@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="VfxLayerStack" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://gem_system/combat/vfx_layer_stack.gd" id="1_stack"]
+[ext_resource type="Script" path="res://gem_system/combat/vfx_layer.gd" id="2_layer"]
+[ext_resource type="SpriteFrames" path="res://placeholder_do_not_ship/vltk_jackie_b4sXIfHh/jackie_strike_frames.tres" id="3_frames"]
+
+[sub_resource type="Resource" id="Resource_strike"]
+script = ExtResource("2_layer")
+sprite_frames = ExtResource("3_frames")
+offset = Vector2(8, -96)
+scale = 0.7
+loop = false
+
+[resource]
+script = ExtResource("1_stack")
+layers = Array[ExtResource("2_layer")]([SubResource("Resource_strike")])

@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đường Môn Skill Data</title>
+<style>
+body { background: var(--bg, #f6f3ec); }
+:root {
+  --bg: #f6f3ec;
+  --surface: #ffffff;
+  --surface-2: #ede7d8;
+  --text: #2b2620;
+  --text-dim: #6b6255;
+  --accent: #9a2b1f;
+  --accent-2: #6b7d4f;
+  --border: #ddd3bd;
+  --tag-bg: #efe3c8;
+  --tag-text: #7a5a1e;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #201c17;
+    --surface: #2a251e;
+    --surface-2: #322c23;
+    --text: #ece4d6;
+    --text-dim: #b0a493;
+    --accent: #e2725b;
+    --accent-2: #9fb37a;
+    --border: #443c30;
+    --tag-bg: #453a24;
+    --tag-text: #e0c081;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #201c17;
+  --surface: #2a251e;
+  --surface-2: #322c23;
+  --text: #ece4d6;
+  --text-dim: #b0a493;
+  --accent: #e2725b;
+  --accent-2: #9fb37a;
+  --border: #443c30;
+  --tag-bg: #453a24;
+  --tag-text: #e0c081;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif', Georgia, serif;
+  padding-inline: 16px;
+  padding-block: 28px 60px;
+  margin: 0;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1 {
+  font-family: 'Cinzel', 'Noto Serif', serif;
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  margin: 0 0 4px;
+  text-wrap: balance;
+}
+.subtitle { color: var(--text-dim); font-size: 15px; margin: 0 0 22px; }
+.toolbar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 22px;
+}
+#search {
+  flex: 1 1 240px;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.count { color: var(--text-dim); font-size: 13px; white-space: nowrap; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.skill-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skill-card header { display: flex; flex-direction: column; gap: 4px; }
+.skill-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); letter-spacing: 0.05em; }
+.skill-card h3 { margin: 0; font-size: 19px; line-height: 1.25; color: var(--text); }
+.garbled { font-size: 11px; font-weight: 400; color: var(--text-dim); font-family: 'Noto Sans', sans-serif; }
+.skill-meta { display: flex; flex-wrap: wrap; gap: 8px; font-family: 'Noto Sans', sans-serif; font-size: 12px; color: var(--text-dim); }
+.prop { color: var(--accent-2); font-weight: 600; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 11px;
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.desc { font-size: 13.5px; color: var(--text-dim); margin: 0; font-family: 'Noto Sans', sans-serif; line-height: 1.5; }
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.stat-table th, .stat-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+.stat-table th { color: var(--text-dim); font-weight: 600; font-family: 'Noto Sans', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.stat-table tbody tr:last-child td { border-bottom: none; }
+.no-data { font-size: 12px; color: var(--text-dim); font-style: italic; margin: 0; }
+footer code { font-size: 11px; color: var(--text-dim); background: var(--surface-2); padding: 2px 6px; border-radius: 4px; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Noto+Serif:wght@400;600&family=Noto+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+</head>
+<body>
+<div class="wrap">
+  <h1>Đường Môn — Tổng Hợp Võ Công</h1>
+  <p class="subtitle">Trích xuất từ Skills.txt + script/skill/tangmen.lua (source Võ Lâm Truyền Kỳ gốc). Cấp 1 tới cấp tối đa nội suy tuyến tính theo công thức Link() gốc.</p>
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="Tìm skill theo tên...">
+    <span class="count" id="count">55 skill</span>
+  </div>
+  <div class="grid" id="grid">
+    
+    <article class="skill-card" data-name="đường môn ám khí" data-id="43">
+      <header>
+        <div class="skill-id">#43</div>
+        <h3>Đường Môn ám khí</h3>
+        <div class="skill-meta">
+          <span class="prop">Hỗ trợ bị động</span>
+          <span class="lvl">Yêu cầu cấp 10 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Tăng khả năng sử dụng ám khí</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>25%</td><td class='num'>215%</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>tangmen_anqi</code></footer>
+    </article>
+    <article class="skill-card" data-name="đường môn đao pháp" data-id="44">
+      <header>
+        <div class="skill-id">#44</div>
+        <h3>Đường Môn Đao pháp</h3>
+        <div class="skill-meta">
+          <span class="prop">Hỗ trợ bị động</span>
+          <span class="lvl">Yêu cầu cấp 10 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Tăng hiệu quả sử dụng đao</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="phích lịch đơn" data-id="45">
+      <header>
+        <div class="skill-id">#45</div>
+        <h3>Phích Lịch đơn</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 10 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Võ công nhập môn, sát thương cùng lúc nhiều đối thủ</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>20%</td><td class='num'>80%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>5</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>1%</td><td class='num'>8%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>339%</td><td class='num'>339%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>302%</td><td class='num'>302%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>342%</td><td class='num'>342%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #4</td><td class='num'>341%</td><td class='num'>341%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #5</td><td class='num'>249%</td><td class='num'>249%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #6</td><td class='num'>58%</td><td class='num'>58%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #7</td><td class='num'>1069%</td><td class='num'>1069%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #8</td><td class='num'>1070%</td><td class='num'>1070%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #9</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>12</td><td class='num'>12</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>pili_dan</code></footer>
+    </article>
+    <article class="skill-card" data-name="đao nhận cơ quan (##)" data-id="46">
+      <header>
+        <div class="skill-id">#46</div>
+        <h3>Đao Nhận cơ quan (##)</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 10 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đặt bẫy vật lý sát thương cùng lúc nhiều đối phương</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="đoạt hồn tiêu" data-id="47">
+      <header>
+        <div class="skill-id">#47</div>
+        <h3>Đoạt Hồn Tiêu</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 80%</span></div>
+      </header>
+      <p class="desc">Trung cấp chiêu thức, cần trang bị ám khí Phi tiêu</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>25%</td><td class='num'>115%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>2%</td><td class='num'>12%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>342%</td><td class='num'>342%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #4</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Độc sát</td><td class='num'>3</td><td class='num'>8</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>24</td><td class='num'>28</td><td class='num'>20</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>384</td><td class='num'>448</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>5</td><td class='num'>16</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>duohun_biao</code></footer>
+    </article>
+    <article class="skill-card" data-name="tâm nhãn" data-id="48">
+      <header>
+        <div class="skill-id">#48</div>
+        <h3>Tâm Nhãn</h3>
+        <div class="skill-meta">
+          <span class="prop">Hỗ trợ bị động</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Trấn phái tâm pháp, tăng khả năng công kích chính xác bằng ám khí </p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Băng sát (nội công)</td><td class='num'>10</td><td class='num'>110</td><td class='num'>30</td></tr><tr><td>Độc sát (nội công)</td><td class='num'>1</td><td class='num'>10</td><td class='num'>30</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>15%</td><td class='num'>115%</td><td class='num'>20</td></tr><tr><td>Thời gian độc phát</td><td class='num'>3%</td><td class='num'>33%</td><td class='num'>30</td></tr><tr><td>Tăng chí mạng</td><td class='num'>8%</td><td class='num'>26%</td><td class='num'>30</td></tr><tr><td>Tốc độ đánh</td><td class='num'>29</td><td class='num'>106</td><td class='num'>30</td></tr></tbody></table>
+      <footer><code>xinyan</code></footer>
+    </article>
+    <article class="skill-card" data-name="địa diệm cơ quan (##)" data-id="49">
+      <header>
+        <div class="skill-id">#49</div>
+        <h3>Địa Diệm cơ quan (##)</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 20 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Trung cấp Hãm Tĩnh thuật, tăng hiệu quả Hoả sát</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="truy tâm tiễn" data-id="50">
+      <header>
+        <div class="skill-id">#50</div>
+        <h3>Truy Tâm Tiễn</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Trung cấp chiêu thức, cần trang bị phi đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>20%</td><td class='num'>185%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>3</td><td class='num'>8</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>5%</td><td class='num'>15%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>339%</td><td class='num'>339%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1069%</td><td class='num'>1069%</td><td class='num'>2</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>24</td><td class='num'>28</td><td class='num'>20</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>384</td><td class='num'>448</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>20</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>zhuixin_jian</code></footer>
+    </article>
+    <article class="skill-card" data-name="thanh mộc (##)" data-id="51">
+      <header>
+        <div class="skill-id">#51</div>
+        <h3>Thanh Mộc (##)</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đường Môn Độc môn nội công, tăng khả năng phòng Lôi</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="âm lôi cơ quan (##)" data-id="52">
+      <header>
+        <div class="skill-id">#52</div>
+        <h3>Âm Lôi Cơ quan (##)</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Trung cấp Hãm Tĩnh thuật, tăng Lôi sát</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="mạn thiên hoa vũ" data-id="54">
+      <header>
+        <div class="skill-id">#54</div>
+        <h3>Mạn Thiên Hoa Vũ</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức cao cấp,dùng ám khí tấn công đối phương trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>30%</td><td class='num'>185%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>3</td><td class='num'>8</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>1%</td><td class='num'>8%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>302%</td><td class='num'>302%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1070%</td><td class='num'>1070%</td><td class='num'>2</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>384</td><td class='num'>416</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>40</td><td class='num'>40</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>mantian_huayu</code></footer>
+    </article>
+    <article class="skill-card" data-name="thối độc thuật" data-id="55">
+      <header>
+        <div class="skill-id">#55</div>
+        <h3>Thối Độc Thuật</h3>
+        <div class="skill-meta">
+          <span class="prop">Chủ động hỗ trợ công kích</span>
+          <span class="lvl">Yêu cầu cấp 40 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đường Môn tuyệt kỹ, tăng hiệu quả Độc sát</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="hàn sương cơ quan (##)" data-id="56">
+      <header>
+        <div class="skill-id">#56</div>
+        <h3>Hàn Sương Cơ quan (##)</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 40 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cao cấp Hãm Tĩnh thuật, tăng hiệu quả Băng sát</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="băng phách hàn quang" data-id="57">
+      <header>
+        <div class="skill-id">#57</div>
+        <h3>Băng Phách Hàn Quang</h3>
+        <div class="skill-meta">
+          <span class="prop">Chủ động hỗ trợ công kích</span>
+          <span class="lvl">Yêu cầu cấp 50 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Độc Môn kỳ thuật, dùng ám khí tăng Băng sát</p>
+      <p class='no-data'>Không có bảng chỉ số theo cấp (thuộc tính cố định / engine field).</p>
+      <footer><code>—</code></footer>
+    </article>
+    <article class="skill-card" data-name="thiên la địa võng" data-id="58">
+      <header>
+        <div class="skill-id">#58</div>
+        <h3>Thiên La Địa Võng</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Độc môn ám khí, tấn công đối phương trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>80%</td><td class='num'>344%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>24</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>5%</td><td class='num'>14%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>302%</td><td class='num'>302%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1070%</td><td class='num'>1070%</td><td class='num'>2</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>26</td><td class='num'>28</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>45</td><td class='num'>65</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>tianluo_diwang</code></footer>
+    </article>
+    <article class="skill-card" data-name="thiên la địa võng tiểu phi đao" data-id="227">
+      <header>
+        <div class="skill-id">#227</div>
+        <h3>Thiên La Địa Võng tiểu Phi Đao</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 50 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Độc Môn kỳ thuật, dùng ám khí tăng Băng sát</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>40%</td><td class='num'>120%</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>26</td><td class='num'>28</td><td class='num'>21</td></tr></tbody></table>
+      <footer><code>tianluo_diwang1</code></footer>
+    </article>
+    <article class="skill-card" data-name="tiểu lý phi đao" data-id="249">
+      <header>
+        <div class="skill-id">#249</div>
+        <h3>Tiểu Lý Phi Đao</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 38%</span></div>
+      </header>
+      <p class="desc">Đường Môn tuyệt kỹ, cần trang bị phi đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>50%</td><td class='num'>344%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>24</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>59%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ tạo sát thương</td><td class='num'>10%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>340%</td><td class='num'>340%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1097%</td><td class='num'>1097%</td><td class='num'>2</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>50</td><td class='num'>50</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>xiaoli_feidao</code></footer>
+    </article>
+    <article class="skill-card" data-name="tiểu lý phi đao" data-id="250">
+      <header>
+        <div class="skill-id">#250</div>
+        <h3>Tiểu Lý Phi Đao</h3>
+        <div class="skill-meta">
+          <span class="prop">Bẫy / Cơ quan (##)</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đường Môn tuyệt kỹ, cần trang bị phi đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>50%</td><td class='num'>344%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>24</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>59%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ tạo sát thương</td><td class='num'>10%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>340%</td><td class='num'>340%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1097%</td><td class='num'>1097%</td><td class='num'>2</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>50</td><td class='num'>50</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>xiaoli_feidao</code></footer>
+    </article>
+    <article class="skill-card" data-name="truy tinh trục điện" data-id="301">
+      <header>
+        <div class="skill-id">#301</div>
+        <h3>Truy Tinh Trục Điện</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 25%</span></div>
+      </header>
+      <p class="desc">Thiên Nhẫn  trung cấp chiêu thức, sát thương trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>10</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>zhuixing_zhudian</code></footer>
+    </article>
+    <article class="skill-card" data-name="bạo vũ lê hoa" data-id="302">
+      <header>
+        <div class="skill-id">#302</div>
+        <h3>Bạo Vũ Lê Hoa</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Độc môn ám khí, dùng ám khí sát thương trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>15%</td><td class='num'>434%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>25</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>480</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>19</td><td class='num'>20</td></tr><tr><td>Hiệu quả xuất chiêu</td><td class='num'>18</td><td class='num'>36</td><td class='num'>21</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>302</td><td class='num'>302</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1070%</td><td class='num'>1070%</td><td class='num'>2</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi bay</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>2</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>baoyu_lihua</code></footer>
+    </article>
+    <article class="skill-card" data-name="độc thích cốt" data-id="303">
+      <header>
+        <div class="skill-id">#303</div>
+        <h3>Độc Thích Cốt</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 20 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Bẫy độc </p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Độc sát</td><td class='num'>8</td><td class='num'>40</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>duci_gu</code></footer>
+    </article>
+    <article class="skill-card" data-name="độc thích cốt" data-id="304">
+      <header>
+        <div class="skill-id">#304</div>
+        <h3>Độc Thích Cốt</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Độc sát</td><td class='num'>8</td><td class='num'>40</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>duci_gu</code></footer>
+    </article>
+    <article class="skill-card" data-name="nhiếp hồn nguyệt ảnh" data-id="339">
+      <header>
+        <div class="skill-id">#339</div>
+        <h3>Nhiếp Hồn Nguyệt ảnh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức cao cấp, hạ thủ vô hình, cần trang bị phi đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>25%</td><td class='num'>301%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>31</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>59%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>60</td><td class='num'>20</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi va chạm</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1069%</td><td class='num'>1069%</td><td class='num'>2</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>4</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>339</td><td class='num'>339</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>shehun_yueying</code></footer>
+    </article>
+    <article class="skill-card" data-name="ngân đao xạ nguyệt" data-id="340">
+      <header>
+        <div class="skill-id">#340</div>
+        <h3>Ngân Đao Xạ Nguyệt</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức cao cấp,dùng ám khí tấn công đối phương trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>25%</td><td class='num'>116%</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>yindao_sheyue</code></footer>
+    </article>
+    <article class="skill-card" data-name="tán hoa tiêu" data-id="341">
+      <header>
+        <div class="skill-id">#341</div>
+        <h3>Tán Hoa Tiêu</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức cao cấp, sát thương ám khí cực kỳ lợi hại</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>20%</td><td class='num'>274%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>39%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>342%</td><td class='num'>342%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #4</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>24</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>25</td><td class='num'>50</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr></tbody></table>
+      <footer><code>sanhua_biao</code></footer>
+    </article>
+    <article class="skill-card" data-name="cửu cung phi tinh" data-id="342">
+      <header>
+        <div class="skill-id">#342</div>
+        <h3>Cửu Cung Phi Tinh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, sát thương phi tiêu trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>10%</td><td class='num'>294%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>39%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>30</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>75</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>342</td><td class='num'>342</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>jiugong_feixing</code></footer>
+    </article>
+    <article class="skill-card" data-name="xuyên tâm thích" data-id="343">
+      <header>
+        <div class="skill-id">#343</div>
+        <h3>Xuyên Tâm Thích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 30 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy vật lý </p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>chuanxin_ci</code></footer>
+    </article>
+    <article class="skill-card" data-name="xuyên tâm thích" data-id="344">
+      <header>
+        <div class="skill-id">#344</div>
+        <h3>Xuyên Tâm Thích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>chuanxin_ci</code></footer>
+    </article>
+    <article class="skill-card" data-name="hàn băng thích" data-id="345">
+      <header>
+        <div class="skill-id">#345</div>
+        <h3>Hàn Băng Thích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 40 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy Băng </p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>hanbing_ci</code></footer>
+    </article>
+    <article class="skill-card" data-name="hàn băng thích" data-id="346">
+      <header>
+        <div class="skill-id">#346</div>
+        <h3>Hàn Băng Thích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>5%</td><td class='num'>30%</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>hanbing_ci</code></footer>
+    </article>
+    <article class="skill-card" data-name="địa diệm hỏa" data-id="347">
+      <header>
+        <div class="skill-id">#347</div>
+        <h3>Địa Diệm Hỏa</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 10 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy Hỏa</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>diyan_huo</code></footer>
+    </article>
+    <article class="skill-card" data-name="địa diệm hỏa" data-id="348">
+      <header>
+        <div class="skill-id">#348</div>
+        <h3>Địa Diệm Hỏa</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>diyan_huo</code></footer>
+    </article>
+    <article class="skill-card" data-name="lôi kích thuật" data-id="349">
+      <header>
+        <div class="skill-id">#349</div>
+        <h3>Lôi Kích Thuật</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 50 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy Lôi </p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Lôi sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>leiji_shu</code></footer>
+    </article>
+    <article class="skill-card" data-name="lôi kích thuật" data-id="350">
+      <header>
+        <div class="skill-id">#350</div>
+        <h3>Lôi Kích Thuật</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>10%</td><td class='num'>52%</td><td class='num'>21</td></tr><tr><td>Lôi sát</td><td class='num'>60</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>20</td><td class='num'>60</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>leiji_shu</code></footer>
+    </article>
+    <article class="skill-card" data-name="loạn hoàn kích" data-id="351">
+      <header>
+        <div class="skill-id">#351</div>
+        <h3>Loạn Hoàn Kích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy tối cao, giẫm phải khó bảo toàn sinh mạng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>20</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Lôi sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>60</td><td class='num'>120</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>luanhuan_ji</code></footer>
+    </article>
+    <article class="skill-card" data-name="loạn hoàn kích" data-id="352">
+      <header>
+        <div class="skill-id">#352</div>
+        <h3>Loạn Hoàn Kích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 60 · Tối đa 30</span>
+        </div>
+        <div class="tags"><span class='tag'>DoHurt 10%</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, Lôi sát trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>20</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Lôi sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>60</td><td class='num'>120</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>luanhuan_ji</code></footer>
+    </article>
+    <article class="skill-card" data-name="mê ảnh tung" data-id="710">
+      <header>
+        <div class="skill-id">#710</div>
+        <h3>Mê ảnh Tung</h3>
+        <div class="skill-meta">
+          <span class="prop">Hỗ trợ chủ động</span>
+          <span class="lvl">Yêu cầu cấp 120 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Thuật di hình hoán ảnh, đi đến điểm chỉ định trong nháy mắt</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tiêu hao nội lực</td><td class='num'>25</td><td class='num'>60</td><td class='num'>20</td></tr><tr><td>Thời gian hồi chiêu</td><td class='num'>270</td><td class='num'>90</td><td class='num'>21</td></tr><tr><td>Thời gian hồi chiêu (trên ngựa)</td><td class='num'>360</td><td class='num'>144</td><td class='num'>21</td></tr><tr><td>Tham số 1</td><td class='num'>120</td><td class='num'>405</td><td class='num'>21</td></tr><tr><td>EXP để lên cấp</td><td class='num'>17851239</td><td class='num'>620738181</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>tangmen120</code></footer>
+    </article>
+    <article class="skill-card" data-name="éăềêầữéầàằìểẳẳấĩ" data-id="938">
+      <header>
+        <div class="skill-id">#938</div>
+        <h3>éĂỀÊẦữéầàẰìểẳẳẤĩ <span class="garbled">(tên lỗi encoding gốc)</span></h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy tối cao, giẫm phải khó bảo toàn sinh mạng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>20</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Lôi sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>60</td><td class='num'>120</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>luanhuan_ji</code></footer>
+    </article>
+    <article class="skill-card" data-name="ắứẫ̉xẳềìểẳẳấĩ" data-id="1018">
+      <header>
+        <div class="skill-id">#1018</div>
+        <h3>ắứẫ̉XẲỀìểẳẳẤĩ</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Cạm bẫy tối cao, giẫm phải khó bảo toàn sinh mạng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>20</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Lôi sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>60</td><td class='num'>120</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>luanhuan_ji</code></footer>
+    </article>
+    <article class="skill-card" data-name="vô ảnh xuyên" data-id="1069">
+      <header>
+        <div class="skill-id">#1069</div>
+        <h3>Vô ảnh Xuyên</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Tấn Tiệp Vô ảnh, Xuyên Tinh Quán Nguyệt, Đường Môn Đại Thừa ám Khí, sau khi xuyên thấu mục tiêu tạo thành phạm vi sát thương</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>30%</td><td class='num'>684%</td><td class='num'>26</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>6</td><td class='num'>53</td><td class='num'>26</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>100%</td><td class='num'>26</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>40</td><td class='num'>92</td><td class='num'>23</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi va chạm</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>4</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>40</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>feidaotang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="thiết liên tứ sát" data-id="1070">
+      <header>
+        <div class="skill-id">#1070</div>
+        <h3>Thiết Liên Tứ Sát</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 60%</span></div>
+      </header>
+      <p class="desc">Thiết Liên Trụy Địa, Quỷ Sa Tán Phát, Đường Môn Đại Thừa Nỏ Pháp, thiết liên phóng ra liên tục tấn công địch nhân, và sát thương những địch nhân xung quanh</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>18%</td><td class='num'>1024%</td><td class='num'>26</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>35</td><td class='num'>120</td><td class='num'>23</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>36</td><td class='num'>26</td></tr><tr><td>Hiệu quả xuất chiêu</td><td class='num'>18</td><td class='num'>36</td><td class='num'>21</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi bay</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>2</td><td class='num'>20</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>nutang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="càn khôn nhất trịch" data-id="1071">
+      <header>
+        <div class="skill-id">#1071</div>
+        <h3>Càn Khôn Nhất Trịch</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Phiêu Nạp Càn Khôn, Nhất Kích Trí Mệnh, Đường Môn Đại Thừa Tiêu Pháp, công kích đối phương phía trước</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>12%</td><td class='num'>778%</td><td class='num'>26</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>60%</td><td class='num'>26</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>52</td><td class='num'>26</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>36</td><td class='num'>107</td><td class='num'>23</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>biaotang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="truy tâm tỏa mệnh" data-id="1097">
+      <header>
+        <div class="skill-id">#1097</div>
+        <h3>Truy Tâm Tỏa Mệnh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 10%</span></div>
+      </header>
+      <p class="desc">Đường Môn Đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>30%</td><td class='num'>192%</td><td class='num'>26</td></tr></tbody></table>
+      <footer><code>feidaotang150_2</code></footer>
+    </article>
+    <article class="skill-card" data-name="thiết sa xạ tinh" data-id="1098">
+      <header>
+        <div class="skill-id">#1098</div>
+        <h3>Thiết Sa Xạ Tinh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đường Môn nỏ</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>18%</td><td class='num'>288%</td><td class='num'>26</td></tr><tr><td>Độc sát</td><td class='num'>10</td><td class='num'>23</td><td class='num'>23</td></tr></tbody></table>
+      <footer><code>nutang150_2</code></footer>
+    </article>
+    <article class="skill-card" data-name="ầơắôềằệắ2" data-id="1099">
+      <header>
+        <div class="skill-id">#1099</div>
+        <h3>ầơẮÔềằệẮ2</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 21</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Đường Môn tiểu</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>12%</td><td class='num'>355%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>45%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>36</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>36</td><td class='num'>90</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>biaotang150_2</code></footer>
+    </article>
+    <article class="skill-card" data-name="ầơắôềằệắ3" data-id="1100">
+      <header>
+        <div class="skill-id">#1100</div>
+        <h3>ầơẮÔềằệẮ3</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 21</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Đường Môn tiểu</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>12%</td><td class='num'>355%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>45%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>36</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>36</td><td class='num'>90</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>biaotang150_3</code></footer>
+    </article>
+    <article class="skill-card" data-name="tích lịch loạn hoàn kích" data-id="1110">
+      <header>
+        <div class="skill-id">#1110</div>
+        <h3>Tích Lịch Loạn Hoàn Kích</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 150 · Tối đa 26</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Công Nhân Vi Hạ, Công Nhân Vi Thượng, Đường Môn Đại Thừa Hãm Tĩnh, có thể mưu toán cài bẫy đối với mục tiêu ở xa</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>20%</td><td class='num'>80%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>1%</td><td class='num'>10%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>5</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>1%</td><td class='num'>8%</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>339%</td><td class='num'>339%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>302%</td><td class='num'>302%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>342%</td><td class='num'>342%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #4</td><td class='num'>341%</td><td class='num'>341%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #5</td><td class='num'>249%</td><td class='num'>249%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #6</td><td class='num'>58%</td><td class='num'>58%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #7</td><td class='num'>1069%</td><td class='num'>1069%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #8</td><td class='num'>1070%</td><td class='num'>1070%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #9</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>12</td><td class='num'>12</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>pili_dan</code></footer>
+    </article>
+    <article class="skill-card" data-name="tích lịch loạn hoàn hãm tĩnh" data-id="1113">
+      <header>
+        <div class="skill-id">#1113</div>
+        <h3>Tích Lịch Loạn Hoàn Hãm Tĩnh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 21</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc">Đường Môn Hãm Tĩnh</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Hỏa sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>20</td><td class='num'>80</td><td class='num'>20</td></tr><tr><td>Sát thương vật lý</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Băng sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Lôi sát</td><td class='num'>100</td><td class='num'>400</td><td class='num'>20</td></tr><tr><td>Tỉ lệ làm choáng</td><td class='num'>1%</td><td class='num'>20%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>60</td><td class='num'>120</td><td class='num'>20</td></tr></tbody></table>
+      <footer><code>luanhuan_ji</code></footer>
+    </article>
+    <article class="skill-card" data-name="ằỉầưãẫùế" data-id="1132">
+      <header>
+        <div class="skill-id">#1132</div>
+        <h3>ằỉẦƯãẫùẾ <span class="garbled">(tên lỗi encoding gốc)</span></h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 0 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, sát thương phi tiêu trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>10%</td><td class='num'>294%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>39%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>30</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>75</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>342</td><td class='num'>342</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>jiugong_feixing</code></footer>
+    </article>
+    <article class="skill-card" data-name="ằỉầưãẫùếìểẳẳấĩ" data-id="1133">
+      <header>
+        <div class="skill-id">#1133</div>
+        <h3>ằỉẦƯãẫùẾìểẳẳẤĩ <span class="garbled">(tên lỗi encoding gốc)</span></h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 0 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Chiêu thức tối cao, sát thương phi tiêu trên diện rộng</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>10%</td><td class='num'>294%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>39%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>30</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>75</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>342</td><td class='num'>342</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>jiugong_feixing</code></footer>
+    </article>
+    <article class="skill-card" data-name="ệĩẫớảăàóãẫùế" data-id="1136">
+      <header>
+        <div class="skill-id">#1136</div>
+        <h3>ệĩẫớảăàóãẫùẾ <span class="garbled">(tên lỗi encoding gốc)</span></h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 50 · Tối đa 20</span>
+        </div>
+        <div class="tags"></div>
+      </header>
+      <p class="desc"><em>Không có mô tả</em></p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>10%</td><td class='num'>294%</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>39%</td><td class='num'>20</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>30</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>75</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1071%</td><td class='num'>1071%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #2</td><td class='num'>1099%</td><td class='num'>1099%</td><td class='num'>2</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #3</td><td class='num'>1100%</td><td class='num'>1100%</td><td class='num'>2</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>342</td><td class='num'>342</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>jiugong_feixing</code></footer>
+    </article>
+    <article class="skill-card" data-name="ẻịệ̉̀ânpc" data-id="1158">
+      <header>
+        <div class="skill-id">#1158</div>
+        <h3>ẻịệ̉̀ânpc</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Tấn Tiệp Vô ảnh, Xuyên Tinh Quán Nguyệt, Đường Môn Đại Thừa ám Khí, sau khi xuyên thấu mục tiêu tạo thành phạm vi sát thương</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>30%</td><td class='num'>684%</td><td class='num'>26</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>6</td><td class='num'>53</td><td class='num'>26</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>100%</td><td class='num'>26</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>40</td><td class='num'>92</td><td class='num'>23</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi va chạm</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>4</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>40</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>feidaotang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="èỳầôậấẫ̉npc" data-id="1159">
+      <header>
+        <div class="skill-id">#1159</div>
+        <h3>èỳẦôậẤẫ̉npc</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích nội công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 60%</span></div>
+      </header>
+      <p class="desc">Thiết Liên Trụy Địa, Quỷ Sa Tán Phát, Đường Môn Đại Thừa Nỏ Pháp, thiết liên phóng ra liên tục tấn công địch nhân, và sát thương những địch nhân xung quanh</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>18%</td><td class='num'>1024%</td><td class='num'>26</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>35</td><td class='num'>120</td><td class='num'>23</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>36</td><td class='num'>26</td></tr><tr><td>Hiệu quả xuất chiêu</td><td class='num'>18</td><td class='num'>36</td><td class='num'>21</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi bay</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>2</td><td class='num'>20</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>nutang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="ầơắôềằệắnpc" data-id="1160">
+      <header>
+        <div class="skill-id">#1160</div>
+        <h3>ầơẮÔềằệẮnpc</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 80 · Tối đa 20</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span></div>
+      </header>
+      <p class="desc">Phiêu Nạp Càn Khôn, Nhất Kích Trí Mệnh, Đường Môn Đại Thừa Tiêu Pháp, công kích đối phương phía trước</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Ngũ hành tương khắc</td><td class='num'>40%</td><td class='num'>82%</td><td class='num'>21</td></tr><tr><td>Tăng sát thương vật lý</td><td class='num'>12%</td><td class='num'>778%</td><td class='num'>26</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>12%</td><td class='num'>60%</td><td class='num'>26</td></tr><tr><td>Độc sát</td><td class='num'>1</td><td class='num'>52</td><td class='num'>26</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>32</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>36</td><td class='num'>107</td><td class='num'>23</td></tr><tr><td>EXP để lên cấp</td><td class='num'>300</td><td class='num'>300000</td><td class='num'>25</td></tr></tbody></table>
+      <footer><code>biaotang150</code></footer>
+    </article>
+    <article class="skill-card" data-name="nhiếp hồn nguyệt ảnh" data-id="1537">
+      <header>
+        <div class="skill-id">#1537</div>
+        <h3>Nhiếp Hồn Nguyệt ảnh</h3>
+        <div class="skill-meta">
+          <span class="prop">Công kích ngoại công</span>
+          <span class="lvl">Yêu cầu cấp 1 · Tối đa 60</span>
+        </div>
+        <div class="tags"><span class='tag'>Vật lý</span><span class='tag'>DoHurt 50%</span></div>
+      </header>
+      <p class="desc">Chiêu thức cao cấp, hạ thủ vô hình, cần trang bị phi đao</p>
+      <table class='stat-table'><thead><tr><th>Chỉ số</th><th>Cấp 1</th><th>Cấp tối đa</th><th>Max Lv</th></tr></thead><tbody><tr><td>Tăng sát thương vật lý</td><td class='num'>25%</td><td class='num'>301%</td><td class='num'>20</td></tr><tr><td>Ngũ hành tương khắc</td><td class='num'>20%</td><td class='num'>62%</td><td class='num'>21</td></tr><tr><td>Độc sát</td><td class='num'>5</td><td class='num'>31</td><td class='num'>20</td></tr><tr><td>Tỉ lệ chí mạng</td><td class='num'>10%</td><td class='num'>59%</td><td class='num'>20</td></tr><tr><td>Tiêu hao nội lực</td><td class='num'>30</td><td class='num'>60</td><td class='num'>20</td></tr><tr><td>Cấp skill liên kết</td><td class='num'>1</td><td class='num'>20</td><td class='num'>20</td></tr><tr><td>Skill khi va chạm</td><td class='num'>0</td><td class='num'>1</td><td class='num'>20</td></tr><tr><td>Tăng sát thương kỹ năng liên kết #1</td><td class='num'>1069%</td><td class='num'>1069%</td><td class='num'>2</td></tr><tr><td>Hiệu ứng hiển thị</td><td class='num'>0</td><td class='num'>4</td><td class='num'>20</td></tr><tr><td>Tốc độ xuất chiêu</td><td class='num'>28</td><td class='num'>32</td><td class='num'>21</td></tr><tr><td>Phạm vi hiệu quả</td><td class='num'>448</td><td class='num'>512</td><td class='num'>21</td></tr><tr><td>Kinh nghiệm skill liên kết</td><td class='num'>339</td><td class='num'>339</td><td class='num'>2</td></tr></tbody></table>
+      <footer><code>shehun_yueying</code></footer>
+    </article>
+  </div>
+</div>
+<script>
+const search = document.getElementById('search');
+const cards = Array.from(document.querySelectorAll('.skill-card'));
+const count = document.getElementById('count');
+search.addEventListener('input', () => {
+  const q = search.value.trim().toLowerCase();
+  let n = 0;
+  for (const c of cards) {
+    const match = !q || c.dataset.name.includes(q) || c.dataset.id.includes(q);
+    c.hidden = !match;
+    if (match) n++;
+  }
+  count.textContent = n + ' skill';
+});
+</script>
+</body>
+</html>

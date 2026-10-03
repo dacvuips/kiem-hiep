@@ -1,0 +1,854 @@
+{
+ "1": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_55542141",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_f613c20a",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 2,
+  "dmg_interval": 14,
+  "dmg_range": 2,
+  "follow_kind": 0,
+  "height": 18,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Tứ Tượng Đồng Quy",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 12,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "101": {
+  "anims": [
+   null,
+   null,
+   null,
+   {
+    "anim": "fx_e8178d06",
+    "dirs": 1,
+    "frames": 18,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 2,
+  "dmg_interval": 5,
+  "dmg_range": 2,
+  "follow_kind": 0,
+  "height": 18,
+  "life": 1,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Tứ Tượng Đồng Quy (trung tâm)",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "137": {
+  "anims": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 0,
+  "col_friend": 1,
+  "col_vanish": 0,
+  "collide_range": 14,
+  "dmg_interval": 0,
+  "dmg_range": 14,
+  "follow_kind": 0,
+  "height": 2,
+  "life": 2,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Vòng tròn hỗ trợ đồng đội",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "142": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_7bcefae7",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_02249d13",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Tam Nga Tề Tuyết Phi Kiếm",
+  "param1": 1,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 32,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "143": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_0c9b55f0",
+    "dirs": 1,
+    "frames": 8,
+    "interval": 2
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 7,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 3,
+  "dmg_interval": 13,
+  "dmg_range": 3,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 12,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Tam Nga Tề Tuyết #Thân",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "144": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_5698379e",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 14,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 35,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 5,
+  "multi_show": 0,
+  "name": "Kim Đỉnh Phật Quang",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 20,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "186": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_3b41a4a0",
+    "dirs": 1,
+    "frames": 40,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 7,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 3,
+  "dmg_interval": 13,
+  "dmg_range": 3,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 12,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Phong Sương Toái ảnh",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "191": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_ff5045d9",
+    "dirs": 16,
+    "frames": 96,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_02249d13",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Thôi Song Vọng Nguyệt",
+  "param1": 1,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 32,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "2": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_8de48699",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 14,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 32,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Nhất Diệp Tri Thu",
+  "param1": 0,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 20,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "3": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_7bcefae7",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_02249d13",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Bất Diệt Bất Tuyệt",
+  "param1": 1,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 31,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "323": {
+  "anims": [
+   null,
+   {
+    "anim": "em_150_jiane_zd_ed7a",
+    "dirs": 16,
+    "frames": 16,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "em_150_luifenghuixue_d_faf6",
+    "dirs": 1,
+    "frames": 14,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Lưu Phong Hồi Tuyết",
+  "param1": 1,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 32,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "324": {
+  "anims": [
+   null,
+   {
+    "anim": "em_150_zhange_zd_8265",
+    "dirs": 1,
+    "frames": 10,
+    "interval": 1
+   },
+   null,
+   null
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 3,
+  "dmg_interval": 13,
+  "dmg_range": 3,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 36,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Tử Vi Băng Hoa",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "325": {
+  "anims": [
+   null,
+   {
+    "anim": "em_150_jiane_zd_ed7a",
+    "dirs": 16,
+    "frames": 16,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "em_150_luifenghuixue_d_faf6",
+    "dirs": 1,
+    "frames": 14,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 3,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Kiếm Tâm Tĩnh Điển",
+  "param1": 1,
+  "param2": 1,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 32,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "353": {
+  "anims": [
+   null,
+   {
+    "anim": "em_150_jiane_ice_53f3",
+    "dirs": 1,
+    "frames": 10,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_f613c20a",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 3,
+  "dmg_interval": 17,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 18,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Kiếm Tâm Tĩnh Điển - phụ",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "4": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_0c9b55f0",
+    "dirs": 1,
+    "frames": 8,
+    "interval": 2
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 7,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 4,
+  "dmg_interval": 13,
+  "dmg_range": 4,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 12,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Phật Quang Phổ Chiếu",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "5": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_976b73ad",
+    "dirs": 1,
+    "frames": 20,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_e8178d06",
+    "dirs": 1,
+    "frames": 18,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 0,
+  "col_friend": 0,
+  "col_vanish": 0,
+  "collide_range": 5,
+  "dmg_interval": 20,
+  "dmg_range": 5,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 19,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Từ Hàng Phổ Độ",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 10,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "68": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_5698379e",
+    "dirs": 16,
+    "frames": 64,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_ac3a8fba",
+    "dirs": 1,
+    "frames": 14,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 1,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Phiêu Tuyết Xuyên Vân",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 24,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "92": {
+  "anims": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 1,
+  "col_follow": 0,
+  "col_friend": 1,
+  "col_vanish": 0,
+  "collide_range": 10,
+  "dmg_interval": 0,
+  "dmg_range": 10,
+  "follow_kind": 0,
+  "height": 2,
+  "life": 2,
+  "loop": 0,
+  "miss_rate": 0,
+  "move_kind": 0,
+  "multi_show": 0,
+  "name": "Vòng tròn hỗ trợ đồng đội",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 1,
+  "speed": 0,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ }
+}

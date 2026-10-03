@@ -1,0 +1,1313 @@
+[gd_resource type="Resource" script_class="SectDefinition" load_steps="143" format=3]
+
+[ext_resource type="Script" path="res://systems/sect/sect_definition.gd" id="1_sect"]
+[ext_resource type="Script" path="res://systems/sect/skill_definition.gd" id="2_skill"]
+[ext_resource type="Script" path="res://systems/sect/skill_stat_line.gd" id="3_statline"]
+
+[sub_resource type="Resource" id="SubResource_1"]
+script = ExtResource("2_skill")
+id = "duong_mon_dam_kh"
+skill_name = "Đường Môn Ám Khí"
+description = "Tăng khả năng sử dụng ám khí."
+is_active = false
+category = 1
+req_level = 10
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+passive_attack_bonus = 2.0
+
+[sub_resource type="Resource" id="SubResource_2"]
+script = ExtResource("2_skill")
+id = "duong_mon_dao_phap"
+skill_name = "Đường Môn Đao Pháp"
+description = "Tăng hiệu quả sử dụng đao."
+is_active = false
+category = 1
+req_level = 10
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+passive_defense_bonus = 2.0
+
+[sub_resource type="Resource" id="SubResource_4"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 20.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_5"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 1.0
+value_at_max_level = 8.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_6"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_7"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 5.0
+
+[sub_resource type="Resource" id="SubResource_8"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 12.0
+value_at_max_level = 12.0
+
+[sub_resource type="Resource" id="SubResource_3"]
+script = ExtResource("2_skill")
+id = "duong_mon_tich_lich_don"
+skill_name = "Tích Lịch Đơn"
+description = "Võ công nhập môn, sát thương cùng lúc nhiều đối thủ."
+is_active = true
+category = 0
+req_level = 10
+max_level = 20
+base_damage = 24.0
+mana_cost = 0.0
+cooldown = 1.2
+range = 400.0
+element = 1
+damage_growth_per_level = 2.88
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_4"), SubResource("SubResource_5"), SubResource("SubResource_6"), SubResource("SubResource_7"), SubResource("SubResource_8")])
+is_main_attack = true
+
+[sub_resource type="Resource" id="SubResource_9"]
+script = ExtResource("2_skill")
+id = "duong_mon_dao_nhan_co_quan"
+skill_name = "Đao Nhận Cơ Quan"
+description = "Đặt bẫy vật lý sát thương cùng lúc nhiều đối phương."
+is_active = true
+category = 0
+req_level = 10
+max_level = 20
+base_damage = 24.0
+mana_cost = 0.0
+cooldown = 1.2
+range = 180.0
+element = 1
+damage_growth_per_level = 2.88
+
+[sub_resource type="Resource" id="SubResource_11"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_12"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_10"]
+script = ExtResource("2_skill")
+id = "duong_mon_dia_diem_hoa"
+skill_name = "Địa Diệm Hỏa"
+description = "Cạm bẫy Hỏa."
+is_active = true
+category = 0
+req_level = 10
+max_level = 20
+base_damage = 24.0
+mana_cost = 0.0
+cooldown = 1.2
+range = 50.0
+element = 1
+damage_growth_per_level = 2.88
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_11"), SubResource("SubResource_12")])
+
+[sub_resource type="Resource" id="SubResource_14"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 8.0
+value_at_max_level = 40.0
+
+[sub_resource type="Resource" id="SubResource_15"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_16"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_13"]
+script = ExtResource("2_skill")
+id = "duong_mon_doc_thich_cot"
+skill_name = "Độc Thích Cốt"
+description = "Bẫy độc."
+is_active = true
+category = 0
+req_level = 20
+max_level = 20
+base_damage = 28.0
+mana_cost = 0.0
+cooldown = 1.4
+range = 50.0
+element = 1
+damage_growth_per_level = 3.36
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_14"), SubResource("SubResource_15"), SubResource("SubResource_16")])
+
+[sub_resource type="Resource" id="SubResource_17"]
+script = ExtResource("2_skill")
+id = "duong_mon_dia_diem_co_quan"
+skill_name = "Địa Diệm Cơ Quan"
+description = "Trung cấp Hãm Tĩnh thuật, tăng hiệu quả Hỏa sát."
+is_active = true
+category = 0
+req_level = 20
+max_level = 20
+base_damage = 28.0
+mana_cost = 0.0
+cooldown = 1.4
+range = 180.0
+element = 1
+damage_growth_per_level = 3.36
+
+[sub_resource type="Resource" id="SubResource_19"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 25.0
+value_at_max_level = 115.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_20"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_21"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 2.0
+value_at_max_level = 12.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_22"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 3.0
+value_at_max_level = 8.0
+
+[sub_resource type="Resource" id="SubResource_23"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 5.0
+value_at_max_level = 16.0
+
+[sub_resource type="Resource" id="SubResource_18"]
+script = ExtResource("2_skill")
+id = "duong_mon_doat_hon_tieu"
+skill_name = "Đoạt Hồn Tiêu"
+description = "Trung cấp chiêu thức, cần trang bị ám khí Phi tiêu."
+is_active = true
+category = 0
+req_level = 30
+max_level = 20
+base_damage = 32.0
+mana_cost = 0.0
+cooldown = 1.6
+range = 450.0
+element = 1
+damage_growth_per_level = 3.84
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_19"), SubResource("SubResource_20"), SubResource("SubResource_21"), SubResource("SubResource_22"), SubResource("SubResource_23")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_25"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 20.0
+value_at_max_level = 185.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_26"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_27"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 5.0
+value_at_max_level = 15.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_28"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 3.0
+value_at_max_level = 8.0
+
+[sub_resource type="Resource" id="SubResource_29"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 20.0
+
+[sub_resource type="Resource" id="SubResource_24"]
+script = ExtResource("2_skill")
+id = "duong_mon_truy_tam_tien"
+skill_name = "Truy Tâm Tiễn"
+description = "Trung cấp chiêu thức, cần trang bị phi đao."
+is_active = true
+category = 0
+req_level = 30
+max_level = 20
+base_damage = 32.0
+mana_cost = 0.0
+cooldown = 1.6
+range = 360.0
+element = 1
+damage_growth_per_level = 3.84
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_25"), SubResource("SubResource_26"), SubResource("SubResource_27"), SubResource("SubResource_28"), SubResource("SubResource_29")])
+
+[sub_resource type="Resource" id="SubResource_30"]
+script = ExtResource("2_skill")
+id = "duong_mon_thanh_moc"
+skill_name = "Thanh Mộc"
+description = "Đường Môn độc môn nội công, tăng khả năng phòng Lôi."
+is_active = false
+category = 1
+req_level = 30
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+passive_defense_bonus = 3.0
+
+[sub_resource type="Resource" id="SubResource_31"]
+script = ExtResource("2_skill")
+id = "duong_mon_am_loi_co_quan"
+skill_name = "Âm Lôi Cơ Quan"
+description = "Trung cấp Hãm Tĩnh thuật, tăng Lôi sát."
+is_active = true
+category = 0
+req_level = 30
+max_level = 20
+base_damage = 32.0
+mana_cost = 0.0
+cooldown = 1.6
+range = 180.0
+element = 1
+damage_growth_per_level = 3.84
+
+[sub_resource type="Resource" id="SubResource_33"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 30.0
+value_at_max_level = 185.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_34"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_35"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 1.0
+value_at_max_level = 8.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_36"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 3.0
+value_at_max_level = 8.0
+
+[sub_resource type="Resource" id="SubResource_37"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 40.0
+value_at_max_level = 40.0
+
+[sub_resource type="Resource" id="SubResource_32"]
+script = ExtResource("2_skill")
+id = "duong_mon_man_thien_hoa_vu"
+skill_name = "Mạn Thiên Hoa Vũ"
+description = "Chiêu thức cao cấp, dùng ám khí tấn công đối phương trên diện rộng."
+is_active = true
+category = 0
+req_level = 30
+max_level = 20
+base_damage = 32.0
+mana_cost = 0.0
+cooldown = 1.6
+range = 400.0
+element = 1
+damage_growth_per_level = 3.84
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_33"), SubResource("SubResource_34"), SubResource("SubResource_35"), SubResource("SubResource_36"), SubResource("SubResource_37")])
+
+[sub_resource type="Resource" id="SubResource_39"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 60.0
+value_at_max_level = 400.0
+
+[sub_resource type="Resource" id="SubResource_40"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_41"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_38"]
+script = ExtResource("2_skill")
+id = "duong_mon_xuyen_tam_thich"
+skill_name = "Xuyên Tâm Thích"
+description = "Cạm bẫy vật lý."
+is_active = true
+category = 0
+req_level = 30
+max_level = 20
+base_damage = 32.0
+mana_cost = 0.0
+cooldown = 1.6
+range = 50.0
+element = 1
+damage_growth_per_level = 3.84
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_39"), SubResource("SubResource_40"), SubResource("SubResource_41")])
+
+[sub_resource type="Resource" id="SubResource_42"]
+script = ExtResource("2_skill")
+id = "duong_mon_thoi_doc_thuat"
+skill_name = "Thối Độc Thuật"
+description = "Đường Môn tuyệt kỹ, tăng hiệu quả Độc sát."
+is_active = false
+category = 1
+req_level = 40
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+passive_attack_bonus = 3.0
+
+[sub_resource type="Resource" id="SubResource_43"]
+script = ExtResource("2_skill")
+id = "duong_mon_han_suong_co_quan"
+skill_name = "Hàn Sương Cơ Quan"
+description = "Cao cấp Hãm Tĩnh thuật, tăng hiệu quả Băng sát."
+is_active = true
+category = 0
+req_level = 40
+max_level = 20
+base_damage = 36.0
+mana_cost = 0.0
+cooldown = 1.8
+range = 180.0
+element = 1
+damage_growth_per_level = 4.32
+
+[sub_resource type="Resource" id="SubResource_45"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+value_at_level_1 = 60.0
+value_at_max_level = 400.0
+
+[sub_resource type="Resource" id="SubResource_46"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_47"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_44"]
+script = ExtResource("2_skill")
+id = "duong_mon_han_bang_thich"
+skill_name = "Hàn Băng Thích"
+description = "Cạm bẫy Băng."
+is_active = true
+category = 0
+req_level = 40
+max_level = 20
+base_damage = 36.0
+mana_cost = 0.0
+cooldown = 1.8
+range = 50.0
+element = 1
+damage_growth_per_level = 4.32
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_45"), SubResource("SubResource_46"), SubResource("SubResource_47")])
+
+[sub_resource type="Resource" id="SubResource_48"]
+script = ExtResource("2_skill")
+id = "duong_mon_bang_phach_han_quang"
+skill_name = "Băng Phách Hàn Quang"
+description = "Độc môn kỳ thuật, dùng ám khí tăng Băng sát."
+is_active = false
+category = 1
+req_level = 50
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+passive_max_hp_bonus = 20.0
+
+[sub_resource type="Resource" id="SubResource_50"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 80.0
+value_at_max_level = 344.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_51"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_52"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 5.0
+value_at_max_level = 24.0
+
+[sub_resource type="Resource" id="SubResource_53"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 5.0
+value_at_max_level = 14.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_54"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 45.0
+value_at_max_level = 65.0
+
+[sub_resource type="Resource" id="SubResource_49"]
+script = ExtResource("2_skill")
+id = "duong_mon_thien_la_dia_vong_tieu_phi_dao"
+skill_name = "Thiên La Địa Võng Tiểu Phi Đao"
+description = "Độc môn kỳ thuật, dùng ám khí tăng Băng sát."
+is_active = true
+category = 0
+req_level = 50
+max_level = 20
+base_damage = 40.0
+mana_cost = 0.0
+cooldown = 2.0
+range = 180.0
+element = 1
+damage_growth_per_level = 4.8
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_50"), SubResource("SubResource_51"), SubResource("SubResource_52"), SubResource("SubResource_53"), SubResource("SubResource_54")])
+
+[sub_resource type="Resource" id="SubResource_56"]
+script = ExtResource("3_statline")
+label = "Lôi sát"
+value_at_level_1 = 60.0
+value_at_max_level = 400.0
+
+[sub_resource type="Resource" id="SubResource_57"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_58"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ choáng"
+value_at_level_1 = 1.0
+value_at_max_level = 20.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_59"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_55"]
+script = ExtResource("2_skill")
+id = "duong_mon_loi_kich_thuat"
+skill_name = "Lôi Kích Thuật"
+description = "Cạm bẫy Lôi."
+is_active = true
+category = 0
+req_level = 50
+max_level = 20
+base_damage = 40.0
+mana_cost = 0.0
+cooldown = 2.0
+range = 50.0
+element = 1
+damage_growth_per_level = 4.8
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_56"), SubResource("SubResource_57"), SubResource("SubResource_58"), SubResource("SubResource_59")])
+
+[sub_resource type="Resource" id="SubResource_61"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 80.0
+value_at_max_level = 344.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_62"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_63"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 5.0
+value_at_max_level = 24.0
+
+[sub_resource type="Resource" id="SubResource_64"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 5.0
+value_at_max_level = 14.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_65"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 45.0
+value_at_max_level = 65.0
+
+[sub_resource type="Resource" id="SubResource_60"]
+script = ExtResource("2_skill")
+id = "duong_mon_thien_la_dia_vong"
+skill_name = "Thiên La Địa Võng"
+description = "Độc môn ám khí, tấn công đối phương trên diện rộng."
+is_active = true
+category = 0
+req_level = 60
+max_level = 20
+base_damage = 44.0
+mana_cost = 0.0
+cooldown = 2.2
+range = 520.0
+element = 1
+damage_growth_per_level = 5.28
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_61"), SubResource("SubResource_62"), SubResource("SubResource_63"), SubResource("SubResource_64"), SubResource("SubResource_65")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_67"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 50.0
+value_at_max_level = 344.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_68"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_69"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 10.0
+value_at_max_level = 59.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_70"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 5.0
+value_at_max_level = 24.0
+
+[sub_resource type="Resource" id="SubResource_71"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 50.0
+value_at_max_level = 50.0
+
+[sub_resource type="Resource" id="SubResource_66"]
+script = ExtResource("2_skill")
+id = "duong_mon_tieu_ly_phi_dao"
+skill_name = "Tiểu Lý Phi Đao"
+description = "Đường Môn tuyệt kỹ, cần trang bị phi đao."
+is_active = true
+category = 0
+req_level = 60
+max_level = 20
+base_damage = 44.0
+mana_cost = 0.0
+cooldown = 2.2
+range = 480.0
+element = 1
+damage_growth_per_level = 5.28
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_67"), SubResource("SubResource_68"), SubResource("SubResource_69"), SubResource("SubResource_70"), SubResource("SubResource_71")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_73"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 20.0
+value_at_max_level = 274.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_74"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_75"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 10.0
+value_at_max_level = 39.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_76"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 5.0
+value_at_max_level = 24.0
+
+[sub_resource type="Resource" id="SubResource_77"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 25.0
+value_at_max_level = 50.0
+
+[sub_resource type="Resource" id="SubResource_72"]
+script = ExtResource("2_skill")
+id = "duong_mon_tan_hoa_tieu"
+skill_name = "Tán Hoa Tiêu"
+description = "Chiêu thức cao cấp, sát thương ám khí cực kỳ lợi hại."
+is_active = true
+category = 0
+req_level = 60
+max_level = 20
+base_damage = 44.0
+mana_cost = 0.0
+cooldown = 2.2
+range = 400.0
+element = 1
+damage_growth_per_level = 5.28
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_73"), SubResource("SubResource_74"), SubResource("SubResource_75"), SubResource("SubResource_76"), SubResource("SubResource_77")])
+
+[sub_resource type="Resource" id="SubResource_79"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_80"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+
+[sub_resource type="Resource" id="SubResource_78"]
+script = ExtResource("2_skill")
+id = "duong_mon_truy_tinh_truc_dien"
+skill_name = "Truy Tinh Trục Điện"
+description = "Thiên Nhẫn trung cấp chiêu thức, sát thương trên diện rộng."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 400.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_79"), SubResource("SubResource_80")])
+
+[sub_resource type="Resource" id="SubResource_82"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 15.0
+value_at_max_level = 434.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_83"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_84"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 19.0
+
+[sub_resource type="Resource" id="SubResource_85"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 25.0
+value_at_max_level = 80.0
+
+[sub_resource type="Resource" id="SubResource_81"]
+script = ExtResource("2_skill")
+id = "duong_mon_bao_vu_le_hoa"
+skill_name = "Bạo Vũ Lê Hoa"
+description = "Độc môn ám khí, dùng ám khí sát thương trên diện rộng."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 470.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_82"), SubResource("SubResource_83"), SubResource("SubResource_84"), SubResource("SubResource_85")])
+
+[sub_resource type="Resource" id="SubResource_87"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 25.0
+value_at_max_level = 301.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_88"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_89"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 10.0
+value_at_max_level = 59.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_90"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 5.0
+value_at_max_level = 31.0
+
+[sub_resource type="Resource" id="SubResource_91"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 30.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_86"]
+script = ExtResource("2_skill")
+id = "duong_mon_niep_hon_nguyet_anh"
+skill_name = "Nhiếp Hồn Nguyệt Ảnh"
+description = "Chiêu thức cao cấp, hạ thủ vô hình, cần trang bị phi đao."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 360.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_87"), SubResource("SubResource_88"), SubResource("SubResource_89"), SubResource("SubResource_90"), SubResource("SubResource_91")])
+
+[sub_resource type="Resource" id="SubResource_93"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 25.0
+value_at_max_level = 116.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_94"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_92"]
+script = ExtResource("2_skill")
+id = "duong_mon_ngan_dao_xa_nguyet"
+skill_name = "Ngân Đao Xạ Nguyệt"
+description = "Chiêu thức cao cấp, dùng ám khí tấn công đối phương trên diện rộng."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 400.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_93"), SubResource("SubResource_94")])
+
+[sub_resource type="Resource" id="SubResource_96"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 10.0
+value_at_max_level = 394.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_97"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 60.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_98"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 10.0
+value_at_max_level = 39.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_99"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 30.0
+
+[sub_resource type="Resource" id="SubResource_100"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 30.0
+value_at_max_level = 75.0
+
+[sub_resource type="Resource" id="SubResource_95"]
+script = ExtResource("2_skill")
+id = "duong_mon_cuu_cung_phi_tinh"
+skill_name = "Cửu Cung Phi Tinh"
+description = "Chiêu thức tối cao, sát thương phi tiêu trên diện rộng."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 360.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_96"), SubResource("SubResource_97"), SubResource("SubResource_98"), SubResource("SubResource_99"), SubResource("SubResource_100")])
+
+[sub_resource type="Resource" id="SubResource_102"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+is_range = true
+min_at_level_1 = 100.0
+max_at_level_1 = 100.0
+min_at_max_level = 385.0
+max_at_max_level = 385.0
+
+[sub_resource type="Resource" id="SubResource_103"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 100.0
+max_at_level_1 = 100.0
+min_at_max_level = 385.0
+max_at_max_level = 385.0
+
+[sub_resource type="Resource" id="SubResource_104"]
+script = ExtResource("3_statline")
+label = "Hỏa sát"
+is_range = true
+min_at_level_1 = 100.0
+max_at_level_1 = 100.0
+min_at_max_level = 385.0
+max_at_max_level = 385.0
+
+[sub_resource type="Resource" id="SubResource_105"]
+script = ExtResource("3_statline")
+label = "Lôi sát"
+is_range = true
+min_at_level_1 = 100.0
+max_at_level_1 = 100.0
+min_at_max_level = 385.0
+max_at_max_level = 385.0
+
+[sub_resource type="Resource" id="SubResource_106"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+is_range = true
+min_at_level_1 = 20.0
+max_at_level_1 = 20.0
+min_at_max_level = 20.0
+max_at_max_level = 20.0
+
+[sub_resource type="Resource" id="SubResource_107"]
+script = ExtResource("3_statline")
+label = "Làm choáng"
+value_at_level_1 = 1.0
+value_at_max_level = 20.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_108"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 60.0
+value_at_max_level = 117.0
+
+[sub_resource type="Resource" id="SubResource_101"]
+script = ExtResource("2_skill")
+id = "duong_mon_loan_hoan_kich"
+skill_name = "Loạn Hoàn Kích"
+description = "Cạm bẫy tối cao, giẫm phải khó bảo toàn sinh mạng."
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+base_damage = 52.0
+mana_cost = 0.0
+cooldown = 2.6
+range = 50.0
+element = 1
+damage_growth_per_level = 6.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_102"), SubResource("SubResource_103"), SubResource("SubResource_104"), SubResource("SubResource_105"), SubResource("SubResource_106"), SubResource("SubResource_107"), SubResource("SubResource_108")])
+
+[sub_resource type="Resource" id="SubResource_110"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 25.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_109"]
+script = ExtResource("2_skill")
+id = "duong_mon_me_anh_tung"
+skill_name = "Mê Ảnh Tung"
+description = "Thuật di hình hoán ảnh, đi đến điểm chỉ định trong nháy mắt."
+is_active = false
+category = 1
+req_level = 120
+max_level = 20
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 1
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_110")])
+passive_defense_bonus = 5.0
+
+[sub_resource type="Resource" id="SubResource_112"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 30.0
+value_at_max_level = 160.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_113"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_114"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 12.0
+value_at_max_level = 72.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_115"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 6.0
+value_at_max_level = 38.0
+
+[sub_resource type="Resource" id="SubResource_116"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+
+[sub_resource type="Resource" id="SubResource_111"]
+script = ExtResource("2_skill")
+id = "duong_mon_vo_anh_xuyen"
+skill_name = "Vô Ảnh Xuyên"
+description = "Tấn Tiệp Vô Ảnh, Xuyên Tinh Quán Nguyệt, Đường Môn Đại Thừa Ám Khí, sau khi xuyên thấu mục tiêu tạo thành phạm vi sát thương."
+is_active = true
+category = 0
+req_level = 150
+max_level = 27
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 360.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_112"), SubResource("SubResource_113"), SubResource("SubResource_114"), SubResource("SubResource_115"), SubResource("SubResource_116")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_118"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 18.0
+value_at_max_level = 520.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_119"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_120"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 25.0
+
+[sub_resource type="Resource" id="SubResource_121"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 35.0
+value_at_max_level = 100.0
+
+[sub_resource type="Resource" id="SubResource_117"]
+script = ExtResource("2_skill")
+id = "duong_mon_thiet_lien_tu_sat"
+skill_name = "Thiết Liên Tứ Sát"
+description = "Thiết Liên Trụy Địa, Quỷ Sa Tán Phát, Đường Môn Đại Thừa Nỏ Pháp, thiết liên phóng ra liên tục tấn công địch nhân, và sát thương những địch nhân xung quanh."
+is_active = true
+category = 0
+req_level = 150
+max_level = 27
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 470.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_118"), SubResource("SubResource_119"), SubResource("SubResource_120"), SubResource("SubResource_121")])
+
+[sub_resource type="Resource" id="SubResource_123"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 12.0
+value_at_max_level = 355.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_124"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_125"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 12.0
+value_at_max_level = 45.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_126"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 36.0
+
+[sub_resource type="Resource" id="SubResource_127"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 36.0
+value_at_max_level = 90.0
+
+[sub_resource type="Resource" id="SubResource_122"]
+script = ExtResource("2_skill")
+id = "duong_mon_can_khon_nhat_trich"
+skill_name = "Càn Khôn Nhất Trịch"
+description = "Phiêu Nạp Càn Khôn, Nhất Kích Trí Mệnh, Đường Môn Đại Thừa Tiêu Pháp, công kích đối phương phía trước."
+is_active = true
+category = 0
+req_level = 150
+max_level = 27
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 360.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_123"), SubResource("SubResource_124"), SubResource("SubResource_125"), SubResource("SubResource_126"), SubResource("SubResource_127")])
+
+[sub_resource type="Resource" id="SubResource_129"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 30.0
+value_at_max_level = 140.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_130"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_128"]
+script = ExtResource("2_skill")
+id = "duong_mon_truy_tam_toa_menh"
+skill_name = "Truy Tâm Tỏa Mệnh"
+description = "Đường Môn Đại Thừa Đao Pháp, tuyệt kỹ gia truyền tối hậu."
+is_active = true
+category = 0
+req_level = 150
+max_level = 20
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 400.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_129"), SubResource("SubResource_130")])
+
+[sub_resource type="Resource" id="SubResource_132"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 18.0
+value_at_max_level = 180.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_133"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_134"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 10.0
+value_at_max_level = 20.0
+
+[sub_resource type="Resource" id="SubResource_131"]
+script = ExtResource("2_skill")
+id = "duong_mon_thiet_sa_xa_tinh"
+skill_name = "Thiết Sa Xạ Tinh"
+description = "Đường Môn Đại Thừa Nỏ Pháp, tuyệt kỹ gia truyền tối hậu."
+is_active = true
+category = 0
+req_level = 150
+max_level = 20
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 400.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_132"), SubResource("SubResource_133"), SubResource("SubResource_134")])
+
+[sub_resource type="Resource" id="SubResource_136"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương vật lý"
+value_at_level_1 = 20.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_137"]
+script = ExtResource("3_statline")
+label = "Tỉ lệ chí mạng"
+value_at_level_1 = 1.0
+value_at_max_level = 8.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_138"]
+script = ExtResource("3_statline")
+label = "Ngũ Hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_139"]
+script = ExtResource("3_statline")
+label = "Độc sát"
+value_at_level_1 = 1.0
+value_at_max_level = 5.0
+
+[sub_resource type="Resource" id="SubResource_140"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 12.0
+value_at_max_level = 12.0
+
+[sub_resource type="Resource" id="SubResource_135"]
+script = ExtResource("2_skill")
+id = "duong_mon_tich_lich_loan_hoan_kich"
+skill_name = "Tích Lịch Loạn Hoàn Kích"
+description = "Công Nhân Vi Hạ, Công Nhân Vi Thượng, Đường Môn Đại Thừa Hãm Tĩnh, có thể mưu toán cài bẫy đối với mục tiêu ở xa."
+is_active = true
+category = 0
+req_level = 150
+max_level = 26
+base_damage = 80.0
+mana_cost = 0.0
+cooldown = 4.0
+range = 420.0
+element = 1
+damage_growth_per_level = 9.6
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_136"), SubResource("SubResource_137"), SubResource("SubResource_138"), SubResource("SubResource_139"), SubResource("SubResource_140")])
+
+[resource]
+script = ExtResource("1_sect")
+id = "duong_mon"
+sect_name = "Đường Môn"
+element = 1
+alignment = 2
+description = "Danh gia ám khí, sở trường phi tiêu độc châm, cơ quan thuật và trận pháp cạm bẫy."
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_1"), SubResource("SubResource_2"), SubResource("SubResource_3"), SubResource("SubResource_9"), SubResource("SubResource_10"), SubResource("SubResource_13"), SubResource("SubResource_17"), SubResource("SubResource_18"), SubResource("SubResource_24"), SubResource("SubResource_30"), SubResource("SubResource_31"), SubResource("SubResource_32"), SubResource("SubResource_38"), SubResource("SubResource_42"), SubResource("SubResource_43"), SubResource("SubResource_44"), SubResource("SubResource_48"), SubResource("SubResource_49"), SubResource("SubResource_55"), SubResource("SubResource_60"), SubResource("SubResource_66"), SubResource("SubResource_72"), SubResource("SubResource_78"), SubResource("SubResource_81"), SubResource("SubResource_86"), SubResource("SubResource_92"), SubResource("SubResource_95"), SubResource("SubResource_101"), SubResource("SubResource_109"), SubResource("SubResource_111"), SubResource("SubResource_117"), SubResource("SubResource_122"), SubResource("SubResource_128"), SubResource("SubResource_131"), SubResource("SubResource_135")])

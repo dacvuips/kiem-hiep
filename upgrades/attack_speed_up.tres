@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3 uid="uid://csthxxv5uxrhx"]
+
+[ext_resource type="Script" uid="uid://dsjmh75qmtjkx" path="res://upgrades/upgrade_data.gd" id="1_h1lfr"]
+[ext_resource type="Texture2D" uid="uid://d15bayejnikkp" path="res://upgrades/icon/speed.png" id="1_pi87p"]
+
+[resource]
+script = ExtResource("1_h1lfr")
+id = "attack_speed_up"
+title = "Tốc độ đánh"
+description = "Tăng tốc độ đánh +25%"
+icon = ExtResource("1_pi87p")
+stat_type = 2
+value = 0.25
+metadata/_custom_type_script = "uid://dsjmh75qmtjkx"

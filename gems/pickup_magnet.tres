@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PickupData" format=3 uid="uid://bvw0sc0ypw1wc"]
+
+[ext_resource type="Script" uid="uid://cuadd783f0q8h" path="res://gems/pickup_data.gd" id="1_5nj2t"]
+[ext_resource type="Texture2D" uid="uid://c8uahlox1i00g" path="res://gems/magnet.png" id="2_hw5hq"]
+
+[resource]
+script = ExtResource("1_5nj2t")
+pickup_type = 1
+drop_chance = 0.0005
+texture = ExtResource("2_hw5hq")

@@ -1,0 +1,5389 @@
+{
+ "1061": {
+  "attack_radius": 360,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 10,
+  "child": 323,
+  "child_level": -1,
+  "child_num": 5,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 0,
+  "gen_data": 2,
+  "gen_style": 5,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ],
+    [
+     36,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     448,
+     0,
+     0
+    ],
+    [
+     451,
+     0,
+     0
+    ],
+    [
+     454,
+     0,
+     0
+    ],
+    [
+     458,
+     0,
+     0
+    ],
+    [
+     461,
+     0,
+     0
+    ],
+    [
+     464,
+     0,
+     0
+    ],
+    [
+     468,
+     0,
+     0
+    ],
+    [
+     471,
+     0,
+     0
+    ],
+    [
+     474,
+     0,
+     0
+    ],
+    [
+     478,
+     0,
+     0
+    ],
+    [
+     481,
+     0,
+     0
+    ],
+    [
+     485,
+     0,
+     0
+    ],
+    [
+     488,
+     0,
+     0
+    ],
+    [
+     491,
+     0,
+     0
+    ],
+    [
+     495,
+     0,
+     0
+    ],
+    [
+     498,
+     0,
+     0
+    ],
+    [
+     501,
+     0,
+     0
+    ],
+    [
+     505,
+     0,
+     0
+    ],
+    [
+     508,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ]
+   ],
+   "skill_eventskilllevel": [
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     4,
+     0,
+     0
+    ],
+    [
+     5,
+     0,
+     0
+    ],
+    [
+     6,
+     0,
+     0
+    ],
+    [
+     7,
+     0,
+     0
+    ],
+    [
+     8,
+     0,
+     0
+    ],
+    [
+     9,
+     0,
+     0
+    ],
+    [
+     10,
+     0,
+     0
+    ],
+    [
+     11,
+     0,
+     0
+    ],
+    [
+     12,
+     0,
+     0
+    ],
+    [
+     13,
+     0,
+     0
+    ],
+    [
+     14,
+     0,
+     0
+    ],
+    [
+     15,
+     0,
+     0
+    ],
+    [
+     16,
+     0,
+     0
+    ],
+    [
+     17,
+     0,
+     0
+    ],
+    [
+     18,
+     0,
+     0
+    ],
+    [
+     19,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ]
+   ],
+   "skill_showevent": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ]
+   ],
+   "skill_startevent": [
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     0,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ],
+    [
+     1,
+     0,
+     1089
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Kiếm Hoa Vãn Tinh",
+  "need_shadow": 0,
+  "param1": 22,
+  "param2": 65537,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 1,
+  "start_skill": 1089,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "1062": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 11,
+  "child": 324,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 6,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 1,
+  "name": "Băng Vũ Lạc Tinh",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "1089": {
+  "attack_radius": 800,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 11,
+  "child": 325,
+  "child_level": -1,
+  "child_num": 8,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 1,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Kiếm Tâm Tĩnh Điển",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 1,
+  "vanish_skill": 1091,
+  "wait": 0
+ },
+ "1091": {
+  "attack_radius": 800,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 353,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 6,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Kiếm Tâm Tĩnh Điển - phụ",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 1
+ },
+ "206": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 14,
+  "child": 92,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Lưu Thủy",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "207": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 14,
+  "child": 92,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Mộng Điệp",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "208": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 14,
+  "child": 92,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Phật Tâm Từ Hữu",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "243": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 1,
+  "child_level": -1,
+  "child_num": 4,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 8,
+  "gen_style": 1,
+  "heel": 0,
+  "levels": {
+   "skill_attackradius": [
+    [
+     384,
+     0,
+     0
+    ],
+    [
+     385,
+     0,
+     0
+    ],
+    [
+     387,
+     0,
+     0
+    ],
+    [
+     389,
+     0,
+     0
+    ],
+    [
+     390,
+     0,
+     0
+    ],
+    [
+     392,
+     0,
+     0
+    ],
+    [
+     394,
+     0,
+     0
+    ],
+    [
+     395,
+     0,
+     0
+    ],
+    [
+     397,
+     0,
+     0
+    ],
+    [
+     399,
+     0,
+     0
+    ],
+    [
+     400,
+     0,
+     0
+    ],
+    [
+     402,
+     0,
+     0
+    ],
+    [
+     404,
+     0,
+     0
+    ],
+    [
+     405,
+     0,
+     0
+    ],
+    [
+     407,
+     0,
+     0
+    ],
+    [
+     409,
+     0,
+     0
+    ],
+    [
+     410,
+     0,
+     0
+    ],
+    [
+     412,
+     0,
+     0
+    ],
+    [
+     414,
+     0,
+     0
+    ],
+    [
+     416,
+     0,
+     0
+    ],
+    [
+     417,
+     0,
+     0
+    ],
+    [
+     419,
+     0,
+     0
+    ],
+    [
+     421,
+     0,
+     0
+    ],
+    [
+     422,
+     0,
+     0
+    ],
+    [
+     424,
+     0,
+     0
+    ],
+    [
+     426,
+     0,
+     0
+    ],
+    [
+     427,
+     0,
+     0
+    ],
+    [
+     429,
+     0,
+     0
+    ],
+    [
+     431,
+     0,
+     0
+    ],
+    [
+     432,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Tứ Tượng Đồng Quy",
+  "need_shadow": 0,
+  "param1": 20,
+  "param2": 90,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "252": {
+  "attack_radius": 0,
+  "aura": 0,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 0,
+  "child_level": -1,
+  "child_num": 0,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Phật Pháp Vô Biên",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 3,
+  "target_ally": 0,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "281": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 92,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Ba La Tâm Kinh",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "282": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 281,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Thanh Âm Phạn Xướng",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "328": {
+  "attack_radius": 360,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 10,
+  "child": 142,
+  "child_level": -1,
+  "child_num": 3,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 0,
+  "gen_data": 1,
+  "gen_style": 5,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     448,
+     0,
+     0
+    ],
+    [
+     451,
+     0,
+     0
+    ],
+    [
+     454,
+     0,
+     0
+    ],
+    [
+     458,
+     0,
+     0
+    ],
+    [
+     461,
+     0,
+     0
+    ],
+    [
+     464,
+     0,
+     0
+    ],
+    [
+     468,
+     0,
+     0
+    ],
+    [
+     471,
+     0,
+     0
+    ],
+    [
+     474,
+     0,
+     0
+    ],
+    [
+     478,
+     0,
+     0
+    ],
+    [
+     481,
+     0,
+     0
+    ],
+    [
+     485,
+     0,
+     0
+    ],
+    [
+     488,
+     0,
+     0
+    ],
+    [
+     491,
+     0,
+     0
+    ],
+    [
+     495,
+     0,
+     0
+    ],
+    [
+     498,
+     0,
+     0
+    ],
+    [
+     501,
+     0,
+     0
+    ],
+    [
+     505,
+     0,
+     0
+    ],
+    [
+     508,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ]
+   ],
+   "skill_eventskilllevel": [
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     4,
+     0,
+     0
+    ],
+    [
+     5,
+     0,
+     0
+    ],
+    [
+     6,
+     0,
+     0
+    ],
+    [
+     7,
+     0,
+     0
+    ],
+    [
+     8,
+     0,
+     0
+    ],
+    [
+     9,
+     0,
+     0
+    ],
+    [
+     10,
+     0,
+     0
+    ],
+    [
+     11,
+     0,
+     0
+    ],
+    [
+     12,
+     0,
+     0
+    ],
+    [
+     13,
+     0,
+     0
+    ],
+    [
+     14,
+     0,
+     0
+    ],
+    [
+     15,
+     0,
+     0
+    ],
+    [
+     16,
+     0,
+     0
+    ],
+    [
+     17,
+     0,
+     0
+    ],
+    [
+     18,
+     0,
+     0
+    ],
+    [
+     19,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ]
+   ],
+   "skill_showevent": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ]
+   ],
+   "skill_startevent": [
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     0,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ],
+    [
+     1,
+     0,
+     329
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Tam Nga Tề Tuyết",
+  "need_shadow": 0,
+  "param1": 22,
+  "param2": 65537,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 1,
+  "start_skill": 329,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "329": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 143,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 1,
+  "name": "Ngọc Tuyền Tẩy Trần",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 3
+ },
+ "331": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 144,
+  "child_level": -1,
+  "child_num": 4,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 9,
+  "gen_style": 1,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ]
+   ],
+   "skill_misslenum_v": [
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Kim Đỉnh Phật Quang",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 34,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "332": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 333,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Phổ Độ Chúng Sinh",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "333": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 14,
+  "child": 137,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Phổ Độ Chúng Sinh",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "380": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 11,
+  "child": 186,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 6,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "skill_eventskilllevel": [
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     2,
+     0,
+     0
+    ],
+    [
+     3,
+     0,
+     0
+    ],
+    [
+     4,
+     0,
+     0
+    ],
+    [
+     5,
+     0,
+     0
+    ],
+    [
+     6,
+     0,
+     0
+    ],
+    [
+     7,
+     0,
+     0
+    ],
+    [
+     8,
+     0,
+     0
+    ],
+    [
+     9,
+     0,
+     0
+    ],
+    [
+     10,
+     0,
+     0
+    ],
+    [
+     11,
+     0,
+     0
+    ],
+    [
+     12,
+     0,
+     0
+    ],
+    [
+     13,
+     0,
+     0
+    ],
+    [
+     14,
+     0,
+     0
+    ],
+    [
+     15,
+     0,
+     0
+    ],
+    [
+     16,
+     0,
+     0
+    ],
+    [
+     17,
+     0,
+     0
+    ],
+    [
+     18,
+     0,
+     0
+    ],
+    [
+     19,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ]
+   ],
+   "skill_showevent": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     1,
+     0,
+     0
+    ]
+   ],
+   "skill_startevent": [
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     0,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ],
+    [
+     1,
+     0,
+     331
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 1,
+  "name": "Phong Sương Toái ảnh",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 1,
+  "start_skill": 331,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "385": {
+  "attack_radius": 360,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 10,
+  "child": 191,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 1,
+  "gen_data": 20,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     27,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     384,
+     0,
+     0
+    ],
+    [
+     387,
+     0,
+     0
+    ],
+    [
+     390,
+     0,
+     0
+    ],
+    [
+     394,
+     0,
+     0
+    ],
+    [
+     397,
+     0,
+     0
+    ],
+    [
+     400,
+     0,
+     0
+    ],
+    [
+     404,
+     0,
+     0
+    ],
+    [
+     407,
+     0,
+     0
+    ],
+    [
+     410,
+     0,
+     0
+    ],
+    [
+     414,
+     0,
+     0
+    ],
+    [
+     417,
+     0,
+     0
+    ],
+    [
+     421,
+     0,
+     0
+    ],
+    [
+     424,
+     0,
+     0
+    ],
+    [
+     427,
+     0,
+     0
+    ],
+    [
+     431,
+     0,
+     0
+    ],
+    [
+     434,
+     0,
+     0
+    ],
+    [
+     437,
+     0,
+     0
+    ],
+    [
+     441,
+     0,
+     0
+    ],
+    [
+     444,
+     0,
+     0
+    ],
+    [
+     448,
+     0,
+     0
+    ],
+    [
+     451,
+     0,
+     0
+    ],
+    [
+     454,
+     0,
+     0
+    ],
+    [
+     458,
+     0,
+     0
+    ],
+    [
+     461,
+     0,
+     0
+    ],
+    [
+     464,
+     0,
+     0
+    ],
+    [
+     468,
+     0,
+     0
+    ],
+    [
+     471,
+     0,
+     0
+    ],
+    [
+     474,
+     0,
+     0
+    ],
+    [
+     478,
+     0,
+     0
+    ],
+    [
+     481,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Thôi Song Vọng Nguyệt",
+  "need_shadow": 0,
+  "param1": 1,
+  "param2": 0,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "712": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 0,
+  "child": 718,
+  "child_level": -1,
+  "child_num": 0,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "skill_appendskill": [
+    [
+     332,
+     1,
+     0
+    ],
+    [
+     332,
+     2,
+     0
+    ],
+    [
+     332,
+     3,
+     0
+    ],
+    [
+     332,
+     4,
+     0
+    ],
+    [
+     332,
+     5,
+     0
+    ],
+    [
+     332,
+     6,
+     0
+    ],
+    [
+     332,
+     7,
+     0
+    ],
+    [
+     332,
+     8,
+     0
+    ],
+    [
+     332,
+     9,
+     0
+    ],
+    [
+     332,
+     10,
+     0
+    ],
+    [
+     332,
+     11,
+     0
+    ],
+    [
+     332,
+     12,
+     0
+    ],
+    [
+     332,
+     13,
+     0
+    ],
+    [
+     332,
+     14,
+     0
+    ],
+    [
+     332,
+     15,
+     0
+    ],
+    [
+     332,
+     16,
+     0
+    ],
+    [
+     332,
+     17,
+     0
+    ],
+    [
+     332,
+     18,
+     0
+    ],
+    [
+     332,
+     19,
+     0
+    ],
+    [
+     332,
+     20,
+     0
+    ],
+    [
+     332,
+     21,
+     0
+    ],
+    [
+     332,
+     22,
+     0
+    ],
+    [
+     332,
+     23,
+     0
+    ],
+    [
+     332,
+     24,
+     0
+    ],
+    [
+     332,
+     25,
+     0
+    ],
+    [
+     332,
+     26,
+     0
+    ],
+    [
+     332,
+     27,
+     0
+    ],
+    [
+     332,
+     28,
+     0
+    ],
+    [
+     332,
+     29,
+     0
+    ],
+    [
+     332,
+     30,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Bế Nguyệt Phất Trần",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "718": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 0,
+  "child": 92,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 3,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "skill_appendskill": [
+    [
+     332,
+     1,
+     0
+    ],
+    [
+     332,
+     2,
+     0
+    ],
+    [
+     332,
+     3,
+     0
+    ],
+    [
+     332,
+     4,
+     0
+    ],
+    [
+     332,
+     5,
+     0
+    ],
+    [
+     332,
+     6,
+     0
+    ],
+    [
+     332,
+     7,
+     0
+    ],
+    [
+     332,
+     8,
+     0
+    ],
+    [
+     332,
+     9,
+     0
+    ],
+    [
+     332,
+     10,
+     0
+    ],
+    [
+     332,
+     11,
+     0
+    ],
+    [
+     332,
+     12,
+     0
+    ],
+    [
+     332,
+     13,
+     0
+    ],
+    [
+     332,
+     14,
+     0
+    ],
+    [
+     332,
+     15,
+     0
+    ],
+    [
+     332,
+     16,
+     0
+    ],
+    [
+     332,
+     17,
+     0
+    ],
+    [
+     332,
+     18,
+     0
+    ],
+    [
+     332,
+     19,
+     0
+    ],
+    [
+     332,
+     20,
+     0
+    ],
+    [
+     332,
+     21,
+     0
+    ],
+    [
+     332,
+     22,
+     0
+    ],
+    [
+     332,
+     23,
+     0
+    ],
+    [
+     332,
+     24,
+     0
+    ],
+    [
+     332,
+     25,
+     0
+    ],
+    [
+     332,
+     26,
+     0
+    ],
+    [
+     332,
+     27,
+     0
+    ],
+    [
+     332,
+     28,
+     0
+    ],
+    [
+     332,
+     29,
+     0
+    ],
+    [
+     332,
+     30,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Kỹ năng phụ - Bế Nguyệt Phất Trần",
+  "need_shadow": 0,
+  "param1": 1,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "77": {
+  "attack_radius": 0,
+  "aura": 0,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 0,
+  "child_level": -1,
+  "child_num": 0,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Nga Mi Kiếm pháp",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 3,
+  "target_ally": 0,
+  "target_enemy": 0,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "79": {
+  "attack_radius": 0,
+  "aura": 0,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 0,
+  "child_level": -1,
+  "child_num": 0,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Nga Mi Chưởng pháp",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 3,
+  "target_ally": 0,
+  "target_enemy": 0,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "80": {
+  "attack_radius": 240,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 1,
+  "char_anim": 11,
+  "child": 68,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 1,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     320,
+     0,
+     0
+    ],
+    [
+     323,
+     0,
+     0
+    ],
+    [
+     326,
+     0,
+     0
+    ],
+    [
+     330,
+     0,
+     0
+    ],
+    [
+     333,
+     0,
+     0
+    ],
+    [
+     336,
+     0,
+     0
+    ],
+    [
+     340,
+     0,
+     0
+    ],
+    [
+     343,
+     0,
+     0
+    ],
+    [
+     346,
+     0,
+     0
+    ],
+    [
+     350,
+     0,
+     0
+    ],
+    [
+     353,
+     0,
+     0
+    ],
+    [
+     357,
+     0,
+     0
+    ],
+    [
+     360,
+     0,
+     0
+    ],
+    [
+     363,
+     0,
+     0
+    ],
+    [
+     367,
+     0,
+     0
+    ],
+    [
+     370,
+     0,
+     0
+    ],
+    [
+     373,
+     0,
+     0
+    ],
+    [
+     377,
+     0,
+     0
+    ],
+    [
+     380,
+     0,
+     0
+    ],
+    [
+     384,
+     0,
+     0
+    ],
+    [
+     387,
+     0,
+     0
+    ],
+    [
+     390,
+     0,
+     0
+    ],
+    [
+     394,
+     0,
+     0
+    ],
+    [
+     397,
+     0,
+     0
+    ],
+    [
+     400,
+     0,
+     0
+    ],
+    [
+     404,
+     0,
+     0
+    ],
+    [
+     407,
+     0,
+     0
+    ],
+    [
+     410,
+     0,
+     0
+    ],
+    [
+     414,
+     0,
+     0
+    ],
+    [
+     417,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Phiêu Tuyết Xuyên Vân",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 5,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "82": {
+  "attack_radius": 570,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 101,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 1,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 6,
+  "gen_data": 0,
+  "gen_style": 1,
+  "heel": 0,
+  "levels": {
+   "skill_attackradius": [
+    [
+     384,
+     0,
+     0
+    ],
+    [
+     385,
+     0,
+     0
+    ],
+    [
+     387,
+     0,
+     0
+    ],
+    [
+     389,
+     0,
+     0
+    ],
+    [
+     390,
+     0,
+     0
+    ],
+    [
+     392,
+     0,
+     0
+    ],
+    [
+     394,
+     0,
+     0
+    ],
+    [
+     395,
+     0,
+     0
+    ],
+    [
+     397,
+     0,
+     0
+    ],
+    [
+     399,
+     0,
+     0
+    ],
+    [
+     400,
+     0,
+     0
+    ],
+    [
+     402,
+     0,
+     0
+    ],
+    [
+     404,
+     0,
+     0
+    ],
+    [
+     405,
+     0,
+     0
+    ],
+    [
+     407,
+     0,
+     0
+    ],
+    [
+     409,
+     0,
+     0
+    ],
+    [
+     410,
+     0,
+     0
+    ],
+    [
+     412,
+     0,
+     0
+    ],
+    [
+     414,
+     0,
+     0
+    ],
+    [
+     416,
+     0,
+     0
+    ],
+    [
+     417,
+     0,
+     0
+    ],
+    [
+     419,
+     0,
+     0
+    ],
+    [
+     421,
+     0,
+     0
+    ],
+    [
+     422,
+     0,
+     0
+    ],
+    [
+     424,
+     0,
+     0
+    ],
+    [
+     426,
+     0,
+     0
+    ],
+    [
+     427,
+     0,
+     0
+    ],
+    [
+     429,
+     0,
+     0
+    ],
+    [
+     431,
+     0,
+     0
+    ],
+    [
+     432,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Tứ Tượng Đồng Quy",
+  "need_shadow": 0,
+  "param1": 20,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 1,
+  "start_skill": 243,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "85": {
+  "attack_radius": 180,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 2,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 1,
+  "gen_data": 5,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     20,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     21,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     22,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     23,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     24,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     25,
+     0,
+     0
+    ],
+    [
+     26,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     320,
+     0,
+     0
+    ],
+    [
+     323,
+     0,
+     0
+    ],
+    [
+     326,
+     0,
+     0
+    ],
+    [
+     330,
+     0,
+     0
+    ],
+    [
+     333,
+     0,
+     0
+    ],
+    [
+     336,
+     0,
+     0
+    ],
+    [
+     340,
+     0,
+     0
+    ],
+    [
+     343,
+     0,
+     0
+    ],
+    [
+     346,
+     0,
+     0
+    ],
+    [
+     350,
+     0,
+     0
+    ],
+    [
+     353,
+     0,
+     0
+    ],
+    [
+     357,
+     0,
+     0
+    ],
+    [
+     360,
+     0,
+     0
+    ],
+    [
+     363,
+     0,
+     0
+    ],
+    [
+     367,
+     0,
+     0
+    ],
+    [
+     370,
+     0,
+     0
+    ],
+    [
+     373,
+     0,
+     0
+    ],
+    [
+     377,
+     0,
+     0
+    ],
+    [
+     380,
+     0,
+     0
+    ],
+    [
+     384,
+     0,
+     0
+    ],
+    [
+     387,
+     0,
+     0
+    ],
+    [
+     390,
+     0,
+     0
+    ],
+    [
+     394,
+     0,
+     0
+    ],
+    [
+     397,
+     0,
+     0
+    ],
+    [
+     400,
+     0,
+     0
+    ],
+    [
+     404,
+     0,
+     0
+    ],
+    [
+     407,
+     0,
+     0
+    ],
+    [
+     410,
+     0,
+     0
+    ],
+    [
+     414,
+     0,
+     0
+    ],
+    [
+     417,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Nhất Diệp Tri Thu",
+  "need_shadow": 0,
+  "param1": 2,
+  "param2": 0,
+  "physical": 1,
+  "precast": "",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "86": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 206,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Lưu Thủy",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "88": {
+  "attack_radius": 360,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 10,
+  "child": 3,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 1,
+  "gen_data": 20,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {
+   "missle_speed_v": [
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     28,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     29,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     30,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     31,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ],
+    [
+     32,
+     0,
+     0
+    ]
+   ],
+   "skill_attackradius": [
+    [
+     448,
+     0,
+     0
+    ],
+    [
+     451,
+     0,
+     0
+    ],
+    [
+     454,
+     0,
+     0
+    ],
+    [
+     458,
+     0,
+     0
+    ],
+    [
+     461,
+     0,
+     0
+    ],
+    [
+     464,
+     0,
+     0
+    ],
+    [
+     468,
+     0,
+     0
+    ],
+    [
+     471,
+     0,
+     0
+    ],
+    [
+     474,
+     0,
+     0
+    ],
+    [
+     478,
+     0,
+     0
+    ],
+    [
+     481,
+     0,
+     0
+    ],
+    [
+     485,
+     0,
+     0
+    ],
+    [
+     488,
+     0,
+     0
+    ],
+    [
+     491,
+     0,
+     0
+    ],
+    [
+     495,
+     0,
+     0
+    ],
+    [
+     498,
+     0,
+     0
+    ],
+    [
+     501,
+     0,
+     0
+    ],
+    [
+     505,
+     0,
+     0
+    ],
+    [
+     508,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ],
+    [
+     512,
+     0,
+     0
+    ]
+   ]
+  },
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Bất Diệt Bất Tuyệt",
+  "need_shadow": 0,
+  "param1": 1,
+  "param2": 0,
+  "physical": 1,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "89": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 207,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Mộng Điệp",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "91": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 4,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 1,
+  "name": "Phật Quang Phổ Chiếu",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": 2,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 0,
+  "target_enemy": 1,
+  "target_self": 0,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ },
+ "92": {
+  "attack_radius": 180,
+  "aura": 1,
+  "base": 0,
+  "by_missle": 0,
+  "char_anim": 14,
+  "child": 208,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 7,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 0,
+  "melee": 0,
+  "name": "Phật Tâm Từ Hữu",
+  "need_shadow": 0,
+  "param1": 0,
+  "param2": 0,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 2,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 0
+ },
+ "93": {
+  "attack_radius": 400,
+  "aura": 0,
+  "base": 1,
+  "by_missle": 0,
+  "char_anim": 11,
+  "child": 5,
+  "child_level": -1,
+  "child_num": 1,
+  "collide_event": 0,
+  "collide_skill": 0,
+  "event_level": 0,
+  "fly_event": 0,
+  "fly_skill": 0,
+  "fly_time": 0,
+  "form": 6,
+  "gen_data": 0,
+  "gen_style": 0,
+  "heel": 0,
+  "levels": {},
+  "max_shadow": 15,
+  "melee": 0,
+  "name": "Từ Hàng Phổ Độ",
+  "need_shadow": 0,
+  "param1": 20,
+  "param2": 5,
+  "physical": 0,
+  "precast": "fx_2f8c6d50",
+  "series": -1,
+  "start_event": 0,
+  "start_skill": 0,
+  "stop_when_move": 0,
+  "style": 0,
+  "target_ally": 1,
+  "target_enemy": 0,
+  "target_self": 1,
+  "time_per_cast": 0,
+  "vanish_event": 0,
+  "vanish_skill": 0,
+  "wait": 5
+ }
+}

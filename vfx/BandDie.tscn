@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://ba7lmpbj4pkrl"]
+
+[ext_resource type="Script" uid="uid://7qiiswhttx4m" path="res://vfx/band_die.gd" id="1_sl7xn"]
+[ext_resource type="Texture2D" uid="uid://b2rxibghbg4rm" path="res://vfx/band_die.png" id="1_ybbcr"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sl7xn"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(0, 0, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_23770"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(147, 0, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m4s3u"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(294, 0, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e542k"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(441, 0, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gq560"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(0, 148, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1gel6"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(147, 148, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ud0bn"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(294, 148, 147, 148)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qp3o6"]
+atlas = ExtResource("1_ybbcr")
+region = Rect2(441, 148, 147, 148)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3ns5p"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sl7xn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_23770")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m4s3u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e542k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gq560")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1gel6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ud0bn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qp3o6")
+}],
+"loop": 0,
+"name": &"explode",
+"speed": 20.0
+}]
+
+[node name="Node2D" type="Node2D" unique_id=2101218828]
+script = ExtResource("1_sl7xn")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=810839421]
+scale = Vector2(0.3265306, 0.32653055)
+sprite_frames = SubResource("SpriteFrames_3ns5p")
+animation = &"explode"

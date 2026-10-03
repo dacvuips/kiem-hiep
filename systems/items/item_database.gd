@@ -1,0 +1,164 @@
+extends RefCounted
+class_name ItemDatabase
+## Dữ liệu trang bị VLTK gốc (data/items/*.json, sinh bởi tools/import_vltk_items.py) — nạp 1 lần, dùng
+## chung (chỉ đọc). Xem docs/vltk_equipment_reference.md.
+
+const EQUIPMENT_PATH := "res://data/items/equipment.json"
+const MAGIC_PATH := "res://data/items/magic_attribs.json"
+const GOLD_PATH := "res://data/items/gold_equipment.json"
+const DESC_PATH := "res://data/items/magic_desc.json"
+
+## EQUIPDETAILTYPE gốc — đồng thời là chỉ số cột tỷ lệ rơi (nType) trong magicattrib.txt.
+enum Detail { MELEE, RANGE, ARMOR, RING, AMULET, BOOT, BELT, HELM, CUFF, PENDANT, HORSE }
+const DETAIL_NAMES := {
+	Detail.MELEE: "Vũ khí", Detail.RANGE: "Ám khí", Detail.ARMOR: "Áo", Detail.RING: "Nhẫn",
+	Detail.AMULET: "Dây chuyền", Detail.BOOT: "Giày", Detail.BELT: "Thắt lưng", Detail.HELM: "Mũ",
+	Detail.CUFF: "Bao tay", Detail.PENDANT: "Ngọc bội", Detail.HORSE: "Ngựa",
+}
+## Tên loại cụ thể của vũ khí (ParticularType gốc) — loại khác dùng tên món cấp thấp nhất làm nhãn.
+const WEAPON_PARTICULAR_NAMES := {
+	Detail.MELEE: {0: "Kiếm", 1: "Đao", 2: "Côn (bổng)", 3: "Thương", 4: "Chùy", 5: "Song đao", 6: "Triền thủ"},
+	Detail.RANGE: {0: "Phi tiêu", 1: "Phi đao", 2: "Tụ tiễn"},
+}
+
+static var _equipment: Array = []
+static var _magic: Array = []
+static var _gold: Array = []
+static var _desc: Dictionary = {}
+## Bộ hoàng kim (Group) -> chỉ số các món trong bộ.
+static var _gold_groups: Dictionary = {}
+## detail -> particular -> level -> chỉ số trong _equipment
+static var _index: Dictionary = {}
+
+static func _ensure_loaded() -> void:
+	if not _equipment.is_empty():
+		return
+	_equipment = _load_json(EQUIPMENT_PATH)
+	_magic = _load_json(MAGIC_PATH)
+	for i in _equipment.size():
+		var e: Dictionary = _equipment[i]
+		var by_particular: Dictionary = _index.get_or_add(int(e["detail"]), {})
+		var by_level: Dictionary = by_particular.get_or_add(int(e["particular"]), {})
+		if not by_level.has(int(e["level"])):
+			by_level[int(e["level"])] = i
+
+## Hoàng kim (~5MB) chỉ nạp khi thật sự cần (sinh/hiện đồ hoàng kim).
+static func _ensure_gold_loaded() -> void:
+	if not _gold.is_empty():
+		return
+	_gold = _load_json(GOLD_PATH)
+	for i in _gold.size():
+		var group := int(_gold[i]["group"])
+		if group > 0:
+			(_gold_groups.get_or_add(group, []) as Array).append(i)
+
+static var _skill_names: Dictionary = {}
+
+## Tên kỹ năng VLTK theo SkillId số (Skills.txt) — cho dòng "Kỹ năng [ <tên> ]: +N cấp".
+static func get_vltk_skill_name(skill_id: int) -> String:
+	if _skill_names.is_empty():
+		var file := FileAccess.open("res://data/items/skill_names.json", FileAccess.READ)
+		if file:
+			var data = JSON.parse_string(file.get_as_text())
+			_skill_names = data if data is Dictionary else {"_": ""}
+	return str(_skill_names.get(str(skill_id), ""))
+
+## Mẫu câu hiển thị thuộc tính (settings/MagicDesc.ini gốc) — "" nếu không có.
+static func get_desc_template(attrib_name: String) -> String:
+	if _desc.is_empty():
+		var file := FileAccess.open(DESC_PATH, FileAccess.READ)
+		if file:
+			var data = JSON.parse_string(file.get_as_text())
+			_desc = data if data is Dictionary else {"_": ""}
+	return str(_desc.get(attrib_name, ""))
+
+## Các món CÙNG BỘ hoàng kim (mỗi loại đồ 1 món, theo thứ tự ô) — để hiện danh sách bộ trong mô tả.
+static func get_gold_set_members(group: int) -> Array[int]:
+	_ensure_gold_loaded()
+	var out: Array[int] = []
+	var seen_details := {}
+	for idx in _gold_groups.get(group, []):
+		var detail := int(_gold[idx]["detail"])
+		if seen_details.has(detail):
+			continue
+		seen_details[detail] = true
+		out.append(idx)
+	return out
+
+static func _load_json(path: String) -> Array:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("ItemDatabase: không mở được %s" % path)
+		return []
+	var data = JSON.parse_string(file.get_as_text())
+	return data if data is Array else []
+
+static func get_base(base_index: int) -> Dictionary:
+	_ensure_loaded()
+	return _equipment[base_index] if base_index >= 0 and base_index < _equipment.size() else {}
+
+## Ảnh vật phẩm (icon hành trang/ô trang bị) từ cột Image gốc — assets/items/icons/<tên file>.png (kích thước gốc,
+## có mipmap) và icons_small/ (đã thu nhỏ Lanczos vừa ô hành trang 48px), sinh bởi tools/import_vltk_item_icons.py.
+## null nếu món không có ảnh (vài ảnh không có trong dữ liệu gốc).
+const ICON_DIR := "res://assets/items/icons/"
+const ICON_SMALL_DIR := "res://assets/items/icons_small/"
+static var _icons: Dictionary = {}
+
+static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
+	var image: String = base.get("image", "")
+	if image == "":
+		return null
+	var key := image.replace("\\", "/").get_file().get_basename().to_lower()
+	var path := (ICON_SMALL_DIR if small else ICON_DIR) + key + ".png"
+	if not _icons.has(path):
+		_icons[path] = load(path) if ResourceLoader.exists(path) else null
+	return _icons[path]
+
+static func get_gold(gold_index: int) -> Dictionary:
+	_ensure_gold_loaded()
+	return _gold[gold_index] if gold_index >= 0 and gold_index < _gold.size() else {}
+
+## Chỉ số đồ gốc theo (loại chi tiết, loại cụ thể, cấp 1-10) — -1 nếu không có.
+static func find_base(detail: int, particular: int, level: int) -> int:
+	_ensure_loaded()
+	return int(_index.get(detail, {}).get(particular, {}).get(level, -1))
+
+static func get_particulars(detail: int) -> Array:
+	_ensure_loaded()
+	var keys: Array = _index.get(detail, {}).keys()
+	keys.sort()
+	return keys
+
+static func get_levels(detail: int, particular: int) -> Array:
+	_ensure_loaded()
+	var keys: Array = _index.get(detail, {}).get(particular, {}).keys()
+	keys.sort()
+	return keys
+
+## Nhãn 1 loại cụ thể: tên loại vũ khí, hoặc tên món cấp thấp nhất (VD "Áo — Sa Di phục").
+static func get_particular_label(detail: int, particular: int) -> String:
+	var names: Dictionary = WEAPON_PARTICULAR_NAMES.get(detail, {})
+	if names.has(particular):
+		return "%s — %s" % [DETAIL_NAMES.get(detail, "?"), names[particular]]
+	var levels := get_levels(detail, particular)
+	var first := get_base(find_base(detail, particular, levels[0])) if not levels.is_empty() else {}
+	return "%s — %s" % [DETAIL_NAMES.get(detail, "?"), first.get("name", str(particular))]
+
+static func get_magic_records() -> Array:
+	_ensure_loaded()
+	return _magic
+
+## Chỉ số hoàng kim khớp bộ lọc. `menpai`: -2 = tất cả, -1 = không môn phái, 0-9 = MENPAI_ORDER.
+static func find_gold(detail: int, menpai: int = -2, particular: int = -1) -> Array[int]:
+	_ensure_gold_loaded()
+	var out: Array[int] = []
+	for i in _gold.size():
+		var g: Dictionary = _gold[i]
+		if int(g["detail"]) != detail:
+			continue
+		if particular >= 0 and int(g["particular"]) != particular:
+			continue
+		if menpai != -2 and int(g["menpai"]) != menpai:
+			continue
+		out.append(i)
+	return out

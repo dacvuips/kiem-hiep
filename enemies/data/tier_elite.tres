@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyTierData" format=3 uid="uid://buaii6h5kx8kt"]
+
+[ext_resource type="Script" uid="uid://dkgscgyg7l28e" path="res://enemies/enemy_tier_data.gd" id="1_iwkht"]
+[ext_resource type="PackedScene" uid="uid://6qsp2rjk51rt" path="res://enemies/EliteEnemy.tscn" id="1_onc7d"]
+[ext_resource type="Texture2D" uid="uid://bil518nw68g6n" path="res://gems/gem-2.png" id="2_fx5cn"]
+[ext_resource type="Script" uid="uid://cuadd783f0q8h" path="res://gems/pickup_data.gd" id="3_db1mf"]
+[ext_resource type="Resource" uid="uid://dh5078gdtvmvf" path="res://gems/pickup_heal.tres" id="4_n8jrd"]
+[ext_resource type="Resource" uid="uid://bvw0sc0ypw1wc" path="res://gems/pickup_magnet.tres" id="5_x83cu"]
+
+[resource]
+script = ExtResource("1_iwkht")
+tier_name = "Quái Tinh Anh"
+enemy_scene = ExtResource("1_onc7d")
+vitality = 11
+contact_damage = 25.0
+speed = 70.0
+exp_drop = 5.0
+gem_texture = ExtResource("2_fx5cn")
+possible_drops = Array[ExtResource("3_db1mf")]([ExtResource("4_n8jrd"), ExtResource("5_x83cu")])

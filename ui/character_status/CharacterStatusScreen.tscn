@@ -1,0 +1,1256 @@
+[gd_scene format=3 uid="uid://b5ojle7db8eoo"]
+
+[ext_resource type="Script" uid="uid://ciuvvfpni478h" path="res://ui/character_status/character_status_screen.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cgp47h88tjlrw" path="res://ui/character_status/status_frame.png" id="2_frame"]
+[ext_resource type="Script" uid="uid://c56uwu328somd" path="res://systems/avatar/character_avatar.gd" id="98_avatar"]
+[ext_resource type="Script" uid="uid://dnuf1aum68bl7" path="res://ui/items/item_slot_button.gd" id="99_item_slot"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_add_normal"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.75, 0.12, 0.1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_add_pressed"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.55, 0.08, 0.06, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_add_hover"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.88, 0.18, 0.15, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_add_disabled"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.3, 0.28, 0.27, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxEmpty" id="StyleBox_add_focus"]
+
+[node name="CharacterStatusScreen" type="Control" unique_id=1401786887]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_script")
+
+[node name="Aspect" type="AspectRatioContainer" parent="." unique_id=1561973742]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ratio = 1.33333
+
+[node name="Frame" type="TextureRect" parent="Aspect" unique_id=333200456]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_frame")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Board" type="Control" parent="Aspect/Frame" unique_id=490339009]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="LabelTen" type="Label" parent="Aspect/Frame/Board" unique_id=388576191]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.180479
+anchor_right = 0.11395
+anchor_bottom = 0.213628
+offset_left = 8.048904
+offset_top = 0.055114746
+offset_right = 8.048904
+offset_bottom = 0.055114746
+text = "Tên:"
+clip_text = true
+
+[node name="NameValue" type="Label" parent="Aspect/Frame/Board" unique_id=612687975]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.117403
+anchor_top = 0.180479
+anchor_right = 0.470994
+anchor_bottom = 0.213628
+offset_left = 59.292213
+offset_top = 0.055114746
+offset_right = -10.623047
+offset_bottom = 0.055130005
+text = "hiếu"
+clip_text = true
+
+[node name="LabelXungHieu" type="Label" parent="Aspect/Frame/Board" unique_id=617207482]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.206262
+anchor_right = 0.145028
+anchor_bottom = 0.228361
+offset_left = 8.048904
+offset_top = 8.491348
+offset_right = 30.772293
+offset_bottom = 15.580078
+text = "Xưng hiệu:"
+clip_text = true
+
+[node name="TitleValue" type="Label" parent="Aspect/Frame/Board" unique_id=1100735209]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.14779
+anchor_top = 0.206262
+anchor_right = 0.470994
+anchor_bottom = 0.228361
+offset_left = 37.12079
+offset_top = 8.491348
+offset_right = -38.154236
+offset_bottom = 15.580078
+text = "—"
+clip_text = true
+
+[node name="LabelPhucDuyen" type="Label" parent="Aspect/Frame/Board" unique_id=1822964322]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.232044
+anchor_right = 0.154696
+anchor_bottom = 0.254144
+offset_left = 8.048904
+offset_top = 15.928329
+offset_right = 30.491028
+offset_bottom = 23.016312
+text = "Phúc duyên:"
+clip_text = true
+
+[node name="FuyuanValue" type="Label" parent="Aspect/Frame/Board" unique_id=1149379416]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.160221
+anchor_top = 0.232044
+anchor_right = 0.237569
+anchor_bottom = 0.254144
+offset_left = 26.187042
+offset_top = 16.92833
+offset_right = 26.187027
+offset_bottom = 24.016312
+text = "0"
+clip_text = true
+
+[node name="LabelDanhVong" type="Label" parent="Aspect/Frame/Board" unique_id=69386222]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.251381
+anchor_top = 0.232044
+anchor_right = 0.331492
+anchor_bottom = 0.254144
+offset_left = 22.67366
+offset_top = 14.928329
+offset_right = 36.767334
+offset_bottom = 22.016312
+text = "Danh vọng:"
+clip_text = true
+
+[node name="PrestigeValue" type="Label" parent="Aspect/Frame/Board" unique_id=1580681489]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.337017
+anchor_top = 0.232044
+anchor_right = 0.470994
+anchor_bottom = 0.254144
+offset_left = 41.463318
+offset_top = 14.928329
+offset_right = 41.463318
+offset_bottom = 22.016312
+text = "0"
+clip_text = true
+
+[node name="LabelDangCap" type="Label" parent="Aspect/Frame/Board" unique_id=1718187027]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.276243
+anchor_right = 0.154696
+anchor_bottom = 0.298343
+offset_left = 7.0489044
+offset_top = 14.1050415
+offset_right = 7.0489044
+offset_bottom = 21.193039
+text = "Đẳng cấp:"
+clip_text = true
+
+[node name="LevelValue" type="Label" parent="Aspect/Frame/Board" unique_id=2126957014]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.160221
+anchor_top = 0.276243
+anchor_right = 0.237569
+anchor_bottom = 0.298343
+offset_left = 25.187042
+offset_top = 12.1050415
+offset_right = 25.187027
+offset_bottom = 19.193039
+text = "1"
+clip_text = true
+
+[node name="LabelXepHang" type="Label" parent="Aspect/Frame/Board" unique_id=548407372]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.251381
+anchor_top = 0.276243
+anchor_right = 0.331492
+anchor_bottom = 0.298343
+offset_left = 22.67363
+offset_top = 13.1050415
+offset_right = 22.673645
+offset_bottom = 20.193039
+text = "Xếp hạng:"
+clip_text = true
+
+[node name="RankValue" type="Label" parent="Aspect/Frame/Board" unique_id=1062761018]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.337017
+anchor_top = 0.276243
+anchor_right = 0.455801
+anchor_bottom = 0.298343
+offset_left = 41.463318
+offset_top = 12.1050415
+offset_right = 41.463318
+offset_bottom = 19.193039
+text = "—"
+clip_text = true
+
+[node name="PortraitHint" type="Label" parent="Aspect/Frame/Board" unique_id=390163113]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.072514
+anchor_top = 0.354512
+anchor_right = 0.234807
+anchor_bottom = 0.518416
+text = "Nhấp vào đây để
+chọn hình dáng"
+clip_text = true
+
+[node name="PortraitBox" type="Control" parent="Aspect/Frame/Board" unique_id=1900000301]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 1
+anchor_left = 0.072514
+anchor_top = 0.354512
+anchor_right = 0.234807
+anchor_bottom = 0.518416
+offset_left = -16.61444
+offset_top = -21.248642
+offset_right = 32.58467
+offset_bottom = -9.248657
+tooltip_text = "Bấm để xoay nhân vật"
+
+[node name="PortraitAvatar" type="Node2D" parent="Aspect/Frame/Board/PortraitBox" unique_id=1900000302]
+unique_name_in_owner = true
+script = ExtResource("98_avatar")
+
+[node name="RowBgLife" type="Panel" parent="Aspect/Frame/Board" unique_id=1591667900]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.23826
+anchor_top = 0.35175
+anchor_right = 0.473757
+anchor_bottom = 0.38674
+offset_right = -5.806793
+offset_bottom = 0.5472107
+mouse_filter = 2
+
+[node name="LabelSinhLuc" type="Label" parent="Aspect/Frame/Board" unique_id=1343132754]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.241713
+anchor_top = 0.35500002
+anchor_right = 0.33100003
+anchor_bottom = 0.390424
+offset_top = 0.31173706
+offset_right = 0.47229004
+text = "Sinh lực:"
+clip_text = true
+
+[node name="LifeValue" type="Label" parent="Aspect/Frame/Board" unique_id=1761869412]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.331492
+anchor_top = 0.355433
+anchor_right = 0.470994
+anchor_bottom = 0.390424
+offset_left = -9.232697
+offset_top = 0.088256836
+offset_right = -9.232697
+offset_bottom = 0.088256836
+text = "160/160"
+clip_text = true
+
+[node name="RowBgMana" type="Panel" parent="Aspect/Frame/Board" unique_id=872528769]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.23826
+anchor_top = 0.387661
+anchor_right = 0.473757
+anchor_bottom = 0.421731
+offset_left = 0.2697754
+offset_top = 0.8840637
+offset_right = -5.806793
+offset_bottom = -0.64630127
+mouse_filter = 2
+
+[node name="LabelNoiLuc" type="Label" parent="Aspect/Frame/Board" unique_id=288003379]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.241713
+anchor_top = 0.391344
+anchor_right = 0.331492
+anchor_bottom = 0.418048
+offset_left = -0.04510498
+offset_top = -0.7677002
+offset_right = -0.04510498
+offset_bottom = 3.0054321
+text = "Nội lực:"
+clip_text = true
+
+[node name="ManaValue" type="Label" parent="Aspect/Frame/Board" unique_id=1084233660]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.331492
+anchor_top = 0.391344
+anchor_right = 0.470994
+anchor_bottom = 0.418048
+offset_left = -9.232697
+offset_top = -1.7677002
+offset_right = -9.232697
+offset_bottom = 2.0054321
+text = "100/100"
+clip_text = true
+
+[node name="RowBgStamina" type="Panel" parent="Aspect/Frame/Board" unique_id=746897843]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.23826
+anchor_top = 0.415285
+anchor_right = 0.473757
+anchor_bottom = 0.449355
+offset_left = 0.26979065
+offset_top = 2.994812
+offset_right = -5.8067627
+offset_bottom = 2.464386
+mouse_filter = 2
+
+[node name="LabelTheLuc" type="Label" parent="Aspect/Frame/Board" unique_id=1204196698]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.241713
+anchor_top = 0.418969
+anchor_right = 0.33100003
+anchor_bottom = 0.45100003
+offset_left = 0.954895
+offset_top = 1.3423157
+offset_right = 1.427185
+offset_bottom = 1.2799683
+text = "Thể lực:"
+clip_text = true
+
+[node name="StaminaValue" type="Label" parent="Aspect/Frame/Board" unique_id=303934034]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.331492
+anchor_top = 0.418969
+anchor_right = 0.470994
+anchor_bottom = 0.445672
+offset_left = 1.7673035
+offset_top = 0.34231567
+offset_right = -8.386963
+offset_bottom = 4.11615
+text = "120/120"
+clip_text = true
+
+[node name="RowBgElement" type="Panel" parent="Aspect/Frame/Board" unique_id=673069531]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.23826
+anchor_top = 0.44291
+anchor_right = 0.473757
+anchor_bottom = 0.482505
+offset_left = -1.7302246
+offset_top = 21.104797
+offset_right = -1.7302246
+offset_bottom = 22.104797
+mouse_filter = 2
+
+[node name="LabelThuocTinh" type="Label" parent="Aspect/Frame/Board" unique_id=372035576]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.241713
+anchor_top = 0.446593
+anchor_right = 0.331492
+anchor_bottom = 0.478821
+offset_left = 1.954895
+offset_top = 20.453064
+offset_right = 1.954895
+offset_bottom = 20.453064
+text = "Thuộc tính:"
+clip_text = true
+
+[node name="ElementValue" type="Label" parent="Aspect/Frame/Board" unique_id=278862365]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.331492
+anchor_top = 0.446593
+anchor_right = 0.470994
+anchor_bottom = 0.478821
+offset_left = 6.7673035
+offset_top = 20.453064
+offset_right = 6.7673035
+offset_bottom = 20.453064
+text = "Mộc"
+clip_text = true
+
+[node name="LabelKinhNghiem" type="Label" parent="Aspect/Frame/Board" unique_id=1954849445]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.538674
+anchor_right = 0.186464
+anchor_bottom = 0.564457
+offset_left = 3.0
+offset_right = 3.0
+offset_bottom = 4.436249
+text = "Kinh nghiệm:"
+clip_text = true
+
+[node name="ExpValue" type="Label" parent="Aspect/Frame/Board" unique_id=1117390536]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.186464
+anchor_top = 0.538674
+anchor_right = 0.470994
+anchor_bottom = 0.564457
+offset_left = 2.9938354
+offset_top = -1.8452759
+offset_right = -60.154266
+offset_bottom = 2.590973
+text = "0/100"
+clip_text = true
+
+[node name="LabelSucManh" type="Label" parent="Aspect/Frame/Board" unique_id=447326926]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.566298
+anchor_right = 0.15884
+anchor_bottom = 0.603131
+offset_left = 3.0
+offset_top = 4.0
+offset_right = 3.0
+offset_bottom = 4.0
+text = "Sức mạnh:"
+clip_text = true
+
+[node name="BaseStatValue0" type="Label" parent="Aspect/Frame/Board" unique_id=591455884]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.15884
+anchor_top = 0.566298
+anchor_right = 0.18232
+anchor_bottom = 0.603131
+offset_left = 24.512817
+offset_top = 5.265442
+offset_right = 43.484894
+offset_bottom = 5.265442
+text = "5"
+clip_text = true
+
+[node name="BaseStatButton0" type="Button" parent="Aspect/Frame/Board" unique_id=1088735727]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.185083
+anchor_top = 0.569982
+anchor_right = 0.201657
+anchor_bottom = 0.592081
+offset_left = 44.31958
+offset_top = 4.612976
+offset_right = 48.809998
+offset_bottom = 6.612976
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.6)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBox_add_normal")
+theme_override_styles/pressed = SubResource("StyleBox_add_pressed")
+theme_override_styles/hover = SubResource("StyleBox_add_hover")
+theme_override_styles/disabled = SubResource("StyleBox_add_disabled")
+theme_override_styles/focus = SubResource("StyleBox_add_focus")
+text = "+"
+
+[node name="LabelThanPhap" type="Label" parent="Aspect/Frame/Board" unique_id=574668787]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.248619
+anchor_top = 0.566298
+anchor_right = 0.335635
+anchor_bottom = 0.603131
+offset_left = 28.0
+offset_top = 3.0
+offset_right = 36.79001
+offset_bottom = 2.745697
+text = "Thân pháp:"
+clip_text = true
+
+[node name="BaseStatValue1" type="Label" parent="Aspect/Frame/Board" unique_id=1781880736]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.335635
+anchor_top = 0.566298
+anchor_right = 0.359116
+anchor_bottom = 0.603131
+offset_left = 52.0
+offset_top = 4.0
+offset_right = 68.24838
+offset_bottom = 4.0
+text = "5"
+clip_text = true
+
+[node name="BaseStatButton1" type="Button" parent="Aspect/Frame/Board" unique_id=705897116]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.361878
+anchor_top = 0.569982
+anchor_right = 0.378453
+anchor_bottom = 0.592081
+offset_left = 65.5968
+offset_top = 4.612976
+offset_right = 70.08807
+offset_bottom = 6.612976
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.6)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBox_add_normal")
+theme_override_styles/pressed = SubResource("StyleBox_add_pressed")
+theme_override_styles/hover = SubResource("StyleBox_add_hover")
+theme_override_styles/disabled = SubResource("StyleBox_add_disabled")
+theme_override_styles/focus = SubResource("StyleBox_add_focus")
+text = "+"
+
+[node name="LabelSinhKhi" type="Label" parent="Aspect/Frame/Board" unique_id=1859149885]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.604052
+anchor_right = 0.15884
+anchor_bottom = 0.641805
+offset_left = 3.0
+offset_top = 4.0
+offset_right = 3.0
+offset_bottom = 4.0
+text = "Sinh khí:"
+clip_text = true
+
+[node name="BaseStatValue2" type="Label" parent="Aspect/Frame/Board" unique_id=67397328]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.15884
+anchor_top = 0.604052
+anchor_right = 0.18232
+anchor_bottom = 0.641805
+offset_left = 26.0
+offset_top = 4.0
+offset_right = 45.972076
+offset_bottom = 4.0
+text = "5"
+clip_text = true
+
+[node name="BaseStatButton2" type="Button" parent="Aspect/Frame/Board" unique_id=311507961]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.185083
+anchor_top = 0.607735
+anchor_right = 0.201657
+anchor_bottom = 0.629834
+offset_left = 44.31958
+offset_top = 3.4308167
+offset_right = 48.809998
+offset_bottom = 5.4308167
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.6)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBox_add_normal")
+theme_override_styles/pressed = SubResource("StyleBox_add_pressed")
+theme_override_styles/hover = SubResource("StyleBox_add_hover")
+theme_override_styles/disabled = SubResource("StyleBox_add_disabled")
+theme_override_styles/focus = SubResource("StyleBox_add_focus")
+text = "+"
+
+[node name="LabelNoiCong" type="Label" parent="Aspect/Frame/Board" unique_id=1279359273]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.248619
+anchor_top = 0.604052
+anchor_right = 0.335635
+anchor_bottom = 0.641805
+offset_left = 29.0
+offset_top = 4.0
+offset_right = 29.0
+offset_bottom = 4.0
+text = "Nội công:"
+clip_text = true
+
+[node name="BaseStatValue3" type="Label" parent="Aspect/Frame/Board" unique_id=290731183]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.335635
+anchor_top = 0.604052
+anchor_right = 0.359116
+anchor_bottom = 0.641805
+offset_left = 52.0
+offset_top = 5.0
+offset_right = 71.24838
+offset_bottom = 5.0
+text = "5"
+clip_text = true
+
+[node name="BaseStatButton3" type="Button" parent="Aspect/Frame/Board" unique_id=2054741090]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.361878
+anchor_top = 0.607735
+anchor_right = 0.378453
+anchor_bottom = 0.629834
+offset_left = 65.5968
+offset_top = 2.4308167
+offset_right = 70.08807
+offset_bottom = 4.4308167
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.6)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBox_add_normal")
+theme_override_styles/pressed = SubResource("StyleBox_add_pressed")
+theme_override_styles/hover = SubResource("StyleBox_add_hover")
+theme_override_styles/disabled = SubResource("StyleBox_add_disabled")
+theme_override_styles/focus = SubResource("StyleBox_add_focus")
+text = "+"
+
+[node name="LabelLucTayTrai" type="Label" parent="Aspect/Frame/Board" unique_id=1929467804]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.652855
+anchor_right = 0.220994
+anchor_bottom = 0.687845
+offset_left = 2.0
+offset_right = 2.0
+text = "Lực tay trái:"
+clip_text = true
+
+[node name="DamageLeftValue" type="Label" parent="Aspect/Frame/Board" unique_id=535481035]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.220994
+anchor_top = 0.652855
+anchor_right = 0.470994
+anchor_bottom = 0.687845
+text = "15/30"
+clip_text = true
+
+[node name="LabelLucTayPhai" type="Label" parent="Aspect/Frame/Board" unique_id=1588023126]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.688766
+anchor_right = 0.220994
+anchor_bottom = 0.722836
+offset_left = 2.0
+offset_right = 2.0
+text = "Lực tay phải:"
+clip_text = true
+
+[node name="DamageRightValue" type="Label" parent="Aspect/Frame/Board" unique_id=2027602937]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.220994
+anchor_top = 0.688766
+anchor_right = 0.470994
+anchor_bottom = 0.722836
+text = "15/30"
+clip_text = true
+
+[node name="LabelChinhXac" type="Label" parent="Aspect/Frame/Board" unique_id=2049641828]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.734807
+anchor_right = 0.179558
+anchor_bottom = 0.762431
+offset_left = 2.0
+offset_right = 2.0
+offset_bottom = 3.1107178
+text = "Chính xác:"
+clip_text = true
+
+[node name="ChinhXacValue" type="Label" parent="Aspect/Frame/Board" unique_id=1975228011]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.179558
+anchor_top = 0.734807
+anchor_right = 0.27279
+anchor_bottom = 0.762431
+offset_left = -2.0
+offset_right = -2.0
+offset_bottom = 3.1107178
+text = "25/25"
+clip_text = true
+
+[node name="LabelKhangKim" type="Label" parent="Aspect/Frame/Board" unique_id=419902302]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.276243
+anchor_top = 0.734807
+anchor_right = 0.369475
+anchor_bottom = 0.762431
+text = "Kháng Kim:"
+clip_text = true
+
+[node name="ResistValue0" type="Label" parent="Aspect/Frame/Board" unique_id=1495685691]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.369475
+anchor_top = 0.734807
+anchor_right = 0.470994
+anchor_bottom = 0.762431
+offset_left = -4.0
+offset_right = -10.154266
+offset_bottom = 3.1107178
+text = "2%"
+clip_text = true
+
+[node name="LabelNeTranh" type="Label" parent="Aspect/Frame/Board" unique_id=1213310400]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.764273
+anchor_right = 0.179558
+anchor_bottom = 0.791897
+offset_left = 2.0
+offset_top = 5.0
+offset_right = 2.0
+offset_bottom = 8.110718
+text = "Né tránh:"
+clip_text = true
+
+[node name="NeTranhValue" type="Label" parent="Aspect/Frame/Board" unique_id=786039996]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.179558
+anchor_top = 0.764273
+anchor_right = 0.27279
+anchor_bottom = 0.791897
+offset_left = -2.0
+offset_top = 4.0
+offset_right = -2.0
+offset_bottom = 7.110718
+text = "20"
+clip_text = true
+
+[node name="LabelKhangMoc" type="Label" parent="Aspect/Frame/Board" unique_id=628268310]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.276243
+anchor_top = 0.764273
+anchor_right = 0.369475
+anchor_bottom = 0.791897
+offset_top = 6.0
+offset_bottom = 9.110718
+text = "Kháng Mộc:"
+clip_text = true
+
+[node name="ResistValue1" type="Label" parent="Aspect/Frame/Board" unique_id=824772056]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.369475
+anchor_top = 0.764273
+anchor_right = 0.470994
+anchor_bottom = 0.791897
+offset_left = -4.0
+offset_top = 7.0
+offset_right = -9.154266
+offset_bottom = 10.110718
+text = "2%"
+clip_text = true
+
+[node name="LabelChay" type="Label" parent="Aspect/Frame/Board" unique_id=1982935496]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.793738
+anchor_right = 0.179558
+anchor_bottom = 0.821363
+offset_left = 2.0
+offset_top = 8.0
+offset_right = 2.0
+offset_bottom = 11.110046
+text = "Chạy:"
+clip_text = true
+
+[node name="ChayValue" type="Label" parent="Aspect/Frame/Board" unique_id=830686542]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.179558
+anchor_top = 0.793738
+anchor_right = 0.27279
+anchor_bottom = 0.821363
+offset_left = -2.0
+offset_top = 9.0
+offset_right = -2.0
+offset_bottom = 12.110046
+text = "105"
+clip_text = true
+
+[node name="LabelKhangThuy" type="Label" parent="Aspect/Frame/Board" unique_id=338603342]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.276243
+anchor_top = 0.793738
+anchor_right = 0.369475
+anchor_bottom = 0.821363
+offset_top = 10.0
+offset_bottom = 13.110046
+text = "Kháng Thủy:"
+clip_text = true
+
+[node name="ResistValue2" type="Label" parent="Aspect/Frame/Board" unique_id=172743781]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.369475
+anchor_top = 0.793738
+anchor_right = 0.470994
+anchor_bottom = 0.821363
+offset_left = -2.0
+offset_top = 10.0
+offset_right = -9.154266
+offset_bottom = 13.110046
+text = "2%"
+clip_text = true
+
+[node name="LabelCongKich" type="Label" parent="Aspect/Frame/Board" unique_id=592711896]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.823204
+anchor_right = 0.179558
+anchor_bottom = 0.850829
+offset_left = 2.0
+offset_top = 15.0
+offset_right = 2.0
+offset_bottom = 18.109985
+text = "Công kích:"
+clip_text = true
+
+[node name="CongKichValue" type="Label" parent="Aspect/Frame/Board" unique_id=1039743089]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.179558
+anchor_top = 0.823204
+anchor_right = 0.27279
+anchor_bottom = 0.850829
+offset_left = -2.0
+offset_top = 13.0
+offset_right = -2.0
+offset_bottom = 16.109985
+text = "25/0"
+clip_text = true
+
+[node name="LabelKhangHoa" type="Label" parent="Aspect/Frame/Board" unique_id=1617291968]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.276243
+anchor_top = 0.823204
+anchor_right = 0.369475
+anchor_bottom = 0.850829
+offset_top = 15.0
+offset_bottom = 18.109985
+text = "Kháng Hỏa:"
+clip_text = true
+
+[node name="ResistValue3" type="Label" parent="Aspect/Frame/Board" unique_id=280698182]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.369475
+anchor_top = 0.823204
+anchor_right = 0.470994
+anchor_bottom = 0.850829
+offset_left = -3.0
+offset_top = 15.0
+offset_right = -10.154266
+offset_bottom = 18.109985
+text = "2%"
+clip_text = true
+
+[node name="LabelTiemNang" type="Label" parent="Aspect/Frame/Board" unique_id=402431206]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.071823
+anchor_top = 0.85267
+anchor_right = 0.179558
+anchor_bottom = 0.880295
+offset_left = 2.0
+offset_top = 23.0
+offset_right = 2.0
+offset_bottom = 26.110046
+text = "Tiềm năng:"
+clip_text = true
+
+[node name="TiemNangValue" type="Label" parent="Aspect/Frame/Board" unique_id=232580733]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.179558
+anchor_top = 0.85267
+anchor_right = 0.27279
+anchor_bottom = 0.880295
+offset_top = 21.0
+offset_bottom = 24.110046
+text = "0"
+clip_text = true
+
+[node name="LabelKhangTho" type="Label" parent="Aspect/Frame/Board" unique_id=1603677689]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.276243
+anchor_top = 0.85267
+anchor_right = 0.369475
+anchor_bottom = 0.880295
+offset_top = 22.0
+offset_bottom = 25.110046
+text = "Kháng Thổ:"
+clip_text = true
+
+[node name="ResistValue4" type="Label" parent="Aspect/Frame/Board" unique_id=1672449523]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.369475
+anchor_top = 0.85267
+anchor_right = 0.470994
+anchor_bottom = 0.880295
+offset_left = -3.0
+offset_top = 20.0
+offset_right = -10.154266
+offset_bottom = 23.110046
+text = "2%"
+clip_text = true
+
+[node name="EquipSlot0" type="Button" parent="Aspect/Frame/Board" unique_id=1950000000]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.63579
+anchor_top = 0.23665
+anchor_right = 0.75209
+anchor_bottom = 0.36556
+offset_left = -6.358032
+offset_top = -0.3880005
+offset_right = -4.0057373
+offset_bottom = 1.796814
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot1" type="Button" parent="Aspect/Frame/Board" unique_id=1950000001]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.63579
+anchor_top = 0.37293
+anchor_right = 0.75209
+anchor_bottom = 0.51381
+offset_left = -5.358032
+offset_top = 1.4904175
+offset_right = -5.0057373
+offset_bottom = 1.4904175
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot2" type="Button" parent="Aspect/Frame/Board" unique_id=1950000002]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.63579
+anchor_top = 0.52026
+anchor_right = 0.75209
+anchor_bottom = 0.58748
+offset_left = -5.358032
+offset_top = -0.5871887
+offset_right = -5.358032
+offset_bottom = 2.0144043
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot3" type="Button" parent="Aspect/Frame/Board" unique_id=1950000003]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.81685
+anchor_top = 0.38674
+anchor_right = 0.93315
+anchor_bottom = 0.55525
+offset_left = -7.175171
+offset_top = -0.4527893
+offset_right = -4.822876
+offset_bottom = 1.2200012
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot4" type="Button" parent="Aspect/Frame/Board" unique_id=1950000004]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.81685
+anchor_top = 0.5663
+anchor_right = 0.93315
+anchor_bottom = 0.77348
+offset_left = -7.175171
+offset_top = -1.7359924
+offset_right = -4.822876
+offset_bottom = 2.0944214
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot5" type="Button" parent="Aspect/Frame/Board" unique_id=1950000005]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.31584
+anchor_right = 0.5766
+anchor_bottom = 0.42081
+offset_left = -3.9871826
+offset_top = -0.40480042
+offset_right = -3.9871826
+offset_bottom = -0.40478516
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot6" type="Button" parent="Aspect/Frame/Board" unique_id=1950000006]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.81685
+anchor_top = 0.2965
+anchor_right = 0.93315
+anchor_bottom = 0.37569
+offset_left = -7.175171
+offset_top = -0.47999573
+offset_right = -4.822876
+offset_bottom = 1.5032043
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot7" type="Button" parent="Aspect/Frame/Board" unique_id=1950000007]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.43278
+anchor_right = 0.5766
+anchor_bottom = 0.53223
+offset_left = -4.9871826
+offset_top = -1.601593
+offset_right = -4.9871826
+offset_bottom = 0.39840698
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot8" type="Button" parent="Aspect/Frame/Board" unique_id=1950000008]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.54144
+anchor_right = 0.5766
+anchor_bottom = 0.63812
+offset_left = -4.9871826
+offset_top = -2.836792
+offset_right = -4.9871826
+offset_bottom = 0.16320801
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot9" type="Button" parent="Aspect/Frame/Board" unique_id=1950000009]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.65009
+anchor_right = 0.5766
+anchor_bottom = 0.76243
+offset_left = -4.9871826
+offset_top = -0.06478882
+offset_right = -4.9871826
+offset_bottom = -0.064819336
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot10" type="Button" parent="Aspect/Frame/Board" unique_id=1950000010]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.63579
+anchor_top = 0.60037
+anchor_right = 0.75209
+anchor_bottom = 0.85451
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://bs5ucqjn788ya"]
+
+[ext_resource type="Script" uid="uid://ds8bcaqr1o1ek" path="res://gems/pickup.gd" id="1_xr3c8"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3ns5p"]
+
+[node name="Pickup" type="Area2D" unique_id=45815976]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_xr3c8")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=644189897]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1624215210]
+shape = SubResource("RectangleShape2D_3ns5p")

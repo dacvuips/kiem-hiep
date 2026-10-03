@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bbso8vaqgekud"]
+
+[ext_resource type="Script" uid="uid://dq156oxad5p6p" path="res://ui/level_up/level_up_ui.gd" id="1_87182"]
+[ext_resource type="Script" uid="uid://dsjmh75qmtjkx" path="res://upgrades/upgrade_data.gd" id="2_encji"]
+[ext_resource type="Resource" uid="uid://xfxafqmgxsc3" path="res://upgrades/damage_up.tres" id="3_rdm1f"]
+[ext_resource type="Resource" uid="uid://csthxxv5uxrhx" path="res://upgrades/attack_speed_up.tres" id="4_5sn0s"]
+[ext_resource type="Resource" uid="uid://sj85xvlamet" path="res://upgrades/range_up.tres" id="5_5am43"]
+[ext_resource type="Resource" uid="uid://dwebdi4p53a3" path="res://upgrades/double_shot.tres" id="6_udtcw"]
+
+[node name="LevelUpUi" type="CanvasLayer" unique_id=1272959011]
+process_mode = 3
+script = ExtResource("1_87182")
+all_upgrades = Array[ExtResource("2_encji")]([ExtResource("3_rdm1f"), ExtResource("4_5sn0s"), ExtResource("5_5am43"), ExtResource("6_udtcw")])
+
+[node name="DimOverlay" type="ColorRect" parent="." unique_id=1305905335]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=71229256]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer" unique_id=993414174]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel" unique_id=47974250]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin" unique_id=1536275989]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox" unique_id=897696054]
+layout_mode = 2
+text = "LÊN CẤP! CHỌN NÂNG CẤP"
+
+[node name="ChoicesContainer" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1852960786]
+layout_mode = 2
+theme_override_constants/separation = 16

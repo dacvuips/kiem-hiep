@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://chxvagncod3d4"]
+
+[ext_resource type="Script" uid="uid://ga181ejubuk5" path="res://projectiles/projectile.gd" id="1_ighsu"]
+[ext_resource type="Texture2D" uid="uid://cx1ppb0a2o13h" path="res://sprites/loc-xoay.png" id="2_ighsu"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3ns5p"]
+radius = 22.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7nr1q"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(0, 0, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7ypqm"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(313, 0, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8amdc"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(626, 0, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6tl4a"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(939, 0, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jbsic"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(0, 313, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nht24"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(313, 313, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5wx2b"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(626, 313, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kifdy"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(939, 313, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsqe1"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(0, 626, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y7rbk"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(313, 626, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_675ew"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(626, 626, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aj1oi"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(939, 626, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nyp7e"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(0, 939, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yvy4x"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(313, 939, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iywqg"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(626, 939, 313, 313)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y8gli"]
+atlas = ExtResource("2_ighsu")
+region = Rect2(939, 939, 313, 313)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_xhvhe"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7nr1q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7ypqm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8amdc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6tl4a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jbsic")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nht24")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5wx2b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kifdy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hsqe1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y7rbk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_675ew")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aj1oi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nyp7e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yvy4x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iywqg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y8gli")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 19.0
+}]
+
+[node name="projectile" type="Area2D" unique_id=1783249831]
+collision_mask = 4
+script = ExtResource("1_ighsu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1357081993]
+shape = SubResource("CircleShape2D_3ns5p")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=1900404359]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1021443940]
+position = Vector2(4.7683716e-07, 0)
+scale = Vector2(0.14057508, 0.14057508)
+sprite_frames = SubResource("SpriteFrames_xhvhe")
+frame_progress = 0.9717565

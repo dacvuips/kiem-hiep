@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://soru5wkiajxi"]
+
+[ext_resource type="Texture2D" uid="uid://6cnvr05s2eab" path="res://world/obstacles/tree.png" id="1_c8lko"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pekjf"]
+size = Vector2(92, 35)
+
+[node name="Obstacle" type="StaticBody2D" unique_id=850871264]
+collision_layer = 32
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=470781132]
+position = Vector2(2, -35)
+scale = Vector2(1.5000002, 1.5000002)
+texture = ExtResource("1_c8lko")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=774239525]
+texture_filter = 1
+position = Vector2(4, 7.5)
+shape = SubResource("RectangleShape2D_pekjf")

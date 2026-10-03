@@ -1,0 +1,428 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/skill_book/skill_book_screen.gd" id="1_book"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_frame"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.135, 0.12, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.42, 0.24, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_header"]
+content_margin_left = 16.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0.25, 0.2, 0.13, 1)
+border_width_bottom = 2
+border_color = Color(0.7, 0.58, 0.3, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_section"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.09, 0.1, 0.09, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.33, 0.24, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab"]
+content_margin_left = 18.0
+content_margin_top = 4.0
+content_margin_right = 18.0
+content_margin_bottom = 4.0
+bg_color = Color(0.36, 0.28, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.7, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_name"]
+content_margin_top = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.17, 0.17, 0.14, 1)
+border_width_bottom = 1
+border_color = Color(0.45, 0.42, 0.3, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_icon_frame"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.06, 0.08, 0.07, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.3, 0.55, 0.4, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.55, 0.45, 0.2, 0.35)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.07, 0.3, 0.29, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.78, 0.72, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_hover"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1, 0.4, 0.38, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.95, 0.88, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_disabled"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.16, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.33, 0.3, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_settings"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+bg_color = Color(0.16, 0.16, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.38, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBox_empty"]
+
+[node name="SkillBookScreen" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1_book")
+
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Frame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(1200, 650)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_frame")
+
+[node name="Root" type="VBoxContainer" parent="Center/Frame"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="PanelContainer" parent="Center/Frame/Root"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_header")
+
+[node name="HeaderRow" type="HBoxContainer" parent="Center/Frame/Root/Header"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/Frame/Root/Header/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.07, 0.02, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 34
+text = "Kĩ năng"
+
+[node name="CloseButton" type="Button" parent="Center/Frame/Root/Header/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 36)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "X"
+
+[node name="Body" type="HBoxContainer" parent="Center/Frame/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Left" type="VBoxContainer" parent="Center/Frame/Root/Body"]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TabRow" type="HBoxContainer" parent="Center/Frame/Root/Body/Left"]
+layout_mode = 2
+
+[node name="Tab" type="Label" parent="Center/Frame/Root/Body/Left/TabRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_tab")
+text = "Kỹ năng"
+
+[node name="GridPanel" type="PanelContainer" parent="Center/Frame/Root/Body/Left"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBox_section")
+
+[node name="GridBox" type="VBoxContainer" parent="Center/Frame/Root/Body/Left/GridPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GridScroll" type="ScrollContainer" parent="Center/Frame/Root/Body/Left/GridPanel/GridBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Grid" type="GridContainer" parent="Center/Frame/Root/Body/Left/GridPanel/GridBox/GridScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 6
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 5
+
+[node name="PointsLabel" type="Label" parent="Center/Frame/Root/Body/Left/GridPanel/GridBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.93, 0.85, 1)
+theme_override_font_sizes/font_size = 16
+text = "Điểm kỹ năng: 0"
+horizontal_alignment = 2
+
+[node name="Detail" type="PanelContainer" parent="Center/Frame/Root/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBox_section")
+
+[node name="DetailBox" type="VBoxContainer" parent="Center/Frame/Root/Body/Detail"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameBar" type="PanelContainer" parent="Center/Frame/Root/Body/Detail/DetailBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_name")
+
+[node name="SkillName" type="Label" parent="Center/Frame/Root/Body/Detail/DetailBox/NameBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
+text = "Chọn 1 kỹ năng"
+horizontal_alignment = 1
+
+[node name="HeadRow" type="HBoxContainer" parent="Center/Frame/Root/Body/Detail/DetailBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="IconFrame" type="PanelContainer" parent="Center/Frame/Root/Body/Detail/DetailBox/HeadRow"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_icon_frame")
+
+[node name="SkillIcon" type="TextureRect" parent="Center/Frame/Root/Body/Detail/DetailBox/HeadRow/IconFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="Center/Frame/Root/Body/Detail/DetailBox/HeadRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="SkillDesc" type="Label" parent="Center/Frame/Root/Body/Detail/DetailBox/HeadRow/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.86, 1)
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 3
+
+[node name="SkillSchool" type="Label" parent="Center/Frame/Root/Body/Detail/DetailBox/HeadRow/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.88, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 3
+
+[node name="StatScroll" type="ScrollContainer" parent="Center/Frame/Root/Body/Detail/DetailBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StatBox" type="VBoxContainer" parent="Center/Frame/Root/Body/Detail/DetailBox/StatScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Frame/Root/Body/Detail/DetailBox"]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="LearnButton" type="Button" parent="Center/Frame/Root/Body/Detail/DetailBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_disabled_color = Color(0.6, 0.6, 0.56, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBox_button")
+theme_override_styles/hover = SubResource("StyleBox_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_button")
+theme_override_styles/disabled = SubResource("StyleBox_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+text = "Học / Nâng cấp (+1)"
+
+[node name="TestButton" type="Button" parent="Center/Frame/Root/Body/Detail/DetailBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 14
+text = "Nâng cấp (TEST)"
+
+[node name="Right" type="PanelContainer" parent="Center/Frame/Root/Body"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_section")
+
+[node name="RightBox" type="VBoxContainer" parent="Center/Frame/Root/Body/Right"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Settings" type="PanelContainer" parent="Center/Frame/Root/Body/Right/RightBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_settings")
+
+[node name="SettingsBox" type="VBoxContainer" parent="Center/Frame/Root/Body/Right/RightBox/Settings"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="SettingsTitle" type="Label" parent="Center/Frame/Root/Body/Right/RightBox/Settings/SettingsBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_name")
+text = "Tùy chỉnh kỹ năng"
+horizontal_alignment = 1
+
+[node name="NoTargetCheck" type="CheckBox" parent="Center/Frame/Root/Body/Right/RightBox/Settings/SettingsBox"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Không có quái gần vẫn ra chiêu, bắn về phía trước mặt"
+theme_override_colors/font_color = Color(0.92, 0.92, 0.88, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "Không mục tiêu"
+
+[node name="FaceDirectionCheck" type="CheckBox" parent="Center/Frame/Root/Body/Right/RightBox/Settings/SettingsBox"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Luôn ra chiêu theo hướng nhân vật đang quay, không tự nhắm quái gần nhất"
+theme_override_colors/font_color = Color(0.92, 0.92, 0.88, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "Đánh theo hướng trước mặt"
+
+[node name="TapReleaseCheck" type="CheckBox" parent="Center/Frame/Root/Body/Right/RightBox/Settings/SettingsBox"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Nút skill ra chiêu khi nhả tay (tắt: ra chiêu ngay lúc chạm)"
+theme_override_colors/font_color = Color(0.92, 0.92, 0.88, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.95, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "Chạm nhả"
+
+[node name="BarTitle" type="Label" parent="Center/Frame/Root/Body/Right/RightBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_font_sizes/font_size = 15
+text = "Thanh kỹ năng — kéo kỹ năng đã học thả vào ô"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Wheel" type="Control" parent="Center/Frame/Root/Body/Right/RightBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(276, 310)
+layout_mode = 2
+size_flags_vertical = 3

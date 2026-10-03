@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StoneData" format=3 uid="uid://w6xkgk26pen8"]
+
+[ext_resource type="Texture2D" uid="uid://buute2pgbsdk8" path="res://sprites/dan.png" id="1_7sf8d"]
+[ext_resource type="Script" uid="uid://dv7kuqdw80aaw" path="res://stones/stone_data.gd" id="1_qqmjh"]
+
+[resource]
+script = ExtResource("1_qqmjh")
+stone_name = "Đá Lửa"
+icon = ExtResource("1_7sf8d")
+color = Color(0.8271073, 0.7464649, 1.1551381e-06, 1)
+damage = 15.0
+element_id = "fire"
+metadata/_custom_type_script = "uid://dv7kuqdw80aaw"

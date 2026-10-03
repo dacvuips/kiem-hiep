@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3 uid="uid://dwebdi4p53a3"]
+
+[ext_resource type="Texture2D" uid="uid://brmqn483vvlm0" path="res://upgrades/icon/X2.png" id="1_7iwxx"]
+[ext_resource type="Script" uid="uid://dsjmh75qmtjkx" path="res://upgrades/upgrade_data.gd" id="1_ppmeb"]
+
+[resource]
+script = ExtResource("1_ppmeb")
+id = "double_shot"
+title = "X2 số lượng đạn"
+description = "Tăng số đạn +100%"
+icon = ExtResource("1_7iwxx")
+stat_type = 0
+value = 1.0
+metadata/_custom_type_script = "uid://dsjmh75qmtjkx"

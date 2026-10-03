@@ -1,0 +1,1542 @@
+[gd_resource type="Resource" script_class="SectDefinition" format=3]
+
+[ext_resource type="Script" path="res://systems/sect/sect_definition.gd" id="1_sect"]
+[ext_resource type="Script" path="res://systems/sect/skill_definition.gd" id="2_skill"]
+[ext_resource type="Script" path="res://systems/sect/skill_stat_line.gd" id="3_statline"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_fenghua_xueyue.png" id="vicon_thuy_yen_fenghua_xueyue"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_cuiyan_daofa.png" id="vicon_thuy_yen_cuiyan_daofa"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_cuiyan_shuangdao.png" id="vicon_thuy_yen_cuiyan_shuangdao"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_huti_hanbing.png" id="vicon_thuy_yen_huti_hanbing"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_fengjuan_canxue.png" id="vicon_thuy_yen_fengjuan_canxue"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bingxin_qianying.png" id="vicon_thuy_yen_bingxin_qianying"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_yuda_lihua.png" id="vicon_thuy_yen_yuda_lihua"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_xueying.png" id="vicon_thuy_yen_xueying"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_taxue_wuhen.png" id="vicon_thuy_yen_taxue_wuhen"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_muye_liuxing.png" id="vicon_thuy_yen_muye_liuxing"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_fuyun_sanxue.png" id="vicon_thuy_yen_fuyun_sanxue"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bihai_chaosheng.png" id="vicon_thuy_yen_bihai_chaosheng"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_binggu_xuexin.png" id="vicon_thuy_yen_binggu_xuexin"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bingzong_wuying.png" id="vicon_thuy_yen_bingzong_wuying"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bingxin_yuling.png" id="vicon_thuy_yen_bingxin_yuling"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bingxin_xuelian.png" id="vicon_thuy_yen_bingxin_xuelian"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_bingxin_xianzi.png" id="vicon_thuy_yen_bingxin_xianzi"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_fengxue_bingtian.png" id="vicon_thuy_yen_fengxue_bingtian"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_cuiyan120.png" id="vicon_thuy_yen_cuiyan120"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_daocuiyan150.png" id="vicon_thuy_yen_daocuiyan150"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_daocuiyan150_2.png" id="vicon_thuy_yen_daocuiyan150_2"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_neicuiyan150.png" id="vicon_thuy_yen_neicuiyan150"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/thuy_yen_neicuiyan150_2.png" id="vicon_thuy_yen_neicuiyan150_2"]
+
+[sub_resource type="Resource" id="SubResource_1"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_2"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 55.0
+suffix = "%"
+target_skill_id = "thuy_yen_bingzong_wuying"
+
+[sub_resource type="Resource" id="SubResource_3"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 35.0
+suffix = "%"
+target_skill_id = "thuy_yen_muye_liuxing"
+
+[sub_resource type="Resource" id="SubResource_4"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #3"
+value_at_level_1 = 1.0
+value_at_max_level = 45.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150"
+
+[sub_resource type="Resource" id="SubResource_5"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #4"
+value_at_level_1 = 1.0
+value_at_max_level = 45.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_6"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 5.0
+max_at_level_1 = 5.0
+min_at_max_level = 80.0
+max_at_max_level = 150.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_7"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 10.0
+value_at_max_level = 10.0
+
+[sub_resource type="Resource" id="SubResource_8"]
+script = ExtResource("2_skill")
+id = "thuy_yen_fenghua_xueyue"
+skill_name = "Phong Hoa Tuyết Nguyệt (hệ Thủy)"
+weapon_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 10
+vltk_skill_id = 99
+icon = ExtResource("vicon_thuy_yen_fenghua_xueyue")
+description = "Chiêu thức nhập môn, đánh ra hàn khí kèm sát thương Băng."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 1
+vltk_attack_radius = 360
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 5, 0, 20, 80, 0), PackedFloat32Array(), PackedFloat32Array(1, 5, 0, 20, 150, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 5, 0, 20, 85, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 5.0
+mana_cost = 10.0
+cooldown = 1.27
+range = 320.0
+element = 2
+damage_growth_per_level = 4.2105
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_1"), SubResource("SubResource_2"), SubResource("SubResource_3"), SubResource("SubResource_4"), SubResource("SubResource_5"), SubResource("SubResource_6"), SubResource("SubResource_7")])
+is_main_attack = true
+
+[sub_resource type="Resource" id="SubResource_9"]
+script = ExtResource("3_statline")
+label = "Cộng đao công"
+value_at_level_1 = 45.0
+value_at_max_level = 215.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_10"]
+script = ExtResource("3_statline")
+label = "Tấn công chí mạng"
+value_at_level_1 = 6.0
+value_at_max_level = 35.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_11"]
+script = ExtResource("2_skill")
+id = "thuy_yen_cuiyan_daofa"
+skill_name = "Thúy Yên Đao Pháp"
+weapon_limit = 1
+max_level = 20
+req_level = 10
+vltk_skill_id = 95
+icon = ExtResource("vicon_thuy_yen_cuiyan_daofa")
+description = "Bị động: tăng uy lực khi sử dụng Đao (tăng theo đường cong phi tuyến)."
+school_text = "Đao (Nội công)"
+is_active = false
+category = 1
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addphysicsdamage_p": [PackedFloat32Array(1, 45, 0, 20, 215, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array(1, 1, 0, 2, 1, 0)],
+"deadlystrikeenhance_p": [PackedFloat32Array(1, 6, 0, 20, 35, 1), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_9"), SubResource("SubResource_10")])
+passive_attack_bonus = 2.15
+
+[sub_resource type="Resource" id="SubResource_12"]
+script = ExtResource("3_statline")
+label = "Cộng công Băng"
+value_at_level_1 = 20.0
+value_at_max_level = 215.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_13"]
+script = ExtResource("2_skill")
+id = "thuy_yen_cuiyan_shuangdao"
+skill_name = "Thúy Yên Song Đao"
+max_level = 20
+req_level = 10
+vltk_skill_id = 97
+icon = ExtResource("vicon_thuy_yen_cuiyan_shuangdao")
+description = "Bị động: song đao hợp luyện, tăng công Băng."
+school_text = "Song Đao (Nội công)"
+is_active = false
+category = 1
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addcoldmagic_v": [PackedFloat32Array(1, 20, 0, 20, 215, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_12")])
+passive_attack_bonus = 2.15
+
+[sub_resource type="Resource" id="SubResource_14"]
+script = ExtResource("3_statline")
+label = "Phản đòn cận chiến"
+value_at_level_1 = 5.0
+value_at_max_level = 20.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_15"]
+script = ExtResource("3_statline")
+label = "Phản đòn tầm xa"
+value_at_level_1 = 5.0
+value_at_max_level = 20.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_16"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 40.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_17"]
+script = ExtResource("2_skill")
+id = "thuy_yen_huti_hanbing"
+skill_name = "Hộ Thể Hàn Băng"
+target_self = true
+max_level = 20
+req_level = 40
+vltk_skill_id = 100
+icon = ExtResource("vicon_thuy_yen_huti_hanbing")
+description = "Vận hàn khí hộ thân, phản đòn cả cận chiến lẫn tầm xa."
+school_text = "Tâm pháp hộ thân (Nội công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 31
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"meleedamagereturn_p": [PackedFloat32Array(1, 5, 0, 20, 20, 0), PackedFloat32Array(1, 2160, 0, 20, 2160, 0), PackedFloat32Array()],
+"rangedamagereturn_p": [PackedFloat32Array(1, 5, 0, 20, 20, 0), PackedFloat32Array(1, 2160, 0, 20, 2160, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 40.0
+cooldown = 10.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_14"), SubResource("SubResource_15"), SubResource("SubResource_16")])
+
+[sub_resource type="Resource" id="SubResource_18"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 1.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_19"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 25.0
+value_at_max_level = 235.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_20"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 10.0
+max_at_level_1 = 10.0
+min_at_max_level = 75.0
+max_at_max_level = 125.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_21"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 115.0
+suffix = "%"
+target_skill_id = "thuy_yen_bingxin_xianzi"
+
+[sub_resource type="Resource" id="SubResource_22"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 35.0
+suffix = "%"
+target_skill_id = "thuy_yen_bihai_chaosheng"
+
+[sub_resource type="Resource" id="SubResource_23"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #3"
+value_at_level_1 = 1.0
+value_at_max_level = 95.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150"
+
+[sub_resource type="Resource" id="SubResource_24"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #4"
+value_at_level_1 = 1.0
+value_at_max_level = 95.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_25"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 20.0
+
+[sub_resource type="Resource" id="SubResource_26"]
+script = ExtResource("2_skill")
+id = "thuy_yen_fengjuan_canxue"
+skill_name = "Phong Quyển Tàn Tuyết (hệ Thủy)"
+horse_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 10
+vltk_skill_id = 102
+icon = ExtResource("vicon_thuy_yen_fengjuan_canxue")
+description = "Gió cuốn tàn tuyết, kết hợp sát thương vật lý và Băng."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 1
+vltk_attack_radius = 360
+vltk_state_special_id = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 10, 0, 20, 75, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 125, 0)],
+"physicsdamage_v": [PackedFloat32Array(1, 25, 0, 20, 235, 0), PackedFloat32Array(), PackedFloat32Array(1, 25, 0, 20, 375, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 25.0
+mana_cost = 20.0
+cooldown = 1.33
+range = 384.0
+element = 2
+damage_growth_per_level = 11.0526
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_18"), SubResource("SubResource_19"), SubResource("SubResource_20"), SubResource("SubResource_21"), SubResource("SubResource_22"), SubResource("SubResource_23"), SubResource("SubResource_24"), SubResource("SubResource_25")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_27"]
+script = ExtResource("3_statline")
+label = "Hồi phục sinh lực"
+value_at_level_1 = 130.0
+value_at_max_level = 700.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_28"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 21.0
+value_at_max_level = 40.0
+
+[sub_resource type="Resource" id="SubResource_29"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bingxin_qianying"
+skill_name = "Băng Tâm Trái Ảnh"
+target_self = true
+max_level = 20
+req_level = 20
+vltk_skill_id = 269
+icon = ExtResource("vicon_thuy_yen_bingxin_qianying")
+description = "Vận công điều hòa nội tức, hồi phục sinh lực bản thân."
+school_text = "Tâm pháp trị liệu (Nội công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 6
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 1
+vltk_attribs = {
+"lifereplenish_v": [PackedFloat32Array(1, 130, 0, 20, 700, 0), PackedFloat32Array(1, 8, 0, 2, 8, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 21.0
+cooldown = 8.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_27"), SubResource("SubResource_28")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_30"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 10.0
+value_at_max_level = 140.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_31"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_32"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 10.0
+max_at_level_1 = 10.0
+min_at_max_level = 100.0
+max_at_max_level = 250.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_33"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 15.0
+value_at_max_level = 50.0
+suffix = "%"
+target_skill_id = "thuy_yen_bingxin_xuelian"
+
+[sub_resource type="Resource" id="SubResource_34"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 42.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_35"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 20.0
+value_at_max_level = 30.0
+
+[sub_resource type="Resource" id="SubResource_36"]
+script = ExtResource("2_skill")
+id = "thuy_yen_yuda_lihua"
+skill_name = "Vũ Đả Lê Hoa (hệ Thủy)"
+horse_limit = 1
+weapon_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 30
+vltk_skill_id = 105
+icon = ExtResource("vicon_thuy_yen_yuda_lihua")
+description = "Mưa hoa lê rơi, kết hợp đòn vật lý và hàn khí."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 6
+vltk_attack_radius = 300
+vltk_state_special_id = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 10, 0, 20, 100, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 250, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 10, 0, 20, 140, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 5, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 10.0
+mana_cost = 20.0
+cooldown = 1.4
+range = 448.0
+element = 2
+damage_growth_per_level = 6.8421
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_30"), SubResource("SubResource_31"), SubResource("SubResource_32"), SubResource("SubResource_33"), SubResource("SubResource_34"), SubResource("SubResource_35")])
+
+[sub_resource type="Resource" id="SubResource_37"]
+script = ExtResource("3_statline")
+label = "Tốc độ đánh"
+value_at_level_1 = 12.0
+value_at_max_level = 65.0
+
+[sub_resource type="Resource" id="SubResource_38"]
+script = ExtResource("3_statline")
+label = "Tốc độ xuất chiêu"
+value_at_level_1 = 12.0
+value_at_max_level = 65.0
+
+[sub_resource type="Resource" id="SubResource_39"]
+script = ExtResource("3_statline")
+label = "Tăng tốc chạy"
+value_at_level_1 = 17.0
+value_at_max_level = 55.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_40"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 40.0
+value_at_max_level = 140.0
+
+[sub_resource type="Resource" id="SubResource_41"]
+script = ExtResource("2_skill")
+id = "thuy_yen_xueying"
+skill_name = "Tuyết Ảnh"
+target_self = true
+max_level = 20
+req_level = 50
+vltk_skill_id = 109
+icon = ExtResource("vicon_thuy_yen_xueying")
+description = "Khinh công tuyệt đỉnh, tăng mạnh tốc độ đánh, xuất chiêu và chạy."
+school_text = "Khinh công (Nội công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 33
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"attackspeed_v": [PackedFloat32Array(1, 12, 0, 20, 65, 0), PackedFloat32Array(1, 2160, 0, 20, 3240, 0), PackedFloat32Array()],
+"castspeed_v": [PackedFloat32Array(1, 12, 0, 20, 65, 0), PackedFloat32Array(1, 2160, 0, 20, 3240, 0), PackedFloat32Array()],
+"fastwalkrun_p": [PackedFloat32Array(1, 17, 0, 20, 55, 0), PackedFloat32Array(1, 2160, 0, 20, 3240, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 40.0
+cooldown = 12.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_37"), SubResource("SubResource_38"), SubResource("SubResource_39"), SubResource("SubResource_40")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_42"]
+script = ExtResource("2_skill")
+id = "thuy_yen_taxue_wuhen"
+skill_name = "Đạp Tuyết Vô Ngân"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_taxue_wuhen")
+description = "Thân pháp ẩn tung tích (dữ liệu gốc ghi chú không sử dụng — giữ lại tham khảo, cần rà soát thêm)."
+school_text = "Khinh công (Nội công)"
+is_active = false
+category = 1
+req_level = 40
+max_level = 20
+target_enemy = false
+target_ally = false
+target_self = true
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 6
+vltk_attack_radius = 0
+vltk_state_special_id = 33
+vltk_damage_range = 3
+vltk_range_damage = 1
+vltk_hit_friend = 1
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+
+[sub_resource type="Resource" id="SubResource_43"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 10.0
+value_at_max_level = 52.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_44"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 30.0
+value_at_max_level = 271.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_45"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 20.0
+max_at_level_1 = 20.0
+min_at_max_level = 246.0
+max_at_max_level = 426.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_46"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 60.0
+suffix = "%"
+target_skill_id = "thuy_yen_bingzong_wuying"
+
+[sub_resource type="Resource" id="SubResource_47"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 50.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150"
+
+[sub_resource type="Resource" id="SubResource_48"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #3"
+value_at_level_1 = 1.0
+value_at_max_level = 50.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_49"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 30.0
+value_at_max_level = 40.0
+
+[sub_resource type="Resource" id="SubResource_50"]
+script = ExtResource("2_skill")
+id = "thuy_yen_muye_liuxing"
+skill_name = "Mục Dã Lưu Tinh (hệ Thủy)"
+horse_limit = 1
+weapon_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 60
+vltk_skill_id = 108
+icon = ExtResource("vicon_thuy_yen_muye_liuxing")
+description = "Tuyệt kỹ 60 cấp, sao băng lướt qua đồng cỏ, sát thương Băng mạnh mẽ."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 6
+vltk_attack_radius = 420
+vltk_state_special_id = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 20, 0, 20, 246, 0), PackedFloat32Array(), PackedFloat32Array(1, 20, 0, 20, 426, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 30, 0, 20, 271, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 30.0
+mana_cost = 30.0
+cooldown = 1.73
+range = 480.0
+element = 2
+damage_growth_per_level = 12.6842
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_43"), SubResource("SubResource_44"), SubResource("SubResource_45"), SubResource("SubResource_46"), SubResource("SubResource_47"), SubResource("SubResource_48"), SubResource("SubResource_49")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_51"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 40.0
+max_at_level_1 = 40.0
+min_at_max_level = 375.0
+max_at_max_level = 575.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_52"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 10.0
+value_at_max_level = 135.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_53"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_54"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 100.0
+suffix = "%"
+target_skill_id = "thuy_yen_fengxue_bingtian"
+
+[sub_resource type="Resource" id="SubResource_55"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 83.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150"
+
+[sub_resource type="Resource" id="SubResource_56"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #3"
+value_at_level_1 = 1.0
+value_at_max_level = 83.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_57"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 50.0
+value_at_max_level = 50.0
+
+[sub_resource type="Resource" id="SubResource_58"]
+script = ExtResource("2_skill")
+id = "thuy_yen_fuyun_sanxue"
+skill_name = "Phù Vân Tán Tuyết (hệ Thủy)"
+horse_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 30
+vltk_skill_id = 113
+icon = ExtResource("vicon_thuy_yen_fuyun_sanxue")
+description = "Mây trôi tuyết tán, sát thương Băng cực mạnh diện rộng."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 6
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 3
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 40, 0, 20, 375, 0), PackedFloat32Array(), PackedFloat32Array(1, 40, 0, 20, 575, 0)],
+"physicsdamage_v": [PackedFloat32Array(1, 10, 0, 20, 135, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 135, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 5, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 10.0
+mana_cost = 50.0
+cooldown = 1.6
+range = 416.0
+element = 2
+damage_growth_per_level = 6.5789
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_51"), SubResource("SubResource_52"), SubResource("SubResource_53"), SubResource("SubResource_54"), SubResource("SubResource_55"), SubResource("SubResource_56"), SubResource("SubResource_57")])
+
+[sub_resource type="Resource" id="SubResource_59"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 20.0
+value_at_max_level = 200.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_60"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 43.0
+max_at_level_1 = 43.0
+min_at_max_level = 704.0
+max_at_max_level = 1214.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_61"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 2.0
+value_at_max_level = 70.0
+suffix = "%"
+target_skill_id = "thuy_yen_bingxin_xianzi"
+
+[sub_resource type="Resource" id="SubResource_62"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 58.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150"
+
+[sub_resource type="Resource" id="SubResource_63"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 65.0
+value_at_max_level = 65.0
+
+[sub_resource type="Resource" id="SubResource_64"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bihai_chaosheng"
+skill_name = "Bích Hải Triều Sinh (hệ Thủy)"
+horse_limit = 1
+target_enemy = true
+max_level = 20
+req_level = 60
+vltk_skill_id = 111
+icon = ExtResource("vicon_thuy_yen_bihai_chaosheng")
+description = "Tuyệt kỹ 60 cấp, sóng biển trào dâng, đòn thế mạnh mẽ khó cản."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 72
+vltk_state_special_id = 0
+vltk_damage_range = 8
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 43, 0, 20, 704, 0), PackedFloat32Array(), PackedFloat32Array(1, 43, 0, 20, 1214, 0)],
+"physicsdamage_v": [PackedFloat32Array(1, 20, 0, 20, 200, 0), PackedFloat32Array(), PackedFloat32Array(1, 20, 0, 20, 200, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 20.0
+mana_cost = 65.0
+cooldown = 1.73
+range = 384.0
+element = 2
+damage_growth_per_level = 9.4737
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_59"), SubResource("SubResource_60"), SubResource("SubResource_61"), SubResource("SubResource_62"), SubResource("SubResource_63")])
+
+[sub_resource type="Resource" id="SubResource_65"]
+script = ExtResource("3_statline")
+label = "Cộng công Băng"
+value_at_level_1 = 60.0
+value_at_max_level = 315.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_66"]
+script = ExtResource("3_statline")
+label = "Cộng sát thương Băng"
+value_at_level_1 = 30.0
+value_at_max_level = 275.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_67"]
+script = ExtResource("3_statline")
+label = "Cộng công pháp thuật"
+value_at_level_1 = 30.0
+value_at_max_level = 275.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_68"]
+script = ExtResource("3_statline")
+label = "Giảm hồi chiêu"
+value_at_level_1 = 3.0
+value_at_max_level = 49.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_69"]
+script = ExtResource("3_statline")
+label = "Tấn công chí mạng"
+value_at_level_1 = 5.0
+value_at_max_level = 45.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_70"]
+script = ExtResource("3_statline")
+label = "Tăng hiệu quả hệ Băng"
+value_at_level_1 = 8.0
+value_at_max_level = 80.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_71"]
+script = ExtResource("2_skill")
+id = "thuy_yen_binggu_xuexin"
+skill_name = "Băng Cốt Tuyết Tâm"
+max_level = 30
+req_level = 60
+vltk_skill_id = 114
+icon = ExtResource("vicon_thuy_yen_binggu_xuexin")
+description = "Bị động: luyện hàn khí nhập cốt, tăng toàn diện công Băng, chí mạng và tốc hồi chiêu."
+school_text = "Tâm pháp trấn phái (Nội công)"
+is_active = false
+category = 1
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addcolddamage_v": [PackedFloat32Array(1, 30, 0, 30, 275, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
+"addcoldmagic_v": [PackedFloat32Array(1, 60, 0, 30, 315, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
+"addphysicsmagic_v": [PackedFloat32Array(1, 30, 0, 30, 275, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
+"coldenhance_p": [PackedFloat32Array(1, 8, 0, 30, 80, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
+"deadlystrikeenhance_p": [PackedFloat32Array(1, 5, 0, 30, 45, 1), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 0.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_65"), SubResource("SubResource_66"), SubResource("SubResource_67"), SubResource("SubResource_68"), SubResource("SubResource_69"), SubResource("SubResource_70")])
+passive_attack_bonus = 3.15
+
+[sub_resource type="Resource" id="SubResource_72"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 15.0
+value_at_max_level = 524.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_73"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 62.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_74"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 10.0
+max_at_level_1 = 50.0
+min_at_max_level = 173.0
+max_at_max_level = 276.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_75"]
+script = ExtResource("3_statline")
+label = "Số đạn bắn ra"
+value_at_level_1 = 1.0
+value_at_max_level = 5.0
+
+[sub_resource type="Resource" id="SubResource_76"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 120.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150"
+
+[sub_resource type="Resource" id="SubResource_77"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 120.0
+suffix = "%"
+target_skill_id = "thuy_yen_daocuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_78"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 40.0
+value_at_max_level = 60.0
+
+[sub_resource type="Resource" id="SubResource_79"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bingzong_wuying"
+skill_name = "Băng Tung Vô Ảnh (hệ Thủy)"
+horse_limit = 1
+weapon_limit = 1
+practice_only = true
+target_enemy = true
+max_level = 20
+req_level = 80
+vltk_skill_id = 336
+icon = ExtResource("vicon_thuy_yen_bingzong_wuying")
+description = "Tuyệt kỹ 80 cấp, thân ảnh hóa băng, phóng nhiều luồng hàn khí kích hoạt đòn tiếp nối."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 2
+vltk_attack_radius = 360
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addskillexp1": [PackedFloat32Array(1, 336, 0, 2, 336, 0), PackedFloat32Array(), PackedFloat32Array(1, 0, 0, 2, 0, 0)],
+"colddamage_v": [PackedFloat32Array(1, 10, 0, 15, 140, 0, 20, 173, 0), PackedFloat32Array(), PackedFloat32Array(1, 50, 0, 15, 200, 0, 20, 276, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 15, 0, 15, 350, 0, 20, 524, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 15, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 15.0
+mana_cost = 40.0
+cooldown = 1.87
+range = 512.0
+element = 2
+damage_growth_per_level = 26.7895
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_72"), SubResource("SubResource_73"), SubResource("SubResource_74"), SubResource("SubResource_75"), SubResource("SubResource_76"), SubResource("SubResource_77"), SubResource("SubResource_78")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_80"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 62.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_81"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 15.0
+value_at_max_level = 115.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_82"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 10.0
+max_at_level_1 = 10.0
+min_at_max_level = 440.0
+max_at_max_level = 440.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_83"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bingxin_yuling"
+skill_name = "Băng Tâm Ngọc Lăng (hệ Thủy)"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_bingxin_yuling")
+description = "Đòn phụ (dữ liệu gốc ghi chú không sử dụng — giữ lại tham khảo, cần rà soát thêm), kích hoạt Băng Tâm Tuyết Liên khi trúng đích."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = false
+category = 1
+req_level = 80
+max_level = 20
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 10, 0, 20, 440, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 440, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 15.0
+mana_cost = 0.0
+cooldown = 1.87
+range = 448.0
+element = 2
+damage_growth_per_level = 5.2632
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_80"), SubResource("SubResource_81"), SubResource("SubResource_82")])
+
+[sub_resource type="Resource" id="SubResource_84"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 62.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_85"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 10.0
+max_at_level_1 = 10.0
+min_at_max_level = 220.0
+max_at_max_level = 220.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_86"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bingxin_xuelian"
+skill_name = "Băng Tâm Tuyết Liên (hệ Thủy)"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_bingxin_xuelian")
+description = "Đòn tiếp nối do Băng Tâm Ngọc Lăng/Băng Tung Vô Ảnh kích hoạt, bồi thêm sát thương Băng."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 1
+vltk_missle_form = 7
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 3
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 10, 0, 20, 220, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 220, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 1.87
+range = 448.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_84"), SubResource("SubResource_85")])
+
+[sub_resource type="Resource" id="SubResource_87"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 62.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_88"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 5.0
+value_at_max_level = 558.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_89"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 15.0
+max_at_level_1 = 15.0
+min_at_max_level = 581.0
+max_at_max_level = 581.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_90"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #1"
+value_at_level_1 = 1.0
+value_at_max_level = 45.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150"
+
+[sub_resource type="Resource" id="SubResource_91"]
+script = ExtResource("3_statline")
+label = "Tăng sát thương kỹ năng liên kết #2"
+value_at_level_1 = 1.0
+value_at_max_level = 45.0
+suffix = "%"
+target_skill_id = "thuy_yen_neicuiyan150_2"
+
+[sub_resource type="Resource" id="SubResource_92"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 45.0
+value_at_max_level = 75.0
+
+[sub_resource type="Resource" id="SubResource_93"]
+script = ExtResource("2_skill")
+id = "thuy_yen_bingxin_xianzi"
+skill_name = "Băng Tâm Tiên Tử (hệ Thủy)"
+horse_limit = 1
+practice_only = true
+target_enemy = true
+max_level = 20
+req_level = 80
+vltk_skill_id = 337
+icon = ExtResource("vicon_thuy_yen_bingxin_xianzi")
+description = "Tuyệt kỹ 80 cấp, đòn bay xuyên phá, kích hoạt Phong Tuyết Băng Thiên khi bay tới đích."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 1
+vltk_attack_radius = 240
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addskillexp1": [PackedFloat32Array(1, 337, 0, 2, 337, 0), PackedFloat32Array(), PackedFloat32Array(1, 0, 0, 2, 0, 0)],
+"colddamage_v": [PackedFloat32Array(1, 15, 0, 15, 240, 0, 20, 581, 0), PackedFloat32Array(), PackedFloat32Array(1, 15, 0, 15, 240, 0, 20, 581, 0)],
+"physicsdamage_v": [PackedFloat32Array(1, 5, 0, 15, 100, 0, 20, 558, 0), PackedFloat32Array(), PackedFloat32Array(1, 5, 0, 15, 100, 0, 20, 558, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 15, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 5.0
+mana_cost = 45.0
+cooldown = 1.87
+range = 512.0
+element = 2
+damage_growth_per_level = 29.1053
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_87"), SubResource("SubResource_88"), SubResource("SubResource_89"), SubResource("SubResource_90"), SubResource("SubResource_91"), SubResource("SubResource_92")])
+
+[sub_resource type="Resource" id="SubResource_94"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 62.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_95"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 45.0
+max_at_level_1 = 45.0
+min_at_max_level = 400.0
+max_at_max_level = 400.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_96"]
+script = ExtResource("2_skill")
+id = "thuy_yen_fengxue_bingtian"
+skill_name = "Phong Tuyết Băng Thiên (hệ Thủy)"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_fengxue_bingtian")
+description = "Đòn tiếp nối do Băng Tâm Tiên Tử kích hoạt khi bay tới đích, băng tuyết ngập trời."
+school_text = "Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+req_level = 80
+max_level = 20
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 3
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 45, 0, 20, 400, 0), PackedFloat32Array(), PackedFloat32Array(1, 45, 0, 20, 400, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 1.87
+range = 448.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_94"), SubResource("SubResource_95")])
+
+[sub_resource type="Resource" id="SubResource_97"]
+script = ExtResource("3_statline")
+label = "Thời gian khôi phục chiêu thức"
+value_at_level_1 = 60.0
+value_at_max_level = 40.0
+suffix = " giây"
+
+[sub_resource type="Resource" id="SubResource_98"]
+script = ExtResource("3_statline")
+label = "Thời gian ẩn thân"
+value_at_level_1 = 5.0
+value_at_max_level = 30.0
+suffix = " giây"
+
+[sub_resource type="Resource" id="SubResource_99"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 35.0
+value_at_max_level = 80.0
+
+[sub_resource type="Resource" id="SubResource_100"]
+script = ExtResource("2_skill")
+id = "thuy_yen_cuiyan120"
+skill_name = "Ngự Tuyết Ẩn"
+horse_limit = 1
+practice_only = true
+target_self = true
+max_level = 20
+req_level = 120
+vltk_skill_id = 713
+icon = ExtResource("vicon_thuy_yen_cuiyan120")
+description = "Tuyệt kỹ 120 cấp, hóa thân vào sương tuyết, ẩn thân tránh mọi truy đuổi."
+school_text = "Khinh công trấn phái (Nội công)"
+is_active = true
+category = 0
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"hide": [PackedFloat32Array(1, 1, 0, 20, 1, 0), PackedFloat32Array(1, 90, 0, 15, 450, 0, 20, 540, 0, 21, 540, 0), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 35.0
+cooldown = 60.0
+range = 0.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_97"), SubResource("SubResource_98"), SubResource("SubResource_99")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_101"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 90.0
+value_at_max_level = 1440.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_102"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_103"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 60.0
+max_at_level_1 = 300.0
+min_at_max_level = 1410.0
+max_at_max_level = 2474.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_104"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 48.0
+value_at_max_level = 72.0
+
+[sub_resource type="Resource" id="SubResource_105"]
+script = ExtResource("2_skill")
+id = "thuy_yen_daocuiyan150"
+skill_name = "Băng Tước Hoạt Kỳ (hệ Thủy)"
+horse_limit = 1
+weapon_limit = 1
+practice_only = true
+target_enemy = true
+max_level = 20
+req_level = 150
+vltk_skill_id = 1063
+icon = ExtResource("vicon_thuy_yen_daocuiyan150")
+description = "Đại thừa tuyệt kỹ 150 cấp, hàn khí ngưng thành lưỡi kiếm băng, kích hoạt Băng Ngưng Hàn Yên khi trúng đích."
+school_text = "Đại Thừa Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 1
+vltk_attack_radius = 360
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 60, 0, 15, 850, 0, 20, 1050, 0, 23, 1290, 0, 26, 1410, 0), PackedFloat32Array(), PackedFloat32Array(1, 300, 0, 15, 1200, 0, 20, 1655, 0, 23, 2201, 0, 26, 2474, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 90, 0, 15, 600, 0, 20, 900, 0, 23, 1260, 0, 26, 1440, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 90.0
+mana_cost = 48.0
+cooldown = 2.2
+range = 512.0
+element = 2
+damage_growth_per_level = 54.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_101"), SubResource("SubResource_102"), SubResource("SubResource_103"), SubResource("SubResource_104")])
+is_hotbar = true
+
+[sub_resource type="Resource" id="SubResource_106"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 18.0
+value_at_max_level = 274.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_107"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_108"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 12.0
+max_at_level_1 = 60.0
+min_at_max_level = 285.0
+max_at_max_level = 494.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_109"]
+script = ExtResource("3_statline")
+label = "Số đạn bắn ra"
+value_at_level_1 = 1.0
+value_at_max_level = 5.0
+
+[sub_resource type="Resource" id="SubResource_110"]
+script = ExtResource("2_skill")
+id = "thuy_yen_daocuiyan150_2"
+skill_name = "Băng Ngưng Hàn Yên (hệ Thủy)"
+practice_only = true
+target_enemy = true
+max_level = 20
+req_level = 150
+vltk_skill_id = 1064
+icon = ExtResource("vicon_thuy_yen_daocuiyan150_2")
+description = "Đòn tiếp nối tầng 2 của Băng Tước Hoạt Kỳ, phân tán thành nhiều luồng hàn khí."
+school_text = "Đại Thừa Đao/Kiếm (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 2
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 12, 0, 15, 168, 0, 20, 210, 0, 23, 260, 0, 26, 285, 0), PackedFloat32Array(), PackedFloat32Array(1, 60, 0, 15, 240, 0, 20, 331, 0, 23, 440, 0, 26, 494, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 18, 0, 15, 120, 0, 20, 175, 0, 23, 241, 0, 26, 274, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 18.0
+mana_cost = 0.0
+cooldown = 2.2
+range = 512.0
+element = 2
+damage_growth_per_level = 10.24
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_106"), SubResource("SubResource_107"), SubResource("SubResource_108"), SubResource("SubResource_109")])
+
+[sub_resource type="Resource" id="SubResource_111"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_112"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 6.0
+value_at_max_level = 988.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_113"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 18.0
+max_at_level_1 = 18.0
+min_at_max_level = 1438.0
+max_at_max_level = 1438.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_114"]
+script = ExtResource("3_statline")
+label = "Tiêu hao nội lực"
+value_at_level_1 = 55.0
+value_at_max_level = 90.0
+
+[sub_resource type="Resource" id="SubResource_115"]
+script = ExtResource("2_skill")
+id = "thuy_yen_neicuiyan150"
+skill_name = "Thủy Anh Man Tú (hệ Thủy)"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_neicuiyan150")
+description = "Đại thừa tuyệt kỹ 150 cấp nội công, hàn khí thấm sâu vào nội tạng, kích hoạt Khinh Sa Phù Thủy khi bay."
+school_text = "Đại Thừa Nội công"
+is_active = true
+category = 0
+req_level = 150
+max_level = 26
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 1
+vltk_attack_radius = 240
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 18, 0, 15, 290, 0, 20, 700, 0, 23, 1192, 0, 26, 1438, 0), PackedFloat32Array(), PackedFloat32Array(1, 18, 0, 15, 290, 0, 20, 700, 0, 23, 1192, 0, 26, 1438, 0)],
+"physicsdamage_v": [PackedFloat32Array(1, 6, 0, 15, 120, 0, 20, 430, 0, 23, 802, 0, 26, 988, 0), PackedFloat32Array(), PackedFloat32Array(1, 6, 0, 15, 120, 0, 20, 430, 0, 23, 802, 0, 26, 988, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 6.0
+mana_cost = 55.0
+cooldown = 2.2
+range = 512.0
+element = 2
+damage_growth_per_level = 39.28
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_111"), SubResource("SubResource_112"), SubResource("SubResource_113"), SubResource("SubResource_114")])
+
+[sub_resource type="Resource" id="SubResource_116"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_117"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+is_range = true
+min_at_level_1 = 55.0
+max_at_level_1 = 55.0
+min_at_max_level = 1035.0
+max_at_max_level = 1035.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_118"]
+script = ExtResource("2_skill")
+id = "thuy_yen_neicuiyan150_2"
+skill_name = "Khinh Sa Phù Thủy (hệ Thủy)"
+is_hidden = true
+icon = ExtResource("vicon_thuy_yen_neicuiyan150_2")
+description = "Đòn tiếp nối của Thủy Anh Man Tú, kích hoạt khi bay tới đích, nhẹ như cát trôi trên nước."
+school_text = "Đại Thừa Nội công"
+is_active = true
+category = 0
+req_level = 150
+max_level = 26
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 400
+vltk_state_special_id = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 55, 0, 20, 720, 0, 23, 930, 0, 26, 1035, 0), PackedFloat32Array(), PackedFloat32Array(1, 55, 0, 20, 720, 0, 23, 930, 0, 26, 1035, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 2.2
+range = 512.0
+element = 2
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_116"), SubResource("SubResource_117")])
+
+[resource]
+script = ExtResource("1_sect")
+id = "thuy_yen_mon"
+sect_name = "Thúy Yên Môn"
+element = 2
+alignment = 2
+description = "Môn phái ẩn dật bên sông nước, luyện hàn khí Băng, khinh công tuyệt đỉnh, chiêu thức uyển chuyển kết hợp đòn thế liên hoàn."
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_8"), SubResource("SubResource_26"), SubResource("SubResource_11"), SubResource("SubResource_13"), SubResource("SubResource_29"), SubResource("SubResource_36"), SubResource("SubResource_58"), SubResource("SubResource_17"), SubResource("SubResource_41"), SubResource("SubResource_50"), SubResource("SubResource_64"), SubResource("SubResource_71"), SubResource("SubResource_79"), SubResource("SubResource_93"), SubResource("SubResource_100"), SubResource("SubResource_105"), SubResource("SubResource_110"), SubResource("SubResource_42"), SubResource("SubResource_83"), SubResource("SubResource_86"), SubResource("SubResource_96"), SubResource("SubResource_115"), SubResource("SubResource_118")])

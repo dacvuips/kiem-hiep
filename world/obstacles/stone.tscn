@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cbprw4ovveyw1"]
+
+[ext_resource type="Texture2D" uid="uid://de6ttnqycfgs3" path="res://world/obstacles/stone.png" id="1_76l0o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3ns5p"]
+size = Vector2(63, 64)
+
+[node name="Obstacle" type="StaticBody2D" unique_id=850871264]
+collision_layer = 32
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=470781132]
+scale = Vector2(0.76, 0.76)
+texture = ExtResource("1_76l0o")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=774239525]
+y_sort_enabled = true
+texture_filter = 1
+position = Vector2(0.5, 1)
+shape = SubResource("RectangleShape2D_3ns5p")

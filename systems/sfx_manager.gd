@@ -1,0 +1,107 @@
+extends Node
+## Phát âm thanh hiệu ứng (SFX) có vị trí trong thế giới 2D — đối xứng với VfxManager nhưng cho
+## tai thay vì mắt. Mọi nơi muốn phát tiếng (cast skill, trúng đòn...) gọi qua đây, không tự
+## tạo AudioStreamPlayer riêng.
+##
+## Hiệu năng: dùng 1 pool CỐ ĐỊNH VOICE_COUNT AudioStreamPlayer2D tạo sẵn lúc khởi động (không
+## new/free node mỗi lần phát). Khi hết voice rảnh thì "cướp" voice cũ nhất thay vì tạo thêm.
+## Chống spam: cùng 1 stream không phát lại trong MIN_REPEAT_INTERVAL giây và không vang quá
+## MAX_INSTANCES_PER_STREAM bản cùng lúc — VD Ảo Kiếm 6 lưỡi trúng cùng frame chỉ ra 1 tiếng
+## thay vì 6 tiếng chồng nhau gây rè/to bất thường.
+##
+## Online: SFX thuần là trình bày phía client (giống VFX), không ảnh hưởng logic/đồng bộ —
+## skill của player khác vẫn phát qua đây với vị trí của họ, tự nhỏ dần theo khoảng cách.
+
+const VOICE_COUNT := 24
+const MAX_DISTANCE := 1400.0
+const MIN_REPEAT_INTERVAL_MS := 45
+const MAX_INSTANCES_PER_STREAM := 3
+## Lệch cao độ ngẫu nhiên ±8% mỗi lần phát — tránh cảm giác "lặp máy móc" khi 1 skill bắn liên tục.
+const DEFAULT_PITCH_JITTER := 0.08
+const BUS_NAME := &"SFX"
+
+## Âm mặc định theo hệ nguyên tố — skill nào không gán cast_sfx/hit_sfx riêng sẽ dùng âm của
+## hệ cuối cùng (sau khi Element Gem đổi hệ). Thay âm cả 1 hệ chỉ cần ghi đè file cùng tên.
+const SKILL_SFX_DIR := "res://audio/sfx/skill/"
+const ELEMENT_FILE_PREFIX := {
+	ElementTypes.ElementType.KIM: "kim",
+	ElementTypes.ElementType.MOC: "moc",
+	ElementTypes.ElementType.THUY: "thuy",
+	ElementTypes.ElementType.HOA: "hoa",
+	ElementTypes.ElementType.THO: "tho",
+}
+
+var _voices: Array[AudioStreamPlayer2D] = []
+var _next_voice: int = 0
+var _last_played_ms: Dictionary = {}  ## AudioStream instance_id -> Time.get_ticks_msec()
+var _element_cast: Dictionary = {}  ## ElementTypes.ElementType -> AudioStream
+var _element_hit: Dictionary = {}
+
+func _ready() -> void:
+	var bus := BUS_NAME if AudioServer.get_bus_index(BUS_NAME) != -1 else &"Master"
+	for i in VOICE_COUNT:
+		var voice := AudioStreamPlayer2D.new()
+		voice.bus = bus
+		voice.max_distance = MAX_DISTANCE
+		add_child(voice)
+		_voices.append(voice)
+
+	for element in ELEMENT_FILE_PREFIX:
+		var prefix: String = ELEMENT_FILE_PREFIX[element]
+		_element_cast[element] = _try_load(SKILL_SFX_DIR + prefix + "_cast.wav")
+		_element_hit[element] = _try_load(SKILL_SFX_DIR + prefix + "_hit.wav")
+
+## Thiếu file thì im lặng (trả null) thay vì crash — cho phép xoá/đổi tên âm thanh lúc làm game.
+func _try_load(path: String) -> AudioStream:
+	if not ResourceLoader.exists(path):
+		push_warning("SfxManager: không tìm thấy '%s'." % path)
+		return null
+	return load(path)
+
+func play(stream: AudioStream, world_position: Vector2, volume_db: float = 0.0, pitch_jitter: float = DEFAULT_PITCH_JITTER) -> void:
+	if stream == null:
+		return
+	var now := Time.get_ticks_msec()
+	var key := stream.get_instance_id()
+	if now - int(_last_played_ms.get(key, -MIN_REPEAT_INTERVAL_MS)) < MIN_REPEAT_INTERVAL_MS:
+		return
+	if _count_playing(stream) >= MAX_INSTANCES_PER_STREAM:
+		return
+	_last_played_ms[key] = now
+
+	var voice := _pick_voice()
+	voice.stream = stream
+	voice.global_position = world_position
+	voice.volume_db = volume_db
+	voice.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
+	voice.play()
+
+func play_skill_cast(stats: ResolvedSkillStats, world_position: Vector2) -> void:
+	var stream: AudioStream = stats.cast_sfx if stats.cast_sfx else _element_cast.get(stats.element)
+	play(stream, world_position, stats.sfx_volume_db)
+
+func play_skill_hit(stats: ResolvedSkillStats, world_position: Vector2) -> void:
+	var stream: AudioStream = stats.hit_sfx if stats.hit_sfx else _element_hit.get(stats.element)
+	play(stream, world_position, stats.sfx_volume_db)
+
+## Cho các hiệu ứng phụ không gắn với 1 skill cụ thể (VD tia sét aura của Skill Director).
+func play_element_hit(element: ElementTypes.ElementType, world_position: Vector2, volume_db: float = 0.0) -> void:
+	play(_element_hit.get(element), world_position, volume_db)
+
+func _count_playing(stream: AudioStream) -> int:
+	var count := 0
+	for voice in _voices:
+		if voice.playing and voice.stream == stream:
+			count += 1
+	return count
+
+## Ưu tiên voice đang rảnh; hết rảnh thì dùng lại voice kế tiếp theo vòng tròn (cũ nhất).
+func _pick_voice() -> AudioStreamPlayer2D:
+	for i in VOICE_COUNT:
+		var index := (_next_voice + i) % VOICE_COUNT
+		if not _voices[index].playing:
+			_next_voice = (index + 1) % VOICE_COUNT
+			return _voices[index]
+	var stolen := _voices[_next_voice]
+	_next_voice = (_next_voice + 1) % VOICE_COUNT
+	return stolen

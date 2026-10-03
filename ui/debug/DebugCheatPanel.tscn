@@ -1,0 +1,163 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://ui/debug/debug_cheat_panel.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_toggle"]
+bg_color = Color(0.6, 0.12, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.85)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_box"]
+bg_color = Color(0.05, 0.05, 0.07, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.3, 0.25, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[node name="DebugCheatPanel" type="VBoxContainer"]
+offset_right = 220.0
+offset_bottom = 40.0
+theme_override_constants/separation = 6
+script = ExtResource("1_script")
+
+[node name="ToggleButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 34)
+layout_mode = 2
+size_flags_horizontal = 0
+focus_mode = 0
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBox_toggle")
+theme_override_styles/hover = SubResource("StyleBox_toggle")
+theme_override_styles/pressed = SubResource("StyleBox_toggle")
+toggle_mode = true
+text = "TEST"
+
+[node name="CheatBox" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_box")
+
+[node name="Rows" type="VBoxContainer" parent="CheatBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LevelLabel" type="Label" parent="CheatBox/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cấp: 1"
+
+[node name="LevelRow" type="HBoxContainer" parent="CheatBox/Rows"]
+layout_mode = 2
+
+[node name="LevelUp1" type="Button" parent="CheatBox/Rows/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+1 cấp"
+
+[node name="LevelUp10" type="Button" parent="CheatBox/Rows/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+10 cấp"
+
+[node name="LevelReset" type="Button" parent="CheatBox/Rows/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "Về cấp 1"
+
+[node name="SkillPointsLabel" type="Label" parent="CheatBox/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Điểm kỹ năng: 0"
+
+[node name="SkillPointRow" type="HBoxContainer" parent="CheatBox/Rows"]
+layout_mode = 2
+
+[node name="SkillPoint1" type="Button" parent="CheatBox/Rows/SkillPointRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+1"
+
+[node name="SkillPoint10" type="Button" parent="CheatBox/Rows/SkillPointRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+10"
+
+[node name="ItemRow" type="HBoxContainer" parent="CheatBox/Rows"]
+layout_mode = 2
+
+[node name="RandomItem1" type="Button" parent="CheatBox/Rows/ItemRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+1 đồ"
+
+[node name="RandomItem10" type="Button" parent="CheatBox/Rows/ItemRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "+10 đồ"
+
+[node name="ResetButton" type="Button" parent="CheatBox/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.45, 0.4, 1)
+text = "Tẩy điểm (kỹ năng + tiềm năng)"
+
+[node name="ResultLabel" type="Label" parent="CheatBox/Rows"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+
+[node name="LevelResetConfirm" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Về cấp 1"
+ok_button_text = "Về cấp 1"
+cancel_button_text = "Huỷ"
+dialog_text = "Đưa nhân vật về cấp 1 như mới tạo?
+(Mất toàn bộ cấp, EXP, điểm tiềm năng, điểm kỹ năng và skill đã học.
+Giữ tên, môn phái, tiền tệ và tiến độ ải.)"
+
+[node name="ResetConfirm" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Tẩy điểm"
+ok_button_text = "Tẩy"
+cancel_button_text = "Huỷ"
+dialog_text = "Hoàn lại toàn bộ điểm tiềm năng đã cộng và điểm kỹ năng đã học?
+(Giữ nguyên cấp. Thanh skill sẽ về trống.)"

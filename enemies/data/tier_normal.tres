@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTierData" format=3 uid="uid://c7rpgxartkhe4"]
+
+[ext_resource type="Script" uid="uid://dkgscgyg7l28e" path="res://enemies/enemy_tier_data.gd" id="1_x6yo0"]
+[ext_resource type="PackedScene" uid="uid://dvxbf0isvuopc" path="res://enemies/Enemy.tscn" id="1_x52m0"]
+[ext_resource type="Script" uid="uid://cuadd783f0q8h" path="res://gems/pickup_data.gd" id="2_58c2g"]
+[ext_resource type="Resource" uid="uid://dh5078gdtvmvf" path="res://gems/pickup_heal.tres" id="3_jdtlq"]
+[ext_resource type="Resource" uid="uid://bvw0sc0ypw1wc" path="res://gems/pickup_magnet.tres" id="4_vkqb5"]
+
+[resource]
+script = ExtResource("1_x6yo0")
+tier_name = "Quái Thường"
+enemy_scene = ExtResource("1_x52m0")
+vitality = 37
+possible_drops = Array[ExtResource("2_58c2g")]([ExtResource("3_jdtlq"), ExtResource("4_vkqb5")])

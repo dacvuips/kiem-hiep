@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PickupData" format=3 uid="uid://dh5078gdtvmvf"]
+
+[ext_resource type="Script" uid="uid://cuadd783f0q8h" path="res://gems/pickup_data.gd" id="1_kparn"]
+[ext_resource type="Texture2D" uid="uid://ca6eygf5jqjf0" path="res://gems/heart.png" id="2_cmi1r"]
+
+[resource]
+script = ExtResource("1_kparn")
+drop_chance = 0.002
+texture = ExtResource("2_cmi1r")
+heal_amount = 30.0

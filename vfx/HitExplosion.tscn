@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://co84j22eoagha"]
+
+[ext_resource type="Texture2D" uid="uid://bu0dgrspfc0pa" path="res://vfx/hit_explosion.png" id="1_nkt3d"]
+[ext_resource type="Script" uid="uid://c8fwh6fruie2o" path="res://vfx/hit_explosion.gd" id="2_hitexplosion"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xhvhe"]
+atlas = ExtResource("1_nkt3d")
+region = Rect2(0, 0, 241, 241)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wdexx"]
+atlas = ExtResource("1_nkt3d")
+region = Rect2(214, 0, 214, 241)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3ns5p"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xhvhe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdexx")
+}],
+"loop": 0,
+"name": &"explode",
+"speed": 10.0
+}]
+
+[node name="HitExplosion" type="Node2D" unique_id=1166145376]
+script = ExtResource("2_hitexplosion")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1546189971]
+scale = Vector2(0.22429904, 0.224299)
+sprite_frames = SubResource("SpriteFrames_3ns5p")
+animation = &"explode"
+frame = 1
+frame_progress = 1.0

@@ -1,0 +1,468 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/items/inventory_popup.gd" id="1_inv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_frame"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.075, 0.05, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.55, 0.25, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_title"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.3, 0.2, 0.09, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.83, 0.68, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_grid"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.04, 0.035, 0.03, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.32, 0.17, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab"]
+bg_color = Color(0.17, 0.14, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.28, 0.16, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab_hover"]
+bg_color = Color(0.25, 0.2, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.6, 0.48, 0.25, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab_selected"]
+bg_color = Color(0.58, 0.45, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.82, 0.45, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab_locked"]
+bg_color = Color(0.11, 0.1, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.17, 0.12, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_money"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.05, 0.045, 0.04, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.32, 0.17, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_action"]
+bg_color = Color(0.45, 0.33, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.7, 0.35, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_action_hover"]
+bg_color = Color(0.58, 0.43, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.86, 0.5, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_action_pressed"]
+bg_color = Color(0.33, 0.24, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.7, 0.35, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxEmpty" id="StyleBox_empty"]
+
+[node name="InventoryPopup" type="CanvasLayer"]
+layer = 55
+script = ExtResource("1_inv")
+
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Frame" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+offset_right = 500.0
+offset_bottom = 560.0
+theme_override_styles/panel = SubResource("StyleBox_frame")
+
+[node name="Root" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleBar" type="PanelContainer" parent="Frame/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 13
+theme_override_styles/panel = SubResource("StyleBox_title")
+
+[node name="TitleRow" type="HBoxContainer" parent="Frame/Root/TitleBar"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Pad" type="Control" parent="Frame/Root/TitleBar/TitleRow"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Frame/Root/TitleBar/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.1, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 22
+text = "Hành trang"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Frame/Root/TitleBar/TitleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+focus_mode = 0
+text = "X"
+
+[node name="Body" type="HBoxContainer" parent="Frame/Root"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GridFrame" type="PanelContainer" parent="Frame/Root/Body"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_grid")
+
+[node name="Grid" type="GridContainer" parent="Frame/Root/Body/GridFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 6
+
+[node name="Side" type="VBoxContainer" parent="Frame/Root/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BagTabs" type="VBoxContainer" parent="Frame/Root/Body/Side"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Bag0" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 1"
+
+[node name="Bag1" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 2"
+
+[node name="Bag2" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 3"
+
+[node name="Bag3" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 4"
+
+[node name="Bag4" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 5"
+
+[node name="Bag5" type="Button" parent="Frame/Root/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.75, 0.68, 0.55, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.96, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.37, 0.32, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/hover_pressed = SubResource("StyleBox_tab_selected")
+theme_override_styles/disabled = SubResource("StyleBox_tab_locked")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+toggle_mode = true
+text = "Túi 6"
+
+[node name="Spacer" type="Control" parent="Frame/Root/Body/Side"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="TestRow" type="VBoxContainer" parent="Frame/Root/Body/Side"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TestAddButton" type="Button" parent="Frame/Root/Body/Side/TestRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 11
+text = "+10 đồ (TEST)"
+
+[node name="TestCreateButton" type="Button" parent="Frame/Root/Body/Side/TestRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 11
+text = "Tạo đồ (TEST)"
+
+[node name="Bottom" type="HBoxContainer" parent="Frame/Root"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Money" type="VBoxContainer" parent="Frame/Root/Bottom"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GoldRow" type="PanelContainer" parent="Frame/Root/Bottom/Money"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_money")
+
+[node name="GoldLine" type="HBoxContainer" parent="Frame/Root/Bottom/Money/GoldRow"]
+layout_mode = 2
+
+[node name="GoldName" type="Label" parent="Frame/Root/Bottom/Money/GoldRow/GoldLine"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "Ngân lượng"
+
+[node name="GoldValue" type="Label" parent="Frame/Root/Bottom/Money/GoldRow/GoldLine"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 lượng"
+horizontal_alignment = 1
+
+[node name="JadeRow" type="PanelContainer" parent="Frame/Root/Bottom/Money"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_money")
+
+[node name="JadeLine" type="HBoxContainer" parent="Frame/Root/Bottom/Money/JadeRow"]
+layout_mode = 2
+
+[node name="JadeName" type="Label" parent="Frame/Root/Bottom/Money/JadeRow/JadeLine"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.9, 0.65, 1)
+theme_override_font_sizes/font_size = 13
+text = "Ngọc"
+
+[node name="JadeValue" type="Label" parent="Frame/Root/Bottom/Money/JadeRow/JadeLine"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1
+
+[node name="Actions" type="VBoxContainer" parent="Frame/Root/Bottom"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SortButton" type="Button" parent="Frame/Root/Bottom/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 32)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_action")
+theme_override_styles/hover = SubResource("StyleBox_action_hover")
+theme_override_styles/pressed = SubResource("StyleBox_action_pressed")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+text = "Sắp xếp"
+
+[node name="SellButton" type="Button" parent="Frame/Root/Bottom/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 32)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_action")
+theme_override_styles/hover = SubResource("StyleBox_action_hover")
+theme_override_styles/pressed = SubResource("StyleBox_action_pressed")
+theme_override_styles/focus = SubResource("StyleBox_empty")
+text = "Bày bán"
+
+[node name="Message" type="Label" parent="Frame/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+autowrap_mode = 3

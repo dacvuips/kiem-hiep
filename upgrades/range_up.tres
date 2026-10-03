@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3 uid="uid://sj85xvlamet"]
+
+[ext_resource type="Script" uid="uid://dsjmh75qmtjkx" path="res://upgrades/upgrade_data.gd" id="1_0q2dc"]
+[ext_resource type="Texture2D" uid="uid://d13kb8y6lcdhu" path="res://upgrades/icon/range.png" id="1_yqvn4"]
+
+[resource]
+script = ExtResource("1_0q2dc")
+id = "range_up"
+title = "Phạm vi"
+description = "Tăng phạm vi +40%"
+icon = ExtResource("1_yqvn4")
+stat_type = 3
+value = 0.4
+metadata/_custom_type_script = "uid://dsjmh75qmtjkx"
