@@ -23,7 +23,7 @@ const MIN_CAP := 300.0
 static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0) -> Dictionary:
 	var merged := client_data.duplicate(true)
 	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender", "lead_level", "lead_exp", "server_seen",
-			"guild", "guild_join_after", "camp", "security_hash", "security_locked"]:
+			"guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value"]:
 		if server_data.has(k):
 			merged[k] = server_data[k]
 	var fresh := PlayerProfile.from_dict(merged)

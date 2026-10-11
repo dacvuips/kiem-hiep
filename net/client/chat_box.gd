@@ -65,6 +65,15 @@ func _init() -> void:
 	NetClient.chat_received.connect(_on_chat)
 	NetClient.server_notice.connect(func(text: String) -> void: add_line("[color=#b8b0a0]%s[/color]" % _esc(text)))
 
+## "Tán gẫu" từ menu người chơi: chuyển sang kênh Riêng, điền tên người nhận, đưa con trỏ vào ô nhập.
+func open_whisper(to_name: String) -> void:
+	_body.visible = true
+	_toggle.text = "Chat ▾"
+	_channel.select(ChatServer.PRIVATE)
+	_to.visible = true
+	_to.text = to_name
+	_input.grab_focus()
+
 func _on_toggle() -> void:
 	_body.visible = not _body.visible
 	_toggle.text = "Chat ▾" if _body.visible else "Chat ▸"
@@ -83,6 +92,10 @@ func _send() -> void:
 	_input.release_focus()   ## gửi xong trả phím về cho nhân vật
 
 func _on_chat(channel: int, _from_eid: int, from_name: String, to_name: String, text: String) -> void:
+	## Sổ đen: bỏ tin nhắn (kênh lẫn nhắn riêng) của người bị chặn — như gốc, chỉ lọc ở máy mình.
+	var p := GameManager.local_profile
+	if p and p.blacklist.has(from_name) and from_name != p.display_name:
+		return
 	var color: Color = COLORS[clampi(channel, 0, COLORS.size() - 1)]
 	var who := _esc(from_name)
 	if channel == ChatServer.PRIVATE:

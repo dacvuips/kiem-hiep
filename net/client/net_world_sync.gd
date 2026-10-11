@@ -55,6 +55,14 @@ func _ready() -> void:
 	NetClient.guild_received.connect(_on_guild)
 	NetClient.guild_list.connect(func(list: Array) -> void: guild_list = list)
 	NetClient.guild_invite.connect(_on_guild_invite)
+	NetClient.friend_invite.connect(_on_friend_invite)
+	NetClient.enmity_state.connect(_on_enmity)
+	NetClient.pvp_hit.connect(func(attacker_eid: int, hit: Dictionary) -> void:
+		if player and is_instance_valid(player):
+			PvpHit.apply(player, hit, remote_of(attacker_eid)))
+	NetClient.view_equip.connect(func(snap: Dictionary) -> void:
+		if not snap.is_empty():
+			ViewEquipWindow.open_snapshot(get_tree().current_scene, snap))
 	current = self
 	_add_chat_box()
 	_connect()
@@ -212,6 +220,45 @@ func _on_guild(data: Dictionary) -> void:
 	if hub:
 		hub.guild.apply_net_guild(data)
 
+## Cừu sát hiện tại của mình: {state, eid, name, launcher} (state = RelationServer.ENMITY_*).
+var enmity: Dictionary = {}
+
+func _on_enmity(state: int, other_eid: int, other_name: String, launcher: bool) -> void:
+	var old := int(enmity.get("eid", 0))
+	enmity = {"state": state, "eid": other_eid, "name": other_name, "launcher": launcher} if state != RelationServer.ENMITY_NONE else {}
+	if old != 0 and old != other_eid and remote_of(old) != null:
+		remote_of(old).set_pk_enemy(false)
+	_apply_enmity(other_eid)
+
+## Đối thủ cừu sát (đang trong giai đoạn đánh) thành "địch": vào nhóm enemies để chiêu của mình đánh trúng, tên đổi màu.
+func _apply_enmity(eid: int) -> void:
+	var r: RemotePlayer = remote_of(eid)
+	if r == null or not is_instance_valid(r):
+		return
+	r.set_pk_enemy(int(enmity.get("eid", 0)) == eid and int(enmity.get("state", 0)) == RelationServer.ENMITY_FIGHT)
+
+func _on_friend_invite(from_eid: int, from_name: String) -> void:
+	var p := GameManager.local_profile
+	if p and p.blacklist.has(from_name):
+		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 0)   ## sổ đen: tự từ chối
+		return
+	_ask("Hảo hữu", "%s xin phép gia nhập bằng hữu." % from_name, func(ok: bool) -> void:
+		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 1 if ok else 0))
+
+## Chuỗi các bước của menu người chơi cần tới node người chơi khác (theo eid).
+## Đọc kiểu Variant trước: gán thẳng node đã free vào biến có kiểu sẽ báo lỗi "previously freed instance".
+func remote_of(eid: int) -> RemotePlayer:
+	var v: Variant = _remotes.get(eid)
+	return v as RemotePlayer if is_instance_valid(v) else null
+
+func _monster_of(eid: int) -> VltkMonster:
+	var v: Variant = _monsters.get(eid)
+	return v as VltkMonster if is_instance_valid(v) else null
+
+## Khung chat (chỉ có khi online).
+func chat_box() -> ChatBox:
+	return get_parent().get_node_or_null("UI/ChatBox") as ChatBox
+
 func _on_guild_invite(guild_name: String, from_name: String) -> void:
 	_ask("Bang hội", "%s mời bạn vào bang %s." % [from_name, guild_name], func(ok: bool) -> void:
 		NetClient.send_guild(GuildServer.G_ANSWER, {"guild": guild_name, "accept": ok}))
@@ -288,16 +335,17 @@ func _on_spawn(info: Dictionary) -> void:
 	if int(info.kind) == NetProto.KIND_MONSTER:
 		_spawn_monster(info)
 		return
-	if int(info.kind) != NetProto.KIND_PLAYER or _remotes.has(int(info.eid)):
+	if int(info.kind) != NetProto.KIND_PLAYER or remote_of(int(info.eid)) != null:
 		return
 	var r := RemotePlayer.new()
 	_parent().add_child(r)
 	r.setup(info)
 	_remotes[r.eid] = r
+	_apply_enmity(r.eid)
 
 func _spawn_monster(info: Dictionary) -> void:
 	var eid := int(info.eid)
-	if _monsters.has(eid) and is_instance_valid(_monsters[eid]):
+	if _monster_of(eid) != null:
 		return
 	var data := MonsterData.monster(int(info.monster_id))
 	if data.is_empty():
@@ -316,18 +364,18 @@ func _spawn_monster(info: Dictionary) -> void:
 	_monsters[eid] = m
 
 func _on_monster_attack(m_eid: int, slot: int, target_eid: int, dir64: int) -> void:
-	var m: VltkMonster = _monsters.get(m_eid)
+	var m: VltkMonster = _monster_of(m_eid)
 	if m == null or not is_instance_valid(m):
 		return
 	var mine := target_eid == NetClient.my_eid
-	var target_node: Node2D = player if mine else _remotes.get(target_eid)
+	var target_node: Node2D = player if mine else remote_of(target_eid)
 	if target_node == null:
 		return
 	m.net_attack(slot, target_node, dir64, mine)
 
 ## Người khác ra chiêu: vẽ lại trên nhân vật của họ (không sát thương — máy họ tính đòn thật).
 func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
-	var r: RemotePlayer = _remotes.get(caster_eid)
+	var r: RemotePlayer = remote_of(caster_eid)
 	if r == null or not is_instance_valid(r):
 		return
 	var target_node: Node2D = null
@@ -335,46 +383,38 @@ func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int
 		if target_eid == NetClient.my_eid:
 			target_node = player
 		elif _remotes.has(target_eid):
-			target_node = _remotes[target_eid]
+			target_node = remote_of(target_eid)
 		elif _monsters.has(target_eid):
-			target_node = _monsters[target_eid]
-		if target_node != null and not is_instance_valid(target_node):
-			target_node = null
+			target_node = _monster_of(target_eid)
 	VltkSkillRunner.replay(r, skill_id, level, target_node, VltkMath.to_logic(aim))
 
 func _on_monster_killed(k: Dictionary) -> void:
-	var m: VltkMonster = _monsters.get(int(k.eid))
+	var m: VltkMonster = _monster_of(int(k.eid))
 	if m == null or not is_instance_valid(m):
 		return
 	m.grant_rewards(bool(k.last_hit))
 
 func _on_despawn(eid: int) -> void:
-	var m: VltkMonster = _monsters.get(eid)
-	if m != null:
-		_monsters.erase(eid)
-		if is_instance_valid(m):
-			if player and player.get_selected_target() == m:
-				player.clear_target()
-			m.queue_free()
+	var node: Node = _monster_of(eid) if _monsters.has(eid) else remote_of(eid)
+	_monsters.erase(eid)
+	_remotes.erase(eid)
+	if node == null:
 		return
-	var r: RemotePlayer = _remotes.get(eid)
-	if r:
-		_remotes.erase(eid)
-		if player and player.get_selected_target() == r:
-			player.clear_target()
-		r.queue_free()
+	if player and player.get_selected_target() == node:
+		player.clear_target()
+	node.queue_free()
 
 func _on_state(eid: int, server_ms: int, st: Dictionary) -> void:
-	var r: RemotePlayer = _remotes.get(eid)
+	var r: RemotePlayer = remote_of(eid)
 	if r:
 		r.push_state(server_ms, st)
 		return
-	var m: VltkMonster = _monsters.get(eid)
+	var m: VltkMonster = _monster_of(eid)
 	if m and is_instance_valid(m):
 		m.net_push_state(float(server_ms), st)
 
 func _on_look(eid: int, look: Dictionary) -> void:
-	var r: RemotePlayer = _remotes.get(eid)
+	var r: RemotePlayer = remote_of(eid)
 	if r:
 		r.set_look(look)
 

@@ -235,6 +235,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			var picked := pick_target_at(get_global_mouse_position())
 			if picked != null:
 				set_target(picked)
+				## Bấm vào người chơi khác: hiện menu (Tán gẫu / Hảo hữu / Tổ đội / Theo sau / Tin tức / Cừu sát / Sổ đen).
+				if picked is RemotePlayer:
+					PlayerMenu.open(self, picked as RemotePlayer, get_viewport().get_mouse_position())
 				get_viewport().set_input_as_handled()
 				return
 			## Bấm 1 lần = TỰ TÌM ĐƯỜNG vòng vật cản (có map chính); giữ chuột quá HOLD_FOLLOW_TIME thì bám theo con trỏ.
@@ -992,6 +995,13 @@ func toggle_follow() -> void:
 		return
 	follow_target = best
 	_notice("Đi theo %s" % best.name)
+
+## "Theo sau" từ menu người chơi: đi theo đúng người này.
+func start_follow(node: Node2D) -> void:
+	if node == null or node == self:
+		return
+	follow_target = node
+	_notice("Đi theo %s" % (node.display_name if "display_name" in node else node.name))
 
 func stop_follow() -> void:
 	follow_target = null

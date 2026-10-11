@@ -229,6 +229,14 @@ func on_team(c, b: StreamPeerBuffer) -> void:
 				_leave_team(c, "%s đã rời tổ đội." % c.entity.name)
 		TEAM_INVITE:
 			var target = gs.conn_of_eid(arg)
+			## Chưa có đội thì lập đội trước rồi mời (TeamInviteAdd gốc: TEAM_OI_CREATE rồi TEAM_OI_INVITE).
+			if t == null and target != null and SocialRules.team_member_cap(c.profile.lead_level) >= 1:
+				t = Team.new()
+				t.members = [c]
+				c.team = t
+				is_cap = true
+				gs.notice(c, "Tạo tổ đội thành công.")
+				_send_team(t)
 			if not is_cap or target == null:
 				gs.notice(c, "Chỉ đội trưởng mới mời được người vào đội." if not is_cap else "Người chơi không còn ở gần.")
 				return

@@ -29,6 +29,11 @@ signal guild_received(data: Dictionary)
 signal guild_list(list: Array)
 signal guild_invite(guild_name: String, from_name: String)
 signal player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2)
+signal enmity_state(state: int, other_eid: int, other_name: String, launcher: bool)
+signal pvp_hit(attacker_eid: int, hit: Dictionary)
+signal friend_invite(from_eid: int, from_name: String)
+signal friend_list(list: Array)
+signal view_equip(snapshot: Dictionary)
 signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
@@ -215,6 +220,43 @@ func send_chat(channel: int, to_name: String, text: String) -> void:
 	_send(b)
 
 ## Tổ đội: op = SocialServer.TEAM_*, arg = eid người liên quan, arg2 = đồng ý / mở / chế độ nhặt.
+## Hảo hữu: op = RelationServer.FRIEND_*.
+func send_friend(op: int, eid := 0, arg := 0, name := "") -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_FRIEND)
+	b.put_u8(op)
+	b.put_u32(eid)
+	b.put_u8(arg)
+	NetProto.put_str(b, name)
+	_send(b)
+
+## "Cừu sát": tuyên bố cừu sát người chơi `eid`.
+func send_enmity(eid: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_ENMITY)
+	b.put_u32(eid)
+	_send(b)
+
+## Đòn mình đánh trúng đối thủ cừu sát (PvpHit.encode).
+func send_pvp_hit(eid: int, hit: PackedByteArray) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_PVP_HIT)
+	b.put_u32(eid)
+	b.put_u32(hit.size())
+	b.put_data(hit)
+	_send(b)
+
+## "Tin tức": xin xem trang bị người chơi `eid` (server trả S_VIEW_EQUIP).
+func send_view_equip(eid: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_VIEW_EQUIP)
+	b.put_u32(eid)
+	_send(b)
+
 func send_team(op: int, arg := 0, arg2 := 0) -> void:
 	var b := NetProto.writer(NetProto.C_TEAM)
 	b.put_u8(op)
@@ -413,6 +455,26 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list.emit(parsed if parsed is Array else [])
+		NetProto.S_ENMITY:
+			var est := b.get_u8()
+			var eother := b.get_u32()
+			var ename := NetProto.get_str(b)
+			enmity_state.emit(est, eother, ename, b.get_u8() != 0)
+		NetProto.S_PVP_HIT:
+			var attacker := b.get_u32()
+			var n := b.get_u32()
+			if n <= PvpHit.MAX_BYTES and n <= b.get_available_bytes():
+				var hit := PvpHit.decode(b.get_data(n)[1])
+				if not hit.is_empty():
+					pvp_hit.emit(attacker, hit)
+		NetProto.S_FRIEND_INVITE:
+			var feid := b.get_u32()
+			friend_invite.emit(feid, NetProto.get_str(b))
+		NetProto.S_FRIEND_LIST:
+			var parsed_f: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			friend_list.emit(parsed_f if parsed_f is Array else [])
+		NetProto.S_VIEW_EQUIP:
+			view_equip.emit(NetProto.get_json(b))
 		NetProto.S_GUILD_INVITE:
 			var gname := NetProto.get_str(b)
 			guild_invite.emit(gname, NetProto.get_str(b))

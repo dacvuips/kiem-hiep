@@ -149,6 +149,12 @@ var lead_exp: int = 0
 var guild: Dictionary = {}
 ## Thời điểm (giây unix) sớm nhất được xin vào bang khác sau khi rời bang (LeaveTm gốc).
 var guild_join_after: int = 0
+## Hảo hữu (tên nhân vật) — online do game server thêm/xoá. Sổ đen: tên bị chặn tin nhắn (chỉ lọc ở máy mình, như gốc).
+var friends: Array = []
+var blacklist: Array = []
+const MAX_BLACKLIST := 100
+## Điểm PK (KPlayerPK::m_nPKValue gốc, 0..10) — do game server tính.
+var pk_value: int = 0
 ## Câu rao bán khi mở quầy bày bán.
 var stall_title: String = ""
 ## Trạng thái ĐANG chạy (không lưu): đang bày bán / đang mở giao dịch (nhận lời xin giao dịch). Hai trạng thái loại trừ nhau.
@@ -662,6 +668,15 @@ func add_potential_points(stat: BaseStat, amount: int) -> int:
 
 ## Chép toàn bộ dữ liệu từ `other` vào chính hồ sơ này (giữ nguyên đối tượng — UI / SocialHub đang tham chiếu nó).
 ## Online: server gửi bản nhân vật chuẩn (S_PROFILE) -> game chép vào hồ sơ đang dùng.
+static func _name_list(v: Variant, limit: int) -> Array:
+	var out := []
+	if v is Array:
+		for n in v:
+			var s := str(n).strip_edges()
+			if s != "" and not out.has(s) and out.size() < limit:
+				out.append(s)
+	return out
+
 func copy_from(other: PlayerProfile) -> void:
 	for p in get_property_list():
 		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
@@ -718,6 +733,9 @@ func to_dict() -> Dictionary:
 		"guild": guild,
 		"guild_join_after": guild_join_after,
 		"stall_title": stall_title,
+		"friends": friends.duplicate(),
+		"blacklist": blacklist.duplicate(),
+		"pk_value": pk_value,
 	}
 
 static func from_dict(data: Dictionary) -> PlayerProfile:
@@ -783,6 +801,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.guild = saved_guild.duplicate(true) if saved_guild is Dictionary else {}
 	profile.stall_title = str(data.get("stall_title", ""))
 	profile.guild_join_after = int(data.get("guild_join_after", 0))
+	profile.friends = _name_list(data.get("friends", []), 100)
+	profile.blacklist = _name_list(data.get("blacklist", []), MAX_BLACKLIST)
+	profile.pk_value = clampi(int(data.get("pk_value", 0)), 0, 10)
 	profile._migrate_vltk_start_values()
 	profile._clamp_skill_levels()
 	var saved_settings: Dictionary = data.get("skill_settings", {})

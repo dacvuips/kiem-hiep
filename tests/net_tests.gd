@@ -420,6 +420,55 @@ func test_cast() -> void:
 	a.close()
 	b.close()
 
+## Menu người chơi: hảo hữu (xin -> đồng ý -> cả 2 có nhau), tin tức (xem trang bị), cừu sát (đếm ngược -> đánh -> PK).
+func test_relations() -> void:
+	var ai := await make_player("f")
+	var bi := await make_player("g")
+	var a := bot(ai[0], ai[1])
+	var b := bot(bi[0], bi[1])
+	if not await wait_until(func() -> bool: return a.in_world and b.in_world and a.known.has(b.eid) and b.known.has(a.eid)):
+		check("Quan hệ: 2 bot thấy nhau", false)
+		return
+	## Hảo hữu
+	a.friend(RelationServer.FRIEND_ASK, b.eid)
+	check("Hảo hữu: bên kia nhận lời xin kết giao", await wait_until(func() -> bool: return not b.friend_invites.is_empty(), 3.0))
+	b.friend(RelationServer.FRIEND_ANSWER, a.eid, 1)
+	check("Hảo hữu: đồng ý thì cả 2 có nhau trong danh sách", await wait_until(func() -> bool:
+		return (a.profile.get("friends", []) as Array).has(b.name) and (b.profile.get("friends", []) as Array).has(a.name), 3.0),
+		[a.profile.get("friends"), b.profile.get("friends")])
+	a.friend(RelationServer.FRIEND_LIST)
+	check("Hảo hữu: danh sách báo bạn đang online", await wait_until(func() -> bool:
+		return a.friend_list.any(func(f: Dictionary) -> bool: return f.name == b.name and bool(f.online)), 3.0), a.friend_list)
+	b.friend(RelationServer.FRIEND_ANSWER, a.eid, 1)   ## trả lời khi không có lời xin: bỏ qua
+	## Tin tức
+	b.view_equip(a.eid)
+	check("Tin tức: nhận bản trang bị của người kia", await wait_until(func() -> bool: return str(b.view_snap.get("name", "")) == a.name, 3.0), b.view_snap)
+	b.view_snap = {}
+	b.view_equip(a.eid)
+	await get_tree().create_timer(0.4).timeout
+	check("Tin tức: xem liên tục bị chặn", b.view_snap.is_empty())
+	## Cừu sát
+	a.pvp_hit(b.eid, 10, 20)
+	await get_tree().create_timer(0.4).timeout
+	check("Cừu sát: chưa tuyên bố thì đòn không tới", b.pvp_hits.is_empty())
+	a.declare_enmity(b.eid)
+	check("Cừu sát: 2 bên vào đếm ngược", await wait_until(func() -> bool:
+		return int(a.enmity.get("state", 0)) == RelationServer.ENMITY_WAIT and int(b.enmity.get("state", 0)) == RelationServer.ENMITY_WAIT 			and bool(a.enmity.launcher) and not bool(b.enmity.launcher), 3.0), [a.enmity, b.enmity])
+	a.pvp_hit(b.eid, 10, 20)
+	await get_tree().create_timer(0.3).timeout
+	check("Cừu sát: đang đếm ngược chưa đánh được", b.pvp_hits.is_empty())
+	check("Cừu sát: hết đếm ngược thì vào trận", await wait_until(func() -> bool:
+		return int(a.enmity.get("state", 0)) == RelationServer.ENMITY_FIGHT and int(b.enmity.get("state", 0)) == RelationServer.ENMITY_FIGHT, 4.0))
+	a.pvp_hit(b.eid, 10, 99999999)
+	check("Cừu sát: đòn tới máy đối thủ, bị cắt theo trần", await wait_until(func() -> bool: return not b.pvp_hits.is_empty(), 3.0)
+		and int(b.pvp_hits[0].hit.get("max", 0)) < 99999999, b.pvp_hits)
+	b.dead = true
+	b.move_to(b.feet + Vector2(4, 0))
+	check("Cừu sát: hạ đối thủ thì kết thúc + người khởi xướng +2 PK", await wait_until(func() -> bool:
+		return a.enmity.get("state", 0) == 0 and int(a.profile.get("pk_value", 0)) == 2, 3.0), [a.enmity, a.profile.get("pk_value")])
+	a.close()
+	b.close()
+
 func test_security() -> void:
 	var si := await make_player("s")
 	var ti := await make_player("t")
@@ -558,3 +607,4 @@ func run() -> void:
 	await test_guild()
 	await test_security()
 	await test_cast()
+	await test_relations()

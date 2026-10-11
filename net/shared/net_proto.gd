@@ -34,6 +34,10 @@ const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
 const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
 const C_CAST := 18        ## u16 vltk_skill_id, u8 level, u8 cast_flags (CAST_*), u32 target_eid (0 = điểm), u24 x*2, u24 y*2 điểm nhắm
+const C_FRIEND := 19      ## u8 op (RelationServer.FRIEND_*), u32 eid, u8 arg, str name — hảo hữu
+const C_VIEW_EQUIP := 20  ## u32 target_eid — "Tin tức": xem trang bị người đứng gần
+const C_ENMITY := 21      ## u32 target_eid — "Cừu sát": tuyên bố cừu sát người đứng gần
+const C_PVP_HIT := 22     ## u32 target_eid, u32 n, n byte PvpHit — đòn đánh trúng đối thủ cừu sát (máy người đánh tính)
 const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 — khoá bảo vệ (gửi MÃ BĂM, không gửi mật mã)
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
@@ -69,6 +73,11 @@ const S_TEAM_STATE := 24  ## u8 in_team; nếu có: u32 captain_eid, u8 open, u8
                           ## (u32 eid, str name, u16 level, i8 camp, u8 lead_level, str sect_name) [0 = đội trưởng],
                           ## u8 n_apply, n x (u32 eid, str name, u16 level)
 const S_CAST := 30        ## u32 caster_eid + thân C_CAST — người khác vừa ra chiêu: CHỈ VẼ lại, không tính sát thương
+const S_FRIEND_INVITE := 31 ## u32 from_eid, str name — có người xin kết giao
+const S_FRIEND_LIST := 32   ## str json [{name, online, level}]
+const S_VIEW_EQUIP := 33    ## json snapshot (ViewEquipService.snapshot_of_profile)
+const S_ENMITY := 34      ## u8 state (RelationServer.ENMITY_*), u32 other_eid, str other_name, u8 launcher
+const S_PVP_HIT := 35     ## u32 attacker_eid, u32 n, n byte PvpHit (đã cắt theo trần) — máy bị đánh tự trừ máu
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name

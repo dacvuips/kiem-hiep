@@ -28,6 +28,7 @@ func _init(hub: SocialHub = null) -> void:
 		["🧰 Rương", func() -> void: StorageWindow.open(_host(), _profile)],
 		["🏷 Bày bán", func() -> void: StallWindow.open(_host(), _hub)],
 		["🔑 Khoá bảo vệ", func() -> void: SecurityWindow.open(_host(), _profile)],
+		["🤝 Hảo hữu", func() -> void: FriendWindow.open(_host(), _profile)],
 	]
 	for e in entries:
 		var b := SocialUi.stone_button(str(e[0]), Vector2(150, 44))

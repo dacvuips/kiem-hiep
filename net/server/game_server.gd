@@ -53,6 +53,13 @@ class Conn:
 	var packets_window := 0.0
 	var damage_msgs := 0
 	var cast_msgs := 0
+	var last_view_equip := -100.0
+	## Cừu sát (RelationServer): {other, state, until, launcher}; {} = không.
+	var enmity: Dictionary = {}
+	var pvp_msgs := 0
+	var pvp_window := 0.0
+	var last_pvp_from := 0
+	var last_pvp_at := -100.0
 	var cast_window := 0.0
 	var damage_window := 0.0
 	## Bản dữ liệu nhân vật của SERVER (PlayerProfile.to_dict) — nguồn sự thật về cấp / kinh nghiệm khi online.
@@ -110,6 +117,7 @@ var max_players := 2000
 var social: SocialServer
 var chat: ChatServer
 var guild: GuildServer
+var relation: RelationServer
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
 var _status_polling := false
@@ -151,6 +159,7 @@ func _ready() -> void:
 	social = SocialServer.new(self)
 	chat = ChatServer.new(self)
 	guild = GuildServer.new(self)
+	relation = RelationServer.new(self)
 	guild.load_all()
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
@@ -208,6 +217,7 @@ func _process(delta: float) -> void:
 		_simulate(step)
 		_m_sim_us += Time.get_ticks_usec() - ts
 		social.tick(step, _now)
+		relation.tick(_now)
 		guild.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
@@ -326,6 +336,7 @@ func _on_peer_disconnected(id: int, p: MultiplayerPeer) -> void:
 func _drop(c: Conn) -> void:
 	if c.entity:
 		social.on_leave(c)
+		relation.on_leave(c)
 	_conns.erase(c.key)
 	if c.dirty and c.character_id != 0:
 		_save(c)   ## lưu lần cuối (chạy nền, không cần kết nối còn sống)
@@ -359,6 +370,7 @@ func _kick(c: Conn, code: String, message: String) -> void:
 	_send(c, b)
 	if c.entity and c.state == ConnState.IN_WORLD:
 		social.on_leave(c)   ## huỷ giao dịch, rời đội trước khi mất thực thể
+		relation.on_leave(c)
 	c.state = ConnState.CLOSING
 	if c.entity:
 		aoi.remove(c.entity)
@@ -422,6 +434,22 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_GUILD:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				guild.on_guild(c, b)
+		NetProto.C_FRIEND:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 8:
+				relation.on_friend(c, b)
+		NetProto.C_ENMITY:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
+				relation.on_enmity(c, b.get_u32())
+		NetProto.C_PVP_HIT:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 8:
+				var target := b.get_u32()
+				var n := b.get_u32()
+				if n <= PvpHit.MAX_BYTES and n <= b.get_available_bytes():
+					var r := b.get_data(n)
+					relation.on_pvp_hit(c, target, r[1])
+		NetProto.C_VIEW_EQUIP:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
+				relation.on_view_equip(c, b.get_u32())
 		NetProto.C_CHAT:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				chat.on_chat(c, b)
@@ -553,6 +581,8 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 		_send(c, r)
 		return
 	c.move_budget -= dist
+	if (flags & NetProto.FLAG_DEAD) != 0 and (e.flags & NetProto.FLAG_DEAD) == 0:
+		relation.on_died(c)
 	if p != e.pos or dir != e.dir or action != e.action or z != e.z or flags != e.flags:
 		e.pos = p
 		e.dir = dir

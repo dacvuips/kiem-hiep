@@ -32,6 +32,12 @@ var chats: Array = []             ## [{channel, from, to, text}]
 var guild: Dictionary = {}        ## bang của mình (S_GUILD)
 var guild_list: Array = []
 var states_received := 0
+var friend_invites: Array = []    ## [{from, name}]
+var friend_list: Array = []
+var view_snap: Dictionary = {}
+var enmity: Dictionary = {}       ## {state, other, name, launcher}
+var pvp_hits: Array = []          ## [{from, hit}]
+var dead := false                 ## gửi cờ FLAG_DEAD trong C_MOVE
 var casts: Array = []             ## [{caster, skill, level, flags, target, aim}] (S_CAST)
 var closed := false
 var _token := ""
@@ -71,7 +77,35 @@ func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	b.put_u8(dir)
 	b.put_u8(NetProto.action_index(action))
 	b.put_u8(0)
-	b.put_u8(0)
+	b.put_u8(NetProto.FLAG_DEAD if dead else 0)
+	_send(b, NetProto.CH_RELIABLE)
+
+func friend(op: int, target := 0, arg := 0, fname := "") -> void:
+	var b := NetProto.writer(NetProto.C_FRIEND)
+	b.put_u8(op)
+	b.put_u32(target)
+	b.put_u8(arg)
+	NetProto.put_str(b, fname)
+	_send(b, NetProto.CH_RELIABLE)
+
+func view_equip(target: int) -> void:
+	var b := NetProto.writer(NetProto.C_VIEW_EQUIP)
+	b.put_u32(target)
+	_send(b, NetProto.CH_RELIABLE)
+
+func declare_enmity(target: int) -> void:
+	var b := NetProto.writer(NetProto.C_ENMITY)
+	b.put_u32(target)
+	_send(b, NetProto.CH_RELIABLE)
+
+func pvp_hit(target: int, min_d: int, max_d: int) -> void:
+	var a := CombatantStats.new()
+	a.attack_rating = 999
+	var raw := PvpHit.encode(a, min_d, max_d, CombatFormulas.DamageType.PHYSICS, 0, null)
+	var b := NetProto.writer(NetProto.C_PVP_HIT)
+	b.put_u32(target)
+	b.put_u32(raw.size())
+	b.put_data(raw)
 	_send(b, NetProto.CH_RELIABLE)
 
 func cast(skill_id: int, lv: int, target_eid: int, aim: Vector2, cast_flags := 0) -> void:
@@ -324,6 +358,23 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list = parsed if parsed is Array else []
+		NetProto.S_FRIEND_INVITE:
+			var fe := b.get_u32()
+			friend_invites.append({"from": fe, "name": NetProto.get_str(b)})
+		NetProto.S_FRIEND_LIST:
+			var fl: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			friend_list = fl if fl is Array else []
+		NetProto.S_VIEW_EQUIP:
+			view_snap = NetProto.get_json(b)
+		NetProto.S_ENMITY:
+			var est := b.get_u8()
+			var eo := b.get_u32()
+			var en := NetProto.get_str(b)
+			enmity = {"state": est, "other": eo, "name": en, "launcher": b.get_u8() != 0}
+		NetProto.S_PVP_HIT:
+			var pa := b.get_u32()
+			var pn := b.get_u32()
+			pvp_hits.append({"from": pa, "hit": PvpHit.decode(b.get_data(pn)[1])})
 		NetProto.S_CAST:
 			var cst := {"caster": b.get_u32(), "skill": b.get_u16(), "level": b.get_u8(), "flags": b.get_u8(), "target": b.get_u32()}
 			cst["aim"] = NetProto.get_state_pos(b)

@@ -18,6 +18,9 @@ var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo gi�
 var _action := ""
 var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở giao dịch...)
 var _look := {}
+## Đang cừu sát với mình (giai đoạn đánh): là "địch" — chiêu của mình va chạm và gây sát thương (gửi qua server).
+var pk_enemy := false
+const PK_ENEMY_COLOR := Color(1.0, 0.3, 1.0)   ## gốc: tên đối thủ cừu sát màu tím hồng
 
 func setup(info: Dictionary) -> void:
 	eid = int(info.eid)
@@ -43,6 +46,30 @@ func setup(info: Dictionary) -> void:
 	position = info.pos - Vector2(0, FEET_OFFSET)
 	_push(NetClient.server_now_ms() - INTERP_DELAY_MS, info)
 	_apply(info)
+
+func set_pk_enemy(on: bool) -> void:
+	if on == pk_enemy:
+		return
+	pk_enemy = on
+	if on:
+		add_to_group("enemies")
+	else:
+		remove_from_group("enemies")
+	_label.add_theme_color_override("font_color", PK_ENEMY_COLOR if on else _camp_color())
+
+## Chiêu của mình trúng đối thủ cừu sát: không tự trừ máu ở đây — gói đòn gửi server, máy họ tự tính né / kháng / trừ máu.
+func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
+		damage_type: CombatFormulas.DamageType = CombatFormulas.DamageType.PHYSICS,
+		attacker_element: ElementTypes.ElementType = ElementTypes.ElementType.KIM,
+		mods: CombatFormulas.HitModifiers = null) -> void:
+	if not pk_enemy or is_dead():
+		return
+	NetClient.send_pvp_hit(eid, PvpHit.encode(attacker_stats, min_damage, max_damage, damage_type, attacker_element, mods))
+
+func take_damage(amount: float) -> void:
+	var a := CombatantStats.new()
+	a.attack_rating = 999
+	take_damage_from(a, int(amount), int(amount))
 
 func _camp_color() -> Color:
 	match camp:

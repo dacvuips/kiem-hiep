@@ -28,6 +28,14 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 			incoming[k] = v
 		}
 	}
+	// Hảo hữu + điểm PK chỉ game server đổi: bản cũ chưa có thì game cũng không được tự thêm.
+	for _, k := range []string{"friends", "pk_value"} {
+		if v, ok := old[k]; ok {
+			incoming[k] = v
+		} else {
+			delete(incoming, k)
+		}
+	}
 	// Tiền + mở thêm rương (giá StorageService: 500000 x số thứ tự rương)
 	oldTotal := num(old["gold"]) + num(old["storage_gold"])
 	oldExtra, newExtra := num(old["storage_extra"]), num(incoming["storage_extra"])

@@ -25,6 +25,9 @@ static func get_relation(a: Node, b: Node) -> Camp.Relation:
 		return Camp.Relation.NONE
 	if a == b:
 		return Camp.Relation.ALLY
+	## Cừu sát online: đối thủ (RemotePlayer.pk_enemy) luôn là địch của mình và ngược lại.
+	if ("pk_enemy" in b and b.pk_enemy) or ("pk_enemy" in a and a.pk_enemy):
+		return Camp.Relation.ENEMY
 	var both_players := is_player(a) and is_player(b)
 	var rel := Camp.relation(get_camp(a), get_camp(b), both_players)
 	if rel == Camp.Relation.ENEMY and both_players:
