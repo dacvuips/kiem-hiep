@@ -33,6 +33,11 @@ type Config struct {
 
 	// Đứng sau reverse proxy thì lấy IP thật từ X-Forwarded-For.
 	TrustProxy bool
+
+	// Cookie phiên admin chỉ gửi qua HTTPS. Chỉ tắt khi chạy dev bằng http://.
+	AdminCookieSecure bool
+	// Thư mục web Admin đã build (server phục vụ tại /admin/). Rỗng = không phục vụ.
+	AdminWebDir string
 }
 
 func loadConfig() Config {
@@ -53,6 +58,8 @@ func loadConfig() Config {
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", ""),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", ""),
 		TrustProxy:         env("TRUST_PROXY", "false") == "true",
+		AdminCookieSecure:  env("ADMIN_COOKIE_SECURE", "true") != "false",
+		AdminWebDir:        env("ADMIN_WEB_DIR", ""),
 	}
 	if c.DatabaseURL == "" {
 		log.Fatal("thiếu DATABASE_URL")

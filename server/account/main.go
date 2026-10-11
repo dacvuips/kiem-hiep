@@ -22,6 +22,10 @@ func main() {
 	keys := loadKeyring()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	if len(os.Args) > 1 && os.Args[1] == "admin" {
+		adminCLI(ctx, cfg, keys, os.Args[2:])
+		return
+	}
 
 	db, err := openDB(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -64,6 +68,30 @@ func main() {
 	mux.HandleFunc("POST /v1/characters", wrap(s.handleCreateCharacter))
 	mux.HandleFunc("PUT /v1/characters/{id}", wrap(s.handleSaveCharacter))
 	mux.HandleFunc("DELETE /v1/characters/{id}", wrap(s.handleDeleteCharacter))
+
+	// Web Admin
+	mux.HandleFunc("POST /admin/api/login", wrap(s.handleAdminLogin))
+	mux.HandleFunc("POST /admin/api/logout", wrap(s.handleAdminLogout))
+	mux.HandleFunc("GET /admin/api/me", wrap(s.handleAdminMe))
+	mux.HandleFunc("POST /admin/api/me/password", wrap(s.handleAdminChangePassword))
+	mux.HandleFunc("POST /admin/api/2fa/setup", wrap(s.handleAdmin2FASetup))
+	mux.HandleFunc("POST /admin/api/2fa/enable", wrap(s.handleAdmin2FAEnable))
+	mux.HandleFunc("GET /admin/api/stats", wrap(s.handleAdminStats))
+	mux.HandleFunc("GET /admin/api/accounts", wrap(s.handleAdminAccounts))
+	mux.HandleFunc("GET /admin/api/accounts/{id}", wrap(s.handleAdminAccount))
+	mux.HandleFunc("POST /admin/api/accounts/{id}/{action}", wrap(s.handleAdminAccountAction))
+	mux.HandleFunc("POST /admin/api/characters/{id}/restore", wrap(s.handleAdminRestoreCharacter))
+	mux.HandleFunc("GET /admin/api/servers", wrap(s.handleAdminServers))
+	mux.HandleFunc("POST /admin/api/servers", wrap(s.handleAdminSaveServer))
+	mux.HandleFunc("PUT /admin/api/servers/{id}", wrap(s.handleAdminSaveServer))
+	mux.HandleFunc("GET /admin/api/audit", wrap(s.handleAdminAudit))
+	mux.HandleFunc("GET /admin/api/admins", wrap(s.handleAdminAdmins))
+	mux.HandleFunc("POST /admin/api/admins", wrap(s.handleAdminCreateAdmin))
+	mux.HandleFunc("POST /admin/api/admins/{id}/{action}", wrap(s.handleAdminAdminAction))
+	if cfg.AdminWebDir != "" {
+		mux.Handle("GET /admin/", adminWeb(cfg.AdminWebDir))
+		mux.HandleFunc("GET /admin", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/admin/", http.StatusFound) })
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
