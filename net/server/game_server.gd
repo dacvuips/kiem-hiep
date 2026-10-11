@@ -28,6 +28,10 @@ const MAX_HIT_DISTANCE := 1200.0
 ## Lưu nhân vật lên server tài khoản tối đa mỗi chừng này giây (khi có thay đổi) + lúc thoát.
 const SAVE_INTERVAL := 60.0
 const MAX_PROFILE_PER_SEC := 2
+## Đồ rơi: nằm trên đất chừng này giây; chủ (người hạ quái) được nhặt trước OWNER_SECONDS giây, sau đó ai cũng nhặt được.
+const DROP_LIFETIME := 90.0
+const DROP_OWNER_SECONDS := 30.0
+const PICKUP_REACH := 200.0
 
 enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 
@@ -55,8 +59,15 @@ class Conn:
 	var dirty := false
 	var last_save := 0.0
 	var saving := false
+	var save_queued := false
+	## Bị đá vì đăng nhập nơi khác: phiên mới nhận dữ liệu + version; lần lưu đang chạy của phiên cũ chuyển version sang đây.
+	var handoff: Conn
 	var max_hit := 2000.0
 	var last_profile_at := -10.0
+	## "Quà" server đã cho (nhặt đồ / tiền) mà game có thể chưa áp: [{seq, amount, item}] — gói C_PROFILE gửi trước khi
+	## game nhận S_PICKED không được làm mất quà (server cộng lại phần game chưa xác nhận).
+	var grant_seq := 0
+	var grants: Array = []
 
 var grid: MapGrid
 var aoi := AoiGrid.new()
@@ -65,14 +76,20 @@ var _enet := ENetMultiplayerPeer.new()
 var _ws := WebSocketMultiplayerPeer.new()
 var _conns: Dictionary = {}            ## key -> Conn
 var _by_character: Dictionary = {}     ## character_id -> Conn (1 nhân vật chỉ online 1 nơi)
+var _saving_chars: Dictionary = {}     ## character_id -> số lần lưu đang chạy (vào lại ngay sau khi thoát phải chờ)
 var _entities: Dictionary = {}         ## eid -> ServerEntity
 var _monsters: Array[ServerMonster] = []
 var _players_by_eid: Dictionary = {}   ## eid -> Conn
+## Đồ rơi trên đất: drop_id -> {pos, owner, free_at, until, amount, item (Dictionary)}
+var _drops: Dictionary = {}
+var _next_drop := 1
 var _next_eid := 1
 var _tick := 0
 var _acc := 0.0
 var _now := 0.0
 var max_players := 2000
+## Chế độ kiểm thử (GAME_TEST_MODE=1): mỗi quái chết luôn rớt thêm 1 túi tiền để bài test chắc chắn có đồ rơi. TẮT khi chạy thật.
+var test_mode := false
 
 func _ready() -> void:
 	Engine.max_fps = 120
@@ -85,6 +102,9 @@ func _ready() -> void:
 	account.service_key = _env("GAME_SERVICE_KEY", "")
 	account.server_id = int(_env("GAME_SERVER_ID", "1"))
 	max_players = int(_env("GAME_MAX_PLAYERS", "2000"))
+	test_mode = _env("GAME_TEST_MODE", "0") == "1"
+	if test_mode:
+		push_warning("GAME_TEST_MODE=1: mỗi quái chết rớt thêm tiền (chỉ dùng khi kiểm thử)")
 	add_child(account)
 	if account.service_key == "":
 		push_error("Thiếu GAME_SERVICE_KEY — game server không xác thực được người chơi")
@@ -144,6 +164,7 @@ func _process(delta: float) -> void:
 		_simulate(step)
 		if _tick % NetProto.TICK_RATE == 0:
 			_save_due()
+			_prune_drops()
 		if _tick % NetProto.SNAPSHOT_EVERY == 0:
 			_send_snapshots()
 
@@ -224,6 +245,8 @@ func _drop(c: Conn) -> void:
 	_conns.erase(c.key)
 	if c.dirty and c.character_id != 0:
 		_save(c)   ## lưu lần cuối (chạy nền, không cần kết nối còn sống)
+	elif c.save_queued == false and c.saving and c.character_id != 0:
+		c.save_queued = c.dirty
 	if c.character_id != 0 and _by_character.get(c.character_id) == c:
 		_by_character.erase(c.character_id)
 	if c.entity:
@@ -289,6 +312,12 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_PROFILE:
 			if c.state == ConnState.IN_WORLD:
 				_on_profile(c, b)
+		NetProto.C_PICKUP:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
+				_on_pickup(c, b.get_u32())
+		NetProto.C_DISCARD:
+			if c.state == ConnState.IN_WORLD:
+				_on_discard(c, NetProto.get_str(b, 64))
 		NetProto.C_LOOK:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 8:
 				_on_look(c, b)
@@ -310,6 +339,11 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		_kick(c, "full", "Máy chủ đã đầy, vui lòng thử lại sau")
 		return
 	c.state = ConnState.AUTH
+	## Nhân vật vừa thoát và đang lưu lần cuối: chờ lưu xong rồi mới nạp (không thì nạp bản cũ, lần lưu sau bị lệch version).
+	var waited := 0.0
+	while _saving_chars.has(character_id) and not _by_character.has(character_id) and waited < 8.0:
+		await get_tree().create_timer(0.1).timeout
+		waited += 0.1
 	var r: Dictionary = await account.join(token, character_id)
 	if not _conns.has(c.key) or c.state != ConnState.AUTH:
 		return   ## đã ngắt trong lúc chờ
@@ -320,16 +354,28 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	var ch: Dictionary = r.character
 	## Nhân vật đang online ở nơi khác -> đá phiên cũ.
 	var old: Conn = _by_character.get(character_id)
-	if old and old != c:
+	var take_over: Conn = null
+	if old and old != c and old.profile != null:
+		take_over = old
+		old.character_id = 0      ## phiên cũ không tự lưu nữa
+		old.handoff = c
+		_kick(old, "logged_in_elsewhere", "Nhân vật vừa đăng nhập ở nơi khác")
+	elif old and old != c:
 		_kick(old, "logged_in_elsewhere", "Nhân vật vừa đăng nhập ở nơi khác")
 	c.account_id = int(acc.id)
 	c.username = str(acc.username)
 	c.character_id = character_id
 	_by_character[character_id] = c
 	var data: Dictionary = ch.get("data", {}) if ch.get("data") is Dictionary else {}
-	c.data = data
 	c.profile = PlayerProfile.from_dict(data)
+	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
+	c.dirty = true
 	c.char_version = int(ch.get("version", 0))
+	if take_over:   ## dữ liệu trong RAM của phiên cũ mới nhất (có thể chưa kịp lưu)
+		c.data = take_over.data
+		c.profile = take_over.profile
+		c.char_version = take_over.char_version
+		c.grant_seq = take_over.grant_seq
 	c.last_save = _now
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	var e := ServerEntity.new()
@@ -355,6 +401,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	w.put_float(e.pos.y)
 	NetProto.put_str(w, e.name)
 	_send(c, w)
+	send_profile(c)
 	print("Vào map: %s (%s) eid %d — online %d" % [e.name, c.username, e.eid, _by_character.size()])
 
 ## Ngoại hình từ dữ liệu nhân vật (PlayerProfile.to_dict) — cùng cách Player.refresh_appearance().
@@ -438,6 +485,18 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		b.put_u8(share | (0x80 if eid == m.last_hitter else 0))
 		_send(c, b)
 		_grant_exp(c, m, share)
+	## Rớt đồ: server tung xúc xắc theo bảng gốc, đồ thuộc người hạ đòn cuối (DROP_OWNER_SECONDS giây đầu).
+	var rolls := DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
+	var placed: Array = []
+	for i in rolls.size():
+		var off := Vector2(randf_range(-22, 22), randf_range(-8, 8)) * (1.0 if rolls.size() > 1 else 0.4)
+		var d: Dictionary = rolls[i]
+		placed.append(_add_drop(m.pos + off, m.last_hitter, int(d.get("amount", 0)) if str(d.type) == "money" else 0,
+			(d.item as ItemInstance).to_dict() if str(d.type) == "item" else {}))
+	var killer: Conn = _players_by_eid.get(m.last_hitter)
+	if test_mode and killer and killer.entity:   ## kiểm thử: luôn có 1 túi tiền ngay dưới chân người hạ quái
+		placed.append(_add_drop(killer.entity.pos, m.last_hitter, 7, {}))
+	_broadcast_drops(m.pos, placed)
 
 ## Kinh nghiệm do server cộng vào bản nhân vật của server rồi báo game (S_PROGRESS).
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
@@ -470,25 +529,176 @@ func _on_profile(c: Conn, b: StreamPeerBuffer) -> void:
 	if _now - c.last_profile_at < 1.0 / MAX_PROFILE_PER_SEC:
 		return
 	c.last_profile_at = _now
+	var ack := b.get_u32() if b.get_available_bytes() >= 4 else 0
 	var client := NetProto.get_json(b)
 	if client.is_empty():
 		return
-	c.data = ProfileGuard.merge(c.data, client)
-	c.profile = PlayerProfile.from_dict(c.data)
+	## Quà game chưa xác nhận (seq > ack): cộng lại vào bản gộp.
+	var pending: Array = []
+	var pending_gold := 0
+	for g in c.grants:
+		if int(g.seq) > ack:
+			pending.append(g)
+			pending_gold += int(g.amount)
+	c.grants = pending
+	var merged := ProfileGuard.merge(c.data, client, pending_gold)
+	var money_from_server: bool = merged.get("_money_from_server", false)
+	merged.erase("_money_from_server")
+	var p := PlayerProfile.from_dict(merged)
+	if not pending.is_empty():
+		var have := ProfileGuard.items_by_uid(merged)
+		for g in pending:
+			if int(g.amount) > 0:
+				if not money_from_server:   ## tiền server đã gồm khoản này
+					p.gold += int(g.amount)
+			elif not have.has(str(g.item.get("uid", ""))):
+				p.add_item(ItemInstance.from_dict(g.item))
+		merged = p.to_dict()
+	c.data = merged
+	c.profile = p
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.dirty = true
+
+## Gửi bản nhân vật chuẩn của server xuống game.
+func send_profile(c: Conn) -> void:
+	c.grants.clear()   ## game sẽ chép nguyên bản này -> mọi quà đã nằm trong đó
+	var b := NetProto.writer(NetProto.S_PROFILE)
+	b.put_u32(c.grant_seq)
+	NetProto.put_json(b, c.data)
+	_send(c, b)
+
+func notice(c: Conn, text: String) -> void:
+	var b := NetProto.writer(NetProto.S_NOTICE)
+	NetProto.put_str(b, text)
+	_send(c, b)
+
+# ---------------------------------------------------------------- đồ rơi
+
+func _add_drop(pos: Vector2, owner_eid: int, amount: int, item: Dictionary) -> int:
+	var id := _next_drop
+	_next_drop += 1
+	_drops[id] = {"pos": pos, "owner": owner_eid, "free_at": _now + DROP_OWNER_SECONDS, "until": _now + DROP_LIFETIME,
+		"amount": amount, "item": item}
+	return id
+
+## Báo đồ rơi cho mọi người đang ở gần (3x3 ô AOI quanh chỗ rơi).
+func _broadcast_drops(at: Vector2, ids: Array) -> void:
+	if ids.is_empty():
+		return
+	var b := NetProto.writer(NetProto.S_DROPS)
+	b.put_u16(ids.size())
+	for id in ids:
+		var d: Dictionary = _drops[id]
+		b.put_u32(id)
+		b.put_float(d.pos.x)
+		b.put_float(d.pos.y)
+		b.put_u32(int(d.owner))
+		if int(d.amount) > 0:
+			b.put_u8(0)
+			b.put_u32(int(d.amount))
+		else:
+			b.put_u8(1)
+			NetProto.put_str(b, JSON.stringify(d.item))
+	for e in aoi.around(at):
+		var c: Conn = _players_by_eid.get(e.eid)
+		if c:
+			_send(c, b)
+
+func _drop_gone(id: int) -> void:
+	var d: Dictionary = _drops.get(id, {})
+	_drops.erase(id)
+	if d.is_empty():
+		return
+	var b := NetProto.writer(NetProto.S_DROP_GONE)
+	b.put_u32(id)
+	for e in aoi.around(d.pos):
+		var c: Conn = _players_by_eid.get(e.eid)
+		if c:
+			_send(c, b)
+
+func _prune_drops() -> void:
+	for id in _drops.keys():
+		if _now > float(_drops[id].until):
+			_drop_gone(id)
+
+func _on_pickup(c: Conn, id: int) -> void:
+	var d: Dictionary = _drops.get(id, {})
+	if d.is_empty():
+		return
+	if c.entity.pos.distance_to(d.pos) > PICKUP_REACH:
+		notice(c, "Đứng gần hơn mới nhặt được")
+		return
+	if int(d.owner) != 0 and int(d.owner) != c.entity.eid and _now < float(d.free_at):
+		notice(c, "Đồ này của người khác, chưa nhặt được")
+		return
+	var b := NetProto.writer(NetProto.S_PICKED)
+	c.grant_seq += 1
+	b.put_u32(c.grant_seq)
+	b.put_u32(id)
+	if int(d.amount) > 0:
+		c.profile.gold += int(d.amount)
+		c.grants.append({"seq": c.grant_seq, "amount": int(d.amount), "item": {}})
+		b.put_u8(0)
+		b.put_u32(int(d.amount))
+	else:
+		var item := ItemInstance.from_dict(d.item)
+		if not c.profile.add_item(item):
+			c.grant_seq -= 1
+			notice(c, "Hành trang đã đầy")
+			return
+		c.grants.append({"seq": c.grant_seq, "amount": 0, "item": item.to_dict()})
+		b.put_u8(1)
+		NetProto.put_str(b, JSON.stringify(item.to_dict()))
+	c.data = c.profile.to_dict()
+	c.dirty = true
+	_send(c, b)
+	_drop_gone(id)
+
+## Vứt món trong túi xuống đất: server bỏ khỏi hồ sơ rồi đặt thành đồ rơi ai cũng nhặt được.
+func _on_discard(c: Conn, uid: String) -> void:
+	for i in c.profile.inventory.size():
+		var it: ItemInstance = c.profile.inventory[i]
+		if it.uid == uid:
+			if SecurityLock.is_item_locked(it):
+				return
+			c.profile.inventory.remove_at(i)
+			c.data = c.profile.to_dict()
+			c.dirty = true
+			it.room_x = -1
+			it.room_y = -1
+			var id := _add_drop(c.entity.pos + Vector2(randf_range(-14, 14), 6), 0, 0, it.to_dict())
+			_broadcast_drops(c.entity.pos, [id])
+			return
 
 func _save_due() -> void:
 	for c: Conn in _conns.values():
 		if c.state == ConnState.IN_WORLD and c.dirty and not c.saving and _now - c.last_save >= SAVE_INTERVAL:
 			_save(c)
 
+## Lưu tuần tự: đang có lần lưu chạy thì xếp hàng, lưu xong sẽ lưu tiếp bản mới nhất (2 lần lưu chồng nhau cùng version
+## thì 1 lần bị từ chối -> mất dữ liệu).
 func _save(c: Conn) -> void:
+	if c.saving:
+		c.save_queued = true
+		return
 	c.saving = true
 	c.dirty = false
 	c.last_save = _now
-	var r: Dictionary = await account.save_character(c.character_id, c.char_version, c.data)
+	var char_id := c.character_id
+	_saving_chars[char_id] = int(_saving_chars.get(char_id, 0)) + 1
+	var r: Dictionary = await account.save_character(char_id, c.char_version, c.data)
+	_saving_chars[char_id] = int(_saving_chars[char_id]) - 1
+	if int(_saving_chars[char_id]) <= 0:
+		_saving_chars.erase(char_id)
 	c.saving = false
+	if r.ok and c.handoff:
+		c.handoff.char_version = int(r.version)   ## phiên mới (đã nhận dữ liệu) lưu tiếp bằng version mới
+	if c.save_queued:
+		c.save_queued = false
+		if r.ok:
+			c.char_version = int(r.version)
+		_save(c)
+		return
 	if r.ok:
 		c.char_version = int(r.version)
 		if _conns.has(c.key) and c.state == ConnState.IN_WORLD:

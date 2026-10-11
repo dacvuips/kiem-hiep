@@ -660,6 +660,13 @@ func add_potential_points(stat: BaseStat, amount: int) -> int:
 		added += 1
 	return added
 
+## Chép toàn bộ dữ liệu từ `other` vào chính hồ sơ này (giữ nguyên đối tượng — UI / SocialHub đang tham chiếu nó).
+## Online: server gửi bản nhân vật chuẩn (S_PROFILE) -> game chép vào hồ sơ đang dùng.
+func copy_from(other: PlayerProfile) -> void:
+	for p in get_property_list():
+		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
+			set(p.name, other.get(p.name))
+
 func to_dict() -> Dictionary:
 	return {
 		"name": display_name,

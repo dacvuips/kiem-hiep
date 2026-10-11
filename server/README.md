@@ -117,6 +117,7 @@ docker compose --profile game up -d
 # Hoặc chạy thẳng bằng Godot trên máy (sửa code nhanh, không cần build lại)
 GODOT="/duong/dan/Godot_v4.7.2_console.exe" bash server/run_game_server.sh
 
+GAME_TEST_MODE=1 GODOT=... bash server/run_game_server.sh                      # rồi chạy kiểm thử:
 godot --headless --path . res://tests/net_tests.tscn                          # kiểm thử bằng bot thật
 ```
 
@@ -133,5 +134,10 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
 - Quái chết: **server tính kinh nghiệm / lên cấp** (`S_PROGRESS`, chia theo phần sát thương); rớt đồ cho người hạ đòn cuối (`S_KILL`).
 - Dữ liệu nhân vật khi đang trong map: game gửi cho game server (`C_PROFILE`), server gộp theo `ProfileGuard` (giữ cấp /
   kinh nghiệm của server, điểm tiềm năng / kỹ năng không vượt số cấp cho phép) và lưu qua `PUT /internal/game/characters/{id}`
-  mỗi 60 giây + khi thoát. Túi đồ / tiền tạm tin game — chuyển lên server ở bước C.
+  mỗi 60 giây + khi thoát (lưu tuần tự; nhân vật đăng nhập nơi khác thì phiên mới nhận dữ liệu trong RAM của phiên cũ).
+- **Đồ và tiền do server giữ:** mỗi món có `uid`. Game chỉ được sắp xếp / mặc / tháo / cất rương / khoá / đặt giá món server
+  đã biết; món lạ, món nhân bản, sửa chỉ số, tăng tiền đều bị bỏ. Đồ rơi do server tung (`S_DROPS`), nhặt phải xin server
+  (`C_PICKUP` -> `S_PICKED`, chủ được nhặt trước 30 giây), vứt đồ thì server đặt xuống đất (`C_DISCARD`). Quà chưa được game
+  xác nhận (`grant_ack`) được server cộng bù khi gộp, không bị mất.
+- `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền dưới chân người hạ quái.
 - **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).

@@ -84,7 +84,25 @@ func test_monsters(p: BotClient) -> void:
 	var mpos: Vector2 = p.known[m].pos
 	## Đứng sát quái -> quái chủ động ra chiêu (quái VLTK thường chủ động trong tầm nhìn).
 	await _walk(p, mpos + Vector2(40, 0))
-	var aggro := await wait_until(func() -> bool: return not p.attacked_by.is_empty(), 12.0)
+	var aggro := await wait_until(func() -> bool: return not p.attacked_by.is_empty(), 8.0)
+	## Quái gần nhất có thể là loại không chủ động: thử thêm vài con khác.
+	var tried := {m: true}
+	for extra in 3:
+		if aggro:
+			break
+		var other := 0
+		var best := INF
+		for id in p.known:
+			if int(p.known[id].kind) == NetProto.KIND_MONSTER and not tried.has(id):
+				var dd := (p.known[id].pos as Vector2).distance_to(p.feet)
+				if dd < best:
+					best = dd
+					other = id
+		if other == 0:
+			break
+		tried[other] = true
+		await _walk(p, (p.known[other].pos as Vector2) + Vector2(40, 0))
+		aggro = await wait_until(func() -> bool: return not p.attacked_by.is_empty(), 8.0)
 	check("quái ra chiêu vào người đứng gần", aggro, p.attacked_by)
 	## Sát thương từ quá xa không tính.
 	var hp_before := int(p.known[m].get("hp", 100))
@@ -100,6 +118,71 @@ func test_monsters(p: BotClient) -> void:
 		return p.kills.any(func(k: Dictionary) -> bool: return int(k.eid) == m), 5.0), p.kills)
 	check("xác quái biến mất sau vài giây", await wait_until(func() -> bool: return not p.known.has(m), 6.0))
 	check("server cộng kinh nghiệm khi hạ quái (S_PROGRESS)", p.exp_gained > 0, p.exp_gained)
+
+## C1: đồ rơi do server, nhặt qua server, gian lận đồ / tiền không được lưu. Đóng kết nối p ở cuối.
+func test_items(p: BotClient, info: Array) -> void:
+	check("vào map nhận bản nhân vật chuẩn (S_PROFILE)", not p.profile.is_empty(), p.profile.keys().size())
+	## Hạ quái tới khi có đồ rơi (bảng rớt có thể không ra gì mỗi lần).
+	for round in 15:
+		if not p.drops.is_empty():
+			break
+		var m := p.nearest_monster()
+		if m == 0:
+			await _walk_to_monsters(p)
+			m = p.nearest_monster()
+			if m == 0:
+				break
+		await _walk(p, (p.known[m].pos as Vector2) + Vector2(30, 0))
+		for i in 80:
+			if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
+				break
+			p.damage(m, 100000)
+			await get_tree().create_timer(0.06).timeout
+		await wait_until(func() -> bool: return not p.drops.is_empty(), 1.5)
+	check("server rớt đồ khi hạ quái (S_DROPS)", not p.drops.is_empty(), p.drops.size())
+	var gold_got := 0
+	var items_got: Array = []
+	for id in p.drops.keys():
+		var d: Dictionary = p.drops[id]
+		await _walk(p, d.pos)
+		if (d.pos as Vector2).distance_to(p.feet) > 140.0:
+			continue   ## đồ rơi sau vật cản: bỏ qua
+		p.pickup(id)
+		await wait_until(func() -> bool: return p.picked.any(func(x: Dictionary) -> bool: return int(x.id) == id), 2.0)
+	for x in p.picked:
+		if x.has("amount"):
+			gold_got += int(x.amount)
+		else:
+			items_got.append(str(x.item.get("uid", "")))
+	check("nhặt được đồ / tiền qua server (S_PICKED)", not p.picked.is_empty(), p.notices)
+	## Gian lận: thêm món tự chế + tăng tiền. Gửi bản KHÔNG có món vừa nhặt (giả lập gói đến trước S_PICKED, ack cũ).
+	var fake := p.profile.duplicate(true)
+	fake["gold"] = 999999
+	var inv: Array = fake.get("inventory", [])
+	inv.append({"base": 1, "gold": -1, "series": 0, "uid": "deadbeefdeadbeef", "magic": [], "base_values": []})
+	fake["inventory"] = inv
+	var real_ack := p.grant_ack
+	p.grant_ack = 0
+	p.send_profile(fake)
+	p.grant_ack = real_ack
+	await get_tree().create_timer(0.6).timeout
+	p.close()
+	await get_tree().create_timer(1.5).timeout
+	var row := await _character(info)
+	var saved_uids := []
+	for it in row.data.get("inventory", []):
+		saved_uids.append(str(it.get("uid", "")))
+	check("món tự chế không được lưu", not saved_uids.has("deadbeefdeadbeef"), saved_uids)
+	check("tiền gian lận không được lưu", int(row.data.gold) < 999999, row.data.gold)
+	check("tiền nhặt được vẫn còn (dù gói gửi trước S_PICKED)", int(row.data.gold) == int(p.profile.get("gold", 0)) + gold_got, [row.data.gold, gold_got])
+	check("đồ nhặt được vẫn còn", items_got.all(func(u: String) -> bool: return saved_uids.has(u)), [items_got, saved_uids])
+
+func _character(info: Array) -> Dictionary:
+	var list := await http("GET", "/v1/characters?server_id=1", {}, info[0])
+	for c in list.get("characters", []):
+		if int(c.id) == int(info[1]):
+			return c
+	return {}
 
 ## B3: gửi bản nhân vật gian lận cấp -> server giữ cấp của mình; thay đổi hợp lệ (thanh skill) vẫn được lưu khi thoát.
 func test_profile_guard(p: BotClient, info: Array) -> void:
@@ -193,4 +276,4 @@ func run() -> void:
 	b.close()
 	check("B thoát thì biến mất", await wait_until(func() -> bool: return not a2.known.has(b.eid)))
 
-	await test_profile_guard(a2, a_info)
+	await test_items(a2, a_info)

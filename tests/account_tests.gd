@@ -66,6 +66,29 @@ func test_profile_guard() -> void:
 	var hit := ProfileGuard.max_hit(server)
 	check("ProfileGuard: trần sát thương hợp lý", hit >= ProfileGuard.MIN_CAP and hit < 100000.0, hit)
 	check("ProfileGuard: kinh nghiệm hạ quái", ProfileGuard.exp_for_kill(10, MonsterData.monster(1), 10, 100) >= 0)
+	## Đồ + tiền (C1)
+	var owner := PlayerProfile.new()
+	owner.set_sect(SectRegistry.get_by_element(ElementTypes.ElementType.MOC)[0])
+	owner.gold = 1000
+	var sword := ItemGenerator.random_equipment(10)
+	owner.add_item(sword)
+	var od := owner.to_dict()
+	var c1 := od.duplicate(true)
+	(c1.inventory as Array).append({"base": 1, "uid": "fake0000fake0000"})
+	(c1.inventory as Array).append((c1.inventory as Array)[0].duplicate(true))   ## nhân bản cùng uid
+	(c1.inventory as Array)[0]["magic"] = [{"attrib": "damage_v", "value": [9999, 0, 0], "name": "x", "prefix": true}]
+	(c1.inventory as Array)[0]["rx"] = 5
+	c1["gold"] = 50000
+	var g := ProfileGuard.merge(od, c1)
+	check("ProfileGuard: bỏ món tự chế + bản nhân bản", (g.inventory as Array).size() == 1)
+	check("ProfileGuard: chỉ số món đồ giữ bản server", (g.inventory as Array)[0].magic == (od.inventory as Array)[0].magic)
+	check("ProfileGuard: vị trí món do chủ đổi được", int((g.inventory as Array)[0].rx) == 5)
+	check("ProfileGuard: không tăng được tiền", int(g.gold) == 1000)
+	var c2 := od.duplicate(true)
+	c2["gold"] = 400
+	c2["storage_gold"] = 600
+	check("ProfileGuard: chuyển tiền vào rương được", int(ProfileGuard.merge(od, c2).storage_gold) == 600)
+	check("ItemInstance có uid riêng", sword.uid.length() == 16 and ItemGenerator.random_equipment(10).uid != sword.uid)
 
 func test_scenes_load() -> void:
 	for path in SCENES:

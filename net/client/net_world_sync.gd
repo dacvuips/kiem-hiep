@@ -13,6 +13,7 @@ const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "cha
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
 var _monsters: Dictionary = {}    ## eid -> VltkMonster (chế độ online)
+var _drops: Dictionary = {}       ## drop_id -> GroundDrop
 var _send_timer := 0.0
 var _heartbeat := 0.0
 var _last_sent := {}
@@ -34,6 +35,11 @@ func _ready() -> void:
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
 	NetClient.saved.connect(SaveManager.set_online_version)
+	NetClient.profile_received.connect(_on_profile)
+	NetClient.drops_received.connect(_on_drops)
+	NetClient.picked.connect(_on_picked)
+	NetClient.drop_gone.connect(_on_drop_gone)
+	NetClient.server_notice.connect(_notify)
 	_connect()
 
 func _exit_tree() -> void:
@@ -61,6 +67,57 @@ func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
 	_teleport(feet)
 	_last_sent = {}
 	_last_look = {}
+
+## Bản nhân vật chuẩn của server (vào map / sau giao dịch): chép vào hồ sơ đang dùng rồi làm mới hình + chỉ số.
+func _on_profile(data: Dictionary) -> void:
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	profile.copy_from(PlayerProfile.from_dict(data))
+	if player and is_instance_valid(player):
+		player.refresh_combat_stats()
+
+func _on_drops(list: Array) -> void:
+	for d in list:
+		var id := int(d.id)
+		if _drops.has(id):
+			continue
+		var g := GroundDrop.new()
+		if d.has("amount"):
+			g.setup_money(int(d.amount))
+		else:
+			g.setup_item(ItemInstance.from_dict(d.item))
+		g.net_id = id
+		g.position = d.pos
+		_parent().add_child(g)
+		_drops[id] = g
+
+func _on_picked(id: int, amount: int, item: Dictionary) -> void:
+	var profile := GameManager.local_profile
+	if profile:
+		if amount > 0:
+			profile.gold += amount
+			_notify("Nhặt được %d lượng" % amount)
+		elif not item.is_empty():
+			var it := ItemInstance.from_dict(item)
+			if not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
+				profile.add_item(it)
+			_notify("Nhặt được %s" % it.get_display_name())
+		SaveManager.save_profile(profile)
+	_on_drop_gone(id)
+
+## Đặt món đúng ô server đã xếp (giữ khớp với hồ sơ server).
+func _place_at(profile: PlayerProfile, it: ItemInstance) -> bool:
+	if it.room_x < 0:
+		return false
+	profile.inventory.append(it)
+	return true
+
+func _on_drop_gone(id: int) -> void:
+	var g: Node = _drops.get(id)
+	_drops.erase(id)
+	if g and is_instance_valid(g):
+		g.queue_free()
 
 ## Kinh nghiệm / cấp do server tính: cộng y hệt cách server cộng (cùng PlayerProfile.add_exp) rồi chốt theo số của server.
 func _on_progress(gained: int, level: int, current_exp: int) -> void:

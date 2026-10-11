@@ -14,6 +14,14 @@ signal monster_attack(monster_eid: int, slot: int, target_eid: int, dir64: int)
 signal monster_killed(info: Dictionary)
 signal progress(exp_gained: int, level: int, current_exp: int)
 signal saved(version: int)
+signal profile_received(data: Dictionary)
+signal drops_received(drops: Array)
+signal picked(drop_id: int, amount: int, item: Dictionary)
+signal drop_gone(drop_id: int)
+signal server_notice(text: String)
+
+## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
+var grant_ack := 0
 
 enum Status { OFFLINE, CONNECTING, IN_WORLD }
 
@@ -117,7 +125,22 @@ func send_profile(data: Dictionary) -> void:
 	if status != Status.IN_WORLD:
 		return
 	var b := NetProto.writer(NetProto.C_PROFILE)
+	b.put_u32(grant_ack)
 	NetProto.put_json(b, data)
+	_send(b)
+
+func send_pickup(drop_id: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_PICKUP)
+	b.put_u32(drop_id)
+	_send(b)
+
+func send_discard(item_uid: String) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_DISCARD)
+	NetProto.put_str(b, item_uid)
 	_send(b)
 
 func send_look(look: Dictionary) -> void:
@@ -215,6 +238,39 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			progress.emit(gained, lv, b.get_64())
 		NetProto.S_SAVED:
 			saved.emit(b.get_u32())
+		NetProto.S_PROFILE:
+			var seq := b.get_u32()
+			var data := NetProto.get_json(b)
+			if not data.is_empty():
+				grant_ack = seq
+				profile_received.emit(data)
+		NetProto.S_DROPS:
+			var list: Array = []
+			for i in b.get_u16():
+				var d := {"id": b.get_u32(), "pos": Vector2(b.get_float(), b.get_float()), "owner": b.get_u32()}
+				if b.get_u8() == 0:
+					d["amount"] = b.get_u32()
+				else:
+					var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 65535))
+					d["item"] = parsed if parsed is Dictionary else {}
+				list.append(d)
+			drops_received.emit(list)
+		NetProto.S_PICKED:
+			var seq := b.get_u32()
+			var id := b.get_u32()
+			var amount := 0
+			var item := {}
+			if b.get_u8() == 0:
+				amount = b.get_u32()
+			else:
+				var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 65535))
+				item = parsed if parsed is Dictionary else {}
+			picked.emit(id, amount, item)
+			grant_ack = seq
+		NetProto.S_DROP_GONE:
+			drop_gone.emit(b.get_u32())
+		NetProto.S_NOTICE:
+			server_notice.emit(NetProto.get_str(b))
 		NetProto.S_CORRECT:
 			position_corrected.emit(Vector2(b.get_float(), b.get_float()))
 		NetProto.S_PONG:

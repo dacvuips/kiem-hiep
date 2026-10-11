@@ -6,7 +6,11 @@ extends RefCounted
 ##     hiện tại cho phép; sai thì giữ bản của server.
 ##   - Trần sát thương 1 đòn = sát thương tối đa của skill mạnh nhất nhân vật đã học (tính bằng đúng công thức chiêu của game)
 ##     x chí mạng x dư 20% — số báo lên vượt trần bị cắt.
-## Phần còn lại (túi đồ, trang bị, tiền, thanh skill, cài đặt) tạm tin game; bước C chuyển túi đồ / tiền lên server.
+##   - ĐỒ: mỗi món có uid; game chỉ được sắp xếp / mặc / tháo / cất rương / khoá / đặt giá những món server đã biết
+##     (chỉ số món giữ đúng bản server), được bỏ bớt món, KHÔNG được thêm món lạ hay nhân bản (1 uid xuất hiện 2 lần).
+##   - TIỀN: lượng + tiền rương không được nhiều hơn bản server; nguyên bảo không tăng. Tiền / đồ mới chỉ đến từ server
+##     (nhặt đồ rơi, giao dịch, bày bán).
+## Phần còn lại (thanh skill, cài đặt, khoá bảo vệ...) tin game.
 
 ## Chí mạng VLTK x2; để dư thêm cho các hệ số chưa tính (đòn chí tử, cộng dồn hiệu ứng).
 const CRIT_MULT := 3.0
@@ -14,7 +18,9 @@ const TOLERANCE := 1.2
 const MIN_CAP := 300.0
 
 ## Gộp dữ liệu game gửi lên vào bản của server.
-static func merge(server_data: Dictionary, client_data: Dictionary) -> Dictionary:
+## pending_gold = tiền server đã cho (nhặt...) mà game CHƯA xác nhận: game được phép có ít hơn server đúng phần đó.
+## Kết quả có khoá "_money_from_server" = true nếu tiền của game bị bác (đã dùng tiền server — server đã gồm mọi khoản cho).
+static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0) -> Dictionary:
 	var merged := client_data.duplicate(true)
 	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender"]:
 		if server_data.has(k):
@@ -29,7 +35,69 @@ static func merge(server_data: Dictionary, client_data: Dictionary) -> Dictionar
 		for k in ["skill_levels", "skill_points"]:
 			if server_data.has(k):
 				merged[k] = server_data[k]
+	_guard_items(server_data, merged)
+	merged["_money_from_server"] = _guard_money(server_data, merged, pending_gold)
 	return merged
+
+## Mọi món đồ trong hồ sơ (túi, trang bị, rương) theo uid.
+static func items_by_uid(data: Dictionary) -> Dictionary:
+	var out := {}
+	for it in data.get("inventory", []):
+		out[str(it.get("uid", ""))] = it
+	var eq = data.get("equipment", {})
+	if eq is Dictionary:
+		for k in eq:
+			out[str(eq[k].get("uid", ""))] = eq[k]
+	for it in data.get("storage", []):
+		out[str(it.get("uid", ""))] = it
+	out.erase("")
+	return out
+
+## Giữ lại món server biết (lấy chỉ số từ bản server, chỉ nhận vị trí / khoá / giá từ game), bỏ món lạ / trùng uid.
+static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
+	var known := items_by_uid(server_data)
+	var seen := {}
+	var fix := func(it: Variant) -> Variant:
+		if not it is Dictionary:
+			return null
+		var uid := str(it.get("uid", ""))
+		if uid == "" or not known.has(uid) or seen.has(uid):
+			return null
+		seen[uid] = true
+		var out: Dictionary = (known[uid] as Dictionary).duplicate(true)
+		for k in ItemInstance.OWNER_FIELDS:
+			if it.has(k):
+				out[k] = it[k]
+		return out
+	for key in ["inventory", "storage"]:
+		var list := []
+		for it in merged.get(key, []):
+			var v = fix.call(it)
+			if v != null:
+				list.append(v)
+		merged[key] = list
+	var eq = merged.get("equipment", {})
+	var new_eq := {}
+	if eq is Dictionary:
+		for k in eq:
+			var v = fix.call(eq[k])
+			if v != null:
+				new_eq[k] = v
+	merged["equipment"] = new_eq
+
+static func _guard_money(server_data: Dictionary, merged: Dictionary, pending_gold: int) -> bool:
+	var s_total := int(server_data.get("gold", 0)) + int(server_data.get("storage_gold", 0))
+	var gold := int(merged.get("gold", 0))
+	var bank := int(merged.get("storage_gold", 0))
+	var rejected := gold < 0 or bank < 0 or gold + bank > s_total - pending_gold
+	if rejected:
+		merged["gold"] = server_data.get("gold", 0)
+		merged["storage_gold"] = server_data.get("storage_gold", 0)
+	if int(merged.get("jade", 0)) > int(server_data.get("jade", 0)) or int(merged.get("jade", 0)) < 0:
+		merged["jade"] = server_data.get("jade", 0)
+	## Mở rộng rương tốn tiền: không được nhiều hơn tối đa, không tự tăng nếu không có tiền giảm tương ứng (đã chặn ở tổng tiền).
+	merged["storage_extra"] = clampi(int(merged.get("storage_extra", 0)), 0, maxi(int(server_data.get("storage_extra", 0)), 5))
+	return rejected
 
 ## Điểm tiềm năng hợp lệ: đã cộng + còn lại <= điểm khởi đầu + 5 x (cấp - 1), không âm.
 static func _potential_ok(p: PlayerProfile, level: int) -> bool:

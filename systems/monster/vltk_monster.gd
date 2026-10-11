@@ -558,7 +558,7 @@ func die() -> void:
 ## Rớt đồ theo bảng script server gốc (DropTable) + kinh nghiệm (KillRewards, chia theo tổ đội).
 ## Online: chỉ gọi khi server báo mình được thưởng; `with_drops` = mình là người hạ đòn cuối.
 func grant_rewards(with_drops := true) -> void:
-	if with_drops:
+	if with_drops and net_eid == 0:   ## online: đồ rơi do server tung (S_DROPS)
 		var drops := DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
 		if not drops.is_empty():
 			GroundDrop.spawn_drops(get_parent(), position, drops)

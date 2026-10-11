@@ -35,6 +35,14 @@ const LOCK_LOCKED := -1
 const LOCK_NORMAL := 0
 const LOCK_UNLOCKING := 1
 var lock_state: int = LOCK_NORMAL
+## Mã riêng của MÓN ĐỒ NÀY (không trùng món nào khác) — online: server dùng để biết món nào thuộc về ai, chống nhân bản đồ.
+var uid: String = ""
+
+static func new_uid() -> String:
+	return "%08x%08x" % [randi(), randi()]
+
+## Các khoá trong to_dict() mà chủ đồ được tự đổi (vị trí, khoá, giá bán) — còn lại là chỉ số món đồ, chỉ server tạo ra.
+const OWNER_FIELDS := ["rx", "ry", "rb", "lock", "unlock_at", "price"]
 var unlock_at: int = 0          ## thời điểm (giây unix) hết chờ mở khoá
 var trade_price: int = 0        ## giá bày bán (lượng); 0 = không bán
 
@@ -97,7 +105,12 @@ func to_dict() -> Dictionary:
 	return {"base": base_index, "gold": gold_index, "series": series, "base_values": base_values.duplicate(true),
 		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability,
 		"seed": gen_seed, "luck": luck, "rx": room_x, "ry": room_y, "rb": room_bag,
-		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price}
+		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price, "uid": _ensure_uid()}
+
+func _ensure_uid() -> String:
+	if uid == "":
+		uid = new_uid()
+	return uid
 
 static func from_dict(data: Dictionary) -> ItemInstance:
 	var item := ItemInstance.new()
@@ -122,4 +135,7 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.lock_state = int(data.get("lock", LOCK_NORMAL))
 	item.unlock_at = int(data.get("unlock_at", 0))
 	item.trade_price = int(data.get("price", 0))
+	item.uid = str(data.get("uid", ""))
+	if item.uid == "":
+		item.uid = new_uid()
 	return item

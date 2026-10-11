@@ -25,7 +25,10 @@ const C_HELLO := 1        ## u16 version, str access_token, u32 character_id
 const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags
 const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse
 const C_DAMAGE := 4       ## u32 monster_eid, u32 amount, u8 flags (1 = làm khựng) — sát thương đã tính ở máy người đánh
-const C_PROFILE := 5      ## u32 n + n byte JSON(PlayerProfile.to_dict) nén gzip — game server gộp (ProfileGuard) rồi lưu
+const C_PROFILE := 5      ## u32 grant_ack, json(PlayerProfile.to_dict) nén — game server gộp (ProfileGuard) rồi lưu.
+                          ## grant_ack = số thứ tự "quà" (đồ / tiền server cho) cuối cùng game đã áp vào hồ sơ
+const C_PICKUP := 6       ## u32 drop_id — nhặt đồ rơi
+const C_DISCARD := 7      ## str item_uid — vứt món trong túi xuống đất
 const C_PING := 9         ## u32 client_ms
 
 # server -> game
@@ -44,6 +47,11 @@ const S_PROGRESS := 11    ## u32 exp_gained, u16 level, i64 current_exp — kinh
 const S_SAVED := 12       ## u32 version — server vừa lưu nhân vật (game cập nhật version để lần lưu HTTP sau không lệch)
 const S_SPAWNS := 13      ## u16 n, n x (thân S_SPAWN) — gộp mọi thực thể mới vào tầm nhìn trong 1 lần gửi
 const S_DESPAWNS := 14    ## u16 n, n x u32 eid
+const S_PROFILE := 15     ## u32 grant_seq, json nhân vật chuẩn của server — game chép vào hồ sơ đang dùng (vào map, sau giao dịch...)
+const S_DROPS := 16       ## u16 n, n x (u32 drop_id, f32 x, f32 y, u32 owner_eid, u8 kind 0 tiền / 1 đồ, u32 tiền | json đồ)
+const S_PICKED := 17      ## u32 grant_seq, u32 drop_id, u8 kind, u32 tiền | json đồ (đã nằm trong hồ sơ server, có rx/ry)
+const S_DROP_GONE := 18   ## u32 drop_id — đồ rơi đã bị nhặt / hết hạn
+const S_NOTICE := 19      ## str — thông báo cho người chơi
 const MAX_PROFILE_BYTES := 512 * 1024
 
 const KIND_PLAYER := 1

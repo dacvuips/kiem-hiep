@@ -68,9 +68,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		if player.has_method("walk_to_feet"):
 			player.walk_to_feet(global_position)
 
+## Online: đồ rơi do game server tạo (net_id != 0) — nhặt = xin server; server đồng ý (S_PICKED) thì NetWorldSync mới cộng.
+var net_id: int = 0
+
 func _pick_up(player: Node) -> void:
 	var profile := GameManager.local_profile
 	if profile == null:
+		return
+	if net_id != 0:
+		NetClient.send_pickup(net_id)
 		return
 	## Tổ đội: chế độ nhặt đồ (đội trưởng nhặt / luân phiên) quyết định mình có được nhặt lúc này không.
 	var team := SocialHub.of(profile).team

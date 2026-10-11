@@ -160,6 +160,12 @@ func _drop(index: int) -> void:
 		_show_message(blocked)
 		return
 	_profile.inventory.remove_at(index)
+	if NetClient.is_in_world():
+		## Online: server đặt món xuống đất (mọi người ở gần đều thấy).
+		NetClient.send_discard(item.uid)
+		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
+		_commit()
+		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null:
 		var parent: Node = VltkWorld.entity_parent()

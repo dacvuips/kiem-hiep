@@ -17,6 +17,11 @@ var kills: Array = []             ## các S_KILL nhận được
 var exp_gained := 0
 var level := 0
 var saved_version := 0
+var profile: Dictionary = {}      ## bản nhân vật server gửi (S_PROFILE)
+var grant_ack := 0
+var drops: Dictionary = {}        ## drop_id -> {pos, owner, amount | item}
+var picked: Array = []            ## [{id, amount, item}]
+var notices: Array = []
 var states_received := 0
 var closed := false
 var _token := ""
@@ -78,8 +83,14 @@ func nearest_monster() -> int:
 				best = id
 	return best
 
+func pickup(drop_id: int) -> void:
+	var b := NetProto.writer(NetProto.C_PICKUP)
+	b.put_u32(drop_id)
+	_send(b, NetProto.CH_RELIABLE)
+
 func send_profile(data: Dictionary) -> void:
 	var b := NetProto.writer(NetProto.C_PROFILE)
+	b.put_u32(grant_ack)
 	NetProto.put_json(b, data)
 	_send(b, NetProto.CH_RELIABLE)
 
@@ -153,6 +164,32 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			level = b.get_u16()
 		NetProto.S_SAVED:
 			saved_version = b.get_u32()
+		NetProto.S_PROFILE:
+			grant_ack = b.get_u32()
+			profile = NetProto.get_json(b)
+		NetProto.S_DROPS:
+			for i in b.get_u16():
+				var id := b.get_u32()
+				var d := {"pos": Vector2(b.get_float(), b.get_float()), "owner": b.get_u32()}
+				if b.get_u8() == 0:
+					d["amount"] = b.get_u32()
+				else:
+					d["item"] = JSON.parse_string(NetProto.get_str(b, 65535))
+				drops[id] = d
+		NetProto.S_PICKED:
+			grant_ack = b.get_u32()
+			var id := b.get_u32()
+			var got := {"id": id}
+			if b.get_u8() == 0:
+				got["amount"] = b.get_u32()
+			else:
+				got["item"] = JSON.parse_string(NetProto.get_str(b, 65535))
+			picked.append(got)
+			drops.erase(id)
+		NetProto.S_DROP_GONE:
+			drops.erase(b.get_u32())
+		NetProto.S_NOTICE:
+			notices.append(NetProto.get_str(b))
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())
