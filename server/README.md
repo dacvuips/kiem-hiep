@@ -139,5 +139,10 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
   đã biết; món lạ, món nhân bản, sửa chỉ số, tăng tiền đều bị bỏ. Đồ rơi do server tung (`S_DROPS`), nhặt phải xin server
   (`C_PICKUP` -> `S_PICKED`, chủ được nhặt trước 30 giây), vứt đồ thì server đặt xuống đất (`C_DISCARD`). Quà chưa được game
   xác nhận (`grant_ack`) được server cộng bù khi gộp, không bị mất.
-- `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền dưới chân người hạ quái.
+- **Giao dịch + bày bán giữa người thật** (`net/server/social_server.gd`): chạy đúng `TradeSession` / `StallService` gốc trên bản
+  nhân vật của server; game chỉ gửi thao tác (`C_TRADE_*`, `C_STALL`), xong thì server gửi bản chuẩn (`S_PROFILE`) cho 2 bên.
+  Bản game gửi lên trước khi nhận bản chuẩn (ack cũ) bị bỏ qua. Trong map có nút **Giao lưu** (người chơi ở gần).
+- **Nhân vật mới:** lần đầu vào map, server khởi tạo lại phần kinh tế (cấp 1, không tiền / đồ) — chặn tạo nhân vật kèm đồ.
+- **Lưu từ game ngoài map** (`PUT /v1/characters/{id}`): server tài khoản chặn tăng cấp / tiền / đồ / tổng điểm (`profile_guard.go`).
+- `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền + 1 món đồ dưới chân người hạ quái.
 - **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).

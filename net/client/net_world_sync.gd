@@ -20,6 +20,9 @@ var _last_sent := {}
 var _last_look := {}
 var _reconnect_in := -1.0
 
+## Đang chạy trong map (để SocialDirectory lấy người chơi thật ở gần).
+static var current: NetWorldSync
+
 static func is_online_mode() -> bool:
 	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0 and not ServerSelectScreen.selected_server.is_empty()
 
@@ -40,9 +43,16 @@ func _ready() -> void:
 	NetClient.picked.connect(_on_picked)
 	NetClient.drop_gone.connect(_on_drop_gone)
 	NetClient.server_notice.connect(_notify)
+	NetClient.trade_invite.connect(_on_trade_invite)
+	NetClient.trade_state.connect(_on_trade_state)
+	NetClient.trade_end.connect(_on_trade_end)
+	NetClient.stall_items.connect(_on_stall_items)
+	current = self
 	_connect()
 
 func _exit_tree() -> void:
+	if current == self:
+		current = null
 	## Gửi bản cuối cho game server (server lưu khi mình rời), rồi đánh dấu version phải hỏi lại.
 	if NetClient.is_in_world() and GameManager.local_profile:
 		NetClient.send_profile(GameManager.local_profile.to_dict())
@@ -118,6 +128,65 @@ func _on_drop_gone(id: int) -> void:
 	_drops.erase(id)
 	if g and is_instance_valid(g):
 		g.queue_free()
+
+# ---------------------------------------------------------------- giao lưu với người chơi thật
+
+## Người chơi thật đang trong tầm nhìn, dạng MockPlayer (giao diện xã hội có sẵn dùng định dạng này). id = eid trên server.
+func nearby_players() -> Array[MockPlayer]:
+	var out: Array[MockPlayer] = []
+	for r: RemotePlayer in _remotes.values():
+		if not is_instance_valid(r):
+			continue
+		var m := MockPlayer.new()
+		m.id = r.eid
+		m.name = r.display_name
+		m.level = r.level
+		m.camp = r.camp
+		m.stall_open = (r.flags & NetProto.FLAG_STALL) != 0
+		m.trade_open = (r.flags & NetProto.FLAG_TRADE_OPEN) != 0
+		m.invite_accept_rate = 1.0
+		out.append(m)
+	return out
+
+func _hub() -> SocialHub:
+	return SocialHub.of(GameManager.local_profile) if GameManager.local_profile else null
+
+func _on_trade_invite(from_eid: int, from_name: String) -> void:
+	var dlg := ConfirmationDialog.new()
+	dlg.title = "Giao dịch"
+	dlg.dialog_text = "%s muốn giao dịch với bạn." % from_name
+	dlg.ok_button_text = "Đồng ý"
+	dlg.cancel_button_text = "Từ chối"
+	dlg.confirmed.connect(func() -> void: NetClient.send_trade_answer(from_eid, true))
+	dlg.canceled.connect(func() -> void: NetClient.send_trade_answer(from_eid, false))
+	dlg.visibility_changed.connect(func() -> void:
+		if not dlg.visible:
+			dlg.queue_free())
+	get_tree().root.add_child(dlg)
+	dlg.popup_centered()
+
+func _on_trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary) -> void:
+	var hub := _hub()
+	if hub == null:
+		return
+	var t := hub.trade as NetTradeSession
+	if t == null or not t.active or t.partner_eid != partner_eid:
+		t = NetTradeSession.new(hub.profile, partner_eid, partner_name)
+		hub.trade = t
+		t.finished.connect(func(ok: bool, msg: String) -> void: hub.notice.emit(msg, ok))
+		t.apply_state(mine, theirs)
+		TradeWindow.open(get_tree().current_scene, hub)
+		return
+	t.apply_state(mine, theirs)
+
+func _on_trade_end(success: bool, message: String) -> void:
+	var hub := _hub()
+	if hub and hub.trade is NetTradeSession:
+		(hub.trade as NetTradeSession).end(success, message)
+
+func _on_stall_items(_seller_eid: int, title: String, items: Array) -> void:
+	if StallBrowseWindow.current != null and is_instance_valid(StallBrowseWindow.current):
+		StallBrowseWindow.current.set_goods(title, items)
 
 ## Kinh nghiệm / cấp do server tính: cộng y hệt cách server cộng (cùng PlayerProfile.add_exp) rồi chốt theo số của server.
 func _on_progress(gained: int, level: int, current_exp: int) -> void:

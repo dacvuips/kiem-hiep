@@ -39,6 +39,10 @@ func _init(p: PlayerProfile) -> void:
 func start_trade(partner: MockPlayer) -> String:
 	if trade != null and trade.active:
 		return "Bạn đang trong một giao dịch."
+	if NetClient.is_in_world():
+		## Online: xin server; đối phương đồng ý thì server mở giao dịch (NetWorldSync mở cửa sổ).
+		NetClient.send_trade_request(partner.id)
+		return "online"
 	var err := []
 	var s := TradeSession.request(profile, partner, err)
 	if s == null:
@@ -51,6 +55,8 @@ func start_trade(partner: MockPlayer) -> String:
 func tick(delta: float) -> void:
 	if trade != null and trade.active:
 		trade.tick(delta)
+	if NetClient.is_in_world():
+		return   ## online: khách mua hàng / người xin vào là người thật (server báo) — không giả lập
 	if profile.stall_open:
 		_stall_clock += delta
 		if _stall_clock >= 6.0:

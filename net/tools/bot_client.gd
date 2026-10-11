@@ -22,6 +22,10 @@ var grant_ack := 0
 var drops: Dictionary = {}        ## drop_id -> {pos, owner, amount | item}
 var picked: Array = []            ## [{id, amount, item}]
 var notices: Array = []
+var trade_invites: Array = []     ## [{from, name}]
+var trade: Dictionary = {}        ## trạng thái giao dịch mới nhất {partner, mine, theirs}
+var trade_ended: Array = []       ## [{ok, msg}]
+var stall: Dictionary = {}        ## {seller, title, items}
 var states_received := 0
 var closed := false
 var _token := ""
@@ -82,6 +86,45 @@ func nearest_monster() -> int:
 				best_d = d
 				best = id
 	return best
+
+func trade_request(target: int) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_REQ)
+	b.put_u32(target)
+	_send(b, NetProto.CH_RELIABLE)
+
+func trade_answer(from: int, accept: bool) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_ANSWER)
+	b.put_u32(from)
+	b.put_u8(1 if accept else 0)
+	_send(b, NetProto.CH_RELIABLE)
+
+func trade_op(op: int, uid := "", amount := 0) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_OP)
+	b.put_u8(op)
+	if op == SocialServer.OP_OFFER or op == SocialServer.OP_TAKE:
+		NetProto.put_str(b, uid)
+	elif op == SocialServer.OP_MONEY:
+		b.put_u32(amount)
+	_send(b, NetProto.CH_RELIABLE)
+
+func stall_op(op: int, title := "", seller := 0, uid := "") -> void:
+	var b := NetProto.writer(NetProto.C_STALL)
+	b.put_u8(op)
+	if op == SocialServer.STALL_OPEN:
+		NetProto.put_str(b, title)
+	elif op == SocialServer.STALL_BROWSE:
+		b.put_u32(seller)
+	elif op == SocialServer.STALL_BUY:
+		b.put_u32(seller)
+		NetProto.put_str(b, uid)
+	_send(b, NetProto.CH_RELIABLE)
+
+## Các uid đồ trong túi theo bản server mới nhất.
+func inventory_uids() -> Array:
+	var out := []
+	for it in profile.get("inventory", []):
+		out.append(str(it.get("uid", "")))
+	return out
 
 func pickup(drop_id: int) -> void:
 	var b := NetProto.writer(NetProto.C_PICKUP)
@@ -190,6 +233,25 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			drops.erase(b.get_u32())
 		NetProto.S_NOTICE:
 			notices.append(NetProto.get_str(b))
+		NetProto.S_TRADE_INVITE:
+			var from := b.get_u32()
+			trade_invites.append({"from": from, "name": NetProto.get_str(b)})
+		NetProto.S_TRADE_STATE:
+			var t := {"partner": b.get_u32(), "partner_name": NetProto.get_str(b)}
+			for side in ["mine", "theirs"]:
+				var d := {"money": b.get_u32(), "locked": b.get_u8() != 0, "ok": b.get_u8() != 0, "age": b.get_u32(), "uids": []}
+				for k in b.get_u16():
+					d.uids.append(str(JSON.parse_string(NetProto.get_str(b, 65535)).get("uid", "")))
+				t[side] = d
+			trade = t
+		NetProto.S_TRADE_END:
+			var ok := b.get_u8() != 0
+			trade_ended.append({"ok": ok, "msg": NetProto.get_str(b)})
+		NetProto.S_STALL_ITEMS:
+			var s := {"seller": b.get_u32(), "title": NetProto.get_str(b), "items": []}
+			for k in b.get_u16():
+				s.items.append(JSON.parse_string(NetProto.get_str(b, 65535)))
+			stall = s
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())

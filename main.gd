@@ -193,6 +193,7 @@ func _on_panel_profile_changed() -> void:
 ## Tổ đội · Bang hội · Rương · Bày bán · Khoá bảo vệ.
 func _build_social_buttons() -> void:
 	var entries := [
+		["Giao lưu", "Người chơi ở gần: giao dịch, xem quầy, xem trang bị", func(p: PlayerProfile) -> void: SocialMenuWindow.open(self, p)],
 		["Tổ đội", "Lập nhóm, mời / xin vào đội", func(p: PlayerProfile) -> void: TeamWindow.open(self, SocialHub.of(p))],
 		["Bang hội", "Bang hội: tin tức, chiêu mộ, quyền hạn, nhật ký", func(p: PlayerProfile) -> void: GuildWindow.open(self, SocialHub.of(p))],
 		["Rương", "Rương chứa đồ (có khoá bảo vệ)", func(p: PlayerProfile) -> void: StorageWindow.open(self, p)],

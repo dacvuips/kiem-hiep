@@ -9,6 +9,8 @@ var _seller: MockPlayer
 var _list: VBoxContainer
 var _gold: HBoxContainer
 var _msg: PanelContainer
+## Online: cửa sổ đang mở (NetWorldSync đổ hàng vào khi server trả S_STALL_ITEMS).
+static var current: StallBrowseWindow
 
 static func open(host: Node, hub: SocialHub, seller: MockPlayer) -> StallBrowseWindow:
 	return SocialWindow.present(host, StallBrowseWindow.new(hub, seller), &"stall_browse") as StallBrowseWindow
@@ -40,6 +42,23 @@ func _init(hub: SocialHub = null, seller: MockPlayer = null) -> void:
 	var close := SocialUi.stone_button("Đóng")
 	body.add_child(close)
 	close.pressed.connect(func() -> void: close_requested.emit())
+	if NetClient.is_in_world():
+		current = self
+		_seller.bag.inventory.clear()
+		NetClient.send_stall(SocialServer.STALL_BROWSE, "", _seller.id)
+	_refresh()
+
+func _exit_tree() -> void:
+	if current == self:
+		current = null
+
+## Hàng trên quầy do server gửi.
+func set_goods(title: String, items: Array) -> void:
+	_seller.stall_open = title != ""
+	_seller.stall_title = title
+	_seller.bag.inventory.clear()
+	for d in items:
+		_seller.bag.inventory.append(ItemInstance.from_dict(d))
 	_refresh()
 
 func _refresh() -> void:
@@ -72,6 +91,11 @@ func _refresh() -> void:
 		_list.add_child(row)
 
 func _buy(it: ItemInstance) -> void:
+	if NetClient.is_in_world():
+		NetClient.send_stall(SocialServer.STALL_BUY, "", _seller.id, it.uid)
+		SocialUi.set_banner(_msg, "Đang mua %s…" % it.get_display_name(), true)
+		_msg.visible = true
+		return
 	var err := StallService.buy(TradeParty.of_profile(_profile), TradeParty.of_mock(_seller), it, false, _seller.stall_open)
 	SocialUi.set_banner(_msg, err if err != "" else "Mua %s thành công!" % it.get_display_name(), err == "")
 	_msg.visible = true

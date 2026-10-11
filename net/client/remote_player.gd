@@ -16,6 +16,7 @@ var avatar: CharacterAvatar
 var _label: Label
 var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo giờ server
 var _action := ""
+var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở giao dịch...)
 var _look := {}
 
 func setup(info: Dictionary) -> void:
@@ -99,6 +100,9 @@ func _process(_delta: float) -> void:
 	_apply(a)
 
 func _apply(st: Dictionary) -> void:
+	if int(st.flags) != flags:
+		flags = int(st.flags)
+		_label.text = display_name + ("  [Bày bán]" if (flags & NetProto.FLAG_STALL) != 0 else "")
 	var dir := int(st.dir)
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))

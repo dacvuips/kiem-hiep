@@ -116,10 +116,17 @@ func _on_stall() -> void:
 	if _profile.stall_open:
 		StallService.close_stall(_profile)
 		_say("", "Đã dọn quầy.")
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.STALL_CLOSE)
 	else:
 		_profile.stall_title = _title_edit.text
 		var err := StallService.open_stall(_profile, _title_edit.text, _is_riding())
 		_say(err, "Quầy đã mở — chờ khách ghé xem.")
+		if err == "" and NetClient.is_in_world():
+			## Gửi giá vừa đặt cho server trước (cùng kênh tin cậy, đúng thứ tự) rồi mới mở quầy.
+			SaveManager.save_profile(_profile)
+			await SaveManager.flush_online()
+			NetClient.send_stall(SocialServer.STALL_OPEN, _title_edit.text)
 	SaveManager.save_profile(_profile)
 	_refresh()
 
@@ -133,8 +140,13 @@ func _on_trade() -> void:
 	if _profile.trade_open:
 		StallService.close_trade(_profile)
 		_say("", "Đã tắt mở giao dịch.")
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_CLOSE)
 	else:
-		_say(StallService.open_trade(_profile), "Đã mở giao dịch — người khác có thể xin giao dịch với bạn.")
+		var err := StallService.open_trade(_profile)
+		_say(err, "Đã mở giao dịch — người khác có thể xin giao dịch với bạn.")
+		if err == "" and NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_OPEN)
 	_refresh()
 
 func _refresh() -> void:

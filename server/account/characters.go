@@ -239,15 +239,25 @@ func (s *server) handleSaveCharacter(w http.ResponseWriter, r *http.Request) err
 	ctx := r.Context()
 	var name string
 	var version int
-	err = s.db.QueryRow(ctx, `SELECT name, version FROM characters WHERE id=$1 AND account_id=$2 AND deleted_at IS NULL`, id, a.ID).
-		Scan(&name, &version)
+	var oldData json.RawMessage
+	err = s.db.QueryRow(ctx, `SELECT name, version, data FROM characters WHERE id=$1 AND account_id=$2 AND deleted_at IS NULL`, id, a.ID).
+		Scan(&name, &version, &oldData)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return errNoCharacter
 	}
 	if err != nil {
 		return err
 	}
-	data, gender, sect, level, err := profileSummary(req.Data, name)
+	// Lưu từ game (ngoài map): không cho tăng cấp / tiền / đồ / điểm — xem guardClientSave.
+	var incoming map[string]any
+	if err := json.Unmarshal(req.Data, &incoming); err != nil || incoming == nil {
+		return errBadRequest
+	}
+	guarded, err := json.Marshal(guardClientSave(oldData, incoming))
+	if err != nil {
+		return err
+	}
+	data, gender, sect, level, err := profileSummary(guarded, name)
 	if err != nil {
 		return err
 	}

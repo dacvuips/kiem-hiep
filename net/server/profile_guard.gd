@@ -125,6 +125,22 @@ static func _skills_ok(p: PlayerProfile, level: int) -> bool:
 	var budget := PlayerProfile.new().skill_points + PlayerProfile.SKILL_POINTS_PER_LEVEL * (level - 1)
 	return p.skill_points >= 0 and spent + p.skill_points <= budget
 
+## Nhân vật MỚI (chưa qua server lần nào): dữ liệu do game tạo lúc "Tạo nhân vật" — chỉ giữ phần ngoại hình / cài đặt,
+## phần kinh tế về đúng khởi đầu (cấp 1, không tiền, không đồ, điểm mặc định). Chặn tạo nhân vật kèm sẵn tiền / đồ.
+static func sanitize_new(data: Dictionary) -> Dictionary:
+	var src := PlayerProfile.from_dict(data)
+	var fresh := PlayerProfile.new()
+	fresh.display_name = src.display_name
+	fresh.gender = src.gender
+	var sect := SectRegistry.get_by_id(src.sect_id)
+	if sect:
+		fresh.set_sect(sect)
+	fresh.camp = src.camp
+	fresh.riding = src.riding
+	fresh.skill_settings = src.skill_settings
+	fresh.server_seen = 1
+	return fresh.to_dict()
+
 class _Caster extends Node2D:
 	var combat_stats: CombatantStats
 

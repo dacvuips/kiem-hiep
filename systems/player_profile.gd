@@ -667,8 +667,12 @@ func copy_from(other: PlayerProfile) -> void:
 		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
 			set(p.name, other.get(p.name))
 
+## Online: game server đã kiểm tra / khởi tạo phần kinh tế của nhân vật này (lần đầu vào map). 0 = chưa.
+var server_seen: int = 0
+
 func to_dict() -> Dictionary:
 	return {
+		"server_seen": server_seen,
 		"name": display_name,
 		"gender": gender,
 		"level": level,
@@ -729,6 +733,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.sect_id = str(data.get("sect_id", ""))
 	profile.sect_name = str(data.get("sect_name", profile.sect_name))
 	profile.camp = int(data.get("camp", -1))
+	profile.server_seen = int(data.get("server_seen", 0))
 	for item_data in data.get("inventory", []):
 		profile.inventory.append(ItemInstance.from_dict(item_data))
 	profile._layout_inventory()

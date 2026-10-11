@@ -21,6 +21,8 @@ static func reset() -> void:
 	_owner_key = ""
 
 static func players(profile: PlayerProfile) -> Array[MockPlayer]:
+	if NetClient.is_in_world() and NetWorldSync.current != null:
+		return NetWorldSync.current.nearby_players()
 	var key := "%s|%d" % [profile.display_name, profile.level / 10]
 	if _owner_key != key or _players.is_empty():
 		_owner_key = key

@@ -30,6 +30,10 @@ const C_PROFILE := 5      ## u32 grant_ack, json(PlayerProfile.to_dict) nén —
 const C_PICKUP := 6       ## u32 drop_id — nhặt đồ rơi
 const C_DISCARD := 7      ## str item_uid — vứt món trong túi xuống đất
 const C_PING := 9         ## u32 client_ms
+const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
+const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
+const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
+const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
 const S_WELCOME := 1      ## u32 my_eid, f32 x, f32 y, str name
@@ -52,6 +56,11 @@ const S_DROPS := 16       ## u16 n, n x (u32 drop_id, f32 x, f32 y, u32 owner_ei
 const S_PICKED := 17      ## u32 grant_seq, u32 drop_id, u8 kind, u32 tiền | json đồ (đã nằm trong hồ sơ server, có rx/ry)
 const S_DROP_GONE := 18   ## u32 drop_id — đồ rơi đã bị nhặt / hết hạn
 const S_NOTICE := 19      ## str — thông báo cho người chơi
+const S_TRADE_INVITE := 20 ## u32 from_eid, str name — có người xin giao dịch
+const S_TRADE_STATE := 21  ## u32 partner_eid, str partner_name, 2 x (bên mình trước): u32 money, u8 locked, u8 ok, u32 ok_age_ms,
+                           ## u16 n, n x str json đồ trong phòng
+const S_TRADE_END := 22   ## u8 success, str message
+const S_STALL_ITEMS := 23 ## u32 seller_eid, str title ("" = quầy đóng), u16 n, n x str json đồ (có giá)
 const MAX_PROFILE_BYTES := 512 * 1024
 
 const KIND_PLAYER := 1
@@ -65,6 +74,10 @@ const FLAG_RIDING := 1
 const FLAG_SITTING := 2
 const FLAG_DEAD := 4
 const FLAG_JUMPING := 8
+## Cờ do SERVER đặt (game không gửi được): đang bày bán / đang mở giao dịch.
+const FLAG_STALL := 16
+const FLAG_TRADE_OPEN := 32
+const CLIENT_FLAGS := 0x0f
 
 static func action_index(action: String) -> int:
 	var i := ACTIONS.find(action)

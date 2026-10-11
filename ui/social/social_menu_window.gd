@@ -90,6 +90,9 @@ func _view_equip(m: MockPlayer) -> void:
 
 func _trade(m: MockPlayer) -> void:
 	var err := _hub.start_trade(m)
+	if err == "online":
+		_say("Đã gửi lời mời giao dịch tới %s — chờ đồng ý." % m.name)
+		return
 	if err != "":
 		_say(err)
 		return

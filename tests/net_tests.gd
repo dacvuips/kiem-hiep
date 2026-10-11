@@ -177,6 +177,107 @@ func test_items(p: BotClient, info: Array) -> void:
 	check("tiền nhặt được vẫn còn (dù gói gửi trước S_PICKED)", int(row.data.gold) == int(p.profile.get("gold", 0)) + gold_got, [row.data.gold, gold_got])
 	check("đồ nhặt được vẫn còn", items_got.all(func(u: String) -> bool: return saved_uids.has(u)), [items_got, saved_uids])
 
+## C2: giao dịch + bày bán giữa 2 người thật, đồ / tiền đổi chủ ở server; lưu HTTP ngoài map không tăng được tiền.
+func test_trade_and_stall() -> void:
+	var xi := await make_player("x")
+	var yi := await make_player("y")
+	var x := bot(xi[0], xi[1])
+	var y := bot(yi[0], yi[1])
+	if not await wait_until(func() -> bool: return x.in_world and y.in_world and not x.profile.is_empty()):
+		check("C2: 2 bot vào map", false)
+		return
+	check("C2: nhân vật mới được server khởi tạo (server_seen, không tiền)", int(x.profile.get("server_seen", 0)) == 1 and int(x.profile.get("gold", -1)) == 0, x.profile.get("gold"))
+	## X kiếm 1 món + tiền (chế độ test: đồ rơi ngay dưới chân người hạ quái)
+	var m := x.nearest_monster()
+	if m == 0:
+		await _walk_to_monsters(x)
+		m = x.nearest_monster()
+	await _walk(x, (x.known[m].pos as Vector2) + Vector2(30, 0))
+	for i in 80:
+		if not x.known.has(m) or int(x.known[m].get("hp", 100)) == 0:
+			break
+		x.damage(m, 100000)
+		await get_tree().create_timer(0.06).timeout
+	await wait_until(func() -> bool: return x.drops.size() >= 2, 3.0)
+	for id in x.drops.keys():
+		x.pickup(id)
+	await wait_until(func() -> bool: return x.picked.size() >= 2, 3.0)
+	var item_uid := ""
+	for p in x.picked:
+		if p.has("item"):
+			item_uid = str(p.item.get("uid", ""))
+	check("C2: X có món đồ để giao dịch", item_uid != "", x.picked)
+	if item_uid == "":
+		return
+	## Y đi tới cạnh X, mở giao dịch; X xin giao dịch.
+	await _walk(y, x.feet + Vector2(40, 0))
+	y.stall_op(SocialServer.TRADE_OPEN)
+	await get_tree().create_timer(0.3).timeout
+	x.trade_request(y.eid)
+	check("C2: Y nhận lời mời giao dịch", await wait_until(func() -> bool: return not y.trade_invites.is_empty(), 3.0), x.notices)
+	y.trade_answer(x.eid, true)
+	check("C2: phòng giao dịch mở cho cả 2", await wait_until(func() -> bool: return not x.trade.is_empty() and not y.trade.is_empty(), 3.0))
+	x.trade_op(SocialServer.OP_OFFER, item_uid)
+	check("C2: Y thấy món X bỏ vào", await wait_until(func() -> bool: return y.trade.get("theirs", {}).get("uids", []).has(item_uid), 3.0), y.trade)
+	x.trade_op(SocialServer.OP_LOCK)
+	y.trade_op(SocialServer.OP_LOCK)
+	await wait_until(func() -> bool: return x.trade.get("theirs", {}).get("locked", false), 3.0)
+	x.trade_op(SocialServer.OP_CONFIRM)
+	await get_tree().create_timer(0.3).timeout
+	y.trade_op(SocialServer.OP_CONFIRM)   ## bên bấm sau phải chờ 5 giây
+	await get_tree().create_timer(0.5).timeout
+	check("C2: bấm Đồng ý quá sớm bị nhắc chờ", y.notices.any(func(n: String) -> bool: return n.contains("đợi")), y.notices)
+	await get_tree().create_timer(5.0).timeout
+	y.trade_op(SocialServer.OP_CONFIRM)
+	check("C2: giao dịch thành công", await wait_until(func() -> bool: return not y.trade_ended.is_empty() and y.trade_ended[-1].ok, 3.0), y.trade_ended)
+	check("C2: món đồ sang tay Y", await wait_until(func() -> bool: return y.inventory_uids().has(item_uid) and not x.inventory_uids().has(item_uid), 3.0))
+	## Bày bán: Y đặt giá 5 rồi mở quầy, X mua lại.
+	var py := y.profile.duplicate(true)
+	for it in py.inventory:
+		if str(it.uid) == item_uid:
+			it["price"] = 5
+	y.send_profile(py)
+	await get_tree().create_timer(0.6).timeout
+	y.stall_op(SocialServer.STALL_OPEN, "Hàng tốt giá rẻ")
+	await get_tree().create_timer(0.4).timeout
+	x.stall_op(SocialServer.STALL_BROWSE, "", y.eid)
+	check("C2: X xem quầy thấy món có giá", await wait_until(func() -> bool:
+		return x.stall.get("items", []).any(func(d: Dictionary) -> bool: return str(d.uid) == item_uid and int(d.price) == 5), 3.0), [x.stall, y.notices])
+	var x_gold := int(x.profile.get("gold", 0))
+	x.stall_op(SocialServer.STALL_BUY, "", y.eid, item_uid)
+	check("C2: mua ở quầy: đồ về X, tiền sang Y", await wait_until(func() -> bool:
+		return x.inventory_uids().has(item_uid) and int(x.profile.gold) == x_gold - 5 and int(y.profile.gold) == 5, 3.0),
+		[x.notices, y.notices, x.profile.get("gold"), y.profile.get("gold")])
+	x.close()
+	y.close()
+	await get_tree().create_timer(1.5).timeout
+	var rx := await _character(xi)
+	var ry := await _character(yi)
+	var saved_x := []
+	for it in rx.data.get("inventory", []):
+		saved_x.append(str(it.uid))
+	check("C2: kết quả được lưu", saved_x.has(item_uid) and int(ry.data.gold) == 5, [saved_x, ry.data.gold])
+	## Lưu HTTP từ Hub (ngoài map) không tăng được tiền / đồ.
+	var cheat: Dictionary = ry.data.duplicate(true)
+	cheat["gold"] = 999999
+	(cheat.inventory as Array).append({"uid": "cafebabecafebabe", "base": 1})
+	await http_put("/v1/characters/%d" % int(yi[1]), {"version": int(ry.version), "data": cheat}, yi[0])
+	var ry2 := await _character(yi)
+	var uids2 := []
+	for it in ry2.data.get("inventory", []):
+		uids2.append(str(it.uid))
+	check("C2: lưu HTTP ngoài map không tăng được tiền", int(ry2.data.gold) == 5, ry2.data.gold)
+	check("C2: lưu HTTP ngoài map không thêm được đồ lạ", not uids2.has("cafebabecafebabe"), uids2)
+
+func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
+	var h := HTTPRequest.new()
+	add_child(h)
+	h.request(API + path, ["Content-Type: application/json", "Authorization: Bearer " + token], HTTPClient.METHOD_PUT, JSON.stringify(body))
+	var res: Array = await h.request_completed
+	h.queue_free()
+	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+	return d if d is Dictionary else {}
+
 func _character(info: Array) -> Dictionary:
 	var list := await http("GET", "/v1/characters?server_id=1", {}, info[0])
 	for c in list.get("characters", []):
@@ -277,3 +378,4 @@ func run() -> void:
 	check("B thoát thì biến mất", await wait_until(func() -> bool: return not a2.known.has(b.eid)))
 
 	await test_items(a2, a_info)
+	await test_trade_and_stall()

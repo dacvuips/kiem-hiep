@@ -19,6 +19,10 @@ signal drops_received(drops: Array)
 signal picked(drop_id: int, amount: int, item: Dictionary)
 signal drop_gone(drop_id: int)
 signal server_notice(text: String)
+signal trade_invite(from_eid: int, from_name: String)
+signal trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary)
+signal trade_end(success: bool, message: String)
+signal stall_items(seller_eid: int, title: String, items: Array)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -127,6 +131,40 @@ func send_profile(data: Dictionary) -> void:
 	var b := NetProto.writer(NetProto.C_PROFILE)
 	b.put_u32(grant_ack)
 	NetProto.put_json(b, data)
+	_send(b)
+
+func send_trade_request(target_eid: int) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_REQ)
+	b.put_u32(target_eid)
+	_send(b)
+
+func send_trade_answer(from_eid: int, accept: bool) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_ANSWER)
+	b.put_u32(from_eid)
+	b.put_u8(1 if accept else 0)
+	_send(b)
+
+func send_trade_op(op: int, uid := "", amount := 0) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_OP)
+	b.put_u8(op)
+	if op == SocialServer.OP_OFFER or op == SocialServer.OP_TAKE:
+		NetProto.put_str(b, uid)
+	elif op == SocialServer.OP_MONEY:
+		b.put_u32(amount)
+	_send(b)
+
+## Bày bán / mở giao dịch. op = SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE.
+func send_stall(op: int, title := "", seller_eid := 0, uid := "") -> void:
+	var b := NetProto.writer(NetProto.C_STALL)
+	b.put_u8(op)
+	match op:
+		SocialServer.STALL_OPEN:
+			NetProto.put_str(b, title)
+		SocialServer.STALL_BROWSE:
+			b.put_u32(seller_eid)
+		SocialServer.STALL_BUY:
+			b.put_u32(seller_eid)
+			NetProto.put_str(b, uid)
 	_send(b)
 
 func send_pickup(drop_id: int) -> void:
@@ -271,6 +309,33 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			drop_gone.emit(b.get_u32())
 		NetProto.S_NOTICE:
 			server_notice.emit(NetProto.get_str(b))
+		NetProto.S_TRADE_INVITE:
+			var from := b.get_u32()
+			trade_invite.emit(from, NetProto.get_str(b))
+		NetProto.S_TRADE_STATE:
+			var pid := b.get_u32()
+			var pname := NetProto.get_str(b)
+			var sides := []
+			for i in 2:
+				var d := {"money": b.get_u32(), "locked": b.get_u8() != 0, "ok": b.get_u8() != 0, "ok_age_ms": b.get_u32(), "items": []}
+				for k in b.get_u16():
+					var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 65535))
+					if parsed is Dictionary:
+						d.items.append(parsed)
+				sides.append(d)
+			trade_state.emit(pid, pname, sides[0], sides[1])
+		NetProto.S_TRADE_END:
+			var ok := b.get_u8() != 0
+			trade_end.emit(ok, NetProto.get_str(b))
+		NetProto.S_STALL_ITEMS:
+			var seller := b.get_u32()
+			var title := NetProto.get_str(b)
+			var items := []
+			for k in b.get_u16():
+				var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 65535))
+				if parsed is Dictionary:
+					items.append(parsed)
+			stall_items.emit(seller, title, items)
 		NetProto.S_CORRECT:
 			position_corrected.emit(Vector2(b.get_float(), b.get_float()))
 		NetProto.S_PONG:
