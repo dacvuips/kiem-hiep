@@ -26,6 +26,7 @@ SaveManager="*res://systems/save/save_manager.gd"
 MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
 NetClient="*res://net/client/net_client.gd"
+PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
 
 [display]
 
@@ -35,6 +36,10 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [gui]
 
