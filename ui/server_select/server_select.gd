@@ -1,11 +1,12 @@
 extends Control
 class_name ServerSelectScreen
 ## Màn Chọn Máy Chủ (sau Đăng Nhập). Bố cục theo mockup 1672x941; mọi thành phần là node trong Stage (kéo thả trong editor,
-## Stage tự co theo cửa sổ). Danh sách máy chủ đọc từ data/server/servers.json — HIỆN LÀ DỮ LIỆU MẪU, chưa có máy chủ thật.
+## Stage tự co theo cửa sổ). Danh sách máy chủ lấy từ server tài khoản (AccountApi.servers(), admin quản lý trên web Admin).
+##   Chưa đăng nhập thì quay về màn Đăng Nhập. Góc phải trên: tên tài khoản + nút Đổi tài khoản.
 ##   - Cột trái lọc: Tất cả / Máy chủ mới / Đông vui / Miền Bắc / Miền Trung / Miền Nam.
 ##   - Máy chủ "Bảo trì" không vào được. Máy chủ đã chọn lưu vào user://login.cfg (mục server) để lần sau chọn sẵn.
 
-const DATA_PATH := "res://data/server/servers.json"
+const LOGIN_SCENE := "res://ui/login/Login.tscn"
 const CFG_PATH := "user://login.cfg"
 const NEXT_SCENE := "res://ui/character_roster/CharacterRoster.tscn"
 const FADE := 0.35
@@ -30,15 +31,22 @@ static var selected_server_id := 1
 @onready var _filter_box: VBoxContainer = %Filters
 @onready var _enter: TextureButton = %EnterButton
 @onready var _message: Label = %Message
+@onready var _account_label: Label = %AccountLabel
+@onready var _switch_account: Button = %SwitchAccountButton
 
 var _servers: Array = []
 var _filter := "all"
 var _tween: Tween
 var _row_buttons: Array[Button] = []
+var _loading := false
 var _filter_buttons: Array[Button] = []
 
 func _ready() -> void:
-	_servers = _load_servers()
+	if not AccountApi.is_logged_in():
+		get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
+		return
+	_account_label.text = "Tài khoản: " + AccountApi.username()
+	_switch_account.pressed.connect(_on_switch_account_pressed)
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) == OK:
 		selected_server_id = int(cfg.get_value("server", "id", selected_server_id))
@@ -46,19 +54,36 @@ func _ready() -> void:
 	_enter.pressed.connect(_on_enter_pressed)
 	_enter.mouse_entered.connect(_hover.bind(true))
 	_enter.mouse_exited.connect(_hover.bind(false))
-	_refresh_rows()
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
+	_fetch_servers()
 
 func _hover(on: bool) -> void:
 	_enter.pivot_offset = _enter.size * 0.5
 	create_tween().tween_property(_enter, "scale", Vector2.ONE * (1.04 if on else 1.0), 0.1)
 
-func _load_servers() -> Array:
-	if not FileAccess.file_exists(DATA_PATH):
-		return []
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
-	return parsed.get("servers", []) if parsed is Dictionary else []
+func _fetch_servers() -> void:
+	if _loading:
+		return
+	_loading = true
+	_servers = []
+	_refresh_rows()
+	var r: Dictionary = await AccountApi.servers()
+	_loading = false
+	if r.ok and r.data is Dictionary:
+		_servers = r.data.get("servers", [])
+	elif r.code == "unauthorized" or r.code == "banned":
+		AccountScreen.next_login_message = r.message
+		get_tree().change_scene_to_file(LOGIN_SCENE)
+		return
+	else:
+		_toast(r.message + " — bấm Vào game để thử lại")
+	_refresh_rows()
+
+func _on_switch_account_pressed() -> void:
+	_switch_account.disabled = true
+	await AccountApi.logout()
+	get_tree().change_scene_to_file(LOGIN_SCENE)
 
 # ---------------------------------------------------------------- lọc
 
@@ -121,7 +146,7 @@ func _refresh_rows() -> void:
 		shown += 1
 	if shown == 0:
 		var l := Label.new()
-		l.text = "Không có máy chủ nào"
+		l.text = "Đang tải danh sách máy chủ…" if _loading else "Không có máy chủ nào"
 		l.add_theme_color_override("font_color", Color(0.6, 0.55, 0.48))
 		l.add_theme_font_size_override("font_size", 18)
 		l.custom_minimum_size = Vector2(550, 60)
@@ -215,6 +240,9 @@ func _select(id: int) -> void:
 # ---------------------------------------------------------------- vào game
 
 func _on_enter_pressed() -> void:
+	if _servers.is_empty():
+		_fetch_servers()
+		return
 	var server := {}
 	for s in _servers:
 		if int(s.get("id", 0)) == selected_server_id:

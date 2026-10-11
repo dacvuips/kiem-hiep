@@ -24,6 +24,7 @@ ObjectPool="*uid://b3lfdja4o5cws"
 GameManager="*uid://cakgoqlhg0ma0"
 SaveManager="*res://systems/save/save_manager.gd"
 MusicManager="*res://systems/music_manager.gd"
+AccountApi="*res://systems/net/account_api.gd"
 
 [display]
 

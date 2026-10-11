@@ -227,9 +227,9 @@ horizontal_alignment = 1
 [node name="GoogleButton" type="TextureButton" parent="Stage" unique_id=1518406327]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 690.0
+offset_left = 806.0
 offset_top = 671.0
-offset_right = 750.0
+offset_right = 866.0
 offset_bottom = 731.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("g")
@@ -238,6 +238,7 @@ stretch_mode = 5
 
 [node name="AppleButton" type="TextureButton" parent="Stage" unique_id=717928078]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 767.0
 offset_top = 671.0
@@ -250,6 +251,7 @@ stretch_mode = 5
 
 [node name="FacebookButton" type="TextureButton" parent="Stage" unique_id=1648133001]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 844.0
 offset_top = 671.0
@@ -262,6 +264,7 @@ stretch_mode = 5
 
 [node name="GuestButton" type="TextureButton" parent="Stage" unique_id=381592713]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 921.0
 offset_top = 671.0

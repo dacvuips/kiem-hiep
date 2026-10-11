@@ -1,0 +1,221 @@
+extends Node
+## Autoload AccountApi — gọi server tài khoản (server/account, Go) qua HTTP/JSON. Chạy được cả PC, mobile và web.
+##
+## BẢO MẬT: client KHÔNG giữ khóa bí mật nào. Chỉ giữ token của chính người chơi:
+##   - access token (15 phút) chỉ nằm trong RAM;
+##   - refresh token (30 ngày) chỉ lưu xuống máy khi tích "Ghi nhớ đăng nhập". Server xoay vòng refresh token mỗi lần dùng
+##     và thu hồi mọi phiên nếu thấy token cũ bị dùng lại, nên token bị chép trộm sẽ sớm vô hiệu.
+##   File phiên được mã hóa bằng mã máy (OS.get_unique_id) — chỉ để file chép sang máy khác không đọc được, không phải khóa server.
+##
+## Mọi hàm public đều `await` được và trả về Dictionary:
+##   {"ok": bool, "status": int (HTTP), "code": String (mã lỗi server, rỗng nếu ok), "message": String, "data": Variant}
+
+signal logged_out
+
+## Địa chỉ server tài khoản. Đổi bằng tham số dòng lệnh `--account-url=https://...` hoặc Project Settings
+## "kiem_hiep/network/account_url" (dùng khi xuất bản game).
+const DEFAULT_URL := "http://127.0.0.1:8080"
+const SETTING_URL := "kiem_hiep/network/account_url"
+const SESSION_PATH := "user://session.dat"
+const TIMEOUT := 15.0
+## Làm mới access token sớm chừng này giây trước khi hết hạn.
+const REFRESH_MARGIN := 30.0
+
+var base_url := DEFAULT_URL
+## Thông tin tài khoản đang đăng nhập: {id, username, email, has_password, google_linked}. Rỗng = chưa đăng nhập.
+var account: Dictionary = {}
+
+var _access := ""
+var _access_expire_at := 0.0 ## giây (Time.get_ticks_msec()/1000)
+var _refresh := ""
+var _remember := true
+var _refreshing := false
+signal _refresh_finished(ok: bool)
+
+func _ready() -> void:
+	base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
+	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
+		if arg.begins_with("--account-url="):
+			base_url = arg.get_slice("=", 1)
+	base_url = base_url.trim_suffix("/")
+
+func is_logged_in() -> bool:
+	return not account.is_empty()
+
+func username() -> String:
+	return str(account.get("username", ""))
+
+# ---------------------------------------------------------------- tài khoản
+
+func login(user: String, password: String, remember: bool) -> Dictionary:
+	_remember = remember
+	var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/login", {"username": user, "password": password})
+	if r.ok:
+		_apply_session(r.data)
+	return r
+
+func register(user: String, email: String, password: String) -> Dictionary:
+	_remember = true
+	var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/register", {"username": user, "email": email, "password": password})
+	if r.ok:
+		_apply_session(r.data)
+	return r
+
+## Gửi mã đặt lại mật khẩu về email. Server luôn trả ok (kể cả tên/email không khớp) để chống dò tài khoản.
+func forgot_password(user: String, email: String) -> Dictionary:
+	return await _request(HTTPClient.METHOD_POST, "/v1/auth/forgot", {"username": user, "email": email})
+
+func reset_password(user: String, code: String, new_password: String) -> Dictionary:
+	return await _request(HTTPClient.METHOD_POST, "/v1/auth/reset", {"username": user, "code": code, "new_password": new_password})
+
+## Đổi mật khẩu khi đang đăng nhập. Server đăng xuất mọi máy khác và trả phiên mới cho máy này.
+func change_password(old_password: String, new_password: String) -> Dictionary:
+	var r := await _authed(HTTPClient.METHOD_POST, "/v1/account/password", {"old_password": old_password, "new_password": new_password})
+	if r.ok:
+		_apply_session(r.data)
+	return r
+
+func logout() -> void:
+	if _refresh != "":
+		await _request(HTTPClient.METHOD_POST, "/v1/auth/logout", {"refresh_token": _refresh})
+	_clear_session()
+	logged_out.emit()
+
+## Có phiên đã ghi nhớ trên máy này không (để tự đăng nhập lại).
+func has_saved_session() -> bool:
+	return FileAccess.file_exists(SESSION_PATH)
+
+## Tên tài khoản của phiên đã ghi nhớ (để điền sẵn), rỗng nếu không có.
+func saved_username() -> String:
+	return str(_read_session_file().get("username", ""))
+
+## Đăng nhập lại bằng refresh token đã ghi nhớ. Thất bại (hết hạn, bị thu hồi, bị khóa) thì xóa phiên đã lưu.
+func resume() -> Dictionary:
+	var saved := _read_session_file()
+	_refresh = str(saved.get("refresh_token", ""))
+	if _refresh == "":
+		return _fail(0, "no_session", "")
+	_remember = true
+	var ok: bool = await _do_refresh()
+	if ok:
+		return {"ok": true, "status": 200, "code": "", "message": "", "data": account}
+	return _fail(401, "unauthorized", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại")
+
+# ---------------------------------------------------------------- dữ liệu game
+
+func servers() -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/servers")
+
+## Access token hiện tại (còn hạn) — dùng khi kết nối game server. Rỗng nếu chưa đăng nhập / không làm mới được.
+func access_token() -> String:
+	if not await _ensure_access():
+		return ""
+	return _access
+
+# ---------------------------------------------------------------- phiên
+
+func _apply_session(data: Variant) -> void:
+	if not data is Dictionary:
+		return
+	_access = str(data.get("access_token", ""))
+	_refresh = str(data.get("refresh_token", ""))
+	_access_expire_at = _now() + float(data.get("expires_in", 0))
+	account = data.get("account", {})
+	if _remember:
+		_write_session_file()
+	else:
+		DirAccess.remove_absolute(SESSION_PATH)
+
+func _clear_session() -> void:
+	_access = ""
+	_refresh = ""
+	_access_expire_at = 0.0
+	account = {}
+	if FileAccess.file_exists(SESSION_PATH):
+		DirAccess.remove_absolute(SESSION_PATH)
+
+func _session_key() -> String:
+	## Không phải bí mật của server — chỉ gắn file phiên với máy này.
+	var id := OS.get_unique_id()
+	return ("kiemhiep-session:" + (id if id != "" else OS.get_name())).sha256_text()
+
+func _write_session_file() -> void:
+	var f := FileAccess.open_encrypted_with_pass(SESSION_PATH, FileAccess.WRITE, _session_key())
+	if f:
+		f.store_string(JSON.stringify({"refresh_token": _refresh, "username": username()}))
+
+func _read_session_file() -> Dictionary:
+	if not FileAccess.file_exists(SESSION_PATH):
+		return {}
+	var f := FileAccess.open_encrypted_with_pass(SESSION_PATH, FileAccess.READ, _session_key())
+	if f == null:
+		DirAccess.remove_absolute(SESSION_PATH) ## file hỏng / chép từ máy khác
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	return parsed if parsed is Dictionary else {}
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+func _ensure_access() -> bool:
+	if _access != "" and _now() < _access_expire_at - REFRESH_MARGIN:
+		return true
+	if _refresh == "":
+		return false
+	return await _do_refresh()
+
+## Làm mới phiên. Nhiều lời gọi cùng lúc chỉ gửi 1 yêu cầu (refresh token dùng 1 lần, gửi 2 lần = bị coi là đánh cắp).
+func _do_refresh() -> bool:
+	if _refreshing:
+		return await _refresh_finished
+	_refreshing = true
+	var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/refresh", {"refresh_token": _refresh})
+	if r.ok:
+		_apply_session(r.data)
+	elif r.status == 401 or r.status == 403:
+		_clear_session()
+		logged_out.emit()
+	_refreshing = false
+	_refresh_finished.emit(r.ok)
+	return r.ok
+
+func _authed(method: HTTPClient.Method, path: String, body: Variant = null) -> Dictionary:
+	if not await _ensure_access():
+		return _fail(401, "unauthorized", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại")
+	var r := await _request(method, path, body, _access)
+	if r.status == 401 and _refresh != "" and await _do_refresh():
+		r = await _request(method, path, body, _access)
+	return r
+
+# ---------------------------------------------------------------- HTTP
+
+func _request(method: HTTPClient.Method, path: String, body: Variant = null, bearer := "") -> Dictionary:
+	var http := HTTPRequest.new()
+	http.timeout = TIMEOUT
+	add_child(http)
+	var headers := PackedStringArray(["Content-Type: application/json", "Accept: application/json"])
+	if bearer != "":
+		headers.append("Authorization: Bearer " + bearer)
+	var payload := "" if body == null else JSON.stringify(body)
+	var err := http.request(base_url + path, headers, method, payload)
+	if err != OK:
+		http.queue_free()
+		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
+	var res: Array = await http.request_completed
+	http.queue_free()
+	var result: int = res[0]
+	var status: int = res[1]
+	if result != HTTPRequest.RESULT_SUCCESS:
+		if result == HTTPRequest.RESULT_TIMEOUT:
+			return _fail(0, "network", "Máy chủ không phản hồi, vui lòng thử lại")
+		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
+	var text := (res[3] as PackedByteArray).get_string_from_utf8()
+	var data: Variant = JSON.parse_string(text) if text != "" else null
+	if status >= 200 and status < 300:
+		return {"ok": true, "status": status, "code": "", "message": "", "data": data}
+	if data is Dictionary:
+		return _fail(status, str(data.get("code", "error")), str(data.get("message", "Có lỗi xảy ra")))
+	return _fail(status, "error", "Máy chủ gặp sự cố (%d), vui lòng thử lại sau" % status)
+
+func _fail(status: int, code: String, message: String) -> Dictionary:
+	return {"ok": false, "status": status, "code": code, "message": message, "data": null}

@@ -88,7 +88,10 @@ func _ready() -> void:
 	_back_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_name_input.text_submitted.connect(func(_t: String) -> void: _on_create_pressed())
 	for b in _side_buttons:
-		b.pressed.connect(_show_message.bind("Tính năng đang phát triển"))
+		if b.name == "AccountButton":
+			b.pressed.connect(func() -> void: AccountDialog.open(self))
+		else:
+			b.pressed.connect(_show_message.bind("Tính năng đang phát triển"))
 
 	var existing := GameManager.local_profile
 	if existing == null and SaveManager.has_profile():

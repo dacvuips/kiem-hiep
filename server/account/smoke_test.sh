@@ -60,8 +60,12 @@ ACCESS=$(jq -r .access_token <<<"$r"); REFRESH4=$(jq -r .refresh_token <<<"$r")
 check "đăng nhập mật khẩu mới" "$(jq -r .account.username <<<"$r")" "$U"
 
 check "đổi mật khẩu sai mật khẩu cũ" "$(post /v1/account/password '{"old_password":"sai","new_password":"matkhau9"}' "$ACCESS" | jq -r .code)" "wrong_password"
+OLDACCESS=$ACCESS
+sleep 1
 r=$(post /v1/account/password '{"old_password":"matkhau2","new_password":"matkhau9"}' "$ACCESS")
 check "đổi mật khẩu" "$(jq -r .account.username <<<"$r")" "$U"
+check "access token cũ bị từ chối ngay sau khi đổi" "$(get /v1/account/me "$OLDACCESS" | jq -r .code)" "unauthorized"
+check "access token mới vẫn dùng được" "$(get /v1/account/me "$(jq -r .access_token <<<"$r")" | jq -r .username)" "$U"
 check "phiên cũ bị đăng xuất sau khi đổi" "$(post /v1/auth/refresh "{\"refresh_token\":\"$REFRESH4\"}" | jq -r .code)" "unauthorized"
 check "đăng xuất" "$(post /v1/auth/logout "{\"refresh_token\":\"$(jq -r .refresh_token <<<"$r")\"}" | jq -r .ok)" "true"
 

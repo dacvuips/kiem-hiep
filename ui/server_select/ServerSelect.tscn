@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
 [ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
@@ -12,6 +12,14 @@ font_size = 38
 font_color = Color(0.96, 0.88, 0.7, 1)
 outline_size = 8
 outline_color = Color(0.08, 0.03, 0.01, 1)
+
+[sub_resource type="StyleBoxEmpty" id="empty"]
+
+[sub_resource type="LabelSettings" id="acc"]
+font_size = 19
+font_color = Color(0.92, 0.84, 0.66, 1)
+outline_size = 5
+outline_color = Color(0.06, 0.02, 0.01, 1)
 
 [sub_resource type="LabelSettings" id="msg"]
 font_size = 22
@@ -122,3 +130,36 @@ modulate = Color(1, 1, 1, 0)
 label_settings = SubResource("msg")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="AccountLabel" type="Label" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1250
+offset_top = 18
+offset_right = 1650
+offset_bottom = 50
+mouse_filter = 2
+label_settings = SubResource("acc")
+horizontal_alignment = 2
+vertical_alignment = 1
+text = "Tài khoản:"
+
+[node name="SwitchAccountButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1450
+offset_top = 50
+offset_right = 1650
+offset_bottom = 84
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.95, 0.8, 0.45, 1)
+theme_override_colors/font_hover_color = Color(1, 0.93, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("empty")
+theme_override_styles/pressed = SubResource("empty")
+theme_override_styles/hover = SubResource("empty")
+theme_override_styles/focus = SubResource("empty")
+alignment = 2
+text = "Đổi tài khoản"
+flat = true

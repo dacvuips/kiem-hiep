@@ -193,6 +193,9 @@ func _build_nav() -> void:
 		if id == "social":
 			button.pressed.connect(func() -> void: SocialMenuWindow.open(self, _profile))
 			continue
+		if id == "settings":
+			button.pressed.connect(func() -> void: AccountDialog.open(self))
+			continue
 		button.pressed.connect(_show_toast.bind("%s: đang phát triển" % label_text))
 
 # ---------------------------------------------------------------- panel Thuộc Tính

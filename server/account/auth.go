@@ -69,17 +69,19 @@ type accountRow struct {
 	Status       string
 	BannedUntil  *time.Time
 	BanReason    string
+	// Token cấp trước mốc này bị từ chối (đổi/đặt lại mật khẩu = đá mọi phiên đang mở, kể cả access token còn hạn).
+	PasswordChangedAt time.Time
 }
 
 func (a accountRow) view() accountView {
 	return accountView{ID: a.ID, Username: a.Username, Email: a.Email, HasPassword: a.PasswordHash != "", Google: a.GoogleSub != nil}
 }
 
-const accountCols = `id, username, email, password_hash, google_sub, status, banned_until, ban_reason`
+const accountCols = `id, username, email, password_hash, google_sub, status, banned_until, ban_reason, password_changed_at`
 
 func scanAccount(row pgx.Row) (accountRow, error) {
 	var a accountRow
-	err := row.Scan(&a.ID, &a.Username, &a.Email, &a.PasswordHash, &a.GoogleSub, &a.Status, &a.BannedUntil, &a.BanReason)
+	err := row.Scan(&a.ID, &a.Username, &a.Email, &a.PasswordHash, &a.GoogleSub, &a.Status, &a.BannedUntil, &a.BanReason, &a.PasswordChangedAt)
 	return a, err
 }
 
@@ -153,7 +155,7 @@ func (s *server) accessToken(a accountRow) (string, error) {
 
 // parseAccess kiểm tra access token (chữ ký theo kid, thuật toán, iss, aud, hạn), trả về id tài khoản.
 // Game server làm đúng các bước này với khóa công khai lấy từ /.well-known/jwks.json.
-func (s *server) parseAccess(tok string) (int64, error) {
+func (s *server) parseAccess(tok string) (id int64, issuedAt time.Time, err error) {
 	t, err := jwt.Parse(tok, func(t *jwt.Token) (any, error) {
 		kid, _ := t.Header["kid"].(string)
 		if pub, ok := s.keys.verify[kid]; ok {
@@ -168,18 +170,22 @@ func (s *server) parseAccess(tok string) (int64, error) {
 		jwt.WithIssuedAt(),
 		jwt.WithLeeway(30*time.Second))
 	if err != nil {
-		return 0, errUnauthorized
+		return 0, time.Time{}, errUnauthorized
 	}
 	claims, _ := t.Claims.(jwt.MapClaims)
 	if claims["typ"] != "access" {
-		return 0, errUnauthorized
+		return 0, time.Time{}, errUnauthorized
 	}
 	sub, _ := claims["sub"].(string)
-	id, err := strconv.ParseInt(sub, 10, 64)
+	id, err = strconv.ParseInt(sub, 10, 64)
 	if err != nil {
-		return 0, errUnauthorized
+		return 0, time.Time{}, errUnauthorized
 	}
-	return id, nil
+	iat, err := claims.GetIssuedAt()
+	if err != nil || iat == nil {
+		return 0, time.Time{}, errUnauthorized
+	}
+	return id, iat.Time, nil
 }
 
 // issue tạo phiên mới: refresh token (lưu hash trong DB) + access token.
@@ -217,7 +223,7 @@ func (s *server) requireAccount(r *http.Request) (accountRow, error) {
 	if !strings.HasPrefix(h, "Bearer ") {
 		return accountRow{}, errUnauthorized
 	}
-	id, err := s.parseAccess(strings.TrimPrefix(h, "Bearer "))
+	id, issuedAt, err := s.parseAccess(strings.TrimPrefix(h, "Bearer "))
 	if err != nil {
 		return accountRow{}, err
 	}
@@ -227,6 +233,10 @@ func (s *server) requireAccount(r *http.Request) (accountRow, error) {
 	}
 	if err != nil {
 		return accountRow{}, err
+	}
+	// iat chỉ chính xác tới giây: so với mốc đổi mật khẩu làm tròn xuống giây để token mới cấp ngay sau đó vẫn hợp lệ.
+	if issuedAt.Before(a.PasswordChangedAt.Truncate(time.Second)) {
+		return accountRow{}, errUnauthorized
 	}
 	return a, s.banError(r.Context(), a)
 }
