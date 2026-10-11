@@ -2,7 +2,7 @@ extends Control
 class_name ServerSelectScreen
 ## Màn Chọn Máy Chủ (sau Đăng Nhập). Bố cục theo mockup 1672x941; mọi thành phần là node trong Stage (kéo thả trong editor,
 ## Stage tự co theo cửa sổ). Danh sách máy chủ lấy từ server tài khoản (AccountApi.servers(), admin quản lý trên web Admin).
-##   Chưa đăng nhập thì quay về màn Đăng Nhập. Góc phải trên: tên tài khoản + nút Đổi tài khoản.
+##   Chưa đăng nhập thì quay về màn Đăng Nhập. Góc phải trên: tên tài khoản. Nút Quay lại (góc trái dưới) = đăng xuất về màn Đăng Nhập.
 ##   - Cột trái lọc: Tất cả / Máy chủ mới / Đông vui / Miền Bắc / Miền Trung / Miền Nam.
 ##   - Máy chủ "Bảo trì" không vào được. Máy chủ đã chọn lưu vào user://login.cfg (mục server) để lần sau chọn sẵn.
 
@@ -32,7 +32,7 @@ static var selected_server_id := 1
 @onready var _enter: TextureButton = %EnterButton
 @onready var _message: Label = %Message
 @onready var _account_label: Label = %AccountLabel
-@onready var _switch_account: Button = %SwitchAccountButton
+@onready var _back: TextureButton = %BackButton
 
 var _servers: Array = []
 var _filter := "all"
@@ -46,7 +46,9 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
 		return
 	_account_label.text = "Tài khoản: " + AccountApi.username()
-	_switch_account.pressed.connect(_on_switch_account_pressed)
+	_back.pressed.connect(_on_back_pressed)
+	_back.mouse_entered.connect(func() -> void: _back.pivot_offset = _back.size * 0.5; create_tween().tween_property(_back, "scale", Vector2.ONE * 1.05, 0.1))
+	_back.mouse_exited.connect(func() -> void: create_tween().tween_property(_back, "scale", Vector2.ONE, 0.1))
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) == OK:
 		selected_server_id = int(cfg.get_value("server", "id", selected_server_id))
@@ -80,10 +82,14 @@ func _fetch_servers() -> void:
 		_toast(r.message + " — bấm Vào game để thử lại")
 	_refresh_rows()
 
-func _on_switch_account_pressed() -> void:
-	_switch_account.disabled = true
+## Quay lại màn Đăng Nhập: đăng xuất luôn (nếu không, "Ghi nhớ đăng nhập" sẽ tự đưa vào lại màn này).
+func _on_back_pressed() -> void:
+	_back.disabled = true
+	_enter.disabled = true
 	await AccountApi.logout()
-	get_tree().change_scene_to_file(LOGIN_SCENE)
+	var t := create_tween()
+	t.tween_property(self, "modulate:a", 0.0, FADE)
+	t.tween_callback(get_tree().change_scene_to_file.bind(LOGIN_SCENE))
 
 # ---------------------------------------------------------------- lọc
 

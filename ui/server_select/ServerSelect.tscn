@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" path="res://ui/login/logo.png" id="logo"]
 [ext_resource type="Texture2D" path="res://ui/server_select/frame.png" id="frame"]
 [ext_resource type="Texture2D" path="res://ui/server_select/btn_enter.png" id="be"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_back.png" id="bk"]
 
 [sub_resource type="LabelSettings" id="title"]
 font_size = 38
@@ -144,22 +145,26 @@ horizontal_alignment = 2
 vertical_alignment = 1
 text = "Tài khoản:"
 
-[node name="SwitchAccountButton" type="Button" parent="Stage"]
+[node name="BackButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1450
-offset_top = 50
-offset_right = 1650
-offset_bottom = 84
-focus_mode = 0
+offset_left = 24
+offset_top = 790
+offset_right = 264
+offset_bottom = 950
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.95, 0.8, 0.45, 1)
-theme_override_colors/font_hover_color = Color(1, 0.93, 0.7, 1)
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("empty")
-theme_override_styles/pressed = SubResource("empty")
-theme_override_styles/hover = SubResource("empty")
-theme_override_styles/focus = SubResource("empty")
-alignment = 2
-text = "Đổi tài khoản"
-flat = true
+texture_normal = ExtResource("bk")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Text" type="Label" parent="Stage/BackButton"]
+layout_mode = 0
+offset_left = 76
+offset_top = 50
+offset_right = 222
+offset_bottom = 110
+mouse_filter = 2
+label_settings = SubResource("acc")
+text = "Quay lại"
+horizontal_alignment = 1
+vertical_alignment = 1
