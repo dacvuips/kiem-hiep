@@ -205,6 +205,17 @@ func _apply_name_y() -> void:
 
 # ------------------------------------------------------------ bấm để chạy tới
 
+## Đang gõ vào ô nhập (chat, đặt tên...) thì phím không điều khiển nhân vật (không chạy / nhảy / ra chiêu khi gõ chữ).
+func _typing() -> bool:
+	var f := get_viewport().gui_get_focus_owner()
+	return f is LineEdit or f is TextEdit
+
+func _key_pressed(action: StringName) -> bool:
+	return not _typing() and Input.is_action_just_pressed(action)
+
+func _key_vector(neg_x: StringName, pos_x: StringName, neg_y: StringName, pos_y: StringName) -> Vector2:
+	return Vector2.ZERO if _typing() else Input.get_vector(neg_x, pos_x, neg_y, pos_y)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _dead:
 		return
@@ -433,7 +444,7 @@ func _physics_process(delta: float) -> void:
 	var camera_zoom: float = $Camera2D.zoom.x
 	if not is_equal_approx(camera_zoom, _zoom_target):
 		$Camera2D.zoom = Vector2.ONE * lerpf(camera_zoom, _zoom_target, minf(1.0, ZOOM_SMOOTHING * delta))
-	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var input_vector := _key_vector("move_left", "move_right", "move_up", "move_down")
 	if input_vector != Vector2.ZERO:
 		if _has_move_target:
 			_clear_move_target()
@@ -480,21 +491,21 @@ func _physics_process(delta: float) -> void:
 	if not is_attacking and not is_casting and not _is_jumping and not _is_sitting:
 		update_move_animation(input_vector)
 
-	if Input.is_action_just_pressed("jump"):
+	if _key_pressed("jump"):
 		start_jump()
-	if Input.is_action_just_pressed("toggle_horse"):
+	if _key_pressed("toggle_horse"):
 		toggle_ride()
-	if Input.is_action_just_pressed("toggle_follow"):
+	if _key_pressed("toggle_follow"):
 		toggle_follow()
-	if Input.is_action_just_pressed("toggle_sit"):
+	if _key_pressed("toggle_sit"):
 		toggle_sit()
 
-	if Input.is_action_just_pressed("attack") and not is_attacking:
+	if _key_pressed("attack") and not is_attacking:
 		play_attack()
 
 	range_indicator.set_radius(get_current_range())
 
-	if Input.is_action_just_pressed("toggle_auto"):
+	if _key_pressed("toggle_auto"):
 		is_auto_mode = not is_auto_mode
 
 	## Bị làm chậm thì hồi chiêu cũng chậm theo — VLTK bỏ qua 1/2 frame MỌI hành động khi đóng băng.
@@ -508,7 +519,7 @@ func _physics_process(delta: float) -> void:
 	if is_auto_mode:
 		if target and skill_controller.try_cast_auto(self, target):
 			play_cast()
-	elif Input.is_action_just_pressed("attack_skill"):
+	elif _key_pressed("attack_skill"):
 		## Không bắt buộc có mục tiêu ở đây — skill buff lên mình thi triển được khi không có quái gần,
 		## SectSkillController._try_cast tự từ chối đòn đánh thiếu mục tiêu.
 		if skill_controller.try_cast_main(self, get_cast_target(skill_controller.get_main_skill())):
@@ -517,7 +528,7 @@ func _physics_process(delta: float) -> void:
 	## Phím skill_1-4 = 4 ô đầu của trang thanh skill đang chọn.
 	var page_start: int = GameManager.local_profile.hotbar_page * PlayerProfile.HOTBAR_SLOTS_PER_PAGE 			if GameManager.local_profile else 0
 	for i in range(4):
-		if Input.is_action_just_pressed("skill_%d" % (i + 1)):
+		if _key_pressed("skill_%d" % (i + 1)):
 			var sub_skill: SkillDefinition = skill_controller.get_sub_skills()[page_start + i]
 			if skill_controller.try_cast_skill(page_start + i, self, get_cast_target(sub_skill)):
 				play_cast()
@@ -907,7 +918,7 @@ func start_jump(frames: int = JUMP_DEFAULT_FRAMES) -> bool:
 		_notice("Đang cưỡi ngựa, không thể nhảy")
 		return false
 	_is_sitting = false
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var dir := _key_vector("move_left", "move_right", "move_up", "move_down")
 	_jump_dir = (dir if dir != Vector2.ZERO else last_direction).normalized()
 	last_direction = _jump_dir
 	_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)

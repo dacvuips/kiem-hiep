@@ -8,5 +8,6 @@ GODOT="${GODOT:-godot}"
 export GAME_SERVICE_KEY="$(grep '^GAME_SERVICE_KEY=' "$here/.env" | cut -d= -f2-)"
 export GAME_ACCOUNT_URL="${GAME_ACCOUNT_URL:-http://127.0.0.1:8080}"
 export GAME_SERVER_ID="${GAME_SERVER_ID:-1}"
-export GAME_TEST_MODE="${GAME_TEST_MODE:-0}"   # 1 = luôn rớt thêm tiền khi quái chết (chỉ để chạy tests/net_tests)
+export GAME_TEST_MODE="${GAME_TEST_MODE:-0}"
+export GAME_STATUS_POLL="${GAME_STATUS_POLL:-30}"     # giây giữa 2 lần hỏi trạng thái khoá / cấm chat   # 1 = luôn rớt thêm tiền khi quái chết (chỉ để chạy tests/net_tests)
 exec "$GODOT" --headless --path "$project" res://net/server/game_server.tscn

@@ -81,6 +81,7 @@ func main() {
 	// Nội bộ: game server
 	mux.HandleFunc("POST /internal/game/join", wrap(s.handleInternalJoin))
 	mux.HandleFunc("PUT /internal/game/characters/{id}", wrap(s.handleInternalSave))
+	mux.HandleFunc("POST /internal/game/status", wrap(s.handleInternalStatus))
 
 	// Web Admin
 	mux.HandleFunc("POST /admin/api/login", wrap(s.handleAdminLogin))

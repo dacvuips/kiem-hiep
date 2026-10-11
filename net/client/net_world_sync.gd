@@ -50,6 +50,7 @@ func _ready() -> void:
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_invite.connect(_on_team_invite)
 	current = self
+	_add_chat_box()
 	_connect()
 
 func _exit_tree() -> void:
@@ -60,6 +61,19 @@ func _exit_tree() -> void:
 		NetClient.send_profile(GameManager.local_profile.to_dict())
 	NetClient.disconnect_from_server()
 	SaveManager.mark_version_unknown()
+
+## Khung chat trên lớp giao diện của màn chơi (góc trái, giữa màn hình).
+func _add_chat_box() -> void:
+	var ui: Node = get_parent().get_node_or_null("UI")
+	if ui == null:
+		return
+	var box := ChatBox.create()
+	box.name = "ChatBox"
+	box.anchor_top = 0.42
+	box.anchor_bottom = 0.42
+	box.offset_left = 8
+	box.offset_top = 0
+	ui.add_child(box)
 
 func _connect() -> void:
 	_reconnect_in = -1.0

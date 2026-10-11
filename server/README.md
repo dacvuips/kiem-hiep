@@ -145,6 +145,9 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
 - **Tổ đội thật** (`SocialServer`, `C_TEAM` / `S_TEAM_STATE`): lập đội, mời / xin vào, đuổi, đổi đội trưởng, mở / đóng,
   luật nhặt đồ (tự nhặt / tự do / đội trưởng / luân phiên) do server kiểm tra, chia kinh nghiệm cho đồng đội trong 768 px +
   kinh nghiệm lãnh đạo cho đội trưởng (luật KTeam gốc). `TeamService` khi online chỉ gửi lệnh, TeamWindow giữ nguyên.
+- **Chat** (`net/server/chat_server.gd`, khung `ChatBox`): kênh Gần / Thế giới (chờ 10 giây) / Tổ đội / Bang hội / Riêng.
+  Game server hỏi `POST /internal/game/status` mỗi `GAME_STATUS_POLL` giây (mặc định 30): **cấm chat / khoá từ web Admin
+  có hiệu lực ngay với người đang online** (bị khoá thì bị đá ra). Đang gõ chữ thì phím không điều khiển nhân vật.
 - **Nhân vật mới:** lần đầu vào map, server khởi tạo lại phần kinh tế (cấp 1, không tiền / đồ) — chặn tạo nhân vật kèm đồ.
 - **Lưu từ game ngoài map** (`PUT /v1/characters/{id}`): server tài khoản chặn tăng cấp / tiền / đồ / tổng điểm (`profile_guard.go`).
 - `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền + 1 món đồ dưới chân người hạ quái.

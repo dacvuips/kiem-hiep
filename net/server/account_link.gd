@@ -12,6 +12,10 @@ func join(access_token: String, character_id: int) -> Dictionary:
 	return await _call(HTTPClient.METHOD_POST, "/internal/game/join",
 		{"access_token": access_token, "character_id": character_id, "server_id": server_id})
 
+## Trạng thái khoá / cấm chat của nhiều tài khoản: {"statuses": {"id": {banned, ban_message, muted_until}}}.
+func status(account_ids: Array) -> Dictionary:
+	return await _call(HTTPClient.METHOD_POST, "/internal/game/status", {"account_ids": account_ids})
+
 func save_character(character_id: int, version: int, data: Dictionary) -> Dictionary:
 	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id, {"version": version, "data": data})
 

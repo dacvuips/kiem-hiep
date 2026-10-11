@@ -98,3 +98,43 @@ func (s *server) handleInternalSave(w http.ResponseWriter, r *http.Request) erro
 	}
 	return writeJSON(w, http.StatusOK, map[string]int{"version": version})
 }
+
+// POST /internal/game/status {account_ids:[...]} — game server hỏi định kỳ (30 giây) để áp ngay lệnh khoá / cấm chat từ web Admin
+// cho người đang online: {statuses: {id: {banned, ban_message, muted_until}}}.
+func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) error {
+	if err := s.requireService(r); err != nil {
+		return err
+	}
+	var req struct {
+		AccountIDs []int64 `json:"account_ids"`
+	}
+	if err := readLargeJSON(r, &req); err != nil {
+		return err
+	}
+	if len(req.AccountIDs) > 10000 {
+		return errBadRequest
+	}
+	rows, err := s.db.Query(r.Context(), `SELECT `+accountCols+`, muted_until FROM accounts WHERE id = ANY($1)`, req.AccountIDs)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	out := map[string]any{}
+	for rows.Next() {
+		var a accountRow
+		var muted *time.Time
+		if err := rows.Scan(&a.ID, &a.Username, &a.Email, &a.PasswordHash, &a.GoogleSub, &a.Status, &a.BannedUntil, &a.BanReason,
+			&a.PasswordChangedAt, &muted); err != nil {
+			return err
+		}
+		banned := a.Status == "banned" && (a.BannedUntil == nil || a.BannedUntil.After(time.Now()))
+		msg := ""
+		if banned {
+			if e := s.banError(r.Context(), a); e != nil {
+				msg = e.(*apiError).Message
+			}
+		}
+		out[strconv.FormatInt(a.ID, 10)] = map[string]any{"banned": banned, "ban_message": msg, "muted_until": muted}
+	}
+	return writeJSON(w, http.StatusOK, map[string]any{"statuses": out})
+}

@@ -28,6 +28,7 @@ var trade_ended: Array = []       ## [{ok, msg}]
 var stall: Dictionary = {}        ## {seller, title, items}
 var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
 var team_invites: Array = []      ## [captain_eid]
+var chats: Array = []             ## [{channel, from, to, text}]
 var states_received := 0
 var closed := false
 var _token := ""
@@ -120,6 +121,16 @@ func stall_op(op: int, title := "", seller := 0, uid := "") -> void:
 		b.put_u32(seller)
 		NetProto.put_str(b, uid)
 	_send(b, NetProto.CH_RELIABLE)
+
+func say(channel: int, text: String, to := "") -> void:
+	var b := NetProto.writer(NetProto.C_CHAT)
+	b.put_u8(channel)
+	NetProto.put_str(b, to)
+	NetProto.put_str(b, text)
+	_send(b, NetProto.CH_RELIABLE)
+
+func heard(text: String) -> bool:
+	return chats.any(func(c: Dictionary) -> bool: return str(c.text) == text)
 
 func team_op(op: int, arg := 0, arg2 := 0) -> void:
 	var b := NetProto.writer(NetProto.C_TEAM)
@@ -275,6 +286,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					NetProto.get_str(b)
 					b.get_u16()
 			team = st
+		NetProto.S_CHAT:
+			var ch := b.get_u8()
+			b.get_u32()
+			var from := NetProto.get_str(b)
+			var to := NetProto.get_str(b)
+			chats.append({"channel": ch, "from": from, "to": to, "text": NetProto.get_str(b)})
 		NetProto.S_TEAM_INVITE:
 			team_invites.append(b.get_u32())
 			NetProto.get_str(b)

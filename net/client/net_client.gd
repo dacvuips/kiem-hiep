@@ -25,6 +25,7 @@ signal trade_end(success: bool, message: String)
 signal stall_items(seller_eid: int, title: String, items: Array)
 signal team_state(state: Dictionary)
 signal team_invite(captain_eid: int, captain_name: String)
+signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -167,6 +168,15 @@ func send_stall(op: int, title := "", seller_eid := 0, uid := "") -> void:
 		SocialServer.STALL_BUY:
 			b.put_u32(seller_eid)
 			NetProto.put_str(b, uid)
+	_send(b)
+
+func send_chat(channel: int, to_name: String, text: String) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_CHAT)
+	b.put_u8(channel)
+	NetProto.put_str(b, to_name)
+	NetProto.put_str(b, text)
 	_send(b)
 
 ## Tổ đội: op = SocialServer.TEAM_*, arg = eid người liên quan, arg2 = đồng ý / mở / chế độ nhặt.
@@ -352,6 +362,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				for i in b.get_u8():
 					st.applicants.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16()})
 			team_state.emit(st)
+		NetProto.S_CHAT:
+			var ch := b.get_u8()
+			var from := b.get_u32()
+			var from_name := NetProto.get_str(b)
+			var to_name := NetProto.get_str(b)
+			chat_received.emit(ch, from, from_name, to_name, NetProto.get_str(b))
 		NetProto.S_TEAM_INVITE:
 			var cap := b.get_u32()
 			team_invite.emit(cap, NetProto.get_str(b))

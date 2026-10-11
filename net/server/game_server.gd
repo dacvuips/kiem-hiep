@@ -71,6 +71,10 @@ class Conn:
 	## C_PROFILE đến dồn (quá MAX_PROFILE_PER_SEC): giữ bản mới nhất, xử lý ở tick sau thay vì bỏ.
 	var pending_profile: Dictionary = {}
 	var pending_ack := 0
+	## Chat
+	var muted_until := 0.0              ## giây unix (web Admin cấm chat)
+	var last_chat := -100.0
+	var last_world_chat := -100.0
 	var max_hit := 2000.0
 	var last_profile_at := -10.0
 	## "Quà" server đã cho (nhặt đồ / tiền) mà game có thể chưa áp: [{seq, amount, item}] — gói C_PROFILE gửi trước khi
@@ -101,6 +105,11 @@ var _acc := 0.0
 var _now := 0.0
 var max_players := 2000
 var social: SocialServer
+var chat: ChatServer
+## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
+var STATUS_POLL_SECONDS := 30.0
+var _status_polling := false
+var _last_status_poll := 0.0
 ## Chế độ kiểm thử (GAME_TEST_MODE=1): mỗi quái chết luôn rớt thêm 1 túi tiền để bài test chắc chắn có đồ rơi. TẮT khi chạy thật.
 var test_mode := false
 
@@ -125,6 +134,8 @@ func _ready() -> void:
 		return
 	_spawn_monsters()
 	social = SocialServer.new(self)
+	chat = ChatServer.new(self)
+	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
 	var ws_port := int(_env("GAME_WS_PORT", "7778"))
 	if _enet.create_server(enet_port, mini(max_players, 4095), 2) != OK:
@@ -183,6 +194,9 @@ func _process(delta: float) -> void:
 		if _tick % NetProto.TICK_RATE == 0:
 			_save_due()
 			_prune_drops()
+			if _now - _last_status_poll >= STATUS_POLL_SECONDS:
+				_last_status_poll = _now
+				_poll_status()
 		if _tick % NetProto.SNAPSHOT_EVERY == 0:
 			_send_snapshots()
 
@@ -291,6 +305,8 @@ func _kick(c: Conn, code: String, message: String) -> void:
 	NetProto.put_str(b, code)
 	NetProto.put_str(b, message)
 	_send(c, b)
+	if c.entity and c.state == ConnState.IN_WORLD:
+		social.on_leave(c)   ## huỷ giao dịch, rời đội trước khi mất thực thể
 	c.state = ConnState.CLOSING
 	if c.entity:
 		aoi.remove(c.entity)
@@ -345,6 +361,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_STALL:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
 				social.on_stall(c, b)
+		NetProto.C_CHAT:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				chat.on_chat(c, b)
 		NetProto.C_TEAM:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
 				social.on_team(c, b)
@@ -399,6 +418,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	elif old and old != c:
 		_kick(old, "logged_in_elsewhere", "Nhân vật vừa đăng nhập ở nơi khác")
 	c.account_id = int(acc.id)
+	c.muted_until = _unix_of(acc.get("muted_until"))
 	c.username = str(acc.username)
 	c.character_id = character_id
 	_by_character[character_id] = c
@@ -759,6 +779,53 @@ func conn_of_eid(eid: int) -> Conn:
 
 func now() -> float:
 	return _now
+
+func conn_of_name(character_name: String) -> Conn:
+	var key := character_name.strip_edges().to_lower()
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD and c.entity and c.entity.name.to_lower() == key:
+			return c
+	return null
+
+## Thời điểm RFC3339 (JSON từ server tài khoản) -> giây unix; null / rỗng -> 0.
+static func _unix_of(v: Variant) -> float:
+	if v == null or str(v) == "":
+		return 0.0
+	return float(Time.get_unix_time_from_datetime_string(str(v).left(19))) - _tz_offset(str(v))
+
+static func _tz_offset(s: String) -> float:
+	## "...+07:00" / "...Z": Time.get_unix_time_from_datetime_string coi chuỗi là UTC -> trừ độ lệch múi giờ.
+	if s.ends_with("Z") or s.length() < 6:
+		return 0.0
+	var tail := s.right(6)
+	if tail[0] != "+" and tail[0] != "-":
+		return 0.0
+	var secs := int(tail.substr(1, 2)) * 3600 + int(tail.substr(4, 2)) * 60
+	return float(secs if tail[0] == "+" else -secs)
+
+## Áp ngay lệnh khoá / cấm chat từ web Admin cho người đang online.
+func _poll_status() -> void:
+	if _status_polling:
+		return
+	var ids := []
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD and c.account_id != 0:
+			ids.append(c.account_id)
+	if ids.is_empty():
+		return
+	_status_polling = true
+	var r: Dictionary = await account.status(ids)
+	_status_polling = false
+	if not r.ok:
+		return
+	var st: Dictionary = r.get("statuses", {})
+	for c: Conn in _conns.values():
+		var s: Variant = st.get(str(c.account_id))
+		if not s is Dictionary or c.state != ConnState.IN_WORLD:
+			continue
+		c.muted_until = _unix_of(s.get("muted_until"))
+		if bool(s.get("banned", false)):
+			_kick(c, "banned", str(s.get("ban_message", "Tài khoản đã bị khoá")))
 
 func send(c: Conn, b: StreamPeerBuffer) -> void:
 	_send(c, b)

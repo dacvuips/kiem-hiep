@@ -328,6 +328,37 @@ func test_team() -> void:
 	for x in [p, q, r]:
 		x.close()
 
+## C4a: chat — kênh gần, nhắn riêng, giới hạn kênh thế giới.
+func test_chat() -> void:
+	var ui := await make_player("u")
+	var vi := await make_player("v")
+	var u := bot(ui[0], ui[1])
+	var v := bot(vi[0], vi[1])
+	if not await wait_until(func() -> bool: return u.in_world and v.in_world):
+		check("C4: 2 bot vào map", false)
+		return
+	await get_tree().create_timer(0.5).timeout
+	u.say(ChatServer.NEAR, "xin chào cả nhà")
+	check("C4: kênh gần tới người đứng cạnh", await wait_until(func() -> bool: return v.heard("xin chào cả nhà"), 3.0), v.chats)
+	await get_tree().create_timer(1.0).timeout
+	u.say(ChatServer.PRIVATE, "nhắn riêng nè", v.name)
+	check("C4: nhắn riêng theo tên", await wait_until(func() -> bool: return v.heard("nhắn riêng nè") and u.heard("nhắn riêng nè"), 3.0), v.chats)
+	await get_tree().create_timer(1.0).timeout
+	u.say(ChatServer.PRIVATE, "ai đó", "Không Có Ai Tên Này")
+	check("C4: nhắn riêng người không online", await wait_until(func() -> bool:
+		return u.notices.any(func(n: String) -> bool: return n.contains("không online")), 3.0), u.notices)
+	await get_tree().create_timer(1.0).timeout
+	u.say(ChatServer.WORLD, "rao bán đồ 1")
+	await get_tree().create_timer(1.0).timeout
+	u.say(ChatServer.WORLD, "rao bán đồ 2")
+	await get_tree().create_timer(1.0).timeout
+	check("C4: kênh thế giới nhận tin đầu", v.heard("rao bán đồ 1"))
+	check("C4: kênh thế giới chặn gửi dồn (chờ 10 giây)", not v.heard("rao bán đồ 2") and u.notices.any(func(n: String) -> bool: return n.contains("Kênh thế giới")), u.notices)
+	u.say(ChatServer.NEAR, "[color=red]giả mạo[/color]")
+	check("C4: tin có mã định dạng vẫn tới nguyên văn (game tự chặn hiển thị)", await wait_until(func() -> bool: return v.heard("[color=red]giả mạo[/color]"), 3.0))
+	u.close()
+	v.close()
+
 func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
 	var h := HTTPRequest.new()
 	add_child(h)
@@ -439,3 +470,4 @@ func run() -> void:
 	await test_items(a2, a_info)
 	await test_trade_and_stall()
 	await test_team()
+	await test_chat()
