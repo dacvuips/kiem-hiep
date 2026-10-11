@@ -36,10 +36,10 @@ func main() {
 	}
 
 	s := &server{
-		cfg:    cfg,
-		keys:   keys,
-		db:     db,
-		mail:   newMailer(cfg),
+		cfg:  cfg,
+		keys: keys,
+		db:   db,
+		mail: newMailer(cfg),
 		// Theo IP nới rộng vì nhiều người chơi 4G/quán net chung 1 IP; chống dò mật khẩu nằm ở userRL.
 		ipRL:   newRateLimiter(120, 60),
 		userRL: newRateLimiter(10, 5),
@@ -60,6 +60,10 @@ func main() {
 	mux.HandleFunc("POST /v1/account/password", wrap(s.handleChangePassword))
 	mux.HandleFunc("GET /v1/account/me", wrap(s.handleMe))
 	mux.HandleFunc("GET /v1/servers", wrap(s.handleServers))
+	mux.HandleFunc("GET /v1/characters", wrap(s.handleListCharacters))
+	mux.HandleFunc("POST /v1/characters", wrap(s.handleCreateCharacter))
+	mux.HandleFunc("PUT /v1/characters/{id}", wrap(s.handleSaveCharacter))
+	mux.HandleFunc("DELETE /v1/characters/{id}", wrap(s.handleDeleteCharacter))
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
@@ -68,6 +72,7 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	go func() {
 		<-ctx.Done()

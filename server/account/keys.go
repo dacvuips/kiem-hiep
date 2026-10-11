@@ -13,11 +13,11 @@ import (
 
 // Khóa bí mật của hệ thống — CHỈ đọc từ biến môi trường, không bao giờ nằm trong code, database hay client.
 //
-//   JWT_PRIVATE_KEY   khóa Ed25519 (32 byte seed, base64) để KÝ access token. Chỉ account server có.
-//   JWT_KID           mã của khóa đang ký (ghi vào header "kid" của token).
-//   JWT_PUBLIC_KEYS   (tùy chọn) khóa công khai cũ còn được chấp nhận khi đổi khóa: "kid1:base64,kid2:base64".
-//   PASSWORD_PEPPER   khóa trộn vào mật khẩu trước khi băm argon2id — lộ database vẫn không dò được mật khẩu.
-//   TOKEN_HMAC_KEY    khóa HMAC để băm refresh token / mã OTP lưu trong database.
+//	JWT_PRIVATE_KEY   khóa Ed25519 (32 byte seed, base64) để KÝ access token. Chỉ account server có.
+//	JWT_KID           mã của khóa đang ký (ghi vào header "kid" của token).
+//	JWT_PUBLIC_KEYS   (tùy chọn) khóa công khai cũ còn được chấp nhận khi đổi khóa: "kid1:base64,kid2:base64".
+//	PASSWORD_PEPPER   khóa trộn vào mật khẩu trước khi băm argon2id — lộ database vẫn không dò được mật khẩu.
+//	TOKEN_HMAC_KEY    khóa HMAC để băm refresh token / mã OTP lưu trong database.
 //
 // Game server chỉ cần KHÓA CÔNG KHAI (lấy ở /.well-known/jwks.json) để kiểm tra token, không thể tự ký token.
 type keyring struct {

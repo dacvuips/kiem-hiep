@@ -13,6 +13,9 @@ const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
 const ROSTER_SCENE_PATH := "res://ui/character_roster/CharacterRoster.tscn"   ## nút "Quay lại" về danh sách nhân vật
 const CHARS_DIR := "res://ui/character_create/chars/"
 const NAME_MIN_LENGTH := 2
+
+## Ô nhân vật sẽ tạo (màn Danh sách nhân vật đặt trước khi chuyển sang đây). Chỉ dùng khi đã đăng nhập.
+static var target_slot := 0
 const FADE_DURATION := 0.35
 
 const ELEMENT_ORDER: Array[ElementTypes.ElementType] = [
@@ -93,7 +96,8 @@ func _ready() -> void:
 		else:
 			b.pressed.connect(_show_message.bind("Tính năng đang phát triển"))
 
-	var existing := GameManager.local_profile
+	## Đã đăng nhập: luôn tạo nhân vật MỚI trên server, không điền sẵn nhân vật cũ.
+	var existing: PlayerProfile = null if AccountApi.is_logged_in() else GameManager.local_profile
 	if existing == null and SaveManager.has_profile():
 		existing = SaveManager.load_profile()
 		GameManager.local_profile = existing
@@ -204,6 +208,9 @@ func _on_create_pressed() -> void:
 	if sects.is_empty():
 		_show_message("Hệ này chưa có môn phái")
 		return
+	if AccountApi.is_logged_in():
+		_create_online(player_name, sects[0])
+		return
 
 	## Đã có nhân vật thì chỉ đổi tên/giới tính/môn phái, giữ nguyên tiến trình.
 	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
@@ -218,6 +225,35 @@ func _on_create_pressed() -> void:
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
 	_show_message("Đã tạo nhân vật %s — %s" % [player_name, profile.sect_name])
+
+## Tạo nhân vật trên server (tài khoản + máy chủ đang chọn, ô target_slot) rồi vào game luôn.
+func _create_online(player_name: String, sect: SectDefinition) -> void:
+	if _create_button.disabled:
+		return
+	var profile := PlayerProfile.new()
+	profile.display_name = player_name
+	profile.gender = _gender
+	profile.set_sect(sect)
+	var need_gender := PlayerProfile.required_gender(int(_element))
+	if need_gender >= 0:
+		profile.gender = need_gender as PlayerProfile.Gender   ## Kim chỉ nam, Thủy chỉ nữ
+	_create_button.disabled = true
+	_enter_button.disabled = true
+	_show_message("Đang tạo nhân vật…")
+	var r: Dictionary = await AccountApi.create_character(ServerSelectScreen.selected_server_id, target_slot, player_name, profile.to_dict())
+	_create_button.disabled = false
+	_enter_button.disabled = false
+	if not r.ok:
+		_show_message(r.message)
+		if r.code in ["bad_name", "name_taken"]:
+			_name_input.grab_focus()
+			_name_input.select_all()
+		return
+	var c: Dictionary = r.data
+	GameManager.local_profile = PlayerProfile.from_dict(c["data"])
+	SaveManager.set_online_character(int(c["id"]), int(c["version"]))
+	_show_message("Đã tạo nhân vật %s — %s" % [c["name"], profile.sect_name])
+	_on_enter_pressed()
 
 func _on_enter_pressed() -> void:
 	_play_ui(VltkSound.UI_ENTER)

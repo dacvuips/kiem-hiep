@@ -5,7 +5,8 @@ class_name CharacterRosterScreen
 ##
 ## Hình nhân vật + vòng hào quang LẤY Y NGUYÊN từ màn Tạo Nhân Vật (CharacterCreate.tscn): cùng sheet theo HỆ (từ môn phái) + giới tính,
 ## cùng độ dời/độ phóng đã chỉnh riêng từng nhân vật, cùng vòng aura — chỉ thu nhỏ theo hệ số CHAR_SCALE.
-## Game hiện chỉ lưu 1 nhân vật (SaveManager) nên mới có ô 1; các ô còn lại trống, bấm "Tạo nhân vật" để vào màn tạo.
+## Đã đăng nhập: nhân vật lấy từ server theo tài khoản + máy chủ đã chọn (tối đa 4 ô); "Tạo nhân vật" tạo vào ô trống đầu tiên.
+## Chưa đăng nhập (chạy thẳng scene để test): chỉ có ô 1 từ file lưu trên máy như cũ.
 
 const CREATE_SCENE := "res://ui/character_create/CharacterCreate.tscn"
 const HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
@@ -40,15 +41,23 @@ var _create_ref: Node             ## bản dựng (không vào cây) của Chara
 func _ready() -> void:
 	_create_ref = load(CREATE_SCENE).instantiate()
 	_enter_btn.pressed.connect(_on_enter_pressed)
-	_create_btn.pressed.connect(_go.bind(CREATE_SCENE))
+	_create_btn.pressed.connect(_on_create_pressed)
 	_cancel_btn.pressed.connect(_go.bind(BACK_SCENE))
 	_quit_btn.pressed.connect(func() -> void: get_tree().quit())
 	for b: Button in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
 		_style_hit_area(b)
-	_build_slots()
-	_select(0)
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
+	if AccountApi.is_logged_in():
+		await _build_slots_online()
+	else:
+		_build_slots()
+	var first := 0
+	for i in _slots.size():
+		if (_slots[i] as Dictionary).has("profile"):
+			first = i
+			break
+	_select(first)
 
 func _exit_tree() -> void:
 	if is_instance_valid(_create_ref):
@@ -82,6 +91,45 @@ func _build_slots() -> void:
 		else:
 			slot = {"card": _make_card(i, null, map_name)}
 		_slots.append(slot)
+
+## Nhân vật trên server: mỗi ô = {profile, character (bản ghi server: id, version...), card, portrait, aura}.
+func _build_slots_online() -> void:
+	GameManager.local_profile = null
+	SaveManager.clear_online_character()
+	_toast("Đang tải nhân vật…")
+	var r: Dictionary = await AccountApi.characters(ServerSelectScreen.selected_server_id)
+	var by_slot := {}
+	if r.ok:
+		_message.modulate.a = 0.0
+		for c in r.data.get("characters", []):
+			by_slot[int(c.get("slot", 0))] = c
+	elif r.code == "unauthorized" or r.code == "banned":
+		AccountScreen.next_login_message = r.message
+		get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
+		return
+	else:
+		_toast(r.message)
+	var map_name := _map_name()
+	for i in SLOT_COUNT:
+		var slot := {}
+		if by_slot.has(i) and by_slot[i].get("data") is Dictionary:
+			var c: Dictionary = by_slot[i]
+			slot = _make_character_slot(i, PlayerProfile.from_dict(c["data"]), map_name)
+			slot["character"] = c
+		else:
+			slot = {"card": _make_card(i, null, map_name)}
+		_slots.append(slot)
+
+func _on_create_pressed() -> void:
+	if not AccountApi.is_logged_in():
+		_go(CREATE_SCENE)
+		return
+	for i in _slots.size():
+		if not (_slots[i] as Dictionary).has("profile"):
+			CharacterCreateScreen.target_slot = i
+			_go(CREATE_SCENE)
+			return
+	_toast("Đã đủ %d nhân vật trên máy chủ này" % SLOT_COUNT)
 
 func _map_name() -> String:
 	if FileAccess.file_exists(MINIMAP_META):
@@ -219,6 +267,9 @@ func _on_enter_pressed() -> void:
 		_toast("Ô này chưa có nhân vật — bấm \"Tạo nhân vật\"")
 		return
 	GameManager.local_profile = slot["profile"]
+	if slot.has("character"):
+		var c: Dictionary = slot["character"]
+		SaveManager.set_online_character(int(c["id"]), int(c["version"]))
 	_go(HUB_SCENE)
 
 func _go(path: String) -> void:

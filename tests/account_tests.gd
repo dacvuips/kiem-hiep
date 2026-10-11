@@ -64,6 +64,8 @@ func test_api_flow() -> void:
 	check("danh sách máy chủ", r.ok and r.data.servers.size() > 0, r)
 	check("có access token", (await api.access_token()) != "")
 
+	await test_characters(api, user)
+
 	r = await api.change_password("sai_mat_khau", "matkhau2")
 	check("đổi mật khẩu sai mk cũ", r.code == "wrong_password", r)
 	r = await api.change_password("matkhau1", "matkhau2")
@@ -100,6 +102,52 @@ func test_api_flow() -> void:
 	r = await api.login(user, "matkhau3", false)
 	check("đăng nhập mật khẩu mới", r.ok, r)
 	await api.logout()
+
+func test_characters(api: Node, user: String) -> void:
+	var sid := 1
+	var r: Dictionary = await api.characters(sid)
+	check("danh sách nhân vật trống", r.ok and r.data.characters.is_empty(), r)
+	var p := PlayerProfile.new()
+	p.set_sect(SectRegistry.get_by_element(ElementTypes.ElementType.MOC)[0])
+	var cname := "Hiệp " + user.substr(user.length() - 6)
+	r = await api.create_character(sid, 0, cname, p.to_dict())
+	check("tạo nhân vật", r.ok and r.data.name == cname and r.data.level == 1, r)
+	if not r.ok:
+		return
+	var cid := int(r.data.id)
+	var ver := int(r.data.version)
+	check("tên trùng", (await api.create_character(sid, 1, cname.to_upper(), p.to_dict())).code == "name_taken")
+	check("ô đã có", (await api.create_character(sid, 0, cname + "x", p.to_dict())).code == "slot_taken")
+	check("tên có ký tự lạ", (await api.create_character(sid, 1, "ab<script>", p.to_dict())).code == "bad_name")
+	p.level = 7
+	p.display_name = "Đổi Tên Lén"
+	r = await api.save_character(cid, ver, p.to_dict())
+	check("lưu tiến trình", r.ok and int(r.data.version) == ver + 1, r)
+	check("lưu bằng version cũ bị chặn", (await api.save_character(cid, ver, p.to_dict())).code == "stale_save")
+	r = await api.characters(sid)
+	var c: Dictionary = r.data.characters[0] if r.ok and not r.data.characters.is_empty() else {}
+	check("đọc lại cấp đã lưu", int(c.get("level", 0)) == 7, c)
+	check("không đổi tên qua dữ liệu lưu", str(c.get("data", {}).get("display_name", "")) == cname, c)
+	r = await api.servers()
+	check("máy chủ đếm số nhân vật", r.ok and int(r.data.servers[0].characters) == 1, r)
+	check("xóa sai mật khẩu", (await api.delete_character(cid, "sai")).code == "wrong_password")
+	r = await api.delete_character(cid, "matkhau1")
+	check("xóa nhân vật", r.ok, r)
+	r = await api.characters(sid)
+	check("đã xóa khỏi danh sách", r.ok and r.data.characters.is_empty(), r)
+
+	## SaveManager online: gom lưu rồi gửi lên server.
+	r = await api.create_character(sid, 2, cname, p.to_dict())
+	check("tạo lại cùng tên sau khi xóa", r.ok, r)
+	if r.ok:
+		var prof := PlayerProfile.from_dict(r.data.data)
+		SaveManager.set_online_character(int(r.data.id), int(r.data.version))
+		prof.level = 9
+		SaveManager.save_profile(prof)
+		await SaveManager.flush_online()
+		var r2: Dictionary = await api.characters(sid)
+		check("SaveManager lưu lên server", r2.ok and int(r2.data.characters[0].level) == 9, r2)
+		SaveManager.clear_online_character()
 
 func _read_otp(email: String) -> String:
 	var http := HTTPRequest.new()

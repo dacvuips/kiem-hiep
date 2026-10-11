@@ -44,12 +44,17 @@ Lỗi luôn có dạng `{"code": "...", "message": "..."}`. Client dựa vào `c
 | POST | `/v1/auth/reset` | `username, code, new_password` | Sai 5 lần thì mã bị hủy. Đăng xuất mọi máy |
 | POST | `/v1/account/password` | `old_password, new_password` | Cần `Authorization: Bearer`. Trả phiên mới |
 | GET | `/v1/account/me` | | Cần Bearer |
-| GET | `/v1/servers` | | Cần Bearer. Định dạng giống `data/server/servers.json` cũ |
+| GET | `/v1/servers` | | Cần Bearer. Kèm `characters` = số nhân vật của tài khoản trên từng máy chủ |
+| GET | `/v1/characters?server_id=N` | | Nhân vật của tài khoản trên máy chủ N (tối đa 4 ô) |
+| POST | `/v1/characters` | `server_id, slot, name, data` | Tên 2–16 ký tự (chữ có dấu, số, cách), không trùng trong máy chủ |
+| PUT | `/v1/characters/{id}` | `version, data` | Lưu tiến trình. Sai `version` (máy khác vừa lưu) thì trả `stale_save`. Không đổi được tên qua `data` |
+| DELETE | `/v1/characters/{id}` | `password` | Xóa mềm, phải nhập lại mật khẩu |
 
 Phiên đăng nhập: `{access_token (15 phút), refresh_token (30 ngày), expires_in, account}`.
 
 Các mã lỗi: `bad_request`, `bad_username`, `bad_email`, `bad_password`, `password_is_username`, `username_taken`, `wrong_login`,
-`wrong_password`, `bad_code`, `banned`, `unauthorized`, `rate_limited`, `internal`.
+`wrong_password`, `bad_code`, `bad_name`, `name_taken`, `slot_taken`, `too_many_characters`,
+`character_not_found`, `bad_server`, `maintenance`, `stale_save`, `data_too_large`, `banned`, `unauthorized`, `rate_limited`, `internal`.
 
 ## Bảo mật
 
@@ -69,3 +74,6 @@ Các mã lỗi: `bad_request`, `bad_username`, `bad_email`, `bad_password`, `pas
 Đổi khóa ký JWT: chạy `genkeys`, thay `JWT_KID` + `JWT_PRIVATE_KEY`, đưa khóa công khai cũ vào `JWT_PUBLIC_KEYS`
 để token đang dùng còn hợp lệ tới khi hết hạn (15 phút), sau đó xóa đi.
 **Không được đổi `PASSWORD_PEPPER`** khi đã có người chơi. Phải sao lưu nó an toàn cùng database.
+
+> Hiện client tự gửi dữ liệu nhân vật (`PUT /v1/characters/{id}`), nên sửa client vẫn có thể gian lận chỉ số/đồ.
+> Khi có game server (bước B), chỉ game server được ghi dữ liệu nhân vật.

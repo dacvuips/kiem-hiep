@@ -11,6 +11,7 @@ class_name CharacterHubScreen
 ## sửa RECT_NAV_MENU bên dưới hoặc kéo %FrameNavMenu trong scene rồi đồng bộ lại rect ở đây.
 
 const SELECT_SCENE_PATH := "res://ui/character_select/CharacterSelect.tscn"
+const ROSTER_SCENE_PATH := "res://ui/character_roster/CharacterRoster.tscn"
 const GAME_SCENE_PATH := "res://Main.tscn"
 const FADE_DURATION := 0.3
 
@@ -57,7 +58,7 @@ func _ready() -> void:
 		_profile = SaveManager.load_profile()
 		GameManager.local_profile = _profile
 	if _profile == null:
-		get_tree().change_scene_to_file.call_deferred(SELECT_SCENE_PATH)
+		get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH if AccountApi.is_logged_in() else SELECT_SCENE_PATH)
 		return
 
 	_apply_pending_run_exp()
@@ -247,6 +248,10 @@ func _on_stage_button_pressed() -> void:
 	StageSelectScreen.open(self, _profile, stages, _enter_stage, func() -> void: pass)
 
 func _on_back_pressed() -> void:
+	if AccountApi.is_logged_in():
+		await SaveManager.flush_online()
+		get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
+		return
 	get_tree().change_scene_to_file(SELECT_SCENE_PATH)
 
 ## Nút "Kỹ Năng" ở menu phải — mở bảng Kỹ Năng Võ Công đầy đủ (toàn bộ skill môn phái, không chỉ

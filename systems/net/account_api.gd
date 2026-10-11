@@ -106,6 +106,23 @@ func resume() -> Dictionary:
 func servers() -> Dictionary:
 	return await _authed(HTTPClient.METHOD_GET, "/v1/servers")
 
+## Nhân vật của tài khoản trên 1 máy chủ: data = {"characters": [{id, slot, name, gender, sect_id, level, version, data}], "max": 4}.
+func characters(server_id: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/characters?server_id=%d" % server_id)
+
+## Tạo nhân vật ở ô `slot`. profile_data = PlayerProfile.to_dict(). Server kiểm tra tên (2–16 ký tự, không trùng trong máy chủ).
+func create_character(server_id: int, slot: int, character_name: String, profile_data: Dictionary) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_POST, "/v1/characters",
+		{"server_id": server_id, "slot": slot, "name": character_name, "data": profile_data})
+
+## Lưu tiến trình. version = bản đang có; server trả version mới. Lệch version (máy khác vừa lưu) -> code "stale_save".
+func save_character(character_id: int, version: int, profile_data: Dictionary) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_PUT, "/v1/characters/%d" % character_id, {"version": version, "data": profile_data})
+
+## Xóa nhân vật (xóa mềm, admin khôi phục được) — phải nhập lại mật khẩu tài khoản.
+func delete_character(character_id: int, password: String) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_DELETE, "/v1/characters/%d" % character_id, {"password": password})
+
 ## Access token hiện tại (còn hạn) — dùng khi kết nối game server. Rỗng nếu chưa đăng nhập / không làm mới được.
 func access_token() -> String:
 	if not await _ensure_access():
@@ -127,6 +144,9 @@ func _apply_session(data: Variant) -> void:
 		DirAccess.remove_absolute(SESSION_PATH)
 
 func _clear_session() -> void:
+	## Đăng xuất / hết phiên: bỏ nhân vật đang chơi để tài khoản sau không thấy nhân vật của tài khoản trước.
+	GameManager.local_profile = null
+	SaveManager.clear_online_character()
 	_access = ""
 	_refresh = ""
 	_access_expire_at = 0.0
