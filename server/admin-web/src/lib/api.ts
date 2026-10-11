@@ -1,0 +1,154 @@
+// Gọi API admin (cùng nguồn, cookie HttpOnly). Mọi yêu cầu kèm header X-Admin-Request để server chống CSRF.
+export class ApiError extends Error {
+  constructor(public status: number, public code: string, message: string) {
+    super(message)
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  let res: Response
+  try {
+    res = await fetch('/admin/api' + path, {
+      method,
+      credentials: 'same-origin',
+      headers: { 'X-Admin-Request': '1', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    throw new ApiError(0, 'network', 'Không kết nối được máy chủ')
+  }
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new ApiError(res.status, data?.code ?? 'error', data?.message ?? `Lỗi máy chủ (${res.status})`)
+  }
+  return data as T
+}
+
+export const api = {
+  get: <T,>(p: string) => request<T>('GET', p),
+  post: <T,>(p: string, b: unknown = {}) => request<T>('POST', p, b),
+  put: <T,>(p: string, b: unknown) => request<T>('PUT', p, b),
+}
+
+// ---- kiểu dữ liệu
+
+export type Role = 'super' | 'gm' | 'support' | 'viewer'
+export interface Admin {
+  id: number
+  username: string
+  display_name: string
+  role: Role
+  disabled: boolean
+  totp_enabled: boolean
+  must_change_password: boolean
+  created_at: string
+  last_login_at: string | null
+  last_login_ip: string
+}
+export interface Me {
+  admin: Admin
+  scope: 'full' | 'enroll'
+  permissions: string[]
+}
+
+export interface DayCount {
+  day: string
+  count: number
+}
+export interface ServerStat {
+  id: number
+  name: string
+  region: string
+  status: string
+  is_new: boolean
+  host: string
+  port: number
+  ws_url: string
+  sort_order: number
+  opened_at: string
+  characters: number
+}
+export interface AuditItem {
+  id: number
+  admin_id: number | null
+  admin: string
+  action: string
+  target_type: string
+  target_id: string
+  target: string
+  reason: string
+  detail: Record<string, unknown>
+  ip: string
+  created_at: string
+}
+export interface Stats {
+  accounts: number
+  new_today: number
+  new_7d: number
+  banned: number
+  muted: number
+  characters: number
+  active_today: number
+  active_7d: number
+  online: number | null
+  registrations: DayCount[]
+  active_daily: DayCount[]
+  servers: ServerStat[]
+  recent_audit: AuditItem[]
+}
+export interface Account {
+  id: number
+  username: string
+  email: string
+  status: 'active' | 'banned'
+  banned_until: string | null
+  ban_reason: string
+  muted_until: string | null
+  google_linked: boolean
+  created_at: string
+  created_ip: string
+  last_login_at: string | null
+  last_login_ip: string
+  characters: number
+}
+export interface Page<T> {
+  items: T[]
+  total: number
+  page: number
+  size: number
+}
+export interface CharacterRow {
+  id: number
+  server_id: number
+  server: string
+  slot: number
+  name: string
+  gender: number
+  sect_id: string
+  level: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+export interface LoginRow {
+  ok: boolean
+  method: string
+  ip: string
+  user_agent: string
+  created_at: string
+}
+export interface SessionRow {
+  id: number
+  created_at: string
+  last_used_at: string
+  expires_at: string
+  ip: string
+  user_agent: string
+}
+export interface AccountDetail {
+  account: Account
+  characters: CharacterRow[]
+  logins: LoginRow[]
+  sessions: SessionRow[]
+  audit: AuditItem[]
+}

@@ -4,7 +4,8 @@ Thư mục này nằm ngoài project Godot (có `.gdignore`).
 
 | Thư mục | Nội dung |
 |---|---|
-| `account/` | Server tài khoản (Go): đăng ký, đăng nhập, quên/đổi mật khẩu, danh sách máy chủ. Sắp tới: API web Admin |
+| `account/` | Server tài khoản (Go): đăng ký, đăng nhập, quên/đổi mật khẩu, máy chủ, nhân vật, API web Admin |
+| `admin-web/` | Web Admin (React + Vite), được build vào image `account` và phục vụ tại `/admin/` |
 
 ## Chạy trên máy dev
 
@@ -20,6 +21,7 @@ docker compose up -d --build
 | Dịch vụ | Địa chỉ |
 |---|---|
 | API tài khoản | http://localhost:8080 |
+| Web Admin | http://localhost:8080/admin/ |
 | Hộp thư giả (xem mã OTP) | http://localhost:8025 |
 | PostgreSQL | `127.0.0.1:5432`, user/db `kiemhiep`, mật khẩu = `DB_PASSWORD` trong `.env` |
 
@@ -77,3 +79,24 @@ Các mã lỗi: `bad_request`, `bad_username`, `bad_email`, `bad_password`, `pas
 
 > Hiện client tự gửi dữ liệu nhân vật (`PUT /v1/characters/{id}`), nên sửa client vẫn có thể gian lận chỉ số/đồ.
 > Khi có game server (bước B), chỉ game server được ghi dữ liệu nhân vật.
+
+## Web Admin
+
+- Đăng nhập lần đầu bằng `BOOTSTRAP_ADMIN_USER` / `BOOTSTRAP_ADMIN_PASS` trong `.env`. Hệ thống bắt **bật 2FA**
+  (Google Authenticator...) rồi **đổi mật khẩu** (ít nhất 12 ký tự) trước khi vào các trang.
+- Vai trò: **Super Admin** (toàn quyền), **Game Master** (khóa, cấm chat, khôi phục nhân vật), **Hỗ trợ** (đặt lại mật khẩu,
+  đổi email, đăng xuất mọi thiết bị), **Chỉ xem**.
+- Mọi thao tác thay đổi dữ liệu bắt nhập lý do và ghi vào nhật ký (bảng `admin_audit`, không sửa / xóa được).
+- Phiên admin nằm trong cookie HttpOnly + SameSite=Strict, kèm header chống CSRF, hết hạn sau 8 giờ.
+- Mất 2FA / quên mật khẩu Super Admin: chạy trên máy chủ
+  `docker compose exec account /account admin <tên> super` để nhận mật khẩu tạm mới (2FA bị xóa, phải thiết lập lại).
+- Sửa giao diện: `cd admin-web && npm install && npm run dev` rồi mở http://localhost:5173/admin/ (API tự chuyển sang :8080).
+
+Kiểm tra web Admin bằng trình duyệt thật (cần Chrome):
+
+```bash
+PASS=$(docker compose exec -T account /account admin e2e_super super | grep -o 'tạm: .*' | cut -d' ' -f2)
+cd admin-web/e2e && npm install && node admin_e2e.mjs e2e_super "$PASS" ./shots
+# xong: vô hiệu hóa admin thử
+docker compose exec -T postgres psql -U kiemhiep -c "UPDATE admins SET disabled=true WHERE username='e2e_super'"
+```

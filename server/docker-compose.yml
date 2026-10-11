@@ -1,5 +1,6 @@
 # Môi trường chạy trên máy dev:  cd server && docker compose up -d --build
 #   API tài khoản : http://localhost:8080
+#   Web Admin     : http://localhost:8080/admin/
 #   Hộp thư giả   : http://localhost:8025  (xem mã OTP quên mật khẩu)
 #   PostgreSQL    : 127.0.0.1:5432  (user/db kiemhiep, mật khẩu = DB_PASSWORD trong .env)
 # Mọi khóa/mật khẩu nằm trong server/.env (xem .env.example), không có trong file này.
@@ -22,7 +23,9 @@ services:
     ports: ["127.0.0.1:8025:8025"]
 
   account:
-    build: ./account
+    build:
+      context: .
+      dockerfile: account/Dockerfile
     env_file: .env
     environment:
       DATABASE_URL: postgres://kiemhiep:${DB_PASSWORD}@postgres:5432/kiemhiep?sslmode=disable
