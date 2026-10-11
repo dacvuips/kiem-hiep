@@ -1,5 +1,7 @@
 extends RefCounted
 class_name VltkSkillCaster
+## Phép chia nguyên trong file này là CỐ Ý — chép đúng số học số nguyên của bản gốc C++ (g_DirCos, ô logic 32...).
+@warning_ignore_start("integer_division")
 ## Thi triển skill VLTK theo đúng KSkill gốc (KSkills.cpp): Cast -> CastMissles theo đội hình (MisslesForm) ->
 ## CastWall / CastLine / CastSpread / CastCircle / CastZone / CastExtractiveLineMissle -> sinh đạn (BaseSkill = 1) hoặc
 ## thi triển tiếp skill con (BaseSkill = 0) tại từng vị trí, rồi skill sự kiện Start.
@@ -39,11 +41,15 @@ static func _cast(ctx: VltkCastContext, s: Dictionary, des: Vector2, target: Nod
 ## KSkill::CastMissles.
 static func _cast_missiles(ctx: VltkCastContext, s: Dictionary, des: Vector2, target: Node2D, wait: int,
 		from_missile: VltkMissile) -> int:
+	## Mục tiêu có thể đã chết/bị giải phóng giữa chừng (đạn đuổi theo quái rồi quái chết) — truyền thẳng vào hàm có tham
+	## số kiểu Node2D sẽ lỗi "previously freed", nên đổi về null (= nhắm điểm) trước.
+	if not is_instance_valid(target):
+		target = null
 	var form := int(s["form"])
 	if from_missile != null:
 		var ref := from_missile.logic
 		var mdir := from_missile.dir
-		var mtarget := from_missile.follow_target
+		var mtarget: Node2D = from_missile.follow_target if is_instance_valid(from_missile.follow_target) else null
 		match form:
 			Form.WALL:
 				return _wall(ctx, s, wrapi(mdir + VltkMath.MAX_DIR / 4, 0, VltkMath.MAX_DIR), ref, mtarget, wait, from_missile)
@@ -167,7 +173,7 @@ static func _extractive_line(ctx: VltkCastContext, s: Dictionary, dir: int, src:
 	if m == null:
 		return 0
 	m.aim_parabola(dist)
-	if m.data.get("move_kind", 0) in [VltkMissile.MoveKind.LINE, VltkMissile.MoveKind.PARABOLA, VltkMissile.MoveKind.FOLLOW]:
+	if int(m.data.get("move_kind", 0)) in [VltkMissile.MoveKind.LINE, VltkMissile.MoveKind.PARABOLA, VltkMissile.MoveKind.FOLLOW]:
 		m.set_factors((int(des.x - src.x) << 10) / dist, (int(des.y - src.y) << 10) / dist)
 	return 1
 
@@ -237,3 +243,5 @@ static func _zone(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, t
 			if _emit(ctx, s, i * num + j, begin + Vector2(j * VltkMath.CELL, i * VltkMath.CELL), dir, target, wait, parent):
 				count += 1
 	return count
+
+@warning_ignore_restore("integer_division")

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cg7e4pew2haqs" path="res://player/player.tscn" id="1_uu6xs"]
 [ext_resource type="Resource" uid="uid://djjk70ruawtja" path="res://stages/stage_01/stage_01.tres" id="2_03owx"]
 [ext_resource type="Script" uid="uid://bw78oxafwchs2" path="res://spawner/spawner.gd" id="3_r0du0"]
-[ext_resource type="PackedScene" uid="uid://ibeej5jrxqy5" path="res://world/world.tscn" id="4_cm0pq"]
+[ext_resource type="PackedScene" path="res://world/vltk_world.tscn" id="4_cm0pq"]
 [ext_resource type="Script" uid="uid://x04wym6dmid4" path="res://main.gd" id="5_main"]
 [ext_resource type="PackedScene" uid="uid://bbso8vaqgekud" path="res://ui/level_up/LevelUpUI.tscn" id="6_3dxm6"]
 [ext_resource type="Script" uid="uid://b7h1uw2yrj4nj" path="res://stages/enemy_spawn_entry.gd" id="6_03owx"]
@@ -50,25 +50,25 @@ theme_override_font_sizes/font_size = 20
 
 [node name="CharacterButton" type="Button" parent="UI" unique_id=1900000003]
 offset_left = 150.0
-offset_top = 20.0
+offset_top = 36.0
 offset_right = 260.0
-offset_bottom = 56.0
+offset_bottom = 72.0
 focus_mode = 0
 text = "Nhân vật"
 
 [node name="InventoryButton" type="Button" parent="UI" unique_id=1900000004]
 offset_left = 270.0
-offset_top = 20.0
+offset_top = 36.0
 offset_right = 380.0
-offset_bottom = 56.0
+offset_bottom = 72.0
 focus_mode = 0
 text = "Hành trang"
 
 [node name="SkillsButton" type="Button" parent="UI" unique_id=1900000006]
 offset_left = 390.0
-offset_top = 20.0
+offset_top = 36.0
 offset_right = 500.0
-offset_bottom = 56.0
+offset_bottom = 72.0
 focus_mode = 0
 tooltip_text = "Bảng Kỹ Năng (phím G)"
 text = "Kỹ năng"
@@ -81,13 +81,6 @@ text = "Kỹ năng"
 
 [node name="World" parent="." unique_id=780628057 instance=ExtResource("4_cm0pq")]
 process_mode = 1
-
-[node name="ObstacleSpawner" type="Node2D" parent="." unique_id=1769053211]
-process_mode = 1
-script = ExtResource("14_obssp")
-obstacle_scenes = Array[PackedScene]([ExtResource("15_stone"), ExtResource("7_fpfj3"), ExtResource("6_sc1dx")])
-obstacles_per_chunk = 1
-load_radius = 1
 
 [node name="Player" parent="." unique_id=33162553 instance=ExtResource("1_uu6xs")]
 process_mode = 1

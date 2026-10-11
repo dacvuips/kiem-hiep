@@ -1,5 +1,7 @@
 extends RefCounted
 class_name VltkSkillData
+## Phép chia nguyên trong file này là CỐ Ý — chép đúng số học số nguyên của bản gốc C++ (g_DirCos, ô logic 32...).
+@warning_ignore_start("integer_division")
 ## Dữ liệu chiêu VLTK gốc do tools/import_vltk_skill_fx.py xuất ra (data/skill_fx/*.json + assets/skill_fx/*.png).
 ## Chỉ đọc — dùng chung cho mọi người chơi (state runtime nằm trên VltkMissile/VltkEffect, không ở đây).
 
@@ -14,6 +16,7 @@ enum Phase { WAIT, FLY, VANISH, COLLISION }
 static var _skills: Dictionary = {}
 static var _missiles: Dictionary = {}
 static var _anims: Dictionary = {}
+static var _states: Dictionary = {}  ## StateSpecialId -> hình trạng thái (states.json)
 static var _loaded := false
 static var _textures: Dictionary = {}
 static var _level_cache: Dictionary = {}  ## "id:level" -> skill đã áp thuộc tính theo cấp
@@ -25,6 +28,7 @@ static func _ensure() -> void:
 	_skills = _load_json("skills.json")
 	_missiles = _load_json("missiles.json")
 	_anims = _load_json("anims.json")
+	_states = _load_json("states.json")
 
 static func _load_json(file: String) -> Dictionary:
 	var path := DATA_DIR + file
@@ -36,6 +40,11 @@ static func _load_json(file: String) -> Dictionary:
 static func has_skill(skill_id: int) -> bool:
 	_ensure()
 	return _skills.has(str(skill_id))
+
+## Hình trạng thái gắn lên người (CStateMagicTable gốc) theo StateSpecialId của skill; {} nếu chưa có hình.
+static func state(state_id: int) -> Dictionary:
+	_ensure()
+	return _states.get(str(state_id), {})
 
 static func anim(key: String) -> Dictionary:
 	_ensure()
@@ -109,6 +118,19 @@ static func skill(skill_id: int, level: int) -> Dictionary:
 	_level_cache[key] = s
 	return s
 
+## Thuộc tính sát thương/hiệu ứng nguyên tố theo cấp của skill (physicsenhance_p, colddamage_v, firedamage_v,
+## lightingdamage_v, poisondamage_v, stun_p, deadlystrike_p, seriesdamage_p...) do tools/import_vltk_skill_fx.py xuất
+## (HIT_LEVEL_ATTRS): [giá trị 1, 2, 3] ở cấp `level`, hoặc [] nếu skill không có thuộc tính đó.
+static func hit_attrib(skill_id: int, attrib: String, level: int) -> Array:
+	_ensure()
+	var levels: Dictionary = _skills.get(str(skill_id), {}).get("levels", {})
+	if not levels.has(attrib):
+		return []
+	var values: Array = levels[attrib]
+	if values.is_empty():
+		return []
+	return values[clampi(level, 1, values.size()) - 1]
+
 ## Đạn con của skill (đã ghi đè thuộc tính theo cấp của skill). {} nếu không có.
 static func missile_for(skill_lv: Dictionary) -> Dictionary:
 	_ensure()
@@ -118,3 +140,5 @@ static func missile_for(skill_lv: Dictionary) -> Dictionary:
 	var m := base.duplicate()
 	m.merge(skill_lv.get("missile_override", {}), true)
 	return m
+
+@warning_ignore_restore("integer_division")

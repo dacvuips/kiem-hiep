@@ -21,6 +21,9 @@ var vitality: int = 5
 var energy: int = 5
 
 var level: int = 1
+var female: bool = false
+## Người chơi: kháng theo hệ = hệ_số × cấp / 100 (KLevelAdd::GetXxxResist gốc — cấp 1 ra 0%). Quái giữ nguyên hệ số.
+var scale_resist_by_level: bool = false
 var element: ElementTypes.ElementType = ElementTypes.ElementType.KIM
 
 ## ---- HP/Mana/Stamina tối đa — CHÍNH XÁC 100% VLTK, xem ELEMENT_LEVEL_ADD ----
@@ -109,10 +112,13 @@ const ELEMENT_LEVEL_ADD := {
 		"res": {"fire": 0, "cold": 25, "poison": -25, "lighting": 0, "physic": 0}},
 }
 
-## Stamina — KHÔNG có công thức gốc đáng tin (dữ liệu server mâu thuẫn giữa imaxstamina=100 thực
-## tế và StaminaBase=180 trong bảng hệ số, xem docs mục 3) — dùng công thức tự thiết kế cố định.
+## Stamina — khởi điểm 100 (imaxstamina của NewPlayerIni, khớp ảnh nhân vật gốc cấp 1). level_add.txt gốc ghi
+## StaminaPerVitality = 0 cho cả 5 hệ: cộng Sinh khí KHÔNG làm tăng thể lực.
 const STAMINA_BASE := 100
-const STAMINA_PER_VITALITY := 2
+const STAMINA_PER_VITALITY := 0
+## Thể lực mỗi cấp (KLevelAdd::GetStaminaPerLevel gốc; cả 5 hệ cùng số): 100 + (cấp-1) x 9 nam / x 8 nữ — khớp 280 ở cấp 21, 370 ở cấp 31.
+const STAMINA_PER_LEVEL_MALE := 9
+const STAMINA_PER_LEVEL_FEMALE := 8
 
 ## ĐƯỜNG DỰNG CHỈ SỐ DUY NHẤT cho mọi bên tham chiến (player, quái, người chơi khác khi online):
 ##   1. Chỉ số gốc từ `build` (cấp, hệ, 4 chỉ số) + thuộc tính strength_v/... (pass 1)
@@ -124,7 +130,9 @@ const STAMINA_PER_VITALITY := 2
 static func build(b: CombatantBuild, state_sources: Array[Dictionary] = []) -> CombatantStats:
 	var s := CombatantStats.new()
 	s.level = b.level
+	s.female = b.female
 	s.element = b.element
+	s.scale_resist_by_level = b.sect_id != ""
 	s.strength = b.strength
 	s.dexterity = b.dexterity
 	s.vitality = b.vitality
@@ -163,7 +171,7 @@ func _apply_core_formulas() -> void:
 	var coeff: Dictionary = ELEMENT_LEVEL_ADD[element]
 	max_hp = int(coeff.life_per_level) * level + vitality * int(coeff.life_per_vitality)
 	max_mana = int(coeff.mana_per_level) * level + energy * int(coeff.mana_per_energy)
-	max_stamina = STAMINA_BASE + vitality * STAMINA_PER_VITALITY
+	max_stamina = STAMINA_BASE + (level - 1) * (STAMINA_PER_LEVEL_FEMALE if female else STAMINA_PER_LEVEL_MALE) + vitality * STAMINA_PER_VITALITY
 
 	attack_rating = CombatFormulas.calc_base_attack_rating(dexterity)
 	defense = CombatFormulas.calc_base_defense(dexterity)
@@ -190,11 +198,12 @@ const DEXTERITY_SET_DAMAGE_VALUE := 5  ## KPlayer.h gốc
 func _init_resist_defaults() -> void:
 	var coeff: Dictionary = ELEMENT_LEVEL_ADD.get(element, {})
 	var res: Dictionary = coeff.get("res", {})
-	resist_percent[CombatFormulas.DamageType.FIRE] = int(res.get("fire", 0))
-	resist_percent[CombatFormulas.DamageType.COLD] = int(res.get("cold", 0))
-	resist_percent[CombatFormulas.DamageType.POISON] = int(res.get("poison", 0))
-	resist_percent[CombatFormulas.DamageType.LIGHT] = int(res.get("lighting", 0))
-	resist_percent[CombatFormulas.DamageType.PHYSICS] = int(res.get("physic", 0))
+	var mult: int = level if scale_resist_by_level else 100
+	resist_percent[CombatFormulas.DamageType.FIRE] = int(res.get("fire", 0)) * mult / 100
+	resist_percent[CombatFormulas.DamageType.COLD] = int(res.get("cold", 0)) * mult / 100
+	resist_percent[CombatFormulas.DamageType.POISON] = int(res.get("poison", 0)) * mult / 100
+	resist_percent[CombatFormulas.DamageType.LIGHT] = int(res.get("lighting", 0)) * mult / 100
+	resist_percent[CombatFormulas.DamageType.PHYSICS] = int(res.get("physic", 0)) * mult / 100
 	resist_percent[CombatFormulas.DamageType.MAGIC] = 0
 	for type in resist_percent.keys():
 		resist_percent_cap[type] = CombatFormulas.MAX_RESIST

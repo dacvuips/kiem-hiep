@@ -4,9 +4,6 @@ class_name StageData
 ## Tên hiển thị, VD "Màn 1 - Thanh Phong Thôn"
 @export var stage_name: String = ""
 
-## Scene world/map riêng cho màn này (vật cản, background, ranh giới)
-@export var world_scene: PackedScene
-
 ## true = map cho nhân vật tự di chuyển -> hiện joystick kéo góc dưới-trái (MoveJoystick). Tắt với
 ## map không cần đi lại (VD đứng yên đánh boss) để joystick không chiếm chỗ màn hình.
 @export var show_move_joystick: bool = true
@@ -22,3 +19,18 @@ class_name StageData
 
 ## Thời gian màn kéo dài (giây) trước khi boss xuất hiện / màn kết thúc
 @export var stage_duration: float = 300.0
+
+@export_group("Ô vuông màn chơi trên map chính")
+## Toàn bộ game dùng 1 MAP CHÍNH duy nhất (Main.tscn/World = VltkWorld). Mỗi màn chơi chỉ là 1 ô vuông trên map đó: nhân vật
+## và quái bị giới hạn trong ô, rìa ô có hào quang sáng. Toạ độ tính bằng PIXEL MAP (cùng hệ toạ độ Node2D của map;
+## mỗi vùng 512px, ô lưới 32x16px). Bấm F8 khi đang chạy (bản debug) để chép toạ độ nhân vật hiện tại, dán vào `arena_center`.
+## (0, 0) = tự chọn: tâm khu chơi của map.
+@export var arena_center: Vector2 = Vector2.ZERO
+## Kích thước ô vuông (pixel map). Quái sinh quanh rìa TRONG của ô.
+@export var arena_size: Vector2 = Vector2(4000, 4000)
+## Màu hào quang ở rìa ô.
+@export var arena_color: Color = Color(1.0, 0.82, 0.35)
+
+@export_group("Âm thanh / khác")
+## Map VLTK gốc (STT trong maplist.ini) dùng để lấy NHẠC NỀN của màn này (MusicSet.txt). 0 = dùng nhạc mặc định.
+@export var vltk_map_id: int = 0

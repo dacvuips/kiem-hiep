@@ -1,5 +1,7 @@
 extends RefCounted
 class_name VltkMath
+## Phép chia nguyên trong file này là CỐ Ý — chép đúng số học số nguyên của bản gốc C++ (g_DirCos, ô logic 32...).
+@warning_ignore_start("integer_division")
 ## Hệ toạ độ / hướng / nhịp của VLTK gốc (KMath.h, KSubWorld, KRepresentShell2) dùng cho bộ máy chiêu skill_fx.
 ##
 ## - Toạ độ LOGIC (Mps): x = x màn hình, y = 2 × y màn hình (ViewPortCoordToSpaceCoord: nY = (nY + top + Z*887/1024)*2)
@@ -67,3 +69,5 @@ static func image_dir(dir: int, spr_dirs: int) -> int:
 	if dir % step >= 32 / spr_dirs:
 		d += 1
 	return 0 if d >= spr_dirs else d
+
+@warning_ignore_restore("integer_division")

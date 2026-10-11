@@ -1,0 +1,378 @@
+[gd_scene format=3 uid="uid://bpt5ifoi4n2nj"]
+
+[ext_resource type="Script" uid="uid://dh8bqtot26dg2" path="res://ui/character_create/aura_ring.gd" id="ar"]
+[ext_resource type="Texture2D" uid="uid://d0r5372cqt4vw" path="res://ui/character_create/btn_create.png" id="bc"]
+[ext_resource type="Texture2D" uid="uid://e7yo4dmkbpix" path="res://ui/character_create/btn_enter.png" id="be"]
+[ext_resource type="Texture2D" uid="uid://1ud4wuvc1nw7" path="res://ui/character_create/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" uid="uid://6kpbrh72kh18" path="res://ui/character_create/element_hoa.png" id="ehoa"]
+[ext_resource type="Texture2D" uid="uid://bycjvtp7ie0xr" path="res://ui/character_create/element_kim.png" id="ekim"]
+[ext_resource type="Texture2D" uid="uid://dgnhir56bu5an" path="res://ui/character_create/element_moc.png" id="emoc"]
+[ext_resource type="Texture2D" uid="uid://cv70f65ev1smp" path="res://ui/character_create/element_tho.png" id="etho"]
+[ext_resource type="Texture2D" uid="uid://jnrbt4dhm3sc" path="res://ui/character_create/element_thuy.png" id="ethuy"]
+[ext_resource type="Texture2D" uid="uid://8w5bbevd57eu" path="res://ui/character_create/icon_account.png" id="ia"]
+[ext_resource type="Texture2D" uid="uid://csp68tobyd8x0" path="res://ui/character_create/icon_support.png" id="ih"]
+[ext_resource type="Texture2D" uid="uid://igghqlmrvpdd" path="res://ui/character_create/icon_notice.png" id="in"]
+[ext_resource type="Texture2D" uid="uid://lfg4iowuy5tb" path="res://ui/character_create/icon_settings.png" id="is"]
+[ext_resource type="Texture2D" uid="uid://d0llp3iyboic" path="res://ui/character_create/name_input.png" id="ni"]
+[ext_resource type="Script" uid="uid://bke6d8oo1dc3e" path="res://ui/character_create/animated_portrait.gd" id="p"]
+[ext_resource type="Script" uid="uid://dkhi5m5vbgq60" path="res://ui/character_create/character_create.gd" id="s"]
+[ext_resource type="Script" uid="uid://2cpihwqs2dtr" path="res://ui/character_create/stage_fit.gd" id="sf"]
+
+[sub_resource type="LabelSettings" id="soon"]
+font_size = 30
+font_color = Color(0.95, 0.85, 0.6, 0.85)
+outline_size = 8
+outline_color = Color(0.1, 0.04, 0.02, 1)
+
+[sub_resource type="StyleBoxFlat" id="field"]
+content_margin_left = 4.0
+bg_color = Color(0.165, 0.145, 0.125, 1)
+
+[sub_resource type="LabelSettings" id="msg"]
+font_size = 26
+font_color = Color(1, 0.9, 0.62, 1)
+outline_size = 8
+outline_color = Color(0.1, 0.04, 0.02, 1)
+
+[sub_resource type="StyleBoxFlat" id="back_n"]
+bg_color = Color(0.1, 0.06, 0.04, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.68, 0.32, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="back_h"]
+bg_color = Color(0.24, 0.14, 0.07, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.86, 0.45, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CharacterCreate" type="Control" unique_id=1347634260]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("s")
+
+[node name="Background" type="TextureRect" parent="." unique_id=453279213]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Stage" type="Control" parent="." unique_id=1882083662]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 0.3400879
+offset_right = 1672.3401
+offset_bottom = 941.0
+scale = Vector2(0.76514345, 0.76514345)
+mouse_filter = 2
+script = ExtResource("sf")
+
+[node name="MaleAura" type="Control" parent="Stage" unique_id=423813255]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 199.51804
+offset_top = 633.86786
+offset_right = 796.7927
+offset_bottom = 964.5249
+mouse_filter = 2
+script = ExtResource("ar")
+tilt = 0.36
+
+[node name="FemaleAura" type="Control" parent="Stage" unique_id=1223615083]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 909.18835
+offset_top = 641.7099
+offset_right = 1535.3352
+offset_bottom = 957.9904
+mouse_filter = 2
+script = ExtResource("ar")
+tilt = 0.36
+fps = 11.655
+
+[node name="MalePortrait" type="Control" parent="Stage" unique_id=469526578]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = -18.7417
+offset_top = 14.376389
+offset_right = 747.1278
+offset_bottom = 817.5441
+script = ExtResource("p")
+offsets = Dictionary[String, Vector2]({
+"hoa_nam": Vector2(161, 21),
+"kim_nam": Vector2(3, 14),
+"moc_nam": Vector2(130, 15),
+"tho_nam": Vector2(135, 7)
+})
+scales = Dictionary[String, float]({
+"hoa_nam": 0.76,
+"kim_nam": 1.07,
+"moc_nam": 0.8400000000000001,
+"tho_nam": 0.8400000000000001
+})
+preview_character = "kim_nam"
+preview_scale = 1.07
+preview_offset = Vector2(3, 14)
+
+[node name="FemalePortrait" type="Control" parent="Stage" unique_id=1176330758]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 901.6319
+offset_top = 226.1014
+offset_right = 1568.468
+offset_bottom = 838.3792
+script = ExtResource("p")
+offsets = Dictionary[String, Vector2]({
+"tho_nu": Vector2(-10, -3)
+})
+scales = Dictionary[String, float]({
+"tho_nu": 1.15
+})
+preview_character = "tho_nu"
+preview_scale = 1.15
+preview_offset = Vector2(-10, -3)
+
+[node name="AccountButton" type="TextureButton" parent="Stage" unique_id=1790239987]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 210.0
+offset_right = 134.0
+offset_bottom = 326.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("ia")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SettingsButton" type="TextureButton" parent="Stage" unique_id=1986320267]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 336.0
+offset_right = 134.0
+offset_bottom = 454.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("is")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SupportButton" type="TextureButton" parent="Stage" unique_id=1967960624]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 456.5
+offset_right = 134.0
+offset_bottom = 573.5
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("ih")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="NoticeButton" type="TextureButton" parent="Stage" unique_id=678252310]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 574.5
+offset_right = 134.0
+offset_bottom = 709.5
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("in")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ElementKim" type="TextureButton" parent="Stage" unique_id=1068355687]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 761.0
+offset_top = 21.0
+offset_right = 911.0
+offset_bottom = 171.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("ekim")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ElementMoc" type="TextureButton" parent="Stage" unique_id=451656035]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 761.0
+offset_top = 162.0
+offset_right = 911.0
+offset_bottom = 312.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("emoc")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ElementThuy" type="TextureButton" parent="Stage" unique_id=698077091]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 749.0
+offset_top = 288.0
+offset_right = 923.0
+offset_bottom = 462.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("ethuy")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ElementHoa" type="TextureButton" parent="Stage" unique_id=437593103]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 761.0
+offset_top = 439.0
+offset_right = 911.0
+offset_bottom = 589.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("ehoa")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ElementTho" type="TextureButton" parent="Stage" unique_id=1325891959]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 761.0
+offset_top = 578.0
+offset_right = 911.0
+offset_bottom = 728.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("etho")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="MaleMissing" type="Label" parent="Stage" unique_id=1010479829]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 240.0
+offset_top = 500.0
+offset_right = 640.0
+offset_bottom = 550.0
+label_settings = SubResource("soon")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FemaleMissing" type="Label" parent="Stage" unique_id=962292055]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 990.0
+offset_top = 500.0
+offset_right = 1390.0
+offset_bottom = 550.0
+label_settings = SubResource("soon")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CreateButton" type="TextureButton" parent="Stage" unique_id=40721039]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 252.0
+offset_top = 858.0
+offset_right = 612.0
+offset_bottom = 918.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("bc")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="NameBox" type="TextureRect" parent="Stage" unique_id=1839257611]
+layout_mode = 0
+offset_left = 621.0
+offset_top = 859.0
+offset_right = 1051.0
+offset_bottom = 917.0
+mouse_filter = 2
+texture = ExtResource("ni")
+expand_mode = 1
+
+[node name="NameInput" type="LineEdit" parent="Stage/NameBox" unique_id=79246718]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 82.0
+offset_top = 14.0
+offset_right = 327.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.95, 0.88, 0.72, 1)
+theme_override_colors/font_placeholder_color = Color(0.62, 0.6, 0.58, 1)
+theme_override_colors/caret_color = Color(0.95, 0.88, 0.72, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("field")
+theme_override_styles/focus = SubResource("field")
+placeholder_text = "Tên nhân vật"
+max_length = 16
+caret_blink = true
+
+[node name="DiceButton" type="Button" parent="Stage/NameBox" unique_id=1386181941]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 333.0
+offset_top = 16.0
+offset_right = 367.0
+offset_bottom = 46.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="EnterButton" type="TextureButton" parent="Stage" unique_id=1321899307]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1058.1805
+offset_top = 857.3556
+offset_right = 1361.0956
+offset_bottom = 918.7722
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("be")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="BackButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 26.0
+offset_right = 226.0
+offset_bottom = 86.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("back_n")
+theme_override_styles/hover = SubResource("back_h")
+theme_override_styles/pressed = SubResource("back_h")
+text = "‹  Quay lại"
+
+[node name="Message" type="Label" parent="Stage" unique_id=1733472458]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 425.61945
+offset_top = 790.0
+offset_right = 1236.0
+offset_bottom = 834.0
+label_settings = SubResource("msg")
+horizontal_alignment = 1
+vertical_alignment = 1

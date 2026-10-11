@@ -1,5 +1,7 @@
 extends Node2D
 class_name VltkEffect
+## Phép chia nguyên trong file này là CỐ Ý — chép đúng số học số nguyên của bản gốc C++ (g_DirCos, ô logic 32...).
+@warning_ignore_start("integer_division")
 ## Hiệu ứng 1 lần của đạn VLTK (KSkillSpecial gốc): ảnh chờ khi sinh đạn, nổ/biến mất, trúng đòn trên người mục tiêu.
 ## Chạy hết số frame của 1 hướng rồi tự trả về ObjectPool. Bám theo nhân vật nếu có `follow`.
 
@@ -9,6 +11,7 @@ const DRAW_Z := 1
 
 var end_tick := 0          ## số nhịp (18/giây) — ngoài dùng để biết hiệu ứng đã hết chưa (SpecialMovieIsAllEnd)
 var follow: Node2D = null
+var _speed_scale: float = 1.0   ## > 1 = hoạt ảnh chạy nhanh hơn (skill hỗ trợ)
 
 var _anim: Dictionary = {}
 var _interval := 1
@@ -22,13 +25,14 @@ var _z := 0.0
 @onready var _sprite: Sprite2D = $Sprite
 
 ## phase = {anim, frames, dirs, interval} (Missles.txt AnimFileN + AnimFileInfoN). null nếu giai đoạn đó không có ảnh.
-static func spawn(parent: Node, phase: Variant, logic_pos: Vector2, z: float, dir_index: int, follow_node: Node2D = null) -> VltkEffect:
+static func spawn(parent: Node, phase: Variant, logic_pos: Vector2, z: float, dir_index: int, follow_node: Node2D = null, speed: float = 1.0) -> VltkEffect:
 	if not (phase is Dictionary) or parent == null:
 		return null
 	var anim := VltkSkillData.anim(str(phase.get("anim", "")))
 	if anim.is_empty():
 		return null
 	var e: VltkEffect = ObjectPool.acquire(SCENE, parent)
+	e._speed_scale = speed
 	e._setup(phase, anim, logic_pos, z, dir_index, follow_node)
 	return e
 
@@ -57,7 +61,7 @@ func is_finished() -> bool:
 	return _tick > end_tick
 
 func _process(delta: float) -> void:
-	_acc += delta
+	_acc += delta * _speed_scale
 	while _acc >= VltkMath.TICK:
 		_acc -= VltkMath.TICK
 		_tick += 1
@@ -85,3 +89,5 @@ func _update() -> void:
 
 func _on_pool_release() -> void:
 	follow = null
+
+@warning_ignore_restore("integer_division")

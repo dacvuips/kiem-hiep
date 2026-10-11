@@ -36,6 +36,9 @@ enum SkillCategory { ACTIVE, PASSIVE }
 ## true = đòn đánh chính của môn phái — dùng được sẵn không cần học (cấp 0 tính như cấp 1), vẫn
 ## cộng "điểm kỹ năng" được để nâng cấp tới max_level như skill thường.
 @export var is_main_attack: bool = false
+## true = skill ĐÁNH THƯỜNG chung (VLTK gốc SkillId 1 "Công kích vật lý"): phái nào cũng có, cấp 1, dùng ngay không cần học.
+## SectRegistry gắn skill này vào đầu danh sách của MỌI phái (systems/sect/common/basic_attack.tres).
+@export var is_basic_attack: bool = false
 ## KHÔNG CÒN DÙNG — hotbar giờ do người chơi tự gắn (PlayerProfile.hotbar_skill_ids). Giữ field để
 ## các file .tres cũ vẫn load được.
 @export var is_hotbar: bool = false
@@ -46,7 +49,8 @@ enum SkillCategory { ACTIVE, PASSIVE }
 @export var practice_only: bool = false
 ## Đồng bộ từ Skills.txt bằng tools/sync_skills_from_vltk.py: SkillId gốc, hạn chế vũ khí (EqtLimit: -2 không hạn chế,
 ## -1 quyền thủ, 0 kiếm, 1 đơn đao, 2 côn bổng, 3 thương, 4 song chùy, 5 song đao, 100 phi tiêu, 101 phi đao, 102 tụ
-## tiễn) và hạn chế cưỡi ngựa (HorseLimit 1 = không thi triển được khi cưỡi). Hiện CHỈ HIỂN THỊ, chưa chặn thi triển.
+## tiễn) và hạn chế cưỡi ngựa (HorseLimit 1 = chỉ thi triển khi xuống ngựa, 2 = chỉ khi cưỡi ngựa). Kiểm tra lúc thi triển ở
+## get_cast_block_reason() (KSkill::CanCastSkill gốc), gọi từ SectSkillController.
 @export var vltk_skill_id: int = 0
 @export var weapon_limit: int = -2
 @export var horse_limit: int = 0
@@ -57,6 +61,18 @@ const WEAPON_LIMIT_TEXT := {
 	3: ["Thương", "ffff40"], 4: ["Song Chùy", "ff80c0"], 5: ["Song Đao", "e0e0e0"], 100: ["Phi Tiêu", "d0a060"],
 	101: ["Phi Đao", "60a0ff"], 102: ["Tụ Tiễn", "4080ff"],
 }
+
+## Lý do KHÔNG thi triển được ("" = được) theo KSkill::CanCastSkill gốc: `weapon_class` = loại vũ khí đang cầm
+## (Equipment.get_weapon_class), `riding` = đang cưỡi ngựa.
+func get_cast_block_reason(weapon_class: int, riding: bool) -> String:
+	if weapon_limit != -2 and weapon_class != weapon_limit:
+		var entry: Array = WEAPON_LIMIT_TEXT.get(weapon_limit, ["đúng loại vũ khí"])
+		return "Cần trang bị %s để thi triển" % entry[0]
+	if horse_limit == 1 and riding:
+		return "Đang cưỡi ngựa, không thể thi triển"
+	if horse_limit == 2 and not riding:
+		return "Cần cưỡi ngựa để thi triển"
+	return ""
 
 func get_weapon_limit_bbcode() -> String:
 	if not WEAPON_LIMIT_TEXT.has(weapon_limit):

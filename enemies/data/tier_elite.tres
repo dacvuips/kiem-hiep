@@ -11,9 +11,10 @@
 script = ExtResource("1_iwkht")
 tier_name = "Quái Tinh Anh"
 enemy_scene = ExtResource("1_onc7d")
+vltk_monster_id = 12
 vitality = 11
-contact_damage = 25.0
 speed = 70.0
+contact_damage = 25.0
 exp_drop = 5.0
 gem_texture = ExtResource("2_fx5cn")
 possible_drops = Array[ExtResource("3_db1mf")]([ExtResource("4_n8jrd"), ExtResource("5_x83cu")])

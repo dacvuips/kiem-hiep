@@ -2,9 +2,10 @@
 
 [ext_resource type="FontFile" uid="uid://c1ufvxcvnbh6a" path="res://assets/fonts/NotoSerif-Variable.ttf" id="1_font"]
 
-[sub_resource type="FontVariation" id="FontVariation_default"]
-base_font = ExtResource("1_font")
+[sub_resource type="SystemFont" id="SystemFont_vltk"]
+fallbacks = Array[Font]([ExtResource("1_font")])
+font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI")
 
 [resource]
-default_font = SubResource("FontVariation_default")
+default_font = SubResource("SystemFont_vltk")
 default_font_size = 16

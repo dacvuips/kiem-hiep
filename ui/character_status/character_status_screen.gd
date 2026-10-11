@@ -143,7 +143,8 @@ func _style_base_stat_box() -> void:
 func _style_derived_box() -> void:
 	var left_labels_text := ["Chính xác:", "Né tránh:", "Chạy:", "Công kích:", "Tiềm năng:"]
 	var left_names := ["ChinhXac", "NeTranh", "Chay", "CongKich", "TiemNang"]
-	var right_labels_text := ["Kháng Kim:", "Kháng Mộc:", "Kháng Thủy:", "Kháng Hỏa:", "Kháng Thổ:"]
+	## Nhãn đúng bảng nhân vật VLTK gốc (UiStatus): Phòng thủ (vật lý), Kháng hàn, Kháng lôi, Kháng hỏa, Kháng độc.
+	var right_labels_text := ["Phòng thủ:", "Kháng hàn:", "Kháng lôi:", "Kháng hỏa:", "Kháng độc:"]
 	var right_names := ["KhangKim", "KhangMoc", "KhangThuy", "KhangHoa", "KhangTho"]
 
 	for i in 5:
@@ -181,34 +182,44 @@ func refresh() -> void:
 		(get_node("%%BaseStatValue%d" % i) as Label).text = str(base_stats[i])
 		(get_node("%%BaseStatButton%d" % i) as Button).disabled = _profile.potential_points <= 0
 
-	(%DamageLeftValue as Label).text = "%d/%d" % [s.unarmed_min_damage, s.unarmed_max_damage]
+	## Gốc: Lực tay trái = damage skill chuột trái (ở đây: đòn chính), phải = đòn đánh cơ bản (vật lý 0%, tức damage tay/vũ khí).
+	var left_damage := Vector2i(s.unarmed_min_damage, s.unarmed_max_damage)
+	var left_uses_ar := true
+	var player := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	if player != null and "skill_controller" in player:
+		var main_skill: SkillDefinition = player.skill_controller.get_main_skill()
+		if main_skill != null:
+			left_damage = player.skill_controller.get_echo_damage(main_skill, player)
+			if main_skill.vltk_skill_id > 0:
+				left_uses_ar = int(VltkSkillData.skill(main_skill.vltk_skill_id, 1).get("use_ar", 1)) != 0
+	(%DamageLeftValue as Label).text = "%d/%d" % [left_damage.x, left_damage.y]
 	(%DamageRightValue as Label).text = "%d/%d" % [s.unarmed_min_damage, s.unarmed_max_damage]
 
 	## "Chính xác"/"Né tránh" giờ hiển thị ĐÚNG khái niệm VLTK gốc: AttackRating (quyết định % TRÚNG
 	## đòn của chính nhân vật) và Defense (quyết định % NÉ ĐƯỢC đòn đối phương) — không còn 2 chỉ số
 	## rời rạc "accuracy"/"evasion" tự chế như bản cũ (xem CombatFormulas.calc_hit_percent).
-	(%ChinhXacValue as Label).text = str(s.attack_rating)
+	## Gốc (UiStatus): "Chính xác" = AttackRating của skill chuột trái/phải (hiện tại 2 bên cùng số); "Công kích" = tốc độ đánh/tốc độ
+	## thi triển cộng thêm (0/0 lúc đầu); "Chạy" = tốc độ chạy (10).
+	## Gốc: bên nào dùng skill KHÔNG tính trúng/trượt (IsUseAR = 0) thì hiện "-" thay cho chính xác.
+	(%ChinhXacValue as Label).text = "%s/%d" % [str(s.attack_rating) if left_uses_ar else "-", s.attack_rating]
 	(%NeTranhValue as Label).text = str(s.defense)
-	(%ChayValue as Label).text = str(100 + s.dexterity)
-	(%CongKichValue as Label).text = "%d/%d" % [s.unarmed_min_damage, s.unarmed_max_damage]
+	(%ChayValue as Label).text = str(PLAYER_RUN_SPEED)
+	(%CongKichValue as Label).text = "%d/%d" % [s.attack_speed, s.cast_speed]
 	(%TiemNangValue as Label).text = str(_profile.potential_points)
 
-	var elements := [ElementTypes.ElementType.KIM, ElementTypes.ElementType.MOC,
-			ElementTypes.ElementType.THUY, ElementTypes.ElementType.HOA, ElementTypes.ElementType.THO]
-	var element_to_damage_type := {
-		ElementTypes.ElementType.KIM: CombatFormulas.DamageType.PHYSICS,
-		ElementTypes.ElementType.MOC: CombatFormulas.DamageType.LIGHT,
-		ElementTypes.ElementType.THUY: CombatFormulas.DamageType.COLD,
-		ElementTypes.ElementType.HOA: CombatFormulas.DamageType.FIRE,
-		ElementTypes.ElementType.THO: CombatFormulas.DamageType.POISON,
-	}
-	for i in elements.size():
-		var dmg_type: CombatFormulas.DamageType = element_to_damage_type[elements[i]]
+	## Thứ tự hàng kháng theo bảng gốc: Phòng thủ, hàn, lôi, hỏa, độc.
+	var resist_types := [CombatFormulas.DamageType.PHYSICS, CombatFormulas.DamageType.COLD, CombatFormulas.DamageType.LIGHT,
+			CombatFormulas.DamageType.FIRE, CombatFormulas.DamageType.POISON]
+	for i in resist_types.size():
+		var dmg_type: CombatFormulas.DamageType = resist_types[i]
 		(get_node("%%ResistValue%d" % i) as Label).text = "%d%%" % s.get_capped_resist(dmg_type)
 	_refresh_equipment_slots()
 	_refresh_portrait()
 
 # ---------------------------------------------------------------- chân dung
+
+## Tốc độ chạy hiển thị của nhân vật (m_CurrentRunSpeed gốc lúc đi bộ/chạy thường = 10).
+const PLAYER_RUN_SPEED := 10
 
 ## Giây giữa 2 lần tự xoay 1 hướng (8 hướng -> 1 vòng ~ 12 giây).
 const PORTRAIT_TURN_SECONDS := 1.5
@@ -239,8 +250,9 @@ func _turn_portrait() -> void:
 	avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * ((avatar.direction + 1) % 8))))
 
 func _refresh_portrait() -> void:
-	var look := Equipment.get_appearance(_profile.equipment)
 	var avatar: CharacterAvatar = %PortraitAvatar
+	avatar.set_gender("female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male")
+	var look := Equipment.get_appearance(_profile.equipment, avatar.gender, _profile.riding)
 	avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
 
 # ---------------------------------------------------------------- trang bị
@@ -324,13 +336,19 @@ func _style_label(label: Label, text: String, color: Color, font_size: int, alig
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	label.add_theme_constant_override("outline_size", 2)
 	if bold:
-		## NotoSerif-Variable.ttf (gắn làm default_font toàn game qua assets/fonts/default_theme.tres)
-		## là variable font có trục "wght" thật — dùng variation_opentype để lấy nét đậm chuẩn thay
-		## vì embolden giả (méo nét, không đúng hình dáng chữ có dấu tiếng Việt).
-		var font_variation := FontVariation.new()
-		font_variation.base_font = ThemeDB.fallback_font
-		font_variation.variation_opentype = {"wght": 700}
-		label.add_theme_font_override("font", font_variation)
+		## Chữ đậm: bản đậm (weight 700) của chính phông giao diện — Tahoma Bold của hệ thống (phông gốc VLTK), xem
+		## assets/fonts/default_theme.tres; thiếu thì lùi về Arial Bold / NotoSerif.
+		label.add_theme_font_override("font", _bold_font())
+
+static var _bold_font_cache: SystemFont
+
+static func _bold_font() -> SystemFont:
+	if _bold_font_cache == null:
+		_bold_font_cache = SystemFont.new()
+		_bold_font_cache.font_names = PackedStringArray(["Tahoma", "Arial", "Segoe UI"])
+		_bold_font_cache.font_weight = 700
+		_bold_font_cache.fallbacks = [load("res://assets/fonts/NotoSerif-Variable.ttf")]
+	return _bold_font_cache
 
 static func _format_number(value: int) -> String:
 	var digits := str(absi(value))

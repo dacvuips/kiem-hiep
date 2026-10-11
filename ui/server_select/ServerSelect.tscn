@@ -1,0 +1,124 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Texture2D" path="res://ui/server_select/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" path="res://ui/login/logo.png" id="logo"]
+[ext_resource type="Texture2D" path="res://ui/server_select/frame.png" id="frame"]
+[ext_resource type="Texture2D" path="res://ui/server_select/btn_enter.png" id="be"]
+
+[sub_resource type="LabelSettings" id="title"]
+font_size = 38
+font_color = Color(0.96, 0.88, 0.7, 1)
+outline_size = 8
+outline_color = Color(0.08, 0.03, 0.01, 1)
+
+[sub_resource type="LabelSettings" id="msg"]
+font_size = 22
+font_color = Color(1, 0.9, 0.62, 1)
+outline_size = 8
+outline_color = Color(0.1, 0.04, 0.02, 1)
+
+[node name="ServerSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("s")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Stage" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1672.0
+offset_bottom = 941.0
+mouse_filter = 2
+script = ExtResource("sf")
+
+[node name="Logo" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 548
+offset_top = -85
+offset_right = 1198
+offset_bottom = 322
+mouse_filter = 2
+texture = ExtResource("logo")
+expand_mode = 1
+
+[node name="Frame" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 400
+offset_top = 212
+offset_right = 1275
+offset_bottom = 819
+mouse_filter = 2
+texture = ExtResource("frame")
+expand_mode = 1
+
+[node name="Title" type="Label" parent="Stage"]
+layout_mode = 0
+offset_left = 635
+offset_top = 262
+offset_right = 1035
+offset_bottom = 316
+mouse_filter = 2
+label_settings = SubResource("title")
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Chọn máy chủ"
+
+[node name="Filters" type="VBoxContainer" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 470
+offset_top = 360
+offset_right = 618
+offset_bottom = 680
+theme_override_constants/separation = 5
+
+[node name="Rows" type="VBoxContainer" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 648
+offset_top = 390
+offset_right = 1198
+offset_bottom = 720
+theme_override_constants/separation = 2
+
+[node name="EnterButton" type="TextureButton" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 615
+offset_top = 718
+offset_right = 1055
+offset_bottom = 834
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("be")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Message" type="Label" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 436
+offset_top = 850
+offset_right = 1236
+offset_bottom = 890
+mouse_filter = 2
+modulate = Color(1, 1, 1, 0)
+label_settings = SubResource("msg")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,5 +1,7 @@
 extends Node2D
 class_name VltkMissile
+## Phép chia nguyên trong file này là CỐ Ý — chép đúng số học số nguyên của bản gốc C++ (g_DirCos, ô logic 32...).
+@warning_ignore_start("integer_division")
 ## 1 viên đạn VLTK — chép vòng đời KMissle gốc (KMissle.cpp), chạy 18 nhịp/giây trên toạ độ logic (VltkMath):
 ##   sinh ra (DoWait: hiệu ứng "chờ") -> chờ tới StartLifeTime -> PrePareFly -> bay (OnFly theo MoveKind, sự kiện Fly
 ##   mỗi FlyEventTime nhịp) -> va chạm (CheckCollision: CollidRange 1 = chạm gần nhất, >1 = quét ±ô) -> ProcessCollision
@@ -18,9 +20,14 @@ const MIN_COLLISION_Z := 0
 const MAX_COLLISION_Z := 20
 ## Interupt_EndOldMissleLifeWhenMove: người thi triển di chuyển thì đạn biến mất.
 const INTERRUPT_END_WHEN_MOVE := 1
-## Đạn Follow chỉnh hướng mỗi 8 nhịp.
-const FOLLOW_REAIM_TICKS := 8
+## Đạn Follow (bám mục tiêu) chỉnh hướng sau mỗi FOLLOW_REAIM_TICKS nhịp. KMissle.cpp gốc dùng 8 (đạn bay thẳng ~8 nhịp giữa các lần
+## chỉnh nên nhìn như không đuổi theo quái đang chạy) — đặt 0 = chỉnh MỖI nhịp cho đạn đuổi sát. Muốn đúng gốc thì đặt lại 8.
+const FOLLOW_REAIM_TICKS := 0
 const DRAW_Z := 1
+## Đạn Follow mất mục tiêu (quái đã chết giữa chừng / chưa có mục tiêu) thì đuổi quái gần nhất trong tầm này (toạ độ logic) thay vì
+## bay thẳng luôn; quét lại mỗi RETARGET_TICKS nhịp cho rẻ. (Bản gốc bay thẳng — đây là chỉnh theo yêu cầu "đạn dí theo".)
+const RETARGET_RANGE := 480.0
+const RETARGET_TICKS := 2
 
 static var _next_serial := 1
 
@@ -54,6 +61,7 @@ var _parent: VltkMissile = null
 var _parent_serial := 0
 var _launcher_src := Vector2.ZERO
 var _phases: Array = []
+var _variant_b := false       ## đang dùng bộ ảnh/âm B (MultiShow)
 var _effects: Array = []       ## [{end: nhịp kết thúc (theo _cur_life), target}] — SpecialMovieIsAllEnd / 1 hiệu ứng/mục tiêu
 var _acc := 0.0
 var _anim: Dictionary = {}
@@ -102,8 +110,10 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	_launcher_src = ctx.launcher_logic() if ctx.is_valid() else logic
 	## MultiShow: cùng 1 đạn có 2 bộ ảnh, chọn ngẫu nhiên (KMissle::operator=).
 	_phases = data.get("anims", [])
+	_variant_b = false
 	if int(data.get("multi_show", 0)) and randi() % 2 == 1:
 		_phases = data.get("anims_b", _phases)
+		_variant_b = true
 	if _move_kind in [MoveKind.LINE, MoveKind.ROLLBACK, MoveKind.FOLLOW]:
 		set_factors(VltkMath.dir_cos(dir), VltkMath.dir_sin(dir))
 	z_index = DRAW_Z
@@ -159,6 +169,7 @@ func _activate() -> bool:
 	if _cur_life == _start_life and status != Phase.VANISH:
 		if _prepare_fly():
 			status = Phase.FLY
+			_play_sound(Phase.FLY, logic)  ## KMissle: PlaySound(MS_DoFly) lúc bắt đầu bay
 		else:
 			_do_vanish()
 			return false
@@ -211,6 +222,8 @@ func _on_fly() -> void:
 			off = _orbit_step()
 		MoveKind.FOLLOW:
 			_temp1 += 1
+			if follow_target == null and _cur_life % RETARGET_TICKS == 0:
+				follow_target = _find_retarget()
 			if _temp1 > FOLLOW_REAIM_TICKS:
 				_temp1 = 0
 				if follow_target != null:
@@ -223,10 +236,24 @@ func _on_fly() -> void:
 			off = Vector2(x_factor * _speed, y_factor * _speed)
 	logic += off / 1024.0
 	if _check_collision() == -1:
-		if int(data.get("auto_explode", 0)):
+		## Đạn parabol (lựu đạn) rơi chạm đất thì nổ ngay điểm rơi — z giảm nhanh nên hay lọt qua khung z ≤ 20 mà chưa kịp trúng.
+		if int(data.get("auto_explode", 0)) or _move_kind == MoveKind.PARABOLA:
 			_process_collision_at(logic, int(data.get("dmg_range", 0)))
 		_spawn_effect(Phase.VANISH, logic)
 		_do_vanish()
+
+## Quái (địch của người thi triển) gần đạn nhất trong RETARGET_RANGE; null nếu không có.
+func _find_retarget() -> Node2D:
+	var best: Node2D = null
+	var best_d := RETARGET_RANGE * RETARGET_RANGE
+	for t in ctx.targets():
+		if not _is_target(t):
+			continue
+		var d := (VltkMath.logic_of(t) - logic).length_squared()
+		if d < best_d:
+			best_d = d
+			best = t
+	return best
 
 ## MISSLE_MMK_Circle / Helix: quay quanh người thi triển (Param2 = 0) hoặc tại chỗ; Param1 = chiều quay.
 func _orbit_step() -> Vector2:
@@ -270,9 +297,12 @@ func _check_collision() -> int:
 			continue
 		var c := VltkMath.cell_of(VltkMath.logic_of(t)) - cell
 		if absi(c.x) <= collide_range and absi(c.y) <= collide_range:
-			_process_collision_at(logic, dmg_range)
-			_do_collision()
-			return 1
+			## Vùng sát thương (dmg_range / 2 ô) hẹp hơn vùng dò va chạm: chưa ai nằm trong vùng sát thương thì cứ bay tiếp,
+			## không nổ/biến mất sớm (nếu không đạn parabol nổ ngay lúc mới bay mà chưa trúng ai).
+			if _process_collision_at(logic, dmg_range) > 0:
+				_do_collision()
+				return 1
+			break
 	return 0
 
 ## CheckNearestCollision: mục tiêu trong 3×3 ô quanh đạn và cách đạn không quá 1 ô (32) mỗi trục.
@@ -317,7 +347,7 @@ func _process_collision_at(center: Vector2, dmg_range: int) -> int:
 		count += 1
 		var follow := target if int(data.get("col_follow", 0)) else null
 		_spawn_effect(Phase.COLLISION, VltkMath.logic_of(target), follow, target)
-		ctx.deal_damage(target)
+		ctx.deal_damage(target, skill)
 		if hit_count > 0 and count >= hit_count:
 			break
 	return count
@@ -358,9 +388,16 @@ func _spawn_effect(phase: int, at_logic: Vector2, follow: Node2D = null, target:
 		for e in _effects:
 			if e["target"] == target and e["end"] >= _cur_life:
 				return
+	_play_sound(phase, at_logic)  ## KMissle::CreateSpecialEffect gọi PlaySound(trạng thái) sau khi qua kiểm tra trùng
 	var fx := VltkEffect.spawn(ctx.world, _phase(phase), at_logic - Vector2(0, 5), _z, dir, follow)
 	if fx:
 		_effects.append({"end": _cur_life + fx.end_tick, "target": target})
+
+## Tiếng đạn theo giai đoạn (SndFile1..4 / SndFileB1..4 trong Missles.txt), phát tại vị trí đạn.
+func _play_sound(phase: int, at_logic: Vector2) -> void:
+	var stream := VltkSound.missile(int(skill.get("child", 0)), phase, _variant_b)
+	if stream != null:
+		SfxManager.play(stream, VltkMath.to_world(at_logic))
 
 func _effects_all_ended() -> bool:
 	for e in _effects:
@@ -417,3 +454,5 @@ func _on_pool_release() -> void:
 	_parent = null
 	_last_col = null
 	_effects.clear()
+
+@warning_ignore_restore("integer_division")

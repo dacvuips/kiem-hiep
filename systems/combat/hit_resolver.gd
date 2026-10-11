@@ -20,12 +20,13 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 		_apply_hit_state(defender, status, mods)
 		return 0
 
-	if not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense):
+	if (mods == null or mods.use_attack_rating) and not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense):
 		return MISSED
 
 	var parts := mods.extra_damages.duplicate() if mods else {}
 	var main_part: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main_part + Vector2i(min_damage, max_damage)
+	parts = CombatFormulas.apply_server_damage_scaling(parts, int(attacker_element))
 	var dealt := {}
 	var final_damage := CombatFormulas.resolve_multi_damage(attacker_stats, defender_stats, defender_hp,
 			parts, attacker_element, mods, dealt)

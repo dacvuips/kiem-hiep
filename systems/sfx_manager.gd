@@ -31,6 +31,11 @@ const ELEMENT_FILE_PREFIX := {
 	ElementTypes.ElementType.THO: "tho",
 }
 
+## Âm giao diện (không có vị trí): vài player 2D-less luân phiên.
+const UI_VOICE_COUNT := 4
+var _ui_voices: Array[AudioStreamPlayer] = []
+var _next_ui_voice: int = 0
+
 var _voices: Array[AudioStreamPlayer2D] = []
 var _next_voice: int = 0
 var _last_played_ms: Dictionary = {}  ## AudioStream instance_id -> Time.get_ticks_msec()
@@ -45,6 +50,12 @@ func _ready() -> void:
 		voice.max_distance = MAX_DISTANCE
 		add_child(voice)
 		_voices.append(voice)
+
+	for i in UI_VOICE_COUNT:
+		var ui_voice := AudioStreamPlayer.new()
+		ui_voice.bus = bus
+		add_child(ui_voice)
+		_ui_voices.append(ui_voice)
 
 	for element in ELEMENT_FILE_PREFIX:
 		var prefix: String = ELEMENT_FILE_PREFIX[element]
@@ -74,6 +85,16 @@ func play(stream: AudioStream, world_position: Vector2, volume_db: float = 0.0, 
 	voice.global_position = world_position
 	voice.volume_db = volume_db
 	voice.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
+	voice.play()
+
+## Tiếng giao diện (SoundList.txt, xem VltkSound.UI_*) — không theo vị trí trong thế giới.
+func play_ui(stream: AudioStream, volume_db: float = 0.0) -> void:
+	if stream == null:
+		return
+	var voice := _ui_voices[_next_ui_voice]
+	_next_ui_voice = (_next_ui_voice + 1) % UI_VOICE_COUNT
+	voice.stream = stream
+	voice.volume_db = volume_db
 	voice.play()
 
 func play_skill_cast(stats: ResolvedSkillStats, world_position: Vector2) -> void:

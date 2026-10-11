@@ -5,6 +5,9 @@ class_name ResolvedSkillStats
 ## thay đổi (không tính lại mỗi frame) để tránh tốn CPU.
 
 var damage: float = 0.0
+## Khoảng damage vật lý (nMinDamage..nMaxDamage gốc) — mỗi đòn ra ngẫu nhiên trong khoảng này; < 0 = không có, dùng `damage`.
+var damage_min: float = -1.0
+var damage_max: float = -1.0
 var element: ElementTypes.ElementType = ElementTypes.ElementType.THO
 ## Tỷ lệ "Tấn công chí mạng" (deadlystrike_p VLTK, 0..1) — trúng thì CombatFormulas nhân ×2
 ## (DEADLY_STRIKE_MULTIPLIER) cho MỌI loại damage của đòn, xem Projectile.setup_from_resolved().
@@ -60,6 +63,8 @@ var extra_damage_ranges: Dictionary = {}
 var freeze_frames: int = 0
 var poison_time_frames: int = 0
 var poison_interval_frames: int = 0
+## Lượng độc rút MỖI NHỊP (m_PoisonState.nValue[0] gốc = damage của skill, không phải số vừa roll lúc trúng đòn). 0 = lấy theo damage thực của đòn.
+var poison_tick_damage: int = 0
 var stun_chance_p: int = 0
 var stun_frames: int = 0
 ## Bùa (skill nhắm địch chỉ mang trạng thái): đạn trúng thì áp trạng thái này lên mục tiêu, không damage.
@@ -92,6 +97,7 @@ func make_hit_mods(attacker_node: Node, is_melee: bool = false) -> CombatFormula
 	mods.freeze_frames = freeze_frames
 	mods.poison_time_frames = poison_time_frames
 	mods.poison_interval_frames = poison_interval_frames
+	mods.poison_tick_damage = poison_tick_damage
 	mods.stun_chance_p = stun_chance_p
 	mods.stun_frames = stun_frames
 	mods.is_state_only = is_state_only

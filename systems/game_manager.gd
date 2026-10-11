@@ -9,6 +9,12 @@ signal magnet_used
 signal game_over
 
 var current_stage: StageData
+## 2 chế độ chơi HOÀN TOÀN KHÁC NHAU:
+##   STAGE    = "Vượt Ải": màn chơi là 1 ô vuông có hào quang trên map chính, quái sinh theo đợt (kiểu sinh tồn) — dùng current_stage.
+##   MAIN_MAP = nút "Chơi": đi lại tự do trên toàn map chính, KHÔNG ô vuông, KHÔNG sinh quái/vật phẩm kiểu sinh tồn
+##              (cơ chế riêng của chế độ này sẽ xây dần) — current_stage = null.
+enum GameMode { STAGE, MAIN_MAP }
+var game_mode: GameMode = GameMode.STAGE
 ## true sau khi Player chết — Spawner kiểm tra cờ này trước khi tick sinh quái tiếp, không chỉ
 ## dựa vào signal (phòng trường hợp 1 Spawner được tạo SAU khi game_over đã bắn, VD debug/hot
 ## reload) để không bao giờ lỡ mất trạng thái game đã kết thúc.

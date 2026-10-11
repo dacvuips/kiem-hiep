@@ -114,6 +114,38 @@ static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
 		_icons[path] = load(path) if ResourceLoader.exists(path) else null
 	return _icons[path]
 
+## Kích thước món trong hành trang tính bằng Ô (rộng × cao) — cột Width/Height của bảng đồ gốc. Đồ hoàng kim không có
+## cột này trong dữ liệu nhập nên lấy theo kích thước phổ biến nhất của cùng loại (loại + loại cụ thể), rồi cùng loại, rồi 1×1.
+static var _kind_sizes: Dictionary = {}
+
+static func size_of(base: Dictionary) -> Vector2i:
+	var w := int(base.get("width", 0))
+	var h := int(base.get("height", 0))
+	if w > 0 and h > 0:
+		return Vector2i(w, h)
+	_ensure_loaded()
+	if _kind_sizes.is_empty():
+		var counts := {}
+		for e in _equipment:
+			var size := Vector2i(int(e.get("width", 1)), int(e.get("height", 1)))
+			for key in ["%d:%d" % [int(e["detail"]), int(e["particular"])], str(int(e["detail"]))]:
+				var by_size: Dictionary = counts.get_or_add(key, {})
+				by_size[size] = int(by_size.get(size, 0)) + 1
+		for key in counts:
+			var best := Vector2i(1, 1)
+			var best_count := -1
+			for size in counts[key]:
+				if counts[key][size] > best_count:
+					best_count = counts[key][size]
+					best = size
+			_kind_sizes[key] = best
+	var detail := int(base.get("detail", -1))
+	var particular := int(base.get("particular", 0))
+	var by_particular := "%d:%d" % [detail, particular]
+	if _kind_sizes.has(by_particular):
+		return _kind_sizes[by_particular]
+	return _kind_sizes.get(str(detail), Vector2i(1, 1))
+
 static func get_gold(gold_index: int) -> Dictionary:
 	_ensure_gold_loaded()
 	return _gold[gold_index] if gold_index >= 0 and gold_index < _gold.size() else {}

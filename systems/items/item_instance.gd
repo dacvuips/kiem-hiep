@@ -20,7 +20,27 @@ var magic: Array = []
 var durability: int = 0
 ## Tham số sinh (giống KItemGeneratorParam) — giữ để kiểm tra/tái tạo khi online.
 var gen_seed: int = 0
+## Ô trên cùng-trái của món trong hành trang (lưới ROOM_WIDTH × ROOM_HEIGHT của PlayerProfile); -1 = chưa xếp chỗ.
+var room_x: int = -1
+var room_y: int = -1
+## Túi chứa món (0 = Túi 1...).
+var room_bag: int = 0
 var luck: int = 0
+## ---- Khoá món đồ / bày bán (KLockItem + itradeprice gốc) ----
+## Trạng thái khoá: LOCK_NORMAL = tự do; LOCK_LOCKED = đã khoá (không bán/giao dịch/vứt/đặt giá); LOCK_UNLOCKING = đang chờ mở khoá
+## (hết `unlock_at` mới thành tự do); LOCK_FOREVER / LOCK_CHARACTER = khoá vĩnh viễn / gắn nhân vật (không đổi được).
+const LOCK_CHARACTER := -3
+const LOCK_FOREVER := -2
+const LOCK_LOCKED := -1
+const LOCK_NORMAL := 0
+const LOCK_UNLOCKING := 1
+var lock_state: int = LOCK_NORMAL
+var unlock_at: int = 0          ## thời điểm (giây unix) hết chờ mở khoá
+var trade_price: int = 0        ## giá bày bán (lượng); 0 = không bán
+
+## Kích thước trong hành trang (số ô rộng × cao) — xem ItemDatabase.size_of().
+func get_size() -> Vector2i:
+	return ItemDatabase.size_of(get_base())
 
 func get_base() -> Dictionary:
 	return ItemDatabase.get_gold(gold_index) if gold_index >= 0 else ItemDatabase.get_base(base_index)
@@ -76,7 +96,8 @@ func get_requirements() -> Array:
 func to_dict() -> Dictionary:
 	return {"base": base_index, "gold": gold_index, "series": series, "base_values": base_values.duplicate(true),
 		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability,
-		"seed": gen_seed, "luck": luck}
+		"seed": gen_seed, "luck": luck, "rx": room_x, "ry": room_y, "rb": room_bag,
+		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price}
 
 static func from_dict(data: Dictionary) -> ItemInstance:
 	var item := ItemInstance.new()
@@ -95,4 +116,10 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.durability = int(data.get("durability", 0))
 	item.gen_seed = int(data.get("seed", 0))
 	item.luck = int(data.get("luck", 0))
+	item.room_x = int(data.get("rx", -1))
+	item.room_y = int(data.get("ry", -1))
+	item.room_bag = int(data.get("rb", 0))
+	item.lock_state = int(data.get("lock", LOCK_NORMAL))
+	item.unlock_at = int(data.get("unlock_at", 0))
+	item.trade_price = int(data.get("price", 0))
 	return item

@@ -13,6 +13,15 @@ func setup(player: Node) -> void:
 	player.health_changed.connect(_on_health_changed)
 	var profile := GameManager.local_profile
 	(%NameLabel as Label).text = profile.display_name if profile else ""
+	## Buff/bùa/hào quang của người chơi hiện ngay dưới thanh máu + nội lực (không còn hiện trên đầu nhân vật).
+	var icons := StateIconBar.new()
+	%ManaBar.get_parent().add_child(icons)
+	icons.setup(player)
+	## Tên/cấp/thanh máu/nội lực đã chuyển lên TopStatusBar (giữa trên màn hình, kiểu VLTK) — khung này chỉ còn hàng biểu tượng buff.
+	%NameLabel.get_parent().visible = false
+	%HealthBar.visible = false
+	%ManaBar.visible = false
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	refresh()
 
 func refresh() -> void:

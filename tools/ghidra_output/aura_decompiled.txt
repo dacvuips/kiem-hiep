@@ -1,0 +1,26 @@
+---- FUNCTION @ 1001c040 name=FUN_1001c040 ----
+
+void __fastcall FUN_1001c040(int *param_1)
+
+{
+  int iVar1;
+  int *piVar2;
+  int iVar3;
+  
+  if (*(int *)(&DAT_10950034 + *param_1 * 0x1778) == 0) {
+    iVar3 = 3;
+    do {
+      piVar2 = param_1 + 3;
+      if ((0 < param_1[1]) && (iVar1 = *piVar2, *piVar2 = iVar1 + -1, iVar1 + -1 < 1)) {
+        *piVar2 = 0;
+        param_1[1] = 0;
+        param_1[2] = 0;
+      }
+      iVar3 = iVar3 + -1;
+      param_1 = piVar2;
+    } while (iVar3 != 0);
+  }
+  return;
+}
+
+

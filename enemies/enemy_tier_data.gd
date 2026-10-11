@@ -26,6 +26,9 @@ class_name EnemyTierData
 ## Scene Enemy dùng cho tier này — mỗi tier có scene riêng, đã setup sẵn SpriteFrames/animation
 ## trong Editor (không cắt frame bằng code). Nhiều tier có thể DÙNG CHUNG 1 scene (chỉ khác chỉ số).
 @export var enemy_scene: PackedScene
+## Quái VLTK gốc (STT trong Npcs.txt, xem MonsterData) dùng làm HÌNH ẢNH cho tier này — đi/đứng/chết bằng sprite VLTK
+## thay cho AnimatedSprite của scene. -1 = giữ hình cũ trong scene. Chỉ số/hành vi vẫn theo EnemyTierData.
+@export var vltk_monster_id: int = -1
 
 @export_group("4 chỉ số gốc — CHÍNH XÁC 100% VLTK, xem CombatantStats.from_enemy_tier()")
 ## Cấp của quái — ảnh hưởng HP/Mana theo đúng công thức VLTK (LifePerLevel × Level + ...).

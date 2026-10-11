@@ -35,6 +35,30 @@ func _ready() -> void:
 	## Tẩy điểm không hoàn tác được -> hỏi xác nhận trước.
 	%ResetButton.pressed.connect(_reset_confirm.popup_centered)
 	_reset_confirm.confirmed.connect(_on_reset_confirmed)
+	_add_social_row()
+
+## Hàng nút thử chức năng xã hội (lập bang cần tiền, danh vọng, phúc duyên, cấp lãnh đạo — chưa có nguồn tăng trong game).
+func _add_social_row() -> void:
+	var rows := get_node_or_null("CheatBox/Rows")
+	if rows == null:
+		return
+	var row := HBoxContainer.new()
+	var items := [
+		["+20tr", func(p: PlayerProfile) -> void: p.gold += 20_000_000],
+		["+Danh vọng/Phúc duyên", func(p: PlayerProfile) -> void:
+			p.prestige += 100
+			p.fuyuan += 100],
+		["+Lãnh đạo", func(p: PlayerProfile) -> void: p.lead_level = mini(p.lead_level + 5, 100)],
+	]
+	for it in items:
+		var b := Button.new()
+		b.text = it[0]
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(func() -> void:
+			it[1].call(GameManager.local_profile)
+			_commit())
+		row.add_child(b)
+	rows.add_child(row)
 
 ## Lên cấp qua PlayerProfile.level_up() — nhận điểm kỹ năng/tiềm năng y như lên cấp thật.
 func _add_levels(count: int) -> void:

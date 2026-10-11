@@ -28,8 +28,8 @@ const NAV_ITEMS := [
 	["quests", "Nhiệm Vụ"],
 	["equipment", "Trang Bị"],
 	["skills", "Kỹ Năng"],
-	["sect", "Tông Môn"],
-	["market", "Chợ"],
+	["guild", "Bang Hội"],
+	["social", "Giao Lưu"],
 	["herb_garden", "Dược Viên"],
 	["ranking", "BXH"],
 	["settings", "Cài Đặt"],
@@ -141,10 +141,10 @@ func _style_bottom_bar() -> void:
 	(%ChallengeButton as Button).pressed.connect(_start_current_stage)
 	_style_label(%ChallengeLabel, 32, COLOR_GOLD)
 
-	## "Chơi" cũng vào trận, giống hệt hành vi + hover của "Vượt Ải" — nút riêng vì 2 label không
-	## dùng chung 1 vùng bấm (PlayLabel nằm ngoài rect của ChallengeButton).
+	## "Chơi" = vào MAP CHÍNH đi lại tự do (không ô vuông, không sinh quái) — khác hẳn chế độ "Vượt Ải". Nút riêng vì 2 label
+	## không dùng chung 1 vùng bấm (PlayLabel nằm ngoài rect của ChallengeButton).
 	_style_as_hit_area(%PlayButton)
-	(%PlayButton as Button).pressed.connect(_start_current_stage)
+	(%PlayButton as Button).pressed.connect(_start_main_map)
 	_style_label(%PlayLabel, 32, COLOR_GOLD)
 
 func _style_character_card() -> void:
@@ -187,6 +187,12 @@ func _build_nav() -> void:
 		if id == "equipment":
 			button.pressed.connect(_on_equipment_nav_pressed)
 			continue
+		if id == "guild":
+			button.pressed.connect(func() -> void: GuildWindow.open(self, SocialHub.of(_profile)))
+			continue
+		if id == "social":
+			button.pressed.connect(func() -> void: SocialMenuWindow.open(self, _profile))
+			continue
 		button.pressed.connect(_show_toast.bind("%s: đang phát triển" % label_text))
 
 # ---------------------------------------------------------------- panel Thuộc Tính
@@ -206,16 +212,26 @@ func _setup_debug_cheat_panel() -> void:
 
 # ---------------------------------------------------------------- hành động
 
+## Nút "Chơi": vào map chính, đi lại tự do.
+func _start_main_map() -> void:
+	GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+	GameManager.current_stage = null
+	GameManager.is_game_over = false
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tween.tween_callback(get_tree().change_scene_to_file.bind(GAME_SCENE_PATH))
+
 func _start_current_stage() -> void:
 	_enter_stage(_current_stage())
 
-## Nút "Vượt Ải"/"Chơi" luôn vào ải TIẾP THEO (_current_stage, dựa theo stages_cleared) — nhưng
+## Nút "Vượt Ải" luôn vào ải TIẾP THEO (_current_stage, dựa theo stages_cleared) — nhưng
 ## người chơi cũng có thể chọn CHƠI LẠI 1 ải bất kỳ đã mở khoá qua màn Chọn Ải, xem
 ## _on_stage_button_pressed().
 func _enter_stage(stage: StageData) -> void:
 	if stage == null:
 		_show_toast("Chưa có ải nào")
 		return
+	GameManager.game_mode = GameManager.GameMode.STAGE
 	GameManager.current_stage = stage
 	GameManager.is_game_over = false
 	var tween := create_tween()

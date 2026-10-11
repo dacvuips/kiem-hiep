@@ -17,6 +17,8 @@ const DEFAULT_HEAD_OFFSET := -64.0
 
 var controller: StatusEffectController
 var _time: float = 0.0
+## StateSpecialId -> hình trạng thái VLTK đang gắn lên người (xem VltkStateSprite).
+var _state_sprites: Dictionary = {}
 
 func _ready() -> void:
 	z_index = 5
@@ -26,9 +28,36 @@ func _process(delta: float) -> void:
 	if controller == null or not is_instance_valid(controller):
 		queue_free()
 		return
-	visible = not controller.get_state_display_list().is_empty()
-	if visible:
-		queue_redraw()
+	## KHÔNG vẽ biểu tượng skill/vòng đếm ngược trên đầu nữa (người chơi xem ở StateIconBar góc trái; bùa trên quái chỉ còn
+	## hình trạng thái gắn trên người) — node này giờ chỉ đồng bộ hình trạng thái VLTK.
+	visible = false
+	_sync_state_sprites()
+
+## Mỗi trạng thái có StateSpecialId (meta "state_id") và đã có hình trong dữ liệu -> gắn hình đó lên người suốt lúc
+## còn hiệu lực, bỏ khi hết. Nhiều buff cùng StateSpecialId chỉ dùng 1 hình.
+func _sync_state_sprites() -> void:
+	var wanted := {}
+	for st in controller.get_state_display_list():
+		var id := int(st["meta"].get("state_id", 0))
+		if id > 0:
+			wanted[id] = true
+	for id in wanted:
+		if not _state_sprites.has(id):
+			var node := VltkStateSprite.attach(get_parent() as Node2D, id)
+			_state_sprites[id] = node  ## null = chưa có hình, đừng thử lại mỗi frame
+	for id in _state_sprites.keys():
+		if not wanted.has(id):
+			var node: VltkStateSprite = _state_sprites[id]
+			if node != null and is_instance_valid(node):
+				node.queue_free()
+			_state_sprites.erase(id)
+
+func _exit_tree() -> void:
+	for id in _state_sprites:
+		var node: VltkStateSprite = _state_sprites[id]
+		if node != null and is_instance_valid(node):
+			node.queue_free()
+	_state_sprites.clear()
 
 func _draw() -> void:
 	var states := controller.get_state_display_list()
@@ -38,7 +67,9 @@ func _draw() -> void:
 	for st in states:
 		if st["meta"].get("is_debuff", false):
 			has_debuff = true
-	_draw_ring(COLOR_DEBUFF if has_debuff else COLOR_BUFF)
+	## Không vẽ vòng sáng quanh chân. Người chơi xem buff/bùa ở StateIconBar (dưới thanh máu góc trái) nên bỏ hàng icon trên đầu.
+	if get_parent().is_in_group("player"):
+		return
 
 	var head_y := _head_offset()
 	var total_w := states.size() * ICON_SIZE + (states.size() - 1) * ICON_GAP

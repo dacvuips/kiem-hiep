@@ -30,7 +30,16 @@ const WHEEL_SUBS := [Vector2(-168, -47), Vector2(-241, -115), Vector2(-188, -199
 const WHEEL_SUB_SIZE := 64.0
 const WHEEL_PAGES := [Vector2(-264, -44), Vector2(-60, -44)]
 const WHEEL_PAGE_SIZE := Vector2(78, 46)
+## 1 vòng tròn nhỏ "thi triển liên tục" (PlayerProfile.loop_skill_ids) — cùng vị trí với 2 ô trong SkillBarUI.tscn.
+const LOOP_BASE := SkillBarUI.LOOP_SLOT_BASE
+const WHEEL_LOOPS := [Vector2(-314, -123)]
+const WHEEL_LOOP_SIZE := 44.0
 var _wheel_page_buttons: Array[Button] = []
+## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào PlayerProfile.skill_layout, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
+var _arranging := false
+var _arrange_button: Button
+var _wheel_default_center: Dictionary = {}   ## slot -> tâm mặc định (toạ độ trong %Wheel, đã nhân WHEEL_SCALE)
+var _arrange_drag_slot := NO_DRAG
 const MAIN_SLOT := SkillBarUI.MAIN_SLOT
 const FROM_BOOK := SkillBarUI.FROM_BOOK
 
@@ -189,6 +198,8 @@ func _select(skill: SkillDefinition) -> void:
 		stat_box.add_child(rich)
 	if skill.horse_limit == 1:
 		_add_line(stat_box, "Trong lúc cưỡi ngựa không thể thi triển", COLOR_WARNING)
+	elif skill.horse_limit == 2:
+		_add_line(stat_box, "Chỉ thi triển được khi cưỡi ngựa", COLOR_WARNING)
 	var support := skill.get_support_percent_from_other_skills(_all_skills, _profile)
 	if support > 0.0:
 		_add_line(stat_box, "Hỗ trợ từ các kỹ năng khác: %d%%" % int(support), COLOR_STAT)
@@ -286,14 +297,29 @@ func _build_stat_lines(skill: SkillDefinition, at_level: int) -> Array[String]:
 
 # ---------------------------------------------------------------- thanh kỹ năng (phải)
 
+func _layout_key(slot: int) -> String:
+	if slot == MAIN_SLOT:
+		return "main"
+	if slot >= LOOP_BASE:
+		return "loop%d" % (slot - LOOP_BASE)
+	return "s%d" % slot
+
 func _build_wheel() -> void:
 	var wheel: Control = %Wheel
 	var origin := wheel.custom_minimum_size - Vector2(4, 4)  ## góc dưới-phải của vùng xếp ô
-	_wheel_slots[MAIN_SLOT] = _make_wheel_slot(wheel, MAIN_SLOT, origin + WHEEL_MAIN[0] * WHEEL_SCALE,
-			WHEEL_MAIN[1] * WHEEL_SCALE, "Chính")
+	var defs: Array = [[MAIN_SLOT, WHEEL_MAIN[0], WHEEL_MAIN[1], "Chính"]]
 	for i in WHEEL_SUBS.size():
-		_wheel_slots[i] = _make_wheel_slot(wheel, i, origin + WHEEL_SUBS[i] * WHEEL_SCALE, WHEEL_SUB_SIZE * WHEEL_SCALE,
-				str(i + 1) if i < 4 else "")
+		defs.append([i, WHEEL_SUBS[i], WHEEL_SUB_SIZE, str(i + 1) if i < 4 else ""])
+	for i in WHEEL_LOOPS.size():
+		defs.append([LOOP_BASE + i, WHEEL_LOOPS[i], WHEEL_LOOP_SIZE, ""])
+	for d in defs:
+		var slot: int = d[0]
+		var default_center: Vector2 = origin + (d[1] as Vector2) * WHEEL_SCALE
+		_wheel_default_center[slot] = default_center
+		var center := default_center + _profile.get_layout_offset(_layout_key(slot)) * WHEEL_SCALE
+		var holder := _make_wheel_slot(wheel, slot, center, float(d[2]) * WHEEL_SCALE, str(d[3]))
+		holder.gui_input.connect(_on_wheel_slot_input.bind(slot))
+		_wheel_slots[slot] = holder
 	for p in WHEEL_PAGES.size():
 		var b := Button.new()
 		b.text = str(p + 1)
@@ -308,6 +334,74 @@ func _build_wheel() -> void:
 			_save_hotbar())
 		wheel.add_child(b)
 		_wheel_page_buttons.append(b)
+	## Nút mũi tên đảo chiều giữa "1" và "2": chuyển nhóm kỹ năng 1 <-> 2.
+	var swap := Button.new()
+	swap.text = "⇄"
+	swap.focus_mode = Control.FOCUS_NONE
+	swap.tooltip_text = "Đổi nhóm kỹ năng 1 <-> 2"
+	swap.add_theme_font_size_override("font_size", 20)
+	swap.size = Vector2(40, WHEEL_PAGE_SIZE.y * WHEEL_SCALE)
+	var mid := (_wheel_page_buttons[0].position + _wheel_page_buttons[0].size * 0.5 + _wheel_page_buttons[1].position + _wheel_page_buttons[1].size * 0.5) * 0.5
+	swap.position = mid - swap.size * 0.5
+	swap.pressed.connect(func() -> void:
+		_profile.hotbar_page = 1 - _profile.hotbar_page
+		_save_hotbar())
+	wheel.add_child(swap)
+	## Công cụ sắp xếp vị trí nút.
+	_arrange_button = Button.new()
+	_arrange_button.text = "Sắp xếp"
+	_arrange_button.toggle_mode = true
+	_arrange_button.focus_mode = Control.FOCUS_NONE
+	_arrange_button.tooltip_text = "Sắp xếp vị trí: bật rồi KÉO các nút để đổi chỗ (cụm nút trong trận đổi theo)"
+	_arrange_button.add_theme_font_size_override("font_size", 13)
+	_arrange_button.position = Vector2(2, 2)
+	_arrange_button.custom_minimum_size = Vector2(92, 26)
+	_arrange_button.toggled.connect(_set_arranging)
+	wheel.add_child(_arrange_button)
+	var reset := Button.new()
+	reset.text = "Mặc định"
+	reset.focus_mode = Control.FOCUS_NONE
+	reset.tooltip_text = "Đưa mọi nút về vị trí ban đầu"
+	reset.add_theme_font_size_override("font_size", 13)
+	reset.position = Vector2(2, 32)
+	reset.custom_minimum_size = Vector2(92, 26)
+	reset.pressed.connect(_reset_layout)
+	wheel.add_child(reset)
+
+func _set_arranging(on: bool) -> void:
+	_arranging = on
+	for slot in _wheel_slots:
+		(_wheel_slots[slot] as Control).mouse_default_cursor_shape = Control.CURSOR_MOVE if on else Control.CURSOR_ARROW
+	_show_toast("Kéo các nút để đổi vị trí — tắt \"Sắp xếp vị trí\" để gắn kỹ năng" if on else "Đã lưu vị trí các nút")
+
+func _reset_layout() -> void:
+	_profile.skill_layout.clear()
+	for slot in _wheel_slots:
+		var holder: Control = _wheel_slots[slot]
+		holder.position = _wheel_default_center[slot] - holder.size * 0.5
+	SaveManager.save_profile(_profile)
+	_show_toast("Đã đưa các nút về vị trí mặc định")
+
+## Kéo nút để dời chỗ (chỉ khi đang bật "Sắp xếp vị trí"): giữ trong khung %Wheel, thả ra thì lưu độ dời theo toạ độ HUD.
+func _on_wheel_slot_input(event: InputEvent, slot: int) -> void:
+	if not _arranging:
+		return
+	var holder: Control = _wheel_slots[slot]
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_arrange_drag_slot = slot
+			holder.move_to_front()
+		elif _arrange_drag_slot == slot:
+			_arrange_drag_slot = NO_DRAG
+			var center := holder.position + holder.size * 0.5
+			_profile.set_layout_offset(_layout_key(slot), (center - _wheel_default_center[slot]) / WHEEL_SCALE)
+			SaveManager.save_profile(_profile)
+		holder.accept_event()
+	elif event is InputEventMouseMotion and _arrange_drag_slot == slot:
+		var wheel: Control = %Wheel
+		var limit := wheel.size if wheel.size.x > 1.0 else wheel.custom_minimum_size
+		holder.position = (holder.position + event.relative).clamp(Vector2.ZERO, (limit - holder.size).max(Vector2.ZERO))
+		holder.accept_event()
 
 ## Chỉ số hotbar của ô đầu trang đang chọn.
 func _page_start() -> int:
@@ -335,7 +429,9 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 	plus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	plus.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	plus.size = holder.size
-	plus.add_theme_font_size_override("font_size", 26)
+	plus.add_theme_font_size_override("font_size", 26 if diameter > 45.0 else 18)
+	if slot >= LOOP_BASE:
+		plus.text = "∞"  ## ô thi triển liên tục còn trống
 	holder.add_child(plus)
 	var key_label := Label.new()
 	key_label.text = key
@@ -363,6 +459,9 @@ func _main_skill() -> SkillDefinition:
 func _wheel_skill(slot: int) -> SkillDefinition:
 	if slot == MAIN_SLOT:
 		return _main_skill()
+	if slot >= LOOP_BASE:
+		var loop_index := slot - LOOP_BASE
+		return _find_skill(_profile.loop_skill_ids[loop_index]) if loop_index < _profile.loop_skill_ids.size() else null
 	var index := _page_start() + slot
 	return _find_skill(_profile.hotbar_skill_ids[index]) if index < _profile.hotbar_skill_ids.size() else null
 
@@ -377,7 +476,9 @@ func _refresh_wheel() -> void:
 		holder.add_theme_stylebox_override("panel", SkillButton.make_round_style(holder.size.x, bg))
 		(holder.get_node("Icon") as TextureRect).texture = skill.icon if skill else null
 		(holder.get_node("Plus") as Label).visible = skill == null
-		holder.tooltip_text = skill.skill_name if skill else "Ô trống — kéo kỹ năng vào đây"
+		holder.tooltip_text = skill.skill_name if skill else \
+				("Ô thi triển liên tục — kỹ năng gắn vào đây tự ra chiêu mỗi khi hồi xong" if slot >= LOOP_BASE \
+				else "Ô trống — kéo kỹ năng vào đây")
 
 func _find_skill(skill_id: String) -> SkillDefinition:
 	if skill_id == "":
@@ -398,6 +499,8 @@ func _get_grid_drag_data(_pos: Vector2, skill: SkillDefinition, source: Control)
 	return SkillBarUI.make_drag_data(skill.id, FROM_BOOK)
 
 func _get_wheel_drag_data(_pos: Vector2, slot: int) -> Variant:
+	if _arranging:
+		return null   ## đang sắp xếp vị trí: kéo là dời nút, không phải kéo kỹ năng
 	var skill := _wheel_skill(slot)
 	if skill == null or (slot == MAIN_SLOT and _profile.main_skill_id == ""):
 		return null  ## đòn chính mặc định không gỡ được
@@ -406,7 +509,7 @@ func _get_wheel_drag_data(_pos: Vector2, slot: int) -> Variant:
 	return SkillBarUI.make_drag_data(skill.id, slot)
 
 func _can_drop_wheel(_pos: Vector2, data: Variant, _slot: int) -> bool:
-	return data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
+	return not _arranging and data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
 
 ## Thả lên 1 ô = gắn; kéo giữa 2 ô = đổi chỗ (như cụm nút skill trong trận).
 func _drop_wheel(_pos: Vector2, data: Variant, slot: int) -> void:
@@ -421,7 +524,9 @@ func _drop_wheel(_pos: Vector2, data: Variant, slot: int) -> void:
 	_save_hotbar()
 
 func _assign(slot: int, skill_id: String) -> void:
-	if slot == MAIN_SLOT:
+	if slot >= LOOP_BASE:
+		_profile.set_loop_slot(slot - LOOP_BASE, skill_id)
+	elif slot == MAIN_SLOT:
 		_profile.set_main_skill(skill_id)
 	else:
 		_profile.set_hotbar_slot(_page_start() + slot, skill_id)
@@ -431,7 +536,9 @@ func _notification(what: int) -> void:
 	if what != NOTIFICATION_DRAG_END:
 		return
 	if _dragged_wheel_slot != NO_DRAG and not get_viewport().gui_is_drag_successful():
-		if _dragged_wheel_slot == MAIN_SLOT:
+		if _dragged_wheel_slot >= LOOP_BASE:
+			_profile.set_loop_slot(_dragged_wheel_slot - LOOP_BASE, "")
+		elif _dragged_wheel_slot == MAIN_SLOT:
 			_profile.set_main_skill("")
 		else:
 			_profile.hotbar_skill_ids[_page_start() + _dragged_wheel_slot] = ""

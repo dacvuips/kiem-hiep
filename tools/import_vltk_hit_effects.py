@@ -24,6 +24,33 @@ TRES_DIR = ROOT / "systems" / "sect" / "data"
 VLTK = Path("D:/game/source_vo-lam-truyen-ky/anh-viet")
 SKILLS_TXT = VLTK / "Server + client full-001/server/settings/Skills.txt"
 MISSLES_TXT = VLTK / "Server + client full-001/server/settings/Missles.txt"
+VNG_CLIENT = r"D:\game\source_vo-lam-truyen-ky\vng\Level Up Games\Vo Lam Truyen Ky 2.0"
+
+
+def _use_vng_tables():
+    """Bảng Skills.txt / Missles.txt lấy từ pak client VNG (bản chuẩn) -> thư mục tạm; không đọc được thì giữ bản server cũ."""
+    global SKILLS_TXT, MISSLES_TXT
+    import os
+    import tempfile
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import vltk_pak
+    paks = vltk_pak.PakList.__new__(vltk_pak.PakList)
+    paks.client_dir, paks.paks = VNG_CLIENT, []
+    for n in "common slistcl update minimap res1 res2 freeresource skills spr resource map font sound".split():
+        f = os.path.join(VNG_CLIENT, "data", n + ".pak")
+        if os.path.isfile(f):
+            paks.paks.append(vltk_pak.PakFile(f))
+    out = Path(tempfile.mkdtemp(prefix="vng_hit_"))
+    for name in ("Skills.txt", "Missles.txt"):
+        data = paks.read("settings/" + name)
+        if data is None:
+            print("Không thấy %s trong pak VNG - dùng bản server cũ" % name)
+            return
+        (out / name).write_bytes(data)
+    SKILLS_TXT, MISSLES_TXT = out / "Skills.txt", out / "Missles.txt"
+
+
+_use_vng_tables()
 LUA_DIRS = [
     VLTK / "JXWin Anh Việt-20260926T075907Z-1-002/JXWin Anh Việt/Client anhviet pas 123456/Client123456",
     VLTK / "MiTom_Pak_SPR_v1.1.7/Unpacked_Resources",
@@ -82,6 +109,7 @@ def load_skills_txt():
     header = lines[0].split("\t")
     col = {h: i for i, h in enumerate(header)}
     by_name = {}
+    by_id = {}
     for line in lines[1:]:
         cells = line.split("\t")
         cells += [""] * (len(header) - len(cells))
@@ -100,7 +128,8 @@ def load_skills_txt():
         flags["_child_missle"] = to_int(cells[col["ChildSkillId"]])
         script = cells[col["LvlSetScript"]].strip().replace("\\", "/").lstrip("/")
         by_name.setdefault(norm(cells[col["SkillName"]]), []).append((script, mapping, flags))
-    return by_name
+        by_id[to_int(cells[col["SkillId"]])] = (script, mapping, flags)
+    return by_name, by_id
 
 
 # ---- parser bảng lua literal tối giản (số/biểu thức số, bảng lồng, [n]=, tên hàm Line/Conic/Extrac) ----
@@ -212,7 +241,7 @@ def attribs_literal(attribs: dict) -> str:
 
 def main():
     dry = "--dry" in sys.argv
-    by_name = load_skills_txt()
+    by_name, by_id = load_skills_txt()
     missles = load_missles()
     stats = {"skills": 0, "matched": 0, "with_attribs": 0, "conic": set()}
     for tres in sorted(TRES_DIR.glob("*.tres")):
@@ -227,7 +256,9 @@ def main():
             ## Xoá dữ liệu cũ (gồm cả dict nhiều dòng của vltk_attribs) để chạy lại được.
             new_block = re.sub(r'^vltk_attribs = \{.*?^\}\n', "", block, flags=re.M | re.S)
             new_block = re.sub(r"^(?:" + "|".join(WRITTEN_FIELDS) + r") = .*\n", "", new_block, flags=re.M)
-            rows = by_name.get(norm(name_m.group(1)), [])
+            ## Ưu tiên ghép theo SkillId (tên skill VNG đổi chữ so với bản cũ, VD "Tích Lịch Đơn"), không có thì ghép theo tên.
+            id_m = re.search(r"^vltk_skill_id = (\d+)", block, re.M)
+            rows = [by_id[int(id_m.group(1))]] if id_m and int(id_m.group(1)) in by_id else by_name.get(norm(name_m.group(1)), [])
             if rows:
                 stats["matched"] += 1
                 script, mapping, flags = rows[0]

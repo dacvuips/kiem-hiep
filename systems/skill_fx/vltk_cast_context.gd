@@ -26,14 +26,19 @@ func targets() -> Array[Node]:
 	return launcher.get_tree().get_nodes_in_group(target_group)
 
 ## KMissle::ProcessDamage -> ReceiveDamage: mỗi lần trúng roll chí mạng riêng.
-func deal_damage(target: Node) -> void:
+func deal_damage(target: Node, skill: Dictionary = {}) -> void:
 	if stats == null or not is_instance_valid(target):
 		return
 	if target.has_method("take_damage_from"):
-		var whole := int(stats.damage)
+		var low := int(stats.damage_min) if stats.damage_min >= 0.0 else int(stats.damage)
+		var high := int(stats.damage_max) if stats.damage_max >= 0.0 else int(stats.damage)
 		var attacker := attacker_stats if attacker_stats else CombatantStats.new()
 		var damage_type: CombatFormulas.DamageType = stats.main_damage_type if stats.main_damage_type >= 0 \
 				else CombatFormulas.DamageType.PHYSICS
-		target.take_damage_from(attacker, whole, whole, damage_type, stats.element, stats.make_hit_mods(launcher))
+		var mods := stats.make_hit_mods(launcher)
+		## IsUseAR / DoHurt của skill (Skills.txt). Skill không có dữ liệu (đòn tự dựng) giữ mặc định: tính trúng/trượt, luôn khựng.
+		mods.use_attack_rating = int(skill.get("use_ar", 1)) != 0
+		mods.do_hurt_p = int(skill.get("do_hurt", 100))
+		target.take_damage_from(attacker, low, maxi(low, high), damage_type, stats.element, mods)
 	elif target.has_method("take_damage"):
 		target.take_damage(stats.damage)

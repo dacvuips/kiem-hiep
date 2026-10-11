@@ -1,0 +1,68 @@
+---- FUNCTION @ 1000cd80 name=FUN_1000cd80 ----
+
+void __fastcall FUN_1000cd80(int param_1)
+
+{
+  if (*(int *)(param_1 + 0x1658) == 0) {
+    switch(*(undefined4 *)(param_1 + 0x260)) {
+    case 1:
+      thunk_FUN_10012e40();
+      return;
+    case 2:
+      FUN_1000fa10();
+      return;
+    case 3:
+      FUN_1000ea70(0);
+      break;
+    case 4:
+      FUN_10012e00();
+      return;
+    case 6:
+    case 7:
+      FUN_1000f670();
+      return;
+    case 8:
+      FUN_1000ece0();
+      return;
+    case 9:
+      FUN_1000e570();
+      return;
+    case 10:
+      FUN_1000e0f0();
+      return;
+    case 0xb:
+      return;
+    case 0xc:
+      return;
+    case 0xe:
+      FUN_1000e5f0();
+      return;
+    case 0xf:
+      FUN_1000e6c0();
+      return;
+    case 0x10:
+      return;
+    case 0x11:
+      FUN_10014ad0();
+      return;
+    case 0x12:
+      FUN_10014da0();
+      return;
+    case 0x13:
+      FUN_10014bf0();
+      return;
+    case 0x14:
+      FUN_10015010();
+      return;
+    case 0x15:
+      FUN_1000e890();
+      return;
+    case 0x16:
+      FUN_1000f3e0();
+      return;
+    }
+  }
+  return;
+}
+
+

@@ -7,7 +7,6 @@ custom_solver_bias = 0.479
 points = PackedVector2Array(165, -36, -68, -16, -132, 27, -5, 34, 77, 11, 124, -13)
 
 [node name="Obstacle" type="StaticBody2D" unique_id=850871264]
-z_index = -1
 collision_layer = 32
 collision_mask = 0
 

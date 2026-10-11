@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://gu1b6gdmk0ur" path="res://enemies/enemy.gd" id="1_43lb5"]
 [ext_resource type="Texture2D" uid="uid://yf38gvky76lw" path="res://enemies/enemy_level1.png" id="2_8tr1a"]
-[ext_resource type="Texture2D" uid="uid://bkj0pw32bxaxj" path="res://vfx/shadow.svg" id="2_jfak0"]
 [ext_resource type="PackedScene" uid="uid://biu6erxf1mbp2" path="res://ui/HealthBar.tscn" id="3_8tr1a"]
 [ext_resource type="Script" uid="uid://bp5l6sq8v8jti" path="res://systems/effects/status_effect_controller.gd" id="4_status"]
 
@@ -89,12 +88,8 @@ collision_layer = 4
 collision_mask = 32
 script = ExtResource("1_43lb5")
 
-[node name="Shadow" type="Sprite2D" parent="." unique_id=1049855655]
-position = Vector2(0, 29)
-scale = Vector2(0.43750015, 0.43750015)
-texture = ExtResource("2_jfak0")
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=936246999]
+position = Vector2(0, 25)
 shape = SubResource("CircleShape2D_3ns5p")
 
 [node name="HitArea" type="Area2D" parent="." unique_id=1423116716]

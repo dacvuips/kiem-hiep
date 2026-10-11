@@ -74,15 +74,11 @@ value_at_max_level = 20.0
 script = ExtResource("2_skill")
 id = "vo_dang_no_loi_chi"
 skill_name = "Nộ Lôi Chỉ"
-target_enemy = true
 max_level = 20
-req_level = 10
-vltk_skill_id = 153
-icon = ExtResource("vicon_vo_dang_no_loi_chi")
-description = "Chỉ pháp nhập môn, vận sét đánh lên đối thủ."
-school_text = "Chỉ pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 1
 vltk_attack_radius = 400
@@ -94,6 +90,13 @@ vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 1, 0, 20, 5, 0), PackedFloat32Array(), PackedFloat32Array(1, 1, 0, 20, 75, 0)],
 "seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
+req_level = 10
+vltk_skill_id = 153
+icon = ExtResource("vicon_vo_dang_no_loi_chi")
+description = "Chỉ pháp nhập môn, vận sét đánh lên đối thủ."
+school_text = "Chỉ pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 1.0
 mana_cost = 0.0
 cooldown = 1.27
@@ -130,13 +133,10 @@ id = "vo_dang_kiem_phap"
 skill_name = "Võ Đang Kiếm Pháp"
 weapon_limit = 0
 max_level = 20
-req_level = 10
-vltk_skill_id = 151
-icon = ExtResource("vicon_vo_dang_kiem_phap")
-description = "Bị động, tăng khả năng công kích khi sử dụng kiếm."
-school_text = "Kiếm pháp (Hỗ trợ)"
-is_active = false
-category = 1
+target_enemy = false
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -149,6 +149,13 @@ vltk_attribs = {
 "attackratingenhance_p": [PackedFloat32Array(1, 15, 0, 20, 72, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
 "deadlystrikeenhance_p": [PackedFloat32Array(1, 6, 0, 20, 25, 1), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
 }
+req_level = 10
+vltk_skill_id = 151
+icon = ExtResource("vicon_vo_dang_kiem_phap")
+description = "Bị động, tăng khả năng công kích khi sử dụng kiếm."
+school_text = "Kiếm pháp (Hỗ trợ)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.0
@@ -176,13 +183,10 @@ script = ExtResource("2_skill")
 id = "vo_dang_quyen_phap"
 skill_name = "Võ Đang Quyền Pháp"
 max_level = 20
-req_level = 10
-vltk_skill_id = 152
-icon = ExtResource("vicon_vo_dang_quyen_phap")
-description = "Bị động, tăng khả năng công kích khi sử dụng quyền cước kèm nội lực Lôi Pháp."
-school_text = "Quyền pháp (Hỗ trợ)"
-is_active = false
-category = 1
+target_enemy = false
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -194,6 +198,13 @@ vltk_attribs = {
 "addlightingmagic_v": [PackedFloat32Array(1, 20, 0, 15, 250, 0, 20, 915, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
 "manashield_p": [PackedFloat32Array(1, -5, 0, 20, -5, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array()]
 }
+req_level = 10
+vltk_skill_id = 152
+icon = ExtResource("vicon_vo_dang_quyen_phap")
+description = "Bị động, tăng khả năng công kích khi sử dụng quyền cước kèm nội lực Lôi Pháp."
+school_text = "Quyền pháp (Hỗ trợ)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.0
@@ -257,15 +268,11 @@ id = "vo_dang_thuong_hai_minh_nguyet"
 skill_name = "Thương Hải Minh Nguyệt"
 horse_limit = 1
 weapon_limit = 0
-target_enemy = true
 max_level = 20
-req_level = 10
-vltk_skill_id = 155
-icon = ExtResource("vicon_vo_dang_thuong_hai_minh_nguyet")
-description = "Kiếm chiêu tựa trăng soi biển cả, uy lực sét đánh kèm theo."
-school_text = "Kiếm pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
 vltk_attack_radius = 480
@@ -278,6 +285,13 @@ vltk_attribs = {
 "physicsenhance_p": [PackedFloat32Array(1, 5, 0, 20, 75, 0), PackedFloat32Array(), PackedFloat32Array()],
 "seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
+req_level = 10
+vltk_skill_id = 155
+icon = ExtResource("vicon_vo_dang_thuong_hai_minh_nguyet")
+description = "Kiếm chiêu tựa trăng soi biển cả, uy lực sét đánh kèm theo."
+school_text = "Kiếm pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 5.0
 mana_cost = 0.0
 cooldown = 1.33
@@ -303,15 +317,11 @@ value_at_max_level = 160.0
 script = ExtResource("2_skill")
 id = "vo_dang_toa_vong_vo_nga"
 skill_name = "Tọa Vọng Vô Ngã"
-target_self = true
 max_level = 20
-req_level = 50
-vltk_skill_id = 157
-icon = ExtResource("vicon_vo_dang_toa_vong_vo_nga")
-description = "Nhập định quên thân, dựng khiên nội lực bảo hộ bản thân."
-school_text = "Nội công (Nội công)"
-is_active = true
-category = 0
+target_enemy = false
+target_ally = false
+target_self = true
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -322,6 +332,13 @@ vltk_hit_friend = 0
 vltk_attribs = {
 "manashield_p": [PackedFloat32Array(1, 25, 0, 5, 75, 0, 20, 80, 0, 26, 85, 0, 27, 85, 0), PackedFloat32Array(1, 2160, 0, 20, 3240, 0), PackedFloat32Array()]
 }
+req_level = 50
+vltk_skill_id = 157
+icon = ExtResource("vicon_vo_dang_toa_vong_vo_nga")
+description = "Nhập định quên thân, dựng khiên nội lực bảo hộ bản thân."
+school_text = "Nội công (Nội công)"
+is_active = true
+category = 0
 base_damage = 25.0
 mana_cost = 0.0
 cooldown = 1.33
@@ -377,15 +394,11 @@ id = "vo_dang_kiem_phi_kinh_thien"
 skill_name = "Kiếm Phi Kinh Thiên"
 horse_limit = 1
 weapon_limit = 0
-target_enemy = true
 max_level = 20
-req_level = 30
-vltk_skill_id = 158
-icon = ExtResource("vicon_vo_dang_kiem_phi_kinh_thien")
-description = "Kiếm khí bay lên kinh động trời cao, mang theo sấm sét."
-school_text = "Kiếm pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 6
 vltk_attack_radius = 400
@@ -398,6 +411,13 @@ vltk_attribs = {
 "physicsenhance_p": [PackedFloat32Array(1, 20, 0, 20, 115, 0), PackedFloat32Array(), PackedFloat32Array()],
 "seriesdamage_p": [PackedFloat32Array(1, 5, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
+req_level = 30
+vltk_skill_id = 158
+icon = ExtResource("vicon_vo_dang_kiem_phi_kinh_thien")
+description = "Kiếm khí bay lên kinh động trời cao, mang theo sấm sét."
+school_text = "Kiếm pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 20.0
 mana_cost = 0.0
 cooldown = 1.4
@@ -423,16 +443,11 @@ value_at_max_level = 800.0
 script = ExtResource("2_skill")
 id = "vo_dang_that_tinh_tran"
 skill_name = "Thất Tinh Trận"
-is_aura = true
-target_self = true
-target_ally = true
 max_level = 20
-req_level = 20
-vltk_skill_id = 159
-icon = ExtResource("vicon_vo_dang_that_tinh_tran")
-description = "Bị động, kết trận thất tinh, tăng tốc độ ra chiêu và phòng ngự."
-school_text = "Trận pháp (Hỗ trợ)"
-is_active = false
+target_enemy = false
+target_ally = true
+target_self = true
+is_aura = true
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 180
@@ -444,6 +459,12 @@ vltk_attribs = {
 "adddefense_v": [PackedFloat32Array(1, 97, 0, 20, 800, 0), PackedFloat32Array(1, 18, 0, 20, 18, 0), PackedFloat32Array()],
 "attackratingenhance_p": [PackedFloat32Array(1, 24, 0, 20, 450, 0), PackedFloat32Array(1, 18, 0, 2, 18, 0), PackedFloat32Array()]
 }
+req_level = 20
+vltk_skill_id = 159
+icon = ExtResource("vicon_vo_dang_that_tinh_tran")
+description = "Bị động, kết trận thất tinh, tăng tốc độ ra chiêu và phòng ngự."
+school_text = "Trận pháp (Hỗ trợ)"
+is_active = false
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.0
@@ -465,13 +486,10 @@ script = ExtResource("2_skill")
 id = "vo_dang_the_van_tung"
 skill_name = "Thế Vân Tung"
 max_level = 20
-req_level = 40
-vltk_skill_id = 160
-icon = ExtResource("vicon_vo_dang_the_van_tung")
-description = "Khinh công cưỡi mây đạp gió, tăng tốc độ di chuyển."
-school_text = "Khinh công (Hỗ trợ)"
-is_active = false
-category = 1
+target_enemy = false
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -482,6 +500,13 @@ vltk_hit_friend = 0
 vltk_attribs = {
 "fastwalkrun_p": [PackedFloat32Array(1, 18, 0, 20, 60, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array()]
 }
+req_level = 40
+vltk_skill_id = 160
+icon = ExtResource("vicon_vo_dang_the_van_tung")
+description = "Khinh công cưỡi mây đạp gió, tăng tốc độ di chuyển."
+school_text = "Khinh công (Hỗ trợ)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.0
@@ -536,15 +561,11 @@ script = ExtResource("2_skill")
 id = "vo_dang_bac_cap_nhi_phuc"
 skill_name = "Bác Cấp Nhi Phục"
 horse_limit = 1
-target_enemy = true
 max_level = 20
-req_level = 30
-vltk_skill_id = 164
-icon = ExtResource("vicon_vo_dang_bac_cap_nhi_phuc")
-description = "Một chỉ bức bách, sét đánh làm đối phương choáng váng."
-school_text = "Chỉ pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
 vltk_attack_radius = 470
@@ -557,6 +578,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 5, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 20, 0, 20, 55, 0), PackedFloat32Array(1, 1, 0, 20, 20, 0), PackedFloat32Array()]
 }
+req_level = 30
+vltk_skill_id = 164
+icon = ExtResource("vicon_vo_dang_bac_cap_nhi_phuc")
+description = "Một chỉ bức bách, sét đánh làm đối phương choáng váng."
+school_text = "Chỉ pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 5.0
 mana_cost = 0.0
 cooldown = 1.47
@@ -611,15 +639,11 @@ script = ExtResource("2_skill")
 id = "vo_dang_vo_nga_vo_kiem"
 skill_name = "Vô Ngã Vô Kiếm"
 horse_limit = 1
-target_enemy = true
 max_level = 20
-req_level = 60
-vltk_skill_id = 165
-icon = ExtResource("vicon_vo_dang_vo_nga_vo_kiem")
-description = "Kiếm ý đến độ vô ngã vô kiếm, phóng ra nhiều đạo kiếm khí mang sét."
-school_text = "Kiếm pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 2
 vltk_attack_radius = 400
@@ -632,6 +656,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 5, 0, 20, 20, 0), PackedFloat32Array(1, 1, 0, 20, 10, 0, 21, 10, 0), PackedFloat32Array()]
 }
+req_level = 60
+vltk_skill_id = 165
+icon = ExtResource("vicon_vo_dang_vo_nga_vo_kiem")
+description = "Kiếm ý đến độ vô ngã vô kiếm, phóng ra nhiều đạo kiếm khí mang sét."
+school_text = "Kiếm pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 1.0
 mana_cost = 0.0
 cooldown = 1.47
@@ -673,13 +704,10 @@ script = ExtResource("2_skill")
 id = "vo_dang_thai_cuc_than_cong"
 skill_name = "Thái Cực Thần Công"
 max_level = 30
-req_level = 60
-vltk_skill_id = 166
-icon = ExtResource("vicon_vo_dang_thai_cuc_than_cong")
-description = "Bị động, nội công căn bản của phái Võ Đang, tăng tốc độ và nội lực."
-school_text = "Nội công (Hỗ trợ)"
-is_active = false
-category = 1
+target_enemy = false
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -695,6 +723,13 @@ vltk_attribs = {
 "manamax_p": [PackedFloat32Array(1, 35, 0, 30, 245, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
 "manareplenish_v": [PackedFloat32Array(1, 1, 0, 30, 12, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
 }
+req_level = 60
+vltk_skill_id = 166
+icon = ExtResource("vicon_vo_dang_thai_cuc_than_cong")
+description = "Bị động, nội công căn bản của phái Võ Đang, tăng tốc độ và nội lực."
+school_text = "Nội công (Hỗ trợ)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.0
@@ -771,15 +806,11 @@ id = "vo_dang_tam_hoan_thao_nguyet"
 skill_name = "Tam Hoàn Thao Nguyệt"
 horse_limit = 1
 weapon_limit = 0
-target_enemy = true
 max_level = 20
-req_level = 60
-vltk_skill_id = 267
-icon = ExtResource("vicon_vo_dang_tam_hoan_thao_nguyet")
-description = "Ba vòng kiếm khí vờn quanh vầng trăng, sát thương mãnh liệt."
-school_text = "Kiếm pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
 vltk_attack_radius = 90
@@ -795,6 +826,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(1, 1, 0, 20, 10, 0, 21, 10, 0), PackedFloat32Array()]
 }
+req_level = 60
+vltk_skill_id = 267
+icon = ExtResource("vicon_vo_dang_tam_hoan_thao_nguyet")
+description = "Ba vòng kiếm khí vờn quanh vầng trăng, sát thương mãnh liệt."
+school_text = "Kiếm pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 20.0
 mana_cost = 0.0
 cooldown = 1.53
@@ -844,15 +882,11 @@ id = "vo_dang_thien_dia_vo_cuc"
 skill_name = "Thiên Địa Vô Cực"
 horse_limit = 1
 practice_only = true
-target_enemy = true
 max_level = 20
-req_level = 80
-vltk_skill_id = 365
-icon = ExtResource("vicon_vo_dang_thien_dia_vo_cuc")
-description = "Hợp nhất thiên địa vô cực, giáng sét đánh xuống một vùng rộng."
-school_text = "Nội công (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
 vltk_attack_radius = 470
@@ -866,6 +900,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 20, 0, 15, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 10, 0, 20, 20, 0, 21, 20, 0), PackedFloat32Array(1, 1, 0, 20, 6, 0, 21, 6, 0), PackedFloat32Array()]
 }
+req_level = 80
+vltk_skill_id = 365
+icon = ExtResource("vicon_vo_dang_thien_dia_vo_cuc")
+description = "Hợp nhất thiên địa vô cực, giáng sét đánh xuống một vùng rộng."
+school_text = "Nội công (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 5.0
 mana_cost = 0.0
 cooldown = 1.53
@@ -1083,8 +1124,27 @@ skill_name = "Nhân Kiếm Hợp Nhất"
 horse_limit = 1
 weapon_limit = 0
 practice_only = true
-target_enemy = true
 max_level = 20
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 1
+vltk_missle_form = 1
+vltk_attack_radius = 90
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"addskillexp1": [PackedFloat32Array(1, 368, 0, 2, 368, 0), PackedFloat32Array(), PackedFloat32Array(1, 0, 0, 2, 0, 0)],
+"attackrating_p": [PackedFloat32Array(1, 65, 0, 20, 345, 0), PackedFloat32Array(), PackedFloat32Array()],
+"deadlystrike_p": [PackedFloat32Array(1, 16, 0, 20, 25, 0), PackedFloat32Array(), PackedFloat32Array()],
+"lightingdamage_v": [PackedFloat32Array(1, 12, 0, 20, 35, 0), PackedFloat32Array(), PackedFloat32Array(1, 12, 0, 15, 100, 0, 20, 268, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 8, 0, 15, 80, 0, 20, 194, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 15, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()],
+"stealmana_p": [PackedFloat32Array(1, 1, 0, 20, 5, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
 req_level = 80
 vltk_skill_id = 368
 icon = ExtResource("vicon_vo_dang_nhan_kiem_hop_nhat")
@@ -1092,18 +1152,6 @@ description = "Người và kiếm hợp làm một, kiếm ý dung hòa sét tr
 school_text = "Kiếm pháp (Ngoại công)"
 is_active = true
 category = 0
-vltk_is_physical = 0
-vltk_missle_form = 6
-vltk_attack_radius = 0
-vltk_state_special_id = 18
-vltk_damage_range = 3
-vltk_range_damage = 0
-vltk_hit_friend = 0
-vltk_attribs = {
-"attackrating_p": [PackedFloat32Array(1, 65, 0, 20, 345, 0), PackedFloat32Array(), PackedFloat32Array()],
-"deadlystrike_p": [PackedFloat32Array(1, 16, 0, 20, 25, 0), PackedFloat32Array(), PackedFloat32Array()],
-"physicsenhance_p": [PackedFloat32Array(1, 8, 0, 15, 80, 0, 20, 194, 0), PackedFloat32Array(), PackedFloat32Array()]
-}
 base_damage = 8.0
 mana_cost = 0.0
 cooldown = 1.6
@@ -1151,8 +1199,7 @@ vltk_damage_range = 1
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
-"lightingdamage_v": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 100, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()]
+"lightingdamage_v": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 100, 0)]
 }
 base_damage = 1.0
 mana_cost = 0.0
@@ -1220,16 +1267,11 @@ script = ExtResource("2_skill")
 id = "vo_dang_xuat_u_bat_nhiem"
 skill_name = "Xuất Ứ Bất Nhiễm"
 practice_only = true
-target_self = true
-target_ally = true
 max_level = 20
-req_level = 120
-vltk_skill_id = 716
-icon = ExtResource("vicon_vo_dang_xuat_u_bat_nhiem")
-description = "Như hoa sen mọc trong bùn mà không nhiễm bùn, miễn trạng thái bất lợi cho đồng đội trong thời gian ngắn."
-school_text = "Nội công (Hỗ trợ)"
-is_active = true
-category = 0
+target_enemy = false
+target_ally = true
+target_self = true
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
@@ -1240,6 +1282,13 @@ vltk_hit_friend = 1
 vltk_attribs = {
 "ignorenegativestate_p": [PackedFloat32Array(1, 1, 0, 15, 1, 0, 20, 1, 0, 21, 1, 0), PackedFloat32Array(1, 18, 0, 20, 18, 0, 21, 18, 0), PackedFloat32Array()]
 }
+req_level = 120
+vltk_skill_id = 716
+icon = ExtResource("vicon_vo_dang_xuat_u_bat_nhiem")
+description = "Như hoa sen mọc trong bùn mà không nhiễm bùn, miễn trạng thái bất lợi cho đồng đội trong thời gian ngắn."
+school_text = "Nội công (Hỗ trợ)"
+is_active = true
+category = 0
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 2.0
@@ -1281,15 +1330,11 @@ id = "vo_dang_tao_hoa_thai_thanh"
 skill_name = "Tạo Hóa Thái Thanh"
 horse_limit = 1
 practice_only = true
-target_enemy = true
 max_level = 20
-req_level = 150
-vltk_skill_id = 1078
-icon = ExtResource("vicon_vo_dang_tao_hoa_thai_thanh")
-description = "Đạo pháp tối cao, tạo hóa hư không giáng sét thái thanh xuống trần."
-school_text = "Nội công (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
 vltk_attack_radius = 470
@@ -1302,6 +1347,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 10, 0, 20, 30, 0, 23, 36, 0, 26, 36, 0), PackedFloat32Array(1, 1, 0, 20, 6, 0, 21, 6, 0), PackedFloat32Array()]
 }
+req_level = 150
+vltk_skill_id = 1078
+icon = ExtResource("vicon_vo_dang_tao_hoa_thai_thanh")
+description = "Đạo pháp tối cao, tạo hóa hư không giáng sét thái thanh xuống trần."
+school_text = "Nội công (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 6.0
 mana_cost = 0.0
 cooldown = 2.2
@@ -1366,20 +1418,16 @@ skill_name = "Kiếm Thùy Tinh Hà"
 horse_limit = 1
 weapon_limit = 0
 practice_only = true
-target_enemy = true
 max_level = 20
-req_level = 150
-vltk_skill_id = 1079
-icon = ExtResource("vicon_vo_dang_kiem_thuy_tinh_ha")
-description = "Kiếm rủ xuống như dải ngân hà, uy lực tối thượng thừa Võ Đang."
-school_text = "Kiếm pháp (Ngoại công)"
-is_active = true
-category = 0
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
 vltk_is_physical = 1
-vltk_missle_form = 6
+vltk_missle_form = 1
 vltk_attack_radius = 470
 vltk_state_special_id = 0
-vltk_damage_range = 4
+vltk_damage_range = 3
 vltk_range_damage = 1
 vltk_hit_friend = 0
 vltk_attribs = {
@@ -1390,6 +1438,13 @@ vltk_attribs = {
 "seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stealmana_p": [PackedFloat32Array(1, 1, 0, 20, 5, 0, 23, 6, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
+req_level = 150
+vltk_skill_id = 1079
+icon = ExtResource("vicon_vo_dang_kiem_thuy_tinh_ha")
+description = "Kiếm rủ xuống như dải ngân hà, uy lực tối thượng thừa Võ Đang."
+school_text = "Kiếm pháp (Ngoại công)"
+is_active = true
+category = 0
 base_damage = 12.0
 mana_cost = 0.0
 cooldown = 2.2
@@ -1510,8 +1565,8 @@ vltk_is_physical = 1
 vltk_missle_form = 6
 vltk_attack_radius = 520
 vltk_state_special_id = 0
-vltk_damage_range = 1
-vltk_range_damage = 0
+vltk_damage_range = 2
+vltk_range_damage = 1
 vltk_hit_friend = 0
 vltk_attribs = {
 "deadlystrike_p": [PackedFloat32Array(1, 20, 0, 20, 30, 0, 23, 33, 0, 26, 34, 0), PackedFloat32Array(), PackedFloat32Array()],

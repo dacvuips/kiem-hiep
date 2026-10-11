@@ -17,6 +17,8 @@ var strength: int = 35
 var dexterity: int = 25
 var vitality: int = 25
 var energy: int = 15
+## Giới tính (0 nam / 1 nữ) — chỉ ảnh hưởng thể lực mỗi cấp (level_add.txt: StaminaMale/FemalePerLevel).
+var female: bool = false
 ## Môn phái + cấp skill đã học -> skill NỘI TẠI đã học được cộng vào chỉ số (qua vltk_attribs).
 var sect_id: String = ""
 var skill_levels: Dictionary = {}  ## skill_id (String) -> cấp (int)
@@ -30,6 +32,8 @@ var equipment: Dictionary = {}
 var extra_attribs: Dictionary = {}
 ## Hào quang đang bật (skill is_aura) — thuộc tính của nó tính như nguồn cố định khi còn bật.
 var active_aura_id: String = ""
+## false = không tính đồ ở ô Ngựa (xuống ngựa). Quái/người chơi khác mặc định cưỡi.
+var riding: bool = true
 
 ## Mọi nguồn thuộc tính CỐ ĐỊNH của bản dựng: thuộc tính thêm + trang bị + skill nội tại đã học + hào quang ĐANG
 ## BẬT (active_aura_id). Mỗi phần tử {tên: Vector3i}.
@@ -38,7 +42,11 @@ func get_permanent_attrib_sources() -> Array[Dictionary]:
 	if not extra_attribs.is_empty():
 		sources.append(extra_attribs)
 	if not equipment.is_empty():
-		sources.append_array(Equipment.get_attrib_sources(equipment, element))
+		var worn := equipment
+		if not riding and equipment.has(Equipment.Part.HORSE):
+			worn = equipment.duplicate()
+			worn.erase(Equipment.Part.HORSE)
+		sources.append_array(Equipment.get_attrib_sources(worn, element))
 	var sect := SectRegistry.get_by_id(sect_id) if sect_id != "" else null
 	if sect == null:
 		return sources
@@ -60,7 +68,7 @@ func to_dict() -> Dictionary:
 		"level": level, "element": element,
 		"strength": strength, "dexterity": dexterity, "vitality": vitality, "energy": energy,
 		"sect_id": sect_id, "skill_levels": skill_levels.duplicate(), "extra_attribs": attribs,
-		"camp": camp, "active_aura_id": active_aura_id,
+		"camp": camp, "active_aura_id": active_aura_id, "riding": riding,
 		"equipment": _equipment_to_dict(),
 	}
 
@@ -81,6 +89,7 @@ static func from_dict(data: Dictionary) -> CombatantBuild:
 	b.sect_id = str(data.get("sect_id", ""))
 	b.camp = int(data.get("camp", b.camp))
 	b.active_aura_id = str(data.get("active_aura_id", ""))
+	b.riding = bool(data.get("riding", true))
 	var saved_equipment: Dictionary = data.get("equipment", {})
 	for part in saved_equipment:
 		b.equipment[int(part)] = ItemInstance.from_dict(saved_equipment[part])

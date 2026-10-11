@@ -24,6 +24,8 @@ var move_speed_multiplier: float = 1.0
 var is_stunned: bool = false
 
 func _physics_process(delta: float) -> void:
+	if _tint_color != Color.WHITE:
+		_apply_tint(false)   ## giữ màu nhuộm sau khi hết nhấp nháy đỏ
 	_tick_states(delta)
 	_tick_replenish(delta)
 	if _active_effects.is_empty():
@@ -69,7 +71,9 @@ func apply_vltk_hit(mods: CombatFormulas.HitModifiers, dealt: Dictionary, defend
 	var poison_damage: int = dealt.get(CombatFormulas.DamageType.POISON, 0)
 	if poison_damage > 0 and mods.poison_time_frames > 0:
 		## Lượng rút mỗi lần không nhân chí mạng (CalcDamage lúc tick độc gốc truyền bIsDS = FALSE).
-		if mods.is_deadly_strike:
+		if mods.poison_tick_damage > 0:
+			poison_damage = mods.poison_tick_damage   ## gốc: m_PoisonState.nValue[0] = damage khai báo của skill
+		elif mods.is_deadly_strike:
 			poison_damage = maxi(1, int(poison_damage / CombatFormulas.DEADLY_STRIKE_MULTIPLIER))
 		var time_frames := _reduce_frames(mods.poison_time_frames, defender.poison_time_reduce_p)
 		if time_frames > 0:
@@ -89,14 +93,17 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int) -> 
 	var fps := SkillDefinition.VLTK_GAME_FPS
 	if not _active_effects.has("poison"):
 		var effect := StatusEffect.new("poison", time_frames / fps, float(damage), interval_frames / fps)
+		effect.frame_mode = true
+		effect.frames_left = time_frames
+		effect.interval_frames = interval_frames
 		apply_effect(effect)
 		return
 	## Gộp 2 lớp độc — KNpc::ReceiveDamage (nhánh m_PoisonState.nTime > 0):
 	##   d = ((c1+c2)·d1/c1 + (c1+c2)·d2/c2) / 2;  t = (t1·d1·c2 + t2·d2·c1) / (d1·c2 + d2·c1);  c = (c1+c2)/2
 	var existing: StatusEffect = _active_effects["poison"]
 	var d1 := int(existing.damage_per_tick)
-	var t1 := int(existing.time_remaining * fps)
-	var c1 := int(round(existing.tick_rate * fps))
+	var t1 := existing.frames_left
+	var c1 := existing.interval_frames
 	var d2 := damage
 	var t2 := time_frames
 	var c2 := interval_frames
@@ -105,9 +112,11 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int) -> 
 		_apply_vltk_poison(damage, time_frames, interval_frames)
 		return
 	existing.damage_per_tick = float(((c1 + c2) * d1 / c1 + (c1 + c2) * d2 / c2) / 2)
-	existing.time_remaining = float((t1 * d1 * c2 + t2 * d2 * c1) / (d1 * c2 + d2 * c1)) / fps
+	existing.frames_left = (t1 * d1 * c2 + t2 * d2 * c1) / (d1 * c2 + d2 * c1)
+	existing.time_remaining = float(existing.frames_left) / fps
 	existing.duration = maxf(existing.duration, existing.time_remaining)
-	existing.tick_rate = float((c1 + c2) / 2) / fps
+	existing.interval_frames = (c1 + c2) / 2
+	existing.tick_rate = float(existing.interval_frames) / fps
 
 ## Áp 1 bộ trạng thái thuộc tính (buff lên mình / bùa lên địch) trong `seconds` giây.
 ## `meta` cho phần hiển thị (StateVisuals): {"icon": Texture2D, "name": String, "is_debuff": bool}.
@@ -190,30 +199,70 @@ func clear_all() -> void:
 	if had_states:
 		stats_changed.emit()
 
-## Màu nhuộm báo trạng thái (ưu tiên choáng > chậm > độc) — đặt vào self_modulate của sprite chủ để
-## không đè hiệu ứng nhấp nháy khi trúng đòn (vốn dùng modulate). Sprite chủ: node "Sprite" (Player)
-## hoặc "Sprite2D" (Enemy).
-const TINT_STUN := Color(1.0, 0.9, 0.35)
-const TINT_FREEZE := Color(0.55, 0.8, 1.0)
-const TINT_POISON := Color(0.55, 1.0, 0.45)
+## Hình báo trạng thái trúng đòn (giống VLTK gốc, dùng chung người chơi/quái/NPC):
+##   - Độc sát (poison)    : nhân vật nhuộm XANH LÁ ĐẬM suốt lúc còn độc.
+##   - Băng sát (freeze)   : nhân vật nhuộm VÀNG (và bị làm chậm).
+##   - Lôi sát (stun)      : VÒNG TRÒN quay trên đầu (StunRing), đứng yên tại chỗ — không nhuộm màu.
+## Nhuộm bằng `modulate` của node hình ảnh chủ (Avatar / MonsterSprite / Sprite) rồi giữ lại mỗi frame (không đè lúc nhấp nháy đỏ khi bị đánh).
+const TINT_FREEZE := Color(1.0, 0.92, 0.3)
+const TINT_POISON := Color(0.3, 0.72, 0.3)
 
-func _update_tint() -> void:
+var _tint_target: CanvasItem
+var _tint_color := Color.WHITE
+const StunRingScript := preload("res://systems/effects/stun_ring.gd")
+var _stun_ring: Node2D
+
+func _find_tint_target() -> CanvasItem:
 	var owner_node := get_parent()
 	if owner_node == null:
-		return
+		return null
+	for prop in ["avatar", "_sprite"]:
+		var v: Variant = owner_node.get(prop)
+		if v is CanvasItem:
+			return v
 	var sprite: CanvasItem = owner_node.get_node_or_null("Sprite")
 	if sprite == null:
 		sprite = owner_node.get_node_or_null("Sprite2D")
-	if sprite == null:
-		return
-	if is_stunned:
-		sprite.self_modulate = TINT_STUN
-	elif _active_effects.has("freeze") or _active_effects.has("slow"):
-		sprite.self_modulate = TINT_FREEZE
+	return sprite
+
+func _update_tint() -> void:
+	if _tint_target == null or not is_instance_valid(_tint_target):
+		_tint_target = _find_tint_target()
+	var tint := Color.WHITE
+	if _active_effects.has("freeze") or _active_effects.has("slow"):
+		tint = TINT_FREEZE
 	elif _active_effects.has("poison"):
-		sprite.self_modulate = TINT_POISON
-	else:
-		sprite.self_modulate = Color.WHITE
+		tint = TINT_POISON
+	var changed := tint != _tint_color
+	_tint_color = tint
+	_apply_tint(changed)
+	## Vòng choáng trên đầu.
+	var owner_node := get_parent()
+	if is_stunned and owner_node is Node2D:
+		if _stun_ring == null or not is_instance_valid(_stun_ring):
+			_stun_ring = StunRingScript.new()
+			owner_node.add_child(_stun_ring)
+	elif _stun_ring != null:
+		if is_instance_valid(_stun_ring):
+			_stun_ring.queue_free()
+		_stun_ring = null
+
+## Đặt màu nhuộm lên node hình ảnh; chỉ ghi khi màu hiện tại là trắng hoặc đúng màu ta đã ghi lần trước (đang nhấp nháy đỏ thì để yên).
+var _applied_color := Color.WHITE
+
+static func _same_rgb(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < 0.01 and absf(a.g - b.g) < 0.01 and absf(a.b - b.b) < 0.01
+
+func _apply_tint(_force: bool = false) -> void:
+	if _tint_target == null or not is_instance_valid(_tint_target):
+		return
+	var cur := _tint_target.modulate
+	if _same_rgb(cur, _tint_color):
+		_applied_color = _tint_color
+		return
+	if _same_rgb(cur, Color.WHITE) or _same_rgb(cur, _applied_color):
+		_tint_target.modulate = Color(_tint_color.r, _tint_color.g, _tint_color.b, cur.a)
+		_applied_color = _tint_color
 
 func _recalculate_derived_state() -> void:
 	move_speed_multiplier = 1.0

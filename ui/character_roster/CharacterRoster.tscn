@@ -1,0 +1,97 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://ui/character_roster/character_roster.gd" id="s"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Texture2D" path="res://ui/character_roster/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" path="res://ui/character_roster/bar.png" id="bar"]
+
+[sub_resource type="LabelSettings" id="msg"]
+font_size = 22
+font_color = Color(1, 0.9, 0.62, 1)
+outline_size = 8
+outline_color = Color(0.1, 0.04, 0.02, 1)
+
+[node name="CharacterRoster" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("s")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Stage" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1672.0
+offset_bottom = 941.0
+mouse_filter = 2
+script = ExtResource("sf")
+
+[node name="Bar" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 158
+offset_top = 806
+offset_right = 1488
+offset_bottom = 900
+mouse_filter = 2
+texture = ExtResource("bar")
+expand_mode = 1
+
+[node name="EnterArea" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 250.0
+offset_top = 822
+offset_right = 500.0
+offset_bottom = 884
+
+[node name="CreateArea" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 527.0
+offset_top = 822
+offset_right = 817.0
+offset_bottom = 884
+
+[node name="CancelArea" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 885.0
+offset_top = 822
+offset_right = 1085.0
+offset_bottom = 884
+
+[node name="QuitArea" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1167.0
+offset_top = 822
+offset_right = 1417.0
+offset_bottom = 884
+
+[node name="Message" type="Label" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 436
+offset_top = 770
+offset_right = 1236
+offset_bottom = 806
+mouse_filter = 2
+modulate = Color(1, 1, 1, 0)
+label_settings = SubResource("msg")
+horizontal_alignment = 1
+vertical_alignment = 1

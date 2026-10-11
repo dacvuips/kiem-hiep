@@ -19,6 +19,8 @@ var _phase: float = 0.0
 ## true = dùng ảnh đã thu nhỏ sẵn (ô hành trang 48px). Ảnh luôn vẽ ĐÚNG KÍCH THƯỚC GỐC, căn đúng điểm ảnh, không phóng
 ## to — chỉ thu nhỏ khi lớn hơn ô (có mipmap) -> nét như game gốc.
 var small_icons: bool = false
+## Hệ số phóng ảnh tối đa khi vẽ (1 = giữ kích thước gốc). Hành trang nhiều ô đặt > 1 để ảnh vừa khít khung món.
+var icon_max_scale: float = 1.0
 var _item_icon: Texture2D
 
 func _ready() -> void:
@@ -122,7 +124,7 @@ func _draw() -> void:
 func _draw_item_icon() -> void:
 	var inner := Rect2(Vector2.ZERO, size).grow(-3.0)
 	var tex_size := _item_icon.get_size()
-	var scale := minf(1.0, minf(inner.size.x / tex_size.x, inner.size.y / tex_size.y))
+	var scale := minf(icon_max_scale, minf(inner.size.x / tex_size.x, inner.size.y / tex_size.y))
 	var draw_size := (tex_size * scale).round()
 	var pos := (inner.position + (inner.size - draw_size) * 0.5).floor()
 	draw_texture_rect(_item_icon, Rect2(pos, draw_size), false)

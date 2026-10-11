@@ -257,3 +257,102 @@ theme_override_styles/hover_pressed = SubResource("StyleBox_page_on")
 theme_override_styles/focus = SubResource("StyleBox_empty")
 toggle_mode = true
 text = "2"
+
+[node name="JumpButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -412.0
+offset_top = -290.0
+offset_right = -348.0
+offset_bottom = -238.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+tooltip_text = "Nhảy (phím Space)"
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+text = "Nhảy"
+
+[node name="HorseButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -412.0
+offset_top = -230.0
+offset_right = -348.0
+offset_bottom = -178.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+tooltip_text = "Lên/xuống ngựa (phím M)"
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+toggle_mode = true
+text = "Ngựa"
+
+[node name="FollowButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -412.0
+offset_top = -170.0
+offset_right = -348.0
+offset_bottom = -118.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+tooltip_text = "Đi theo người gần nhất (phím F)"
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+text = "Đi theo"
+
+[node name="SitButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -412.0
+offset_top = -350.0
+offset_right = -348.0
+offset_bottom = -298.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+tooltip_text = "Ngồi/đứng dậy (phím C)"
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+toggle_mode = true
+text = "Ngồi"
+
+[node name="Loop1" parent="." instance=ExtResource("2_button")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -336.0
+offset_top = -145.0
+offset_right = -292.0
+offset_bottom = -101.0
+grow_horizontal = 0
+grow_vertical = 0
+tooltip_text = "Ô thi triển liên tục: skill gắn vào đây tự ra chiêu mỗi khi hồi xong. Bấm để tạm dừng/tiếp tục."

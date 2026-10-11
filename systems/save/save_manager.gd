@@ -8,7 +8,13 @@ const SAVE_PATH := "user://savegame.json"
 signal game_saved
 signal game_loaded
 
+## Chạy kiểm thử tự động (đặt biến môi trường KIEMHIEP_NO_SAVE=1) thì KHÔNG ghi đè file lưu thật của người chơi.
+static func _saving_disabled() -> bool:
+	return OS.has_environment("KIEMHIEP_NO_SAVE")
+
 func save_game(_player: Node) -> void:
+	if _saving_disabled():
+		return
 	var data := {
 		"version": 1,
 		"player_stats": _serialize_player_stats(),
@@ -56,6 +62,8 @@ func has_profile() -> bool:
 	return FileAccess.file_exists(PROFILE_PATH)
 
 func save_profile(profile: PlayerProfile) -> void:
+	if _saving_disabled():
+		return
 	var file := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
 	if file == null:
 		push_warning("SaveManager: không mở được file để ghi (%s)" % PROFILE_PATH)

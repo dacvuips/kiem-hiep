@@ -69,14 +69,15 @@ TABLE_DRAW_ORDER = "\u8d34\u56fe\u987a\u5e8f\u8868"        # bảng thứ tự v
 TABLE_SHADOW = "\u4e3b\u89d2\u52a8\u4f5c\u9634\u5f71\u5bf9\u5e94\u8868"  # bảng bóng theo động tác (chung nam/nữ)
 ## Cột bảng liên kết vũ khí -> động tác game.
 WEAPON_ACTION_COLUMNS = {"stand": "FightStand", "run": "FightRun", "hurt": "Wound", "die": "Die",
-                         "attack": "Attack1", "attack2": "Attack2", "cast": "Magic"}
+                         "attack": "Attack1", "attack2": "Attack2", "cast": "Magic",
+                         "jump": "JunpFly", "sit": "SitDown"}  ## "JunpFly" sai chính tả ngay trong tiêu đề bảng gốc
 
 ## Đợt hình xuất ra (mã hình = chỉ số hàng bảng bộ phận). None = tự chọn theo món đồ trong game (xem _auto_export).
 ## Hiện tại: None cho cả 4 = MỌI mã hình mà đồ trong game dùng (đồ thường + hoàng kim, ngựa).
 EXPORT = {"helm": None, "armor": None, "weapon": None, "horse": None}
 ## Chỉ xuất các động tác game đang dùng (key WEAPON_ACTION_COLUMNS) — thêm "hurt"/"die"/"attack2" khi game dùng tới.
 ## Bỏ 3 động tác chưa dùng giảm ~40% dung lượng.
-USED_ACTIONS = ["stand", "run", "attack", "cast"]
+USED_ACTIONS = ["stand", "run", "attack", "cast", "jump", "sit"]
 DIRS = 8
 
 
@@ -240,7 +241,7 @@ def export_png(paks, spr_dir, spr_name, out_dir):
     sheet = Image.new("RGBA", (w * per_dir, h * dirs))
     for i, im in enumerate(images[:per_dir * dirs]):
         sheet.paste(im.crop((left, top, right, bottom)), ((i % per_dir) * w, (i // per_dir) * h))
-    key = os.path.splitext(spr_name)[0].lower()
+    key = os.path.splitext(os.path.basename(spr_name))[0].lower()  ## tên ngựa dùng chung dạng "../man/xxx.spr" -> chỉ lấy tên file
     ## Sprite gốc chỉ có <= 256 màu (+ vài mức trong suốt) -> lưu PNG bảng màu, nhẹ ~4 lần so với RGBA.
     sheet.quantize(256, method=Image.Quantize.FASTOCTREE).save(os.path.join(out_dir, key + ".png"), optimize=True)
     return key, {"frames_per_dir": per_dir, "dirs": dirs, "interval": max(meta["interval"], 1),
@@ -298,7 +299,7 @@ def build(gender):
     def add(part, res, action, spr_name):
         if not spr_name:
             return
-        key = os.path.splitext(spr_name)[0].lower()
+        key = os.path.splitext(os.path.basename(spr_name))[0].lower()
         if key not in files:
             if key in previous and os.path.isfile(os.path.join(out_dir, key + ".png")):
                 files[key] = previous[key]
@@ -350,6 +351,9 @@ def build(gender):
         box = img.getbbox()
         if box:
             anchor = [f["offset"][0] + (box[0] + box[2]) // 2, f["offset"][1] + (box[1] + box[3]) // 2]
+    ## Chiều ngang: tâm THÂN thật ở giữa khung 320 (x = 160, đo ở mọi hướng) — bóng tư thế tay không lệch tới x = 171 làm nhân vật
+    ## lệch trái so với tên/thanh máu/vòng sáng đặt ở gốc node, nên chỉ lấy y từ bóng, x cố định 160.
+    anchor[0] = 160
 
     data = {
         "gender": gender,

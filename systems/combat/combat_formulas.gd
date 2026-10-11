@@ -130,6 +130,44 @@ static func apply_five_elements_clash(
 ## BƯỚC 4 — Tổng hợp toàn bộ pipeline damage (KNpc::CalcDamage, KNpc.cpp:2445-2688)
 ## ==============================================================================================
 
+## ==============================================================================================
+## HỆ SỐ SÁT THƯƠNG CỦA SERVER THẬT (Coreserver.dll chạy trên máy ảo, KHÁC mã nguồn trong repo)
+## Lấy từ bản giải mã Ghidra của KNpc::ReceiveDamage thật (tools/ghidra_output/real_damage_functions.txt, hàm @10010860): trước khi
+## vào CalcDamage, mỗi loại damage của đòn bị NHÂN riêng:
+##   - Vật lý        : x (500 + k) / 100  (k = 1, hoặc 2 với xác suất không rõ — dùng 1)  => khoảng x5
+##   - Hỏa           : x (rand 0..4 + 5 + k) / 5 cho min; x (X + k) / 5 cho max, X = 7 nếu hệ đạn Kim/Mộc/Thổ, = rand 0..9 + 5 nếu Thủy/Hỏa
+##   - Băng          : như Hỏa; X = 7 nếu hệ đạn Kim/Hỏa, = rand 0..9 + 5 nếu Thổ/Thủy, = 0 nếu Mộc
+##   - Lôi           : như trên nhưng chia 10 (không phải 5); X = 7 nếu hệ đạn Kim/Thủy/Hỏa/Thổ, = rand 0..9 + 5 nếu Mộc
+##   - Độc           : giữ nguyên (cú đánh đầu = roll giữa damage và nhịp)
+## `false` để quay về công thức thuần của mã nguồn.
+## ==============================================================================================
+const SERVER_DAMAGE_SCALING := true
+const SERVER_SCALE_K := 1
+
+## Áp hệ số trên cho `parts` (DamageType -> Vector2i(min, max)); `series` = hệ của đạn (0 Kim, 1 Mộc, 2 Thủy, 3 Hỏa, 4 Thổ).
+static func apply_server_damage_scaling(parts: Dictionary, series: int) -> Dictionary:
+	if not SERVER_DAMAGE_SCALING:
+		return parts
+	var out := {}
+	var k := SERVER_SCALE_K
+	for t in parts:
+		var v: Vector2i = parts[t]
+		match t:
+			DamageType.PHYSICS:
+				out[t] = Vector2i(v.x * (500 + k) / 100, v.y * (500 + k) / 100)
+			DamageType.FIRE:
+				var x := 7 if series in [0, 1, 4] else (randi_range(0, 9) + 5 if series in [2, 3] else 0)
+				out[t] = Vector2i((randi_range(0, 4) + 5 + k) * v.x / 5, (x + k) * v.y / 5)
+			DamageType.COLD:
+				var y := 7 if series in [0, 3] else (randi_range(0, 9) + 5 if series in [2, 4] else 0)
+				out[t] = Vector2i((randi_range(0, 4) + 5 + k) * v.x / 5, (y + k) * v.y / 5)
+			DamageType.LIGHT:
+				var z := 7 if series in [0, 2, 3, 4] else (randi_range(0, 9) + 5 if series == 1 else 0)
+				out[t] = Vector2i((k + randi_range(0, 4) + 5) * v.x / 10, (z + k) * v.y / 10)
+			_:
+				out[t] = v
+	return out
+
 ## Loại damage — quyết định dùng % kháng/giáp nào của bên phòng thủ (Physics/Cold/Fire/Light/
 ## Poison/Magic — đúng switch(nType) trong CalcDamage gốc, KNpc.cpp:2498-2587).
 enum DamageType { PHYSICS, COLD, FIRE, LIGHT, POISON, MAGIC }
@@ -185,10 +223,15 @@ class DamageResult:
 class HitModifiers:
 	var extra_damages: Dictionary = {}
 	var is_deadly_strike: bool = false
+	## IsUseAR của skill: false = KHÔNG roll trúng/trượt (KNpc::ReceiveDamage gốc chỉ CheckHitTarget khi bUseAR).
+	var use_attack_rating: bool = true
+	## DoHurt của skill: % khựng (DoHurt()) mục tiêu khi trúng; 100 = luôn (đòn không khai báo).
+	var do_hurt_p: int = 100
 	var five_elements_damage_p: int = 0
 	var freeze_frames: int = 0           ## làm chậm nếu phần Băng sát gây được damage
 	var poison_time_frames: int = 0      ## trúng độc nếu phần Độc sát gây được damage
 	var poison_interval_frames: int = 0
+	var poison_tick_damage: int = 0      ## lượng rút mỗi nhịp độc (0 = theo damage thực của đòn)
 	var stun_chance_p: int = 0           ## % tỷ lệ choáng (độc lập với damage)
 	var stun_frames: int = 0
 	## Người đánh (node) — để phản đòn (damage return) và hút máu (steal life); null = bỏ qua 2 thứ đó.

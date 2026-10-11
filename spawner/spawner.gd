@@ -19,6 +19,9 @@ extends Node
 ## Cứ mỗi khoảng thời gian này (giây), số quái mỗi đợt spawn tăng thêm 1
 @export var seconds_per_extra_enemy: float = 30.0
 
+## Hệ số số lượng quái xuất hiện theo thời gian (0.9 = giảm xuống 90%).
+const SPAWN_RATE_MULTIPLIER := 0.9
+
 var current_interval: float
 var time_since_last_spawn: float = 0.0
 var elapsed_time: float = 0.0
@@ -42,7 +45,8 @@ func _process(delta: float) -> void:
 		spawn_boss(stage.boss_tier)
 		return
 
-	current_interval = max(min_spawn_interval, initial_spawn_interval - elapsed_time * interval_decrease_per_second)
+	## SPAWN_RATE_MULTIPLIER < 1 = quái xuất hiện ÍT hơn theo thời gian (khoảng cách giữa 2 đợt giãn ra 1 / hệ số).
+	current_interval = max(min_spawn_interval, initial_spawn_interval - elapsed_time * interval_decrease_per_second) / SPAWN_RATE_MULTIPLIER
 
 	if time_since_last_spawn >= current_interval:
 		time_since_last_spawn = 0.0
@@ -54,7 +58,7 @@ func spawn_boss(boss_entry: EnemySpawnEntry) -> void:
 	if boss_entry.tier.enemy_scene == null:
 		return
 	var boss := boss_entry.tier.enemy_scene.instantiate()
-	get_parent().add_child(boss)
+	_entity_parent().add_child(boss)
 	boss.global_position = get_random_spawn_position()
 	boss.setup(boss_entry)
 	GameManager.notify_boss_spawned()
@@ -65,9 +69,14 @@ func spawn_enemy() -> void:
 		return
 
 	var enemy := entry.tier.enemy_scene.instantiate()
-	get_parent().add_child(enemy)
+	_entity_parent().add_child(enemy)
 	enemy.global_position = get_random_spawn_position()
 	enemy.setup(entry)
+
+## Quái sinh vào lớp vật thể của map VLTK (nếu có) để sắp độ sâu cùng nhà/cây; không có map thì như cũ (cha của Spawner).
+func _entity_parent() -> Node:
+	var p := VltkWorld.entity_parent()
+	return p if p != null else get_parent()
 
 func get_current_enemy_entries() -> Array[EnemySpawnEntry]:
 	if GameManager.current_stage:
@@ -105,8 +114,12 @@ func get_random_unlocked_entry() -> EnemySpawnEntry:
 	return unlocked[-1]
 
 func get_random_spawn_position() -> Vector2:
-	var viewport_size := get_viewport().get_visible_rect().size
+	## Có ô vuông màn chơi trên map chính: quái sinh ở rìa TRONG của ô (không theo viền camera nữa).
+	if VltkWorld.has_arena():
+		return VltkWorld.random_edge_spawn()
 	var camera := get_viewport().get_camera_2d()
+	## Vùng nhìn thấy trong thế giới = khung màn hình / zoom camera (zoom < 1 nhìn rộng hơn) — quái phải sinh ra NGOÀI vùng đó.
+	var viewport_size := get_viewport().get_visible_rect().size / (camera.zoom if camera else Vector2.ONE)
 	var center := camera.global_position if camera else Vector2.ZERO
 
 	var half_width := viewport_size.x / 2.0 + spawn_margin

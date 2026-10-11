@@ -1,0 +1,58 @@
+{
+ "hoa_nam": {
+  "cell_w": 402,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 176.2
+ },
+ "hoa_nu": {
+  "cell_w": 465,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 250.5
+ },
+ "kim_nam": {
+  "cell_w": 572,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 286.8
+ },
+ "moc_nam": {
+  "cell_w": 388,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 201.3
+ },
+ "moc_nu": {
+  "cell_w": 395,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 159.0
+ },
+ "tho_nam": {
+  "cell_w": 344,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 20,
+  "feet_x": 153.7
+ },
+ "tho_nu": {
+  "cell_w": 292,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 176.2
+ },
+ "thuy_nu": {
+  "cell_w": 497,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 266.1
+ }
+}

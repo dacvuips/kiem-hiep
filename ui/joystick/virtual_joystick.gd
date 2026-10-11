@@ -15,6 +15,8 @@ signal tapped(screen_position: Vector2)
 @export_range(0.0, 0.9) var deadzone: float = 0.15
 ## Kéo xa hơn (px) chừng này từ chỗ chạm mới bật joystick; ít hơn mà thả tay = 1 cú bấm "chạy tới".
 @export var drag_start_distance: float = 12.0
+## Hình đế + núm: false = chỉ HIỆN trong lúc đang kéo (thả tay là ẩn, joystick vẫn nhận chạm/kéo bình thường); true = luôn hiện.
+@export var show_graphics: bool = false
 
 @onready var _base: Control = %Base
 @onready var _knob: Control = %Knob
@@ -31,6 +33,8 @@ var _pressed_actions: Dictionary = {}  ## action (StringName) -> true, các acti
 func _ready() -> void:
 	_rest_base_position = _base.position
 	_center_knob()
+	## Ẩn bằng visible của node Base: vị trí/kích thước của nó vẫn được dùng để tính hướng kéo.
+	_base.visible = show_graphics
 
 ## Game bị pause giữa lúc đang kéo (bảng lên cấp, popup thoát trận...) -> nhả luôn, không thì sau
 ## khi hết pause nhân vật tự đi tiếp theo hướng cũ.
@@ -82,6 +86,7 @@ func _on_drag(pointer: int, local_position: Vector2) -> void:
 		if Rect2(_base.position, _base.size).has_point(_press_position):
 			_pointer = pointer
 			_active = true
+			_base.visible = true
 		else:
 			_start(pointer, _press_position)
 		_update_knob(local_position)
@@ -102,12 +107,14 @@ func _notification(what: int) -> void:
 func _start(pointer: int, local_position: Vector2) -> void:
 	_pointer = pointer
 	_active = true
+	_base.visible = true  ## đang kéo -> hiện hình
 	_base.position = local_position - _base.size * 0.5
 	_update_knob(local_position)
 
 func _stop() -> void:
 	_pointer = -1
 	_active = false
+	_base.visible = show_graphics  ## thả tay -> ẩn lại (trừ khi đặt luôn hiện)
 	_base.position = _rest_base_position
 	_center_knob()
 	_apply_direction(Vector2.ZERO)

@@ -30,8 +30,9 @@ func spawn_random_pickup() -> void:
 	pickup.setup(data)
 
 func get_random_position_on_screen() -> Vector2:
-	var viewport_size := get_viewport().get_visible_rect().size
 	var camera := get_viewport().get_camera_2d()
+	## Vùng nhìn thấy = khung màn hình / zoom camera.
+	var viewport_size := get_viewport().get_visible_rect().size / (camera.zoom if camera else Vector2.ONE)
 	var center := camera.global_position if camera else Vector2.ZERO
 
 	var half_width := viewport_size.x / 2.0 - spawn_margin

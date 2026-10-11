@@ -4,11 +4,11 @@
 [ext_resource type="Script" uid="uid://jcoh0ru8ev61" path="res://player/range_indicator.gd" id="5_qjkh3"]
 [ext_resource type="Texture2D" uid="uid://bqm2kcwbgg3bt" path="res://sprites/player/aura.png" id="7_x7c3f"]
 [ext_resource type="Script" uid="uid://bp5l6sq8v8jti" path="res://systems/effects/status_effect_controller.gd" id="19_status"]
-[ext_resource type="Script" path="res://player/sect_skill_controller.gd" id="20_sect_skill"]
+[ext_resource type="Script" uid="uid://blko0o1kvh78t" path="res://player/sect_skill_controller.gd" id="20_sect_skill"]
+[ext_resource type="Script" uid="uid://c56uwu328somd" path="res://systems/avatar/character_avatar.gd" id="21_avatar"]
 
-[ext_resource type="Script" path="res://systems/avatar/character_avatar.gd" id="21_avatar"]
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3ns5p"]
-size = Vector2(88, 49)
+size = Vector2(40, 18)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qjt2w"]
 atlas = ExtResource("7_x7c3f")
@@ -156,7 +156,7 @@ position = Vector2(0, 30)
 script = ExtResource("21_avatar")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=98992192]
-position = Vector2(-3, 26)
+position = Vector2(0, 30)
 shape = SubResource("RectangleShape2D_3ns5p")
 
 [node name="RangeIndicator" type="Node2D" parent="." unique_id=1023198051]
@@ -164,7 +164,7 @@ script = ExtResource("5_qjkh3")
 
 [node name="Aura" type="AnimatedSprite2D" parent="." unique_id=680578686]
 z_index = -1
-position = Vector2(4.7683716e-07, 41)
+position = Vector2(3, 41.000004)
 scale = Vector2(0.57, 0.33216333)
 sprite_frames = SubResource("SpriteFrames_3ns5p")
 frame_progress = 0.79796755

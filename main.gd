@@ -3,10 +3,8 @@ extends Node2D
 @export var stage_for_testing: StageData
 
 var elapsed_time: float = 0.0
-var current_world: Node
 
 @onready var time_label: Label = $UI/TimeLabel
-@onready var world_container: Node = $World
 @onready var skill_bar_ui: SkillBarUI = $UI/SkillBarUI
 @onready var joystick: MoveJoystick = $UI/VirtualJoystick
 @onready var status_hud: PlayerStatusHud = $UI/PlayerStatusHud
@@ -23,37 +21,71 @@ var _exit_confirm: PanelContainer
 var _status_window: CharacterStatusWindow
 var _inventory_window: InventoryPopup
 
-func _ready() -> void:
-	current_world = world_container
+## Map VLTK dùng để lấy nhạc nền khi StageData không khai báo vltk_map_id — tạm, thay bằng map thật của màn.
+const DEFAULT_MUSIC_MAP_ID := 1
 
+func _play_stage_music(stage: StageData) -> void:
+	var map_id := stage.vltk_map_id if stage.vltk_map_id > 0 else DEFAULT_MUSIC_MAP_ID
+	MusicManager.play_map(map_id)
+
+func _exit_tree() -> void:
+	MusicManager.stop()
+
+func _ready() -> void:
+	var free_roam := GameManager.game_mode == GameManager.GameMode.MAIN_MAP
 	var stage: StageData = GameManager.current_stage if GameManager.current_stage else stage_for_testing
-	if stage:
+	if free_roam:
+		_enter_main_map()
+	elif stage:
 		load_stage(stage)
+		_play_stage_music(stage)
 
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		skill_bar_ui.setup(player)
 		status_hud.setup(player)
+		var top_bar := TopStatusBar.new()
+		$UI.add_child(top_bar)
+		top_bar.setup(player)
 		## Bấm (không kéo) trong vùng joystick vẫn là "chạy tới chỗ bấm" như ở mọi chỗ khác trên bản đồ.
 		joystick.tapped.connect(player.move_to_screen_position)
 
+	if player:
+		var mini_map := MiniMap.new()
+		mini_map.name = "MiniMap"
+		$UI.add_child(mini_map)
+		mini_map.setup(player)
+
 	_build_exit_button()
+	_build_social_buttons()
+	add_child(SocialTicker.new())   ## nhịp nền xã hội: khách mua hàng bày bán, người xin vào đội/bang
+	_build_monster_test_button()
+	_build_skill_test_button()
 	$UI/CharacterButton.pressed.connect(_toggle_status_window)
 	$UI/InventoryButton.pressed.connect(_toggle_inventory_window)
 	$UI/SkillsButton.pressed.connect(_open_skill_book)
+
+## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
+## Vẫn giữ nguyên: skill + thanh skill, trang bị, cộng chỉ số, di chuyển, ngựa, mini map.
+func _enter_main_map() -> void:
+	GameManager.current_stage = null
+	joystick.visible = true
+	_joystick_enabled = true
+	time_label.visible = false
+	$Spawner.set_process(false)
+	$PickupSpawner.set_process(false)
+	if VltkWorld.current != null:
+		VltkWorld.current.setup_main_map()
+	MusicManager.play_map(DEFAULT_MUSIC_MAP_ID)
 
 func load_stage(stage: StageData) -> void:
 	GameManager.start_stage(stage)
 	_joystick_enabled = stage.show_move_joystick
 	joystick.visible = _joystick_enabled
 
-	if stage.world_scene:
-		var old_world := current_world
-		var new_world := stage.world_scene.instantiate()
-		add_child(new_world)
-		move_child(new_world, old_world.get_index())
-		current_world = new_world
-		old_world.queue_free()
+	## Map chính (World = VltkWorld) dùng chung mọi màn; màn chỉ là 1 ô vuông trên đó (StageData.arena_*).
+	if VltkWorld.current != null:
+		VltkWorld.current.setup_stage(stage)
 
 func _process(delta: float) -> void:
 	if get_tree().paused:
@@ -68,7 +100,15 @@ func _process(delta: float) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not (OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo):
 		return
-	if event.keycode == KEY_F9:
+	if event.keycode == KEY_F8:
+		## Chép toạ độ (pixel map) của nhân vật để dán vào StageData.arena_center khi đặt ô vuông màn chơi.
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p:
+			var feet := p.global_position + Vector2(0, VltkWorld.FEET_OFFSET)
+			var text := "Vector2(%d, %d)" % [roundi(feet.x), roundi(feet.y)]
+			DisplayServer.clipboard_set(text)
+			print("arena_center = ", text, "  (đã chép vào clipboard)")
+	elif event.keycode == KEY_F9:
 		PlayerStats.level_up()
 	elif event.keycode == KEY_F5:
 		var player := get_tree().get_first_node_in_group("player")
@@ -142,16 +182,87 @@ func _on_panel_profile_changed() -> void:
 	if player:
 		player.refresh_combat_stats()
 
+## Hàng nút xã hội RIÊNG LẺ (mỗi chức năng 1 nút) nằm dưới thanh trạng thái, bên phải khung thông tin nhân vật:
+## Tổ đội · Bang hội · Rương · Bày bán · Khoá bảo vệ.
+func _build_social_buttons() -> void:
+	var entries := [
+		["Tổ đội", "Lập nhóm, mời / xin vào đội", func(p: PlayerProfile) -> void: TeamWindow.open(self, SocialHub.of(p))],
+		["Bang hội", "Bang hội: tin tức, chiêu mộ, quyền hạn, nhật ký", func(p: PlayerProfile) -> void: GuildWindow.open(self, SocialHub.of(p))],
+		["Rương", "Rương chứa đồ (có khoá bảo vệ)", func(p: PlayerProfile) -> void: StorageWindow.open(self, p)],
+		["Bày bán", "Đặt giá và bày bán đồ, mở giao dịch", func(p: PlayerProfile) -> void: StallWindow.open(self, SocialHub.of(p))],
+		["Khoá bảo vệ", "Mật mã bảo vệ rương và đồ đạc", func(p: PlayerProfile) -> void: SecurityWindow.open(self, p)],
+	]
+	var x := 310.0
+	for e in entries:
+		var button := Button.new()
+		button.text = e[0]
+		button.offset_left = x
+		button.offset_top = 80
+		button.offset_right = x + 108
+		button.offset_bottom = 114
+		button.focus_mode = Control.FOCUS_NONE
+		button.tooltip_text = e[1]
+		var open_fn: Callable = e[2]
+		button.pressed.connect(func() -> void:
+			if GameManager.local_profile != null:
+				open_fn.call(GameManager.local_profile))
+		$UI.add_child(button)
+		x += 116.0
+
+## Nút "Quái" — mở/đóng popup thử quái VLTK (danh sách mọi quái, xem động tác, tạo quái quanh người chơi để thử).
+var _monster_popup: MonsterTestPopup
+
+func _build_monster_test_button() -> void:
+	var button := Button.new()
+	button.text = "Quái"
+	button.offset_left = 510
+	button.offset_top = 36
+	button.offset_right = 600
+	button.offset_bottom = 72
+	button.focus_mode = Control.FOCUS_NONE
+	button.tooltip_text = "Danh sách quái VLTK — tạo quái để thử"
+	button.pressed.connect(_toggle_monster_popup)
+	$UI.add_child(button)
+
+func _toggle_monster_popup() -> void:
+	if _monster_popup == null or not is_instance_valid(_monster_popup):
+		_monster_popup = MonsterTestPopup.new()
+		$UI.add_child(_monster_popup)
+		return
+	_monster_popup.visible = not _monster_popup.visible
+
+## Nút "Skill" — mở/đóng bảng tổng hợp skill (chia theo phái) để thi triển thử.
+var _skill_popup: SkillTestPopup
+
+func _build_skill_test_button() -> void:
+	var button := Button.new()
+	button.text = "Skill"
+	button.offset_left = 660
+	button.offset_top = 36
+	button.offset_right = 750
+	button.offset_bottom = 72
+	button.focus_mode = Control.FOCUS_NONE
+	button.tooltip_text = "Bảng tất cả skill theo phái — thi triển thử"
+	button.pressed.connect(_toggle_skill_popup)
+	$UI.add_child(button)
+
+func _toggle_skill_popup() -> void:
+	if _skill_popup == null or not is_instance_valid(_skill_popup):
+		_skill_popup = SkillTestPopup.new()
+		$UI.add_child(_skill_popup)
+		return
+	_skill_popup.visible = not _skill_popup.visible
+
 ## Nút "Thoát Trận" góc trên trái — bấm hiện popup xác nhận trước khi quay về Character Hub,
 ## tránh mất tiến độ trận đang chơi do bấm nhầm.
 func _build_exit_button() -> void:
 	var ui: CanvasLayer = $UI
 	var button := Button.new()
-	button.text = "Thoát Trận"
+	button.text = "Thoát" if GameManager.game_mode == GameManager.GameMode.MAIN_MAP else "Thoát Trận"
 	button.offset_left = 20
-	button.offset_top = 20
+	button.offset_top = 36
 	button.offset_right = 140
-	button.offset_bottom = 56
+	button.offset_bottom = 72
 	button.pressed.connect(_on_exit_button_pressed)
 	ui.add_child(button)
 

@@ -6,6 +6,9 @@ const FLOAT_DURATION = 0.1
 @onready var text: Label = $Text
 
 func _ready() -> void:
+	## Số sát thương luôn nằm TRÊN quái/người (bản đồ y-sort nên quái đứng thấp hơn sẽ vẽ đè lên số).
+	z_as_relative = false
+	z_index = 100
 	text.add_theme_color_override("font_color", Color.RED)
 	text.add_theme_font_size_override("font_size", 20)
 	text.add_theme_constant_override("outline_size", 6)

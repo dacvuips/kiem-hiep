@@ -1,17 +1,8 @@
 [gd_scene format=3 uid="uid://ibeej5jrxqy5"]
 
 [ext_resource type="Texture2D" uid="uid://dylaa5h07x07e" path="res://world/bg-dat.jpg" id="1_6xmxd"]
+[ext_resource type="Script" path="res://world/tiling_background.gd" id="2_tiling"]
 
-[node name="World" type="ParallaxBackground" unique_id=908992083]
-
-[node name="Layer" type="ParallaxLayer" parent="." unique_id=862051056]
-motion_mirroring = Vector2(1279, 720)
-
-[node name="Sprite2D" type="Sprite2D" parent="Layer" unique_id=1535416664]
-texture_repeat = 2
-position = Vector2(2.3841858e-07, 0)
-scale = Vector2(1, 1.0013889)
+[node name="World" type="Node2D"]
+script = ExtResource("2_tiling")
 texture = ExtResource("1_6xmxd")
-centered = false
-region_enabled = true
-region_rect = Rect2(0, 0, 1280, 720)

@@ -203,6 +203,17 @@ static func get_unmet_requirements(item: ItemInstance, profile: PlayerProfile, c
 			unmet.append(ItemText.format_attrib(req[0], [int(req[1]), 0, 0]))
 	return unmet
 
+## Loại vũ khí đang cầm theo cách KSkill::CanCastSkill gốc so với EqtLimit của skill: -1 = tay không / găng (Triền thủ,
+## HAND_PARTICULAR = 6), 0 kiếm, 1 đao, 2 côn, 3 thương, 4 chùy, 5 song đao; ám khí = 100 + loại (100 tiêu, 101 đao, 102 tiễn).
+static func get_weapon_class(equipped: Dictionary) -> int:
+	var weapon: ItemInstance = equipped.get(Part.WEAPON)
+	if weapon == null:
+		return -1
+	var particular := int(weapon.get_base().get("particular", 0))
+	if weapon.get_detail() == ItemDatabase.Detail.RANGE:
+		return 100 + particular
+	return -1 if particular == 6 else particular
+
 static func can_use(item: ItemInstance, profile: PlayerProfile, ctx: Dictionary = {}) -> bool:
 	return get_unmet_requirements(item, profile, ctx).is_empty()
 
@@ -212,7 +223,7 @@ static func can_use(item: ItemInstance, profile: PlayerProfile, ctx: Dictionary 
 ## đầu/tóc, áo đổi vai/thân/tay, vũ khí đổi 2 lớp vũ khí + bộ động tác, ngựa (-1 = đi bộ) thêm 3 lớp ngựa + bộ
 ## động tác cưỡi. Ô trống -> hình mặc định. Đồ hoàng kim dùng hình riêng (GoldEquipRes) nếu đã có trong đợt hình,
 ## không thì theo loại/cấp của chính nó. Online chỉ cần gửi 4 số này.
-static func get_appearance(equipped: Dictionary, gender: String = "male") -> Dictionary:
+static func get_appearance(equipped: Dictionary, gender: String = "male", riding: bool = true) -> Dictionary:
 	var data := AvatarData.get_for(gender)
 	var result := {"helm": data.default_res("helm"), "armor": data.default_res("armor"),
 			"weapon": data.default_res("weapon"), "horse": data.default_res("horse")}
@@ -242,4 +253,6 @@ static func get_appearance(equipped: Dictionary, gender: String = "male") -> Dic
 				result["weapon"] = data.res_for_item("range", particular, level)
 			ItemDatabase.Detail.HORSE:
 				result["horse"] = data.res_for_item("horse", particular, level)
+	if not riding:
+		result["horse"] = -1  ## xuống ngựa: đi bộ, bộ động tác thường
 	return result

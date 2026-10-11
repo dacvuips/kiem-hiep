@@ -1,19 +1,16 @@
 extends CanvasLayer
 class_name InventoryPopup
-## Khung "Hành trang" kiểu VLTK mobile: lưới 6x6 ô có ẢNH vật phẩm, cột "Túi 1..6" bên phải, tiền ở dưới, nút
-## "Sắp xếp" / "Bày bán". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ. Kéo thanh tiêu đề
-## để di chuyển khung. Bố cục/màu nằm trong InventoryPopup.tscn; script chỉ dựng lưới ô + đổ dữ liệu.
+## Khung "Hành trang" kiểu VLTK: LƯỚI Ô 6 × 10 (ItemRoomView) — mỗi món là 1 khối chiếm số ô rộng × cao riêng, kéo thả để
+## đổi chỗ; tiền ở dưới, nút "Sắp xếp" / "Bày bán". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
+## Kéo thanh tiêu đề để di chuyển khung. Bố cục/màu nằm trong InventoryPopup.tscn; script dựng lưới + đổ dữ liệu.
 ## Mọi thay đổi ghi vào PlayerProfile + lưu save, rồi gọi `on_changed` để màn gọi vẽ lại ô trang bị/chỉ số.
 
 const SCENE_PATH := "res://ui/items/InventoryPopup.tscn"
-const SLOTS_PER_BAG := 36
-const SLOT_SIZE := Vector2(54, 54)
-
 var _profile: PlayerProfile
 var _on_changed: Callable
 var _modal: bool = true
+var _room: ItemRoomView
 var _bag: int = 0
-var _slots: Array[ItemSlotButton] = []
 var _dragging: bool = false
 
 ## `modal` = true: có nền tối, bấm ra ngoài là đóng (màn Hub). false: không nền tối, khung nổi tự do để mở cùng
@@ -38,18 +35,35 @@ func _ready() -> void:
 	%SortButton.pressed.connect(_on_sort_pressed)
 	%SellButton.pressed.connect(func() -> void: _show_message("Bày bán: đang phát triển"))
 
+	## Lưới ô kiểu VLTK thay cho lưới 6x6 + cột "Túi 1..6" cũ (1 hành trang duy nhất 6 x 10 ô).
 	var group := ButtonGroup.new()
 	var bags := %BagTabs.get_children()
 	for i in bags.size():
 		var tab: Button = bags[i]
 		tab.button_group = group
 		tab.pressed.connect(_select_bag.bind(i))
+		## Kéo 1 món thả lên tab = chuyển món sang túi đó.
+		tab.set_drag_forwarding(Callable(), _can_drop_on_tab.bind(i), _drop_on_tab.bind(i))
+	var old_grid: Control = %Grid
+	old_grid.visible = false
+	_room = ItemRoomView.new()
+	## Cỡ ô co theo chiều cao màn hình để 20 hàng + khung vừa cửa sổ (720p -> ~26px, đúng cỡ ô VLTK gốc).
+	var screen_h := get_viewport().get_visible_rect().size.y
+	_room.cell = clampi(int((screen_h - 190.0) / PlayerProfile.ROOM_HEIGHT), 22, 44)
+	_room.item_pressed.connect(_on_item_pressed)
+	_room.changed.connect(_commit)
+	## Khung cao đúng ROOM_HEIGHT hàng; món tràn ra ngoài (save cũ) nằm ở các hàng thêm, kéo cuộn xuống để thấy.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH, PlayerProfile.ROOM_HEIGHT) * _room.cell
+	scroll.add_child(_room)
+	old_grid.get_parent().add_child(scroll)
 
 	%TestRow.visible = OS.is_debug_build()
 	%TestAddButton.pressed.connect(_on_test_items_pressed)
 	%TestCreateButton.pressed.connect(func() -> void: ItemCreatorPopup.open(self, _profile, _commit))
 
-	_build_slots()
+	_room.setup(_profile)
 	_refresh()
 	## Đặt giữa màn hình (sau 1 frame để container tính xong kích thước).
 	await get_tree().process_frame
@@ -57,58 +71,29 @@ func _ready() -> void:
 	frame.size = frame.get_combined_minimum_size()
 	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
 
-func _build_slots() -> void:
-	var grid: GridContainer = %Grid
-	for i in SLOTS_PER_BAG:
-		var b := ItemSlotButton.new()
-		b.small_icons = true
-		b.custom_minimum_size = SLOT_SIZE
-		b.focus_mode = Control.FOCUS_NONE
-		b.clip_text = true
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.add_theme_font_size_override("font_size", 10)
-		for state in ["normal", "hover", "pressed", "disabled"]:
-			b.add_theme_stylebox_override(state, _slot_style(state))
-		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		b.pressed.connect(_on_slot_pressed.bind(i))
-		grid.add_child(b)
-		_slots.append(b)
-
-static func _slot_style(state: String) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.09, 0.08, 0.07) if state != "disabled" else Color(0.05, 0.045, 0.04)
-	s.border_color = {"hover": Color(0.85, 0.7, 0.35), "pressed": Color(1, 0.85, 0.45)}.get(state, Color(0.26, 0.21, 0.13))
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(4)
-	s.set_content_margin_all(3)
-	return s
-
-## Số túi đang mở theo sức chứa hành trang (60 ô = Túi 1 đủ 36 + Túi 2 có 24); túi chưa mở bị khoá.
-func _open_bags() -> int:
-	return ceili(float(PlayerProfile.INVENTORY_CAPACITY) / SLOTS_PER_BAG)
-
 func _select_bag(bag: int) -> void:
 	_bag = bag
 	_refresh()
+
+func _can_drop_on_tab(_at: Vector2, data: Variant, bag: int) -> bool:
+	return data is Dictionary and data.get("type") == ItemRoomView.DRAG_TYPE and bag < PlayerProfile.OPEN_BAGS 			and (data["item"] as ItemInstance).room_bag != bag
+
+func _drop_on_tab(_at: Vector2, data: Variant, bag: int) -> void:
+	if _profile.move_to_bag(data["item"], bag):
+		_show_message("")
+		_commit()
+	else:
+		_show_message("Túi %d đã đầy chỗ cho món này" % (bag + 1))
 
 func _refresh() -> void:
 	var bags := %BagTabs.get_children()
 	for i in bags.size():
 		var tab: Button = bags[i]
-		tab.disabled = i >= _open_bags()
+		tab.disabled = i >= PlayerProfile.OPEN_BAGS
 		tab.tooltip_text = "Chưa mở" if tab.disabled else ""
 		tab.set_pressed_no_signal(i == _bag)
-	var ctx := Equipment.get_requirement_context(_profile)
-	for i in SLOTS_PER_BAG:
-		var index := _bag * SLOTS_PER_BAG + i
-		var slot := _slots[i]
-		var usable_slot := index < PlayerProfile.INVENTORY_CAPACITY
-		slot.disabled = not usable_slot
-		var item: ItemInstance = _profile.inventory[index] if index < _profile.inventory.size() else null
-		if item:
-			slot.show_item(item, ItemText.build(item, _profile), "", Equipment.can_use(item, _profile, ctx))
-		else:
-			slot.show_item(null, "", "" if usable_slot else "Ô chưa mở")
+	_room.bag = _bag
+	_room.rebuild()
 	(%GoldValue as Label).text = format_money(_profile.gold) + " lượng"
 	(%JadeValue as Label).text = format_money(_profile.jade)
 
@@ -121,15 +106,25 @@ static func format_money(value: int) -> String:
 		return str(rest)
 	return "%d vạn %d" % [van, rest] if rest > 0 else "%d vạn" % van
 
-func _on_slot_pressed(slot: int) -> void:
-	var index := _bag * SLOTS_PER_BAG + slot
-	if index >= _profile.inventory.size():
+func _on_item_pressed(item: ItemInstance) -> void:
+	var index := _profile.inventory.find(item)
+	if index < 0:
 		return
-	var item := _profile.inventory[index]
-	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), [
+	var actions := [
 		["Trang bị", _equip.bind(index)],
 		["Vứt bỏ", _drop.bind(index)],
-	], item)
+	]
+	## Khoá món đồ (không bán/giao dịch/vứt được) — mở khoá phải chờ 3 ngày; và đặt giá để bày bán.
+	SecurityLock.refresh_item(item)
+	match item.lock_state:
+		ItemInstance.LOCK_NORMAL:
+			actions.append(["Khoá món", func() -> void: _lock_item(item)])
+		ItemInstance.LOCK_LOCKED:
+			actions.append(["Mở khoá (chờ 3 ngày)", func() -> void: _unlock_item(item)])
+		_:
+			actions.append([SecurityLock.describe_item_lock(item), func() -> void: pass])
+	actions.append(["Đặt giá bán", func() -> void: _set_price(item)])
+	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
 func _equip(index: int) -> void:
 	var err := _profile.equip_from_inventory(index)
@@ -137,20 +132,49 @@ func _equip(index: int) -> void:
 	if err == "":
 		_commit()
 
-func _drop(index: int) -> void:
-	if index < _profile.inventory.size():
-		_profile.inventory.remove_at(index)
-		_show_message("")
-		_commit()
+## "Vứt bỏ": trong trận thì món đồ RƠI XUỐNG ĐẤT ngay dưới chân nhân vật (nhấp vào để nhặt lại); ở ngoài trận (Hub, không có
+## nhân vật trên bản đồ) thì không có chỗ rơi nên bỏ hẳn.
+func _lock_item(item: ItemInstance) -> void:
+	_show_message("Đã khoá món đồ." if SecurityLock.lock_item(item) else "Không khoá được món đồ này.")
+	_commit()
 
-## Sắp xếp: theo loại đồ (vũ khí, áo, mũ...), hoàng kim trước, cấp cao trước.
+func _unlock_item(item: ItemInstance) -> void:
+	_show_message("Bắt đầu chờ mở khoá: còn %s." % SecurityLock.describe_item_lock(item) if SecurityLock.request_unlock(item) else "Không mở khoá được.")
+	_commit()
+
+func _set_price(item: ItemInstance) -> void:
+	SocialWindow.prompt(self, "Đặt giá bán", "Giá (lượng), 0 = không bán", func(text: String) -> void:
+		var price := int(text.strip_edges()) if text.strip_edges().is_valid_int() else -1
+		var err := StallService.set_price(_profile, item, price)
+		_show_message(err if err != "" else ("Đã đặt giá %d lượng — mở quầy ở Giao lưu để bán." % price if price > 0 else "Đã bỏ giá bán."))
+		_commit(), str(item.trade_price) if item.trade_price > 0 else "")
+
+func _drop(index: int) -> void:
+	if index >= _profile.inventory.size():
+		return
+	var item := _profile.inventory[index]
+	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
+	if blocked == "" and SecurityLock.is_item_locked(item):
+		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked != "":
+		_show_message(blocked)
+		return
+	_profile.inventory.remove_at(index)
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null:
+		var parent: Node = VltkWorld.entity_parent()
+		if parent == null:
+			parent = player.get_parent()
+		var feet := player.global_position + Vector2(0, 30)
+		GroundDrop.spawn_drops(parent, feet + Vector2(randf_range(-14, 14), 6), [{"type": "item", "item": item}])
+		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
+	else:
+		_show_message("")
+	_commit()
+
+## Sắp xếp: theo loại đồ (vũ khí, áo, mũ...), hoàng kim trước, cấp cao trước, rồi xếp lại từ đầu lưới.
 func _on_sort_pressed() -> void:
-	_profile.inventory.sort_custom(func(a: ItemInstance, b: ItemInstance) -> bool:
-		if a.get_detail() != b.get_detail():
-			return a.get_detail() < b.get_detail()
-		if a.is_gold() != b.is_gold():
-			return a.is_gold()
-		return a.get_level() > b.get_level())
+	_profile.sort_inventory()
 	_commit()
 
 func _on_test_items_pressed() -> void:

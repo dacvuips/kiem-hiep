@@ -1,0 +1,13 @@
+{
+ "_ghi_chu": "DỮ LIỆU MẪU — chưa có máy chủ thật. status: normal (Bình thường) | crowded (Đông) | maintenance (Bảo trì); region: north | central | south; characters = số nhân vật của tài khoản trên máy chủ này.",
+ "servers": [
+  {"id": 1, "name": "Tống Kim 01", "status": "normal", "region": "north", "is_new": true, "characters": 0},
+  {"id": 2, "name": "Tống Kim 02", "status": "crowded", "region": "north", "is_new": false, "characters": 0},
+  {"id": 3, "name": "Tống Kim 03", "status": "crowded", "region": "central", "is_new": false, "characters": 0},
+  {"id": 4, "name": "Tống Kim 04", "status": "normal", "region": "central", "is_new": false, "characters": 0},
+  {"id": 5, "name": "Tống Kim 05", "status": "maintenance", "region": "south", "is_new": false, "characters": 0},
+  {"id": 6, "name": "Tống Kim 06", "status": "normal", "region": "south", "is_new": false, "characters": 0},
+  {"id": 7, "name": "Tống Kim 07", "status": "normal", "region": "north", "is_new": false, "characters": 0},
+  {"id": 8, "name": "Tống Kim 08", "status": "maintenance", "region": "central", "is_new": false, "characters": 0}
+ ]
+}
