@@ -40,7 +40,8 @@ func _ready() -> void:
 	NetClient.player_cast.connect(_on_player_cast)
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
-	NetClient.saved.connect(SaveManager.set_online_version)
+	if not NetClient.saved.is_connected(SaveManager.set_online_version):
+		NetClient.saved.connect(SaveManager.set_online_version)
 	NetClient.profile_received.connect(_on_profile)
 	NetClient.drops_received.connect(_on_drops)
 	NetClient.picked.connect(_on_picked)
@@ -53,19 +54,26 @@ func _ready() -> void:
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_invite.connect(_on_team_invite)
 	NetClient.guild_received.connect(_on_guild)
-	NetClient.guild_list.connect(func(list: Array) -> void: guild_list = list)
+	NetClient.guild_list.connect(_on_guild_list)
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
 	NetClient.enmity_state.connect(_on_enmity)
-	NetClient.pvp_hit.connect(func(attacker_eid: int, hit: Dictionary) -> void:
-		if player and is_instance_valid(player):
-			PvpHit.apply(player, hit, remote_of(attacker_eid)))
-	NetClient.view_equip.connect(func(snap: Dictionary) -> void:
-		if not snap.is_empty():
-			ViewEquipWindow.open_snapshot(get_tree().current_scene, snap))
+	NetClient.pvp_hit.connect(_on_pvp_hit)
+	NetClient.view_equip.connect(_on_view_equip)
 	current = self
 	_add_chat_box()
 	_connect()
+
+func _on_guild_list(list: Array) -> void:
+	guild_list = list
+
+func _on_pvp_hit(attacker_eid: int, hit: Dictionary) -> void:
+	if player and is_instance_valid(player):
+		PvpHit.apply(player, hit, remote_of(attacker_eid))
+
+func _on_view_equip(snap: Dictionary) -> void:
+	if not snap.is_empty():
+		ViewEquipWindow.open_snapshot(get_tree().current_scene, snap)
 
 func _exit_tree() -> void:
 	if current == self:
@@ -121,8 +129,12 @@ func _on_profile(data: Dictionary) -> void:
 func _on_drops(list: Array) -> void:
 	for d in list:
 		var id := int(d.id)
-		if _drops.has(id):
+		## GroundDrop tự queue_free() khi hết hạn, nên dictionary có thể còn giữ
+		## một reference đã được giải phóng. Đọc qua Variant trước khi kiểm tra.
+		var existing: Variant = _drops.get(id)
+		if is_instance_valid(existing):
 			continue
+		_drops.erase(id)
 		var g := GroundDrop.new()
 		if d.has("amount"):
 			g.setup_money(int(d.amount))
@@ -155,10 +167,12 @@ func _place_at(profile: PlayerProfile, it: ItemInstance) -> bool:
 	return true
 
 func _on_drop_gone(id: int) -> void:
-	var g: Node = _drops.get(id)
+	## Không gán thẳng reference trong dictionary vào biến kiểu Node: nếu drop đã
+	## tự queue_free() vì hết hạn, phép gán đó sẽ phát lỗi "previously freed instance".
+	var g: Variant = _drops.get(id)
 	_drops.erase(id)
-	if g and is_instance_valid(g):
-		g.queue_free()
+	if is_instance_valid(g):
+		(g as Node).queue_free()
 
 # ---------------------------------------------------------------- giao lưu với người chơi thật
 

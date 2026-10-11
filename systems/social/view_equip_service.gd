@@ -46,10 +46,26 @@ static func snapshot_of_mock(m: MockPlayer) -> Dictionary:
 static func snapshot_of_profile(p: PlayerProfile) -> Dictionary:
 	var copies := {}
 	for part in p.equipment:
-		copies[part] = ItemInstance.from_dict((p.equipment[part] as ItemInstance).to_dict())
+		copies[part] = (p.equipment[part] as ItemInstance).to_dict()
 	var sect := SectRegistry.get_by_id(p.sect_id)
 	return {
 		"name": p.display_name, "level": p.level, "sect_name": p.sect_name, "sect_id": p.sect_id,
 		"series": int(sect.element) if sect else 0, "camp": p.get_current_camp(), "female": p.gender == PlayerProfile.Gender.FEMALE,
 		"guild": str(p.guild.get("name", "")), "lead_level": p.lead_level, "equipment": copies,
 	}
+
+## Chuẩn hóa dictionary trang bị từ cả bản chụp nội bộ ({int: ItemInstance}) lẫn gói tin JSON ({String: Dictionary})
+## về đúng định dạng {int: ItemInstance} cho Equipment và ViewEquipWindow.
+static func normalize_equipment(raw: Variant) -> Dictionary:
+	var out := {}
+	if not (raw is Dictionary):
+		return out
+	for k in raw:
+		var part := int(k)
+		var val: Variant = raw[k]
+		if val is ItemInstance:
+			out[part] = val
+		elif val is Dictionary:
+			out[part] = ItemInstance.from_dict(val)
+	return out
+

@@ -7,6 +7,7 @@ class_name AccountDialog
 
 const SCENE := preload("res://ui/account/AccountDialog.tscn")
 const LAYER := 90
+const LAYER_NAME := "AccountDialogLayer"
 
 @onready var _dim: ColorRect = %Dim
 @onready var _close: Button = %CloseButton
@@ -22,11 +23,21 @@ const LAYER := 90
 @onready var _message: Label = %Message
 
 static func open(from: Node) -> AccountDialog:
+	var root := from.get_tree().root
+	var existing_layer := root.get_node_or_null(LAYER_NAME)
+	if existing_layer != null and is_instance_valid(existing_layer):
+		var existing_dlg := existing_layer.get_node_or_null("AccountDialog") as AccountDialog
+		if existing_dlg != null:
+			return existing_dlg
+		existing_layer.queue_free()
 	var layer := CanvasLayer.new()
+	layer.name = LAYER_NAME
 	layer.layer = LAYER
 	var dlg: AccountDialog = SCENE.instantiate()
 	layer.add_child(dlg)
-	from.get_tree().root.add_child(layer)
+	root.add_child(layer)
+	if from != root and not from.tree_exiting.is_connected(layer.queue_free):
+		from.tree_exiting.connect(layer.queue_free)
 	return dlg
 
 func _ready() -> void:
@@ -53,14 +64,18 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_info() -> void:
 	if not AccountApi.is_logged_in():
 		_info.text = "Chưa đăng nhập tài khoản"
-		for c: Control in [_section, _old, _new, _new2, _eye, _change]:
+		for c: Control in [_section, _old, _new, _new2, _eye, _change, _link_google]:
 			c.visible = false
 		_logout.text = "Đăng nhập"
 		return
 	var acc := AccountApi.account
 	_info.text = "Tài khoản: %s\nEmail: %s" % [acc.get("username", ""), acc.get("email", "")]
+	for c: Control in [_section, _new, _new2, _eye, _change]:
+		c.visible = true
 	## Tài khoản chỉ đăng nhập Google (chưa đặt mật khẩu) thì không hỏi mật khẩu hiện tại.
 	_old.visible = bool(acc.get("has_password", true))
+	_link_google.visible = not bool(acc.get("google_linked", false))
+	_logout.text = "Đăng xuất"
 
 func _on_change_pressed() -> void:
 	if _busy:

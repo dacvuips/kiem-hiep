@@ -20,9 +20,11 @@ static func open_snapshot(host: Node, snapshot: Dictionary) -> ViewEquipWindow:
 
 func _init(snapshot: Dictionary = {}) -> void:
 	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), "Cấp %d · %s" % [int(snapshot.get("level", 1)), str(snapshot.get("sect_name", ""))], 640.0)
-	_snap = snapshot
+	_snap = snapshot.duplicate()
 	if snapshot.is_empty():
 		return
+	var equipment := ViewEquipService.normalize_equipment(snapshot.get("equipment", {}))
+	_snap["equipment"] = equipment
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 14)
 	body.add_child(cols)
@@ -42,21 +44,20 @@ func _init(snapshot: Dictionary = {}) -> void:
 			_turn = (_turn + 1) % 8
 			_avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * _turn))))
 	left[1].add_child(portrait)
-	left[1].add_child(SocialUi.kv("Tên:", str(snapshot["name"]), SocialUi.LABEL_RED, Camp.get_color(int(snapshot["camp"]))))
-	left[1].add_child(SocialUi.kv("Cấp:", str(snapshot["level"]), SocialUi.LABEL_BLUE))
-	left[1].add_child(SocialUi.kv("Môn phái:", str(snapshot["sect_name"]), SocialUi.LABEL_BLUE))
-	left[1].add_child(SocialUi.kv("Thuộc tính:", ElementTypes.ELEMENT_NAME.get(int(snapshot["series"]), "—"), SocialUi.LABEL_BLUE))
-	left[1].add_child(SocialUi.kv("Phe:", Camp.get_camp_name(int(snapshot["camp"])), SocialUi.LABEL_BLUE))
+	left[1].add_child(SocialUi.kv("Tên:", str(snapshot.get("name", "")), SocialUi.LABEL_RED, Camp.get_color(int(snapshot.get("camp", 0)))))
+	left[1].add_child(SocialUi.kv("Cấp:", str(int(snapshot.get("level", 1))), SocialUi.LABEL_BLUE))
+	left[1].add_child(SocialUi.kv("Môn phái:", str(snapshot.get("sect_name", "")), SocialUi.LABEL_BLUE))
+	left[1].add_child(SocialUi.kv("Thuộc tính:", ElementTypes.ELEMENT_NAME.get(int(snapshot.get("series", 0)), "—"), SocialUi.LABEL_BLUE))
+	left[1].add_child(SocialUi.kv("Phe:", Camp.get_camp_name(int(snapshot.get("camp", 0))), SocialUi.LABEL_BLUE))
 	if str(snapshot.get("guild", "")) != "":
 		left[1].add_child(SocialUi.kv("Bang hội:", str(snapshot["guild"]), SocialUi.LABEL_GREEN))
-	left[1].add_child(SocialUi.kv("Lãnh đạo:", str(snapshot.get("lead_level", 0)), SocialUi.LABEL_BLUE))
+	left[1].add_child(SocialUi.kv("Lãnh đạo:", str(int(snapshot.get("lead_level", 0))), SocialUi.LABEL_BLUE))
 	cols.add_child(left[0])
 
 	## ---- Phải: 11 ô trang bị
 	var right := SocialUi.section("Trang bị đang mặc", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
 	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var equipment: Dictionary = snapshot["equipment"]
-	var counts := Equipment.get_active_counts(equipment, int(snapshot["series"]))
+	var counts := Equipment.get_active_counts(equipment, int(snapshot.get("series", 0)))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 10)

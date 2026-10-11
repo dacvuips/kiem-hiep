@@ -283,6 +283,90 @@ func _ready() -> void:
 		var again := ViewEquipWindow.open_for(self, p, target, err2)
 		check("ui: xem lại ngay bị chặn (30 nhịp) và báo lỗi", again == null and not err2.is_empty())
 
+	## Issue #7: Xem trang bị qua gói tin JSON (S_VIEW_EQUIP) giữ nguyên 11 ô trang bị & hiển thị số nguyên
+	p.level = 50
+	p.lead_level = 3
+	p.equipment[Equipment.Part.WEAPON] = ItemGenerator.random_equipment(10)
+	p.equipment[Equipment.Part.BODY] = ItemGenerator.random_equipment(10)
+	var raw_snap := ViewEquipService.snapshot_of_profile(p)
+	var wire_snap: Dictionary = JSON.parse_string(JSON.stringify(raw_snap))
+	var vw_wire := ViewEquipWindow.open_snapshot(self, wire_snap)
+	await frames()
+	if vw_wire != null:
+		var wire_slots := vw_wire.find_children("Slot*", "ItemSlotButton", true, false)
+		var wire_shown := 0
+		for sl in wire_slots:
+			if (sl as ItemSlotButton).item_bbcode != "":
+				wire_shown += 1
+		check("ui (#7): S_VIEW_EQUIP qua JSON hiển thị đúng số món đang mặc", wire_shown == p.equipment.size(), "%d / %d" % [wire_shown, p.equipment.size()])
+		var has_float_label := false
+		for lbl in vw_wire.find_children("*", "Label", true, false):
+			if (lbl as Label).text in ["50.0", "3.0", "0.0"]:
+				has_float_label = true
+		check("ui (#7): Cấp & Lãnh đạo hiển thị số nguyên, không có .0", not has_float_label)
+		vw_wire.close_requested.emit()
+		await frames()
+
+	## Issue #8: Xoá hảo hữu trong FriendWindow lưu xuống SaveManager & NetWorldSync không nhân bản kết nối NetClient.saved
+	var backup_profile := SaveManager.load_profile()
+	p.friends = ["KiemKhach01"]
+	SaveManager.save_profile(p)
+	var fw := FriendWindow.open(self, p)
+	await frames()
+	press(fw, "Xoá")
+	await frames()
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w != fw and w is SocialWindow:
+			press(w, "Đồng ý")
+	await frames()
+	var reloaded_p := SaveManager.load_profile()
+	check("ui (#8): xoá hảo hữu lưu bền vững xuống SaveManager", reloaded_p != null and not reloaded_p.friends.has("KiemKhach01"))
+	if backup_profile != null:
+		SaveManager.save_profile(backup_profile)
+	fw.close_requested.emit()
+	await frames()
+
+	var sync1 := NetWorldSync.new()
+	add_child(sync1)
+	sync1.queue_free()
+	await frames()
+	var sync2 := NetWorldSync.new()
+	add_child(sync2)
+	check("ui (#8): vào lại NetWorldSync không nhân bản kết nối NetClient.saved", NetClient.saved.is_connected(SaveManager.set_online_version))
+	sync2.queue_free()
+	await frames()
+
+	## Issue #9: Nút Bày bán trong InventoryPopup mở StallWindow
+	var inv_pop := InventoryPopup.open(self, p, func() -> void: pass)
+	await frames(2)
+	var sell_btn: Button = inv_pop.get_node("%SellButton")
+	sell_btn.pressed.emit()
+	await frames()
+	var stall_opened := false
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StallWindow and is_instance_valid(w):
+			stall_opened = true
+			(w as StallWindow).close_requested.emit()
+	check("ui (#9): nút Bày bán trong InventoryPopup mở StallWindow", stall_opened)
+	inv_pop.queue_free()
+	await frames()
+
+	## Issue #10: AccountDialog không chồng nhiều lớp trên root và ẩn nút Liên kết Google khi offline
+	AccountApi.account = {}
+	var ad1 := AccountDialog.open(self)
+	var ad2 := AccountDialog.open(self)
+	await frames()
+	var acc_layers := 0
+	for ch in get_tree().root.get_children():
+		if ch is CanvasLayer and (ch as CanvasLayer).layer == AccountDialog.LAYER:
+			acc_layers += 1
+	check("ui (#10): gọi AccountDialog.open nhiều lần chỉ tạo 1 lớp trên root", acc_layers == 1 and ad1 == ad2, str(acc_layers))
+	var link_btn: Button = ad1.get_node("%LinkGoogleButton")
+	check("ui (#10): ẩn nút Liên kết Google khi chưa đăng nhập", not link_btn.visible)
+	ad1.get_parent().queue_free()
+	await frames()
+
 	## Tổng kết
 	print("RESULT ", _pass, "/", _pass + _fail)
 	get_tree().quit(1 if _fail > 0 else 0)
+
