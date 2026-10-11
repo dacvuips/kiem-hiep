@@ -6,7 +6,8 @@ class_name LoginScreen
 ##
 ## Đăng nhập qua server tài khoản (AccountApi). "Ghi nhớ đăng nhập": giữ phiên trên máy (KHÔNG lưu mật khẩu), lần sau mở game
 ## tự đăng nhập lại. Tên tài khoản gần nhất lưu ở user://login.cfg để điền sẵn.
-## Apple / Facebook / Khách tạm ẩn; Google sẽ nối ở bước sau.
+## Google: mở trình duyệt của máy để đăng nhập, game chờ server báo xong (bấm lại nút Google để hủy chờ).
+## Apple / Facebook / Khách tạm ẩn.
 
 const CFG_PATH := "user://login.cfg"
 
@@ -30,7 +31,7 @@ func _ready() -> void:
 		AccountScreen.next_login_username = _user.text.strip_edges().to_lower()
 		_go(FORGOT_SCENE))
 	_create.pressed.connect(_go.bind(REGISTER_SCENE))
-	_google.pressed.connect(_toast.bind(_message, "Đăng nhập Google sẽ có ở bản cập nhật sau"))
+	_google.pressed.connect(_on_google_pressed)
 	for b: TextureButton in [_login, _create, _google]:
 		_bind_hover(b)
 
@@ -66,6 +67,29 @@ func _resume() -> void:
 		_toast(_message, r.message)
 	else:
 		_toast(_message, "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại")
+
+var _google_waiting := false
+
+func _on_google_pressed() -> void:
+	if _google_waiting:
+		AccountApi.cancel_google()
+		return
+	if _busy:
+		return
+	_google_waiting = true
+	_set_busy(true, [_login, _create])
+	_toast(_message, "Đang chờ đăng nhập Google trên trình duyệt… (bấm Google lần nữa để hủy)", 300.0)
+	var r: Dictionary = await AccountApi.google_login()
+	_google_waiting = false
+	_set_busy(false, [_login, _create])
+	if not r.ok:
+		_toast(_message, r.message, 4.0)
+		return
+	var cfg := ConfigFile.new()
+	cfg.set_value("login", "remember", true)
+	cfg.set_value("login", "name", AccountApi.username())
+	cfg.save(CFG_PATH)
+	_go(AFTER_LOGIN_SCENE)
 
 func _on_login_pressed() -> void:
 	if _busy:

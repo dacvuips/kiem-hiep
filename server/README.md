@@ -46,6 +46,9 @@ Lỗi luôn có dạng `{"code": "...", "message": "..."}`. Client dựa vào `c
 | POST | `/v1/auth/reset` | `username, code, new_password` | Sai 5 lần thì mã bị hủy. Đăng xuất mọi máy |
 | POST | `/v1/account/password` | `old_password, new_password` | Cần `Authorization: Bearer`. Trả phiên mới |
 | GET | `/v1/account/me` | | Cần Bearer |
+| POST | `/v1/auth/google/start` | | Trả `auth_url, state, poll_secret`. Có Bearer = liên kết Google vào tài khoản đang đăng nhập |
+| GET | `/v1/auth/google/callback` | | Google chuyển trình duyệt về đây (trang HTML báo quay lại game) |
+| POST | `/v1/auth/google/poll` | `state, poll_secret` | `202` = đang chờ; `200` = phiên đăng nhập (lấy được 1 lần) |
 | GET | `/v1/servers` | | Cần Bearer. Kèm `characters` = số nhân vật của tài khoản trên từng máy chủ |
 | GET | `/v1/characters?server_id=N` | | Nhân vật của tài khoản trên máy chủ N (tối đa 4 ô) |
 | POST | `/v1/characters` | `server_id, slot, name, data` | Tên 2–16 ký tự (chữ có dấu, số, cách), không trùng trong máy chủ |
@@ -56,7 +59,7 @@ Phiên đăng nhập: `{access_token (15 phút), refresh_token (30 ngày), expir
 
 Các mã lỗi: `bad_request`, `bad_username`, `bad_email`, `bad_password`, `password_is_username`, `username_taken`, `wrong_login`,
 `wrong_password`, `bad_code`, `bad_name`, `name_taken`, `slot_taken`, `too_many_characters`,
-`character_not_found`, `bad_server`, `maintenance`, `stale_save`, `data_too_large`, `banned`, `unauthorized`, `rate_limited`, `internal`.
+`character_not_found`, `google_disabled`, `google_expired`, `google_in_use`, `google_already_linked`, `google_failed`, `google_canceled`, `bad_server`, `maintenance`, `stale_save`, `data_too_large`, `banned`, `unauthorized`, `rate_limited`, `internal`.
 
 ## Bảo mật
 

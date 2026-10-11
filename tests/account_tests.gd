@@ -53,6 +53,9 @@ func test_api_flow() -> void:
 	var user := "t%d" % (Time.get_unix_time_from_system() as int % 100000000)
 	var email := user + "@example.com"
 
+	var g: Dictionary = await api.google_login()
+	check("Google chưa cấu hình thì báo rõ", g.code == "google_disabled" or g.code == "google_canceled" or g.ok == false, g)
+
 	var r: Dictionary = await api.register(user, email, "matkhau1")
 	if r.code == "network":
 		check("server tài khoản đang chạy", false, "chạy: cd server && docker compose up -d")

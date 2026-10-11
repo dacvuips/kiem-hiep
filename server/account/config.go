@@ -38,6 +38,15 @@ type Config struct {
 	AdminCookieSecure bool
 	// Thư mục web Admin đã build (server phục vụ tại /admin/). Rỗng = không phục vụ.
 	AdminWebDir string
+
+	// Đăng nhập Google. Thiếu client id/secret hoặc PUBLIC_BASE_URL = tắt (nút Google báo chưa bật).
+	PublicBaseURL      string // địa chỉ công khai của server này, VD https://api.kiemhiep.vn (dùng làm redirect_uri)
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleAuthURL      string
+	GoogleTokenURL     string
+	GoogleJWKSURL      string
+	GoogleIssuer       string // thêm 1 iss được chấp nhận (chỉ dùng khi kiểm thử với Google giả)
 }
 
 func loadConfig() Config {
@@ -60,6 +69,13 @@ func loadConfig() Config {
 		TrustProxy:         env("TRUST_PROXY", "false") == "true",
 		AdminCookieSecure:  env("ADMIN_COOKIE_SECURE", "true") != "false",
 		AdminWebDir:        env("ADMIN_WEB_DIR", ""),
+		PublicBaseURL:      env("PUBLIC_BASE_URL", ""),
+		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
+		GoogleAuthURL:      env("GOOGLE_AUTH_URL", "https://accounts.google.com/o/oauth2/v2/auth"),
+		GoogleTokenURL:     env("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
+		GoogleJWKSURL:      env("GOOGLE_JWKS_URL", "https://www.googleapis.com/oauth2/v3/certs"),
+		GoogleIssuer:       env("GOOGLE_TEST_ISSUER", ""),
 	}
 	if c.DatabaseURL == "" {
 		log.Fatal("thiếu DATABASE_URL")

@@ -1,6 +1,7 @@
 extends AccountScreen
 class_name AccountDialog
-## Hộp thoại Tài Khoản trong game (mở từ nút Tài khoản / Cài Đặt): xem tên + email, đổi mật khẩu, đăng xuất.
+## Hộp thoại Tài Khoản trong game (mở từ nút Tài khoản / Cài Đặt): xem tên + email, đổi mật khẩu (hoặc đặt mật khẩu cho
+## tài khoản chỉ đăng nhập Google), liên kết Google, đăng xuất.
 ## Đổi mật khẩu thành công: server đăng xuất mọi máy khác, máy này giữ đăng nhập (nhận phiên mới).
 ## Mở bằng AccountDialog.open(self) — tự đặt trên 1 CanvasLayer cao để nằm trên mọi UI khác.
 
@@ -17,6 +18,7 @@ const LAYER := 90
 @onready var _eye: Button = %EyeButton
 @onready var _change: TextureButton = %ChangeButton
 @onready var _logout: Button = %LogoutButton
+@onready var _link_google: Button = %LinkGoogleButton
 @onready var _message: Label = %Message
 
 static func open(from: Node) -> AccountDialog:
@@ -37,6 +39,7 @@ func _ready() -> void:
 			_close_dialog())
 	_change.pressed.connect(_on_change_pressed)
 	_logout.pressed.connect(_on_logout_pressed)
+	_link_google.pressed.connect(_on_link_google_pressed)
 	_old.text_submitted.connect(func(_t: String) -> void: _new.grab_focus())
 	_new.text_submitted.connect(func(_t: String) -> void: _new2.grab_focus())
 	_new2.text_submitted.connect(func(_t: String) -> void: _on_change_pressed())
@@ -87,6 +90,25 @@ func _on_change_pressed() -> void:
 		f.text = ""
 	_refresh_info()
 	_toast(_message, "Đã đổi mật khẩu. Các máy khác đã bị đăng xuất", 4.0)
+
+var _google_waiting := false
+
+func _on_link_google_pressed() -> void:
+	if _google_waiting:
+		AccountApi.cancel_google()
+		return
+	if _busy:
+		return
+	_google_waiting = true
+	_set_busy(true, [_change, _logout, _close])
+	_link_google.text = "Đang chờ trình duyệt… (bấm để hủy)"
+	_toast(_message, "Đăng nhập Google trên trình duyệt để liên kết", 300.0)
+	var r: Dictionary = await AccountApi.google_login(true)
+	_google_waiting = false
+	_set_busy(false, [_change, _logout, _close])
+	_link_google.text = "Liên kết tài khoản Google"
+	_refresh_info()
+	_toast(_message, "Đã liên kết Google — lần sau có thể đăng nhập bằng Google" if r.ok else r.message, 4.0)
 
 func _on_logout_pressed() -> void:
 	if _busy:

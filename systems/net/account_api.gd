@@ -30,6 +30,7 @@ var _access_expire_at := 0.0 ## giây (Time.get_ticks_msec()/1000)
 var _refresh := ""
 var _remember := true
 var _refreshing := false
+var _google_cancel := false
 signal _refresh_finished(ok: bool)
 
 func _ready() -> void:
@@ -74,6 +75,37 @@ func change_password(old_password: String, new_password: String) -> Dictionary:
 	if r.ok:
 		_apply_session(r.data)
 	return r
+
+## Đăng nhập Google (hoặc LIÊN KẾT Google nếu link = true và đang đăng nhập): mở trình duyệt của máy, chờ người chơi
+## đăng nhập xong rồi nhận phiên từ server. Gọi cancel_google() để hủy chờ. Trả về như login().
+func google_login(link := false) -> Dictionary:
+	_google_cancel = false
+	var start: Dictionary
+	if link:
+		start = await _authed(HTTPClient.METHOD_POST, "/v1/auth/google/start", {})
+	else:
+		start = await _request(HTTPClient.METHOD_POST, "/v1/auth/google/start", {})
+	if not start.ok:
+		return start
+	var d: Dictionary = start.data
+	OS.shell_open(str(d.auth_url))
+	var interval := maxf(1.0, float(d.get("interval", 2)))
+	var deadline := _now() + float(d.get("expires_in", 300))
+	while _now() < deadline:
+		await get_tree().create_timer(interval).timeout
+		if _google_cancel:
+			return _fail(0, "google_canceled", "Đã hủy đăng nhập Google")
+		var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/google/poll", {"state": d.state, "poll_secret": d.poll_secret})
+		if r.status == 202 or r.code == "network":
+			continue   ## chưa xong / rớt mạng tạm thời: hỏi tiếp
+		if r.ok:
+			_remember = true
+			_apply_session(r.data)
+		return r
+	return _fail(0, "google_expired", "Hết thời gian chờ đăng nhập Google, hãy thử lại")
+
+func cancel_google() -> void:
+	_google_cancel = true
 
 func logout() -> void:
 	if _refresh != "":

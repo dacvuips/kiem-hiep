@@ -37,12 +37,14 @@ var (
 )
 
 type server struct {
-	cfg    Config
-	keys   *keyring
-	db     *pgxpool.Pool
-	mail   *mailer
-	ipRL   *rateLimiter // mọi API tài khoản, theo IP
-	userRL *rateLimiter // đăng nhập sai / quên mật khẩu, theo tên tài khoản
+	cfg        Config
+	keys       *keyring
+	db         *pgxpool.Pool
+	mail       *mailer
+	ipRL       *rateLimiter // mọi API tài khoản, theo IP
+	http       *http.Client
+	googleKeys *googleKeySet
+	userRL     *rateLimiter // đăng nhập sai / quên mật khẩu, theo tên tài khoản
 }
 
 type accountView struct {

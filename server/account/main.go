@@ -48,6 +48,12 @@ func main() {
 		ipRL:   newRateLimiter(120, 60),
 		userRL: newRateLimiter(10, 5),
 	}
+	s.http = &http.Client{Timeout: 10 * time.Second}
+	s.googleKeys = &googleKeySet{url: cfg.GoogleJWKSURL, client: s.http}
+	go s.cleanupOAuth(ctx)
+	if !s.googleEnabled() {
+		log.Printf("đăng nhập Google: TẮT (thiếu GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / PUBLIC_BASE_URL)")
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
@@ -63,6 +69,9 @@ func main() {
 	mux.HandleFunc("POST /v1/auth/reset", wrap(s.handleReset))
 	mux.HandleFunc("POST /v1/account/password", wrap(s.handleChangePassword))
 	mux.HandleFunc("GET /v1/account/me", wrap(s.handleMe))
+	mux.HandleFunc("POST /v1/auth/google/start", wrap(s.handleGoogleStart))
+	mux.HandleFunc("GET /v1/auth/google/callback", s.handleGoogleCallback)
+	mux.HandleFunc("POST /v1/auth/google/poll", wrap(s.handleGooglePoll))
 	mux.HandleFunc("GET /v1/servers", wrap(s.handleServers))
 	mux.HandleFunc("GET /v1/characters", wrap(s.handleListCharacters))
 	mux.HandleFunc("POST /v1/characters", wrap(s.handleCreateCharacter))
