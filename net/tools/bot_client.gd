@@ -94,6 +94,21 @@ func poll() -> void:
 	while peer.get_available_packet_count() > 0:
 		_on_packet(peer.get_packet())
 
+func _read_spawn(b: StreamPeerBuffer) -> void:
+	var id := b.get_u32()
+	var kind := b.get_u8()
+	var n := NetProto.get_str(b)
+	var lv := b.get_u16()
+	b.get_8()
+	known[id] = {"kind": kind, "name": n, "level": lv, "pos": Vector2(b.get_float(), b.get_float())}
+	b.get_data(4)
+	known[id]["hp"] = b.get_u8()
+	if kind == NetProto.KIND_MONSTER:
+		known[id]["monster_id"] = b.get_u16()
+		b.get_data(2)
+	else:
+		NetProto.get_look(b)
+
 func _on_packet(pkt: PackedByteArray) -> void:
 	var b := NetProto.reader(pkt)
 	match b.get_u8():
@@ -106,16 +121,13 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			error_code = NetProto.get_str(b)
 			error_message = NetProto.get_str(b)
 		NetProto.S_SPAWN:
-			var id := b.get_u32()
-			var kind := b.get_u8()
-			var n := NetProto.get_str(b)
-			var lv := b.get_u16()
-			b.get_8()
-			known[id] = {"kind": kind, "name": n, "level": lv, "pos": Vector2(b.get_float(), b.get_float())}
-			b.get_data(4)
-			known[id]["hp"] = b.get_u8()
-			if kind == NetProto.KIND_MONSTER:
-				known[id]["monster_id"] = b.get_u16()
+			_read_spawn(b)
+		NetProto.S_SPAWNS:
+			for i in b.get_u16():
+				_read_spawn(b)
+		NetProto.S_DESPAWNS:
+			for i in b.get_u16():
+				known.erase(b.get_u32())
 		NetProto.S_DESPAWN:
 			known.erase(b.get_u32())
 		NetProto.S_STATE:

@@ -522,14 +522,17 @@ func _send_snapshots() -> void:
 		states.put_u32(now_ms)
 		states.put_u16(0)   ## số mục — ghi lại sau
 		var n := 0
+		## Thực thể mới vào tầm / rời tầm: gộp vào 1 gói mỗi loại (vào map gặp ~50 quái = 1 gói thay vì 50).
+		var spawns := NetProto.writer(NetProto.S_SPAWNS)
+		spawns.put_u16(0)
+		var n_spawn := 0
 		for e in aoi.around(c.entity.pos):
 			if e.eid == c.entity.eid:
 				continue
 			visible[e.eid] = true
 			if not c.known.has(e.eid):
-				var s := NetProto.writer(NetProto.S_SPAWN)
-				e.write_spawn(s)
-				_send(c, s)
+				e.write_spawn(spawns)
+				n_spawn += 1
 				c.known[e.eid] = e.version
 				continue
 			if c.known[e.eid] == e.version:
@@ -542,12 +545,21 @@ func _send_snapshots() -> void:
 			e.write_state(states)
 			c.known[e.eid] = e.version
 			n += 1
+		var gone: Array = []
 		for eid in c.known.keys():
 			if not visible.has(eid):
 				c.known.erase(eid)
-				var d := NetProto.writer(NetProto.S_DESPAWN)
+				gone.append(eid)
+		if not gone.is_empty():
+			var d := NetProto.writer(NetProto.S_DESPAWNS)
+			d.put_u16(gone.size())
+			for eid in gone:
 				d.put_u32(eid)
-				_send(c, d)
+			_send(c, d)
+		if n_spawn > 0:
+			spawns.seek(1)
+			spawns.put_u16(n_spawn)
+			_send(c, spawns)
 		if n > 0:
 			states.seek(5)
 			states.put_u16(n)

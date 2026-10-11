@@ -1,6 +1,7 @@
 # Môi trường chạy trên máy dev:  cd server && docker compose up -d --build
 #   API tài khoản : http://localhost:8080
 #   Web Admin     : http://localhost:8080/admin/
+#   Game server   : docker compose --profile game up -d   (UDP 7777 + WebSocket 7778)
 #   Hộp thư giả   : http://localhost:8025  (xem mã OTP quên mật khẩu)
 #   PostgreSQL    : 127.0.0.1:5432  (user/db kiemhiep, mật khẩu = DB_PASSWORD trong .env)
 # Mọi khóa/mật khẩu nằm trong server/.env (xem .env.example), không có trong file này.
@@ -35,6 +36,17 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       mailpit: { condition: service_started }
+
+  # Game server: cần gói server/game/game_server.pck (bash server/build_game_server.sh).
+  game:
+    build: ./game
+    environment:
+      GAME_SERVICE_KEY: ${GAME_SERVICE_KEY:?thiếu GAME_SERVICE_KEY trong .env}
+      GAME_ACCOUNT_URL: http://account:8080
+      GAME_SERVER_ID: "1"
+    ports: ["7777:7777/udp", "7778:7778"]
+    depends_on: [account]
+    profiles: [game]      # chạy cùng: docker compose --profile game up -d
 
 volumes:
   pgdata:

@@ -110,9 +110,18 @@ Chế độ MAIN_MAP online: `res://net/server/game_server.tscn` (code trong `ne
 `:7778` (web), mô phỏng 18 tick/giây, gửi vị trí 9 lần/giây theo lưới tầm nhìn 1024 px (mỗi người thấy 3x3 ô quanh mình).
 
 ```bash
-GODOT="/duong/dan/Godot_v4.7.2_console.exe" bash server/run_game_server.sh   # đọc GAME_SERVICE_KEY từ server/.env
+# Chạy trong Docker (giống production): xuất gói server (~90 MB, chỉ code + dữ liệu, không hình/âm thanh) rồi build image
+GODOT="/duong/dan/Godot_v4.7.2_console.exe" bash server/build_game_server.sh
+docker compose --profile game up -d
+
+# Hoặc chạy thẳng bằng Godot trên máy (sửa code nhanh, không cần build lại)
+GODOT="/duong/dan/Godot_v4.7.2_console.exe" bash server/run_game_server.sh
+
 godot --headless --path . res://tests/net_tests.tscn                          # kiểm thử bằng bot thật
 ```
+
+Gói server dùng preset export **"Game Server (Linux)"** (chế độ Dedicated Server của Godot: ảnh đã import thành ảnh rỗng,
+loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, thực thể mới vào tầm / rời tầm được gộp vào 1 gói (`S_SPAWNS`, `S_DESPAWNS`).
 
 - Vào map: game gửi access token + mã nhân vật; game server hỏi `POST /internal/game/join` (khóa `GAME_SERVICE_KEY`).
   Nhân vật đăng nhập nơi khác thì phiên cũ bị đá.

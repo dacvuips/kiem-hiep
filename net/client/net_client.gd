@@ -147,6 +147,20 @@ func _process(delta: float) -> void:
 			b.put_u32(Time.get_ticks_msec())
 			_send(b)
 
+func _read_spawn(b: StreamPeerBuffer) -> void:
+	var info := {
+		"eid": b.get_u32(), "kind": b.get_u8(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
+		"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
+		"flags": b.get_u8(), "hp": b.get_u8(),
+	}
+	if int(info.kind) == NetProto.KIND_PLAYER:
+		info["look"] = NetProto.get_look(b)
+	else:
+		info["monster_id"] = b.get_u16()
+		info["series"] = b.get_u8()
+		info["blue"] = b.get_u8() != 0
+	entity_spawned.emit(info)
+
 func _on_packet(pkt: PackedByteArray) -> void:
 	if pkt.is_empty():
 		return
@@ -161,18 +175,13 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_ERROR:
 			_last_error = [NetProto.get_str(b), NetProto.get_str(b)]
 		NetProto.S_SPAWN:
-			var info := {
-				"eid": b.get_u32(), "kind": b.get_u8(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
-				"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
-				"flags": b.get_u8(), "hp": b.get_u8(),
-			}
-			if int(info.kind) == NetProto.KIND_PLAYER:
-				info["look"] = NetProto.get_look(b)
-			else:
-				info["monster_id"] = b.get_u16()
-				info["series"] = b.get_u8()
-				info["blue"] = b.get_u8() != 0
-			entity_spawned.emit(info)
+			_read_spawn(b)
+		NetProto.S_SPAWNS:
+			for i in b.get_u16():
+				_read_spawn(b)
+		NetProto.S_DESPAWNS:
+			for i in b.get_u16():
+				entity_despawned.emit(b.get_u32())
 		NetProto.S_DESPAWN:
 			entity_despawned.emit(b.get_u32())
 		NetProto.S_STATE:

@@ -6,7 +6,7 @@ class_name NetProto
 ## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
-const VERSION := 1
+const VERSION := 2
 const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK gốc)
 const SNAPSHOT_EVERY := 2         ## gửi vị trí mỗi 2 tick = 9 lần/giây
 const CLIENT_SEND_RATE := 15.0    ## game gửi vị trí của mình tối đa 15 lần/giây
@@ -42,6 +42,8 @@ const S_PONG := 9         ## u32 client_ms, u32 server_ms
 const S_KILL := 10        ## u32 monster_eid, u16 monster_id, u16 level, u8 series, u8 blue, f32 x, f32 y, u8 share% — mình được thưởng
 const S_PROGRESS := 11    ## u32 exp_gained, u16 level, i64 current_exp — kinh nghiệm / cấp do server tính
 const S_SAVED := 12       ## u32 version — server vừa lưu nhân vật (game cập nhật version để lần lưu HTTP sau không lệch)
+const S_SPAWNS := 13      ## u16 n, n x (thân S_SPAWN) — gộp mọi thực thể mới vào tầm nhìn trong 1 lần gửi
+const S_DESPAWNS := 14    ## u16 n, n x u32 eid
 const MAX_PROFILE_BYTES := 512 * 1024
 
 const KIND_PLAYER := 1
