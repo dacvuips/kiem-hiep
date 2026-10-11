@@ -37,6 +37,7 @@ func _ready() -> void:
 	NetClient.entity_look.connect(_on_look)
 	NetClient.position_corrected.connect(_on_corrected)
 	NetClient.monster_attack.connect(_on_monster_attack)
+	NetClient.player_cast.connect(_on_player_cast)
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
 	NetClient.saved.connect(SaveManager.set_online_version)
@@ -323,6 +324,23 @@ func _on_monster_attack(m_eid: int, slot: int, target_eid: int, dir64: int) -> v
 	if target_node == null:
 		return
 	m.net_attack(slot, target_node, dir64, mine)
+
+## Người khác ra chiêu: vẽ lại trên nhân vật của họ (không sát thương — máy họ tính đòn thật).
+func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
+	var r: RemotePlayer = _remotes.get(caster_eid)
+	if r == null or not is_instance_valid(r):
+		return
+	var target_node: Node2D = null
+	if target_eid != 0 and (cast_flags & NetProto.CAST_SUPPORT) == 0:
+		if target_eid == NetClient.my_eid:
+			target_node = player
+		elif _remotes.has(target_eid):
+			target_node = _remotes[target_eid]
+		elif _monsters.has(target_eid):
+			target_node = _monsters[target_eid]
+		if target_node != null and not is_instance_valid(target_node):
+			target_node = null
+	VltkSkillRunner.replay(r, skill_id, level, target_node, VltkMath.to_logic(aim))
 
 func _on_monster_killed(k: Dictionary) -> void:
 	var m: VltkMonster = _monsters.get(int(k.eid))

@@ -50,8 +50,8 @@ export default function ProfilePage() {
             <Field label="Mật khẩu hiện tại">
               <input className="input" type="password" autoComplete="current-password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} required />
             </Field>
-            <Field label="Mật khẩu mới" hint="12–128 ký tự, không chứa tên đăng nhập.">
-              <input className="input" type="password" autoComplete="new-password" minLength={12} value={pw} onChange={(e) => setPw(e.target.value)} required />
+            <Field label="Mật khẩu mới" hint="6–128 ký tự, không chứa tên đăng nhập.">
+              <input className="input" type="password" autoComplete="new-password" minLength={6} value={pw} onChange={(e) => setPw(e.target.value)} required />
             </Field>
             <Field label="Nhập lại mật khẩu mới">
               <input className="input" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />

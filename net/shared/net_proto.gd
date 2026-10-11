@@ -33,6 +33,7 @@ const C_PING := 9         ## u32 client_ms
 const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
 const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
+const C_CAST := 18        ## u16 vltk_skill_id, u8 level, u8 cast_flags (CAST_*), u32 target_eid (0 = điểm), u24 x*2, u24 y*2 điểm nhắm
 const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 — khoá bảo vệ (gửi MÃ BĂM, không gửi mật mã)
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
@@ -67,6 +68,7 @@ const S_TRADE_END := 22   ## u8 success, str message
 const S_TEAM_STATE := 24  ## u8 in_team; nếu có: u32 captain_eid, u8 open, u8 pick, u8 turn_index, u8 n, n x thành viên
                           ## (u32 eid, str name, u16 level, i8 camp, u8 lead_level, str sect_name) [0 = đội trưởng],
                           ## u8 n_apply, n x (u32 eid, str name, u16 level)
+const S_CAST := 30        ## u32 caster_eid + thân C_CAST — người khác vừa ra chiêu: CHỈ VẼ lại, không tính sát thương
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name
@@ -106,6 +108,9 @@ static func monster_action_name(i: int) -> String:
 	return MONSTER_ACTIONS[i] if i >= 0 and i < MONSTER_ACTIONS.size() else "stand"
 
 # ---------------------------------------------------------------- ghi
+
+## Cờ của C_CAST / S_CAST.
+const CAST_SUPPORT := 1   ## skill hỗ trợ (buff / bùa / hào quang): không bám mục tiêu
 
 ## Toạ độ trong S_STATE: 24 bit mỗi trục theo nửa pixel (toạ độ thế giới tới ~4 triệu px; map chính nằm ở 71680..84992 px).
 const POS_SCALE := 2.0

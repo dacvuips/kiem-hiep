@@ -390,10 +390,10 @@ func (s *server) handleAdminChangePassword(w http.ResponseWriter, r *http.Reques
 	return writeJSON(w, http.StatusOK, map[string]any{"admin": a.adminRow})
 }
 
-// Mật khẩu admin chặt hơn người chơi: ít nhất 12 ký tự.
+// Mật khẩu admin chặt hơn người chơi: ít nhất 6 ký tự (bắt buộc kèm 2FA).
 func checkAdminPassword(p, username string) error {
-	if n := len([]rune(p)); n < 12 || n > 128 {
-		return newErr(http.StatusBadRequest, "bad_password", "Mật khẩu admin dài 12–128 ký tự")
+	if n := len([]rune(p)); n < 6 || n > 128 {
+		return newErr(http.StatusBadRequest, "bad_password", "Mật khẩu admin dài 6–128 ký tự")
 	}
 	if strings.Contains(strings.ToLower(p), username) {
 		return errPasswordIsName

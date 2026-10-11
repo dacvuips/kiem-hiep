@@ -32,6 +32,7 @@ var chats: Array = []             ## [{channel, from, to, text}]
 var guild: Dictionary = {}        ## bang của mình (S_GUILD)
 var guild_list: Array = []
 var states_received := 0
+var casts: Array = []             ## [{caster, skill, level, flags, target, aim}] (S_CAST)
 var closed := false
 var _token := ""
 var _character_id := 0
@@ -71,6 +72,15 @@ func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	b.put_u8(NetProto.action_index(action))
 	b.put_u8(0)
 	b.put_u8(0)
+	_send(b, NetProto.CH_RELIABLE)
+
+func cast(skill_id: int, lv: int, target_eid: int, aim: Vector2, cast_flags := 0) -> void:
+	var b := NetProto.writer(NetProto.C_CAST)
+	b.put_u16(skill_id)
+	b.put_u8(lv)
+	b.put_u8(cast_flags)
+	b.put_u32(target_eid)
+	NetProto.put_state_pos(b, aim)
 	_send(b, NetProto.CH_RELIABLE)
 
 func damage(monster_eid: int, amount: int) -> void:
@@ -314,6 +324,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list = parsed if parsed is Array else []
+		NetProto.S_CAST:
+			var cst := {"caster": b.get_u32(), "skill": b.get_u16(), "level": b.get_u8(), "flags": b.get_u8(), "target": b.get_u32()}
+			cst["aim"] = NetProto.get_state_pos(b)
+			casts.append(cst)
 		NetProto.S_CHAT:
 			var ch := b.get_u8()
 			b.get_u32()

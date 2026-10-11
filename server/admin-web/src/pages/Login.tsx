@@ -216,12 +216,12 @@ function ChangeTempPassword() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <StepTitle icon={<KeyRound className="h-5 w-5" />} title="Đặt mật khẩu mới" desc="Bạn đang dùng mật khẩu tạm. Hãy đặt mật khẩu riêng (ít nhất 12 ký tự)." />
+      <StepTitle icon={<KeyRound className="h-5 w-5" />} title="Đặt mật khẩu mới" desc="Bạn đang dùng mật khẩu tạm. Hãy đặt mật khẩu riêng (ít nhất 6 ký tự)." />
       <Field label="Mật khẩu tạm">
         <input className="input" type="password" autoComplete="current-password" autoFocus value={oldPw} onChange={(e) => setOldPw(e.target.value)} required />
       </Field>
-      <Field label="Mật khẩu mới" hint="12–128 ký tự, không chứa tên đăng nhập. Nên dùng cụm từ dài dễ nhớ.">
-        <input className="input" type="password" autoComplete="new-password" minLength={12} value={pw} onChange={(e) => setPw(e.target.value)} required />
+      <Field label="Mật khẩu mới" hint="6–128 ký tự, không chứa tên đăng nhập. Nên dùng cụm từ dài dễ nhớ.">
+        <input className="input" type="password" autoComplete="new-password" minLength={6} value={pw} onChange={(e) => setPw(e.target.value)} required />
       </Field>
       <Field label="Nhập lại mật khẩu mới">
         <input className="input" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />

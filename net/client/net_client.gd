@@ -28,6 +28,7 @@ signal team_invite(captain_eid: int, captain_name: String)
 signal guild_received(data: Dictionary)
 signal guild_list(list: Array)
 signal guild_invite(guild_name: String, from_name: String)
+signal player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2)
 signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
@@ -119,6 +120,18 @@ func send_move(feet: Vector2, dir: int, action: String, z: float, flags: int) ->
 	b.put_u8(clampi(int(z), 0, 255))
 	b.put_u8(flags)
 	_send(b)   ## tin cậy: gói nhỏ, tối đa 15/giây — gửi không tin cậy từ máy người chơi từng bị ENet bỏ mất hàng loạt
+
+## Mình vừa ra chiêu: server chuyển cho người xung quanh vẽ lại. `aim` = toạ độ chân điểm nhắm (px thế giới).
+func send_cast(skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_CAST)
+	b.put_u16(clampi(skill_id, 0, 65535))
+	b.put_u8(clampi(level, 1, 63))
+	b.put_u8(cast_flags)
+	b.put_u32(target_eid)
+	NetProto.put_state_pos(b, aim)
+	_send(b)
 
 ## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung).
 func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
@@ -299,6 +312,13 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					"z": b.get_u8(), "flags": b.get_u8(), "hp": b.get_u8(),
 				}
 				entity_state.emit(eid, server_ms, st)
+		NetProto.S_CAST:
+			var caster := b.get_u32()
+			var sid := b.get_u16()
+			var lv := b.get_u8()
+			var cf := b.get_u8()
+			var tgt := b.get_u32()
+			player_cast.emit(caster, sid, lv, cf, tgt, NetProto.get_state_pos(b))
 		NetProto.S_LOOK:
 			var eid := b.get_u32()
 			entity_look.emit(eid, NetProto.get_look(b))

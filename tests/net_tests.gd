@@ -398,6 +398,28 @@ func test_guild() -> void:
 	h.close()
 
 ## C5: khoá bảo vệ do server giữ — đặt mật mã thì khoá, khoá thì không mời giao dịch, mở bằng mật mã đúng.
+## Ra chiêu: người đứng gần nhận S_CAST (đúng chiêu / cấp / mục tiêu / điểm nhắm) để vẽ lại; người ra chiêu không nhận lại.
+func test_cast() -> void:
+	var ai := await make_player("k")
+	var bi := await make_player("l")
+	var a := bot(ai[0], ai[1])
+	var b := bot(bi[0], bi[1])
+	if not await wait_until(func() -> bool: return a.in_world and b.in_world and a.known.has(b.eid) and b.known.has(a.eid)):
+		check("Chiêu: 2 bot thấy nhau", false)
+		return
+	a.cast(1234, 7, b.eid, b.feet)
+	var got := await wait_until(func() -> bool: return not b.casts.is_empty(), 3.0)
+	var c: Dictionary = b.casts[0] if got else {}
+	check("Chiêu: người gần nhận S_CAST", got and int(c.caster) == a.eid and int(c.skill) == 1234 and int(c.level) == 7
+		and int(c.target) == b.eid and (c.aim as Vector2).distance_to(b.feet) < 1.0, c)
+	check("Chiêu: người ra chiêu không nhận lại", a.casts.is_empty())
+	for i in 30:
+		a.cast(1234, 7, 0, a.feet)
+	await get_tree().create_timer(1.0).timeout
+	check("Chiêu: giới hạn số chiêu mỗi giây", b.casts.size() <= 1 + GameServer.MAX_CASTS_PER_SEC, b.casts.size())
+	a.close()
+	b.close()
+
 func test_security() -> void:
 	var si := await make_player("s")
 	var ti := await make_player("t")
@@ -535,3 +557,4 @@ func run() -> void:
 	await test_chat()
 	await test_guild()
 	await test_security()
+	await test_cast()

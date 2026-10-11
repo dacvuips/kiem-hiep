@@ -52,6 +52,8 @@ class Conn:
 	var packets := 0
 	var packets_window := 0.0
 	var damage_msgs := 0
+	var cast_msgs := 0
+	var cast_window := 0.0
 	var damage_window := 0.0
 	## Bản dữ liệu nhân vật của SERVER (PlayerProfile.to_dict) — nguồn sự thật về cấp / kinh nghiệm khi online.
 	var data: Dictionary = {}
@@ -392,6 +394,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_MOVE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 12:
 				_on_move(c, b)
+		NetProto.C_CAST:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 14:
+				_on_cast(c, b)
 		NetProto.C_DAMAGE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 9:
 				_on_damage(c, b)
@@ -559,6 +564,37 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 
 ## Sát thương người chơi gây cho quái (tính ở máy người đánh bằng pipeline chiêu hiện có). Server kiểm tra: quái còn sống,
 ## đủ gần, không vượt trần sát thương của chính nhân vật (ProfileGuard.max_hit), không gửi dồn dập.
+## Người chơi ra chiêu: chuyển cho người đang thấy họ để VẼ lại (sát thương vẫn đi đường C_DAMAGE riêng).
+const MAX_CASTS_PER_SEC := 12
+
+func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
+	if _now - c.cast_window > 1.0:
+		c.cast_window = _now
+		c.cast_msgs = 0
+	c.cast_msgs += 1
+	if c.cast_msgs > MAX_CASTS_PER_SEC or (c.entity.flags & NetProto.FLAG_DEAD) != 0:
+		return
+	var skill_id := b.get_u16()
+	var level := clampi(b.get_u8(), 1, 63)
+	var cast_flags := b.get_u8() & NetProto.CAST_SUPPORT
+	var target_eid := b.get_u32()
+	var aim := NetProto.get_state_pos(b)
+	if aim.distance_to(c.entity.pos) > NetProto.AOI_CELL * 1.5:
+		aim = c.entity.pos
+	var out := NetProto.writer(NetProto.S_CAST)
+	out.put_u32(c.entity.eid)
+	out.put_u16(skill_id)
+	out.put_u8(level)
+	out.put_u8(cast_flags)
+	out.put_u32(target_eid)
+	NetProto.put_state_pos(out, aim)
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			for v: ServerEntity in aoi.bucket(c.entity.cell + Vector2i(dx, dy)).values():
+				var vc: Conn = _players_by_eid.get(v.eid)
+				if vc and vc != c and vc.known.has(c.entity.eid):
+					_send(vc, out)
+
 func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
 	var amount := float(b.get_u32())

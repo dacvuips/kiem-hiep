@@ -163,6 +163,7 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
 		_toggle_aura(skill, caster)
 		if is_aura_active(skill) and USE_VLTK_SKILL_FX:
 			VltkSkillRunner.play_support(caster, null, skill, _learned_level(skill))
+			_net_cast(skill, caster, null, true)
 		_cooldowns[skill.id] = AURA_TOGGLE_DELAY
 		_cooldown_totals[skill.id] = AURA_TOGGLE_DELAY
 		skill_cast.emit(skill.id)
@@ -174,11 +175,14 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
 	if self_buff:
 		_play_vltk_precast(skill, caster)
 		_cast_support_buff(skill, caster)
+		_net_cast(skill, caster, null, true)
 	elif is_instant_curse(skill):
 		_play_vltk_precast(skill, caster, target)
 		_cast_instant_curse(skill, caster, target)
+		_net_cast(skill, caster, target, true)
 	elif USE_VLTK_SKILL_FX and VltkSkillRunner.supports(skill, _learned_level(skill)):
 		VltkSkillRunner.execute(caster, target, stats, skill, _learned_level(skill))
+		_net_cast(skill, caster, target, false)
 	else:
 		SectSkillCast.execute(caster, target, stats, skill)
 	## Đánh trúng quái/người nào thì vòng đỏ hiện dưới chân đó (như khi bấm chọn).
@@ -186,6 +190,20 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
 		caster.mark_cast_target(target)
 	skill_cast.emit(skill.id)
 	return true
+
+## Online: báo server để máy người xung quanh VẼ lại chiêu này (chỉ nhân vật của mình, không phải quái / bot dùng chung bộ điều khiển).
+func _net_cast(skill: SkillDefinition, caster: Node2D, target: Node2D, support: bool) -> void:
+	if skill.vltk_skill_id <= 0 or not caster.is_in_group("player") or not NetClient.is_in_world():
+		return
+	var aim_node: Node2D = target if target != null else caster
+	var target_eid := 0
+	if target != null and not target.has_meta("cast_point"):
+		if target is RemotePlayer:
+			target_eid = (target as RemotePlayer).eid
+		elif "net_eid" in target:
+			target_eid = int(target.net_eid)
+	NetClient.send_cast(skill.vltk_skill_id, _learned_level(skill), NetProto.CAST_SUPPORT if support else 0,
+		target_eid, VltkMath.ground_of(aim_node))
 
 ## Buff hỗ trợ: luôn áp lên người thi triển; skill có TargetAlly + vùng ảnh hưởng (VD Thanh Phong phù
 ## 3×3 ô) thì đồng đội trong vùng quanh người thi triển cũng được hưởng (CombatTargeting quyết định ai là

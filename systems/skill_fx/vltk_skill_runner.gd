@@ -190,6 +190,28 @@ static func play_support(caster: Node2D, target: Node2D, skill: SkillDefinition,
 	else:
 		caster.get_tree().create_timer(delay, false).timeout.connect(fire)
 
+## Online: VẼ LẠI chiêu người chơi khác vừa ra (S_CAST) — ảnh xuất chiêu, tiếng, đội hình đạn; ctx.stats = null nên không
+## gây sát thương (máy người ra chiêu tính đòn thật). Skill cận chiến chỉ diễn 1 đòn skill con vào mục tiêu (không lao tới).
+static func replay(caster: Node2D, vltk_skill_id: int, level: int, aim_node: Node2D, aim_logic: Vector2) -> void:
+	if vltk_skill_id <= 0 or not VltkSkillData.has_skill(vltk_skill_id):
+		return
+	var s := VltkSkillData.skill(vltk_skill_id, level)
+	play_precast(caster, s)
+	play_cast_sound(caster, vltk_skill_id)
+	var fire_id := vltk_skill_id
+	if is_melee_supported(s):
+		fire_id = int(s.get("child", 0))
+	elif int(s.get("style", 0)) != VltkSkillCaster.STYLE_MISSILES:
+		return
+	if fire_id <= 0:
+		return
+	var ctx := VltkCastContext.new()
+	ctx.launcher = caster
+	ctx.world = caster.get_parent()
+	ctx.stats = null
+	var des := VltkMath.logic_of(aim_node) if aim_node != null else aim_logic
+	VltkSkillCaster.cast(ctx, fire_id, level, des, aim_node)
+
 ## Tiếng ra chiêu gốc (KSkill::PlayPreCastSound: ManCastSnd / FMCastSnd theo giới tính người thi triển).
 ## Giọng theo nhân vật đang hiển thị (avatar.gender) để khớp với tiếng đánh/chạy của CharacterAvatar; quái/NPC không có
 ## avatar thì giọng nam. Skill không có tiếng gốc thì thôi (âm theo hệ của SfxManager.play_skill_cast vẫn chạy riêng).
