@@ -35,6 +35,28 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 	var sec := SocialUi.section("📜 Bang hội đang tuyển người", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
 	if wait > 0:
 		sec[1].add_child(SocialUi.label("Mới rời bang — còn %d giờ nữa mới xin vào bang khác được." % int(ceil(wait / 3600.0)), SocialUi.WARN, 13))
+	if NetClient.is_in_world() and NetWorldSync.current != null:
+		## Online: danh sách bang thật từ server (S_GUILD_LIST).
+		var list: Array = NetWorldSync.current.guild_list
+		if list.is_empty():
+			sec[1].add_child(SocialUi.label("Chưa có bang hội nào trên máy chủ (hoặc đang tải).", SocialUi.MUTED, 13))
+		for g in list:
+			var head := HBoxContainer.new()
+			head.add_theme_constant_override("separation", 8)
+			var name_l := SocialUi.label(str(g.name), Camp.get_color(int(g.camp)), 15)
+			name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			head.add_child(name_l)
+			head.add_child(SocialUi.label("Bang chủ %s · %s · %d/%d người" % [g.master, Camp.get_camp_name(int(g.camp)), int(g.members), int(g.cap)], SocialUi.SUBTITLE, 12))
+			var b := SocialUi.small_button("Xin vào")
+			b.disabled = wait > 0 or guild.in_guild() or not bool(g.recruit)
+			var mock := MockPlayer.new()
+			mock.guild_name = str(g.name)
+			b.pressed.connect(func() -> void: guild.apply_join(mock, hub.team))
+			head.add_child(b)
+			sec[1].add_child(head)
+			sec[1].add_child(SocialUi.label("   Khuynh hướng: %s · Hoạt động: %s — %s" % [g.get("tendency", "—"), g.get("activity", "—"), g.get("recruit_msg", "")], SocialUi.TEXT, 12))
+		into.add_child(sec[0])
+		return
 	for m in SocialDirectory.players(profile):
 		if m.guild_figure != GuildRules.Figure.MASTER or m.guild_name == "":
 			continue

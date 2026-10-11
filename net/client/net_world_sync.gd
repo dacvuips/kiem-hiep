@@ -22,6 +22,8 @@ var _reconnect_in := -1.0
 
 ## Đang chạy trong map (để SocialDirectory lấy người chơi thật ở gần).
 static var current: NetWorldSync
+## Danh sách bang trên server (S_GUILD_LIST) cho màn xin vào bang.
+var guild_list: Array = []
 
 static func is_online_mode() -> bool:
 	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0 and not ServerSelectScreen.selected_server.is_empty()
@@ -49,6 +51,9 @@ func _ready() -> void:
 	NetClient.stall_items.connect(_on_stall_items)
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_invite.connect(_on_team_invite)
+	NetClient.guild_received.connect(_on_guild)
+	NetClient.guild_list.connect(func(list: Array) -> void: guild_list = list)
+	NetClient.guild_invite.connect(_on_guild_invite)
 	current = self
 	_add_chat_box()
 	_connect()
@@ -89,6 +94,7 @@ func _notify(text: String) -> void:
 		player.notify(text)
 
 func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
+	NetClient.send_guild(GuildServer.G_LIST)
 	_notify("Đã vào máy chủ %s" % ServerSelectScreen.selected_server.get("name", ""))
 	_teleport(feet)
 	_last_sent = {}
@@ -199,6 +205,15 @@ func _on_trade_end(success: bool, message: String) -> void:
 	var hub := _hub()
 	if hub and hub.trade is NetTradeSession:
 		(hub.trade as NetTradeSession).end(success, message)
+
+func _on_guild(data: Dictionary) -> void:
+	var hub := _hub()
+	if hub:
+		hub.guild.apply_net_guild(data)
+
+func _on_guild_invite(guild_name: String, from_name: String) -> void:
+	_ask("Bang hội", "%s mời bạn vào bang %s." % [from_name, guild_name], func(ok: bool) -> void:
+		NetClient.send_guild(GuildServer.G_ANSWER, {"guild": guild_name, "accept": ok}))
 
 func _on_team_state(st: Dictionary) -> void:
 	var hub := _hub()

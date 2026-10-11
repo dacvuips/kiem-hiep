@@ -16,6 +16,16 @@ func join(access_token: String, character_id: int) -> Dictionary:
 func status(account_ids: Array) -> Dictionary:
 	return await _call(HTTPClient.METHOD_POST, "/internal/game/status", {"account_ids": account_ids})
 
+func list_guilds() -> Dictionary:
+	return await _call(HTTPClient.METHOD_GET, "/internal/game/guilds?server_id=%d" % server_id, {})
+
+func save_guild(guild_name: String, data: Dictionary, old_name := "") -> Dictionary:
+	return await _call(HTTPClient.METHOD_PUT, "/internal/game/guilds",
+		{"server_id": server_id, "name": guild_name, "old_name": old_name, "data": data})
+
+func delete_guild(guild_name: String) -> Dictionary:
+	return await _call(HTTPClient.METHOD_DELETE, "/internal/game/guilds?server_id=%d&name=%s" % [server_id, guild_name.uri_encode()], {})
+
 func save_character(character_id: int, version: int, data: Dictionary) -> Dictionary:
 	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id, {"version": version, "data": data})
 
@@ -23,7 +33,8 @@ func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Diction
 	var http := HTTPRequest.new()
 	http.timeout = 10.0
 	add_child(http)
-	var err := http.request(base_url + path, ["Content-Type: application/json", "X-Service-Key: " + service_key], method, JSON.stringify(body))
+	var payload := "" if method == HTTPClient.METHOD_GET else JSON.stringify(body)
+	var err := http.request(base_url + path, ["Content-Type: application/json", "X-Service-Key: " + service_key], method, payload)
 	if err != OK:
 		http.queue_free()
 		return {"ok": false, "code": "account_unreachable", "message": "Máy chủ tài khoản không phản hồi"}

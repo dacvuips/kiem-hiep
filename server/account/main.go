@@ -82,6 +82,9 @@ func main() {
 	mux.HandleFunc("POST /internal/game/join", wrap(s.handleInternalJoin))
 	mux.HandleFunc("PUT /internal/game/characters/{id}", wrap(s.handleInternalSave))
 	mux.HandleFunc("POST /internal/game/status", wrap(s.handleInternalStatus))
+	mux.HandleFunc("GET /internal/game/guilds", wrap(s.handleInternalGuilds))
+	mux.HandleFunc("PUT /internal/game/guilds", wrap(s.handleInternalSaveGuild))
+	mux.HandleFunc("DELETE /internal/game/guilds", wrap(s.handleInternalDeleteGuild))
 
 	// Web Admin
 	mux.HandleFunc("POST /admin/api/login", wrap(s.handleAdminLogin))

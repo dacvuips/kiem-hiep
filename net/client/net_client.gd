@@ -25,6 +25,9 @@ signal trade_end(success: bool, message: String)
 signal stall_items(seller_eid: int, title: String, items: Array)
 signal team_state(state: Dictionary)
 signal team_invite(captain_eid: int, captain_name: String)
+signal guild_received(data: Dictionary)
+signal guild_list(list: Array)
+signal guild_invite(guild_name: String, from_name: String)
 signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
@@ -168,6 +171,15 @@ func send_stall(op: int, title := "", seller_eid := 0, uid := "") -> void:
 		SocialServer.STALL_BUY:
 			b.put_u32(seller_eid)
 			NetProto.put_str(b, uid)
+	_send(b)
+
+## Bang hội: op = GuildServer.G_*, args = tham số.
+func send_guild(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_GUILD)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
 
 func send_chat(channel: int, to_name: String, text: String) -> void:
@@ -362,6 +374,15 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				for i in b.get_u8():
 					st.applicants.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16()})
 			team_state.emit(st)
+		NetProto.S_GUILD:
+			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			guild_received.emit(parsed if parsed is Dictionary else {})
+		NetProto.S_GUILD_LIST:
+			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			guild_list.emit(parsed if parsed is Array else [])
+		NetProto.S_GUILD_INVITE:
+			var gname := NetProto.get_str(b)
+			guild_invite.emit(gname, NetProto.get_str(b))
 		NetProto.S_CHAT:
 			var ch := b.get_u8()
 			var from := b.get_u32()

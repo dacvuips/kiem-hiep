@@ -33,6 +33,7 @@ const C_PING := 9         ## u32 client_ms
 const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
 const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
+const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
 const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá trị), u8 arg2 (đồng ý / chế độ)
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
@@ -65,6 +66,9 @@ const S_TRADE_END := 22   ## u8 success, str message
 const S_TEAM_STATE := 24  ## u8 in_team; nếu có: u32 captain_eid, u8 open, u8 pick, u8 turn_index, u8 n, n x thành viên
                           ## (u32 eid, str name, u16 level, i8 camp, u8 lead_level, str sect_name) [0 = đội trưởng],
                           ## u8 n_apply, n x (u32 eid, str name, u16 level)
+const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
+const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
+const S_GUILD_INVITE := 29 ## str guild_name, str from_name
 const S_CHAT := 26        ## u8 channel, u32 from_eid, str from_name, str to_name (nhắn riêng), str text
 const S_TEAM_INVITE := 25 ## u32 captain_eid, str captain_name — được mời vào đội
 const S_STALL_ITEMS := 23 ## u32 seller_eid, str title ("" = quầy đóng), u16 n, n x str json đồ (có giá)

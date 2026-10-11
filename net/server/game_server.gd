@@ -106,6 +106,7 @@ var _now := 0.0
 var max_players := 2000
 var social: SocialServer
 var chat: ChatServer
+var guild: GuildServer
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
 var _status_polling := false
@@ -135,6 +136,8 @@ func _ready() -> void:
 	_spawn_monsters()
 	social = SocialServer.new(self)
 	chat = ChatServer.new(self)
+	guild = GuildServer.new(self)
+	guild.load_all()
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
 	var ws_port := int(_env("GAME_WS_PORT", "7778"))
@@ -188,6 +191,7 @@ func _process(delta: float) -> void:
 		_tick += 1
 		_simulate(step)
 		social.tick(step, _now)
+		guild.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -361,6 +365,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_STALL:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
 				social.on_stall(c, b)
+		NetProto.C_GUILD:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				guild.on_guild(c, b)
 		NetProto.C_CHAT:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				chat.on_chat(c, b)
@@ -459,6 +466,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	w.put_float(e.pos.y)
 	NetProto.put_str(w, e.name)
 	_send(c, w)
+	guild.on_join(c)
 	send_profile(c)
 	print("Vào map: %s (%s) eid %d — online %d" % [e.name, c.username, e.eid, _by_character.size()])
 
@@ -646,6 +654,8 @@ func send_profile(c: Conn) -> void:
 	b.put_u32(c.grant_seq)
 	NetProto.put_json(b, c.data)
 	_send(c, b)
+	if c.entity and c.profile and not c.profile.guild.is_empty():
+		guild.send_guild(c)   ## bản bang có cờ "của mình" (S_PROFILE chép bản chung)
 
 func notice(c: Conn, text: String) -> void:
 	var b := NetProto.writer(NetProto.S_NOTICE)

@@ -22,7 +22,8 @@ const MIN_CAP := 300.0
 ## Kết quả có khoá "_money_from_server" = true nếu tiền của game bị bác (đã dùng tiền server — server đã gồm mọi khoản cho).
 static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0) -> Dictionary:
 	var merged := client_data.duplicate(true)
-	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender", "lead_level", "lead_exp", "server_seen"]:
+	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender", "lead_level", "lead_exp", "server_seen",
+			"guild", "guild_join_after", "camp"]:
 		if server_data.has(k):
 			merged[k] = server_data[k]
 	var fresh := PlayerProfile.from_dict(merged)

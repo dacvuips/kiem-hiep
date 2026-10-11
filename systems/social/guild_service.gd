@@ -24,6 +24,11 @@ func _init(p: PlayerProfile) -> void:
 	profile = p
 	rng.randomize()
 
+## Online: bang nằm ở game server; S_GUILD gửi bản mới (cờ "local" ở mục của mình).
+func apply_net_guild(data: Dictionary) -> void:
+	profile.guild = data
+	changed.emit()
+
 func in_guild() -> bool:
 	return not profile.guild.is_empty()
 
@@ -80,6 +85,9 @@ func has_perm(perm: String) -> bool:
 
 ## Trao/thu quyền cho 1 thành viên (chỉ Bang chủ; không đổi quyền của Bang chủ).
 func set_perms(member_name: String, perms: Array) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_PERMS, {"name": member_name, "perms": perms})
+		return ""
 	if not is_master():
 		return _say("Chỉ Bang chủ mới phân quyền được.")
 	var m := _find(member_name)
@@ -139,6 +147,9 @@ func create_blockers(team: TeamService = null) -> Array[String]:
 	return out
 
 func create(guild_title: String, camp: int, team: TeamService = null) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_CREATE, {"title": guild_title, "camp": camp})
+		return ""
 	if not GuildRules.is_valid_name(guild_title):
 		return _say("Tên bang hội không hợp lệ (1-%d ký tự)." % int(SocialRules.tong()["name_max_length"]))
 	if camp not in GuildRules.CAMPS:
@@ -169,6 +180,9 @@ func _add_local(figure: int) -> void:
 # ------------------------------------------------------------------ vào / rời bang
 ## Xin vào bang của `master` (bang chủ/trưởng lão giả đang tuyển). Bang giả được dựng từ SocialDirectory.
 func apply_join(target: MockPlayer, team: TeamService = null) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_APPLY, {"guild": target.guild_name})
+		return ""
 	if in_guild():
 		return _say("Thành viên bang hội không thể gia nhập bang hội khác!")
 	if team != null and team.in_team():
@@ -197,6 +211,9 @@ func apply_join(target: MockPlayer, team: TeamService = null) -> String:
 
 ## Quan chức mời 1 người chơi giả vào bang.
 func invite(m: MockPlayer) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_INVITE, {"eid": m.id})
+		return ""
 	if not is_officer():
 		return _say("Chỉ Bang chủ/Trưởng lão mới mời người vào bang.")
 	if is_full():
@@ -222,6 +239,9 @@ func _enroll(m: MockPlayer) -> void:
 	changed.emit()
 
 func accept_applicant(ap_name: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_ACCEPT, {"name": ap_name})
+		return ""
 	if not is_officer():
 		return _say("Chỉ Bang chủ/Trưởng lão mới nhận người.")
 	var found := {}
@@ -242,6 +262,9 @@ func accept_applicant(ap_name: String) -> String:
 	return ""
 
 func reject_applicant(ap_name: String) -> void:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_REJECT, {"name": ap_name})
+		return
 	for a in applies().duplicate():
 		if a["name"] == ap_name:
 			applies().erase(a)
@@ -249,6 +272,8 @@ func reject_applicant(ap_name: String) -> void:
 
 ## Người chơi giả xin vào bang của mình (chỉ khi đang tuyển người). Trả về tên người vừa xin hoặc "".
 func simulate_applicants() -> String:
+	if NetClient.is_in_world():
+		return ""   ## người xin vào là người thật
 	if not in_guild() or not is_officer() or not bool(profile.guild.get("recruit", false)) or is_full():
 		return ""
 	if rng.randf() > 0.35:
@@ -279,6 +304,9 @@ func join_cooldown_left() -> int:
 ## Rời bang: Bang chủ không rời được (phải nhường chức); người khác trả phí rời bang (LeavMn lượng + LeaveRp danh vọng) và phải chờ LeaveTm
 ## giây mới xin vào bang khác được.
 func leave() -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_LEAVE, {})
+		return ""
 	if not in_guild():
 		return "Bạn chưa có bang hội."
 	if is_master():
@@ -306,6 +334,9 @@ func _release_mock(member_name: String) -> void:
 
 ## Giải tán bang (chỉ Bang chủ). Các thành viên giả được thả.
 func disband() -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_DISBAND, {})
+		return ""
 	if not is_master():
 		return _say("Chỉ Bang chủ mới giải tán được bang hội.")
 	for m in members():
@@ -319,6 +350,9 @@ func disband() -> String:
 # ------------------------------------------------------------------ chức vụ / quản lý
 ## Bổ nhiệm — KPlayerTong::CheckInstate gốc: ai được đổi chức ai, và giới hạn 7 Trưởng lão / 56 Đội trưởng.
 func instate(member_name: String, new_figure: int) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_INSTATE, {"name": member_name, "figure": new_figure})
+		return ""
 	if not is_officer() or not has_perm(GuildRules.PERM_INSTATE):
 		return _say("Bạn không có quyền bổ nhiệm.")
 	var m := _find(member_name)
@@ -340,6 +374,9 @@ func instate(member_name: String, new_figure: int) -> String:
 	return ""
 
 func kick(member_name: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_KICK, {"name": member_name})
+		return ""
 	if not is_officer() or not has_perm(GuildRules.PERM_KICK):
 		return _say("Bạn không có quyền khai trừ.")
 	var m := _find(member_name)
@@ -356,6 +393,9 @@ func kick(member_name: String) -> String:
 
 ## Nhường chức Bang chủ cho một Trưởng lão (người nhường xuống làm Trưởng lão).
 func change_master(member_name: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_MASTER, {"name": member_name})
+		return ""
 	if not is_master():
 		return _say("Chỉ Bang chủ mới nhường chức được.")
 	var m := _find(member_name)
@@ -374,6 +414,9 @@ func change_master(member_name: String) -> String:
 	return ""
 
 func set_notice(text: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_NOTICE, {"text": text})
+		return ""
 	if not has_perm(GuildRules.PERM_LOG):
 		return _say("Bạn không có quyền sửa công cáo bang hội.")
 	profile.guild["notice"] = text.strip_edges().left(MAX_NOTICE)
@@ -382,6 +425,9 @@ func set_notice(text: String) -> String:
 
 ## "Sự việc": thêm 1 dòng vào nhật ký sự kiện của bang (cần quyền Nhật ký).
 func add_event(text: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_EVENT, {"text": text})
+		return ""
 	if not has_perm(GuildRules.PERM_LOG):
 		return _say("Bạn không có quyền ghi nhật ký bang hội.")
 	var t := text.strip_edges().left(80)
@@ -393,6 +439,9 @@ func add_event(text: String) -> String:
 
 ## Đổi tên bang (cần quyền Đổi tên).
 func rename(new_name: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_RENAME, {"name": new_name})
+		return ""
 	if not in_guild() or not has_perm(GuildRules.PERM_RENAME):
 		return _say("Bạn không có quyền đổi tên bang hội.")
 	if not GuildRules.is_valid_name(new_name):
@@ -411,6 +460,9 @@ func rename(new_name: String) -> String:
 
 ## Thông tin CHIÊU MỘ (màn "Chiêu Mộ", nút "Bảo lưu và công bố tin"): khuynh hướng, hoạt động chính, lời nhắn chào, cấp tự nhận, cấp từ chối.
 func set_recruit_info(tendency: String, activity: String, message_text: String, accept_level: int, reject_level: int) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_RECRUIT_INFO, {"tendency": tendency, "activity": activity, "msg": message_text, "accept_level": accept_level, "reject_level": reject_level})
+		return ""
 	if not is_officer():
 		return _say("Chỉ Bang chủ/Trưởng lão mới công bố tin chiêu mộ.")
 	profile.guild["tendency"] = tendency
@@ -423,6 +475,9 @@ func set_recruit_info(tendency: String, activity: String, message_text: String, 
 	return ""
 
 func set_recruit(value: bool) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_RECRUIT, {"value": value})
+		return ""
 	if not is_officer():
 		return _say("Chỉ Bang chủ/Trưởng lão mới đổi được.")
 	profile.guild["recruit"] = value
@@ -438,6 +493,9 @@ func set_accept_level(level: int) -> String:
 	return ""
 
 func set_title(member_name: String, title: String) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_TITLE, {"name": member_name, "title": title})
+		return ""
 	if not is_officer():
 		return _say("Chỉ Bang chủ/Trưởng lão mới đặt danh hiệu.")
 	var m := _find(member_name)
@@ -450,6 +508,9 @@ func set_title(member_name: String, title: String) -> String:
 # ------------------------------------------------------------------ quỹ bang / cấp bang / thử thách
 ## Quyên góp tiền vào quỹ bang (cộng điểm cống hiến bằng số tiền / 1000).
 func donate(amount: int) -> String:
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_DONATE, {"amount": amount})
+		return ""
 	if not in_guild():
 		return "Bạn chưa có bang hội."
 	if amount <= 0 or profile.gold < amount:

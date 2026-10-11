@@ -29,6 +29,8 @@ var stall: Dictionary = {}        ## {seller, title, items}
 var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
 var team_invites: Array = []      ## [captain_eid]
 var chats: Array = []             ## [{channel, from, to, text}]
+var guild: Dictionary = {}        ## bang của mình (S_GUILD)
+var guild_list: Array = []
 var states_received := 0
 var closed := false
 var _token := ""
@@ -121,6 +123,18 @@ func stall_op(op: int, title := "", seller := 0, uid := "") -> void:
 		b.put_u32(seller)
 		NetProto.put_str(b, uid)
 	_send(b, NetProto.CH_RELIABLE)
+
+func guild_op(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_GUILD)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+func guild_member_names() -> Array:
+	var out := []
+	for m in guild.get("members", []):
+		out.append(str(m.get("name", "")))
+	return out
 
 func say(channel: int, text: String, to := "") -> void:
 	var b := NetProto.writer(NetProto.C_CHAT)
@@ -286,6 +300,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					NetProto.get_str(b)
 					b.get_u16()
 			team = st
+		NetProto.S_GUILD:
+			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			guild = parsed if parsed is Dictionary else {}
+		NetProto.S_GUILD_LIST:
+			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			guild_list = parsed if parsed is Array else []
 		NetProto.S_CHAT:
 			var ch := b.get_u8()
 			b.get_u32()

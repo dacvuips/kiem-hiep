@@ -359,6 +359,44 @@ func test_chat() -> void:
 	u.close()
 	v.close()
 
+## C4b: bang hội thật — lập, xin vào, duyệt, thông báo, chat bang, rời, giải tán.
+func test_guild() -> void:
+	var gi := await make_player("g")
+	var hi := await make_player("h")
+	var g := bot(gi[0], gi[1])
+	var h := bot(hi[0], hi[1])
+	if not await wait_until(func() -> bool: return g.in_world and h.in_world):
+		check("C4b: 2 bot vào map", false)
+		return
+	g.guild_op(GuildServer.G_TEST_BOOST)
+	h.guild_op(GuildServer.G_TEST_BOOST)
+	await get_tree().create_timer(0.5).timeout
+	var gname := "Bang " + str(gi[1])
+	g.guild_op(GuildServer.G_CREATE, {"title": gname, "camp": GuildRules.CAMPS[0]})
+	check("C4b: lập bang", await wait_until(func() -> bool: return str(g.guild.get("name", "")) == gname, 3.0), g.notices)
+	h.guild_op(GuildServer.G_LIST)
+	check("C4b: bang có trong danh sách", await wait_until(func() -> bool:
+		return h.guild_list.any(func(x: Dictionary) -> bool: return str(x.name) == gname), 3.0))
+	h.guild_op(GuildServer.G_APPLY, {"guild": gname})
+	check("C4b: bang chủ thấy đơn xin vào", await wait_until(func() -> bool:
+		return g.guild.get("applies", []).any(func(a: Dictionary) -> bool: return str(a.name) == h.name), 3.0), h.notices)
+	g.guild_op(GuildServer.G_ACCEPT, {"name": h.name})
+	check("C4b: H vào bang", await wait_until(func() -> bool: return h.guild_member_names().has(h.name) and g.guild_member_names().size() == 2, 3.0), g.notices)
+	check("C4b: cờ 'của mình' đúng người", h.guild.get("members", []).any(func(m: Dictionary) -> bool: return m.name == h.name and m.get("local", false)))
+	g.guild_op(GuildServer.G_NOTICE, {"text": "Tối nay đánh Tống Kim"})
+	check("C4b: thông báo bang tới thành viên", await wait_until(func() -> bool: return str(h.guild.get("notice", "")) == "Tối nay đánh Tống Kim", 3.0))
+	h.say(ChatServer.GUILD, "chào bang chủ")
+	check("C4b: chat kênh bang", await wait_until(func() -> bool: return g.heard("chào bang chủ"), 3.0))
+	h.guild_op(GuildServer.G_LEAVE)
+	check("C4b: rời bang", await wait_until(func() -> bool: return h.guild.is_empty() and g.guild_member_names().size() == 1, 3.0), h.notices)
+	g.guild_op(GuildServer.G_DISBAND)
+	check("C4b: giải tán bang", await wait_until(func() -> bool: return g.guild.is_empty(), 3.0), g.notices)
+	h.guild_op(GuildServer.G_LIST)
+	check("C4b: bang đã giải tán biến khỏi danh sách", await wait_until(func() -> bool:
+		return not h.guild_list.any(func(x: Dictionary) -> bool: return str(x.name) == gname), 3.0))
+	g.close()
+	h.close()
+
 func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
 	var h := HTTPRequest.new()
 	add_child(h)
@@ -471,3 +509,4 @@ func run() -> void:
 	await test_trade_and_stall()
 	await test_team()
 	await test_chat()
+	await test_guild()

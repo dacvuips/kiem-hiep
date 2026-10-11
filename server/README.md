@@ -148,6 +148,9 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
 - **Chat** (`net/server/chat_server.gd`, khung `ChatBox`): kênh Gần / Thế giới (chờ 10 giây) / Tổ đội / Bang hội / Riêng.
   Game server hỏi `POST /internal/game/status` mỗi `GAME_STATUS_POLL` giây (mặc định 30): **cấm chat / khoá từ web Admin
   có hiệu lực ngay với người đang online** (bị khoá thì bị đá ra). Đang gõ chữ thì phím không điều khiển nhân vật.
+- **Bang hội thật** (`net/server/guild_server.gd`, bảng `guilds`): mỗi bang 1 bản dùng chung lưu PostgreSQL; thao tác chạy
+  bằng `GuildService` gốc trên bản chung (bổ nhiệm, đuổi, nhường bang chủ, thông báo, tuyển người, quyên góp, phân quyền,
+  đổi tên); lập bang / xin vào / mời / duyệt / rời / giải tán do server xử lý; quỹ bang + thử thách bang tính trên server.
 - **Nhân vật mới:** lần đầu vào map, server khởi tạo lại phần kinh tế (cấp 1, không tiền / đồ) — chặn tạo nhân vật kèm đồ.
 - **Lưu từ game ngoài map** (`PUT /v1/characters/{id}`): server tài khoản chặn tăng cấp / tiền / đồ / tổng điểm (`profile_guard.go`).
 - `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền + 1 món đồ dưới chân người hạ quái.
