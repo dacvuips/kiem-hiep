@@ -17,6 +17,8 @@ var hp := 100                    ## phần trăm máu 0..100
 var look: Dictionary = {}        ## {gender, helm, armor, weapon, horse}
 var version := 0
 var cell := Vector2i(1 << 30, 1 << 30)   ## ô AOI đang đứng (AoiGrid quản lý)
+var look_dirty := false          ## ngoại hình vừa đổi -> lượt gửi tới gửi kèm S_LOOK
+var snap_ver := -1               ## `version` đã đưa vào gói vị trí của ô (GameServer._send_snapshots)
 
 func touch() -> void:
 	version += 1
@@ -39,10 +41,8 @@ func write_spawn(b: StreamPeerBuffer) -> void:
 
 func write_state(b: StreamPeerBuffer) -> void:
 	b.put_u32(eid)
-	b.put_float(pos.x)
-	b.put_float(pos.y)
-	b.put_u8(dir)
-	b.put_u8(action)
+	NetProto.put_state_pos(b, pos)
+	b.put_u8((dir & 7) | (action << 3))
 	b.put_u8(z)
 	b.put_u8(flags)
 	b.put_u8(hp)

@@ -45,7 +45,7 @@ const S_ERROR := 2        ## str code, str message (rồi ngắt kết nối)
 const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp,
                           ## rồi: người chơi = look; quái = u16 monster_id, u8 series, u8 blue_boss
 const S_DESPAWN := 4      ## u32 eid
-const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp)
+const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, u24 x*2, u24 y*2, u8 dir|action<<3, u8 z, u8 flags, u8 hp) — 14 byte/mục
 const S_CORRECT := 6      ## f32 x, f32 y — server kéo nhân vật của mình về vị trí hợp lệ
 const S_LOOK := 7         ## u32 eid, u8 gender, i16 helm, i16 armor, i16 weapon, i16 horse
 const S_MATTACK := 8      ## u32 monster_eid, u8 skill_slot, u32 target_eid, u8 dir64 — quái bắt đầu ra chiêu vào target
@@ -106,6 +106,20 @@ static func monster_action_name(i: int) -> String:
 	return MONSTER_ACTIONS[i] if i >= 0 and i < MONSTER_ACTIONS.size() else "stand"
 
 # ---------------------------------------------------------------- ghi
+
+## Toạ độ trong S_STATE: 24 bit mỗi trục theo nửa pixel (toạ độ thế giới tới ~4 triệu px; map chính nằm ở 71680..84992 px).
+const POS_SCALE := 2.0
+
+static func put_state_pos(b: StreamPeerBuffer, p: Vector2) -> void:
+	for v in [p.x, p.y]:
+		var q := clampi(roundi(v * POS_SCALE), 0, 0xFFFFFF)
+		b.put_u16(q & 0xFFFF)
+		b.put_u8(q >> 16)
+
+static func get_state_pos(b: StreamPeerBuffer) -> Vector2:
+	var x := b.get_u16() | (b.get_u8() << 16)
+	var y := b.get_u16() | (b.get_u8() << 16)
+	return Vector2(x, y) / POS_SCALE
 
 static func writer(type: int) -> StreamPeerBuffer:
 	var b := StreamPeerBuffer.new()

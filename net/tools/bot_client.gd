@@ -229,8 +229,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			b.get_u32()
 			for i in b.get_u16():
 				var id := b.get_u32()
-				var pos := Vector2(b.get_float(), b.get_float())
-				b.get_data(4)
+				var pos := NetProto.get_state_pos(b)
+				b.get_data(3)
 				var hp := b.get_u8()
 				states_received += 1
 				if known.has(id):
@@ -308,7 +308,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					b.get_u16()
 			team = st
 		NetProto.S_GUILD:
-			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			var raw := NetProto.get_str(b, 1 << 20)
+			var parsed: Variant = JSON.parse_string(raw) if raw != "" else null
 			guild = parsed if parsed is Dictionary else {}
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))

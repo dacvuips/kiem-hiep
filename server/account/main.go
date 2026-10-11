@@ -45,7 +45,8 @@ func main() {
 		db:   db,
 		mail: newMailer(cfg),
 		// Theo IP nới rộng vì nhiều người chơi 4G/quán net chung 1 IP; chống dò mật khẩu nằm ở userRL.
-		ipRL:   newRateLimiter(120, 60),
+		// RATE_LIMIT_IP_PER_MIN: chỉ tăng khi chạy load test trên máy dev (tạo hàng trăm tài khoản bot từ 1 IP).
+		ipRL:   newRateLimiter(envInt("RATE_LIMIT_IP_PER_MIN", 120), max(60, envInt("RATE_LIMIT_IP_PER_MIN", 120)/2)),
 		userRL: newRateLimiter(10, 5),
 	}
 	s.http = &http.Client{Timeout: 10 * time.Second}

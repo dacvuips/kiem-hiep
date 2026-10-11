@@ -157,3 +157,25 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
 - **Lưu từ game ngoài map** (`PUT /v1/characters/{id}`): server tài khoản chặn tăng cấp / tiền / đồ / tổng điểm (`profile_guard.go`).
 - `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền + 1 món đồ dưới chân người hạ quái.
 - **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).
+
+### Đo tải (D)
+
+```bash
+# server/.env: tạm đặt RATE_LIMIT_IP_PER_MIN=5000 (tạo nhiều tài khoản bot từ 1 IP), restart account; xong trả về 120
+GAME_TEST_MODE=1 GODOT=... bash server/run_game_server.sh
+godot --headless --path . res://net/tools/load_test.tscn -- --bots=300 --seconds=60
+```
+
+Bot đi lang thang trong vùng 5000 x 5000 px quanh điểm xuất phát (rất đông — mỗi người thấy gần như mọi người khác), thỉnh
+thoảng đánh quái / chat. Game server in mỗi 10 giây dòng `[đo]`: số người, thời gian tick (tách phần quái / gửi vị trí, ngân
+sách 55.6 ms), KB/s gửi đi. Kết quả trên máy dev (1 luồng Godot, bot chạy cùng máy):
+
+| Người online (cùng 1 vùng) | Tick trung bình | Gửi đi / người |
+|---|---|---|
+| 150 | ~5 ms | ~15 KB/s |
+| 300 | ~9.5 ms | ~20-27 KB/s |
+| 500 | ~14.5 ms | ~18 KB/s |
+
+Tối ưu đã làm: mỗi ô AOI mã hoá 1 lần các thực thể đổi trạng thái rồi người xem ghép 9 khối (trước đó duyệt từng thực thể
+cho từng người: 150 người tốn ~21 ms/tick); chỉ quét lại 3x3 ô khi người xem sang ô khác; bản ghi vị trí 17 -> 14 byte.
+Băng thông mỗi người tăng theo **số người đứng gần**, không theo tổng số người trên map.

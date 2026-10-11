@@ -292,8 +292,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var n := b.get_u16()
 			for i in n:
 				var eid := b.get_u32()
+				var pos := NetProto.get_state_pos(b)
+				var da := b.get_u8()
 				var st := {
-					"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(),
+					"pos": pos, "dir": da & 7, "action": da >> 3,
 					"z": b.get_u8(), "flags": b.get_u8(), "hp": b.get_u8(),
 				}
 				entity_state.emit(eid, server_ms, st)
@@ -385,7 +387,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					st.applicants.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16()})
 			team_state.emit(st)
 		NetProto.S_GUILD:
-			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
+			var raw := NetProto.get_str(b, 1 << 20)
+			var parsed: Variant = JSON.parse_string(raw) if raw != "" else null
 			guild_received.emit(parsed if parsed is Dictionary else {})
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))

@@ -45,7 +45,8 @@ class Conn:
 	var account_id := 0
 	var username := ""
 	var character_id := 0
-	var known: Dictionary = {}          ## eid -> version đã gửi cho người này
+	var known: Dictionary = {}          ## eid đang thấy (đã gửi gói xuất hiện)
+	var view_cell := Vector2i(1 << 30, 1 << 30)   ## ô AOI tâm lúc gửi trước
 	var move_budget := 0.0              ## quãng đường (px) còn được phép đi
 	var last_move_at := 0.0
 	var packets := 0
@@ -110,6 +111,17 @@ var guild: GuildServer
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
 var _status_polling := false
+var _look_dirty: Array[ServerEntity] = []   ## thực thể đổi ngoại hình từ lượt gửi trước
+## Số đo hiệu năng (in mỗi METRICS_SECONDS giây): thời gian xử lý tick, byte gửi đi, số gói.
+const METRICS_SECONDS := 10.0
+var _m_ticks := 0
+var _m_tick_us := 0
+var _m_sim_us := 0
+var _m_snap_us := 0
+var _m_tick_max_us := 0
+var _m_bytes := 0
+var _m_packets := 0
+var _m_at := 0.0
 var _last_status_poll := 0.0
 ## Chế độ kiểm thử (GAME_TEST_MODE=1): mỗi quái chết luôn rớt thêm 1 túi tiền để bài test chắc chắn có đồ rơi. TẮT khi chạy thật.
 var test_mode := false
@@ -187,9 +199,12 @@ func _process(delta: float) -> void:
 	_acc += delta
 	var step := 1.0 / NetProto.TICK_RATE
 	while _acc >= step:
+		var t0 := Time.get_ticks_usec()
 		_acc -= step
 		_tick += 1
+		var ts := Time.get_ticks_usec()
 		_simulate(step)
+		_m_sim_us += Time.get_ticks_usec() - ts
 		social.tick(step, _now)
 		guild.tick(step)
 		for c: Conn in _conns.values():
@@ -202,7 +217,36 @@ func _process(delta: float) -> void:
 				_last_status_poll = _now
 				_poll_status()
 		if _tick % NetProto.SNAPSHOT_EVERY == 0:
+			var tn := Time.get_ticks_usec()
 			_send_snapshots()
+			_m_snap_us += Time.get_ticks_usec() - tn
+		var dt_us := Time.get_ticks_usec() - t0
+		_m_ticks += 1
+		_m_tick_us += dt_us
+		_m_tick_max_us = maxi(_m_tick_max_us, dt_us)
+	if _now - _m_at >= METRICS_SECONDS:
+		_print_metrics()
+
+func _print_metrics() -> void:
+	var span := maxf(0.001, _now - _m_at)
+	var online := _by_character.size()
+	if online > 0 or _m_ticks > 0:
+		var awake := 0
+		for m in _monsters:
+			if not m.hidden and not m.is_dead():
+				awake += 1
+		print("[đo] online %d | tick tb %.2f ms, max %.2f ms (ngân sách %.1f ms) (quái %.2f, gửi vị trí %.2f) | gửi %.1f KB/s (%.2f KB/s/người), %d gói/s | quái sống %d" % [
+			online, _m_tick_us / 1000.0 / maxi(1, _m_ticks), _m_tick_max_us / 1000.0, 1000.0 / NetProto.TICK_RATE,
+			_m_sim_us / 1000.0 / maxi(1, _m_ticks), _m_snap_us / 1000.0 / maxi(1, _m_ticks),
+			_m_bytes / 1024.0 / span, _m_bytes / 1024.0 / span / maxi(1, online), int(_m_packets / span), awake])
+	_m_at = _now
+	_m_ticks = 0
+	_m_tick_us = 0
+	_m_tick_max_us = 0
+	_m_sim_us = 0
+	_m_snap_us = 0
+	_m_bytes = 0
+	_m_packets = 0
 
 func _simulate(_dt: float) -> void:
 	for c: Conn in _conns.values():
@@ -294,6 +338,8 @@ func _drop(c: Conn) -> void:
 		print("Rời map: %s (%s)" % [c.entity.name, c.username])
 
 func _send(c: Conn, b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
+	_m_bytes += b.data_array.size()
+	_m_packets += 1
 	var p := c.peer
 	p.set_target_peer(c.peer_id)
 	p.transfer_channel = channel
@@ -891,65 +937,109 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	if look != e.look:
 		e.look = look
 		e.touch()
-		e.set_meta("look_changed", true)
+		if not e.look_dirty:
+			e.look_dirty = true
+			_look_dirty.append(e)
 
 # ---------------------------------------------------------------- gửi trạng thái theo AOI
 
+## Mỗi ô AOI mã hoá 1 lần các thực thể đổi trạng thái từ lượt trước; người xem đứng yên trong ô chỉ ghép 9 khối đó
+## (không duyệt từng thực thể). Chỉ khi người xem sang ô khác mới quét lại toàn bộ 3x3 để tính vào/rời tầm.
+## Bất biến: c.known chỉ chứa thực thể ở 3x3 ô quanh c.view_cell tính tới lượt gửi trước.
 func _send_snapshots() -> void:
 	var now_ms := Time.get_ticks_msec()
+	var blob := {}     ## ô -> StreamPeerBuffer các bản ghi S_STATE
+	var blob_n := {}   ## ô -> số bản ghi
+	for e: ServerEntity in _entities.values():
+		if e.snap_ver == e.version:
+			continue
+		e.snap_ver = e.version
+		var buf: StreamPeerBuffer = blob.get(e.cell)
+		if buf == null:
+			buf = StreamPeerBuffer.new()
+			blob[e.cell] = buf
+			blob_n[e.cell] = 0
+		e.write_state(buf)
+		blob_n[e.cell] += 1
 	for c: Conn in _conns.values():
 		if c.state != ConnState.IN_WORLD or c.entity == null:
 			continue
-		var visible := {}
-		var states := NetProto.writer(NetProto.S_STATE)
-		states.put_u32(now_ms)
-		states.put_u16(0)   ## số mục — ghi lại sau
-		var n := 0
+		var me := c.entity
+		var known := c.known
+		var center := me.cell
 		## Thực thể mới vào tầm / rời tầm: gộp vào 1 gói mỗi loại (vào map gặp ~50 quái = 1 gói thay vì 50).
 		var spawns := NetProto.writer(NetProto.S_SPAWNS)
 		spawns.put_u16(0)
 		var n_spawn := 0
-		for e in aoi.around(c.entity.pos):
-			if e.eid == c.entity.eid:
-				continue
-			visible[e.eid] = true
-			if not c.known.has(e.eid):
-				e.write_spawn(spawns)
-				n_spawn += 1
-				c.known[e.eid] = e.version
-				continue
-			if c.known[e.eid] == e.version:
-				continue
-			if e.has_meta("look_changed"):
-				var l := NetProto.writer(NetProto.S_LOOK)
-				l.put_u32(e.eid)
-				NetProto.put_look(l, e.look)
-				_send(c, l)
-			e.write_state(states)
-			c.known[e.eid] = e.version
-			n += 1
-		var gone: Array = []
-		for eid in c.known.keys():
-			if not visible.has(eid):
-				c.known.erase(eid)
-				gone.append(eid)
+		var gone: Array[int] = []
+		if center != c.view_cell:
+			c.view_cell = center
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					for e: ServerEntity in aoi.bucket(center + Vector2i(dx, dy)).values():
+						if e != me and not known.has(e.eid):
+							known[e.eid] = 0
+							e.write_spawn(spawns)
+							n_spawn += 1
+			for eid: int in known:
+				if not _in_view(eid, center):
+					gone.append(eid)
+		else:
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					var cell := center + Vector2i(dx, dy)
+					for e: ServerEntity in aoi.entered_in(cell):
+						if e != me and not known.has(e.eid) and _in_view(e.eid, center):
+							known[e.eid] = 0
+							e.write_spawn(spawns)
+							n_spawn += 1
+					for eid: int in aoi.left_from(cell):
+						if known.has(eid) and not _in_view(eid, center):
+							gone.append(eid)
 		if not gone.is_empty():
 			var d := NetProto.writer(NetProto.S_DESPAWNS)
 			d.put_u16(gone.size())
-			for eid in gone:
+			for eid: int in gone:
+				known.erase(eid)
 				d.put_u32(eid)
 			_send(c, d)
 		if n_spawn > 0:
 			spawns.seek(1)
 			spawns.put_u16(n_spawn)
 			_send(c, spawns)
+		var states := NetProto.writer(NetProto.S_STATE)
+		states.put_u32(now_ms)
+		states.put_u16(0)   ## số mục — ghi lại sau
+		var n := 0
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var buf: StreamPeerBuffer = blob.get(center + Vector2i(dx, dy))
+				if buf != null:
+					states.put_data(buf.data_array)
+					n += blob_n[center + Vector2i(dx, dy)]
 		if n > 0:
 			states.seek(5)
 			states.put_u16(n)
 			_send(c, states, NetProto.CH_STATE)
-	for e: ServerEntity in _entities.values():
-		if e.has_meta("look_changed"):
-			e.remove_meta("look_changed")
+	aoi.entered.clear()
+	aoi.left.clear()
+	## Ngoại hình đổi: báo cho người đang thấy (thực thể mới vào tầm đã nhận ngoại hình trong gói xuất hiện).
+	for e: ServerEntity in _look_dirty:
+		var l := NetProto.writer(NetProto.S_LOOK)
+		l.put_u32(e.eid)
+		NetProto.put_look(l, e.look)
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				for v: ServerEntity in aoi.bucket(e.cell + Vector2i(dx, dy)).values():
+					var vc: Conn = _players_by_eid.get(v.eid)
+					if vc and vc.known.has(e.eid):
+						_send(vc, l)
+		e.look_dirty = false
+	_look_dirty.clear()
+
+func _in_view(eid: int, center: Vector2i) -> bool:
+	var e: ServerEntity = _entities.get(eid)
+	return e != null and absi(e.cell.x - center.x) <= 1 and absi(e.cell.y - center.y) <= 1
 
 func online_count() -> int:
 	return _by_character.size()
