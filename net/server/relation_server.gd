@@ -134,7 +134,7 @@ func on_view_equip(c, eid: int) -> void:
 		gs.notice(c, "%s không ở gần bạn." % t.entity.name)
 		return
 	var out := NetProto.writer(NetProto.S_VIEW_EQUIP)
-	NetProto.put_json(out, ViewEquipService.snapshot_of_profile(t.profile))
+	NetProto.put_json(out, ViewEquipService.snapshot_to_wire(ViewEquipService.snapshot_of_profile(t.profile)))
 	gs.send(c, out)
 
 # ---------------------------------------------------------------- cừu sát (KPlayerPK::EnmityPKOpen gốc)

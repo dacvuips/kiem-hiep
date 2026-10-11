@@ -443,6 +443,15 @@ func test_relations() -> void:
 	## Tin tức
 	b.view_equip(a.eid)
 	check("Tin tức: nhận bản trang bị của người kia", await wait_until(func() -> bool: return str(b.view_snap.get("name", "")) == a.name, 3.0), b.view_snap)
+	## Trang bị qua mạng phải dựng lại được thành ItemInstance (lỗi cũ: gửi thẳng đối tượng -> thành chuỗi).
+	var sp := PlayerProfile.new()
+	var it := ItemInstance.new()
+	it.base_index = 3
+	sp.equipment[Equipment.Part.WEAPON] = it
+	var wire: Variant = JSON.parse_string(JSON.stringify(ViewEquipService.snapshot_to_wire(ViewEquipService.snapshot_of_profile(sp))))
+	var back := ViewEquipService.snapshot_from_wire(wire)
+	check("Tin tức: trang bị qua mạng dựng lại thành ItemInstance", back.equipment.get(Equipment.Part.WEAPON) is ItemInstance
+		and (back.equipment[Equipment.Part.WEAPON] as ItemInstance).base_index == 3, back.equipment)
 	b.view_snap = {}
 	b.view_equip(a.eid)
 	await get_tree().create_timer(0.4).timeout

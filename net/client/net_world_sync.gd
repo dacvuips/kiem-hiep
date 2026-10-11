@@ -62,7 +62,7 @@ func _ready() -> void:
 			PvpHit.apply(player, hit, remote_of(attacker_eid)))
 	NetClient.view_equip.connect(func(snap: Dictionary) -> void:
 		if not snap.is_empty():
-			ViewEquipWindow.open_snapshot(get_tree().current_scene, snap))
+			ViewEquipWindow.open_snapshot(get_tree().current_scene, ViewEquipService.snapshot_from_wire(snap)))
 	current = self
 	_add_chat_box()
 	_connect()

@@ -42,6 +42,31 @@ static func snapshot_of_mock(m: MockPlayer) -> Dictionary:
 		"guild": m.guild_name, "lead_level": m.lead_level, "equipment": copies,
 	}
 
+## Online: bản chụp đi qua mạng (JSON) — ItemInstance đổi thành dữ liệu, khoá ô trang bị thành chuỗi.
+static func snapshot_to_wire(snap: Dictionary) -> Dictionary:
+	var out := snap.duplicate()
+	var eq := {}
+	for part in snap.get("equipment", {}):
+		eq[str(part)] = (snap["equipment"][part] as ItemInstance).to_dict()
+	out["equipment"] = eq
+	return out
+
+## Dựng lại bản chụp nhận từ server (ngược với snapshot_to_wire); bỏ món hỏng.
+static func snapshot_from_wire(d: Dictionary) -> Dictionary:
+	var out := d.duplicate()
+	var eq := {}
+	var raw: Variant = d.get("equipment", {})
+	if raw is Dictionary:
+		for k in raw:
+			if raw[k] is Dictionary and str(k).is_valid_int():
+				var it := ItemInstance.from_dict(raw[k])
+				if it != null:
+					eq[int(k)] = it
+	out["equipment"] = eq
+	for k in ["level", "series", "camp", "lead_level"]:
+		out[k] = int(out.get(k, 0))
+	return out
+
 ## Định dạng cho CHÍNH người chơi (online: gửi cho người đang xem mình).
 static func snapshot_of_profile(p: PlayerProfile) -> Dictionary:
 	var copies := {}
