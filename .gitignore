@@ -5,3 +5,4 @@
 # Tạm của editor / python
 *.tscn*.tmp
 __pycache__/
+server/.env
