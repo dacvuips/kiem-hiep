@@ -365,6 +365,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_STALL:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
 				social.on_stall(c, b)
+		NetProto.C_SECURITY:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 5:
+				social.on_security(c, b)
 		NetProto.C_GUILD:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				guild.on_guild(c, b)

@@ -59,9 +59,16 @@ static func set_password(p: PlayerProfile, new_password: String, old_password :=
 	var err := validate_password(new_password)
 	if err != "":
 		return err
+	var old_hash := p.security_hash
 	p.security_hash = _hash(new_password)
 	p.security_locked = true      ## gốc: đặt xong mật khẩu là khoá luôn (SetLockState(bLock = có mật khẩu))
+	_tell_server(SocialServer.SEC_SET, p.security_hash, old_hash if old_hash != "" else "")
 	return ""
+
+## Online: trạng thái khoá nằm ở game server — gửi cùng thao tác (mã băm) để server kiểm tra lại; sai thì server gửi bản chuẩn về.
+static func _tell_server(op: int, hash1 := "", hash2 := "") -> void:
+	if NetClient.is_in_world():
+		NetClient.send_security(op, hash1, hash2)
 
 ## Xoá mật khẩu (phải nhập đúng) — hết khoá bảo vệ.
 static func clear_password(p: PlayerProfile, password: String) -> String:
@@ -71,6 +78,7 @@ static func clear_password(p: PlayerProfile, password: String) -> String:
 		return "Mật mã kiểm chứng không chính xác!"
 	p.security_hash = ""
 	p.security_locked = false
+	_tell_server(SocialServer.SEC_CLEAR, _hash(password))
 	return ""
 
 ## Bật khoá (không cần mật khẩu, nhưng phải đã đặt mật khẩu — đúng SetLockState gốc).
@@ -78,6 +86,7 @@ static func lock(p: PlayerProfile) -> String:
 	if not has_password(p):
 		return "Bạn chưa đặt mật khẩu bảo vệ nên không thể khoá."
 	p.security_locked = true
+	_tell_server(SocialServer.SEC_LOCK)
 	return ""
 
 ## Mở khoá bằng mật khẩu — "" nếu đúng.
@@ -87,6 +96,7 @@ static func unlock(p: PlayerProfile, password: String) -> String:
 	if _hash(password) != p.security_hash:
 		return "Giải mã khoá bảo vệ thất bại: mật mã kiểm chứng không chính xác!"
 	p.security_locked = false
+	_tell_server(SocialServer.SEC_UNLOCK, _hash(password))
 	return ""
 
 # ------------------------------------------------------------------ khoá món đồ

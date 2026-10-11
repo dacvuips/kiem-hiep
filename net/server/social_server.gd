@@ -47,6 +47,12 @@ class Team:
 	func captain():
 		return members[0]
 
+## Lệnh khoá bảo vệ (C_SECURITY): server giữ mật mã băm + trạng thái khoá.
+const SEC_SET := 1      ## hash1 = mã mới, hash2 = mã cũ (rỗng nếu chưa có)
+const SEC_CLEAR := 2    ## hash1
+const SEC_LOCK := 3
+const SEC_UNLOCK := 4   ## hash1
+
 class Trade:
 	var session: TradeSession
 	var conns: Array = []          ## [GameServer.Conn, GameServer.Conn] cùng thứ tự session.sides
@@ -464,6 +470,43 @@ func _end(t: Trade, ok: bool, msg: String) -> void:
 		b.put_u8(1 if ok else 0)
 		NetProto.put_str(b, msg)
 		gs.send(c, b)
+
+# ---------------------------------------------------------------- khoá bảo vệ
+
+func on_security(c, b: StreamPeerBuffer) -> void:
+	var op := b.get_u8()
+	var h1 := NetProto.get_str(b, 128)
+	var h2 := NetProto.get_str(b, 128)
+	var p: PlayerProfile = c.profile
+	var err := ""
+	match op:
+		SEC_SET:
+			if p.security_hash != "" and h2 != p.security_hash:
+				err = "Mật khẩu cũ không chính xác!"
+			elif h1.length() != 64:
+				err = "Mật khẩu không hợp lệ."
+			else:
+				p.security_hash = h1
+				p.security_locked = true
+		SEC_CLEAR:
+			if p.security_hash == "" or h1 != p.security_hash:
+				err = "Mật mã kiểm chứng không chính xác!"
+			else:
+				p.security_hash = ""
+				p.security_locked = false
+		SEC_LOCK:
+			if p.security_hash == "":
+				err = "Bạn chưa đặt mật khẩu bảo vệ nên không thể khoá."
+			else:
+				p.security_locked = true
+		SEC_UNLOCK:
+			if p.security_hash != "" and h1 != p.security_hash:
+				err = "Giải mã khoá bảo vệ thất bại: mật mã kiểm chứng không chính xác!"
+			else:
+				p.security_locked = false
+	if err != "":
+		gs.notice(c, err)
+	gs.profile_changed(c)   ## đồng bộ trạng thái khoá (đúng hay sai đều gửi bản chuẩn)
 
 # ---------------------------------------------------------------- bày bán / mở giao dịch
 

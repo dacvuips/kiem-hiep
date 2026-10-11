@@ -33,6 +33,7 @@ const C_PING := 9         ## u32 client_ms
 const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
 const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
+const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 — khoá bảo vệ (gửi MÃ BĂM, không gửi mật mã)
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
 const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá trị), u8 arg2 (đồng ý / chế độ)

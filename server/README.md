@@ -151,6 +151,8 @@ loại thư mục ảnh / âm thanh thô). Mỗi lần gửi trạng thái, th�
 - **Bang hội thật** (`net/server/guild_server.gd`, bảng `guilds`): mỗi bang 1 bản dùng chung lưu PostgreSQL; thao tác chạy
   bằng `GuildService` gốc trên bản chung (bổ nhiệm, đuổi, nhường bang chủ, thông báo, tuyển người, quyên góp, phân quyền,
   đổi tên); lập bang / xin vào / mời / duyệt / rời / giải tán do server xử lý; quỹ bang + thử thách bang tính trên server.
+- **Rương + khoá bảo vệ** (C5): mở thêm rương phải trừ đúng giá; mật mã / trạng thái khoá bảo vệ chỉ server giữ (`C_SECURITY`,
+  gửi **mã băm** chứ không gửi mật mã); khoá món đồ chỉ được mở sau đủ 3 ngày chờ. Áp cho cả lưu HTTP ngoài map (Go).
 - **Nhân vật mới:** lần đầu vào map, server khởi tạo lại phần kinh tế (cấp 1, không tiền / đồ) — chặn tạo nhân vật kèm đồ.
 - **Lưu từ game ngoài map** (`PUT /v1/characters/{id}`): server tài khoản chặn tăng cấp / tiền / đồ / tổng điểm (`profile_guard.go`).
 - `GAME_TEST_MODE=1` (chỉ khi chạy `tests/net_tests`): mỗi quái chết rớt thêm túi tiền + 1 món đồ dưới chân người hạ quái.

@@ -124,6 +124,13 @@ func stall_op(op: int, title := "", seller := 0, uid := "") -> void:
 		NetProto.put_str(b, uid)
 	_send(b, NetProto.CH_RELIABLE)
 
+func security(op: int, password := "", old_password := "") -> void:
+	var b := NetProto.writer(NetProto.C_SECURITY)
+	b.put_u8(op)
+	NetProto.put_str(b, SecurityLock._hash(password) if password != "" else "")
+	NetProto.put_str(b, SecurityLock._hash(old_password) if old_password != "" else "")
+	_send(b, NetProto.CH_RELIABLE)
+
 func guild_op(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_GUILD)
 	b.put_u8(op)

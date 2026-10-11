@@ -397,6 +397,30 @@ func test_guild() -> void:
 	g.close()
 	h.close()
 
+## C5: khoá bảo vệ do server giữ — đặt mật mã thì khoá, khoá thì không mời giao dịch, mở bằng mật mã đúng.
+func test_security() -> void:
+	var si := await make_player("s")
+	var ti := await make_player("t")
+	var s := bot(si[0], si[1])
+	var t := bot(ti[0], ti[1])
+	if not await wait_until(func() -> bool: return s.in_world and t.in_world):
+		check("C5: 2 bot vào map", false)
+		return
+	s.security(SocialServer.SEC_SET, "1234")
+	check("C5: đặt mật mã thì khoá luôn", await wait_until(func() -> bool: return bool(s.profile.get("security_locked", false)), 3.0))
+	t.stall_op(SocialServer.TRADE_OPEN)
+	await get_tree().create_timer(0.3).timeout
+	s.trade_request(t.eid)
+	check("C5: đang khoá không mời giao dịch được", await wait_until(func() -> bool:
+		return s.notices.any(func(n: String) -> bool: return n.contains("khoá bảo vệ")), 3.0), s.notices)
+	s.security(SocialServer.SEC_UNLOCK, "9999")
+	check("C5: mật mã sai không mở được", await wait_until(func() -> bool:
+		return s.notices.any(func(n: String) -> bool: return n.contains("không chính xác")), 3.0) and bool(s.profile.get("security_locked", false)))
+	s.security(SocialServer.SEC_UNLOCK, "1234")
+	check("C5: mật mã đúng mở được", await wait_until(func() -> bool: return not bool(s.profile.get("security_locked", true)), 3.0))
+	s.close()
+	t.close()
+
 func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
 	var h := HTTPRequest.new()
 	add_child(h)
@@ -510,3 +534,4 @@ func run() -> void:
 	await test_team()
 	await test_chat()
 	await test_guild()
+	await test_security()

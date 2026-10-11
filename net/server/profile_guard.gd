@@ -23,7 +23,7 @@ const MIN_CAP := 300.0
 static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0) -> Dictionary:
 	var merged := client_data.duplicate(true)
 	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender", "lead_level", "lead_exp", "server_seen",
-			"guild", "guild_join_after", "camp"]:
+			"guild", "guild_join_after", "camp", "security_hash", "security_locked"]:
 		if server_data.has(k):
 			merged[k] = server_data[k]
 	var fresh := PlayerProfile.from_dict(merged)
@@ -69,6 +69,7 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 		for k in ItemInstance.OWNER_FIELDS:
 			if it.has(k):
 				out[k] = it[k]
+		_guard_lock(known[uid], out)
 		return out
 	for key in ["inventory", "storage"]:
 		var list := []
@@ -86,18 +87,58 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 				new_eq[k] = v
 	merged["equipment"] = new_eq
 
+## Khoá món đồ (KLockItem): khoá thì được ngay; mở khoá phải chờ đủ ITEM_UNLOCK_SECONDS rồi mới thành tự do; khoá vĩnh viễn /
+## gắn nhân vật không đổi được. Game gửi chuyển trạng thái sai thì giữ trạng thái của server.
+static func _guard_lock(server_item: Dictionary, out: Dictionary) -> void:
+	var s_lock := int(server_item.get("lock", ItemInstance.LOCK_NORMAL))
+	var s_at := int(server_item.get("unlock_at", 0))
+	var c_lock := int(out.get("lock", s_lock))
+	var c_at := int(out.get("unlock_at", 0))
+	var now := SecurityLock.now()
+	var ok := false
+	match s_lock:
+		ItemInstance.LOCK_NORMAL:
+			ok = c_lock in [ItemInstance.LOCK_NORMAL, ItemInstance.LOCK_LOCKED]
+		ItemInstance.LOCK_LOCKED:
+			ok = c_lock == ItemInstance.LOCK_LOCKED \
+				or (c_lock == ItemInstance.LOCK_UNLOCKING and c_at >= now + SecurityLock.ITEM_UNLOCK_SECONDS - 600)
+		ItemInstance.LOCK_UNLOCKING:
+			if c_lock == ItemInstance.LOCK_UNLOCKING:
+				out["unlock_at"] = s_at       ## không rút ngắn thời gian chờ
+				ok = true
+			else:
+				ok = c_lock == ItemInstance.LOCK_LOCKED or (c_lock == ItemInstance.LOCK_NORMAL and now >= s_at)
+	if not ok:
+		out["lock"] = s_lock
+		out["unlock_at"] = s_at
+
+## Tổng giá mở thêm rương từ `from_extra` lên `to_extra` (StorageService.extra_box_cost).
+static func box_cost(from_extra: int, to_extra: int) -> int:
+	var cost := 0
+	for k in range(from_extra, to_extra):
+		cost += StorageService.EXPAND_COST_BASE * (k + 1)
+	return cost
+
 static func _guard_money(server_data: Dictionary, merged: Dictionary, pending_gold: int) -> bool:
 	var s_total := int(server_data.get("gold", 0)) + int(server_data.get("storage_gold", 0))
 	var gold := int(merged.get("gold", 0))
 	var bank := int(merged.get("storage_gold", 0))
-	var rejected := gold < 0 or bank < 0 or gold + bank > s_total - pending_gold
+	## Mở thêm rương phải trả tiền: số rương tăng thì tổng tiền phải giảm ít nhất bằng giá mở.
+	var s_extra := int(server_data.get("storage_extra", 0))
+	var c_extra := clampi(int(merged.get("storage_extra", s_extra)), 0, StorageService.MAX_EXTRA_BOXES)
+	var cost := box_cost(s_extra, c_extra) if c_extra > s_extra else 0
+	if c_extra < s_extra:
+		c_extra = s_extra   ## không tự bớt rương (đồ trong rương có thể mất chỗ)
+	if gold + bank > s_total - pending_gold - cost:
+		c_extra = s_extra
+		cost = 0
+	merged["storage_extra"] = c_extra
+	var rejected := gold < 0 or bank < 0 or gold + bank > s_total - pending_gold - cost
 	if rejected:
 		merged["gold"] = server_data.get("gold", 0)
 		merged["storage_gold"] = server_data.get("storage_gold", 0)
 	if int(merged.get("jade", 0)) > int(server_data.get("jade", 0)) or int(merged.get("jade", 0)) < 0:
 		merged["jade"] = server_data.get("jade", 0)
-	## Mở rộng rương tốn tiền: không được nhiều hơn tối đa, không tự tăng nếu không có tiền giảm tương ứng (đã chặn ở tổng tiền).
-	merged["storage_extra"] = clampi(int(merged.get("storage_extra", 0)), 0, maxi(int(server_data.get("storage_extra", 0)), 5))
 	return rejected
 
 ## Điểm tiềm năng hợp lệ: đã cộng + còn lại <= điểm khởi đầu + 5 x (cấp - 1), không âm.

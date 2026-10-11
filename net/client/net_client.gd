@@ -173,6 +173,16 @@ func send_stall(op: int, title := "", seller_eid := 0, uid := "") -> void:
 			NetProto.put_str(b, uid)
 	_send(b)
 
+## Khoá bảo vệ: gửi MÃ BĂM (SecurityLock._hash), không gửi mật mã gốc.
+func send_security(op: int, hash1 := "", hash2 := "") -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_SECURITY)
+	b.put_u8(op)
+	NetProto.put_str(b, hash1)
+	NetProto.put_str(b, hash2)
+	_send(b)
+
 ## Bang hội: op = GuildServer.G_*, args = tham số.
 func send_guild(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:

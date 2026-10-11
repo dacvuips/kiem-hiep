@@ -88,6 +88,28 @@ func test_profile_guard() -> void:
 	c2["gold"] = 400
 	c2["storage_gold"] = 600
 	check("ProfileGuard: chuyển tiền vào rương được", int(ProfileGuard.merge(od, c2).storage_gold) == 600)
+	## C5: rương, khoá bảo vệ, khoá món đồ
+	var rich := owner.to_dict()
+	rich["gold"] = 600000
+	var c3 := rich.duplicate(true)
+	c3["storage_extra"] = 1
+	check("ProfileGuard: mở rương không trả tiền bị chặn", int(ProfileGuard.merge(rich, c3).storage_extra) == 0)
+	c3["gold"] = 100000
+	check("ProfileGuard: mở rương có trả tiền được nhận", int(ProfileGuard.merge(rich, c3).storage_extra) == 1)
+	var locked := rich.duplicate(true)
+	locked["security_hash"] = "x".repeat(64)
+	locked["security_locked"] = true
+	var c4 := locked.duplicate(true)
+	c4["security_locked"] = false
+	check("ProfileGuard: không tự mở khoá bảo vệ được", bool(ProfileGuard.merge(locked, c4).security_locked))
+	var srv_item := rich.duplicate(true)
+	(srv_item.inventory as Array)[0]["lock"] = ItemInstance.LOCK_LOCKED
+	var c5 := srv_item.duplicate(true)
+	(c5.inventory as Array)[0]["lock"] = ItemInstance.LOCK_NORMAL
+	check("ProfileGuard: không bỏ khoá món đồ ngay được", int((ProfileGuard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_LOCKED)
+	(c5.inventory as Array)[0]["lock"] = ItemInstance.LOCK_UNLOCKING
+	(c5.inventory as Array)[0]["unlock_at"] = SecurityLock.now() + SecurityLock.ITEM_UNLOCK_SECONDS
+	check("ProfileGuard: xin mở khoá (chờ 3 ngày) được nhận", int((ProfileGuard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_UNLOCKING)
 	check("ItemInstance có uid riêng", sword.uid.length() == 16 and ItemGenerator.random_equipment(10).uid != sword.uid)
 
 func test_scenes_load() -> void:

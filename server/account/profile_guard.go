@@ -1,6 +1,9 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // guardClientSave: luật cho dữ liệu nhân vật do GAME gửi thẳng qua HTTP (lúc ở ngoài map — Hub, chọn nhân vật).
 // Trong map thì game server lưu (ProfileGuard trong Godot). Ở đây không có công thức game nên dùng BẤT BIẾN:
@@ -20,16 +23,26 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 	if num(old["server_seen"]) == 0 {
 		return incoming
 	}
-	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "gender", "server_seen", "lead_level", "lead_exp", "guild", "guild_join_after"} {
+	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "gender", "server_seen", "lead_level", "lead_exp", "guild", "guild_join_after", "camp", "security_hash", "security_locked"} {
 		if v, ok := old[k]; ok {
 			incoming[k] = v
 		}
 	}
-	// Tiền
+	// Tiền + mở thêm rương (giá StorageService: 500000 x số thứ tự rương)
 	oldTotal := num(old["gold"]) + num(old["storage_gold"])
-	if g, b := num(incoming["gold"]), num(incoming["storage_gold"]); g < 0 || b < 0 || g+b > oldTotal {
-		incoming["gold"], incoming["storage_gold"] = old["gold"], old["storage_gold"]
+	oldExtra, newExtra := num(old["storage_extra"]), num(incoming["storage_extra"])
+	if newExtra < oldExtra || newExtra > 5 {
+		newExtra = oldExtra
 	}
+	cost := 0.0
+	for k := oldExtra; k < newExtra; k++ {
+		cost += 500000 * (k + 1)
+	}
+	if g, b := num(incoming["gold"]), num(incoming["storage_gold"]); g < 0 || b < 0 || g+b > oldTotal-cost {
+		incoming["gold"], incoming["storage_gold"] = old["gold"], old["storage_gold"]
+		newExtra = oldExtra
+	}
+	incoming["storage_extra"] = newExtra
 	if j := num(incoming["jade"]); j < 0 || j > num(old["jade"]) {
 		incoming["jade"] = old["jade"]
 	}
@@ -84,6 +97,7 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 				out[k] = v
 			}
 		}
+		guardLock(base, out)
 		return out
 	}
 	for _, key := range []string{"inventory", "storage"} {
@@ -104,9 +118,6 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 		}
 	}
 	incoming["equipment"] = newEq
-	if num(incoming["storage_extra"]) > max(num(old["storage_extra"]), 5) {
-		incoming["storage_extra"] = old["storage_extra"]
-	}
 	return incoming
 }
 
@@ -155,4 +166,32 @@ func asList(v any) []any {
 		return l
 	}
 	return nil
+}
+
+// guardLock: khoá món đồ — khoá được ngay; mở khoá phải chờ 3 ngày; khoá vĩnh viễn / gắn nhân vật không đổi (giống ProfileGuard Godot).
+func guardLock(base, out map[string]any) {
+	const (
+		lockNormal, lockLocked, lockUnlocking = 0.0, -1.0, 1.0
+		unlockSeconds                         = 259200.0
+	)
+	sLock, sAt := num(base["lock"]), num(base["unlock_at"])
+	cLock, cAt := num(out["lock"]), num(out["unlock_at"])
+	now := float64(time.Now().Unix())
+	ok := false
+	switch sLock {
+	case lockNormal:
+		ok = cLock == lockNormal || cLock == lockLocked
+	case lockLocked:
+		ok = cLock == lockLocked || (cLock == lockUnlocking && cAt >= now+unlockSeconds-600)
+	case lockUnlocking:
+		if cLock == lockUnlocking {
+			out["unlock_at"] = base["unlock_at"]
+			ok = true
+		} else {
+			ok = cLock == lockLocked || (cLock == lockNormal && now >= sAt)
+		}
+	}
+	if !ok {
+		out["lock"], out["unlock_at"] = base["lock"], base["unlock_at"]
+	}
 }
