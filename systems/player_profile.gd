@@ -30,8 +30,16 @@ var sect_name: String = "Vô Môn Phái"
 ## môn phái (Camp.default_for_sect); đặt giá trị khác khi nhân vật đổi phe (sự kiện, bang chiến...).
 var camp: int = -1
 
+## VLTK gốc: chưa gia nhập môn phái (cần cấp 10) thì thuộc phe Tân thủ — tên trắng, không cừu sát được. Game này gắn phái
+## ngay lúc tạo nhân vật nên coi "gia nhập" = đủ cấp NEWBIE_LEVEL; từ đó phe/màu tên theo phái (hoặc phe bang nếu có).
+const NEWBIE_LEVEL := 10
+
 func get_current_camp() -> int:
-	return camp if camp >= 0 else Camp.default_for_sect(SectRegistry.get_by_id(sect_id))
+	if camp >= 0:
+		return camp
+	if level < NEWBIE_LEVEL:
+		return Camp.Type.BEGIN
+	return Camp.default_for_sect(SectRegistry.get_by_id(sect_id))
 
 ## 4 chỉ số gốc VLTK (Lực/Nhanh nhẹn/Sinh khí/Nội công) — người chơi tự cộng bằng "điểm tiềm
 ## năng" nhận mỗi khi lên cấp (xem UiStatus.ini gốc: Strength/Dexterity/Vitality/Energy +

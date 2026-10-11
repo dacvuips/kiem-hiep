@@ -456,7 +456,17 @@ func test_relations() -> void:
 	b.view_equip(a.eid)
 	await get_tree().create_timer(0.4).timeout
 	check("Tin tức: xem liên tục bị chặn", b.view_snap.is_empty())
-	## Cừu sát
+	## Cừu sát: dưới cấp 10 là Tân thủ (tên trắng) — không cừu sát được
+	check("Tân thủ: nhân vật mới cấp 1 thuộc phe Tân thủ", int(a.known_camp(b.eid)) == Camp.Type.BEGIN, a.known.get(b.eid))
+	a.declare_enmity(b.eid)
+	check("Cừu sát: Tân thủ không cừu sát được", await wait_until(func() -> bool:
+		return a.notices.any(func(n: String) -> bool: return n.contains("Tân thủ")), 3.0) and a.enmity.is_empty(), a.notices)
+	a.say(ChatServer.NEAR, "/testlevel 10")
+	await get_tree().create_timer(1.1).timeout   ## chat chờ giữa 2 lần nói
+	b.say(ChatServer.NEAR, "/testlevel 10")
+	check("Tân thủ: đủ cấp 10 thì đổi phe theo phái, người xung quanh nhận S_CAMP", await wait_until(func() -> bool:
+		return int(a.known_camp(b.eid)) != Camp.Type.BEGIN and int(b.known_camp(a.eid)) != Camp.Type.BEGIN, 3.0),
+		[a.known.get(b.eid), b.known.get(a.eid)])
 	a.pvp_hit(b.eid, 10, 20)
 	await get_tree().create_timer(0.4).timeout
 	check("Cừu sát: chưa tuyên bố thì đòn không tới", b.pvp_hits.is_empty())

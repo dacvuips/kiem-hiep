@@ -28,6 +28,13 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		return
 	if text.length() > MAX_LEN:
 		text = text.left(MAX_LEN)
+	## CHỈ khi GAME_TEST_MODE=1 (tests/net_tests): "/testlevel N" đặt cấp nhân vật để thử luật theo cấp (Tân thủ / cừu sát).
+	if gs.test_mode and text.begins_with("/testlevel "):
+		c.profile.level = clampi(int(text.get_slice(" ", 1)), 1, 200)
+		c.entity.level = c.profile.level
+		c.entity.touch()
+		gs.profile_changed(c)
+		return
 	var now := gs.now()
 	var unix := Time.get_unix_time_from_system()
 	if c.muted_until > unix:

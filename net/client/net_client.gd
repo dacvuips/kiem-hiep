@@ -31,6 +31,7 @@ signal guild_invite(guild_name: String, from_name: String)
 signal player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2)
 signal enmity_state(state: int, other_eid: int, other_name: String, launcher: bool)
 signal pvp_hit(attacker_eid: int, hit: Dictionary)
+signal camp_changed(eid: int, camp: int)
 signal friend_invite(from_eid: int, from_name: String)
 signal friend_list(list: Array)
 signal view_equip(snapshot: Dictionary)
@@ -467,6 +468,9 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				var hit := PvpHit.decode(b.get_data(n)[1])
 				if not hit.is_empty():
 					pvp_hit.emit(attacker, hit)
+		NetProto.S_CAMP:
+			var ceid := b.get_u32()
+			camp_changed.emit(ceid, b.get_8())
 		NetProto.S_FRIEND_INVITE:
 			var feid := b.get_u32()
 			friend_invite.emit(feid, NetProto.get_str(b))

@@ -531,7 +531,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	e.kind = NetProto.KIND_PLAYER
 	e.name = str(ch.get("name", "?"))
 	e.level = int(ch.get("level", 1))
-	e.camp = int(data.get("camp", 0))
+	e.camp = c.profile.get_current_camp()
 	e.look = look_from_profile(data)
 	e.flags = NetProto.FLAG_RIDING if int(e.look.horse) >= 0 else 0
 	e.pos = grid.free_near(grid.default_center())
@@ -710,6 +710,7 @@ func _give_exp(c: Conn, got: int) -> void:
 		c.entity.level = c.profile.level
 		c.entity.touch()
 		c.max_hit = ProfileGuard.max_hit(c.profile)
+		refresh_camp(c)
 	var b := NetProto.writer(NetProto.S_PROGRESS)
 	b.put_u32(got)
 	b.put_u16(c.profile.level)
@@ -883,6 +884,22 @@ func _on_discard(c: Conn, uid: String) -> void:
 			_broadcast_drops(c.entity.pos, [id])
 			return
 
+## Phe (màu tên) đổi: báo người đang thấy + chính mình. Phe chỉ nằm trong gói xuất hiện nên phải báo riêng.
+func refresh_camp(c: Conn) -> void:
+	if c.entity == null or c.profile == null:
+		return
+	var nc := c.profile.get_current_camp()
+	if nc == c.entity.camp:
+		return
+	c.entity.camp = nc
+	var b := NetProto.writer(NetProto.S_CAMP)
+	b.put_u32(c.entity.eid)
+	b.put_8(nc)
+	_send(c, b)
+	for v: Conn in _conns.values():
+		if v != c and v.state == ConnState.IN_WORLD and v.known.has(c.entity.eid):
+			_send(v, b)
+
 ## Hồ sơ server vừa đổi (giao dịch, mua bán...): chụp lại dữ liệu, đánh dấu lưu, gửi bản chuẩn xuống game.
 func profile_changed(c: Conn) -> void:
 	c.data = c.profile.to_dict()
@@ -890,6 +907,7 @@ func profile_changed(c: Conn) -> void:
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	if _conns.has(c.key) and c.state == ConnState.IN_WORLD:
 		send_profile(c)
+		refresh_camp(c)
 
 func in_world_conns() -> Array:
 	var out := []

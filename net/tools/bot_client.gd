@@ -80,6 +80,10 @@ func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	b.put_u8(NetProto.FLAG_DEAD if dead else 0)
 	_send(b, NetProto.CH_RELIABLE)
 
+## Phe của người chơi khác mình đang thấy (gói xuất hiện + S_CAMP).
+func known_camp(other: int) -> int:
+	return int(known[other].get("camp", -99)) if known.has(other) else -99
+
 func friend(op: int, target := 0, arg := 0, fname := "") -> void:
 	var b := NetProto.writer(NetProto.C_FRIEND)
 	b.put_u8(op)
@@ -238,8 +242,8 @@ func _read_spawn(b: StreamPeerBuffer) -> void:
 	var kind := b.get_u8()
 	var n := NetProto.get_str(b)
 	var lv := b.get_u16()
-	b.get_8()
-	known[id] = {"kind": kind, "name": n, "level": lv, "pos": Vector2(b.get_float(), b.get_float())}
+	var cp := b.get_8()
+	known[id] = {"kind": kind, "name": n, "level": lv, "camp": cp, "pos": Vector2(b.get_float(), b.get_float())}
 	b.get_data(4)
 	known[id]["hp"] = b.get_u8()
 	if kind == NetProto.KIND_MONSTER:
@@ -358,6 +362,11 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list = parsed if parsed is Array else []
+		NetProto.S_CAMP:
+			var ce := b.get_u32()
+			var cv := b.get_8()
+			if known.has(ce):
+				known[ce]["camp"] = cv
 		NetProto.S_FRIEND_INVITE:
 			var fe := b.get_u32()
 			friend_invites.append({"from": fe, "name": NetProto.get_str(b)})

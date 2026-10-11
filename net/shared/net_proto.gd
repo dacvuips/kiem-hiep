@@ -78,6 +78,7 @@ const S_FRIEND_LIST := 32   ## str json [{name, online, level}]
 const S_VIEW_EQUIP := 33    ## json snapshot (ViewEquipService.snapshot_of_profile)
 const S_ENMITY := 34      ## u8 state (RelationServer.ENMITY_*), u32 other_eid, str other_name, u8 launcher
 const S_PVP_HIT := 35     ## u32 attacker_eid, u32 n, n byte PvpHit (đã cắt theo trần) — máy bị đánh tự trừ máu
+const S_CAMP := 36        ## u32 eid, i8 camp — phe (màu tên) người chơi đổi (lên cấp 10, vào/rời bang...)
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name

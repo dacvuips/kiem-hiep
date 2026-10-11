@@ -71,11 +71,14 @@ func take_damage(amount: float) -> void:
 	a.attack_rating = 999
 	take_damage_from(a, int(amount), int(amount))
 
+## Màu tên theo phe như nhân vật của mình (Camp.COLORS: Tân thủ trắng, Chính phái cam, Tà phái tím, Trung lập xanh...).
 func _camp_color() -> Color:
-	match camp:
-		1: return Color(1.0, 0.85, 0.35)   ## Tống
-		2: return Color(0.55, 0.8, 1.0)    ## Kim
-	return Color(0.92, 0.92, 0.92)
+	return Camp.get_color(camp)
+
+func set_camp(new_camp: int) -> void:
+	camp = new_camp
+	if not pk_enemy:
+		_label.add_theme_color_override("font_color", _camp_color())
 
 func set_look(look: Dictionary) -> void:
 	if look == _look:

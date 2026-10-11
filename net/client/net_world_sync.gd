@@ -56,6 +56,10 @@ func _ready() -> void:
 	NetClient.guild_list.connect(func(list: Array) -> void: guild_list = list)
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
+	NetClient.camp_changed.connect(func(eid: int, new_camp: int) -> void:
+		var rp: RemotePlayer = _remotes.get(eid)
+		if rp and is_instance_valid(rp):
+			rp.set_camp(new_camp))
 	NetClient.enmity_state.connect(_on_enmity)
 	NetClient.pvp_hit.connect(func(attacker_eid: int, hit: Dictionary) -> void:
 		if player and is_instance_valid(player):

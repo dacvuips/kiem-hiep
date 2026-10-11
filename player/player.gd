@@ -119,6 +119,7 @@ func _ready() -> void:
 
 	var sect := SectRegistry.get_by_id(profile.sect_id) if profile else null
 	skill_controller.setup(sect)
+	skill_controller.skill_cast.connect(_on_skill_cast_for_range)
 	## Buff/bùa thêm hoặc hết hạn -> dựng lại chỉ số (CombatantStats.build gồm trạng thái đang dính).
 	status_controller.stats_changed.connect(refresh_combat_stats)
 	_build_name_label(profile.display_name if profile else "")
@@ -506,7 +507,12 @@ func _physics_process(delta: float) -> void:
 	if _key_pressed("attack") and not is_attacking:
 		play_attack()
 
-	range_indicator.set_radius(get_current_range())
+	range_indicator.set_radius(_display_range())
+	## Phe đổi (lên cấp 10 hết Tân thủ, vào/rời bang...): đổi màu tên theo.
+	var lp := GameManager.local_profile
+	var cur_camp: int = lp.get_current_camp() if lp else camp
+	if cur_camp != camp:
+		set_camp(cur_camp)
 
 	if _key_pressed("toggle_auto"):
 		is_auto_mode = not is_auto_mode
@@ -720,6 +726,23 @@ func get_ground_position() -> Vector2:
 
 ## Tầm đánh = AttackRadius gốc của skill (đơn vị logic VLTK: ngang 1 px = 1 đơn vị, dọc 1 px = 2 đơn vị). Skill chưa có
 ## dữ liệu tầm thì dùng base_range cũ. Nâng cấp tầm (PlayerStats.range_multiplier) vẫn nhân lên.
+## Vòng tầm dưới chân: hiện tầm của skill VỪA DÙNG (đòn chính, phím 1-4, ô liên tục) trong RANGE_SHOW_MS, rồi trở về tầm đòn
+## chính. Skill không có tầm (buff, hào quang) thì không đổi vòng.
+const RANGE_SHOW_MS := 3000
+var _range_skill: SkillDefinition = null
+var _range_until_ms := 0
+
+func _on_skill_cast_for_range(skill_id: String) -> void:
+	var s := skill_controller.get_skill(skill_id)
+	if s != null and s.vltk_attack_radius > 0:
+		_range_skill = s
+		_range_until_ms = Time.get_ticks_msec() + RANGE_SHOW_MS
+
+func _display_range() -> float:
+	if _range_skill != null and Time.get_ticks_msec() < _range_until_ms:
+		return get_skill_radius(_range_skill)
+	return get_current_range()
+
 func get_skill_radius(skill: SkillDefinition) -> float:
 	var radius := float(skill.vltk_attack_radius) if skill != null and skill.vltk_attack_radius > 0 else base_range
 	return radius * PlayerStats.range_multiplier

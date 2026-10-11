@@ -92,6 +92,10 @@ func _find_skill(skill_id: String) -> SkillDefinition:
 			return skill
 	return null
 
+## Skill của phái theo id (null nếu không có / không đặt lên thanh skill được).
+func get_skill(skill_id: String) -> SkillDefinition:
+	return _find_skill(skill_id)
+
 func try_cast_main(caster: Node2D, target: Node2D) -> bool:
 	return _try_cast(get_main_skill(), caster, target)
 

@@ -177,7 +177,7 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 	var sect := SectRegistry.get_by_id(src.sect_id)
 	if sect:
 		fresh.set_sect(sect)
-	fresh.camp = src.camp
+	fresh.camp = -1   ## phe do server tính (Tân thủ -> phái -> bang); không nhận phe game tự đặt lúc tạo nhân vật
 	fresh.riding = src.riding
 	fresh.skill_settings = src.skill_settings
 	fresh.server_seen = 1
