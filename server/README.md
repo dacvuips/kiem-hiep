@@ -119,6 +119,10 @@ godot --headless --path . res://tests/net_tests.tscn                          # 
 - Di chuyển: game gửi vị trí, server kiểm tra tốc độ (ngân sách quãng đường) + ô vật cản, sai thì kéo về (`S_CORRECT`).
 - Quái (693 con theo `map.json`) do game server điều khiển: AI gốc KNpcAI, hồi sinh theo `respawn`. Quái ở vùng không có
   người chơi trong 2 ô AOI thì "ngủ". Server báo quái ra chiêu (`S_MATTACK`); máy người bị nhắm tính đòn thật, máy khác chỉ vẽ.
-- Sát thương người chơi gây cho quái (B2): game tính rồi gửi `C_DAMAGE`; server kiểm tra khoảng cách, trần theo cấp, tốc độ gửi.
-  Quái chết: kinh nghiệm chia theo phần sát thương, rớt đồ cho người hạ đòn cuối (`S_KILL`).
+- Sát thương người chơi gây cho quái: game tính rồi gửi `C_DAMAGE`; server kiểm tra khoảng cách, tốc độ gửi và cắt theo
+  **trần sát thương của chính nhân vật** (`ProfileGuard.max_hit`: skill mạnh nhất đã học x chí mạng x dư 20%).
+- Quái chết: **server tính kinh nghiệm / lên cấp** (`S_PROGRESS`, chia theo phần sát thương); rớt đồ cho người hạ đòn cuối (`S_KILL`).
+- Dữ liệu nhân vật khi đang trong map: game gửi cho game server (`C_PROFILE`), server gộp theo `ProfileGuard` (giữ cấp /
+  kinh nghiệm của server, điểm tiềm năng / kỹ năng không vượt số cấp cho phép) và lưu qua `PUT /internal/game/characters/{id}`
+  mỗi 60 giây + khi thoát. Túi đồ / tiền tạm tin game — chuyển lên server ở bước C.
 - **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).

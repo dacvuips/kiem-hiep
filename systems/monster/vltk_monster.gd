@@ -562,6 +562,8 @@ func grant_rewards(with_drops := true) -> void:
 		var drops := DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
 		if not drops.is_empty():
 			GroundDrop.spawn_drops(get_parent(), position, drops)
+	if net_eid != 0:
+		return   ## online: kinh nghiệm do game server tính và báo (S_PROGRESS)
 	KillRewards.on_monster_killed(self)
 
 # ---------------------------------------------------------------- online (quái của game server)

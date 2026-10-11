@@ -14,6 +14,9 @@ var known: Dictionary = {}        ## eid -> {name, pos, ...}
 var corrections := 0
 var attacked_by: Dictionary = {}  ## monster eid -> số lần quái ra chiêu vào mình
 var kills: Array = []             ## các S_KILL nhận được
+var exp_gained := 0
+var level := 0
+var saved_version := 0
 var states_received := 0
 var closed := false
 var _token := ""
@@ -24,7 +27,9 @@ func start(host: String, port: int, token: String, character_id: int) -> bool:
 	_character_id = character_id
 	if peer.create_client(host, port, 2) != OK:
 		return false
-	peer.peer_connected.connect(func(_id: int) -> void: _hello())
+	peer.peer_connected.connect(func(_id: int) -> void:
+		NetProto.tune_enet_peer(peer.get_peer(1))
+		_hello())
 	peer.peer_disconnected.connect(func(_id: int) -> void: closed = true)
 	return true
 
@@ -52,7 +57,7 @@ func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	b.put_u8(NetProto.action_index(action))
 	b.put_u8(0)
 	b.put_u8(0)
-	_send(b, NetProto.CH_STATE)
+	_send(b, NetProto.CH_RELIABLE)
 
 func damage(monster_eid: int, amount: int) -> void:
 	var b := NetProto.writer(NetProto.C_DAMAGE)
@@ -72,6 +77,11 @@ func nearest_monster() -> int:
 				best_d = d
 				best = id
 	return best
+
+func send_profile(data: Dictionary) -> void:
+	var b := NetProto.writer(NetProto.C_PROFILE)
+	NetProto.put_json(b, data)
+	_send(b, NetProto.CH_RELIABLE)
 
 func close() -> void:
 	peer.close()
@@ -126,6 +136,11 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				attacked_by[m] = int(attacked_by.get(m, 0)) + 1
 		NetProto.S_KILL:
 			kills.append({"eid": b.get_u32(), "monster_id": b.get_u16()})
+		NetProto.S_PROGRESS:
+			exp_gained += b.get_u32()
+			level = b.get_u16()
+		NetProto.S_SAVED:
+			saved_version = b.get_u32()
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())

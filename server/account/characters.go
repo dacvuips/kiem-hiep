@@ -84,7 +84,8 @@ func profileSummary(raw json.RawMessage, name string) (data []byte, gender int, 
 	if err := json.Unmarshal(raw, &m); err != nil || m == nil {
 		return nil, 0, "", 0, errBadRequest
 	}
-	m["display_name"] = name
+	m["name"] = name
+	delete(m, "display_name")
 	num := func(k string) int {
 		if f, ok := m[k].(float64); ok {
 			return int(f)

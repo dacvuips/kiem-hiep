@@ -64,7 +64,10 @@ func http(method: String, path: String, body: Dictionary, token := "") -> Dictio
 	var headers := ["Content-Type: application/json"]
 	if token != "":
 		headers.append("Authorization: Bearer " + token)
-	h.request(API + path, headers, HTTPClient.METHOD_POST if method == "POST" else HTTPClient.METHOD_GET, JSON.stringify(body))
+	if method == "GET":
+		h.request(API + path, headers, HTTPClient.METHOD_GET)
+	else:
+		h.request(API + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
 	var res: Array = await h.request_completed
 	h.queue_free()
 	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
@@ -96,6 +99,32 @@ func test_monsters(p: BotClient) -> void:
 	check("nhận thưởng khi hạ quái (S_KILL)", await wait_until(func() -> bool:
 		return p.kills.any(func(k: Dictionary) -> bool: return int(k.eid) == m), 5.0), p.kills)
 	check("xác quái biến mất sau vài giây", await wait_until(func() -> bool: return not p.known.has(m), 6.0))
+	check("server cộng kinh nghiệm khi hạ quái (S_PROGRESS)", p.exp_gained > 0, p.exp_gained)
+
+## B3: gửi bản nhân vật gian lận cấp -> server giữ cấp của mình; thay đổi hợp lệ (thanh skill) vẫn được lưu khi thoát.
+func test_profile_guard(p: BotClient, info: Array) -> void:
+	var list := await http("GET", "/v1/characters?server_id=1", {}, info[0])
+	var row: Dictionary = {}
+	for c in list.get("characters", []):
+		if int(c.id) == int(info[1]):
+			row = c
+	var data: Dictionary = row.get("data", {}).duplicate(true)
+	var real_level := int(row.get("level", 1))
+	data["level"] = 99
+	data["exp"] = 0
+	data["potential_points"] = 9999
+	data["hotbar_page"] = 1
+	p.send_profile(data)
+	await get_tree().create_timer(0.5).timeout
+	p.close()
+	await get_tree().create_timer(1.5).timeout
+	list = await http("GET", "/v1/characters?server_id=1", {}, info[0])
+	for c in list.get("characters", []):
+		if int(c.id) == int(info[1]):
+			row = c
+	check("cấp gian lận không được lưu", int(row.level) == maxi(real_level, p.level), [row.level, real_level, p.level])
+	check("điểm tiềm năng gian lận không được lưu", int(row.data.potential_points) < 9999, row.data.potential_points)
+	check("thay đổi hợp lệ được server lưu khi thoát", int(row.data.hotbar_page) == 1, row.data.hotbar_page)
 
 ## Tìm quái: đi theo các hướng tới khi thấy (bước 25 px / 1/15 giây ~ 375 px/s, dưới tốc độ tối đa).
 func _walk_to_monsters(p: BotClient) -> bool:
@@ -163,3 +192,5 @@ func run() -> void:
 	check("A2 thấy B", await wait_until(func() -> bool: return a2.known.has(b.eid)))
 	b.close()
 	check("B thoát thì biến mất", await wait_until(func() -> bool: return not a2.known.has(b.eid)))
+
+	await test_profile_guard(a2, a_info)

@@ -12,6 +12,8 @@ signal entity_look(eid: int, look: Dictionary)
 signal position_corrected(feet: Vector2)
 signal monster_attack(monster_eid: int, slot: int, target_eid: int, dir64: int)
 signal monster_killed(info: Dictionary)
+signal progress(exp_gained: int, level: int, current_exp: int)
+signal saved(version: int)
 
 enum Status { OFFLINE, CONNECTING, IN_WORLD }
 
@@ -44,7 +46,10 @@ func connect_to(server: Dictionary, access_token: String, character_id: int) -> 
 		return
 	status = Status.CONNECTING
 	_connect_deadline = Time.get_ticks_msec() / 1000.0 + 10.0
-	_peer.peer_connected.connect(func(_id: int) -> void: _send_hello(access_token, character_id))
+	_peer.peer_connected.connect(func(_id: int) -> void:
+		if _peer is ENetMultiplayerPeer:
+			NetProto.tune_enet_peer((_peer as ENetMultiplayerPeer).get_peer(1))
+		_send_hello(access_token, character_id))
 	_peer.peer_disconnected.connect(func(_id: int) -> void:
 		_fail(_last_error[0] if _last_error[0] != "" else "disconnected",
 			_last_error[1] if _last_error[1] != "" else "Mất kết nối với máy chủ game"))
@@ -95,7 +100,7 @@ func send_move(feet: Vector2, dir: int, action: String, z: float, flags: int) ->
 	b.put_u8(NetProto.action_index(action))
 	b.put_u8(clampi(int(z), 0, 255))
 	b.put_u8(flags)
-	_send(b, NetProto.CH_STATE)
+	_send(b)   ## tin cậy: gói nhỏ, tối đa 15/giây — gửi không tin cậy từ máy người chơi từng bị ENet bỏ mất hàng loạt
 
 ## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung).
 func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
@@ -105,6 +110,14 @@ func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
 	b.put_u32(monster_eid)
 	b.put_u32(clampi(int(amount), 0, 0x7fffffff))
 	b.put_u8(1 if staggers else 0)
+	_send(b)
+
+## Gửi bản nhân vật cho game server (thay cho lưu HTTP khi đang trong map online).
+func send_profile(data: Dictionary) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_PROFILE)
+	NetProto.put_json(b, data)
 	_send(b)
 
 func send_look(look: Dictionary) -> void:
@@ -187,6 +200,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			k["share"] = share & 0x7f
 			k["last_hit"] = (share & 0x80) != 0
 			monster_killed.emit(k)
+		NetProto.S_PROGRESS:
+			var gained := b.get_u32()
+			var lv := b.get_u16()
+			progress.emit(gained, lv, b.get_64())
+		NetProto.S_SAVED:
+			saved.emit(b.get_u32())
 		NetProto.S_CORRECT:
 			position_corrected.emit(Vector2(b.get_float(), b.get_float()))
 		NetProto.S_PONG:

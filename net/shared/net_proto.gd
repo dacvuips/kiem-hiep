@@ -2,7 +2,8 @@ class_name NetProto
 ## Giao thức game server <-> game (dùng chung 2 phía). Gói nhị phân: [1 byte loại tin][dữ liệu].
 ## Toạ độ = toạ độ CHÂN nhân vật trên map (pixel map, giống VltkWorld / map.json).
 ##
-## Kênh ENet: 0 = tin cậy có thứ tự (vào game, xuất hiện/biến mất, sự kiện); 1 = không tin cậy (vị trí, ghi đè được).
+## Kênh ENet: 0 = tin cậy có thứ tự (mọi gói game -> server, vào game, xuất hiện/biến mất, sự kiện);
+## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
 const VERSION := 1
@@ -10,6 +11,12 @@ const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK g�
 const SNAPSHOT_EVERY := 2         ## gửi vị trí mỗi 2 tick = 9 lần/giây
 const CLIENT_SEND_RATE := 15.0    ## game gửi vị trí của mình tối đa 15 lần/giây
 const AOI_CELL := 1024.0          ## ô lưới tầm nhìn (px); mỗi người thấy 3x3 ô quanh mình
+## ENet tự BỎ gói không tin cậy khi thấy trễ tăng (throttle) — với game gửi đều 9-15 gói/giây thì chỉ làm mất vị trí,
+## nên tắt phần giảm (deceleration = 0). Gọi cho mọi ENetPacketPeer mới kết nối, ở cả 2 đầu.
+static func tune_enet_peer(peer: ENetPacketPeer) -> void:
+	if peer:
+		peer.throttle_configure(5000, 32, 0)
+
 const CH_RELIABLE := 0
 const CH_STATE := 1
 
@@ -18,6 +25,7 @@ const C_HELLO := 1        ## u16 version, str access_token, u32 character_id
 const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags
 const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse
 const C_DAMAGE := 4       ## u32 monster_eid, u32 amount, u8 flags (1 = làm khựng) — sát thương đã tính ở máy người đánh
+const C_PROFILE := 5      ## u32 n + n byte JSON(PlayerProfile.to_dict) nén gzip — game server gộp (ProfileGuard) rồi lưu
 const C_PING := 9         ## u32 client_ms
 
 # server -> game
@@ -32,6 +40,9 @@ const S_LOOK := 7         ## u32 eid, u8 gender, i16 helm, i16 armor, i16 weapon
 const S_MATTACK := 8      ## u32 monster_eid, u8 skill_slot, u32 target_eid, u8 dir64 — quái bắt đầu ra chiêu vào target
 const S_PONG := 9         ## u32 client_ms, u32 server_ms
 const S_KILL := 10        ## u32 monster_eid, u16 monster_id, u16 level, u8 series, u8 blue, f32 x, f32 y, u8 share% — mình được thưởng
+const S_PROGRESS := 11    ## u32 exp_gained, u16 level, i64 current_exp — kinh nghiệm / cấp do server tính
+const S_SAVED := 12       ## u32 version — server vừa lưu nhân vật (game cập nhật version để lần lưu HTTP sau không lệch)
+const MAX_PROFILE_BYTES := 512 * 1024
 
 const KIND_PLAYER := 1
 const KIND_MONSTER := 2
@@ -80,6 +91,28 @@ static func get_str(b: StreamPeerBuffer, max_len := 4096) -> String:
 		return ""
 	var r := b.get_data(n)
 	return (r[1] as PackedByteArray).get_string_from_utf8() if r[0] == OK else ""
+
+## Dictionary <-> JSON nén (dữ liệu nhân vật ~10-50 KB -> vài KB).
+static func put_json(b: StreamPeerBuffer, d: Dictionary) -> void:
+	var raw := JSON.stringify(d).to_utf8_buffer()
+	var packed := raw.compress(FileAccess.COMPRESSION_GZIP)
+	b.put_u32(raw.size())
+	b.put_u32(packed.size())
+	b.put_data(packed)
+
+static func get_json(b: StreamPeerBuffer) -> Dictionary:
+	if b.get_available_bytes() < 8:
+		return {}
+	var raw_size := b.get_u32()
+	var packed_size := b.get_u32()
+	if raw_size > MAX_PROFILE_BYTES or packed_size > b.get_available_bytes():
+		return {}
+	var r := b.get_data(packed_size)
+	if r[0] != OK:
+		return {}
+	var raw := (r[1] as PackedByteArray).decompress(raw_size, FileAccess.COMPRESSION_GZIP)
+	var parsed: Variant = JSON.parse_string(raw.get_string_from_utf8())
+	return parsed if parsed is Dictionary else {}
 
 static func reader(packet: PackedByteArray) -> StreamPeerBuffer:
 	var b := StreamPeerBuffer.new()

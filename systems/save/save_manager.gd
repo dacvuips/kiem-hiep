@@ -71,6 +71,8 @@ var _online_version := 0
 var _pending_profile: PlayerProfile
 var _online_saving := false
 var _online_timer: Timer
+## Vừa rời map online: game server đã lưu với version mới mà máy chưa biết -> lần lưu HTTP kế tiếp hỏi lại version trước.
+var _version_unknown := false
 
 func _ready() -> void:
 	_online_timer = Timer.new()
@@ -103,7 +105,16 @@ func clear_online_character() -> void:
 	if _online_timer:
 		_online_timer.stop()
 
+## Game server báo đã lưu (S_SAVED) / vừa rời map.
+func set_online_version(version: int) -> void:
+	_online_version = version
+	_version_unknown = false
+
+func mark_version_unknown() -> void:
+	_version_unknown = true
+
 ## Gửi ngay bản lưu đang chờ (nếu có). await được.
+## Đang trong map online: gửi cho game server (server gộp + lưu). Ngoài map: lưu thẳng qua API (HTTP).
 func flush_online() -> void:
 	while _online_saving:
 		await get_tree().process_frame
@@ -111,6 +122,11 @@ func flush_online() -> void:
 		return
 	var profile := _pending_profile
 	_pending_profile = null
+	if NetClient.is_in_world():
+		NetClient.send_profile(profile.to_dict())
+		return
+	if _version_unknown:
+		await _refresh_version()
 	_online_saving = true
 	var r: Dictionary = await AccountApi.save_character(online_character_id, _online_version, profile.to_dict())
 	_online_saving = false
@@ -122,6 +138,14 @@ func flush_online() -> void:
 		_pending_profile = profile   ## mất mạng: giữ lại, lần lưu sau gửi tiếp
 		_online_timer.start(ONLINE_SAVE_DELAY * 5)
 	online_save_failed.emit(r.message)
+
+func _refresh_version() -> void:
+	var r: Dictionary = await AccountApi.characters(ServerSelectScreen.selected_server_id)
+	if r.ok:
+		for c in r.data.get("characters", []):
+			if int(c.get("id", 0)) == online_character_id:
+				set_online_version(int(c.get("version", _online_version)))
+				return
 
 func has_profile() -> bool:
 	if _online():

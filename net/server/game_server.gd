@@ -25,6 +25,9 @@ const MAX_PACKETS_PER_SEC := 80
 ## Sát thương báo lên: tối đa mỗi giây, xa hơn khoảng này không tính.
 const MAX_DAMAGE_PER_SEC := 30
 const MAX_HIT_DISTANCE := 1200.0
+## Lưu nhân vật lên server tài khoản tối đa mỗi chừng này giây (khi có thay đổi) + lúc thoát.
+const SAVE_INTERVAL := 60.0
+const MAX_PROFILE_PER_SEC := 2
 
 enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 
@@ -45,6 +48,15 @@ class Conn:
 	var packets_window := 0.0
 	var damage_msgs := 0
 	var damage_window := 0.0
+	## Bản dữ liệu nhân vật của SERVER (PlayerProfile.to_dict) — nguồn sự thật về cấp / kinh nghiệm khi online.
+	var data: Dictionary = {}
+	var profile: PlayerProfile
+	var char_version := 0
+	var dirty := false
+	var last_save := 0.0
+	var saving := false
+	var max_hit := 2000.0
+	var last_profile_at := -10.0
 
 var grid: MapGrid
 var aoi := AoiGrid.new()
@@ -130,6 +142,8 @@ func _process(delta: float) -> void:
 		_acc -= step
 		_tick += 1
 		_simulate(step)
+		if _tick % NetProto.TICK_RATE == 0:
+			_save_due()
 		if _tick % NetProto.SNAPSHOT_EVERY == 0:
 			_send_snapshots()
 
@@ -192,6 +206,8 @@ func _key(p: MultiplayerPeer, id: int) -> String:
 	return ("e:" if p == _enet else "w:") + str(id)
 
 func _on_peer_connected(id: int, p: MultiplayerPeer) -> void:
+	if p == _enet:
+		NetProto.tune_enet_peer(_enet.get_peer(id))
 	var c := Conn.new()
 	c.key = _key(p, id)
 	c.peer = p
@@ -206,6 +222,8 @@ func _on_peer_disconnected(id: int, p: MultiplayerPeer) -> void:
 
 func _drop(c: Conn) -> void:
 	_conns.erase(c.key)
+	if c.dirty and c.character_id != 0:
+		_save(c)   ## lưu lần cuối (chạy nền, không cần kết nối còn sống)
 	if c.character_id != 0 and _by_character.get(c.character_id) == c:
 		_by_character.erase(c.character_id)
 	if c.entity:
@@ -268,6 +286,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_DAMAGE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 9:
 				_on_damage(c, b)
+		NetProto.C_PROFILE:
+			if c.state == ConnState.IN_WORLD:
+				_on_profile(c, b)
 		NetProto.C_LOOK:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 8:
 				_on_look(c, b)
@@ -306,6 +327,11 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.character_id = character_id
 	_by_character[character_id] = c
 	var data: Dictionary = ch.get("data", {}) if ch.get("data") is Dictionary else {}
+	c.data = data
+	c.profile = PlayerProfile.from_dict(data)
+	c.char_version = int(ch.get("version", 0))
+	c.last_save = _now
+	c.max_hit = ProfileGuard.max_hit(c.profile)
 	var e := ServerEntity.new()
 	e.eid = _next_eid
 	_next_eid += 1
@@ -370,7 +396,7 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 		aoi.update(e)
 
 ## Sát thương người chơi gây cho quái (tính ở máy người đánh bằng pipeline chiêu hiện có). Server kiểm tra: quái còn sống,
-## đủ gần, không vượt trần theo cấp, không gửi dồn dập. Bước B3 server sẽ tự tính sát thương.
+## đủ gần, không vượt trần sát thương của chính nhân vật (ProfileGuard.max_hit), không gửi dồn dập.
 func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
 	var amount := float(b.get_u32())
@@ -386,13 +412,9 @@ func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 		return
 	if m.pos.distance_to(c.entity.pos) > MAX_HIT_DISTANCE:
 		return
-	amount = minf(amount, max_hit_for_level(c.entity.level))
+	amount = minf(amount, c.max_hit)
 	if m.receive_damage(c.entity.eid, amount, staggers):
 		_on_monster_killed(m)
-
-## Trần sát thương 1 đòn theo cấp người chơi (chặn số liệu giả quá đáng; tinh chỉnh khi server tự tính sát thương).
-static func max_hit_for_level(lvl: int) -> float:
-	return maxf(2000.0, float(lvl * lvl) * 60.0)
 
 ## Quái chết: thưởng cho người đánh (kinh nghiệm theo phần sát thương; rớt đồ cho người hạ đòn cuối), hẹn giờ ẩn xác + hồi sinh.
 func _on_monster_killed(m: ServerMonster) -> void:
@@ -415,6 +437,67 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		b.put_float(m.pos.y)
 		b.put_u8(share | (0x80 if eid == m.last_hitter else 0))
 		_send(c, b)
+		_grant_exp(c, m, share)
+
+## Kinh nghiệm do server cộng vào bản nhân vật của server rồi báo game (S_PROGRESS).
+func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
+	if c.profile == null:
+		return
+	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
+	if got <= 0:
+		return
+	var before := c.profile.level
+	c.profile.add_exp(got)
+	c.data["level"] = c.profile.level
+	c.data["exp"] = c.profile.current_exp
+	c.data["skill_points"] = c.profile.skill_points
+	c.data["potential_points"] = c.profile.potential_points
+	c.data["max_stamina"] = c.profile.max_stamina
+	c.data["stamina"] = c.profile.stamina
+	c.dirty = true
+	if c.profile.level != before and c.entity:
+		c.entity.level = c.profile.level
+		c.entity.touch()
+		c.max_hit = ProfileGuard.max_hit(c.profile)
+	var b := NetProto.writer(NetProto.S_PROGRESS)
+	b.put_u32(got)
+	b.put_u16(c.profile.level)
+	b.put_64(c.profile.current_exp)
+	_send(c, b)
+
+## Game gửi bản nhân vật mới (đổi trang bị, cộng điểm, túi đồ...): gộp theo luật ProfileGuard.
+func _on_profile(c: Conn, b: StreamPeerBuffer) -> void:
+	if _now - c.last_profile_at < 1.0 / MAX_PROFILE_PER_SEC:
+		return
+	c.last_profile_at = _now
+	var client := NetProto.get_json(b)
+	if client.is_empty():
+		return
+	c.data = ProfileGuard.merge(c.data, client)
+	c.profile = PlayerProfile.from_dict(c.data)
+	c.max_hit = ProfileGuard.max_hit(c.profile)
+	c.dirty = true
+
+func _save_due() -> void:
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD and c.dirty and not c.saving and _now - c.last_save >= SAVE_INTERVAL:
+			_save(c)
+
+func _save(c: Conn) -> void:
+	c.saving = true
+	c.dirty = false
+	c.last_save = _now
+	var r: Dictionary = await account.save_character(c.character_id, c.char_version, c.data)
+	c.saving = false
+	if r.ok:
+		c.char_version = int(r.version)
+		if _conns.has(c.key) and c.state == ConnState.IN_WORLD:
+			var b := NetProto.writer(NetProto.S_SAVED)
+			b.put_u32(c.char_version)
+			_send(c, b)
+	else:
+		c.dirty = true
+		push_warning("Lưu nhân vật %d lỗi: %s" % [c.character_id, r.get("message", "")])
 
 func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	## B1: ngoại hình do game báo (đổi trang bị / lên ngựa). Bước B3 server tự tính từ dữ liệu nhân vật.

@@ -32,10 +32,16 @@ func _ready() -> void:
 	NetClient.position_corrected.connect(_on_corrected)
 	NetClient.monster_attack.connect(_on_monster_attack)
 	NetClient.monster_killed.connect(_on_monster_killed)
+	NetClient.progress.connect(_on_progress)
+	NetClient.saved.connect(SaveManager.set_online_version)
 	_connect()
 
 func _exit_tree() -> void:
+	## Gửi bản cuối cho game server (server lưu khi mình rời), rồi đánh dấu version phải hỏi lại.
+	if NetClient.is_in_world() and GameManager.local_profile:
+		NetClient.send_profile(GameManager.local_profile.to_dict())
 	NetClient.disconnect_from_server()
+	SaveManager.mark_version_unknown()
 
 func _connect() -> void:
 	_reconnect_in = -1.0
@@ -56,7 +62,21 @@ func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
 	_last_sent = {}
 	_last_look = {}
 
+## Kinh nghiệm / cấp do server tính: cộng y hệt cách server cộng (cùng PlayerProfile.add_exp) rồi chốt theo số của server.
+func _on_progress(gained: int, level: int, current_exp: int) -> void:
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var before := profile.level
+	profile.add_exp(gained)
+	profile.level = level
+	profile.current_exp = current_exp
+	if profile.level != before and player and is_instance_valid(player):
+		player.refresh_combat_stats()
+		_notify("Lên cấp %d!" % profile.level)
+
 func _on_disconnected(code: String, message: String) -> void:
+	SaveManager.mark_version_unknown()
 	for r in _remotes.values():
 		r.queue_free()
 	_remotes.clear()
