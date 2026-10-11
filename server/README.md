@@ -32,6 +32,27 @@ docker run --rm --network server_default -e API=http://account:8080 -e MAIL=http
   -v "$PWD/account:/t" alpine:3.20 sh -c "apk add -q bash curl jq && bash /t/smoke_test.sh"
 ```
 
+## Trang web người chơi + nạp thẻ
+
+`server/portal-web/` (React + Vite), được build vào image `account` và phục vụ tại **http://localhost:8080/**: trang chủ, đăng ký,
+đăng nhập, quên mật khẩu, quản lý tài khoản (đổi mật khẩu, nhân vật, lịch sử nạp / đăng nhập), **nạp thẻ**.
+
+- Đăng nhập web: `/v1/web/*` — refresh token nằm trong cookie HttpOnly + SameSite=Strict (JavaScript không đọc được),
+  access token chỉ giữ trong bộ nhớ trang; mọi yêu cầu `/v1/web/*` phải có header `X-Web-Request: 1` (chống CSRF).
+- Nạp thẻ: tiền vào **Ví Xu** của tài khoản (`wallets`, sổ cái `wallet_ledger`), người chơi đổi Xu thành **Nguyên bảo** cho 1 nhân vật
+  (`character_grants`). Game server cộng Nguyên bảo khi nhân vật vào map hoặc trong lần hỏi định kỳ nếu đang online, và chỉ đánh dấu
+  "đã nhận" trong cùng lần lưu nhân vật (không mất, không cộng 2 lần). Tỉ lệ mặc định 10.000đ = 100 Xu, 1 Xu = 1 Nguyên bảo
+  (web Admin → Nạp thẻ → Cài đặt quy đổi).
+- Cổng thanh toán: hiện chỉ có **cổng giả lập** (`SHOP_SANDBOX=true`, chỉ máy dev). Cổng thật cắm vào `paymentProvider` trong
+  `account/shop.go` (tạo đơn -> trang của cổng -> webhook có chữ ký -> `markPaid`). Production: `SHOP_SANDBOX=false`.
+- Web Admin: trang **Nạp thẻ** (doanh thu, duyệt / huỷ đơn tay, cài đặt quy đổi) và mục **Ví Xu** trong chi tiết tài khoản (cộng / trừ Xu
+  có lý do, ghi nhật ký).
+
+```bash
+cd server/portal-web && npm install && npm run dev        # phát triển giao diện ở :5174 (chuyển /v1 sang :8080)
+API=http://localhost:8080 bash server/account/web_smoke_test.sh   # kiểm tra phiên web + nạp thẻ giả lập
+```
+
 ## API người chơi
 
 Lỗi luôn có dạng `{"code": "...", "message": "..."}`. Client dựa vào `code`.

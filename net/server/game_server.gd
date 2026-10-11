@@ -91,6 +91,9 @@ class Conn:
 	## game nhận S_PICKED không được làm mất quà (server cộng lại phần game chưa xác nhận).
 	var grant_seq := 0
 	var grants: Array = []
+	## Quà chờ từ web (đổi Xu -> Nguyên bảo): id đã cộng vào RAM (chống cộng 2 lần) / id chưa lưu (gửi kèm lần lưu tới).
+	var seen_web_grants: Dictionary = {}
+	var unsaved_web_grants: Array = []
 	## Lần gửi bản chuẩn (S_PROFILE) gần nhất có seq này: bản game gửi lên với ack nhỏ hơn là bản CŨ (trước khi game nhận
 	## bản chuẩn — VD vừa giao dịch xong) -> bỏ qua, không thì mất đồ / tiền vừa nhận.
 	var min_ack := 0
@@ -523,7 +526,10 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		c.profile = take_over.profile
 		c.char_version = take_over.char_version
 		c.grant_seq = take_over.grant_seq
+		c.seen_web_grants = take_over.seen_web_grants
+		c.unsaved_web_grants = take_over.unsaved_web_grants
 	c.last_save = _now
+	_last_status_poll = -INF   ## hỏi ngay quà chờ (nạp thẻ trên web) cho nhân vật vừa vào
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	var e := ServerEntity.new()
 	e.eid = _next_eid
@@ -951,13 +957,15 @@ func _poll_status() -> void:
 	if _status_polling:
 		return
 	var ids := []
+	var char_ids := []
 	for c: Conn in _conns.values():
 		if c.state == ConnState.IN_WORLD and c.account_id != 0:
 			ids.append(c.account_id)
+			char_ids.append(c.character_id)
 	if ids.is_empty():
 		return
 	_status_polling = true
-	var r: Dictionary = await account.status(ids)
+	var r: Dictionary = await account.status(ids, char_ids)
 	_status_polling = false
 	if not r.ok:
 		return
@@ -969,6 +977,30 @@ func _poll_status() -> void:
 		c.muted_until = _unix_of(s.get("muted_until"))
 		if bool(s.get("banned", false)):
 			_kick(c, "banned", str(s.get("ban_message", "Tài khoản đã bị khoá")))
+	var gr: Variant = r.get("grants", {})
+	if gr is Dictionary:
+		for c: Conn in _conns.values():
+			if c.state == ConnState.IN_WORLD and gr.has(str(c.character_id)):
+				_apply_web_grants(c, gr[str(c.character_id)])
+
+## Nguyên bảo đổi từ Xu trên web: cộng vào bản nhân vật của server, gửi bản chuẩn xuống game, lưu ngay (kèm id quà để đánh dấu).
+func _apply_web_grants(c: Conn, list: Variant) -> void:
+	if not list is Array or c.profile == null:
+		return
+	var got := 0
+	for g in list:
+		var id := int(g.get("id", 0))
+		var jade := int(g.get("jade", 0))
+		if id <= 0 or jade <= 0 or c.seen_web_grants.has(id):
+			continue
+		c.seen_web_grants[id] = true
+		c.unsaved_web_grants.append(id)
+		c.profile.jade += jade
+		got += jade
+	if got > 0:
+		profile_changed(c)
+		notice(c, "Nhận %d Nguyên bảo từ Ví Xu." % got)
+		_save(c)
 
 func send(c: Conn, b: StreamPeerBuffer) -> void:
 	_send(c, b)
@@ -989,7 +1021,11 @@ func _save(c: Conn) -> void:
 	c.last_save = _now
 	var char_id := c.character_id
 	_saving_chars[char_id] = int(_saving_chars.get(char_id, 0)) + 1
-	var r: Dictionary = await account.save_character(char_id, c.char_version, c.data)
+	var sent_grants: Array = c.unsaved_web_grants.duplicate()
+	var r: Dictionary = await account.save_character(char_id, c.char_version, c.data, sent_grants)
+	if r.ok:
+		for id in sent_grants:
+			c.unsaved_web_grants.erase(id)
 	_saving_chars[char_id] = int(_saving_chars[char_id]) - 1
 	if int(_saving_chars[char_id]) <= 0:
 		_saving_chars.erase(char_id)

@@ -73,6 +73,21 @@ func main() {
 	mux.HandleFunc("POST /v1/auth/google/start", wrap(s.handleGoogleStart))
 	mux.HandleFunc("GET /v1/auth/google/callback", s.handleGoogleCallback)
 	mux.HandleFunc("POST /v1/auth/google/poll", wrap(s.handleGooglePoll))
+	// Trang web người chơi: cùng handler đăng nhập nhưng refresh token đi qua cookie HttpOnly (web_session.go).
+	mux.HandleFunc("POST /v1/web/register", wrap(s.webOnly(s.handleRegister)))
+	mux.HandleFunc("POST /v1/web/login", wrap(s.webOnly(s.handleLogin)))
+	mux.HandleFunc("POST /v1/web/refresh", wrap(s.webOnly(s.handleRefresh)))
+	mux.HandleFunc("POST /v1/web/logout", wrap(s.webOnly(s.handleLogout)))
+	mux.HandleFunc("POST /v1/web/password", wrap(s.webOnly(s.handleChangePassword)))
+	mux.HandleFunc("GET /v1/account/logins", wrap(s.handleAccountLogins))
+	// Nạp thẻ (shop.go)
+	mux.HandleFunc("GET /v1/shop/config", wrap(s.handleShopConfig))
+	mux.HandleFunc("GET /v1/shop/wallet", wrap(s.handleShopWallet))
+	mux.HandleFunc("POST /v1/shop/orders", wrap(s.handleShopCreateOrder))
+	mux.HandleFunc("GET /v1/shop/orders/{code}", wrap(s.handleShopOrder))
+	mux.HandleFunc("POST /v1/shop/orders/{code}/cancel", wrap(s.handleShopCancelOrder))
+	mux.HandleFunc("POST /v1/shop/sandbox/{code}/pay", wrap(s.handleShopSandboxPay))
+	mux.HandleFunc("POST /v1/shop/transfer", wrap(s.handleShopTransfer))
 	mux.HandleFunc("GET /v1/servers", wrap(s.handleServers))
 	mux.HandleFunc("GET /v1/characters", wrap(s.handleListCharacters))
 	mux.HandleFunc("POST /v1/characters", wrap(s.handleCreateCharacter))
@@ -103,12 +118,21 @@ func main() {
 	mux.HandleFunc("POST /admin/api/servers", wrap(s.handleAdminSaveServer))
 	mux.HandleFunc("PUT /admin/api/servers/{id}", wrap(s.handleAdminSaveServer))
 	mux.HandleFunc("GET /admin/api/audit", wrap(s.handleAdminAudit))
+	mux.HandleFunc("GET /admin/api/shop/orders", wrap(s.handleAdminOrders))
+	mux.HandleFunc("POST /admin/api/shop/orders/{code}/{action}", wrap(s.handleAdminOrderAction))
+	mux.HandleFunc("GET /admin/api/shop/settings", wrap(s.handleAdminShopSettings))
+	mux.HandleFunc("PUT /admin/api/shop/settings", wrap(s.handleAdminShopSettings))
+	mux.HandleFunc("GET /admin/api/accounts/{id}/wallet", wrap(s.handleAdminWallet))
+	mux.HandleFunc("POST /admin/api/accounts/{id}/wallet", wrap(s.handleAdminWalletAdjust))
 	mux.HandleFunc("GET /admin/api/admins", wrap(s.handleAdminAdmins))
 	mux.HandleFunc("POST /admin/api/admins", wrap(s.handleAdminCreateAdmin))
 	mux.HandleFunc("POST /admin/api/admins/{id}/{action}", wrap(s.handleAdminAdminAction))
 	if cfg.AdminWebDir != "" {
 		mux.Handle("GET /admin/", adminWeb(cfg.AdminWebDir))
 		mux.HandleFunc("GET /admin", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/admin/", http.StatusFound) })
+	}
+	if cfg.PortalWebDir != "" {
+		mux.Handle("GET /", portalWeb(cfg.PortalWebDir))
 	}
 
 	srv := &http.Server{

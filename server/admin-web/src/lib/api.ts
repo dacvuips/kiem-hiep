@@ -152,3 +152,58 @@ export interface AccountDetail {
   sessions: SessionRow[]
   audit: AuditItem[]
 }
+
+// ---- nạp thẻ / ví Xu
+
+export type OrderStatus = 'pending' | 'paid' | 'cancelled' | 'failed'
+export interface TopupOrder {
+  id: number
+  code: string
+  account_id: number
+  username: string
+  amount_vnd: number
+  xu: number
+  provider: string
+  status: OrderStatus
+  note: string
+  created_at: string
+  paid_at: string | null
+}
+export interface OrdersPage {
+  orders: TopupOrder[]
+  total: number
+  page: number
+  size: number
+  summary: { revenue_vnd: number; revenue_today_vnd: number; paid_orders: number }
+}
+export interface ShopSettings {
+  xu_per_10k: number
+  jade_per_xu: number
+  sandbox: boolean
+  provider: string
+}
+export interface LedgerRow {
+  delta: number
+  balance_after: number
+  kind: 'topup' | 'transfer' | 'admin'
+  ref: string
+  note: string
+  admin_id: number | null
+  created_at: string
+}
+export interface GrantRow {
+  id: number
+  character_id: number
+  character: string
+  jade: number
+  xu: number
+  status: 'pending' | 'applied'
+  created_at: string
+  applied_at: string | null
+}
+export interface Wallet {
+  xu: number
+  total_topup_vnd: number
+  ledger: LedgerRow[]
+  grants: GrantRow[]
+}

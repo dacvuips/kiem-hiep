@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  Gavel, LayoutDashboard, LogOut, Menu, Moon, ScrollText, Server, ShieldCheck, Sun, UserCog, Users, X,
+  CreditCard, Gavel, LayoutDashboard, LogOut, Menu, Moon, ScrollText, Server, ShieldCheck, Sun, UserCog, Users, X,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -15,6 +15,7 @@ const NAV = [
   { to: '/accounts', label: 'Tài khoản', icon: Users },
   { to: '/punishments', label: 'Xử phạt', icon: Gavel },
   { to: '/servers', label: 'Máy chủ', icon: Server },
+  { to: '/shop', label: 'Nạp thẻ', icon: CreditCard },
   { to: '/audit', label: 'Nhật ký', icon: ScrollText },
   { to: '/admins', label: 'Quản lý admin', icon: UserCog, perm: 'admins.manage' },
 ]

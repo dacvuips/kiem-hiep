@@ -488,6 +488,69 @@ func test_relations() -> void:
 	a.close()
 	b.close()
 
+## Nạp thẻ (web): đơn -> cổng giả lập -> ví Xu -> đổi Nguyên bảo cho nhân vật ĐANG ONLINE và nhân vật OFFLINE (nhận lúc vào map).
+## Cần account server bật SHOP_SANDBOX=true.
+func _jade_of(token: String, character_id: int) -> int:
+	var r := await http("GET", "/v1/characters?server_id=1", {}, token)
+	for c in r.get("characters", []):
+		if int(c.id) == character_id:
+			return int(c.data.get("jade", 0))
+	return -1
+
+func _buy_xu(token: String, vnd: int) -> Dictionary:
+	var o := await http("POST", "/v1/shop/orders", {"amount_vnd": vnd}, token)
+	var code := str(o.get("order", {}).get("code", ""))
+	if code == "":
+		return o
+	return await http("POST", "/v1/shop/sandbox/%s/pay" % code, {}, token)
+
+func test_shop() -> void:
+	var cfg := await http("GET", "/v1/shop/config", {})
+	if not bool(cfg.get("sandbox", false)):
+		check("Nạp thẻ: account server bật SHOP_SANDBOX=true", false, cfg)
+		return
+	var ai := await make_player("p")
+	var token: String = ai[0]
+	var bad := await http("POST", "/v1/shop/orders", {"amount_vnd": 12345}, token)
+	check("Nạp thẻ: mệnh giá lạ bị từ chối", str(bad.get("code", "")) == "bad_amount", bad)
+	var paid := await _buy_xu(token, 10000)
+	check("Nạp thẻ: thanh toán giả lập thành công", str(paid.get("order", {}).get("status", "")) == "paid", paid)
+	var again := await http("POST", "/v1/shop/sandbox/%s/pay" % str(paid.get("order", {}).get("code", "")), {}, token)
+	check("Nạp thẻ: 1 đơn chỉ cộng 1 lần", str(again.get("code", "")) == "order_done", again)
+	var w := await http("GET", "/v1/shop/wallet", {}, token)
+	var xu_per := int(cfg.get("xu_per_10k", 100))
+	check("Nạp thẻ: ví nhận đúng số Xu", int(w.get("xu", -1)) == xu_per, w)
+	var over := await http("POST", "/v1/shop/transfer", {"character_id": ai[1], "xu": xu_per + 1}, token)
+	check("Đổi Xu: không đủ Xu thì từ chối", str(over.get("code", "")) == "not_enough_xu", over)
+	## Nhân vật đang online: Nguyên bảo tới qua lần hỏi định kỳ (GAME_STATUS_POLL), có trong S_PROFILE và được lưu.
+	var a := bot(ai[0], ai[1])
+	if not await wait_until(func() -> bool: return a.in_world):
+		check("Đổi Xu: bot vào map", false)
+		return
+	var jade_per := int(cfg.get("jade_per_xu", 1))
+	var tr := await http("POST", "/v1/shop/transfer", {"character_id": ai[1], "xu": 40}, token)
+	check("Đổi Xu: trừ ví", int(tr.get("xu", -1)) == xu_per - 40, tr)
+	check("Đổi Xu: nhân vật online nhận Nguyên bảo", await wait_until(func() -> bool: return int(a.profile.get("jade", 0)) == 40 * jade_per, 8.0),
+		a.profile.get("jade"))
+	var saved := false
+	for i in 20:
+		if await _jade_of(token, ai[1]) == 40 * jade_per:
+			saved = true
+			break
+		await get_tree().create_timer(0.5).timeout
+	check("Đổi Xu: Nguyên bảo đã được lưu vào nhân vật", saved)
+	await get_tree().create_timer(4.0).timeout   ## qua thêm 1 lần hỏi định kỳ: không được cộng lại
+	check("Đổi Xu: không cộng 2 lần", int(a.profile.get("jade", 0)) == 40 * jade_per, a.profile.get("jade"))
+	a.close()
+	## Nhân vật offline: đổi trước, vào map mới nhận.
+	var bi := await make_player("q")
+	await _buy_xu(bi[0], 20000)
+	await http("POST", "/v1/shop/transfer", {"character_id": bi[1], "xu": 25}, bi[0])
+	var b := bot(bi[0], bi[1])
+	check("Đổi Xu: nhân vật offline nhận Nguyên bảo khi vào map", await wait_until(func() -> bool:
+		return b.in_world and int(b.profile.get("jade", 0)) == 25 * jade_per, 8.0), b.profile.get("jade"))
+	b.close()
+
 func test_security() -> void:
 	var si := await make_player("s")
 	var ti := await make_player("t")
@@ -627,3 +690,4 @@ func run() -> void:
 	await test_security()
 	await test_cast()
 	await test_relations()
+	await test_shop()

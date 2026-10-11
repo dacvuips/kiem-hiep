@@ -8,6 +8,7 @@ import AccountsPage from './pages/Accounts'
 import AccountDetailPage from './pages/AccountDetail'
 import PunishmentsPage from './pages/Punishments'
 import ServersPage from './pages/Servers'
+import ShopPage from './pages/Shop'
 import AuditPage from './pages/Audit'
 import AdminsPage from './pages/Admins'
 import ProfilePage from './pages/Profile'
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="accounts/:id" element={<AccountDetailPage />} />
         <Route path="punishments" element={<PunishmentsPage />} />
         <Route path="servers" element={<ServersPage />} />
+        <Route path="shop" element={<ShopPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="admins" element={<AdminsPage />} />
         <Route path="profile" element={<ProfilePage />} />

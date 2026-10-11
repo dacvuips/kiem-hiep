@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
@@ -70,8 +71,9 @@ func (s *server) handleInternalSave(w http.ResponseWriter, r *http.Request) erro
 		return errBadRequest
 	}
 	var req struct {
-		Version int             `json:"version"`
-		Data    json.RawMessage `json:"data"`
+		Version  int             `json:"version"`
+		Data     json.RawMessage `json:"data"`
+		GrantIDs []int64         `json:"grant_ids"` // quà chờ đã cộng vào bản nhân vật này (đánh dấu cùng lúc lưu)
 	}
 	if err := readLargeJSON(r, &req); err != nil {
 		return err
@@ -88,11 +90,19 @@ func (s *server) handleInternalSave(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 	var version int
-	err = s.db.QueryRow(ctx, `UPDATE characters SET data=$2, gender=$3, sect_id=$4, level=$5, version=version+1, updated_at=now()
-		WHERE id=$1 AND version=$6 AND deleted_at IS NULL RETURNING version`, id, data, gender, sect, level, req.Version).Scan(&version)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return errStaleSave
-	}
+	err = pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
+		err := tx.QueryRow(ctx, `UPDATE characters SET data=$2, gender=$3, sect_id=$4, level=$5, version=version+1, updated_at=now()
+			WHERE id=$1 AND version=$6 AND deleted_at IS NULL RETURNING version`, id, data, gender, sect, level, req.Version).Scan(&version)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errStaleSave
+		}
+		if err != nil || len(req.GrantIDs) == 0 {
+			return err
+		}
+		_, err = tx.Exec(ctx, `UPDATE character_grants SET status='applied', applied_at=now()
+			WHERE id = ANY($1) AND character_id=$2 AND status='pending'`, req.GrantIDs, id)
+		return err
+	})
 	if err != nil {
 		return err
 	}
@@ -106,13 +116,18 @@ func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 	var req struct {
-		AccountIDs []int64 `json:"account_ids"`
+		AccountIDs   []int64 `json:"account_ids"`
+		CharacterIDs []int64 `json:"character_ids"`
 	}
 	if err := readLargeJSON(r, &req); err != nil {
 		return err
 	}
-	if len(req.AccountIDs) > 10000 {
+	if len(req.AccountIDs) > 10000 || len(req.CharacterIDs) > 10000 {
 		return errBadRequest
+	}
+	grants, err := s.pendingGrants(r.Context(), req.CharacterIDs)
+	if err != nil {
+		return err
 	}
 	rows, err := s.db.Query(r.Context(), `SELECT `+accountCols+`, muted_until FROM accounts WHERE id = ANY($1)`, req.AccountIDs)
 	if err != nil {
@@ -136,5 +151,28 @@ func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) er
 		}
 		out[strconv.FormatInt(a.ID, 10)] = map[string]any{"banned": banned, "ban_message": msg, "muted_until": muted}
 	}
-	return writeJSON(w, http.StatusOK, map[string]any{"statuses": out})
+	return writeJSON(w, http.StatusOK, map[string]any{"statuses": out, "grants": grants})
 }
+
+// Quà chờ của các nhân vật đang online: {character_id: [{id, jade}]}. Game server cộng vào nhân vật rồi gửi grant_ids khi lưu.
+func (s *server) pendingGrants(ctx context.Context, characterIDs []int64) (map[string][]map[string]int64, error) {
+	out := map[string][]map[string]int64{}
+	if len(characterIDs) == 0 {
+		return out, nil
+	}
+	rows, err := s.db.Query(ctx, `SELECT id, character_id, jade FROM character_grants WHERE character_id = ANY($1) AND status='pending' ORDER BY id`, characterIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, cid, jade int64
+		if err := rows.Scan(&id, &cid, &jade); err != nil {
+			return nil, err
+		}
+		k := strconv.FormatInt(cid, 10)
+		out[k] = append(out[k], map[string]int64{"id": id, "jade": jade})
+	}
+	return out, nil
+}
+

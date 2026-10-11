@@ -38,6 +38,10 @@ type Config struct {
 	AdminCookieSecure bool
 	// Thư mục web Admin đã build (server phục vụ tại /admin/). Rỗng = không phục vụ.
 	AdminWebDir string
+	// Thư mục trang web người chơi đã build (phục vụ tại /). Rỗng = không phục vụ.
+	PortalWebDir string
+	// Cổng thanh toán GIẢ LẬP cho nạp thẻ (chỉ dùng khi phát triển). Production phải tắt.
+	ShopSandbox bool
 
 	// Đăng nhập Google. Thiếu client id/secret hoặc PUBLIC_BASE_URL = tắt (nút Google báo chưa bật).
 	PublicBaseURL      string // địa chỉ công khai của server này, VD https://api.kiemhiep.vn (dùng làm redirect_uri)
@@ -72,6 +76,8 @@ func loadConfig() Config {
 		TrustProxy:         env("TRUST_PROXY", "false") == "true",
 		AdminCookieSecure:  env("ADMIN_COOKIE_SECURE", "true") != "false",
 		AdminWebDir:        env("ADMIN_WEB_DIR", ""),
+		PortalWebDir:       env("PORTAL_WEB_DIR", ""),
+		ShopSandbox:        env("SHOP_SANDBOX", "false") == "true",
 		PublicBaseURL:      env("PUBLIC_BASE_URL", ""),
 		GoogleClientID:     env("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),

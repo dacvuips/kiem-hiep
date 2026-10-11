@@ -285,3 +285,11 @@ export function Field({ label, hint, children }: { label: string; hint?: ReactNo
     </label>
   )
 }
+
+export function ReasonField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <Field label="Lý do" hint="Bắt buộc, ít nhất 5 ký tự. Ghi vào nhật ký, không sửa được.">
+      <textarea className="input h-20 resize-none py-2" value={value} onChange={(e) => onChange(e.target.value)} maxLength={500} autoFocus />
+    </Field>
+  )
+}

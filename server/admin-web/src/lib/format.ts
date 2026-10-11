@@ -6,6 +6,7 @@ const rtf = new Intl.RelativeTimeFormat('vi', { numeric: 'auto' })
 export const fmtDateTime = (s?: string | null) => (s ? dtf.format(new Date(s)) : '—')
 export const fmtDay = (s: string) => df.format(new Date(s + 'T00:00:00+07:00'))
 export const fmtNum = (n: number) => nf.format(n)
+export const fmtVnd = (n: number) => nf.format(n) + 'đ'
 
 export function fmtAgo(s?: string | null): string {
   if (!s) return 'Chưa có'
@@ -71,6 +72,10 @@ export const ACTION_LABEL: Record<string, string> = {
   'character.restore': 'Khôi phục nhân vật',
   'server.create': 'Tạo máy chủ',
   'server.update': 'Sửa máy chủ',
+  'shop.order.approve': 'Duyệt đơn nạp',
+  'shop.order.cancel': 'Huỷ đơn nạp',
+  'shop.wallet.adjust': 'Cộng / trừ Xu',
+  'shop.settings': 'Đổi tỉ lệ quy đổi',
 }
 export const actionLabel = (a: string) => ACTION_LABEL[a] ?? a
 
@@ -83,3 +88,12 @@ export function deviceLabel(ua: string): string {
   if (/iPhone|iPad/i.test(ua)) return 'Trình duyệt · iOS'
   return 'Trình duyệt · PC'
 }
+
+// Nạp thẻ.
+export const ORDER_STATUS: Record<string, { label: string; tone: 'ok' | 'warn' | 'danger' | 'neutral' }> = {
+  pending: { label: 'Chờ thanh toán', tone: 'warn' },
+  paid: { label: 'Đã thanh toán', tone: 'ok' },
+  cancelled: { label: 'Đã huỷ', tone: 'neutral' },
+  failed: { label: 'Thất bại', tone: 'danger' },
+}
+export const LEDGER_KIND: Record<string, string> = { topup: 'Nạp thẻ', transfer: 'Đổi sang nhân vật', admin: 'Admin điều chỉnh' }

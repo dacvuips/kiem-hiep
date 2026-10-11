@@ -13,8 +13,8 @@ func join(access_token: String, character_id: int) -> Dictionary:
 		{"access_token": access_token, "character_id": character_id, "server_id": server_id})
 
 ## Trạng thái khoá / cấm chat của nhiều tài khoản: {"statuses": {"id": {banned, ban_message, muted_until}}}.
-func status(account_ids: Array) -> Dictionary:
-	return await _call(HTTPClient.METHOD_POST, "/internal/game/status", {"account_ids": account_ids})
+func status(account_ids: Array, character_ids: Array = []) -> Dictionary:
+	return await _call(HTTPClient.METHOD_POST, "/internal/game/status", {"account_ids": account_ids, "character_ids": character_ids})
 
 func list_guilds() -> Dictionary:
 	return await _call(HTTPClient.METHOD_GET, "/internal/game/guilds?server_id=%d" % server_id, {})
@@ -26,8 +26,10 @@ func save_guild(guild_name: String, data: Dictionary, old_name := "") -> Diction
 func delete_guild(guild_name: String) -> Dictionary:
 	return await _call(HTTPClient.METHOD_DELETE, "/internal/game/guilds?server_id=%d&name=%s" % [server_id, guild_name.uri_encode()], {})
 
-func save_character(character_id: int, version: int, data: Dictionary) -> Dictionary:
-	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id, {"version": version, "data": data})
+## grant_ids: quà chờ (Xu -> Nguyên bảo) đã cộng vào `data` — server tài khoản đánh dấu đã nhận cùng lúc lưu.
+func save_character(character_id: int, version: int, data: Dictionary, grant_ids: Array = []) -> Dictionary:
+	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id,
+		{"version": version, "data": data, "grant_ids": grant_ids})
 
 func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()

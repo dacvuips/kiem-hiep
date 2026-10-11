@@ -294,7 +294,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, http.StatusCreated, resp)
+	return s.writeSession(w, r, http.StatusCreated, resp)
 }
 
 func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) error {
@@ -343,7 +343,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, http.StatusOK, resp)
+	return s.writeSession(w, r, http.StatusOK, resp)
 }
 
 // handleRefresh đổi refresh token cũ lấy cặp token mới (xoay vòng). Dùng lại token đã đổi = dấu hiệu
@@ -362,7 +362,7 @@ func (s *server) handleRefresh(w http.ResponseWriter, r *http.Request) error {
 	var sid, accountID int64
 	var expires time.Time
 	var revoked *time.Time
-	err := s.db.QueryRow(ctx, `SELECT id, account_id, expires_at, revoked_at FROM sessions WHERE token_hash=$1`, s.keys.tokenHash(req.RefreshToken)).
+	err := s.db.QueryRow(ctx, `SELECT id, account_id, expires_at, revoked_at FROM sessions WHERE token_hash=$1`, s.keys.tokenHash(refreshTokenOf(r, req.RefreshToken))).
 		Scan(&sid, &accountID, &expires, &revoked)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return errUnauthorized
@@ -396,7 +396,7 @@ func (s *server) handleRefresh(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, http.StatusOK, resp)
+	return s.writeSession(w, r, http.StatusOK, resp)
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) error {
@@ -406,8 +406,11 @@ func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) error {
 	if err := readJSON(r, &req); err != nil {
 		return err
 	}
-	if _, err := s.db.Exec(r.Context(), `UPDATE sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL`, s.keys.tokenHash(req.RefreshToken)); err != nil {
+	if _, err := s.db.Exec(r.Context(), `UPDATE sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL`, s.keys.tokenHash(refreshTokenOf(r, req.RefreshToken))); err != nil {
 		return err
+	}
+	if isWeb(r) {
+		s.setWebCookie(w, "", -1)
 	}
 	return writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
@@ -563,7 +566,7 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, http.StatusOK, resp)
+	return s.writeSession(w, r, http.StatusOK, resp)
 }
 
 func (s *server) handleMe(w http.ResponseWriter, r *http.Request) error {

@@ -8,7 +8,8 @@ import { api, type AccountDetail } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { actionLabel, deviceLabel, fmtAgo, fmtDateTime, isFuture, SECT_LABEL } from '../lib/format'
 import { AccountStatus } from '../components/AccountsTable'
-import { Badge, Button, Card, Dialog, Empty, ErrorBox, Field, Loading, Tabs, useToast } from '../components/ui'
+import { Badge, Button, Card, Dialog, Empty, ErrorBox, Field, Loading, ReasonField, Tabs, useToast } from '../components/ui'
+import WalletSection from '../components/WalletSection'
 
 type Action = 'ban' | 'unban' | 'mute' | 'unmute' | 'logout-all' | 'reset-password' | 'email'
 
@@ -136,6 +137,8 @@ export default function AccountDetailPage() {
         </div>
       </div>
 
+      <WalletSection accountId={a.id} />
+
       {action && (
         <ActionDialog
           action={action}
@@ -242,14 +245,6 @@ function Characters({ d, canRestore }: { d: AccountDetail; canRestore: boolean }
         {m.error && <div className="mt-3"><ErrorBox error={m.error} /></div>}
       </Dialog>
     </>
-  )
-}
-
-function ReasonField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <Field label="Lý do" hint="Bắt buộc, ít nhất 5 ký tự. Ghi vào nhật ký, không sửa được.">
-      <textarea className="input h-20 resize-none py-2" value={value} onChange={(e) => onChange(e.target.value)} maxLength={500} autoFocus />
-    </Field>
   )
 }
 

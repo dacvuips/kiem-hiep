@@ -63,6 +63,18 @@ S1=$(aget /admin/api/servers | jq -c '.items[0] | {name, region, status, is_new,
 check "sửa máy chủ (giữ nguyên giá trị)" "$(curl -s -b "$JAR" -X PUT "$API/admin/api/servers/1" -H 'Content-Type: application/json' -H 'X-Admin-Request: 1' -d "$S1" | jq -r .ok)" "true"
 check "danh sách admin" "$(aget /admin/api/admins | jq -r "[.items[] | select(.username==\"$AU\")] | length")" "1"
 check "không tự hạ quyền" "$(apost /admin/api/admins/$(aget /admin/api/me | jq -r .admin.id)/update '{"role":"viewer","reason":"thử hạ quyền"}' | jq -r .code)" "self_change"
+# nạp thẻ: đơn chờ -> Admin duyệt tay -> ví; cộng / trừ Xu tay; cài đặt
+UT=$(curl -s -X POST "$API/v1/auth/login" -H 'Content-Type: application/json' -d "{\"username\":\"$U\",\"password\":\"$TEMP\"}" | jq -r .access_token)
+OC=$(curl -s -X POST "$API/v1/shop/orders" -H 'Content-Type: application/json' -H "Authorization: Bearer $UT" -d '{"amount_vnd":20000}' | jq -r .order.code)
+check "danh sách đơn nạp" "$(aget "/admin/api/shop/orders?q=$OC" | jq -r '.orders[0].status')" "pending"
+check "duyệt đơn thiếu lý do" "$(apost /admin/api/shop/orders/$OC/approve '{"reason":""}' | jq -r .code)" "reason_required"
+check "duyệt đơn tay" "$(apost /admin/api/shop/orders/$OC/approve '{"reason":"Đối soát ngân hàng"}' | jq -r .order.status)" "paid"
+check "duyệt lại không cộng 2 lần" "$(apost /admin/api/shop/orders/$OC/approve '{"reason":"Đối soát ngân hàng"}' | jq -r .code)" "order_done"
+XU=$(aget /admin/api/accounts/$ID/wallet | jq -r .xu)
+check "trừ Xu quá số dư bị chặn" "$(apost /admin/api/accounts/$ID/wallet "{\"delta\":-$((XU+1)),\"reason\":\"Thu hồi thử\"}" | jq -r .code)" "not_enough_xu"
+check "cộng Xu tay" "$(apost /admin/api/accounts/$ID/wallet '{"delta":5,"reason":"Đền bù bảo trì"}' | jq -r .xu)" "$((XU+5))"
+check "sổ cái có dòng admin" "$(aget /admin/api/accounts/$ID/wallet | jq -r '.ledger[0].kind')" "admin"
+check "đọc cài đặt quy đổi" "$(aget /admin/api/shop/settings | jq -r '.xu_per_10k > 0')" "true"
 rm -f "$JAR"
 echo "Kết quả: $pass đạt, $fail lỗi"
 [ "$fail" -eq 0 ]

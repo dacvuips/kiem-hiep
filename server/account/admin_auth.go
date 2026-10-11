@@ -35,10 +35,13 @@ const (
 	permPunish       = "punish"        // khóa / mở khóa / cấm chat, khôi phục nhân vật
 	permServers      = "servers.write" // sửa máy chủ
 	permManageAdmins = "admins.manage" // tạo / sửa admin
+	permShop         = "shop.write"    // duyệt / huỷ đơn nạp, cộng / trừ Xu tay
+	permShopSettings = "shop.settings" // đổi tỉ lệ quy đổi
 )
 
 var permMinRole = map[string]string{
 	permRead: "viewer", permSupport: "support", permPunish: "gm", permServers: "super", permManageAdmins: "super",
+	permShop: "gm", permShopSettings: "super",
 }
 
 var (
