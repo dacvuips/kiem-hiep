@@ -23,6 +23,9 @@ func _ready() -> void:
 	# skip in export builds — no mcp server to talk to
 	if not OS.has_feature("editor"):
 		return
+	# skip headless runs (game server, tests) — nothing to screenshot, and they would hold the port
+	if DisplayServer.get_name() == "headless":
+		return
 	_apply_overrides()
 	_start_screenshot_server()
 
@@ -75,7 +78,9 @@ func _start_screenshot_server() -> void:
 	udp_server = UDPServer.new()
 	var err := udp_server.listen(SCREENSHOT_PORT)
 	if err != OK:
-		push_error("[GodotPeek] Screenshot listener failed to start on port %d: %s" % [SCREENSHOT_PORT, error_string(err)])
+		# port already taken (another game window is running) — not an error, just no screenshots for this one
+		print("[GodotPeek] Screenshot port %d busy (another instance running) — screenshots disabled here" % SCREENSHOT_PORT)
+		udp_server = null
 		return
 	print("[GodotPeek] Screenshot listener ready on UDP port %d" % SCREENSHOT_PORT)
 
