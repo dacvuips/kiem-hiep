@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "godot-peek": {
+      "command": "/Users/macbook/Desktop/Project/My-2026/Games/kiem-hiep/tools/godot-peek-mcp/bin/godot-peek-mcp-darwin-amd64",
+      "env": {
+        "GODOT_PEEK_SOCKET": "/tmp/godot-peek-kiem-hiep.sock"
+      }
+    }
+  }
+}
