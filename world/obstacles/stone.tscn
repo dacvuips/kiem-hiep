@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbprw4ovveyw1"]
 
-[ext_resource type="Texture2D" uid="uid://de6ttnqycfgs3" path="res://world/obstacles/stone.png" id="1_76l0o"]
+[ext_resource type="Texture2D" uid="uid://dkkar6kfcuhd4" path="res://world/obstacles/stone.png" id="1_76l0o"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3ns5p"]
 size = Vector2(63, 30)
