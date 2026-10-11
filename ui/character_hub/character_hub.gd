@@ -179,6 +179,7 @@ func _build_nav() -> void:
 
 		_style_as_hit_area(button)
 		_style_label(item_label, 16, COLOR_GOLD)
+		item_label.text = label_text
 		item_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		item_label.clip_text = false
 

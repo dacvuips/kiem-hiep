@@ -33,7 +33,7 @@ func _ready() -> void:
 	%CloseButton.pressed.connect(queue_free)
 	%TitleBar.gui_input.connect(_on_title_input)
 	%SortButton.pressed.connect(_on_sort_pressed)
-	%SellButton.pressed.connect(func() -> void: _show_message("Bày bán: đang phát triển"))
+	%SellButton.pressed.connect(_on_sell_pressed)
 
 	## Lưới ô kiểu VLTK thay cho lưới 6x6 + cột "Túi 1..6" cũ (1 hành trang duy nhất 6 x 10 ô).
 	var group := ButtonGroup.new()
@@ -182,6 +182,14 @@ func _drop(index: int) -> void:
 func _on_sort_pressed() -> void:
 	_profile.sort_inventory()
 	_commit()
+
+func _on_sell_pressed() -> void:
+	if _profile == null:
+		return
+	var host: Node = get_tree().current_scene if get_tree().current_scene != null else get_parent()
+	var win := StallWindow.open(host, SocialHub.of(_profile))
+	if win != null and not win.tree_exiting.is_connected(_refresh):
+		win.tree_exiting.connect(_refresh)
 
 func _on_test_items_pressed() -> void:
 	for i in 10:

@@ -48,13 +48,13 @@ func _refresh() -> void:
 	if _profile.friends.is_empty():
 		_friend_box.add_child(SocialUi.label("Chưa có hảo hữu. Bấm vào người chơi khác → Hảo hữu để kết giao.", SocialUi.MUTED, 12))
 	for n in _profile.friends:
-		var name := str(n)
-		var info: Dictionary = _online.get(name, {})
+		var friend_name := str(n)
+		var info: Dictionary = _online.get(friend_name, {})
 		var on := bool(info.get("online", false))
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		row.add_child(SocialUi.indicator(on))
-		var text := name + ("  (cấp %d)" % int(info.level) if on else "  — vắng mặt")
+		var text := friend_name + ("  (cấp %d)" % int(info.level) if on else "  — vắng mặt")
 		var l := SocialUi.label(text, SocialUi.TEXT if on else SocialUi.MUTED, 13)
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
@@ -63,28 +63,29 @@ func _refresh() -> void:
 			chat.pressed.connect(func() -> void:
 				var box: ChatBox = NetWorldSync.current.chat_box() if NetWorldSync.current else null
 				if box:
-					box.open_whisper(name)
+					box.open_whisper(friend_name)
 					close_requested.emit())
 			row.add_child(chat)
 		var del := SocialUi.small_button("Xoá")
 		del.pressed.connect(func() -> void:
-			SocialWindow.confirm(get_tree().current_scene, "Hảo hữu", "Xoá %s khỏi danh sách hảo hữu?" % name, func() -> void:
-				NetClient.send_friend(RelationServer.FRIEND_REMOVE, 0, 0, name)
-				_profile.friends.erase(name)
+			SocialWindow.confirm(get_tree().current_scene, "Hảo hữu", "Xoá %s khỏi danh sách hảo hữu?" % friend_name, func() -> void:
+				NetClient.send_friend(RelationServer.FRIEND_REMOVE, 0, 0, friend_name)
+				_profile.friends.erase(friend_name)
+				SaveManager.save_profile(_profile)
 				_refresh()))
 		row.add_child(del)
 		_friend_box.add_child(row)
 	if _profile.blacklist.is_empty():
 		_black_box.add_child(SocialUi.label("Sổ đen trống.", SocialUi.MUTED, 12))
 	for n in _profile.blacklist:
-		var name := str(n)
+		var blocked_name := str(n)
 		var row := HBoxContainer.new()
-		var l := SocialUi.label(name, SocialUi.TEXT, 13)
+		var l := SocialUi.label(blocked_name, SocialUi.TEXT, 13)
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
 		var un := SocialUi.small_button("Bỏ chặn")
 		un.pressed.connect(func() -> void:
-			_profile.blacklist.erase(name)
+			_profile.blacklist.erase(blocked_name)
 			SaveManager.save_profile(_profile)
 			_refresh())
 		row.add_child(un)
