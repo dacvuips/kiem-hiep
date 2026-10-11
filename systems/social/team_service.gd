@@ -65,6 +65,44 @@ func _init(p: PlayerProfile) -> void:
 	profile = p
 	rng.randomize()
 
+## Online: đội nằm ở game server; các hàm dưới chỉ gửi lệnh, trạng thái về qua apply_net_state (S_TEAM_STATE).
+static func _online() -> bool:
+	return NetClient.is_in_world()
+
+func apply_net_state(st: Dictionary) -> void:
+	captain = null
+	members.clear()
+	applicants.clear()
+	if st.get("in_team", false):
+		for i in st.members.size():
+			var d: Dictionary = st.members[i]
+			var x := Member.new()
+			x.id = int(d.eid)
+			x.name = str(d.name)
+			x.level = int(d.level)
+			x.camp = int(d.camp)
+			x.lead_level = int(d.lead)
+			x.sect_name = str(d.sect)
+			x.is_local = x.id == NetClient.my_eid
+			x.mock = MockPlayer.new()
+			x.mock.id = x.id
+			x.mock.name = x.name
+			x.mock.level = x.level
+			if i == 0:
+				captain = x
+			else:
+				members.append(x)
+		open = bool(st.open)
+		pick_mode = int(st.pick)
+		_turn = int(st.turn)
+		for a in st.applicants:
+			var m := MockPlayer.new()
+			m.id = int(a.eid)
+			m.name = str(a.name)
+			m.level = int(a.level)
+			applicants.append(m)
+	changed.emit()
+
 func in_team() -> bool:
 	return captain != null
 
@@ -106,6 +144,9 @@ func _in_team_name(name: String) -> bool:
 # ------------------------------------------------------------------ tạo / giải tán
 ## Tạo tổ đội mới (mình là đội trưởng). "" nếu thành công.
 func create_team() -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_CREATE)
+		return ""
 	if not allow_create:
 		return _say("Bạn đang tắt chức năng tổ đội.")
 	if in_team():
@@ -122,6 +163,9 @@ func create_team() -> String:
 	return ""
 
 func dismiss() -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_DISMISS)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới giải tán được tổ đội.")
 	_clear()
@@ -141,6 +185,9 @@ func _clear() -> void:
 func leave() -> String:
 	if not in_team():
 		return "Bạn chưa có tổ đội."
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_LEAVE)
+		return ""
 	if is_captain():
 		_clear()
 		_say("Đội trưởng rời đội — tổ đội giải tán.", true)
@@ -164,6 +211,9 @@ func _add_member(m: MockPlayer) -> void:
 
 ## Đội trưởng mời một người chơi giả. "" nếu họ đồng ý và vào đội, hoặc lời giải thích vì sao không.
 func invite(m: MockPlayer) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_INVITE, m.id)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới mời được người vào đội.")
 	if not open:
@@ -183,6 +233,9 @@ func invite(m: MockPlayer) -> String:
 
 ## Mình xin vào đội của một người chơi giả (họ làm đội trưởng). Đội giả được dựng tại chỗ với vài đồng đội.
 func apply_to(captain_mock: MockPlayer) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_APPLY, captain_mock.id)
+		return ""
 	if in_team():
 		return _say("Bạn đang ở trong một tổ đội.")
 	if not allow_create:
@@ -215,6 +268,8 @@ func apply_to(captain_mock: MockPlayer) -> String:
 
 ## Mô phỏng người chơi giả xin vào đội của mình (gọi theo nhịp từ giao diện). Trả về người vừa xin hoặc null.
 func simulate_applicants() -> MockPlayer:
+	if _online():
+		return null   ## người xin vào là người thật (server báo)
 	if not is_captain() or not open or is_full() or applicants.size() >= MAX_APPLY_LIST:
 		return null
 	if rng.randf() > 0.4:
@@ -228,6 +283,9 @@ func simulate_applicants() -> MockPlayer:
 	return null
 
 func accept_applicant(m: MockPlayer) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_ACCEPT, m.id)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới nhận người.")
 	if not applicants.has(m):
@@ -247,11 +305,17 @@ func accept_applicant(m: MockPlayer) -> String:
 	return ""
 
 func reject_applicant(m: MockPlayer) -> void:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_REJECT, m.id)
+		return
 	applicants.erase(m)
 	changed.emit()
 
 # ------------------------------------------------------------------ quản lý
 func kick(member: Member) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_KICK, member.id)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới đuổi được người.")
 	if member == captain or not members.has(member):
@@ -266,6 +330,9 @@ func kick(member: Member) -> String:
 
 ## Đổi đội trưởng sang một thành viên (chỉ đội trưởng). Đội trưởng mới phải đủ cấp lãnh đạo chứa số người hiện có.
 func change_captain(member: Member) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_CAPTAIN, member.id)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới đổi được đội trưởng.")
 	if not members.has(member):
@@ -280,6 +347,9 @@ func change_captain(member: Member) -> String:
 	return ""
 
 func set_open(value: bool) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_OPEN, 0, 1 if value else 0)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới đóng/mở đội.")
 	if value and is_full():
@@ -289,6 +359,9 @@ func set_open(value: bool) -> String:
 	return ""
 
 func set_pick_mode(mode: int) -> String:
+	if _online():
+		NetClient.send_team(SocialServer.TEAM_PICK, 0, mode)
+		return ""
 	if not is_captain():
 		return _say("Chỉ đội trưởng mới đổi cách nhặt đồ.")
 	pick_mode = clampi(mode, 0, PICK_NAMES.size() - 1)

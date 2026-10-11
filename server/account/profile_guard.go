@@ -20,7 +20,7 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 	if num(old["server_seen"]) == 0 {
 		return incoming
 	}
-	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "gender", "server_seen"} {
+	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "gender", "server_seen", "lead_level", "lead_exp"} {
 		if v, ok := old[k]; ok {
 			incoming[k] = v
 		}

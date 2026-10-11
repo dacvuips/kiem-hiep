@@ -26,6 +26,8 @@ var trade_invites: Array = []     ## [{from, name}]
 var trade: Dictionary = {}        ## trạng thái giao dịch mới nhất {partner, mine, theirs}
 var trade_ended: Array = []       ## [{ok, msg}]
 var stall: Dictionary = {}        ## {seller, title, items}
+var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
+var team_invites: Array = []      ## [captain_eid]
 var states_received := 0
 var closed := false
 var _token := ""
@@ -117,6 +119,13 @@ func stall_op(op: int, title := "", seller := 0, uid := "") -> void:
 	elif op == SocialServer.STALL_BUY:
 		b.put_u32(seller)
 		NetProto.put_str(b, uid)
+	_send(b, NetProto.CH_RELIABLE)
+
+func team_op(op: int, arg := 0, arg2 := 0) -> void:
+	var b := NetProto.writer(NetProto.C_TEAM)
+	b.put_u8(op)
+	b.put_u32(arg)
+	b.put_u8(arg2)
 	_send(b, NetProto.CH_RELIABLE)
 
 ## Các uid đồ trong túi theo bản server mới nhất.
@@ -247,6 +256,28 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TRADE_END:
 			var ok := b.get_u8() != 0
 			trade_ended.append({"ok": ok, "msg": NetProto.get_str(b)})
+		NetProto.S_TEAM_STATE:
+			var st := {"in_team": b.get_u8() != 0, "members": [], "applicants": []}
+			if st.in_team:
+				st["captain"] = b.get_u32()
+				st["open"] = b.get_u8() != 0
+				st["pick"] = b.get_u8()
+				b.get_u8()
+				for i in b.get_u8():
+					st.members.append(b.get_u32())
+					NetProto.get_str(b)
+					b.get_u16()
+					b.get_8()
+					b.get_u8()
+					NetProto.get_str(b)
+				for i in b.get_u8():
+					st.applicants.append(b.get_u32())
+					NetProto.get_str(b)
+					b.get_u16()
+			team = st
+		NetProto.S_TEAM_INVITE:
+			team_invites.append(b.get_u32())
+			NetProto.get_str(b)
 		NetProto.S_STALL_ITEMS:
 			var s := {"seller": b.get_u32(), "title": NetProto.get_str(b), "items": []}
 			for k in b.get_u16():

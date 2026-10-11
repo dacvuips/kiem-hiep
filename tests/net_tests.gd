@@ -269,6 +269,65 @@ func test_trade_and_stall() -> void:
 	check("C2: lưu HTTP ngoài map không tăng được tiền", int(ry2.data.gold) == 5, ry2.data.gold)
 	check("C2: lưu HTTP ngoài map không thêm được đồ lạ", not uids2.has("cafebabecafebabe"), uids2)
 
+## C3: tổ đội thật — lập đội, mời, xin vào, chia kinh nghiệm, luật nhặt đồ, rời / giải tán.
+func test_team() -> void:
+	var pi := await make_player("p")
+	var qi := await make_player("q")
+	var ri := await make_player("r")
+	var p := bot(pi[0], pi[1])
+	var q := bot(qi[0], qi[1])
+	var r := bot(ri[0], ri[1])
+	if not await wait_until(func() -> bool: return p.in_world and q.in_world and r.in_world):
+		check("C3: 3 bot vào map", false)
+		return
+	p.team_op(SocialServer.TEAM_CREATE)
+	check("C3: lập đội", await wait_until(func() -> bool: return p.team.get("in_team", false) and int(p.team.captain) == p.eid, 3.0), p.notices)
+	p.team_op(SocialServer.TEAM_INVITE, q.eid)
+	check("C3: Q nhận lời mời", await wait_until(func() -> bool: return q.team_invites.has(p.eid), 3.0), p.notices)
+	q.team_op(SocialServer.TEAM_ANSWER, p.eid, 1)
+	check("C3: Q vào đội", await wait_until(func() -> bool: return q.team.get("members", []).size() == 2 and p.team.members.size() == 2, 3.0))
+	r.team_op(SocialServer.TEAM_APPLY, p.eid)
+	check("C3: đội trưởng thấy R xin vào", await wait_until(func() -> bool: return p.team.get("applicants", []).has(r.eid), 3.0), r.notices)
+	p.team_op(SocialServer.TEAM_ACCEPT, r.eid)
+	check("C3: R vào đội (3 người)", await wait_until(func() -> bool: return r.team.get("members", []).size() == 3, 3.0), p.notices)
+	## Cả đội đứng gần quái, P hạ quái -> Q, R cũng nhận kinh nghiệm.
+	var m := p.nearest_monster()
+	if m == 0:
+		await _walk_to_monsters(p)
+		m = p.nearest_monster()
+	var spot: Vector2 = (p.known[m].pos as Vector2) + Vector2(30, 0)
+	await _walk(p, spot)
+	await _walk(q, spot + Vector2(0, 20))
+	await _walk(r, spot + Vector2(0, -20))
+	var q_exp := q.exp_gained
+	var r_exp := r.exp_gained
+	for i in 80:
+		if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
+			break
+		p.damage(m, 100000)
+		await get_tree().create_timer(0.06).timeout
+	check("C3: đồng đội trong tầm được chia kinh nghiệm", await wait_until(func() -> bool: return q.exp_gained > q_exp and r.exp_gained > r_exp, 3.0),
+		[q.exp_gained, r.exp_gained])
+	## Luật nhặt "đội trưởng nhặt": Q không nhặt được đồ rơi của P.
+	p.team_op(SocialServer.TEAM_PICK, 0, TeamService.Pick.CAPTAIN)
+	await wait_until(func() -> bool: return int(q.team.get("pick", -1)) == TeamService.Pick.CAPTAIN, 2.0)
+	await wait_until(func() -> bool: return not q.drops.is_empty(), 2.0)
+	var did := -1
+	for id in q.drops:
+		if int(q.drops[id].owner) == p.eid:
+			did = id
+	if did >= 0:
+		q.pickup(did)
+		check("C3: luật đội trưởng nhặt chặn Q", await wait_until(func() -> bool:
+			return q.notices.any(func(n: String) -> bool: return n.contains("lượt")), 2.0), q.notices)
+	## Q rời đội: đội còn 2; P (đội trưởng) rời: giải tán.
+	q.team_op(SocialServer.TEAM_LEAVE)
+	check("C3: thành viên rời, đội còn lại", await wait_until(func() -> bool: return not q.team.get("in_team", true) and p.team.members.size() == 2, 3.0))
+	p.team_op(SocialServer.TEAM_LEAVE)
+	check("C3: đội trưởng rời = giải tán", await wait_until(func() -> bool: return not r.team.get("in_team", true), 3.0))
+	for x in [p, q, r]:
+		x.close()
+
 func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
 	var h := HTTPRequest.new()
 	add_child(h)
@@ -379,3 +438,4 @@ func run() -> void:
 
 	await test_items(a2, a_info)
 	await test_trade_and_stall()
+	await test_team()

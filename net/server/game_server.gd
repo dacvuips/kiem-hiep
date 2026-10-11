@@ -64,6 +64,7 @@ class Conn:
 	var handoff: Conn
 	## Xã hội (SocialServer)
 	var trade = null                    ## SocialServer.Trade đang tham gia
+	var team = null                     ## SocialServer.Team đang ở
 	var trade_open := false
 	var stall_open := false
 	var stall_title := ""
@@ -344,6 +345,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_STALL:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
 				social.on_stall(c, b)
+		NetProto.C_TEAM:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
+				social.on_team(c, b)
 		NetProto.C_PICKUP:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
 				_on_pickup(c, b.get_u32())
@@ -503,6 +507,13 @@ func _on_monster_killed(m: ServerMonster) -> void:
 	var total := 0.0
 	for v in m.contributors.values():
 		total += float(v)
+	## Kinh nghiệm: đội của người hạ đòn cuối chia theo luật tổ đội; người góp sức ngoài đội nhận theo phần sát thương.
+	var killer_conn: Conn = _players_by_eid.get(m.last_hitter)
+	var team_got: Dictionary = {}
+	if killer_conn:
+		team_got = social.team_exp(killer_conn, m.pos, MonsterData.stat_at_level(m.data, "exp", m.level), m.level)
+	for c: Conn in team_got:
+		_give_exp(c, int(team_got[c]))
 	for eid in m.contributors:
 		var c: Conn = _players_by_eid.get(eid)
 		if c == null:
@@ -518,7 +529,8 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		b.put_float(m.pos.y)
 		b.put_u8(share | (0x80 if eid == m.last_hitter else 0))
 		_send(c, b)
-		_grant_exp(c, m, share)
+		if not team_got.has(c):
+			_grant_exp(c, m, share)
 	## Rớt đồ: server tung xúc xắc theo bảng gốc, đồ thuộc người hạ đòn cuối (DROP_OWNER_SECONDS giây đầu).
 	var rolls := DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
 	var placed: Array = []
@@ -537,8 +549,10 @@ func _on_monster_killed(m: ServerMonster) -> void:
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	if c.profile == null:
 		return
-	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
-	if got <= 0:
+	_give_exp(c, ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share))
+
+func _give_exp(c: Conn, got: int) -> void:
+	if got <= 0 or c.profile == null:
 		return
 	var before := c.profile.level
 	c.profile.add_exp(got)
@@ -674,9 +688,16 @@ func _on_pickup(c: Conn, id: int) -> void:
 	if c.entity.pos.distance_to(d.pos) > PICKUP_REACH:
 		notice(c, "Đứng gần hơn mới nhặt được")
 		return
-	if int(d.owner) != 0 and int(d.owner) != c.entity.eid and _now < float(d.free_at):
-		notice(c, "Đồ này của người khác, chưa nhặt được")
-		return
+	## Trong DROP_OWNER_SECONDS đầu: cùng đội với chủ đồ thì theo luật nhặt của đội; người ngoài thì chỉ chủ được nhặt.
+	if int(d.owner) != 0 and _now < float(d.free_at):
+		var owner: Conn = conn_of_eid(int(d.owner))
+		if owner and owner.team and owner.team == c.team:
+			if not social.team_can_pick(c, int(d.owner)):
+				notice(c, "Theo luật nhặt đồ của tổ đội, chưa tới lượt bạn nhặt.")
+				return
+		elif int(d.owner) != c.entity.eid:
+			notice(c, "Đồ này của người khác, chưa nhặt được")
+			return
 	var b := NetProto.writer(NetProto.S_PICKED)
 	c.grant_seq += 1
 	b.put_u32(c.grant_seq)
@@ -699,6 +720,7 @@ func _on_pickup(c: Conn, id: int) -> void:
 	c.dirty = true
 	_send(c, b)
 	_drop_gone(id)
+	social.team_picked(c)
 
 ## Vứt món trong túi xuống đất: server bỏ khỏi hồ sơ rồi đặt thành đồ rơi ai cũng nhặt được.
 func _on_discard(c: Conn, uid: String) -> void:

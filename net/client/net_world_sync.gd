@@ -47,6 +47,8 @@ func _ready() -> void:
 	NetClient.trade_state.connect(_on_trade_state)
 	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.stall_items.connect(_on_stall_items)
+	NetClient.team_state.connect(_on_team_state)
+	NetClient.team_invite.connect(_on_team_invite)
 	current = self
 	_connect()
 
@@ -183,6 +185,30 @@ func _on_trade_end(success: bool, message: String) -> void:
 	var hub := _hub()
 	if hub and hub.trade is NetTradeSession:
 		(hub.trade as NetTradeSession).end(success, message)
+
+func _on_team_state(st: Dictionary) -> void:
+	var hub := _hub()
+	if hub:
+		hub.team.apply_net_state(st)
+
+func _on_team_invite(captain_eid: int, captain_name: String) -> void:
+	_ask("Tổ đội", "%s mời bạn vào tổ đội." % captain_name, func(ok: bool) -> void:
+		NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0))
+
+## Hỏi Đồng ý / Từ chối.
+func _ask(title: String, text: String, answer: Callable) -> void:
+	var dlg := ConfirmationDialog.new()
+	dlg.title = title
+	dlg.dialog_text = text
+	dlg.ok_button_text = "Đồng ý"
+	dlg.cancel_button_text = "Từ chối"
+	dlg.confirmed.connect(func() -> void: answer.call(true))
+	dlg.canceled.connect(func() -> void: answer.call(false))
+	dlg.visibility_changed.connect(func() -> void:
+		if not dlg.visible:
+			dlg.queue_free())
+	get_tree().root.add_child(dlg)
+	dlg.popup_centered()
 
 func _on_stall_items(_seller_eid: int, title: String, items: Array) -> void:
 	if StallBrowseWindow.current != null and is_instance_valid(StallBrowseWindow.current):

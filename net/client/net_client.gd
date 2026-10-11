@@ -23,6 +23,8 @@ signal trade_invite(from_eid: int, from_name: String)
 signal trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary)
 signal trade_end(success: bool, message: String)
 signal stall_items(seller_eid: int, title: String, items: Array)
+signal team_state(state: Dictionary)
+signal team_invite(captain_eid: int, captain_name: String)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -165,6 +167,14 @@ func send_stall(op: int, title := "", seller_eid := 0, uid := "") -> void:
 		SocialServer.STALL_BUY:
 			b.put_u32(seller_eid)
 			NetProto.put_str(b, uid)
+	_send(b)
+
+## Tổ đội: op = SocialServer.TEAM_*, arg = eid người liên quan, arg2 = đồng ý / mở / chế độ nhặt.
+func send_team(op: int, arg := 0, arg2 := 0) -> void:
+	var b := NetProto.writer(NetProto.C_TEAM)
+	b.put_u8(op)
+	b.put_u32(arg)
+	b.put_u8(arg2)
 	_send(b)
 
 func send_pickup(drop_id: int) -> void:
@@ -327,6 +337,24 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TRADE_END:
 			var ok := b.get_u8() != 0
 			trade_end.emit(ok, NetProto.get_str(b))
+		NetProto.S_TEAM_STATE:
+			var st := {"in_team": b.get_u8() != 0}
+			if st.in_team:
+				st["captain"] = b.get_u32()
+				st["open"] = b.get_u8() != 0
+				st["pick"] = b.get_u8()
+				st["turn"] = b.get_u8()
+				st["members"] = []
+				for i in b.get_u8():
+					st.members.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
+						"lead": b.get_u8(), "sect": NetProto.get_str(b)})
+				st["applicants"] = []
+				for i in b.get_u8():
+					st.applicants.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16()})
+			team_state.emit(st)
+		NetProto.S_TEAM_INVITE:
+			var cap := b.get_u32()
+			team_invite.emit(cap, NetProto.get_str(b))
 		NetProto.S_STALL_ITEMS:
 			var seller := b.get_u32()
 			var title := NetProto.get_str(b)

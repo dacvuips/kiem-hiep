@@ -33,6 +33,7 @@ const C_PING := 9         ## u32 client_ms
 const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
 const C_TRADE_OP := 12    ## u8 op (SocialServer.OP_*), rồi: OFFER/TAKE str uid | MONEY u32 | LOCK/CONFIRM/CANCEL không có gì
+const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá trị), u8 arg2 (đồng ý / chế độ)
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
@@ -60,6 +61,10 @@ const S_TRADE_INVITE := 20 ## u32 from_eid, str name — có người xin giao d
 const S_TRADE_STATE := 21  ## u32 partner_eid, str partner_name, 2 x (bên mình trước): u32 money, u8 locked, u8 ok, u32 ok_age_ms,
                            ## u16 n, n x str json đồ trong phòng
 const S_TRADE_END := 22   ## u8 success, str message
+const S_TEAM_STATE := 24  ## u8 in_team; nếu có: u32 captain_eid, u8 open, u8 pick, u8 turn_index, u8 n, n x thành viên
+                          ## (u32 eid, str name, u16 level, i8 camp, u8 lead_level, str sect_name) [0 = đội trưởng],
+                          ## u8 n_apply, n x (u32 eid, str name, u16 level)
+const S_TEAM_INVITE := 25 ## u32 captain_eid, str captain_name — được mời vào đội
 const S_STALL_ITEMS := 23 ## u32 seller_eid, str title ("" = quầy đóng), u16 n, n x str json đồ (có giá)
 const MAX_PROFILE_BYTES := 512 * 1024
 
