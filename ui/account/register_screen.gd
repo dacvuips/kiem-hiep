@@ -1,10 +1,9 @@
 extends AccountScreen
-## Màn Tạo Tài Khoản: tên, email (nhập 2 lần cho khỏi gõ nhầm — email là cách duy nhất lấy lại mật khẩu), mật khẩu (2 lần).
+## Màn Tạo Tài Khoản: tên, email (cách duy nhất lấy lại mật khẩu), mật khẩu (nhập 2 lần).
 ## Không cần mã xác nhận: tạo xong là đăng nhập luôn (ghi nhớ đăng nhập) rồi sang màn Chọn Máy Chủ.
 
 @onready var _user: LineEdit = %UserInput
 @onready var _email: LineEdit = %EmailInput
-@onready var _email2: LineEdit = %EmailConfirmInput
 @onready var _password: LineEdit = %PasswordInput
 @onready var _password2: LineEdit = %PasswordConfirmInput
 @onready var _eye: Button = %EyeButton
@@ -19,7 +18,7 @@ func _ready() -> void:
 	_create.pressed.connect(_on_create_pressed)
 	_back.pressed.connect(_go.bind(LOGIN_SCENE))
 	## Enter ở mỗi ô nhảy sang ô kế tiếp, ô cuối thì tạo tài khoản.
-	var order: Array[LineEdit] = [_user, _email, _email2, _password, _password2]
+	var order: Array[LineEdit] = [_user, _email, _password, _password2]
 	for i in order.size() - 1:
 		order[i].text_submitted.connect(func(_t: String) -> void: order[i + 1].grab_focus())
 	_password2.text_submitted.connect(func(_t: String) -> void: _on_create_pressed())
@@ -37,9 +36,6 @@ func _on_create_pressed() -> void:
 	err = check_email(email)
 	if err != "":
 		_invalid(_email, err)
-		return
-	if email.to_lower() != _email2.text.strip_edges().to_lower():
-		_invalid(_email2, "Nhập lại email không khớp")
 		return
 	err = check_new_password(_password.text, _password2.text, user)
 	if err != "":
