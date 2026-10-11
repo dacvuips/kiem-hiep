@@ -12,6 +12,8 @@
 [ext_resource type="Script" uid="uid://2cpihwqs2dtr" path="res://ui/character_create/stage_fit.gd" id="sf"]
 [ext_resource type="Texture2D" uid="uid://l6016uy5d8vx" path="res://ui/login/icon_user.png" id="u"]
 
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="input_font"]
+
 [sub_resource type="StyleBoxFlat" id="field"]
 content_margin_left = 68.0
 content_margin_right = 70.0
@@ -113,6 +115,7 @@ offset_bottom = 412.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
 theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+theme_override_fonts/font = ExtResource("input_font")
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field_focus")
@@ -140,6 +143,7 @@ offset_bottom = 476.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
 theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+theme_override_fonts/font = ExtResource("input_font")
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field_focus")

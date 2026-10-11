@@ -5,6 +5,8 @@
 [ext_resource type="Texture2D" path="res://ui/login/frame.png" id="frame"]
 [ext_resource type="Texture2D" path="res://ui/account/btn_blank.png" id="bb"]
 
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="input_font"]
+
 [sub_resource type="StyleBoxFlat" id="field"]
 content_margin_left = 20.0
 content_margin_right = 20.0
@@ -194,6 +196,7 @@ offset_bottom = 426.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
 theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+theme_override_fonts/font = ExtResource("input_font")
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field_focus")
@@ -213,6 +216,7 @@ offset_bottom = 484.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
 theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+theme_override_fonts/font = ExtResource("input_font")
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("field_pw")
 theme_override_styles/focus = SubResource("field_pw_focus")
@@ -249,6 +253,7 @@ offset_bottom = 542.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
 theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+theme_override_fonts/font = ExtResource("input_font")
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field_focus")
