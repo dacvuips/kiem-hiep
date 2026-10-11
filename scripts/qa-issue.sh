@@ -540,6 +540,30 @@ ${uploaded_md}"
   echo "$resp" | jq '{number: .number, url: .html_url, title: .title, head: .head.ref, base: .base.ref}'
 }
 
+cmd_close_issue() {
+  local issue_number="${1:-}"
+  local comment="${2:-}"
+  if [[ -z "$issue_number" ]]; then
+    echo "Usage: $0 close <issue-number> [comment]" >&2
+    exit 1
+  fi
+
+  if [[ -n "$comment" ]]; then
+    local comment_file="/tmp/qa_close_comment_$$.json"
+    jq -n --arg body "$comment" '{body: $body}' > "$comment_file"
+    github_api POST "/issues/$issue_number/comments" "@$comment_file" >/dev/null
+    rm -f "$comment_file"
+  fi
+
+  local payload_file="/tmp/qa_close_issue_$$.json"
+  jq -n '{state: "closed", state_reason: "completed"}' > "$payload_file"
+  local resp
+  resp="$(github_api PATCH "/issues/$issue_number" "@$payload_file")"
+  rm -f "$payload_file"
+
+  echo "$resp" | jq '{number: .number, state: .state, state_reason: .state_reason, url: .html_url}'
+}
+
 case "${1:-help}" in
   setup-labels)
     cmd_setup_labels
@@ -564,6 +588,10 @@ case "${1:-help}" in
     shift
     cmd_create_issue "$@"
     ;;
+  close)
+    shift
+    cmd_close_issue "$@"
+    ;;
   attach-issue)
     shift
     cmd_attach_issue "$@"
@@ -587,6 +615,7 @@ Commands:
   save-evidence <issue-slug> [step-name] [src-file]      Lưu ảnh chụp màn hình / log vào docs/qa_reports/evidence/ và tự động upload lên nhánh $EVIDENCE_BRANCH
   upload-evidence <file-or-dir>                          Upload file/thư mục bằng chứng lên GitHub ($EVIDENCE_BRANCH) và xuất đoạn Markdown ![...](url)
   create --title "..." --body-file <path> [options]      Tạo GitHub Issue mới (tự động upload & nhúng hình ảnh từ --evidence-dir) + ghi vào QA_DASHBOARD.md
+  close <issue-number> [comment]                         Đóng GitHub Issue (state=closed, state_reason=completed) kèm bình luận xác nhận sửa lỗi
   attach-issue <issue-number> <file-or-dir> [title]      Upload và đính kèm hình ảnh trực tiếp vào mô tả của một GitHub Issue có sẵn
   attach-mr <mr-number> <file-or-dir> [title]            Upload và đính kèm hình ảnh trực tiếp vào MR / PR description có sẵn (alias: attach-pr)
   create-mr --title "..." --body-file <path> [options]   Tạo MR / PR mới và tự động upload + đính kèm ảnh từ --evidence-dir vào MR description (alias: create-pr)
