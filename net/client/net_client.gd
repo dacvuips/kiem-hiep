@@ -1,0 +1,169 @@
+extends Node
+## Autoload NetClient — kết nối game server (chế độ MAIN_MAP online).
+## PC / mobile: ENet (UDP). Web: WebSocket. Sau khi kết nối gửi C_HELLO (access token + mã nhân vật); server trả S_WELCOME.
+## Không biết gì về hình ảnh: phát signal cho NetWorldSync vẽ.
+
+signal connected_to_world(my_eid: int, feet: Vector2, my_name: String)
+signal disconnected(code: String, message: String)
+signal entity_spawned(info: Dictionary)
+signal entity_despawned(eid: int)
+signal entity_state(eid: int, server_ms: int, state: Dictionary)
+signal entity_look(eid: int, look: Dictionary)
+signal position_corrected(feet: Vector2)
+
+enum Status { OFFLINE, CONNECTING, IN_WORLD }
+
+var status := Status.OFFLINE
+var my_eid := 0
+## Lệch giờ ước lượng: server_ms - client_ms (để nội suy theo giờ server).
+var clock_offset := 0.0
+var rtt_ms := 0.0
+
+var _peer: MultiplayerPeer
+var _last_error := ["", ""]
+var _ping_timer := 0.0
+var _connect_deadline := 0.0
+
+## Kết nối tới máy chủ (dict lấy từ /v1/servers: host, port, ws_url).
+func connect_to(server: Dictionary, access_token: String, character_id: int) -> void:
+	disconnect_from_server()
+	_last_error = ["", ""]
+	var err := OK
+	if OS.has_feature("web"):
+		var ws := WebSocketMultiplayerPeer.new()
+		err = ws.create_client(str(server.get("ws_url", "")))
+		_peer = ws
+	else:
+		var enet := ENetMultiplayerPeer.new()
+		err = enet.create_client(str(server.get("host", "127.0.0.1")), int(server.get("port", 7777)), 2)
+		_peer = enet
+	if err != OK:
+		_fail("connect_failed", "Không kết nối được máy chủ game")
+		return
+	status = Status.CONNECTING
+	_connect_deadline = Time.get_ticks_msec() / 1000.0 + 10.0
+	_peer.peer_connected.connect(func(_id: int) -> void: _send_hello(access_token, character_id))
+	_peer.peer_disconnected.connect(func(_id: int) -> void:
+		_fail(_last_error[0] if _last_error[0] != "" else "disconnected",
+			_last_error[1] if _last_error[1] != "" else "Mất kết nối với máy chủ game"))
+
+func disconnect_from_server() -> void:
+	if _peer:
+		_peer.close()
+	_peer = null
+	status = Status.OFFLINE
+	my_eid = 0
+
+func is_in_world() -> bool:
+	return status == Status.IN_WORLD
+
+func server_now_ms() -> float:
+	return Time.get_ticks_msec() + clock_offset
+
+func _fail(code: String, message: String) -> void:
+	var was := status
+	disconnect_from_server()
+	if was != Status.OFFLINE:
+		disconnected.emit(code, message)
+
+func _send(b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
+	if _peer == null or _peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
+	_peer.set_target_peer(1)
+	_peer.transfer_channel = channel
+	_peer.transfer_mode = MultiplayerPeer.TRANSFER_MODE_RELIABLE if channel == NetProto.CH_RELIABLE \
+		else MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED
+	_peer.put_packet(b.data_array)
+
+func _send_hello(token: String, character_id: int) -> void:
+	var b := NetProto.writer(NetProto.C_HELLO)
+	b.put_u16(NetProto.VERSION)
+	NetProto.put_str(b, token)
+	b.put_u32(character_id)
+	_send(b)
+
+## Gửi vị trí chân + hiển thị của nhân vật mình.
+func send_move(feet: Vector2, dir: int, action: String, z: float, flags: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_MOVE)
+	b.put_float(feet.x)
+	b.put_float(feet.y)
+	b.put_u8(dir & 7)
+	b.put_u8(NetProto.action_index(action))
+	b.put_u8(clampi(int(z), 0, 255))
+	b.put_u8(flags)
+	_send(b, NetProto.CH_STATE)
+
+func send_look(look: Dictionary) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_LOOK)
+	for k in ["helm", "armor", "weapon", "horse"]:
+		b.put_16(int(look.get(k, -1)))
+	_send(b)
+
+func _process(delta: float) -> void:
+	if _peer == null:
+		return
+	_peer.poll()
+	if _peer == null:
+		return
+	if status == Status.CONNECTING and Time.get_ticks_msec() / 1000.0 > _connect_deadline:
+		_fail("timeout", "Máy chủ game không phản hồi")
+		return
+	while _peer and _peer.get_available_packet_count() > 0:
+		_on_packet(_peer.get_packet())
+	if status == Status.IN_WORLD:
+		_ping_timer -= delta
+		if _ping_timer <= 0.0:
+			_ping_timer = 2.0
+			var b := NetProto.writer(NetProto.C_PING)
+			b.put_u32(Time.get_ticks_msec())
+			_send(b)
+
+func _on_packet(pkt: PackedByteArray) -> void:
+	if pkt.is_empty():
+		return
+	var b := NetProto.reader(pkt)
+	match b.get_u8():
+		NetProto.S_WELCOME:
+			my_eid = b.get_u32()
+			var feet := Vector2(b.get_float(), b.get_float())
+			var my_name := NetProto.get_str(b)
+			status = Status.IN_WORLD
+			connected_to_world.emit(my_eid, feet, my_name)
+		NetProto.S_ERROR:
+			_last_error = [NetProto.get_str(b), NetProto.get_str(b)]
+		NetProto.S_SPAWN:
+			var info := {
+				"eid": b.get_u32(), "kind": b.get_u8(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
+				"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
+				"flags": b.get_u8(), "hp": b.get_u8(),
+			}
+			info["look"] = NetProto.get_look(b)
+			entity_spawned.emit(info)
+		NetProto.S_DESPAWN:
+			entity_despawned.emit(b.get_u32())
+		NetProto.S_STATE:
+			var server_ms := b.get_u32()
+			var n := b.get_u16()
+			for i in n:
+				var eid := b.get_u32()
+				var st := {
+					"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(),
+					"z": b.get_u8(), "flags": b.get_u8(), "hp": b.get_u8(),
+				}
+				entity_state.emit(eid, server_ms, st)
+		NetProto.S_LOOK:
+			var eid := b.get_u32()
+			entity_look.emit(eid, NetProto.get_look(b))
+		NetProto.S_CORRECT:
+			position_corrected.emit(Vector2(b.get_float(), b.get_float()))
+		NetProto.S_PONG:
+			var sent := b.get_u32()
+			var server_ms := b.get_u32()
+			var now := Time.get_ticks_msec()
+			rtt_ms = float(now - sent)
+			var offset := float(server_ms) + rtt_ms * 0.5 - now
+			clock_offset = offset if clock_offset == 0.0 else lerpf(clock_offset, offset, 0.2)

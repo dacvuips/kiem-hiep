@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Kiem-hiep"
-run/main_scene="uid://d2n3u17xda056"
+run/main_scene="uid://xkfo54r4ssfh"
 config/features=PackedStringArray("4.7", "Mobile")
 run/max_fps=60
 
@@ -25,6 +25,7 @@ GameManager="*uid://cakgoqlhg0ma0"
 SaveManager="*res://systems/save/save_manager.gd"
 MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
+NetClient="*res://net/client/net_client.gd"
 
 [display]
 

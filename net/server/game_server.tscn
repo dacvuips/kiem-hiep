@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://net/server/game_server.gd" id="s"]
+
+[node name="GameServer" type="Node"]
+script = ExtResource("s")

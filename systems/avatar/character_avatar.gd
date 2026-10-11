@@ -152,6 +152,10 @@ func set_height(z: float) -> void:
 	if _body:
 		_body.position.y = -z
 
+## Độ cao hiện tại so với mặt đất (đang nhảy > 0).
+func get_height() -> float:
+	return -_body.position.y if _body else 0.0
+
 func face(vec: Vector2) -> void:
 	if vec == Vector2.ZERO:
 		return

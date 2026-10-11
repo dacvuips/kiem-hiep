@@ -26,6 +26,8 @@ const TEXT := Color(0.93, 0.88, 0.78)
 
 ## Máy chủ đang chọn (id). Màn sau (Tạo nhân vật / game) đọc được từ đây.
 static var selected_server_id := 1
+## Bản ghi máy chủ đã chọn (host, port, ws_url...) — NetClient dùng để kết nối game server.
+static var selected_server: Dictionary = {}
 
 @onready var _rows: VBoxContainer = %Rows
 @onready var _filter_box: VBoxContainer = %Filters
@@ -263,6 +265,7 @@ func _on_enter_pressed() -> void:
 	cfg.load(CFG_PATH)
 	cfg.set_value("server", "id", selected_server_id)
 	cfg.save(CFG_PATH)
+	selected_server = server
 	_enter.disabled = true
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)

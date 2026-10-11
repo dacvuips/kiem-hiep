@@ -47,6 +47,9 @@ type Config struct {
 	GoogleTokenURL     string
 	GoogleJWKSURL      string
 	GoogleIssuer       string // thêm 1 iss được chấp nhận (chỉ dùng khi kiểm thử với Google giả)
+
+	// Khóa dịch vụ cho game server gọi /internal/* (bí mật dùng chung giữa account server và game server).
+	GameServiceKey string
 }
 
 func loadConfig() Config {
@@ -76,6 +79,7 @@ func loadConfig() Config {
 		GoogleTokenURL:     env("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
 		GoogleJWKSURL:      env("GOOGLE_JWKS_URL", "https://www.googleapis.com/oauth2/v3/certs"),
 		GoogleIssuer:       env("GOOGLE_TEST_ISSUER", ""),
+		GameServiceKey:     env("GAME_SERVICE_KEY", ""),
 	}
 	if c.DatabaseURL == "" {
 		log.Fatal("thiếu DATABASE_URL")

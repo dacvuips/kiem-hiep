@@ -77,6 +77,12 @@ func _enter_main_map() -> void:
 	if VltkWorld.current != null:
 		VltkWorld.current.setup_main_map()
 	MusicManager.play_map(DEFAULT_MUSIC_MAP_ID)
+	## Online: nối với game server (thấy người chơi khác, server kiểm tra di chuyển).
+	if NetWorldSync.is_online_mode():
+		var sync := NetWorldSync.new()
+		sync.name = "NetWorldSync"
+		sync.player = get_tree().get_first_node_in_group("player")
+		add_child(sync)
 
 func load_stage(stage: StageData) -> void:
 	GameManager.start_stage(stage)

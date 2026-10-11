@@ -103,3 +103,18 @@ cd admin-web/e2e && npm install && node admin_e2e.mjs e2e_super "$PASS" ./shots
 # xong: vô hiệu hóa admin thử
 docker compose exec -T postgres psql -U kiemhiep -c "UPDATE admins SET disabled=true WHERE username='e2e_super'"
 ```
+
+## Game server (Godot headless)
+
+Chế độ MAIN_MAP online: `res://net/server/game_server.tscn` (code trong `net/`). Nghe ENet `:7777` (PC/mobile) và WebSocket
+`:7778` (web), mô phỏng 18 tick/giây, gửi vị trí 9 lần/giây theo lưới tầm nhìn 1024 px (mỗi người thấy 3x3 ô quanh mình).
+
+```bash
+GODOT="/duong/dan/Godot_v4.7.2_console.exe" bash server/run_game_server.sh   # đọc GAME_SERVICE_KEY từ server/.env
+godot --headless --path . res://tests/net_tests.tscn                          # kiểm thử bằng bot thật
+```
+
+- Vào map: game gửi access token + mã nhân vật; game server hỏi `POST /internal/game/join` (khóa `GAME_SERVICE_KEY`).
+  Nhân vật đăng nhập nơi khác thì phiên cũ bị đá.
+- Di chuyển: game gửi vị trí, server kiểm tra tốc độ (ngân sách quãng đường) + ô vật cản, sai thì kéo về (`S_CORRECT`).
+- **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).
