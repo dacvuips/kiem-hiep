@@ -74,6 +74,7 @@ func _enter_main_map() -> void:
 	time_label.visible = false
 	$Spawner.set_process(false)
 	$PickupSpawner.set_process(false)
+	VltkWorld.net_monsters = NetWorldSync.is_online_mode()
 	if VltkWorld.current != null:
 		VltkWorld.current.setup_main_map()
 	MusicManager.play_map(DEFAULT_MUSIC_MAP_ID)

@@ -12,6 +12,8 @@ var error_code := ""
 var error_message := ""
 var known: Dictionary = {}        ## eid -> {name, pos, ...}
 var corrections := 0
+var attacked_by: Dictionary = {}  ## monster eid -> số lần quái ra chiêu vào mình
+var kills: Array = []             ## các S_KILL nhận được
 var states_received := 0
 var closed := false
 var _token := ""
@@ -52,6 +54,25 @@ func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	b.put_u8(0)
 	_send(b, NetProto.CH_STATE)
 
+func damage(monster_eid: int, amount: int) -> void:
+	var b := NetProto.writer(NetProto.C_DAMAGE)
+	b.put_u32(monster_eid)
+	b.put_u32(amount)
+	b.put_u8(1)
+	_send(b, NetProto.CH_RELIABLE)
+
+## Quái gần nhất mình đang thấy (eid hoặc 0).
+func nearest_monster() -> int:
+	var best := 0
+	var best_d := INF
+	for id in known:
+		if int(known[id].kind) == NetProto.KIND_MONSTER and int(known[id].get("hp", 100)) > 0:
+			var d := (known[id].pos as Vector2).distance_to(feet)
+			if d < best_d:
+				best_d = d
+				best = id
+	return best
+
 func close() -> void:
 	peer.close()
 	closed = true
@@ -78,9 +99,13 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var id := b.get_u32()
 			var kind := b.get_u8()
 			var n := NetProto.get_str(b)
-			b.get_u16()
+			var lv := b.get_u16()
 			b.get_8()
-			known[id] = {"kind": kind, "name": n, "pos": Vector2(b.get_float(), b.get_float())}
+			known[id] = {"kind": kind, "name": n, "level": lv, "pos": Vector2(b.get_float(), b.get_float())}
+			b.get_data(4)
+			known[id]["hp"] = b.get_u8()
+			if kind == NetProto.KIND_MONSTER:
+				known[id]["monster_id"] = b.get_u16()
 		NetProto.S_DESPAWN:
 			known.erase(b.get_u32())
 		NetProto.S_STATE:
@@ -88,10 +113,19 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			for i in b.get_u16():
 				var id := b.get_u32()
 				var pos := Vector2(b.get_float(), b.get_float())
-				b.get_data(5)
+				b.get_data(4)
+				var hp := b.get_u8()
 				states_received += 1
 				if known.has(id):
 					known[id].pos = pos
+					known[id].hp = hp
+		NetProto.S_MATTACK:
+			var m := b.get_u32()
+			b.get_u8()
+			if b.get_u32() == eid:
+				attacked_by[m] = int(attacked_by.get(m, 0)) + 1
+		NetProto.S_KILL:
+			kills.append({"eid": b.get_u32(), "monster_id": b.get_u16()})
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())

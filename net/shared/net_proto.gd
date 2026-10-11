@@ -17,23 +17,29 @@ const CH_STATE := 1
 const C_HELLO := 1        ## u16 version, str access_token, u32 character_id
 const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags
 const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse
+const C_DAMAGE := 4       ## u32 monster_eid, u32 amount, u8 flags (1 = làm khựng) — sát thương đã tính ở máy người đánh
 const C_PING := 9         ## u32 client_ms
 
 # server -> game
 const S_WELCOME := 1      ## u32 my_eid, f32 x, f32 y, str name
 const S_ERROR := 2        ## str code, str message (rồi ngắt kết nối)
-const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp, look
+const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp,
+                          ## rồi: người chơi = look; quái = u16 monster_id, u8 series, u8 blue_boss
 const S_DESPAWN := 4      ## u32 eid
 const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp)
 const S_CORRECT := 6      ## f32 x, f32 y — server kéo nhân vật của mình về vị trí hợp lệ
 const S_LOOK := 7         ## u32 eid, u8 gender, i16 helm, i16 armor, i16 weapon, i16 horse
+const S_MATTACK := 8      ## u32 monster_eid, u8 skill_slot, u32 target_eid, u8 dir64 — quái bắt đầu ra chiêu vào target
 const S_PONG := 9         ## u32 client_ms, u32 server_ms
+const S_KILL := 10        ## u32 monster_eid, u16 monster_id, u16 level, u8 series, u8 blue, f32 x, f32 y, u8 share% — mình được thưởng
 
 const KIND_PLAYER := 1
 const KIND_MONSTER := 2
 
 ## Động tác hiển thị (chỉ số gửi qua mạng). Khớp tên động tác của CharacterAvatar.
 const ACTIONS: Array[String] = ["stand", "run", "attack", "attack2", "cast", "hurt", "die", "jump", "sit"]
+## Động tác quái (MonsterSprite). Hướng quái gửi 0..63 (VltkMath).
+const MONSTER_ACTIONS: Array[String] = ["stand", "walk", "hurt", "die", "attack1", "attack2", "magic"]
 const FLAG_RIDING := 1
 const FLAG_SITTING := 2
 const FLAG_DEAD := 4
@@ -45,6 +51,13 @@ static func action_index(action: String) -> int:
 
 static func action_name(i: int) -> String:
 	return ACTIONS[i] if i >= 0 and i < ACTIONS.size() else "stand"
+
+static func monster_action_index(action: String) -> int:
+	var i := MONSTER_ACTIONS.find(action)
+	return i if i >= 0 else 0
+
+static func monster_action_name(i: int) -> String:
+	return MONSTER_ACTIONS[i] if i >= 0 and i < MONSTER_ACTIONS.size() else "stand"
 
 # ---------------------------------------------------------------- ghi
 

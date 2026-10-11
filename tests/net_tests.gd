@@ -70,6 +70,51 @@ func http(method: String, path: String, body: Dictionary, token := "") -> Dictio
 	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
 	return d if d is Dictionary else {}
 
+## B2: quái do server điều khiển.
+func test_monsters(p: BotClient) -> void:
+	## Đi tới gần 1 bãi quái (dịch chuyển dần, đúng tốc độ) để chắc chắn thấy quái.
+	check("thấy quái của server", await wait_until(func() -> bool: return p.nearest_monster() != 0, 3.0) or await _walk_to_monsters(p),
+		p.known.size())
+	var m := p.nearest_monster()
+	if m == 0:
+		return
+	var mpos: Vector2 = p.known[m].pos
+	## Đứng sát quái -> quái chủ động ra chiêu (quái VLTK thường chủ động trong tầm nhìn).
+	await _walk(p, mpos + Vector2(40, 0))
+	var aggro := await wait_until(func() -> bool: return not p.attacked_by.is_empty(), 12.0)
+	check("quái ra chiêu vào người đứng gần", aggro, p.attacked_by)
+	## Sát thương từ quá xa không tính.
+	var hp_before := int(p.known[m].get("hp", 100))
+	p.move_to(p.feet)
+	## Đánh tới chết (trần mỗi đòn theo cấp: 2000).
+	for i in 60:
+		if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
+			break
+		p.damage(m, 1999)
+		await get_tree().create_timer(0.08).timeout
+	check("quái mất máu theo sát thương", hp_before == 100, hp_before)
+	check("nhận thưởng khi hạ quái (S_KILL)", await wait_until(func() -> bool:
+		return p.kills.any(func(k: Dictionary) -> bool: return int(k.eid) == m), 5.0), p.kills)
+	check("xác quái biến mất sau vài giây", await wait_until(func() -> bool: return not p.known.has(m), 6.0))
+
+## Tìm quái: đi theo các hướng tới khi thấy (bước 25 px / 1/15 giây ~ 375 px/s, dưới tốc độ tối đa).
+func _walk_to_monsters(p: BotClient) -> bool:
+	for dir in [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]:
+		for i in 40:
+			p.move_to(p.feet + dir * 25.0)
+			await get_tree().create_timer(1.0 / 15.0).timeout
+			if p.nearest_monster() != 0:
+				return true
+	return false
+
+func _walk(p: BotClient, to: Vector2) -> void:
+	for i in 200:
+		var d := to - p.feet
+		if d.length() < 10.0:
+			return
+		p.move_to(p.feet + d.limit_length(25.0))
+		await get_tree().create_timer(1.0 / 15.0).timeout
+
 func run() -> void:
 	var a_info := await make_player("a")
 	var b_info := await make_player("b")
@@ -111,6 +156,8 @@ func run() -> void:
 	var a2 := bot(a_info[0], a_info[1])
 	check("đăng nhập lần 2 vào được", await wait_until(func() -> bool: return a2.in_world))
 	check("phiên cũ bị đá", await wait_until(func() -> bool: return a.error_code == "logged_in_elsewhere"), a.error_code)
+
+	await test_monsters(a2)
 
 	## B thoát -> A2 thấy B biến mất.
 	check("A2 thấy B", await wait_until(func() -> bool: return a2.known.has(b.eid)))

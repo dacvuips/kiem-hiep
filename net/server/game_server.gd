@@ -22,6 +22,9 @@ const MAX_SPEED := 440.0
 ## Ngân sách quãng đường tích tối đa (giây) — bù gói đến dồn do mạng giật, không cho tích lâu để dịch chuyển xa.
 const MOVE_BUDGET_CAP := 1.2
 const MAX_PACKETS_PER_SEC := 80
+## Sát thương báo lên: tối đa mỗi giây, xa hơn khoảng này không tính.
+const MAX_DAMAGE_PER_SEC := 30
+const MAX_HIT_DISTANCE := 1200.0
 
 enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 
@@ -40,6 +43,8 @@ class Conn:
 	var last_move_at := 0.0
 	var packets := 0
 	var packets_window := 0.0
+	var damage_msgs := 0
+	var damage_window := 0.0
 
 var grid: MapGrid
 var aoi := AoiGrid.new()
@@ -49,6 +54,8 @@ var _ws := WebSocketMultiplayerPeer.new()
 var _conns: Dictionary = {}            ## key -> Conn
 var _by_character: Dictionary = {}     ## character_id -> Conn (1 nhân vật chỉ online 1 nơi)
 var _entities: Dictionary = {}         ## eid -> ServerEntity
+var _monsters: Array[ServerMonster] = []
+var _players_by_eid: Dictionary = {}   ## eid -> Conn
 var _next_eid := 1
 var _tick := 0
 var _acc := 0.0
@@ -71,6 +78,7 @@ func _ready() -> void:
 		push_error("Thiếu GAME_SERVICE_KEY — game server không xác thực được người chơi")
 		get_tree().quit(1)
 		return
+	_spawn_monsters()
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
 	var ws_port := int(_env("GAME_WS_PORT", "7778"))
 	if _enet.create_server(enet_port, mini(max_players, 4095), 2) != OK:
@@ -84,8 +92,21 @@ func _ready() -> void:
 	for p: MultiplayerPeer in [_enet, _ws]:
 		p.peer_connected.connect(_on_peer_connected.bind(p))
 		p.peer_disconnected.connect(_on_peer_disconnected.bind(p))
-	print("Game server: map %dx%d ô, ENet :%d, WebSocket :%d, máy chủ %d, tài khoản %s" % [
-		grid.cols, grid.rows, enet_port, ws_port, account.server_id, account.base_url])
+	print("Game server: map %dx%d ô, %d quái, ENet :%d, WebSocket :%d, máy chủ %d, tài khoản %s" % [
+		grid.cols, grid.rows, _monsters.size(), enet_port, ws_port, account.server_id, account.base_url])
+
+## Quái theo bãi trong map.json (role "monster" có dữ liệu mẫu) — luôn tồn tại trên server, không phụ thuộc người chơi.
+func _spawn_monsters() -> void:
+	for n in grid.data.get("npcs", []):
+		if str(n.get("role", "")) != "monster":
+			continue
+		var m := ServerMonster.from_entry(n, _next_eid)
+		if m == null:
+			continue
+		_next_eid += 1
+		_monsters.append(m)
+		_entities[m.eid] = m
+		aoi.update(m)
 
 func _env(k: String, def: String) -> String:
 	var v := OS.get_environment(k)
@@ -116,6 +137,54 @@ func _simulate(_dt: float) -> void:
 	for c: Conn in _conns.values():
 		if c.state == ConnState.WAIT_HELLO and _now - c.since > HELLO_TIMEOUT:
 			_kick(c, "timeout", "Hết thời gian chờ vào game")
+	## Quái chỉ "thức" ở ô có người chơi trong vòng 2 ô (rộng hơn tầm nhìn 1 ô để quái kịp đi tới) — vùng vắng không tốn CPU.
+	var awake := {}
+	for c: Conn in _conns.values():
+		if c.entity != null and c.state == ConnState.IN_WORLD:
+			var cell := aoi.cell_of(c.entity.pos)
+			for dx in range(-2, 3):
+				for dy in range(-2, 3):
+					awake[cell + Vector2i(dx, dy)] = true
+	for m in _monsters:
+		if m.hidden:
+			if _now >= m.dead_at + m.respawn_seconds:
+				m.reset()
+				_entities[m.eid] = m
+				aoi.update(m)
+			continue
+		if m.is_dead():
+			if _now >= m.dead_at + ServerMonster.CORPSE_SECONDS:
+				m.hidden = true
+				aoi.remove(m)
+				_entities.erase(m.eid)
+			continue
+		if awake.has(m.cell):
+			m.tick(self)
+
+## Người chơi còn sống gần nhất trong tầm nhìn (đơn vị logic) của quái.
+func nearest_player(feet: Vector2, vision_logic: float) -> ServerEntity:
+	var here := VltkMath.to_logic(feet)
+	var best: ServerEntity = null
+	var best_d := vision_logic
+	for e in aoi.around(feet):
+		if e.kind != NetProto.KIND_PLAYER or (e.flags & NetProto.FLAG_DEAD) != 0:
+			continue
+		var d := here.distance_to(VltkMath.to_logic(e.pos))
+		if d <= best_d:
+			best_d = d
+			best = e
+	return best
+
+## Quái bắt đầu ra chiêu: báo cho mọi người đang thấy quái (máy người bị nhắm chạy đòn thật).
+func monster_attack(m: ServerMonster, slot: int, target: ServerEntity) -> void:
+	var b := NetProto.writer(NetProto.S_MATTACK)
+	b.put_u32(m.eid)
+	b.put_u8(slot)
+	b.put_u32(target.eid)
+	b.put_u8(m.dir)
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD and (c.known.has(m.eid) or c.entity == target):
+			_send(c, b)
 
 # ---------------------------------------------------------------- kết nối
 
@@ -142,6 +211,7 @@ func _drop(c: Conn) -> void:
 	if c.entity:
 		aoi.remove(c.entity)
 		_entities.erase(c.entity.eid)
+		_players_by_eid.erase(c.entity.eid)
 		print("Rời map: %s (%s)" % [c.entity.name, c.username])
 
 func _send(c: Conn, b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
@@ -164,6 +234,7 @@ func _kick(c: Conn, code: String, message: String) -> void:
 	if c.entity:
 		aoi.remove(c.entity)
 		_entities.erase(c.entity.eid)
+		_players_by_eid.erase(c.entity.eid)
 		c.entity = null
 	var peer := c.peer
 	var id := c.peer_id
@@ -194,6 +265,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_MOVE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 12:
 				_on_move(c, b)
+		NetProto.C_DAMAGE:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 9:
+				_on_damage(c, b)
 		NetProto.C_LOOK:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 8:
 				_on_look(c, b)
@@ -244,6 +318,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	e.pos = grid.free_near(grid.default_center())
 	c.entity = e
 	_entities[e.eid] = e
+	_players_by_eid[e.eid] = c
 	aoi.update(e)
 	c.state = ConnState.IN_WORLD
 	c.move_budget = MAX_SPEED * MOVE_BUDGET_CAP
@@ -293,6 +368,53 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 		e.flags = flags
 		e.touch()
 		aoi.update(e)
+
+## Sát thương người chơi gây cho quái (tính ở máy người đánh bằng pipeline chiêu hiện có). Server kiểm tra: quái còn sống,
+## đủ gần, không vượt trần theo cấp, không gửi dồn dập. Bước B3 server sẽ tự tính sát thương.
+func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
+	var m_eid := b.get_u32()
+	var amount := float(b.get_u32())
+	var staggers := (b.get_u8() & 1) != 0
+	if _now - c.damage_window > 1.0:
+		c.damage_window = _now
+		c.damage_msgs = 0
+	c.damage_msgs += 1
+	if c.damage_msgs > MAX_DAMAGE_PER_SEC:
+		return
+	var m := _entities.get(m_eid) as ServerMonster
+	if m == null or m.is_dead() or (c.entity.flags & NetProto.FLAG_DEAD) != 0:
+		return
+	if m.pos.distance_to(c.entity.pos) > MAX_HIT_DISTANCE:
+		return
+	amount = minf(amount, max_hit_for_level(c.entity.level))
+	if m.receive_damage(c.entity.eid, amount, staggers):
+		_on_monster_killed(m)
+
+## Trần sát thương 1 đòn theo cấp người chơi (chặn số liệu giả quá đáng; tinh chỉnh khi server tự tính sát thương).
+static func max_hit_for_level(lvl: int) -> float:
+	return maxf(2000.0, float(lvl * lvl) * 60.0)
+
+## Quái chết: thưởng cho người đánh (kinh nghiệm theo phần sát thương; rớt đồ cho người hạ đòn cuối), hẹn giờ ẩn xác + hồi sinh.
+func _on_monster_killed(m: ServerMonster) -> void:
+	m.dead_at = _now
+	var total := 0.0
+	for v in m.contributors.values():
+		total += float(v)
+	for eid in m.contributors:
+		var c: Conn = _players_by_eid.get(eid)
+		if c == null:
+			continue
+		var share := clampi(roundi(float(m.contributors[eid]) / maxf(total, 1.0) * 100.0), 0, 100)
+		var b := NetProto.writer(NetProto.S_KILL)
+		b.put_u32(m.eid)
+		b.put_u16(m.monster_id)
+		b.put_u16(m.level)
+		b.put_u8(m.series)
+		b.put_u8(1 if m.blue_boss else 0)
+		b.put_float(m.pos.x)
+		b.put_float(m.pos.y)
+		b.put_u8(share | (0x80 if eid == m.last_hitter else 0))
+		_send(c, b)
 
 func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	## B1: ngoại hình do game báo (đổi trang bị / lên ngựa). Bước B3 server tự tính từ dữ liệu nhân vật.

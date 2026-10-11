@@ -58,6 +58,13 @@ var _fired: bool = false
 var _death_time: float = 0.0
 var _max_radius: float = -1.0
 
+## ONLINE: quái do game server điều khiển (net_eid != 0). Không chạy AI / không tự trừ máu: vị trí + động tác lấy từ
+## server (nội suy), sát thương mình gây được báo lên server, chiêu của quái chỉ ra khi server báo (S_MATTACK).
+var net_eid: int = 0
+var _net_buffer: Array = []       ## [{t, pos, dir, action, hp, flags}] theo giờ server
+var _net_real_attack := false     ## đòn đang ra nhắm vào chính mình -> gây sát thương thật
+const NET_INTERP_DELAY_MS := 140.0
+
 ## Tạo quái `monster_id` (STT Npcs.txt) cấp `lvl` tại `world_pos`. null nếu không có dữ liệu.
 ## `series_override` 0-4 (Kim..Thổ) = ép hệ ngũ hành của quái này (dùng để thử tương khắc); -1 = theo bảng quái gốc.
 static func spawn(parent: Node, id: int, lvl: int, world_pos: Vector2, with_ai: bool = true, series_override: int = -1) -> VltkMonster:
@@ -189,6 +196,9 @@ func _physics_process(delta: float) -> void:
 	_game_time += frames
 	if _state == State.DEAD:
 		_tick_dead(delta, frames)
+		return
+	if net_eid != 0:
+		_tick_net(frames)
 		return
 	if target == null or not is_instance_valid(target):
 		target = get_tree().get_first_node_in_group("player")
@@ -358,6 +368,8 @@ func _tick_attack() -> void:
 func _fire_skill() -> void:
 	if target == null or not is_instance_valid(target) or GameManager.is_game_over:
 		return
+	## Online, đòn nhắm người khác: chỉ vẽ hiệu ứng (đạn bay không gây sát thương), không đánh cận chiến.
+	var visual_only := net_eid != 0 and not _net_real_attack
 	var sk: Array = data["skills"][_active_slot]
 	var skill_id := int(sk[0])
 	var skill_level := int(sk[1])
@@ -367,10 +379,12 @@ func _fire_skill() -> void:
 		var ctx := VltkCastContext.new()
 		ctx.launcher = self
 		ctx.world = get_parent()
-		ctx.stats = _make_hit_stats(skill_id, skill_level)
+		ctx.stats = null if visual_only else _make_hit_stats(skill_id, skill_level)
 		ctx.attacker_stats = combat_stats
 		ctx.target_group = &"player"
 		VltkSkillCaster.cast(ctx, skill_id, skill_level, VltkMath.logic_of(target), target)
+		return
+	if visual_only:
 		return
 	## Skill cận chiến kiểu 1/2/3 chưa có bộ máy riêng: đánh thẳng nếu người chơi còn trong tầm.
 	var radius := float(s.get("attack_radius", DEFAULT_ATTACK_RADIUS)) if not s.is_empty() else DEFAULT_ATTACK_RADIUS
@@ -487,14 +501,24 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
 	## DoHurt của skill: % khựng khi trúng (KNpc::ReceiveDamage gốc: g_RandPercent(nDoHurtP) -> DoHurt()).
-	_apply_damage(float(final_damage), mods == null or randi_range(0, 99) < mods.do_hurt_p)
+	var staggers := mods == null or randi_range(0, 99) < mods.do_hurt_p
+	if net_eid != 0:
+		_net_damage(float(final_damage), staggers)
+		return
+	_apply_damage(float(final_damage), staggers)
 
 func take_damage(amount: float) -> void:
 	if _state != State.DEAD:
+		if net_eid != 0:
+			_net_damage(amount, true)
+			return
 		_apply_damage(amount, true)
 
 func take_status_damage(amount: float, _effect_id: String) -> void:
 	if _state != State.DEAD:
+		if net_eid != 0:
+			_net_damage(amount, false)
+			return
 		_apply_damage(amount, false)
 
 func heal(amount: float) -> void:
@@ -526,12 +550,76 @@ func die() -> void:
 	z_index = -1
 	_enter(State.DEAD, "die")
 	_death_time = 0.0
-	## Rớt đồ theo bảng script server gốc (DropTable): tiền / trang bị xanh rơi xuống đất tại chỗ quái chết.
-	var drops := DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
-	if not drops.is_empty():
-		GroundDrop.spawn_drops(get_parent(), position, drops)
-	KillRewards.on_monster_killed(self)   ## kinh nghiệm (chia theo tổ đội) cho người chơi
+	if net_eid != 0:
+		return   ## online: thưởng do server báo (S_KILL -> grant_rewards)
+	grant_rewards()
 	died.emit(self)
+
+## Rớt đồ theo bảng script server gốc (DropTable) + kinh nghiệm (KillRewards, chia theo tổ đội).
+## Online: chỉ gọi khi server báo mình được thưởng; `with_drops` = mình là người hạ đòn cuối.
+func grant_rewards(with_drops := true) -> void:
+	if with_drops:
+		var drops := DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
+		if not drops.is_empty():
+			GroundDrop.spawn_drops(get_parent(), position, drops)
+	KillRewards.on_monster_killed(self)
+
+# ---------------------------------------------------------------- online (quái của game server)
+
+## Bản tin vị trí / động tác từ server.
+func net_push_state(server_ms: float, st: Dictionary) -> void:
+	var item := st.duplicate()
+	item["t"] = server_ms
+	_net_buffer.append(item)
+	if _net_buffer.size() > 20:
+		_net_buffer.pop_front()
+
+## Server báo quái ra chiêu `slot` vào `target_node`. real = target là chính mình (tính sát thương thật).
+func net_attack(slot: int, target_node: Node2D, dir64: int, real: bool) -> void:
+	if _state == State.DEAD or slot < 0 or slot > 3:
+		return
+	target = target_node
+	_dir64 = dir64
+	_active_slot = slot
+	_net_real_attack = real
+	_begin_attack(slot)
+
+func _net_damage(amount: float, staggers: bool) -> void:
+	_spawn_number(amount, false)
+	## Hiện trước trên thanh máu cho cảm giác ngay; số máu thật lấy theo server ở bản tin sau.
+	health = maxf(1.0, health - amount)
+	_health_bar.set_health(health)
+	NetClient.send_damage(net_eid, amount, staggers)
+
+func _tick_net(frames: float) -> void:
+	_state_frames += frames
+	if _state == State.ATTACK:
+		_tick_attack()   ## diễn hết đòn đang ra (bắn ở 60%) rồi mới theo động tác server
+		_sprite.set_pose(_action, _dir64, _progress(false))
+	if not _net_buffer.is_empty():
+		var render_t := NetClient.server_now_ms() - NET_INTERP_DELAY_MS
+		while _net_buffer.size() >= 2 and float(_net_buffer[1].t) <= render_t:
+			_net_buffer.pop_front()
+		var a: Dictionary = _net_buffer[0]
+		var feet: Vector2 = a.pos
+		if _net_buffer.size() >= 2:
+			var b: Dictionary = _net_buffer[1]
+			var span := float(b.t) - float(a.t)
+			feet = (a.pos as Vector2).lerp(b.pos, clampf((render_t - float(a.t)) / span, 0.0, 1.0) if span > 0.0 else 1.0)
+		global_position = feet
+		health = max_health * float(a.hp) / 100.0
+		_health_bar.set_health(health)
+		if (int(a.flags) & NetProto.FLAG_DEAD) != 0:
+			die()
+			return
+		if _state != State.ATTACK:
+			var act := NetProto.monster_action_name(int(a.action))
+			if act != _action:
+				_enter(State.WALK if act == "walk" else (State.HURT if act == "hurt" else State.IDLE), act)
+			_dir64 = int(a.dir)
+	if _state != State.ATTACK:
+		var looping := _state == State.IDLE or _state == State.WALK
+		_sprite.set_pose(_action, _dir64, _progress(looping))
 
 func _tick_dead(delta: float, frames: float) -> void:
 	_state_frames += frames

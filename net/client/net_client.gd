@@ -10,6 +10,8 @@ signal entity_despawned(eid: int)
 signal entity_state(eid: int, server_ms: int, state: Dictionary)
 signal entity_look(eid: int, look: Dictionary)
 signal position_corrected(feet: Vector2)
+signal monster_attack(monster_eid: int, slot: int, target_eid: int, dir64: int)
+signal monster_killed(info: Dictionary)
 
 enum Status { OFFLINE, CONNECTING, IN_WORLD }
 
@@ -95,6 +97,16 @@ func send_move(feet: Vector2, dir: int, action: String, z: float, flags: int) ->
 	b.put_u8(flags)
 	_send(b, NetProto.CH_STATE)
 
+## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung).
+func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
+	if status != Status.IN_WORLD or amount <= 0.0:
+		return
+	var b := NetProto.writer(NetProto.C_DAMAGE)
+	b.put_u32(monster_eid)
+	b.put_u32(clampi(int(amount), 0, 0x7fffffff))
+	b.put_u8(1 if staggers else 0)
+	_send(b)
+
 func send_look(look: Dictionary) -> void:
 	if status != Status.IN_WORLD:
 		return
@@ -141,7 +153,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
 				"flags": b.get_u8(), "hp": b.get_u8(),
 			}
-			info["look"] = NetProto.get_look(b)
+			if int(info.kind) == NetProto.KIND_PLAYER:
+				info["look"] = NetProto.get_look(b)
+			else:
+				info["monster_id"] = b.get_u16()
+				info["series"] = b.get_u8()
+				info["blue"] = b.get_u8() != 0
 			entity_spawned.emit(info)
 		NetProto.S_DESPAWN:
 			entity_despawned.emit(b.get_u32())
@@ -158,6 +175,18 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_LOOK:
 			var eid := b.get_u32()
 			entity_look.emit(eid, NetProto.get_look(b))
+		NetProto.S_MATTACK:
+			var m_eid := b.get_u32()
+			var slot := b.get_u8()
+			var target := b.get_u32()
+			monster_attack.emit(m_eid, slot, target, b.get_u8())
+		NetProto.S_KILL:
+			var k := {"eid": b.get_u32(), "monster_id": b.get_u16(), "level": b.get_u16(), "series": b.get_u8(),
+				"blue": b.get_u8() != 0, "pos": Vector2(b.get_float(), b.get_float())}
+			var share := b.get_u8()
+			k["share"] = share & 0x7f
+			k["last_hit"] = (share & 0x80) != 0
+			monster_killed.emit(k)
 		NetProto.S_CORRECT:
 			position_corrected.emit(Vector2(b.get_float(), b.get_float()))
 		NetProto.S_PONG:

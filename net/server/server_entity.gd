@@ -34,7 +34,8 @@ func write_spawn(b: StreamPeerBuffer) -> void:
 	b.put_u8(z)
 	b.put_u8(flags)
 	b.put_u8(hp)
-	NetProto.put_look(b, look)
+	if kind == NetProto.KIND_PLAYER:
+		NetProto.put_look(b, look)
 
 func write_state(b: StreamPeerBuffer) -> void:
 	b.put_u32(eid)

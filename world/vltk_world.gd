@@ -19,6 +19,8 @@ const EDGE_SPAWN_INSET := 70.0       ## quái sinh cách rìa trong ô vuông ch
 const EDGE_SPAWN_TRIES := 12
 
 static var current: VltkWorld
+## Online: quái do game server điều khiển (NetWorldSync tạo) -> map KHÔNG tự sinh quái theo vùng.
+static var net_monsters := false
 ## find_path() lần gần nhất chỉ tới được điểm gần đích (đích bị vật cản chia cắt).
 static var last_path_partial := false
 
@@ -292,6 +294,8 @@ class SortedMap extends VltkMap:
 					made.append(m)
 
 	func _spawn_monster(n: Dictionary) -> VltkMonster:
+		if VltkWorld.net_monsters:
+			return null
 		var uid := str(n.get("uid", ""))
 		if _live_monsters.has(uid) and is_instance_valid(_live_monsters[uid]):
 			return null

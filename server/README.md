@@ -117,4 +117,8 @@ godot --headless --path . res://tests/net_tests.tscn                          # 
 - Vào map: game gửi access token + mã nhân vật; game server hỏi `POST /internal/game/join` (khóa `GAME_SERVICE_KEY`).
   Nhân vật đăng nhập nơi khác thì phiên cũ bị đá.
 - Di chuyển: game gửi vị trí, server kiểm tra tốc độ (ngân sách quãng đường) + ô vật cản, sai thì kéo về (`S_CORRECT`).
+- Quái (693 con theo `map.json`) do game server điều khiển: AI gốc KNpcAI, hồi sinh theo `respawn`. Quái ở vùng không có
+  người chơi trong 2 ô AOI thì "ngủ". Server báo quái ra chiêu (`S_MATTACK`); máy người bị nhắm tính đòn thật, máy khác chỉ vẽ.
+- Sát thương người chơi gây cho quái (B2): game tính rồi gửi `C_DAMAGE`; server kiểm tra khoảng cách, trần theo cấp, tốc độ gửi.
+  Quái chết: kinh nghiệm chia theo phần sát thương, rớt đồ cho người hạ đòn cuối (`S_KILL`).
 - **Production:** chặn đường dẫn `/internal/*` ở reverse proxy (chỉ cho mạng nội bộ của game server gọi).

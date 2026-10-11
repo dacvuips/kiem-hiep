@@ -12,6 +12,7 @@ const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "cha
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
+var _monsters: Dictionary = {}    ## eid -> VltkMonster (chế độ online)
 var _send_timer := 0.0
 var _heartbeat := 0.0
 var _last_sent := {}
@@ -29,6 +30,8 @@ func _ready() -> void:
 	NetClient.entity_state.connect(_on_state)
 	NetClient.entity_look.connect(_on_look)
 	NetClient.position_corrected.connect(_on_corrected)
+	NetClient.monster_attack.connect(_on_monster_attack)
+	NetClient.monster_killed.connect(_on_monster_killed)
 	_connect()
 
 func _exit_tree() -> void:
@@ -57,6 +60,10 @@ func _on_disconnected(code: String, message: String) -> void:
 	for r in _remotes.values():
 		r.queue_free()
 	_remotes.clear()
+	for m in _monsters.values():
+		if is_instance_valid(m):
+			m.queue_free()
+	_monsters.clear()
 	_notify(message)
 	if code not in FATAL:
 		_reconnect_in = RECONNECT_DELAY
@@ -76,6 +83,9 @@ func _parent() -> Node:
 	return get_parent()
 
 func _on_spawn(info: Dictionary) -> void:
+	if int(info.kind) == NetProto.KIND_MONSTER:
+		_spawn_monster(info)
+		return
 	if int(info.kind) != NetProto.KIND_PLAYER or _remotes.has(int(info.eid)):
 		return
 	var r := RemotePlayer.new()
@@ -83,7 +93,51 @@ func _on_spawn(info: Dictionary) -> void:
 	r.setup(info)
 	_remotes[r.eid] = r
 
+func _spawn_monster(info: Dictionary) -> void:
+	var eid := int(info.eid)
+	if _monsters.has(eid) and is_instance_valid(_monsters[eid]):
+		return
+	var data := MonsterData.monster(int(info.monster_id))
+	if data.is_empty():
+		return
+	var m := VltkMonster.new()
+	m.net_eid = eid
+	m.monster_id = int(info.monster_id)
+	m.data = data.duplicate()
+	m.data["series"] = int(info.series)
+	m.level = maxi(1, int(info.level))
+	m.blue_boss = bool(info.blue)
+	m.ai_enabled = false
+	m.position = info.pos
+	_parent().add_child(m)
+	m.net_push_state(NetClient.server_now_ms() - VltkMonster.NET_INTERP_DELAY_MS, info)
+	_monsters[eid] = m
+
+func _on_monster_attack(m_eid: int, slot: int, target_eid: int, dir64: int) -> void:
+	var m: VltkMonster = _monsters.get(m_eid)
+	if m == null or not is_instance_valid(m):
+		return
+	var mine := target_eid == NetClient.my_eid
+	var target_node: Node2D = player if mine else _remotes.get(target_eid)
+	if target_node == null:
+		return
+	m.net_attack(slot, target_node, dir64, mine)
+
+func _on_monster_killed(k: Dictionary) -> void:
+	var m: VltkMonster = _monsters.get(int(k.eid))
+	if m == null or not is_instance_valid(m):
+		return
+	m.grant_rewards(bool(k.last_hit))
+
 func _on_despawn(eid: int) -> void:
+	var m: VltkMonster = _monsters.get(eid)
+	if m != null:
+		_monsters.erase(eid)
+		if is_instance_valid(m):
+			if player and player.get_selected_target() == m:
+				player.clear_target()
+			m.queue_free()
+		return
 	var r: RemotePlayer = _remotes.get(eid)
 	if r:
 		_remotes.erase(eid)
@@ -95,6 +149,10 @@ func _on_state(eid: int, server_ms: int, st: Dictionary) -> void:
 	var r: RemotePlayer = _remotes.get(eid)
 	if r:
 		r.push_state(server_ms, st)
+		return
+	var m: VltkMonster = _monsters.get(eid)
+	if m and is_instance_valid(m):
+		m.net_push_state(float(server_ms), st)
 
 func _on_look(eid: int, look: Dictionary) -> void:
 	var r: RemotePlayer = _remotes.get(eid)
