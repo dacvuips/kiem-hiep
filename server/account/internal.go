@@ -53,6 +53,10 @@ func (s *server) handleInternalJoin(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return err
 	}
+	// Vừa nạp bản mới nhất -> bỏ cờ "admin vừa sửa, đá ra" (không đá nhầm phiên mới này).
+	if _, err := s.db.Exec(r.Context(), `UPDATE characters SET admin_reload=false, online_at=now() WHERE id=$1`, c.ID); err != nil {
+		return err
+	}
 	var muted *time.Time
 	s.db.QueryRow(r.Context(), `SELECT muted_until FROM accounts WHERE id=$1`, a.ID).Scan(&muted)
 	return writeJSON(w, http.StatusOK, map[string]any{
@@ -109,6 +113,32 @@ func (s *server) handleInternalSave(w http.ResponseWriter, r *http.Request) erro
 	return writeJSON(w, http.StatusOK, map[string]int{"version": version})
 }
 
+// onlineCharacters: ghi mốc online cho nhân vật game server đang giữ; trả các nhân vật web Admin vừa sửa (game server đá ra để
+// nạp lại) và bỏ cờ của chúng.
+func (s *server) onlineCharacters(ctx context.Context, characterIDs []int64) ([]int64, error) {
+	reload := []int64{}
+	if len(characterIDs) == 0 {
+		return reload, nil
+	}
+	rows, err := s.db.Query(ctx, `WITH old AS (SELECT id, admin_reload FROM characters WHERE id = ANY($1) FOR UPDATE)
+		UPDATE characters c SET online_at=now(), admin_reload=false FROM old WHERE c.id=old.id RETURNING c.id, old.admin_reload`, characterIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var flagged bool
+		if err := rows.Scan(&id, &flagged); err != nil {
+			return nil, err
+		}
+		if flagged {
+			reload = append(reload, id)
+		}
+	}
+	return reload, rows.Err()
+}
+
 // POST /internal/game/status {account_ids:[...]} — game server hỏi định kỳ (30 giây) để áp ngay lệnh khoá / cấm chat từ web Admin
 // cho người đang online: {statuses: {id: {banned, ban_message, muted_until}}}.
 func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) error {
@@ -126,6 +156,10 @@ func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) er
 		return errBadRequest
 	}
 	grants, err := s.pendingGrants(r.Context(), req.CharacterIDs)
+	if err != nil {
+		return err
+	}
+	reload, err := s.onlineCharacters(r.Context(), req.CharacterIDs)
 	if err != nil {
 		return err
 	}
@@ -151,7 +185,7 @@ func (s *server) handleInternalStatus(w http.ResponseWriter, r *http.Request) er
 		}
 		out[strconv.FormatInt(a.ID, 10)] = map[string]any{"banned": banned, "ban_message": msg, "muted_until": muted}
 	}
-	return writeJSON(w, http.StatusOK, map[string]any{"statuses": out, "grants": grants})
+	return writeJSON(w, http.StatusOK, map[string]any{"statuses": out, "grants": grants, "reload": reload})
 }
 
 // Quà chờ của các nhân vật đang online: {character_id: [{id, jade}]}. Game server cộng vào nhân vật rồi gửi grant_ids khi lưu.

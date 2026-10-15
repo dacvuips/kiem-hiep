@@ -12,7 +12,7 @@ const FPS := 12.0
 const CHARS_DIR := "res://ui/character_create/chars/"
 
 ## CHỈNH TỪNG NHÂN VẬT: độ dời riêng (pixel Stage, + = sang phải / xuống dưới) cho mỗi nhân vật, khoá = tên sheet
-## (hoa_nam, kim_nam, moc_nam, tho_nam | hoa_nu, moc_nu, tho_nu, thuy_nu). Cách làm trong editor: chọn node, đổi
+## (hoa_nam, kim_nam, moc_nam, tho_nam, thuy_nam | hoa_nu, kim_nu, moc_nu, tho_nu, thuy_nu). Cách làm trong editor: chọn node, đổi
 ## `preview_character` sang nhân vật cần chỉnh, rồi kéo `preview_offset` — ảnh dời ngay và độ dời được lưu vào đây.
 @export var offsets: Dictionary[String, Vector2] = {}
 
@@ -68,12 +68,29 @@ func _load_preview() -> void:
 	if f == null:
 		return
 	var meta: Variant = JSON.parse_string(f.get_as_text())
-	var path := CHARS_DIR + preview_character + ".png"
-	if meta is Dictionary and meta.has(preview_character) and ResourceLoader.exists(path):
-		setup(load(path), meta[preview_character], preview_character)
+	var sheet := sheet_for(preview_character)
+	var path := CHARS_DIR + sheet + ".png"
+	if meta is Dictionary and meta.has(sheet) and ResourceLoader.exists(path):
+		setup(load(path), meta[sheet], preview_character)
 	else:
 		_texture = null
 		queue_redraw()
+
+## Sheet dùng để vẽ nhân vật `char_key` (VD "kim_nu"): chưa có ảnh riêng thì TẠM mượn sheet giới tính kia cùng hệ
+## (kim_nu -> kim_nam, thuy_nam -> thuy_nu). Cỡ/vị trí vẫn chỉnh theo khoá `char_key`, nên mượn ảnh không ảnh hưởng nhân vật gốc;
+## thả <he>_<gioi>.png + mục chars.json vào chars/ là tự dùng ảnh thật.
+static func sheet_for(char_key: String) -> String:
+	if _sheet_exists(char_key):
+		return char_key
+	var other := char_key.trim_suffix("_nam") + "_nu" if char_key.ends_with("_nam") else char_key.trim_suffix("_nu") + "_nam"
+	return other if _sheet_exists(other) else char_key
+
+static func _sheet_exists(key: String) -> bool:
+	if not ResourceLoader.exists(CHARS_DIR + key + ".png"):
+		return false
+	var f := FileAccess.open(CHARS_DIR + "chars.json", FileAccess.READ)
+	var meta: Variant = JSON.parse_string(f.get_as_text()) if f else null
+	return meta is Dictionary and meta.has(key)
 
 ## Gắn atlas + mô tả ô. KHÔNG đổi kích thước/vị trí node — khung do người chỉnh trong editor quyết định chỗ đứng và cỡ.
 func setup(texture: Texture2D, meta: Dictionary, key: String = "") -> void:

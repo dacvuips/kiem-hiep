@@ -8,10 +8,13 @@ class_name NetWorldSync
 
 const RECONNECT_DELAY := 5.0
 ## Lỗi này thì không tự kết nối lại (phải xử lý ở màn trước).
-const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "character_not_found", "service_key"]
+const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "character_not_found", "service_key",
+	"battle_end", "battle_no_side"]
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
+## Kết nối tới máy chủ game KHÁC máy chủ đã chọn (chiến trường Tống Kim: {host, port, ws_url, name}) — {} = máy chủ đã chọn.
+var server_override: Dictionary = {}
 var _monsters: Dictionary = {}    ## eid -> VltkMonster (chế độ online)
 var _drops: Dictionary = {}       ## drop_id -> GroundDrop
 var _send_timer := 0.0
@@ -51,16 +54,17 @@ func _ready() -> void:
 	NetClient.trade_state.connect(_on_trade_state)
 	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.stall_items.connect(_on_stall_items)
+	NetClient.stall_sign.connect(_on_stall_sign)
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_invite.connect(_on_team_invite)
 	NetClient.guild_received.connect(_on_guild)
 	NetClient.guild_list.connect(_on_guild_list)
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
-	NetClient.camp_changed.connect(func(eid: int, new_camp: int) -> void:
+	NetClient.camp_changed.connect(func(eid: int, new_camp: int, new_nation: int) -> void:
 		var rp := remote_of(eid)
 		if rp:
-			rp.set_camp(new_camp))
+			rp.set_camp(new_camp, new_nation))
 	NetClient.enmity_state.connect(_on_enmity)
 	NetClient.pvp_hit.connect(_on_pvp_hit)
 	NetClient.view_equip.connect(_on_view_equip)
@@ -88,17 +92,23 @@ func _exit_tree() -> void:
 	NetClient.disconnect_from_server()
 	SaveManager.mark_version_unknown()
 
-## Khung chat trên lớp giao diện của màn chơi (góc trái, giữa màn hình).
+## Khung chat trên lớp giao diện của màn chơi (giữa, sát đáy màn hình — mọc lên trên khi mở).
 func _add_chat_box() -> void:
 	var ui: Node = get_parent().get_node_or_null("UI")
 	if ui == null:
 		return
 	var box := ChatBox.create()
 	box.name = "ChatBox"
-	box.anchor_top = 0.42
-	box.anchor_bottom = 0.42
-	box.offset_left = 8
-	box.offset_top = 0
+	box.anchor_left = 0.5
+	box.anchor_right = 0.5
+	box.anchor_top = 1.0
+	box.anchor_bottom = 1.0
+	box.offset_left = -200
+	box.offset_right = 200
+	box.offset_top = -8
+	box.offset_bottom = -8
+	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	ui.add_child(box)
 
 func _connect() -> void:
@@ -108,7 +118,16 @@ func _connect() -> void:
 	if token == "":
 		_notify("Phiên đăng nhập đã hết hạn — hãy đăng nhập lại")
 		return
-	NetClient.connect_to(ServerSelectScreen.selected_server, token, SaveManager.online_character_id)
+	NetClient.connect_to(_server(), token, SaveManager.online_character_id)
+
+func _server() -> Dictionary:
+	return server_override if not server_override.is_empty() else ServerSelectScreen.selected_server
+
+func remotes() -> Array:
+	return _remotes.values()
+
+func monsters() -> Array:
+	return _monsters.values()
 
 func _notify(text: String) -> void:
 	if player and is_instance_valid(player):
@@ -116,16 +135,20 @@ func _notify(text: String) -> void:
 
 func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
 	NetClient.send_guild(GuildServer.G_LIST)
-	_notify("Đã vào máy chủ %s" % ServerSelectScreen.selected_server.get("name", ""))
+	_notify("Đã vào %s" % _server().get("name", ""))
 	_teleport(feet)
 	_last_sent = {}
 	_last_look = {}
 
 ## Bản nhân vật chuẩn của server (vào map / sau giao dịch): chép vào hồ sơ đang dùng rồi làm mới hình + chỉ số.
+## Đã nhận bản nhân vật chuẩn của server trong phiên này (trước đó hồ sơ trong game có thể còn số liệu chưa được server xác nhận).
+var profile_synced := false
+
 func _on_profile(data: Dictionary) -> void:
 	var profile := GameManager.local_profile
 	if profile == null:
 		return
+	profile_synced = true
 	profile.copy_from(PlayerProfile.from_dict(data))
 	if player and is_instance_valid(player):
 		player.refresh_combat_stats()
@@ -191,7 +214,8 @@ func nearby_players() -> Array[MockPlayer]:
 		m.name = r.display_name
 		m.level = r.level
 		m.camp = r.camp
-		m.stall_open = (r.flags & NetProto.FLAG_STALL) != 0
+		m.stall_open = (r.flags & NetProto.FLAG_STALL) != 0 or r.stall_title != ""
+		m.stall_title = r.stall_title
 		m.trade_open = (r.flags & NetProto.FLAG_TRADE_OPEN) != 0
 		m.invite_accept_rate = 1.0
 		out.append(m)
@@ -201,18 +225,8 @@ func _hub() -> SocialHub:
 	return SocialHub.of(GameManager.local_profile) if GameManager.local_profile else null
 
 func _on_trade_invite(from_eid: int, from_name: String) -> void:
-	var dlg := ConfirmationDialog.new()
-	dlg.title = "Giao dịch"
-	dlg.dialog_text = "%s muốn giao dịch với bạn." % from_name
-	dlg.ok_button_text = "Đồng ý"
-	dlg.cancel_button_text = "Từ chối"
-	dlg.confirmed.connect(func() -> void: NetClient.send_trade_answer(from_eid, true))
-	dlg.canceled.connect(func() -> void: NetClient.send_trade_answer(from_eid, false))
-	dlg.visibility_changed.connect(func() -> void:
-		if not dlg.visible:
-			dlg.queue_free())
-	get_tree().root.add_child(dlg)
-	dlg.popup_centered()
+	_ask("Giao dịch", "%s muốn giao dịch với bạn." % from_name, func(ok: bool) -> void:
+		NetClient.send_trade_answer(from_eid, ok))
 
 func _on_trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary) -> void:
 	var hub := _hub()
@@ -291,19 +305,22 @@ func _on_team_invite(captain_eid: int, captain_name: String) -> void:
 		NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0))
 
 ## Hỏi Đồng ý / Từ chối.
+## Hộp hỏi lời mời (giao dịch / tổ đội / bang...) — khung chung của cửa sổ xã hội.
 func _ask(title: String, text: String, answer: Callable) -> void:
-	var dlg := ConfirmationDialog.new()
-	dlg.title = title
-	dlg.dialog_text = text
-	dlg.ok_button_text = "Đồng ý"
-	dlg.cancel_button_text = "Từ chối"
-	dlg.confirmed.connect(func() -> void: answer.call(true))
-	dlg.canceled.connect(func() -> void: answer.call(false))
-	dlg.visibility_changed.connect(func() -> void:
-		if not dlg.visible:
-			dlg.queue_free())
-	get_tree().root.add_child(dlg)
-	dlg.popup_centered()
+	SocialWindow.ask_yes_no(get_tree().current_scene, title, text, answer)
+
+## Biển quầy của ai đó đổi. Của mình mà "" = server đã dọn quầy (hết hàng, rời chỗ ngồi...) -> tắt quầy trên máy.
+func _on_stall_sign(eid: int, title: String) -> void:
+	if eid == NetClient.my_eid:
+		var p := GameManager.local_profile
+		if p != null and title == "" and p.stall_open:
+			StallService.close_stall(p)
+		elif p != null and title != "" and not p.stall_open:
+			NetClient.send_stall(SocialServer.STALL_CLOSE)   ## máy đã dọn quầy (không ngồi được) trước khi server mở xong
+		return
+	var r := remote_of(eid)
+	if r:
+		r.set_stall_title(title)
 
 func _on_stall_items(_seller_eid: int, title: String, items: Array) -> void:
 	if StallBrowseWindow.current != null and is_instance_valid(StallBrowseWindow.current):

@@ -21,8 +21,7 @@ func _init(window_title: String = "", hint: String = "", on_ok: Callable = Calla
 	_hint = SocialUi.label(hint, SocialUi.TEXT, 14, HORIZONTAL_ALIGNMENT_CENTER)
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_hint)
-	var disp_panel := PanelContainer.new()
-	disp_panel.add_theme_stylebox_override("panel", SocialUi.box(Color(0.02, 0.03, 0.03), SocialUi.BORDER, 6, 1, 8))
+	var disp_panel := GameUi.panel(GameUi.PANEL)
 	_display = SocialUi.label("", SocialUi.GOLD, 22, HORIZONTAL_ALIGNMENT_CENTER)
 	_display.custom_minimum_size = Vector2(0, 30)
 	disp_panel.add_child(_display)

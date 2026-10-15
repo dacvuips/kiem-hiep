@@ -20,14 +20,33 @@ const MIN_CAP := 300.0
 ## Gộp dữ liệu game gửi lên vào bản của server.
 ## pending_gold = tiền server đã cho (nhặt...) mà game CHƯA xác nhận: game được phép có ít hơn server đúng phần đó.
 ## Kết quả có khoá "_money_from_server" = true nếu tiền của game bị bác (đã dùng tiền server — server đã gồm mọi khoản cho).
-static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0) -> Dictionary:
+## trust = chế độ phát triển (GAME_DEV_TRUST_CLIENT=1): nhận cấp / đồ / tiền / điểm / phái game gửi (nút TEST lên cấp, tạo đồ) —
+## chỉ giữ phần server tự quản (bang, hảo hữu, PK, khoá bảo vệ, tên). KHÔNG bật trên máy chủ thật.
+static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold := 0, trust := false) -> Dictionary:
 	var merged := client_data.duplicate(true)
-	for k in ["level", "exp", "name", "sect_id", "sect_name", "gender", "lead_level", "lead_exp", "server_seen",
-			"guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value"]:
+	## Đồ web Admin tặng chưa sinh: chỉ server giữ (game không được tự thêm / xoá hàng chờ).
+	merged["admin_grants"] = server_data.get("admin_grants", []).duplicate(true)
+	if trust:
+		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points"]:
+			if server_data.has(k):
+				merged[k] = server_data[k]
+		## Phái chỉ thêm, không mất: bản game cũ (nạp danh sách nhân vật trước khi server lưu xong) không được xoá phái đã vào.
+		if str(server_data.get("sect_id", "")) != "" and str(merged.get("sect_id", "")) == "":
+			for k in ["sect_id", "sect_name", "element"]:
+				if server_data.has(k):
+					merged[k] = server_data[k]
+		merged["_money_from_server"] = false
+		return merged
+	for k in ["level", "exp", "name", "gender", "lead_level", "lead_exp", "server_seen", "starter_kit",
+			"guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points"]:
 		if server_data.has(k):
 			merged[k] = server_data[k]
-	var fresh := PlayerProfile.from_dict(merged)
+	## Chỉ số TEST (nút TEST, bản debug): máy chủ thật không bao giờ nhận từ game.
+	merged["test_attribs"] = (server_data.get("test_attribs", {}) as Dictionary).duplicate() if server_data.get("test_attribs") is Dictionary else {}
 	var level := int(server_data.get("level", 1))
+	merged.erase("nation")   ## bỏ phe Tống / Kim cố định (bản lưu cũ còn khoá này)
+	_guard_sect(server_data, merged, level)
+	var fresh := PlayerProfile.from_dict(merged)
 	if not _potential_ok(fresh, level):
 		for k in ["strength", "dexterity", "vitality", "energy", "potential_points"]:
 			if server_data.has(k):
@@ -39,6 +58,20 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	_guard_items(server_data, merged)
 	merged["_money_from_server"] = _guard_money(server_data, merged, pending_gold)
 	return merged
+
+## Môn phái + hệ: game chỉ được GIA NHẬP 1 lần (server thấy Vô Môn Phái + đủ PlayerProfile.NEWBIE_LEVEL + phái đúng hệ đã chọn
+## lúc tạo nhân vật); còn lại giữ bản server. Hệ luôn theo server.
+static func _guard_sect(server_data: Dictionary, merged: Dictionary, level: int) -> void:
+	var s_sect := SectRegistry.get_by_id(str(server_data.get("sect_id", "")))
+	var s_element := int(s_sect.element) if s_sect else int(server_data.get("element", -1))
+	merged["element"] = s_element
+	var want := SectRegistry.get_by_id(str(merged.get("sect_id", "")))
+	var join_ok := s_sect == null and want != null and level >= PlayerProfile.NEWBIE_LEVEL and s_element >= 0 and int(want.element) == s_element
+	if join_ok:
+		merged["sect_name"] = want.sect_name
+		return
+	merged["sect_id"] = server_data.get("sect_id", "")
+	merged["sect_name"] = server_data.get("sect_name", PlayerProfile.NO_SECT_NAME)
 
 ## Mọi món đồ trong hồ sơ (túi, trang bị, rương) theo uid.
 static func items_by_uid(data: Dictionary) -> Dictionary:
@@ -71,13 +104,7 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 				out[k] = it[k]
 		_guard_lock(known[uid], out)
 		return out
-	for key in ["inventory", "storage"]:
-		var list := []
-		for it in merged.get(key, []):
-			var v = fix.call(it)
-			if v != null:
-				list.append(v)
-		merged[key] = list
+	## Đồ đang mặc xét TRƯỚC: uid trùng giữa trang bị và túi thì giữ bản đang mặc, bỏ bản trong túi.
 	var eq = merged.get("equipment", {})
 	var new_eq := {}
 	if eq is Dictionary:
@@ -86,6 +113,13 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 			if v != null:
 				new_eq[k] = v
 	merged["equipment"] = new_eq
+	for key in ["inventory", "storage"]:
+		var list := []
+		for it in merged.get(key, []):
+			var v = fix.call(it)
+			if v != null:
+				list.append(v)
+		merged[key] = list
 
 ## Khoá món đồ (KLockItem): khoá thì được ngay; mở khoá phải chờ đủ ITEM_UNLOCK_SECONDS rồi mới thành tự do; khoá vĩnh viễn /
 ## gắn nhân vật không đổi được. Game gửi chuyển trạng thái sai thì giữ trạng thái của server.
@@ -174,9 +208,7 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 	var fresh := PlayerProfile.new()
 	fresh.display_name = src.display_name
 	fresh.gender = src.gender
-	var sect := SectRegistry.get_by_id(src.sect_id)
-	if sect:
-		fresh.set_sect(sect)
+	fresh.choose_element(src.get_element())   ## luôn Vô Môn Phái: đủ cấp mới gia nhập phái trong game
 	fresh.camp = -1   ## phe do server tính (Tân thủ -> phái -> bang); không nhận phe game tự đặt lúc tạo nhân vật
 	fresh.riding = src.riding
 	fresh.skill_settings = src.skill_settings
@@ -186,11 +218,20 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 class _Caster extends Node2D:
 	var combat_stats: CombatantStats
 
+## Tốc chạy gốc của nhân vật (Player.SPEED, px/giây) — server không nạp player.gd nên ghi lại ở đây; đổi bên kia thì đổi theo.
+const PLAYER_BASE_SPEED := 150.0
+## Dư cho trễ mạng / gói dồn + buff tốc chạy tạm thời (bùa) không nằm trong hồ sơ.
+const SPEED_TOLERANCE := 1.3
+
+## Tốc độ di chuyển tối đa server chấp nhận cho nhân vật này (px/giây): tốc chạy thật (trang bị, ngựa, chỉ số TEST — fastwalkrun_p)
+## có dư; không thấp hơn GameServer.MAX_SPEED (lao chiêu / nhảy không phụ thuộc tốc chạy).
+static func max_speed(profile: PlayerProfile) -> float:
+	var run := PLAYER_BASE_SPEED * (1.0 + profile.get_combat_stats().move_speed_p / 100.0)
+	return maxf(GameServer.MAX_SPEED, run * SPEED_TOLERANCE)
+
 ## Sát thương tối đa 1 đòn (đã nhân chí mạng + dư) của nhân vật — dùng làm trần cho C_DAMAGE.
 static func max_hit(profile: PlayerProfile) -> float:
 	var sect := SectRegistry.get_by_id(profile.sect_id)
-	if sect == null:
-		return MIN_CAP
 	## _resolve_stats đọc hồ sơ qua GameManager.local_profile -> đặt tạm hồ sơ của người này (server chạy 1 luồng).
 	var prev := GameManager.local_profile
 	GameManager.local_profile = profile
@@ -199,8 +240,13 @@ static func max_hit(profile: PlayerProfile) -> float:
 	var caster := _Caster.new()
 	caster.combat_stats = profile.get_combat_stats()
 	var best := 0.0
-	for skill in sect.skills:
-		if not ctrl.is_skill_usable(skill):
+	var skills: Array[SkillDefinition] = []
+	if sect:
+		skills.assign(sect.skills)
+	skills.append(load(SectRegistry.BASIC_ATTACK_PATH))          ## Vô Môn Phái vẫn đánh thường
+	skills.append(load(SectRegistry.BASIC_ATTACK_RANGED_PATH))
+	for skill in skills:
+		if skill == null or not ctrl.is_skill_usable(skill):   ## nạp hỏng (thiếu file trong gói server): bỏ qua, không dừng cả hàm
 			continue
 		var st: ResolvedSkillStats = ctrl._resolve_stats(skill, caster)
 		var hit := maxf(st.damage, st.damage_max)

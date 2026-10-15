@@ -37,7 +37,7 @@ func _init(hub: SocialHub = null) -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	body.add_child(cols)
-	var left := SocialUi.section("Nhóm của mình", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var left := SocialUi.section("Nhóm của mình")
 	_members_list = SocialUi.item_list(Vector2(210, 230))
 	left[1].add_child(_members_list)
 	left[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -56,7 +56,7 @@ func _init(hub: SocialHub = null) -> void:
 		mid.add_child(b)
 	cols.add_child(mid)
 
-	var right := SocialUi.section("Người chơi", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var right := SocialUi.info_box("Người chơi")
 	_players_list = SocialUi.item_list(Vector2(210, 230))
 	right[1].add_child(_players_list)
 	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL

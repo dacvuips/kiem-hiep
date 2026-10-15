@@ -108,6 +108,8 @@ func _ready() -> void:
 	var st := StorageWindow.open(self, p)
 	await frames()
 	check("ui: rương đang khoá bị che bằng tấm khoá", st._lock_cover.visible)
+	var inv := InventoryPopup.find_open(get_tree())
+	check("ui: mở rương thì mở kèm khung Hành trang riêng", inv != null and st._inventory == inv and inv._room.transfer_handler.is_valid())
 	var item := p.inventory[0]
 	check("ui: rương khoá không kéo thả được", not StorageService.transfer(p, item, p, p.storage, 0, 0, 0))
 	st.submit_money(true, "100")
@@ -199,7 +201,7 @@ func _ready() -> void:
 		hub.trade.tick(6.0)
 		await frames()
 		check("ui: giao dịch hoàn tất", not hub.trade.active and not p.inventory.has(offer))
-		tw.close_requested.emit()
+		check("ui: giao dịch thành công thì cửa sổ tự đóng", not is_instance_valid(tw) or tw.is_queued_for_deletion())
 
 	## Lập nhóm
 	SocialDirectory.reset()
@@ -288,6 +290,18 @@ func _ready() -> void:
 	p.lead_level = 3
 	p.equipment[Equipment.Part.WEAPON] = ItemGenerator.random_equipment(10)
 	p.equipment[Equipment.Part.BODY] = ItemGenerator.random_equipment(10)
+	## Online: bảng "Đang tải" rồi dữ liệu server tới thì thay; xem người khác thì thay bảng cũ (không giữ bảng cũ)
+	var loading := ViewEquipWindow.open_snapshot(self, {"name": "Người A", "level": 50, "loading": true})
+	await frames()
+	var shown := ViewEquipWindow.open_snapshot(self, ViewEquipService.snapshot_from_wire(JSON.parse_string(JSON.stringify(
+		ViewEquipService.snapshot_to_wire(ViewEquipService.snapshot_of_profile(p))))))
+	await frames()
+	var open_views := get_tree().get_nodes_in_group("social_windows").filter(func(w: Node) -> bool:
+		return w is ViewEquipWindow and not w.is_queued_for_deletion())
+	check("tin tức: dữ liệu tới thì thay bảng Đang tải", open_views.size() == 1 and open_views[0] == shown and not is_instance_valid(loading) or (is_instance_valid(loading) and loading.is_queued_for_deletion()), str(open_views.size()))
+	check("tin tức: bảng mới có ô trang bị", not shown.find_children("Slot*", "ItemSlotButton", true, false).is_empty())
+	shown.close_requested.emit()
+	await frames()
 	var raw_snap := ViewEquipService.snapshot_of_profile(p)
 	var wire_snap: Dictionary = JSON.parse_string(JSON.stringify(raw_snap))
 	var vw_wire := ViewEquipWindow.open_snapshot(self, wire_snap)
@@ -336,18 +350,10 @@ func _ready() -> void:
 	sync2.queue_free()
 	await frames()
 
-	## Issue #9: Nút Bày bán trong InventoryPopup mở StallWindow
+	## Bày bán đã bỏ khỏi giao diện: InventoryPopup không còn nút Bày bán
 	var inv_pop := InventoryPopup.open(self, p, func() -> void: pass)
 	await frames(2)
-	var sell_btn: Button = inv_pop.get_node("%SellButton")
-	sell_btn.pressed.emit()
-	await frames()
-	var stall_opened := false
-	for w in get_tree().get_nodes_in_group("social_windows"):
-		if w is StallWindow and is_instance_valid(w):
-			stall_opened = true
-			(w as StallWindow).close_requested.emit()
-	check("ui (#9): nút Bày bán trong InventoryPopup mở StallWindow", stall_opened)
+	check("ui: InventoryPopup không còn nút Bày bán", inv_pop.get_node_or_null("%SellButton") == null)
 	inv_pop.queue_free()
 	await frames()
 
@@ -365,6 +371,59 @@ func _ready() -> void:
 	check("ui (#10): ẩn nút Liên kết Google khi chưa đăng nhập", not link_btn.visible)
 	ad1.get_parent().queue_free()
 	await frames()
+
+	## Tên trên đầu trong Chiến trường Tống Kim: "(Kim)Tên" theo phe trong trận
+	var nr := RemotePlayer.new()
+	add_child(nr)
+	nr.setup({"eid": 960, "name": "Lý Bạch", "level": 60, "camp": Camp.Type.JUSTICE, "nation": Nation.Type.JIN,
+		"look": {"gender": 0, "helm": -1, "armor": -1, "weapon": -1, "horse": -1}, "pos": Vector2.ZERO,
+		"dir": 0, "action": 0, "z": 0, "flags": 0, "hp": 100})
+	check("tên: phe Kim hiện (Kim) trước tên", nr._label.text == "(Kim)Lý Bạch", nr._label.text)
+	nr.set_camp(Camp.Type.JUSTICE, Nation.Type.NONE)
+	check("tên: chưa chọn phe thì chỉ có tên", nr._label.text == "Lý Bạch", nr._label.text)
+	nr.set_camp(Camp.Type.JUSTICE, Nation.Type.SONG)
+	check("tên: vừa chọn phe Tống thì đổi thành (Tống)", nr._label.text == "(Tống)Lý Bạch", nr._label.text)
+	nr.queue_free()
+
+	## Biển tên quầy trên đầu người bày bán: hiện khi có tên quầy, ẩn khi dọn quầy, menu người chơi có "Xem quầy"
+	var stall_rp := RemotePlayer.new()
+	add_child(stall_rp)
+	stall_rp.setup({"eid": 950, "name": "Người bán", "level": 60, "camp": Camp.Type.JUSTICE, "nation": 0, "stall_title": "Hàng tốt giá rẻ",
+		"look": {"gender": 0, "helm": -1, "armor": -1, "weapon": -1, "horse": -1}, "pos": Vector2.ZERO,
+		"dir": 0, "action": 0, "z": 0, "flags": NetProto.FLAG_STALL, "hp": 100})
+	check("quầy: biển tên quầy hiện trên đầu", stall_rp._sign.visible and stall_rp._sign.title == "Hàng tốt giá rẻ" and stall_rp._sign.position.y < stall_rp._label.position.y)
+	check("quầy: bấm biển được (giao diện ăn cú bấm)", stall_rp._sign.mouse_filter == Control.MOUSE_FILTER_STOP)
+	var pm := PlayerMenu.new()
+	pm._target = stall_rp
+	check("quầy: menu người chơi có mục Xem quầy", pm._items().any(func(i: Array) -> bool: return i[0] == "Xem quầy"))
+	stall_rp.set_stall_title("")
+	check("quầy: dọn quầy thì menu không còn Xem quầy", not pm._items().any(func(i: Array) -> bool: return i[0] == "Xem quầy"))
+	pm.free()
+	check("quầy: dọn quầy thì biển biến mất", not stall_rp._sign.visible)
+	stall_rp.queue_free()
+
+	## Đánh thường ở nút chính: trống thì tay không / vũ khí cận chiến = bàn tay, phi tiêu / phi đao / tụ tiễn = phi đao; không có trong bảng Kỹ năng
+	var bp := PlayerProfile.new()
+	bp.display_name = "BasicTester"
+	bp.set_sect(SectRegistry.get_by_element(ElementTypes.ElementType.MOC)[0])
+	GameManager.local_profile = bp
+	var ctrl := SectSkillController.new()
+	add_child(ctrl)
+	ctrl.setup(SectRegistry.get_by_id(bp.sect_id))
+	check("đánh thường: nút chính trống + tay không = bàn tay (SkillId 1)", ctrl.get_main_skill() != null and ctrl.get_main_skill().vltk_skill_id == 1, str(ctrl.get_main_skill()))
+	bp.equipment[Equipment.Part.WEAPON] = ItemGenerator.generate(ItemDatabase.Detail.MELEE, 0, 1, 0, [])
+	check("đánh thường: cầm kiếm = bàn tay", ctrl.get_main_skill().id == "basic_attack")
+	bp.equipment[Equipment.Part.WEAPON] = ItemGenerator.generate(ItemDatabase.Detail.RANGE, 1, 1, 0, [])
+	var ranged := ctrl.get_main_skill()
+	check("đánh thường: cầm phi đao = đòn tầm xa icon phi đao (SkillId 2)", ranged.id == "basic_attack_ranged" and ranged.vltk_skill_id == 2
+		and ranged.icon.resource_path.ends_with("co_ban_at.png"), ranged.id)
+	bp.main_skill_id = "basic_attack"
+	check("đánh thường: gắn nhầm đánh thường vẫn theo vũ khí", ctrl.get_main_skill().id == "basic_attack_ranged")
+	var book_skills := SectRegistry.get_by_id(bp.sect_id).skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden and not s.is_basic_attack)
+	check("đánh thường: không hiện trong bảng Kỹ năng", not book_skills.any(func(s: SkillDefinition) -> bool: return s.is_basic_attack)
+		and SectRegistry.get_by_id(bp.sect_id).skills.filter(func(s: SkillDefinition) -> bool: return s.is_basic_attack).size() == 2)
+	ctrl.queue_free()
+	GameManager.local_profile = p
 
 	## Tổng kết
 	print("RESULT ", _pass, "/", _pass + _fail)

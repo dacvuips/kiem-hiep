@@ -1,7 +1,7 @@
 extends SocialWindow
 class_name SocialMenuWindow
 ## MENU GIAO LƯU — cửa vào các chức năng xã hội (Tổ đội, Bang hội, Rương chứa đồ, Bày bán, Khoá bảo vệ) và danh sách "Người chơi quanh đây"
-## (xem quầy / giao dịch). Mở từ nút "Giao lưu" ở màn chơi và menu "Chợ" ở Hub.
+## (xem quầy / giao dịch). Mở từ nút "Giao dịch" ở màn chơi và menu "Chợ" ở Hub.
 
 var _hub: SocialHub
 var _profile: PlayerProfile
@@ -12,7 +12,7 @@ static func open(host: Node, profile: PlayerProfile) -> SocialMenuWindow:
 	return SocialWindow.present(host, SocialMenuWindow.new(SocialHub.of(profile)), &"social_menu") as SocialMenuWindow
 
 func _init(hub: SocialHub = null) -> void:
-	super._init("Giao Lưu", "Tổ đội · Bang hội · Rương · Giao dịch · Bày bán", 520.0)
+	super._init("Giao Dịch", "Bang hội · Giao dịch", 520.0)
 	_hub = hub
 	if _hub == null:
 		return
@@ -23,12 +23,7 @@ func _init(hub: SocialHub = null) -> void:
 	grid.add_theme_constant_override("v_separation", 8)
 	body.add_child(grid)
 	var entries := [
-		["👥 Tổ đội", func() -> void: TeamWindow.open(_host(), _hub)],
 		["⚑ Bang hội", func() -> void: GuildWindow.open(_host(), _hub)],
-		["🧰 Rương", func() -> void: StorageWindow.open(_host(), _profile)],
-		["🏷 Bày bán", func() -> void: StallWindow.open(_host(), _hub)],
-		["🔑 Khoá bảo vệ", func() -> void: SecurityWindow.open(_host(), _profile)],
-		["🤝 Hảo hữu", func() -> void: FriendWindow.open(_host(), _profile)],
 	]
 	for e in entries:
 		var b := SocialUi.stone_button(str(e[0]), Vector2(150, 44))
@@ -38,7 +33,7 @@ func _init(hub: SocialHub = null) -> void:
 	_msg = SocialUi.banner("", true)
 	_msg.visible = false
 	body.add_child(_msg)
-	var near := SocialUi.section("🚶 Người chơi quanh đây", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var near := SocialUi.info_box("🚶 Người chơi quanh đây")
 	_near_box = near[1]
 	body.add_child(near[0])
 	var close := SocialUi.stone_button("Đóng")

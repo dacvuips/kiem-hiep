@@ -12,6 +12,7 @@ const SCENES := [
 	"res://ui/account/ForgotPassword.tscn",
 	"res://ui/account/AccountDialog.tscn",
 	"res://ui/server_select/ServerSelect.tscn",
+	"res://ui/character_roster/CharacterRoster.tscn",
 ]
 
 var _pass := 0
@@ -27,6 +28,7 @@ func check(name: String, cond: bool, detail: Variant = "") -> void:
 
 func _ready() -> void:
 	test_validation()
+	await test_session_lock()
 	test_profile_guard()
 	test_scenes_load()
 	await test_api_flow()
@@ -43,6 +45,29 @@ func test_validation() -> void:
 	check("mật khẩu ngắn", AccountScreen.check_new_password("12345", "12345", "abc") != "")
 	check("mật khẩu chứa tên", AccountScreen.check_new_password("xxabcxx", "xxabcxx", "abc") != "")
 	check("nhập lại không khớp", AccountScreen.check_new_password("matkhau1", "matkhau2", "abc").begins_with("Nhập lại"))
+
+## 2 cửa sổ game trên 1 máy: cửa sổ đang chạy giữ file phiên, cửa sổ kia không được tự đăng nhập bằng phiên đó (sẽ bị server đá cả 2).
+func test_session_lock() -> void:
+	var lock := AccountApi.SESSION_LOCK_PATH
+	var backup := FileAccess.get_file_as_string(lock) if FileAccess.file_exists(lock) else ""
+	if FileAccess.file_exists(lock):
+		DirAccess.remove_absolute(lock)
+	check("phiên: chưa ai giữ thì cửa sổ này nhận giữ", AccountApi._own_session_file()
+		and FileAccess.get_file_as_string(lock).to_int() == OS.get_process_id())
+	var other := OS.create_process("ping", ["-n", "30", "127.0.0.1"] if OS.get_name() == "Windows" else ["-c", "30", "127.0.0.1"])
+	var f := FileAccess.open(lock, FileAccess.WRITE)
+	f.store_string(str(other))
+	f.close()
+	check("phiên: cửa sổ khác đang chạy giữ phiên thì không dùng được", other > 0 and not AccountApi._own_session_file())
+	OS.kill(other)
+	await get_tree().create_timer(0.5).timeout
+	check("phiên: cửa sổ giữ phiên đã tắt thì nhận giữ lại", AccountApi._own_session_file())
+	if backup != "":
+		f = FileAccess.open(lock, FileAccess.WRITE)
+		f.store_string(backup)
+		f.close()
+	else:
+		DirAccess.remove_absolute(lock)
 
 func test_profile_guard() -> void:
 	var server := PlayerProfile.new()
@@ -63,6 +88,10 @@ func test_profile_guard() -> void:
 	legit["hotbar_page"] = 1
 	m = ProfileGuard.merge(sd, legit)
 	check("ProfileGuard: cộng điểm đúng luật được nhận", int(m.strength) == int(sd.strength) + 5 and int(m.hotbar_page) == 1)
+	## Đã bỏ phe Tống / Kim cố định: bản lưu gửi lên còn khoá "nation" thì bị xoá
+	var n1 := sd.duplicate(true)
+	n1["nation"] = Nation.Type.SONG
+	check("ProfileGuard: bỏ khoá phe Tống / Kim cũ", not ProfileGuard.merge(sd, n1).has("nation"))
 	var hit := ProfileGuard.max_hit(server)
 	check("ProfileGuard: trần sát thương hợp lý", hit >= ProfileGuard.MIN_CAP and hit < 100000.0, hit)
 	check("ProfileGuard: kinh nghiệm hạ quái", ProfileGuard.exp_for_kill(10, MonsterData.monster(1), 10, 100) >= 0)

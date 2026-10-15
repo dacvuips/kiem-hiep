@@ -5,6 +5,7 @@ class_name SectRegistry
 
 const DATA_DIR := "res://systems/sect/data/"
 const BASIC_ATTACK_PATH := "res://systems/sect/common/basic_attack.tres"
+const BASIC_ATTACK_RANGED_PATH := "res://systems/sect/common/basic_attack_ranged.tres"
 
 static var _cache: Array[SectDefinition] = []
 static var _loaded: bool = false
@@ -20,6 +21,8 @@ static func load_all() -> Array[SectDefinition]:
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	while file_name != "":
+		## Bản đã xuất (game / game server) chỉ còn "x.tres.remap" trong thư mục — vẫn load bằng tên gốc "x.tres".
+		file_name = file_name.trim_suffix(".remap")
 		if file_name.ends_with(".tres"):
 			var sect: SectDefinition = load(DATA_DIR + file_name)
 			if sect:
@@ -28,15 +31,18 @@ static func load_all() -> Array[SectDefinition]:
 		file_name = dir.get_next()
 	return _cache
 
-## Skill đánh thường chung (cấp 1) — gắn vào đầu danh sách skill của mọi phái nếu chưa có.
+## 2 skill đánh thường chung (cấp 1: cận chiến SkillId 1 + tầm xa SkillId 2) — gắn vào đầu danh sách skill của mọi phái nếu chưa có.
+## Không hiện trong bảng Kỹ năng; nút chính trống thì tự dùng đòn hợp vũ khí (basic_attack_for).
 static func _add_basic_attack(sect: SectDefinition) -> void:
-	var basic: SkillDefinition = load(BASIC_ATTACK_PATH)
-	if basic == null:
-		return
-	for skill in sect.skills:
-		if skill.is_basic_attack:
-			return
-	sect.skills.insert(0, basic)
+	for path in [BASIC_ATTACK_RANGED_PATH, BASIC_ATTACK_PATH]:
+		var basic: SkillDefinition = load(path)
+		if basic != null and not sect.skills.any(func(s: SkillDefinition) -> bool: return s.id == basic.id):
+			sect.skills.insert(0, basic)
+
+## Đánh thường hợp vũ khí đang cầm: phi tiêu / phi đao / tụ tiễn (Equipment.get_weapon_class >= 100) = tầm xa (icon phi đao),
+## còn lại (tay không, vũ khí cận chiến) = cận chiến (icon bàn tay).
+static func basic_attack_for(equipment: Dictionary) -> SkillDefinition:
+	return load(BASIC_ATTACK_RANGED_PATH if Equipment.get_weapon_class(equipment) >= 100 else BASIC_ATTACK_PATH)
 
 static func get_by_id(id: String) -> SectDefinition:
 	for sect in load_all():

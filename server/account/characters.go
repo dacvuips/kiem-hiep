@@ -99,6 +99,33 @@ func profileSummary(raw json.RawMessage, name string) (data []byte, gender int, 
 	return data, gender, sect, level, err
 }
 
+// Đồ web Admin tặng chưa sinh (admin_grants) chỉ web Admin / game server đổi — game gửi gì cũng giữ bản đã lưu.
+func keepAdminGrants(oldRaw json.RawMessage, incoming map[string]any) {
+	var old map[string]any
+	_ = json.Unmarshal(oldRaw, &old)
+	if v, ok := old["admin_grants"]; ok {
+		incoming["admin_grants"] = v
+	} else {
+		delete(incoming, "admin_grants")
+	}
+}
+
+func stripAdminGrants(raw json.RawMessage) json.RawMessage {
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil || m == nil {
+		return raw
+	}
+	if _, ok := m["admin_grants"]; !ok {
+		return raw
+	}
+	delete(m, "admin_grants")
+	out, err := json.Marshal(m)
+	if err != nil {
+		return raw
+	}
+	return out
+}
+
 func (s *server) checkServer(r *http.Request, id int) error {
 	var status string
 	err := s.db.QueryRow(r.Context(), `SELECT status FROM game_servers WHERE id=$1`, id).Scan(&status)
@@ -178,7 +205,7 @@ func (s *server) handleCreateCharacter(w http.ResponseWriter, r *http.Request) e
 	if err != nil {
 		return err
 	}
-	data, gender, sect, level, err := profileSummary(req.Data, name)
+	data, gender, sect, level, err := profileSummary(stripAdminGrants(req.Data), name)
 	if err != nil {
 		return err
 	}
@@ -253,7 +280,11 @@ func (s *server) handleSaveCharacter(w http.ResponseWriter, r *http.Request) err
 	if err := json.Unmarshal(req.Data, &incoming); err != nil || incoming == nil {
 		return errBadRequest
 	}
-	guarded, err := json.Marshal(guardClientSave(oldData, incoming))
+	if !s.cfg.DevTrustClientSaves {
+		incoming = guardClientSave(oldData, incoming)
+	}
+	keepAdminGrants(oldData, incoming)
+	guarded, err := json.Marshal(incoming)
 	if err != nil {
 		return err
 	}

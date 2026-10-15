@@ -98,6 +98,20 @@ static func generate_gold(gold_index: int, perfection: int = 10, gen_seed: int =
 			item.expand_magic.append(entry)
 	return item
 
+## Vật phẩm KHÔNG phải trang bị (AddItem(genre, detail, particular, cấp, hệ) gốc): `misc_id` trong misc_items.json,
+## `level` = cấp vật phẩm (0 = theo bảng), `series` = hệ (chỉ món có hệ: Sát Thủ lệnh/giản, Nguyên thạch), `amount` =
+## số lượng chồng — tối đa cột Stack gốc (0/1 = không chồng được). null nếu mã không có.
+static func generate_misc(misc_id: String, level: int = 0, series: int = 0, amount: int = 1) -> ItemInstance:
+	var record := ItemDatabase.get_misc(misc_id)
+	if record.is_empty():
+		return null
+	var item := ItemInstance.new()
+	item.misc_id = misc_id
+	item.item_level = level
+	item.series = clampi(series, 0, 4)
+	item.count = clampi(amount, 1, maxi(int(record.get("stack", 0)), 1))
+	return item
+
 ## Đồ ngẫu nhiên cho nút TEST / rơi đồ thử: loại + loại cụ thể ngẫu nhiên, cấp đồ theo cấp nhân vật
 ## (cấp 10 nhân vật = đồ cấp 1, tối đa cấp 10), ngũ hành ngẫu nhiên, 0-6 dòng magic cùng cấp đồ.
 static func random_equipment(character_level: int, luck: int = 0) -> ItemInstance:

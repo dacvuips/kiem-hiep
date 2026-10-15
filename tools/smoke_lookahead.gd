@@ -8,7 +8,7 @@ func _ready() -> void:
 	add_child(player)
 	player.add_child(Camera2D.new())
 	var map := VltkWorld.SortedMap.new()
-	map.map_dir = "res://world/main_map"
+	map.map_dir = "res://world/maps/map_321"
 	map.focus = player
 	map.lookahead_enabled = OS.get_environment("SMOKE_LOOKAHEAD") != "0"
 	add_child(map)

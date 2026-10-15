@@ -2,64 +2,6 @@
 
 [ext_resource type="Script" path="res://ui/character_status/potential_point_popup.gd" id="1_pp"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
-bg_color = Color(0.1, 0.075, 0.05, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.83, 0.68, 0.3, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.6)
-shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_small"]
-bg_color = Color(0.75, 0.12, 0.1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_small_hover"]
-bg_color = Color(0.88, 0.18, 0.15, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_action"]
-bg_color = Color(0.45, 0.33, 0.14, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85, 0.7, 0.35, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_action_hover"]
-bg_color = Color(0.58, 0.43, 0.19, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.86, 0.5, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxEmpty" id="StyleBox_empty"]
-
 [node name="PotentialPointPopup" type="CanvasLayer"]
 layer = 62
 script = ExtResource("1_pp")
@@ -71,7 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.45)
+color = Color(0, 0, 0, 0.55)
 
 [node name="Center" type="CenterContainer" parent="."]
 anchors_preset = 15
@@ -84,7 +26,7 @@ mouse_filter = 2
 [node name="Panel" type="PanelContainer" parent="Center"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBox_panel")
+theme_type_variation = &"GameWindow"
 
 [node name="Box" type="VBoxContainer" parent="Center/Panel"]
 layout_mode = 2
@@ -93,17 +35,13 @@ theme_override_constants/separation = 10
 [node name="Title" type="Label" parent="Center/Panel/Box"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.1, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"GameTitle"
 text = "Cộng điểm: Sức mạnh"
 horizontal_alignment = 1
 
 [node name="Remaining" type="Label" parent="Center/Panel/Box"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.87, 0.83, 1)
 theme_override_font_sizes/font_size = 14
 text = "Điểm tiềm năng còn: 0"
 horizontal_alignment = 1
@@ -117,13 +55,9 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 34)
 layout_mode = 2
+theme_type_variation = &"GameButton"
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBox_small")
-theme_override_styles/hover = SubResource("StyleBox_small_hover")
-theme_override_styles/pressed = SubResource("StyleBox_small")
-theme_override_styles/focus = SubResource("StyleBox_empty")
 text = "−"
 
 [node name="Amount" type="SpinBox" parent="Center/Panel/Box/InputRow"]
@@ -140,32 +74,22 @@ select_all_on_focus = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 34)
 layout_mode = 2
+theme_type_variation = &"GameButton"
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBox_small")
-theme_override_styles/hover = SubResource("StyleBox_small_hover")
-theme_override_styles/pressed = SubResource("StyleBox_small")
-theme_override_styles/focus = SubResource("StyleBox_empty")
 text = "+"
 
 [node name="MaxButton" type="Button" parent="Center/Panel/Box/InputRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 34)
 layout_mode = 2
+theme_type_variation = &"GameButton"
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBox_action")
-theme_override_styles/hover = SubResource("StyleBox_action_hover")
-theme_override_styles/pressed = SubResource("StyleBox_action")
-theme_override_styles/focus = SubResource("StyleBox_empty")
 text = "Tối đa"
 
 [node name="Preview" type="Label" parent="Center/Panel/Box"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.78, 0.12, 1)
 theme_override_font_sizes/font_size = 14
 text = "Sức mạnh: 35 → 36"
 horizontal_alignment = 1
@@ -179,24 +103,14 @@ theme_override_constants/separation = 12
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
+theme_type_variation = &"PrimaryButton"
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBox_action")
-theme_override_styles/hover = SubResource("StyleBox_action_hover")
-theme_override_styles/pressed = SubResource("StyleBox_action")
-theme_override_styles/focus = SubResource("StyleBox_empty")
 text = "Xác nhận"
 
 [node name="CancelButton" type="Button" parent="Center/Panel/Box/Buttons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
+theme_type_variation = &"GameButton"
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBox_action")
-theme_override_styles/hover = SubResource("StyleBox_action_hover")
-theme_override_styles/pressed = SubResource("StyleBox_action")
-theme_override_styles/focus = SubResource("StyleBox_empty")
 text = "Hủy"

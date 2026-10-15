@@ -34,6 +34,10 @@ type Config struct {
 	// Đứng sau reverse proxy thì lấy IP thật từ X-Forwarded-For.
 	TrustProxy bool
 
+	// CHỈ DÙNG KHI PHÁT TRIỂN: lưu nguyên dữ liệu nhân vật game gửi (bỏ guardClientSave) để nút TEST lên cấp / thêm đồ
+	// ở Hub được lưu thật. TUYỆT ĐỐI không bật trên máy chủ thật — người chơi tự sửa được cấp / tiền / đồ.
+	DevTrustClientSaves bool
+
 	// Cookie phiên admin chỉ gửi qua HTTPS. Chỉ tắt khi chạy dev bằng http://.
 	AdminCookieSecure bool
 	// Thư mục web Admin đã build (server phục vụ tại /admin/). Rỗng = không phục vụ.
@@ -74,6 +78,7 @@ func loadConfig() Config {
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", ""),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", ""),
 		TrustProxy:         env("TRUST_PROXY", "false") == "true",
+		DevTrustClientSaves: env("DEV_TRUST_CLIENT_SAVES", "false") == "true",
 		AdminCookieSecure:  env("ADMIN_COOKIE_SECURE", "true") != "false",
 		AdminWebDir:        env("ADMIN_WEB_DIR", ""),
 		PortalWebDir:       env("PORTAL_WEB_DIR", ""),

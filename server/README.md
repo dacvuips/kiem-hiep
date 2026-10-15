@@ -115,6 +115,12 @@ Các mã lỗi: `bad_request`, `bad_username`, `bad_email`, `bad_password`, `pas
 - Mất 2FA / quên mật khẩu Super Admin: chạy trên máy chủ
   `docker compose exec account /account admin <tên> super` để nhận mật khẩu tạm mới (2FA bị xóa, phải thiết lập lại).
 - Sửa giao diện: `cd admin-web && npm install && npm run dev` rồi mở http://localhost:5173/admin/ (API tự chuyển sang :8080).
+- **Sửa nhân vật** (Super Admin): Tài khoản → bấm tên nhân vật. Sửa tên, cấp, tiền, môn phái, điểm tiềm năng / kỹ năng, cấp skill,
+  trang bị, hành trang, rương (sửa / xoá / chuyển món), tặng đồ (đồ thường chọn loại + cấp + ngũ hành + cấp dòng, hoặc hoàng kim),
+  và tab JSON cho mọi trường còn lại. Đồ tặng nằm ở `admin_grants` — game server sinh thành món thật bằng bộ sinh đồ của game
+  khi nhân vật vào map. Lưu xong, nhân vật đang online bị game server đá ra (≤ `GAME_STATUS_POLL` giây) để vào lại nhận bản mới.
+- Danh mục tên đồ / skill cho trang này: `admin-web/public/catalog.json`, sinh bằng
+  `godot --headless --path . --script tools/export_admin_catalog.gd` — chạy lại khi đổi dữ liệu đồ hoặc skill.
 
 Kiểm tra web Admin bằng trình duyệt thật (cần Chrome):
 

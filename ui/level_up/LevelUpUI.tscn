@@ -28,6 +28,7 @@ grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer" unique_id=993414174]
 layout_mode = 2
+theme_type_variation = &"GameWindow"
 
 [node name="Margin" type="MarginContainer" parent="CenterContainer/Panel" unique_id=47974250]
 layout_mode = 2
@@ -37,6 +38,7 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox" unique_id=897696054]
 layout_mode = 2
+theme_type_variation = &"GameTitle"
 text = "LÊN CẤP! CHỌN NÂNG CẤP"
 
 [node name="ChoicesContainer" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1852960786]

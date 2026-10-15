@@ -1643,6 +1643,7 @@ stat_lines = Array[ExtResource("3_statline")]([])
 
 [resource]
 script = ExtResource("1_sect")
+required_gender = 1
 id = "nga_mi"
 sect_name = "Nga Mi"
 element = 2

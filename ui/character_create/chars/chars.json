@@ -54,5 +54,19 @@
   "cols": 5,
   "frames": 21,
   "feet_x": 266.1
+ },
+ "thuy_nam": {
+  "cell_w": 520,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 239.8
+ },
+ "kim_nu": {
+  "cell_w": 345,
+  "cell_h": 480,
+  "cols": 5,
+  "frames": 21,
+  "feet_x": 164.3
  }
 }

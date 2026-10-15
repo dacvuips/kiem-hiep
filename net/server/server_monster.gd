@@ -37,6 +37,8 @@ var _game_time := 0.0
 var _skill_ready: Array[float] = [0.0, 0.0, 0.0, 0.0]
 var _max_radius := -1.0
 var _target_eid := 0
+## Chiến trường Tống Kim: quái của 1 phe (Nguyên Soái) — chỉ đánh / bị đánh bởi người phe kia. "" = quái thường.
+var battle_side := ""
 
 ## Tạo từ 1 mục npcs của map.json. null nếu quái không có dữ liệu mẫu.
 static func from_entry(n: Dictionary, eid_value: int) -> ServerMonster:
@@ -187,7 +189,7 @@ func _ai_think(gs: GameServer) -> void:
 		_walk_to(_origin_logic)
 		return
 	_cur_active = active
-	var enemy := gs.nearest_player(pos, float(data.get("vision", 400)))
+	var enemy := gs.nearest_player(pos, float(data.get("vision", 400)), battle_side)
 	if enemy == null:
 		_target_eid = 0
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):

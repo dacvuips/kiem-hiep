@@ -42,6 +42,9 @@ static func open(from: Node) -> AccountDialog:
 
 func _ready() -> void:
 	_setup_screen()
+	## Nền tối + nút ✕ theo chuẩn GameUi; khung, ô nhập và các nút chữ nằm trên ảnh mẫu (giống màn đăng nhập) nên giữ nguyên.
+	GameUi.apply()
+	_dim.color = GameUi.DIM
 	_bind_eye(_eye, [_old, _new, _new2])
 	_bind_hover(_change)
 	_close.pressed.connect(_close_dialog)

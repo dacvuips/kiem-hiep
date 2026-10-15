@@ -5,9 +5,32 @@ class_name ItemCreatorPopup
 ##     số dòng magic + cấp magic (xanh) — sinh bằng ItemGenerator.generate (đúng Gen_MagicAttrib gốc).
 ##   - Hoàng kim: loại, lọc môn phái (tất cả / không môn phái / từng phái), chọn đúng món, độ hoàn mỹ 0-10
 ##     — sinh bằng ItemGenerator.generate_gold.
+##   - Thuốc / Huyền Tinh - ép đồ tím / Sát thủ / Phong Lăng Độ: vật phẩm khác (misc_items.json) — danh sách theo NPC thử nghiệm gốc
+##     (script/global/nobitaxd/npc/npcthunghiem.lua: TrangBiTim, HuyenTinh, KhoangThach, ThuyTinh, PhucDuyen, HoTro_CapSatThuGian,
+##     itemPLD) + các lệnh bài Sát thủ / Phong Lăng Độ khác trong magicscript.txt, questkey.txt gốc,
+##     chọn cấp / hệ (món có cấp, hệ) + số lượng — sinh bằng ItemGenerator.generate_misc.
 ## Mỗi lần đổi lựa chọn sinh lại bản xem trước; "Tạo" thêm đúng món đang xem trước.
 
-enum Quality { NORMAL, MAGIC, GOLD }
+enum Quality { NORMAL, MAGIC, GOLD, POTION, PURPLE, KILLER, FERRY, MONEY }
+## Nhóm "Ngân lượng": cộng thẳng vào tiền mang theo (profile.gold), không phải vật phẩm.
+const MONEY_AMOUNTS := [10000, 100000, 1000000, 10000000, 100000000]
+const MONEY_MAX := 2000000000  ## int32 gốc — không cho tiền vượt quá
+## Vật liệu ép đồ tím: Huyền Tinh, Nguyên khoáng hiện 1/2/3 (Huyền Thiết, Mật Ngân, Chu Sa) + Nguyên thạch ẩn 1/2/3 có hệ
+## (Khổng Tước, Phù Dung, Chung Nhũ), Thủy tinh Lam/Tử/Lục, Phúc Duyên Lộ tiểu/trung/đại.
+const PURPLE_ITEMS := ["6_1_147", "6_1_149", "6_1_150", "6_1_151", "6_1_152", "6_1_153", "6_1_154",
+	"4_238_1", "4_239_1", "4_240_1", "6_1_122", "6_1_123", "6_1_124"]
+## Sát Thủ lệnh (phần thưởng giết Boss sát thủ, 5 lệnh cùng cấp đổi 1 giản) + Sát thủ giản (gọi Boss),
+## Sát Thủ Giản lễ hộp (mở ra 2 giản), Sát Thủ Bí Bảo, Lệnh Bài Sát Thủ + Huyết Lệ Chi Thư (nhiệm vụ Nhiếp Thí Trần),
+## Ngọc Long Lệnh Bài (sát thủ), Lệnh bài Bắc Đẩu - Boss sát thủ.
+const KILLER_ITEMS := ["6_1_399", "6_1_400", "6_1_2339", "6_1_2347", "6_1_30565", "6_1_30568", "6_1_2631", "6_1_3520"]
+## Phong Lăng Độ (missions/fengling_ferry/fld_head.lua): Lệnh bài Phong Lăng Độ (4,489 — giao cho Thuyền phu để lên thuyền),
+## Lệnh Bài Thủy Tặc (thuyền đặc biệt) + Bảo Rương Thủy Tặc (thưởng), Ngọc Long Lệnh Bài (Phong Lăng Độ),
+## Lệnh bài Bắc Đẩu - Phong Lăng Độ cấp 1/2.
+const FERRY_ITEMS := ["4_489_1", "6_1_2745", "6_1_2743", "6_1_2630", "6_1_3517", "6_1_3518"]
+## Cấp gốc: Huyền Tinh AddItem(6,1,147,1..10); Sát Thủ lệnh lib_killlevel.lua AddItem(6,1,399,20..90,hệ).
+const MISC_LEVELS := {"6_1_147": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "6_1_399": [20, 30, 40, 50, 60, 70, 80, 90],
+	"6_1_400": [20, 30, 40, 50, 60, 70, 80, 90]}
+const AMOUNTS := [1, 5, 10, 20, 50, 100]
 
 var _profile: PlayerProfile
 var _on_changed: Callable
@@ -20,6 +43,10 @@ var _magic_level: OptionButton
 var _menpai: OptionButton
 var _gold_item: OptionButton
 var _perfection: OptionButton
+var _amount: OptionButton
+var _money: OptionButton
+var _equip_button: Button
+var _reroll_button: Button
 var _rows: Dictionary = {}  ## tên hàng -> HBoxContainer (ẩn/hiện theo phẩm chất)
 var _preview_text: RichTextLabel
 var _preview_icon: TextureRect
@@ -29,6 +56,8 @@ var _preview: ItemInstance
 var _normal_types: Array = []
 var _gold_types: Array = []
 var _gold_indices: Array[int] = []
+## Nhóm vật phẩm khác (Quality.POTION/PURPLE/KILLER/FERRY) -> [mã misc_items.json].
+var _misc_types: Dictionary = {}
 
 static func open(parent: Node, profile: PlayerProfile, on_changed: Callable) -> ItemCreatorPopup:
 	var popup := ItemCreatorPopup.new()
@@ -38,11 +67,11 @@ static func open(parent: Node, profile: PlayerProfile, on_changed: Callable) -> 
 	return popup
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	layer = 62
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.75)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	## Khung/tiêu đề/nút lấy từ GameUi để đồng bộ với mọi popup khác.
+	var dim := GameUi.dim_rect()
 	dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			queue_free())
@@ -51,24 +80,13 @@ func _ready() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
-	var panel := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.07, 0.06, 1.0)
-	style.border_color = Color(0.83, 0.68, 0.21)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(14)
-	panel.add_theme_stylebox_override("panel", style)
+	var panel := GameUi.panel(GameUi.WINDOW)
 	center.add_child(panel)
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 6)
 	panel.add_child(root)
-	var title := Label.new()
-	title.text = "Tạo đồ (TEST)"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", Color(0.83, 0.68, 0.21))
+	var title := GameUi.title("Tạo đồ (TEST)")
 	root.add_child(title)
 
 	var body := HBoxContainer.new()
@@ -78,7 +96,8 @@ func _ready() -> void:
 	form.custom_minimum_size = Vector2(330, 0)
 	body.add_child(form)
 
-	_quality = _add_option(form, "quality", "Phẩm chất", ["Thường", "Xanh (magic)", "Hoàng kim"])
+	_quality = _add_option(form, "quality", "Nhóm", ["Thường", "Xanh (magic)", "Hoàng kim", "Thuốc",
+		"Huyền Tinh - ép đồ tím", "Sát thủ (lệnh bài)", "Phong Lăng Độ (lệnh bài)", "Ngân lượng"])
 	_type = _add_option(form, "type", "Loại", [])
 	_level = _add_option(form, "level", "Cấp đồ", [])
 	_series = _add_option(form, "series", "Hệ", ElementTypes.ELEMENT_NAME.values())
@@ -96,6 +115,12 @@ func _ready() -> void:
 		perfection.append("%d/10" % i)
 	_perfection = _add_option(form, "perfection", "Độ hoàn mỹ", perfection)
 	_perfection.select(10)
+	_amount = _add_option(form, "amount", "Số lượng", AMOUNTS)
+	var money_labels := []
+	for v in MONEY_AMOUNTS:
+		money_labels.append("%s lượng" % _money_text(v))
+	_money = _add_option(form, "money", "Số tiền", money_labels)
+	_money.select(2)
 
 	## Cột xem trước: ảnh vật phẩm (kích thước gốc, nét) phía trên mô tả.
 	var preview_box := VBoxContainer.new()
@@ -116,21 +141,25 @@ func _ready() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 10)
 	root.add_child(buttons)
-	for spec in [["Đổi roll khác", _rebuild_preview], ["Tạo", _on_create.bind(false)],
-			["Tạo & mặc", _on_create.bind(true)], ["Đóng", queue_free]]:
-		var b := Button.new()
-		b.text = spec[0]
+	## [chữ, hàm, biến thể nút] — "Tạo" là nút chính.
+	for spec in [["Đổi roll khác", _rebuild_preview, GameUi.BUTTON], ["Tạo", _on_create.bind(false), GameUi.PRIMARY],
+			["Tạo & mặc", _on_create.bind(true), GameUi.BUTTON], ["Đóng", queue_free, GameUi.BUTTON]]:
+		var b := GameUi.button(spec[0], spec[2])
 		b.pressed.connect(spec[1])
 		buttons.add_child(b)
+		if spec[0] == "Tạo & mặc":
+			_equip_button = b
+		elif spec[0] == "Đổi roll khác":
+			_reroll_button = b
 	_message = Label.new()
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_message.add_theme_color_override("font_color", Color(0.6, 0.9, 0.55))
+	_message.add_theme_color_override("font_color", GameUi.LABEL_GREEN)
 	root.add_child(_message)
 
 	_quality.item_selected.connect(func(_i: int) -> void: _on_quality_changed())
 	_type.item_selected.connect(func(_i: int) -> void: _on_type_changed())
 	_menpai.item_selected.connect(func(_i: int) -> void: _refresh_gold_items())
-	for opt in [_level, _series, _lines, _magic_level, _gold_item, _perfection]:
+	for opt in [_level, _series, _lines, _magic_level, _gold_item, _perfection, _amount, _money]:
 		opt.item_selected.connect(func(_i: int) -> void: _rebuild_preview())
 	_build_type_lists()
 	_series.select(_default_series())
@@ -154,8 +183,7 @@ func _add_option(parent: VBoxContainer, key: String, label_text: String, items: 
 
 ## Hệ mặc định = hệ được nhân vật TƯƠNG SINH (mặc vào là bật 1 dòng ẩn ngay).
 func _default_series() -> int:
-	var sect := SectRegistry.get_by_id(_profile.sect_id)
-	return int(Equipment.ACCRUE.get(sect.element, 0)) if sect else 0
+	return int(Equipment.ACCRUE.get(_profile.get_element(), 0))
 
 func _build_type_lists() -> void:
 	for detail in ItemDatabase.Detail.values():
@@ -166,17 +194,53 @@ func _build_type_lists() -> void:
 				_gold_types.append([detail, particular])
 		else:
 			_gold_types.append([detail, -1])
+	## Thuốc: bỏ món trùng tên (VD 4 "Bánh chưng Nhân táo" cùng tác dụng).
+	var potions := []
+	var seen := {}
+	for m in ItemDatabase.list_misc("potion"):
+		if not seen.has(m["name"]):
+			seen[m["name"]] = true
+			potions.append(str(m["id"]))
+	_misc_types = {Quality.POTION: potions, Quality.PURPLE: PURPLE_ITEMS, Quality.KILLER: KILLER_ITEMS,
+		Quality.FERRY: FERRY_ITEMS}
+
+func _is_misc_mode() -> bool:
+	return _misc_types.has(_quality.selected)
+
+## Mã vật phẩm khác đang chọn ("" nếu không ở nhóm vật phẩm khác).
+func _misc_id() -> String:
+	if not _is_misc_mode() or _type.selected < 0:
+		return ""
+	return str(_misc_types[_quality.selected][_type.selected])
 
 func _on_quality_changed() -> void:
+	var money := _quality.selected == Quality.MONEY
+	for key in _rows:
+		_rows[key].visible = key == "quality" or (key == "money") == money
+	_equip_button.visible = not money
+	_reroll_button.visible = not money
+	if money:
+		_rebuild_preview()
+		return
 	var gold := _quality.selected == Quality.GOLD
+	var misc := _is_misc_mode()
 	_rows["level"].visible = not gold
 	_rows["series"].visible = not gold
+	_rows["amount"].visible = misc
+	_equip_button.visible = not misc
 	_rows["lines"].visible = _quality.selected == Quality.MAGIC
 	_rows["magic_level"].visible = _quality.selected == Quality.MAGIC
 	_rows["menpai"].visible = gold
 	_rows["gold_item"].visible = gold
 	_rows["perfection"].visible = gold
 	_type.clear()
+	if misc:
+		for misc_id in _misc_types[_quality.selected]:
+			var m := ItemDatabase.get_misc(misc_id)
+			_add_option_item(_type, str(m.get("name", misc_id)), ItemDatabase.get_icon(m, true))
+		_type.select(0)
+		_on_type_changed()
+		return
 	for t in (_gold_types if gold else _normal_types):
 		var label: String = ItemDatabase.get_particular_label(t[0], t[1]) if t[1] >= 0 else ItemDatabase.DETAIL_NAMES[t[0]]
 		## Ảnh: món cấp thấp nhất của loại đó (đồ thường) / món hoàng kim đầu tiên của loại (hoàng kim).
@@ -194,6 +258,17 @@ func _on_quality_changed() -> void:
 func _on_type_changed() -> void:
 	if _quality.selected == Quality.GOLD:
 		_refresh_gold_items()
+		return
+	if _is_misc_mode():
+		var misc_id := _misc_id()
+		_level.clear()
+		for lv in MISC_LEVELS.get(misc_id, []):
+			_level.add_item("Cấp %d" % lv, lv)
+		_rows["level"].visible = _level.item_count > 0
+		if _level.item_count > 0:
+			_level.select(_level.item_count - 1)  ## mặc định cấp cao nhất (Huyền Tinh 10, Sát thủ 90)
+		_rows["series"].visible = misc_id in ItemText.MISC_WITH_SERIES
+		_rebuild_preview()
 		return
 	var t: Array = _normal_types[_type.selected]
 	_level.clear()
@@ -245,7 +320,17 @@ func _refresh_gold_items() -> void:
 
 func _rebuild_preview() -> void:
 	_preview = null
+	if _quality.selected == Quality.MONEY:
+		_preview_icon.texture = null
+		_preview_text.text = "[center][color=#ffff00]+%s lượng[/color]
+
+[color=#ffffff]Đang mang theo: %s lượng[/color][/center]" % [
+				_money_text(MONEY_AMOUNTS[_money.selected]), _money_text(_profile.gold)]
+		return
 	match _quality.selected:
+		Quality.POTION, Quality.PURPLE, Quality.KILLER, Quality.FERRY:
+			var level := _level.get_item_id(_level.selected) if _rows["level"].visible and _level.selected >= 0 else 0
+			_preview = ItemGenerator.generate_misc(_misc_id(), level, _series.selected, AMOUNTS[_amount.selected])
 		Quality.GOLD:
 			if _gold_item.selected >= 0 and _gold_item.selected < _gold_indices.size():
 				_preview = ItemGenerator.generate_gold(_gold_indices[_gold_item.selected], _perfection.selected)
@@ -266,7 +351,13 @@ func _rebuild_preview() -> void:
 	_preview_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED if big else TextureRect.STRETCH_KEEP_CENTERED
 
 func _on_create(equip_now: bool) -> void:
+	if _quality.selected == Quality.MONEY:
+		_create_money()
+		return
 	if _preview == null:
+		return
+	if _preview.is_misc():
+		_create_misc()
 		return
 	if not _profile.add_item(_preview):
 		_message.text = "Hành trang đầy (%d món)." % PlayerProfile.INVENTORY_CAPACITY
@@ -280,3 +371,43 @@ func _on_create(equip_now: bool) -> void:
 	if _on_changed.is_valid():
 		_on_changed.call()
 	_rebuild_preview()  ## roll món mới cho lần tạo tiếp
+
+## Vật phẩm khác: tạo đủ "Số lượng" — món chồng được thì gom thành chồng (tối đa cột Stack gốc), không thì mỗi món 1 ô.
+func _create_misc() -> void:
+	var remaining: int = AMOUNTS[_amount.selected]
+	var added := 0
+	while remaining > 0:
+		var item := ItemGenerator.generate_misc(_preview.misc_id, _preview.item_level, _preview.series, remaining)
+		if not _profile.add_item(item):
+			break
+		added += item.count
+		remaining -= item.count
+	var item_name := str(_preview.get_base().get("name", "?"))
+	_message.text = "Đã tạo: %s x%d" % [item_name, added] if remaining == 0 			else "Hành trang đầy — mới tạo được %s x%d" % [item_name, added]
+	if added > 0:
+		SaveManager.save_profile(_profile)
+		if _on_changed.is_valid():
+			_on_changed.call()
+
+## Ngân lượng: cộng vào tiền mang theo, chặn ở MONEY_MAX.
+func _create_money() -> void:
+	var before := _profile.gold
+	_profile.gold = mini(_profile.gold + MONEY_AMOUNTS[_money.selected], MONEY_MAX)
+	_message.text = "Đã thêm %s lượng" % _money_text(_profile.gold - before) if _profile.gold > before 			else "Tiền mang theo đã tối đa (%s lượng)." % _money_text(MONEY_MAX)
+	SaveManager.save_profile(_profile)
+	if _on_changed.is_valid():
+		_on_changed.call()
+	_rebuild_preview()
+
+## 1.500.000 -> "150 vạn"; số lẻ vạn ghi đủ có dấu chấm.
+static func _money_text(v: int) -> String:
+	@warning_ignore("integer_division")
+	if v >= 10000 and v % 10000 == 0:
+		return "%d vạn" % (v / 10000)
+	var s := str(v)
+	var out := ""
+	for i in s.length():
+		if i > 0 and (s.length() - i) % 3 == 0:
+			out += "."
+		out += s[i]
+	return out

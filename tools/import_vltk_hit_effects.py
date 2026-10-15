@@ -4,6 +4,7 @@
 
     python tools/import_vltk_hit_effects.py          # ghi vào .tres (chạy lại bao nhiêu lần cũng được)
     python tools/import_vltk_hit_effects.py --dry    # chỉ in kết quả, không ghi
+    python tools/import_vltk_hit_effects.py hoa_son vu_hon   # chỉ các phái này
 
 Nguồn (không đoán theo giá trị số):
   - settings/Skills.txt (TCVN5712-1): mỗi dòng skill có LvlSettingN (tên thuộc tính) + LvlDataN (tên bảng
@@ -51,6 +52,14 @@ def _use_vng_tables():
 
 
 _use_vng_tables()
+## Bản 15 phái (tools/vltk_source.py): 5 phái mới CHỈ có ở bản này (+ Ngũ Độc theo bản mới) -> Skills.txt/Missles.txt/lua của server 15 phái.
+## 10 phái cũ giữ bản VNG ở trên: server 15 phái đã cân bằng lại phái cũ (VD skill 150 lên cấp 50, sát thương x5) — lệch gốc.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import vltk_source  # noqa: E402
+NEW_SECTS = set(vltk_source.JX15_DATA_SECTS)
+NEW_SKILLS_TXT = vltk_source.settings_file("skills.txt")
+NEW_MISSLES_TXT = vltk_source.settings_file("missles.txt")
+NEW_LUA_DIRS = [vltk_source.SERVER]
 LUA_DIRS = [
     VLTK / "JXWin Anh Việt-20260926T075907Z-1-002/JXWin Anh Việt/Client anhviet pas 123456/Client123456",
     VLTK / "MiTom_Pak_SPR_v1.1.7/Unpacked_Resources",
@@ -78,9 +87,9 @@ def to_int(text: str) -> int:
         return 0
 
 
-def load_missles():
+def load_missles(path=None):
     """MissleId -> {DmgRange, IsRangeDmg, CanColFriend} (KMissle::GetInfoFromTabFile gốc)."""
-    raw = subprocess.run(["iconv", "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(MISSLES_TXT)],
+    raw = subprocess.run(["iconv", "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(path or MISSLES_TXT)],
                          capture_output=True, check=True).stdout.decode("utf-8", "replace")
     lines = raw.splitlines()
     col = {h: i for i, h in enumerate(lines[0].split("\t"))}
@@ -102,8 +111,8 @@ def norm(name: str) -> str:
     return unicodedata.normalize("NFC", name).lower()
 
 
-def load_skills_txt():
-    raw = subprocess.run(["iconv", "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(SKILLS_TXT)],
+def load_skills_txt(path=None):
+    raw = subprocess.run(["iconv", "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(path or SKILLS_TXT)],
                          capture_output=True, check=True).stdout.decode("utf-8", "replace")
     lines = raw.splitlines()
     header = lines[0].split("\t")
@@ -191,15 +200,17 @@ def parse_table(src: str):
 _lua_cache = {}
 
 
-def lua_attr(script: str, table: str, attr: str):
-    if script not in _lua_cache:
-        _lua_cache[script] = None
-        for base in LUA_DIRS:
+def lua_attr(script: str, table: str, attr: str, dirs=None):
+    dirs = dirs or LUA_DIRS
+    key = (script, tuple(dirs))
+    if key not in _lua_cache:
+        _lua_cache[key] = None
+        for base in dirs:
             path = base / script
             if path.exists():
-                _lua_cache[script] = strip_comments(path.read_bytes().decode("latin-1"))
+                _lua_cache[key] = strip_comments(path.read_bytes().decode("latin-1"))
                 break
-    text = _lua_cache[script]
+    text = _lua_cache[key]
     if text is None:
         return None
     m = re.search(r"(?<![\w])" + re.escape(table) + r"\s*=\s*\{", text)
@@ -241,10 +252,16 @@ def attribs_literal(attribs: dict) -> str:
 
 def main():
     dry = "--dry" in sys.argv
-    by_name, by_id = load_skills_txt()
-    missles = load_missles()
+    old_tables = (*load_skills_txt(), load_missles())
+    new_tables = (*load_skills_txt(NEW_SKILLS_TXT), load_missles(NEW_MISSLES_TXT))
+    only = [a for a in sys.argv[1:] if not a.startswith("--")]
     stats = {"skills": 0, "matched": 0, "with_attribs": 0, "conic": set()}
     for tres in sorted(TRES_DIR.glob("*.tres")):
+        if only and tres.stem not in only:
+            continue
+        is_new = tres.stem in NEW_SECTS
+        by_name, by_id, missles = new_tables if is_new else old_tables
+        lua_dirs = NEW_LUA_DIRS if is_new else LUA_DIRS
         text = tres.read_text(encoding="utf-8")
         blocks = re.split(r"(?=\n\[sub_resource)", text)
         changed = False
@@ -264,14 +281,17 @@ def main():
                 script, mapping, flags = rows[0]
                 attribs = {}
                 for attr, table in mapping.items():
-                    parsed = lua_attr(script, table, attr)
+                    parsed = lua_attr(script, table, attr, lua_dirs)
                     if isinstance(parsed, list) and parsed:
                         attribs[attr] = parsed
                         if "Conic" in str(parsed) or "Extrac" in str(parsed):
                             stats["conic"].add(f"{name_m.group(1)}.{attr}")
                 lines = "".join(f"{k} = {'true' if flags[k] else 'false'}\n" for k in FLAG_COLUMNS)
                 for field in ["vltk_is_physical"] + list(INT_COLUMNS):
-                    lines += f"{field} = {flags[field]}\n"
+                    value = flags[field]
+                    if is_new and field == "vltk_state_special_id" and value > 0:
+                        value += vltk_source.FX_ID_OFFSET   ## states.json: trạng thái bản 15 phái ở khoá riêng
+                    lines += f"{field} = {value}\n"
                 missle = missles.get(flags["_child_missle"], {})
                 for field in MISSLE_FIELDS:
                     lines += f"{field} = {missle.get(field, 0)}\n"
@@ -289,7 +309,7 @@ def main():
                 blocks[bi] = new_block
                 changed = True
         if changed and not dry:
-            tres.write_text("".join(blocks), encoding="utf-8")
+            tres.write_text("".join(blocks), encoding="utf-8", newline="\n")
     print(f"\nTổng skill: {stats['skills']}, ghép được Skills.txt: {stats['matched']}, có thuộc tính: {stats['with_attribs']}")
     if stats["conic"]:
         print("Mốc dùng hàm nội suy Conic/Extrac (đã lưu mã hàm):", sorted(stats["conic"]))

@@ -17,6 +17,7 @@ var kills: Array = []             ## các S_KILL nhận được
 var exp_gained := 0
 var level := 0
 var saved_version := 0
+var my_stall_sign := ""            ## biển quầy của chính mình server báo (S_STALL_SIGN)
 var profile: Dictionary = {}      ## bản nhân vật server gửi (S_PROFILE)
 var grant_ack := 0
 var drops: Dictionary = {}        ## drop_id -> {pos, owner, amount | item}
@@ -40,6 +41,8 @@ var pvp_hits: Array = []          ## [{from, hit}]
 var dead := false                 ## gửi cờ FLAG_DEAD trong C_MOVE
 var casts: Array = []             ## [{caster, skill, level, flags, target, aim}] (S_CAST)
 var closed := false
+var battle_msgs: Array = []       ## gói S_BATTLE nhận được (chiến trường)
+var battle_state: Dictionary = {} ## gói "state" mới nhất
 var _token := ""
 var _character_id := 0
 
@@ -68,6 +71,18 @@ func _send(b: StreamPeerBuffer, ch: int) -> void:
 	peer.transfer_channel = ch
 	peer.transfer_mode = MultiplayerPeer.TRANSFER_MODE_RELIABLE if ch == NetProto.CH_RELIABLE else MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED
 	peer.put_packet(b.data_array)
+
+## Chiến trường Tống Kim: op = BattleServer.OP_*.
+func battle(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Chết rồi bấm "Về thành dưỡng sức".
+func revive() -> void:
+	dead = false
+	_send(NetProto.writer(NetProto.C_REVIVE), NetProto.CH_RELIABLE)
 
 func move_to(p: Vector2, action := "run", dir := 0) -> void:
 	feet = p
@@ -243,7 +258,9 @@ func _read_spawn(b: StreamPeerBuffer) -> void:
 	var n := NetProto.get_str(b)
 	var lv := b.get_u16()
 	var cp := b.get_8()
-	known[id] = {"kind": kind, "name": n, "level": lv, "camp": cp, "pos": Vector2(b.get_float(), b.get_float())}
+	var na := b.get_u8()
+	var st := NetProto.get_str(b)
+	known[id] = {"kind": kind, "name": n, "level": lv, "camp": cp, "nation": na, "stall_title": st, "pos": Vector2(b.get_float(), b.get_float())}
 	b.get_data(4)
 	known[id]["hp"] = b.get_u8()
 	if kind == NetProto.KIND_MONSTER:
@@ -278,12 +295,16 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			for i in b.get_u16():
 				var id := b.get_u32()
 				var pos := NetProto.get_state_pos(b)
-				b.get_data(3)
+				var dir_action := b.get_u8()
+				b.get_u8()
+				var fl := b.get_u8()
 				var hp := b.get_u8()
 				states_received += 1
 				if known.has(id):
 					known[id].pos = pos
 					known[id].hp = hp
+					known[id].action = dir_action >> 3
+					known[id].flags = fl
 		NetProto.S_MATTACK:
 			var m := b.get_u32()
 			b.get_u8()
@@ -365,8 +386,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_CAMP:
 			var ce := b.get_u32()
 			var cv := b.get_8()
+			var nv := b.get_u8()
 			if known.has(ce):
 				known[ce]["camp"] = cv
+				known[ce]["nation"] = nv
 		NetProto.S_FRIEND_INVITE:
 			var fe := b.get_u32()
 			friend_invites.append({"from": fe, "name": NetProto.get_str(b)})
@@ -397,11 +420,24 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TEAM_INVITE:
 			team_invites.append(b.get_u32())
 			NetProto.get_str(b)
+		NetProto.S_STALL_SIGN:
+			var se := b.get_u32()
+			var stt := NetProto.get_str(b)
+			if known.has(se):
+				known[se]["stall_title"] = stt
+			elif se == eid:
+				my_stall_sign = stt
 		NetProto.S_STALL_ITEMS:
 			var s := {"seller": b.get_u32(), "title": NetProto.get_str(b), "items": []}
 			for k in b.get_u16():
 				s.items.append(JSON.parse_string(NetProto.get_str(b, 65535)))
 			stall = s
+		NetProto.S_BATTLE:
+			var msg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
+			if msg is Dictionary:
+				battle_msgs.append(msg)
+				if msg.get("op") == "state":
+					battle_state = msg
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())

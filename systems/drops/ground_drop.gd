@@ -17,6 +17,12 @@ var _label := ""
 var _color := Color.WHITE
 var _icon: Texture2D
 
+## Nhóm để AutoController quét vật rớt quanh người (không phải lục cả cây node).
+const GROUP := &"ground_drops"
+
+func _enter_tree() -> void:
+	add_to_group(GROUP)
+
 func setup_money(value: int) -> void:
 	amount = value
 	_label = "%d lượng" % value
@@ -45,6 +51,13 @@ func _process(delta: float) -> void:
 			_want_pickup = false      ## người chơi đã đổi ý / bị chặn đường
 	_hover = get_global_mouse_position().distance_to(global_position + Vector2(0, -12)) <= CLICK_RADIUS
 	queue_redraw()
+
+## Auto nhặt đồ: đứng đủ gần thì nhặt ngay (true = đã gửi lệnh nhặt), xa thì để người gọi tự chạy tới.
+func try_auto_pick(player: Node2D) -> bool:
+	if _player_feet(player).distance_to(global_position) > REACH:
+		return false
+	_pick_up(player)
+	return true
 
 func _player_feet(player: Node2D) -> Vector2:
 	return player.global_position + Vector2(0, 30)

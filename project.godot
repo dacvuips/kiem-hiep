@@ -17,6 +17,7 @@ run/max_fps=60
 
 [autoload]
 
+GameUiBoot="*res://ui/common/game_ui_boot.gd"
 PlayerStats="*uid://cq1yslh370n4s"
 VfxManager="*res://systems/vfx_manager.gd"
 SfxManager="*res://systems/sfx_manager.gd"

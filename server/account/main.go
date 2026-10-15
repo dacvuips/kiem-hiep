@@ -93,11 +93,14 @@ func main() {
 	mux.HandleFunc("POST /v1/characters", wrap(s.handleCreateCharacter))
 	mux.HandleFunc("PUT /v1/characters/{id}", wrap(s.handleSaveCharacter))
 	mux.HandleFunc("DELETE /v1/characters/{id}", wrap(s.handleDeleteCharacter))
+	mux.HandleFunc("GET /v1/rankings", wrap(s.handleRankings))
+	mux.HandleFunc("GET /v1/battle", wrap(s.handleBattle))
 
 	// Nội bộ: game server
 	mux.HandleFunc("POST /internal/game/join", wrap(s.handleInternalJoin))
 	mux.HandleFunc("PUT /internal/game/characters/{id}", wrap(s.handleInternalSave))
 	mux.HandleFunc("POST /internal/game/status", wrap(s.handleInternalStatus))
+	mux.HandleFunc("POST /internal/game/battle", wrap(s.handleInternalBattle))
 	mux.HandleFunc("GET /internal/game/guilds", wrap(s.handleInternalGuilds))
 	mux.HandleFunc("PUT /internal/game/guilds", wrap(s.handleInternalSaveGuild))
 	mux.HandleFunc("DELETE /internal/game/guilds", wrap(s.handleInternalDeleteGuild))
@@ -114,6 +117,9 @@ func main() {
 	mux.HandleFunc("GET /admin/api/accounts/{id}", wrap(s.handleAdminAccount))
 	mux.HandleFunc("POST /admin/api/accounts/{id}/{action}", wrap(s.handleAdminAccountAction))
 	mux.HandleFunc("POST /admin/api/characters/{id}/restore", wrap(s.handleAdminRestoreCharacter))
+	mux.HandleFunc("GET /admin/api/characters/{id}", wrap(s.handleAdminCharacter))
+	mux.HandleFunc("PUT /admin/api/characters/{id}", wrap(s.handleAdminSaveCharacter))
+	mux.HandleFunc("POST /admin/api/characters/{id}/kick", wrap(s.handleAdminKickCharacter))
 	mux.HandleFunc("GET /admin/api/servers", wrap(s.handleAdminServers))
 	mux.HandleFunc("POST /admin/api/servers", wrap(s.handleAdminSaveServer))
 	mux.HandleFunc("PUT /admin/api/servers/{id}", wrap(s.handleAdminSaveServer))
@@ -150,6 +156,9 @@ func main() {
 		defer cancel()
 		srv.Shutdown(shutdownCtx)
 	}()
+	if cfg.DevTrustClientSaves {
+		log.Printf("CẢNH BÁO: DEV_TRUST_CLIENT_SAVES=true — lưu nguyên dữ liệu game gửi (chỉ dùng khi phát triển, KHÔNG bật trên máy chủ thật)")
+	}
 	log.Printf("account server lắng nghe %s", cfg.HTTPAddr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

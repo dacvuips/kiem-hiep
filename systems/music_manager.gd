@@ -7,6 +7,23 @@ const FADE_SECONDS := 1.5
 const SILENT_DB := -60.0
 ## Âm lượng gốc trong MusicSet.txt là 0..100 (93 mặc định) -> dB.
 const MASTER_OFFSET_DB := -6.0
+## Bật/tắt nhạc là cài đặt của máy (không theo nhân vật) — lưu trong user://settings.cfg.
+const SETTINGS_PATH := "user://settings.cfg"
+
+signal enabled_changed(on: bool)
+
+## false = tắt tiếng bus Music (bài vẫn chạy ngầm nên bật lại là nghe tiếp, không phải nạp lại).
+var enabled := true:
+	set(v):
+		if v == enabled:
+			return
+		enabled = v
+		_apply_mute()
+		var cfg := ConfigFile.new()
+		cfg.load(SETTINGS_PATH)
+		cfg.set_value("audio", "music", enabled)
+		cfg.save(SETTINGS_PATH)
+		enabled_changed.emit(enabled)
 
 var _players: Array[AudioStreamPlayer] = []
 var _active := 0
@@ -19,12 +36,22 @@ func _ready() -> void:
 		var idx := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(idx, BUS_NAME)
 		AudioServer.set_bus_send(idx, &"Master")
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) == OK:
+		enabled = bool(cfg.get_value("audio", "music", true))
+	_apply_mute()
 	for i in 2:
 		var p := AudioStreamPlayer.new()
 		p.bus = BUS_NAME
 		p.volume_db = SILENT_DB
 		add_child(p)
 		_players.append(p)
+
+func toggle() -> void:
+	enabled = not enabled
+
+func _apply_mute() -> void:
+	AudioServer.set_bus_mute(AudioServer.get_bus_index(BUS_NAME), not enabled)
 
 ## Phát bài `file` (tên trong audio/vltk/music, vd "music210.mp3"); đang phát đúng bài này thì giữ nguyên.
 func play(file: String, volume_percent: int = 93) -> void:

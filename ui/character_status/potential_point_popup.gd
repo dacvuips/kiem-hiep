@@ -21,13 +21,20 @@ static func open(parent: Node, profile: PlayerProfile, stat: int, on_done: Calla
 	return popup
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	## Khung/nút lấy từ GameUi (theme_type_variation trong .tscn); màu chữ mang nghĩa theo bảng màu chung.
+	GameUi.apply()
+	(%Dim as ColorRect).color = GameUi.DIM
+	(%Remaining as Label).add_theme_color_override("font_color", GameUi.TEXT)
+	(%Preview as Label).add_theme_color_override("font_color", GameUi.GOLD)
 	%Dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			queue_free())
 	(%Title as Label).text = "Cộng điểm: %s" % STAT_NAMES[_stat]
 	(%Remaining as Label).text = "Điểm tiềm năng còn: %d" % _profile.potential_points
 	var amount: SpinBox = %Amount
+	GameUi.style(amount.get_line_edit(), GameUi.INPUT)
 	amount.max_value = maxi(_profile.potential_points, 1)
 	amount.value = 1
 	amount.value_changed.connect(func(_v: float) -> void: _update_preview())

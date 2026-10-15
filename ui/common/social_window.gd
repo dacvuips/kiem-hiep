@@ -8,11 +8,8 @@ var subtitle_label: Label
 func _init(window_title: String = "", sub: String = "", min_width := 420.0) -> void:
 	super._init(window_title, true)             ## frameless: không vẽ thanh tiêu đề mặc định, ta tự vẽ
 	custom_minimum_size.x = min_width
-	add_theme_stylebox_override("panel", SocialUi.window_style())
-	close_button.text = "✕"
-	close_button.flat = true
-	close_button.add_theme_color_override("font_color", SocialUi.SUBTITLE)
-	close_button.add_theme_color_override("font_hover_color", SocialUi.LABEL_RED)
+	remove_theme_stylebox_override("panel")   ## bỏ khung rỗng của chế độ frameless → dùng khung chuẩn GameUi.WINDOW
+	GameUi.style(self, GameUi.WINDOW)
 	close_button.offset_left = -40
 	close_button.offset_top = 6
 	close_button.offset_right = -8
@@ -80,19 +77,32 @@ static func prompt(host: Node, window_title: String, hint: String, on_ok: Callab
 
 ## Hộp hỏi Có/Không.
 static func confirm(host: Node, window_title: String, question: String, on_yes: Callable) -> void:
+	ask_yes_no(host, window_title, question, func(yes: bool) -> void:
+		if yes:
+			on_yes.call(), "Đồng ý", "Huỷ")
+
+## Hộp hỏi 2 lựa chọn (lời mời giao dịch / tổ đội / bang...): on_answer(true|false) gọi đúng 1 lần — bấm ✕ cũng tính là "không".
+static func ask_yes_no(host: Node, window_title: String, question: String, on_answer: Callable, yes_text := "Đồng ý", no_text := "Từ chối") -> SocialWindow:
 	var win := SocialWindow.new(window_title, "", 360.0)
 	var l := SocialUi.label(question, SocialUi.TEXT, 14, HORIZONTAL_ALIGNMENT_CENTER)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	win.body.add_child(l)
 	var row := win.add_button_row()
-	var yes := SocialUi.stone_button("Đồng ý")
+	var yes := SocialUi.stone_button(yes_text)
 	yes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var no := SocialUi.stone_button("Huỷ")
+	var no := SocialUi.stone_button(no_text)
 	no.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(yes)
 	row.add_child(no)
 	present(host, win, &"")
-	yes.pressed.connect(func() -> void:
+	var answered := [false]
+	var answer := func(v: bool) -> void:
+		if answered[0]:
+			return
+		answered[0] = true
 		win.close_requested.emit()
-		on_yes.call())
-	no.pressed.connect(func() -> void: win.close_requested.emit())
+		on_answer.call(v)
+	yes.pressed.connect(answer.bind(true))
+	no.pressed.connect(answer.bind(false))
+	win.close_requested.connect(func() -> void: answer.call(false))
+	return win

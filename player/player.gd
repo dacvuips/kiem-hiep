@@ -9,10 +9,11 @@ const INVINCIBLE_BLINKS = 3
 const NAME_LABEL_Y = -58.0
 const RIDE_HEAD_RAISE = 24.0
 ## Thu/phóng camera: < 1 = nhìn rộng hơn. 0.7 cho nhân vật cao ~8.5% chiều cao màn hình như ảnh chụp VLTK gốc (trước đây 1.0 ~ 12%).
-const CAMERA_ZOOM := 0.8
+## Mức đã chọn lưu trong GameSettings (cài đặt của máy), CAMERA_ZOOM là mặc định.
+const CAMERA_ZOOM := GameSettings.DEFAULT_ZOOM
 ## Lăn chuột chỉnh zoom: mỗi nấc nhân/chia ZOOM_STEP, giới hạn ZOOM_MIN..ZOOM_MAX, camera trượt mượt tới mức mới.
-const ZOOM_MIN := 0.225
-const ZOOM_MAX := 1.5
+const ZOOM_MIN := GameSettings.ZOOM_MIN
+const ZOOM_MAX := GameSettings.ZOOM_MAX
 const ZOOM_STEP := 1.1
 const ZOOM_SMOOTHING := 12.0
 const HealthBarScene := preload("res://ui/HealthBar.tscn")
@@ -20,6 +21,7 @@ const HealthBarScene := preload("res://ui/HealthBar.tscn")
 const NAME_LABEL_HEIGHT := 18.0
 const HP_BAR_TOP_OFFSET := 13.0   ## khoảng từ gốc node HealthBar tới mép trên thanh (xem HealthBar.tscn)
 const HP_BAR_WIDTH_SCALE := 1.4
+const HP_BAR_HEIGHT := 4.0          ## thanh quái cao 6px; thanh trên đầu người chơi mảnh hơn
 
 ## NHẢY — công thức KNpc::NewJump/DoJump/ServerJump gốc (frame = 1/18 giây): bay thẳng theo hướng với 12 đơn vị/frame,
 ## độ cao h = (v0*t - g*t²/2)/8, g = 10, v0 = g*(số frame-1)/2 (đỉnh ở giữa quãng). Tối đa 40 frame (m_CurrentJumpFrame).
@@ -97,6 +99,8 @@ var _sit_time: float = 0.0
 var _horse_ready_at_ms: int = 0
 ## Người/NPC đang đi theo (nhóm "followable") — null = không theo ai.
 var follow_target: Node2D = null
+## Bộ máy Auto đánh (Thiết lập auto đánh) — chạy khi is_auto_mode bật, xem AutoController.
+var auto: AutoController
 
 func _ready() -> void:
 	var profile := GameManager.local_profile
@@ -112,7 +116,7 @@ func _ready() -> void:
 	## Aura có sprite_frames gán sẵn trong scene nhưng KHÔNG autoplay — không có dòng này, nó
 	## đứng yên tại đúng frame được lưu lúc chỉnh trong Editor, không bao giờ tự động chạy.
 	aura.play("default")
-	_zoom_target = CAMERA_ZOOM
+	_zoom_target = GameSettings.camera_zoom()
 	$Camera2D.zoom = Vector2.ONE * _zoom_target
 	## Vòng hào quang dưới chân luôn căn đúng CHÂN avatar (không phụ thuộc số đặt tay trong scene): tâm vòng = chân + 1px.
 	aura.position = avatar.position + Vector2(0, 1)
@@ -128,6 +132,8 @@ func _ready() -> void:
 	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
 	_build_move_marker()
 	add_child(RouteDots.new(self))
+	auto = AutoController.new(self)
+	add_child(auto)
 	_refresh_aura_sprite()
 
 ## Đổi phe (màu tên) — VD vào sự kiện/bang chiến, bật PK thành Sát thủ. Đồng đội tính lại tự động vì
@@ -136,6 +142,13 @@ func set_camp(new_camp: int) -> void:
 	camp = new_camp
 	if _name_label:
 		_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
+
+## Vừa gia nhập môn phái (SectPrompt): nạp skill của phái mới + dựng lại chỉ số + phe (màu tên).
+func refresh_sect() -> void:
+	var profile := GameManager.local_profile
+	skill_controller.setup(SectRegistry.get_by_id(profile.sect_id) if profile else null)
+	refresh_combat_stats()
+	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
 
 ## Tên nhân vật trên đầu, tô màu theo phe (giống VLTK) — đặt ngay trên thanh máu.
 func _build_name_label(display_name: String) -> void:
@@ -148,6 +161,37 @@ func _build_name_label(display_name: String) -> void:
 	_name_label.size = Vector2(160, 18)
 	_name_label.position = Vector2(-80, NAME_LABEL_Y)
 	add_child(_name_label)
+	_stall_sign = StallSign.new()
+	_stall_sign.place_above(NAME_LABEL_Y)
+	_stall_sign.clicked.connect(func() -> void:
+		if GameManager.local_profile:
+			StallWindow.open(get_tree().current_scene, SocialHub.of(GameManager.local_profile)))
+	add_child(_stall_sign)
+
+## BÀY BÁN (StallService): quầy vừa mở thì ngồi xuống tại chỗ, biển tên quầy hiện trên đầu; đang bày mà đứng dậy (di chuyển, đánh,
+## nhảy, lên ngựa, chết) thì dọn quầy. Online server cũng tự dọn khi người bán rời chỗ (GameServer._on_move).
+var _stall_sign: StallSign
+var _stall_was_open := false
+
+func _tick_stall() -> void:
+	var p := GameManager.local_profile
+	var open := p != null and p.stall_open
+	if open and not _stall_was_open and not _dead and not _is_sitting:
+		toggle_sit()
+		if not _is_sitting:
+			_close_stall(p, "Không ngồi xuống được lúc này — chưa bày bán được.")
+			open = false
+	if open and (_dead or not _is_sitting):
+		_close_stall(p, "Đã đứng dậy — quầy hàng đã dọn.")
+		open = false
+	_stall_was_open = open
+	_stall_sign.set_title(p.stall_title if open else "")
+
+func _close_stall(p: PlayerProfile, why: String) -> void:
+	StallService.close_stall(p)
+	if NetClient.is_in_world():
+		NetClient.send_stall(SocialServer.STALL_CLOSE)
+	_notice(why)
 
 ## Dựng lại combat_stats từ profile — gọi sau khi học/nâng skill nội tại hoặc cộng điểm GIỮA trận
 ## (VD đóng bảng Kỹ Năng Võ Công) để bonus mới có hiệu lực ngay. Giữ nguyên % máu hiện tại.
@@ -183,7 +227,9 @@ func refresh_appearance() -> void:
 func _build_head_health_bar() -> void:
 	_head_hp_bar = HealthBarScene.instantiate()
 	_head_hp_bar.use_gradient_color = true  ## xanh -> vàng -> đỏ theo % máu
-	_head_hp_bar.scale = Vector2(HP_BAR_WIDTH_SCALE, 1.0)
+	_head_hp_bar.bar_width = 40.0 * HP_BAR_WIDTH_SCALE   ## rộng bằng thanh cũ (40px x 1.4) nhưng không kéo giãn -> đầu bo tròn không méo
+	_head_hp_bar.bar_height = HP_BAR_HEIGHT
+	_head_hp_bar.rounded = true
 	add_child(_head_hp_bar)
 	health_changed.connect(_on_health_changed_head_bar)
 	_on_health_changed_head_bar(health, max_health)
@@ -207,6 +253,14 @@ func _apply_name_y() -> void:
 # ------------------------------------------------------------ bấm để chạy tới
 
 ## Đang gõ vào ô nhập (chat, đặt tên...) thì phím không điều khiển nhân vật (không chạy / nhảy / ra chiêu khi gõ chữ).
+## Đặt mức zoom camera (camera trượt mượt tới) và lưu vào cài đặt máy — lăn chuột và thanh trượt trong Cài đặt đều qua đây.
+func set_camera_zoom(z: float) -> void:
+	_zoom_target = clampf(z, ZOOM_MIN, ZOOM_MAX)
+	GameSettings.set_camera_zoom(_zoom_target)
+
+func get_camera_zoom() -> float:
+	return _zoom_target
+
 func _typing() -> bool:
 	var f := get_viewport().gui_get_focus_owner()
 	return f is LineEdit or f is TextEdit
@@ -221,15 +275,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _dead:
 		return
 	## Lăn chuột = zoom camera (khi con trỏ đang ở trên khung giao diện cuộn được thì khung đó ăn sự kiện, không tới đây).
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_zoom_target = minf(_zoom_target * ZOOM_STEP, ZOOM_MAX)
+	## Đang mở popup/khung nào thì KHÔNG zoom (lăn chuột là để cuộn khung); tắt "lăn chuột zoom" trong Cài đặt cũng không zoom.
+	if event is InputEventMouseButton and event.pressed 			and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		if GameSettings.wheel_zoom() and not UiPopups.any_open(get_tree()):
+			var step := ZOOM_STEP if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / ZOOM_STEP
+			set_camera_zoom(_zoom_target * step)
 			get_viewport().set_input_as_handled()
-			return
-		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_zoom_target = maxf(_zoom_target / ZOOM_STEP, ZOOM_MIN)
-			get_viewport().set_input_as_handled()
-			return
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			## Bấm trúng quái / người chơi khác = CHỌN làm mục tiêu đánh (hiện vòng đỏ xoay dưới chân), không chạy tới điểm bấm.
@@ -242,6 +294,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 			## Bấm 1 lần = TỰ TÌM ĐƯỜNG vòng vật cản (có map chính); giữ chuột quá HOLD_FOLLOW_TIME thì bám theo con trỏ.
+			auto.on_manual_input()
 			var feet := get_global_mouse_position() + Vector2(0, VltkWorld.FEET_OFFSET)
 			if VltkWorld.current == null or not walk_to_feet(feet):
 				_set_move_target(get_global_mouse_position())
@@ -327,12 +380,20 @@ func get_selected_target() -> Node2D:
 
 ## Chạy tới 1 điểm theo TOẠ ĐỘ MÀN HÌNH (VD cú chạm trong vùng joystick — MoveJoystick.tapped).
 func move_to_screen_position(screen_position: Vector2) -> void:
-	_set_move_target(get_canvas_transform().affine_inverse() * screen_position)
+	auto.on_manual_input()
+	var world := get_canvas_transform().affine_inverse() * screen_position
+	## Chạm 1 lần = tự tìm đường vòng vật cản như bấm chuột.
+	if VltkWorld.current == null or not walk_to_feet(world + Vector2(0, VltkWorld.FEET_OFFSET)):
+		_set_move_target(world)
+	_show_route = false
 
 func _set_move_target(world_position: Vector2, keep_path: bool = false) -> void:
 	if not keep_path:
 		_show_route = false
 		_path.clear()  ## bấm điểm mới / kéo chuột -> bỏ lộ trình tự đi cũ
+		_route_goal = Vector2.INF
+		_route_continue = false
+		_route_ahead = PackedVector2Array()
 	_move_target = world_position
 	_has_move_target = true
 	_move_stuck_time = 0.0
@@ -349,7 +410,7 @@ var _path_final := Vector2.ZERO
 
 ## Tự đi tới điểm CHÂN `feet` (toạ độ pixel map) theo đường vòng vật cản trong ô vuông màn chơi (A*). false = không có đường.
 ## Dùng cho mini map (nhập toạ độ / bấm lên bản đồ). Người chơi kéo joystick/bấm điểm khác thì lộ trình huỷ.
-func walk_to_feet(feet: Vector2) -> bool:
+func walk_to_feet(feet: Vector2, _replan := false) -> bool:
 	var points := VltkWorld.find_path(global_position + Vector2(0, VltkWorld.FEET_OFFSET), feet)
 	if points.is_empty():
 		return false
@@ -359,7 +420,38 @@ func walk_to_feet(feet: Vector2) -> bool:
 	_path_final = _path[_path.size() - 1]
 	var started := _advance_path()
 	_show_route = started
+	_route_goal = feet
+	_route_continue = VltkWorld.last_path_continues
+	_route_ahead = VltkWorld.last_route_ahead
+	if not _replan:
+		_route_replans = 0
 	return started
+
+## Đích cuối của lộ trình tự đi (điểm CHÂN), INF = không theo lộ trình (bấm thẳng / bám chuột).
+var _route_goal := Vector2.INF
+## Đường dài toàn map: đoạn đang đi chỉ tới mép lưới tìm đường gần -> đi hết đoạn thì tìm tiếp (_continue_route).
+var _route_continue := false
+var _route_ahead := PackedVector2Array()   ## phần lộ trình thô còn lại (điểm CHÂN) — chỉ để vẽ đường chấm
+var _route_replans := 0
+const MAX_STUCK_REPLANS := 3
+
+## Đi hết 1 đoạn của đường dài: tìm đoạn tiếp tới cùng đích trong lưới tìm đường hiện tại (lưới tự dời theo nhân vật khi đi
+## đủ xa — ép dời ở đây sẽ dựng lại lưới thêm 1 lần, gây khựng). false = hết đường / không tiến thêm.
+func _continue_route() -> bool:
+	if not _route_continue or _route_goal == Vector2.INF:
+		return false
+	return _replan_route()
+
+## Tìm lại đường tới _route_goal từ chỗ đang đứng (giữ chế độ vẽ đường chấm). false = không có đường / không tiến thêm được.
+func _replan_route() -> bool:
+	var show := _show_route
+	var goal := _route_goal
+	if not walk_to_feet(goal, true):
+		return false
+	_show_route = show
+	if _path_final.distance_to(global_position) < MOVE_ARRIVE_DISTANCE * 4.0 and _path.is_empty():
+		return false   ## đường mới không đưa đi đâu -> dừng, tránh tìm lại mãi
+	return true
 
 ## Lộ trình còn lại (điểm CHÂN): điểm đang hướng tới rồi tới các điểm sau — để bản đồ lớn vẽ đường chấm. Rỗng nếu không đang đi.
 func get_route_feet() -> PackedVector2Array:
@@ -369,6 +461,8 @@ func get_route_feet() -> PackedVector2Array:
 	out.append(_move_target + Vector2(0, VltkWorld.FEET_OFFSET))
 	for p in _path:
 		out.append(p + Vector2(0, VltkWorld.FEET_OFFSET))
+	if _route_continue:
+		out.append_array(_route_ahead)   ## đường dài: phần lộ trình thô còn lại tới đích
 	return out
 
 ## Đang tự đi tới 1 điểm (bấm chuột / mini map).
@@ -393,6 +487,11 @@ func _advance_path() -> bool:
 	_set_move_target(next_point, true)
 	_move_marker.global_position = _path_final  ## chấm đích hiện ở điểm cuối, không nhảy theo từng điểm trung gian
 	return true
+
+## Auto bỏ lộ trình đang đi (VD quay sang đánh quái vừa thấy).
+func stop_walking() -> void:
+	if _has_move_target:
+		_clear_move_target()
 
 func _clear_move_target() -> void:
 	_path.clear()
@@ -421,13 +520,19 @@ func _get_move_target_vector(delta: float) -> Vector2:
 		_advance_path()
 		to_target = _move_target - global_position
 	if to_target.length() <= MOVE_ARRIVE_DISTANCE:
-		if not _move_follow_held and not _advance_path():
+		if not _move_follow_held and not _advance_path() and not _continue_route():
 			_clear_move_target()
 		return Vector2.ZERO
 	## Kẹt: vận tốc thực sau move_and_slide gần 0 dù đang muốn chạy.
 	if not is_attacking and get_real_velocity().length() < 5.0:
 		_move_stuck_time += delta
 		if _move_stuck_time >= MOVE_STUCK_TIMEOUT and not _move_follow_held:
+			## Kẹt giữa đường (cạ góc tường, bị đẩy lệch): tìm lại đường từ chỗ đang đứng vài lần rồi mới bỏ.
+			_move_stuck_time = 0.0
+			if _route_goal != Vector2.INF and _route_replans < MAX_STUCK_REPLANS:
+				_route_replans += 1
+				if _replan_route():
+					return (_move_target - global_position).normalized()
 			_clear_move_target()
 			return Vector2.ZERO
 	else:
@@ -443,6 +548,7 @@ func _build_move_marker() -> void:
 	add_child(_move_marker)
 
 func _physics_process(delta: float) -> void:
+	_tick_stall()
 	if _dead:
 		return
 	var camera_zoom: float = $Camera2D.zoom.x
@@ -453,12 +559,13 @@ func _physics_process(delta: float) -> void:
 		if _has_move_target:
 			_clear_move_target()
 		stop_follow()
+		auto.on_manual_input()
 	else:
 		input_vector = _get_move_target_vector(delta)
 		if input_vector == Vector2.ZERO:
 			input_vector = _get_follow_vector()
 		if input_vector == Vector2.ZERO:
-			input_vector = _get_auto_chase_vector()
+			input_vector = auto.get_move_vector()
 	## Choáng (m_StunState gốc): đứng yên, không di chuyển/ra chiêu (_try_cast cũng tự chặn).
 	if _rush_time_left > 0.0:
 		input_vector = _tick_rush(delta)  ## đang lao tới mục tiêu: bỏ qua phím/điểm bấm
@@ -487,6 +594,12 @@ func _physics_process(delta: float) -> void:
 		velocity = input_vector * SPEED * RUSH_SPEED_MULT
 	else:
 		velocity = Vector2.ZERO if is_attacking else input_vector * speed
+		## Chạy rất nhanh (buff / chỉ số TEST): 1 khung có thể đi xa hơn quãng còn lại tới đích -> vượt qua rồi quay lại (giật).
+		## Bước cuối dừng đúng tại đích.
+		if _has_move_target and _path.is_empty() and not _move_follow_held and delta > 0.0:
+			var remaining := (_move_target - global_position).length()
+			if velocity.length() * delta > remaining:
+				velocity = velocity.normalized() * (remaining / delta)
 	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta)
 	move_and_slide()
 	if _is_jumping and get_slide_collision_count() > 0:
@@ -521,14 +634,11 @@ func _physics_process(delta: float) -> void:
 	skill_controller.tick(delta * status_controller.move_speed_multiplier)
 	skill_controller.tick_aura(self, delta)
 	_tick_loop_skills(delta)
-	var target := get_nearest_enemy()
 
-	## Auto CHỈ tự động đòn chính — skill phụ (phím skill_1-4) luôn phải bấm thủ công, kể cả khi
-	## đang bật Auto, xem SectSkillController.try_cast_auto().
-	if is_auto_mode:
-		if target and skill_controller.try_cast_auto(self, target):
-			play_cast()
-	elif _key_pressed("attack_skill"):
+	## Auto: chọn mục tiêu / ra chiêu / buff / nhặt đồ theo "Thiết lập auto đánh" (AutoController). Skill phụ phím skill_1-4
+	## vẫn bấm tay được song song.
+	auto.tick(delta, is_auto_mode)
+	if not is_auto_mode and _key_pressed("attack_skill"):
 		## Không bắt buộc có mục tiêu ở đây — skill buff lên mình thi triển được khi không có quái gần,
 		## SectSkillController._try_cast tự từ chối đòn đánh thiếu mục tiêu.
 		if skill_controller.try_cast_main(self, get_cast_target(skill_controller.get_main_skill())):
@@ -839,7 +949,8 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		die()
 	else:
 		_on_hurt()
-		start_invincibility()
+		if hurt_invincible:
+			start_invincibility()
 
 ## Đường tắt cho va chạm đơn giản (enemy contact_damage kiểu bullet-heaven hiện tại — không phải
 ## đòn "thật" có AttackRating riêng) — bọc thành 1 đòn physics tay không với AttackRating cố định
@@ -876,6 +987,11 @@ func start_invincibility() -> void:
 ## Chết: KHÔNG xoá nhân vật — giữ nguyên cảnh vật, nhân vật nằm tại chỗ (tối tím), quái dừng tay (is_game_over), hiện bảng
 ## "Bạn đã bị trọng thương!" + "Về thành dưỡng sức" (DeathPopup).
 var _dead := false
+signal died
+## false = trúng đòn không được bất tử INVINCIBLE_DURATION giây (trận PK: 2 bên ngang nhau như VLTK gốc — PkMatch tắt).
+var hurt_invincible := true
+## true = chết không hiện bảng "Bạn đã bị trọng thương!" (trận PK tự xử lý thắng/thua và đưa về Hub — PkMatch).
+var suppress_death_popup := false
 
 func is_dead() -> bool:
 	return _dead
@@ -890,13 +1006,34 @@ func die() -> void:
 	_clear_move_target()
 	clear_target()
 	stop_follow()
+	if is_auto_mode:
+		auto.on_player_died()
 	is_auto_mode = false
+	auto.tick(0.0, false)
 	aim_dir = Vector2.ZERO
 	velocity = Vector2.ZERO
 	avatar.play("sit")
 	avatar.modulate = Color(0.75, 0.4, 0.95, 1.0)
+	died.emit()
+	if suppress_death_popup:
+		return
 	GameManager.notify_game_over()
 	DeathPopup.show_for(self)
+
+## "Về thành dưỡng sức": sống lại đầy máu ở điểm xuất phát của map (online: server xác nhận vị trí qua C_REVIVE -> S_CORRECT).
+func revive_at_start() -> void:
+	if not _dead:
+		return
+	_dead = false
+	health = max_health
+	avatar.modulate = Color(1, 1, 1, 1)
+	avatar.play("stand")
+	GameManager.is_game_over = false
+	if VltkWorld.current != null and VltkWorld.current.map != null:
+		VltkWorld.current.place_at_start(self)
+	velocity = Vector2.ZERO
+	if NetWorldSync.is_online_mode():
+		NetClient.send_revive()
 
 ## Hình trạng thái (StateSpecialId) của hào quang đang bật — gắn lên người suốt lúc hào quang còn bật.
 var _aura_sprite: VltkStateSprite = null
@@ -1032,23 +1169,9 @@ func stop_follow() -> void:
 func is_following() -> bool:
 	return follow_target != null
 
-## AUTO "DÍ THEO QUÁI" (KPlayerAI::FollowAttack gốc, m_bFollowTarget): đang bật Auto mà quái nằm NGOÀI tầm skill nhưng còn trong
-## vùng quét AUTO_CHASE_RADIUS thì tự chạy tới quái gần nhất, tới khi vào tầm (85% tầm skill) thì dừng để ra chiêu. Đo khoảng
-## cách theo chuẩn logic VLTK (dọc nhân đôi). Phím di chuyển / bấm điểm trên bản đồ luôn ưu tiên và tạm dừng việc đuổi.
+## Skill cận chiến bấm tay mà không có quái trong tầm: nhắm quái gần nhất trong vùng quét này (get_cast_target).
+## Auto đuổi quái theo "Phạm vi" trong Thiết lập auto đánh (AutoController).
 const AUTO_CHASE_RADIUS := 800.0
-const AUTO_CHASE_STOP_RATIO := 0.85
-
-func _get_auto_chase_vector() -> Vector2:
-	if not is_auto_mode or is_attacking or is_casting or _is_jumping or status_controller.is_stunned:
-		return Vector2.ZERO
-	var enemy := get_nearest_enemy(AUTO_CHASE_RADIUS)
-	if enemy == null:
-		return Vector2.ZERO
-	var d: Vector2 = enemy.global_position - global_position
-	var logic_distance := sqrt(d.x * d.x + d.y * d.y * 4.0)
-	if logic_distance <= get_current_range() * AUTO_CHASE_STOP_RATIO:
-		return Vector2.ZERO
-	return d.normalized()
 
 ## Hướng chạy tới người đang theo (ZERO = không theo / đã đủ gần).
 func _get_follow_vector() -> Vector2:

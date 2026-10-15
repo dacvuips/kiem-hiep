@@ -7,6 +7,7 @@ var _hub: SocialHub
 var _profile: PlayerProfile
 var _bag_view: ItemRoomView
 var _bag := 0
+var _bag_tabs: Array[Button] = []
 var _goods_box: VBoxContainer
 var _log_box: VBoxContainer
 var _state: PanelContainer
@@ -31,15 +32,16 @@ func _init(hub: SocialHub = null) -> void:
 	cols.add_theme_constant_override("separation", 14)
 	body.add_child(cols)
 
-	var left := SocialUi.section("🎒 Hành trang — bấm món để đặt giá", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var left := SocialUi.info_box("🎒 Hành trang — bấm món để đặt giá")
 	var tabs := HBoxContainer.new()
 	left[1].add_child(tabs)
 	for i in PlayerProfile.OPEN_BAGS:
-		var b := SocialUi.small_button("Túi %d" % (i + 1))
+		var b := GameUi.button("Túi %d" % (i + 1), GameUi.TAB)
 		b.pressed.connect(func() -> void:
 			_bag = i
 			_refresh())
 		tabs.add_child(b)
+		_bag_tabs.append(b)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 20 + 8, 330)
@@ -49,7 +51,7 @@ func _init(hub: SocialHub = null) -> void:
 	left[1].add_child(scroll)
 	cols.add_child(left[0])
 
-	var right := SocialUi.section("🏷 Hàng trên quầy", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var right := SocialUi.section("🏷 Hàng trên quầy")
 	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_goods_box = VBoxContainer.new()
 	_goods_box.add_theme_constant_override("separation", 4)
@@ -151,6 +153,8 @@ func _on_trade() -> void:
 
 func _refresh() -> void:
 	_bag_view.bag = _bag
+	for i in _bag_tabs.size():
+		GameUi.set_active(_bag_tabs[i], i == _bag)
 	_bag_view.setup(_profile)
 	if _profile.stall_open:
 		SocialUi.set_banner(_state, "🏷 Quầy đang MỞ: \"%s\"" % _profile.stall_title, true)

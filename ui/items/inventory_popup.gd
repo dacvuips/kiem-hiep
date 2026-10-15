@@ -1,8 +1,8 @@
 extends CanvasLayer
 class_name InventoryPopup
 ## Khung "Hành trang" kiểu VLTK: LƯỚI Ô 6 × 10 (ItemRoomView) — mỗi món là 1 khối chiếm số ô rộng × cao riêng, kéo thả để
-## đổi chỗ; tiền ở dưới, nút "Sắp xếp" / "Bày bán". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
-## Kéo thanh tiêu đề để di chuyển khung. Bố cục/màu nằm trong InventoryPopup.tscn; script dựng lưới + đổ dữ liệu.
+## đổi chỗ; tiền ở dưới, nút "Sắp xếp". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
+## Kéo thanh tiêu đề để di chuyển khung. Bố cục nằm trong InventoryPopup.tscn, khung/nút/màu lấy từ GameUi; script dựng lưới + đổ dữ liệu.
 ## Mọi thay đổi ghi vào PlayerProfile + lưu save, rồi gọi `on_changed` để màn gọi vẽ lại ô trang bị/chỉ số.
 
 const SCENE_PATH := "res://ui/items/InventoryPopup.tscn"
@@ -12,6 +12,20 @@ var _modal: bool = true
 var _room: ItemRoomView
 var _bag: int = 0
 var _dragging: bool = false
+## Cửa sổ đi kèm (Rương chứa đồ) — xem link_partner().
+var _partner_action: Callable
+
+## Phát sau mỗi thay đổi hành trang (để cửa sổ đi kèm như Rương vẽ lại).
+signal profile_changed
+
+const GROUP := "inventory_popups"
+
+## Tìm khung Hành trang đang mở (nếu có).
+static func find_open(tree: SceneTree) -> InventoryPopup:
+	for n in tree.get_nodes_in_group(GROUP):
+		if n is InventoryPopup and is_instance_valid(n) and not n.is_queued_for_deletion():
+			return n
+	return null
 
 ## `modal` = true: có nền tối, bấm ra ngoài là đóng (màn Hub). false: không nền tối, khung nổi tự do để mở cùng
 ## lúc với khung Nhân vật (map đánh quái).
@@ -25,15 +39,23 @@ static func open(parent: Node, profile: PlayerProfile, on_changed: Callable, mod
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group(GROUP)
+	## Khung/nút/tab lấy từ GameUi (theme_type_variation trong .tscn); chỉ màu mang nghĩa đặt ở đây theo bảng màu chung.
+	GameUi.apply()
 	var dim: ColorRect = %Dim
+	dim.color = GameUi.DIM
 	dim.visible = _modal
+	(%GoldValue as Label).add_theme_color_override("font_color", GameUi.GOLD)
+	(%JadeValue as Label).add_theme_color_override("font_color", GameUi.GOLD)
+	$Frame/Root/Bottom/Money/GoldRow/GoldLine/GoldName.add_theme_color_override("font_color", GameUi.TEXT)
+	$Frame/Root/Bottom/Money/JadeRow/JadeLine/JadeName.add_theme_color_override("font_color", GameUi.LABEL_GREEN)
+	(%Message as Label).add_theme_color_override("font_color", GameUi.WARN)
 	dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			queue_free())
 	%CloseButton.pressed.connect(queue_free)
 	%TitleBar.gui_input.connect(_on_title_input)
 	%SortButton.pressed.connect(_on_sort_pressed)
-	%SellButton.pressed.connect(_on_sell_pressed)
 
 	## Lưới ô kiểu VLTK thay cho lưới 6x6 + cột "Túi 1..6" cũ (1 hành trang duy nhất 6 x 10 ô).
 	var group := ButtonGroup.new()
@@ -49,7 +71,7 @@ func _ready() -> void:
 	_room = ItemRoomView.new()
 	## Cỡ ô co theo chiều cao màn hình để 20 hàng + khung vừa cửa sổ (720p -> ~26px, đúng cỡ ô VLTK gốc).
 	var screen_h := get_viewport().get_visible_rect().size.y
-	_room.cell = clampi(int((screen_h - 190.0) / PlayerProfile.ROOM_HEIGHT), 22, 44)
+	_room.cell = clampi(int((screen_h - 260.0) / PlayerProfile.ROOM_HEIGHT), 20, 44)
 	_room.item_pressed.connect(_on_item_pressed)
 	_room.changed.connect(_commit)
 	## Khung cao đúng ROOM_HEIGHT hàng; món tràn ra ngoài (save cũ) nằm ở các hàng thêm, kéo cuộn xuống để thấy.
@@ -70,6 +92,22 @@ func _ready() -> void:
 	var frame: Control = %Frame
 	frame.size = frame.get_combined_minimum_size()
 	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
+
+## Ghép với cửa sổ khác (Rương chứa đồ): `handler(item, from, to, x, y, bag) -> bool` cho phép kéo món từ lưới của cửa sổ đó thả vào
+## hành trang; `item_action(item) -> Array` trả thêm 1 nút [nhãn, Callable] trong khung chi tiết món (vd. "Cất vào rương"), [] = không thêm.
+func link_partner(handler: Callable, item_action: Callable) -> void:
+	_room.transfer_handler = handler
+	_partner_action = item_action
+
+func unlink_partner() -> void:
+	_room.transfer_handler = Callable()
+	_partner_action = Callable()
+
+func refresh() -> void:
+	_refresh()
+
+func frame() -> Control:
+	return %Frame
 
 func _select_bag(bag: int) -> void:
 	_bag = bag
@@ -114,17 +152,31 @@ func _on_item_pressed(item: ItemInstance) -> void:
 		["Trang bị", _equip.bind(index)],
 		["Vứt bỏ", _drop.bind(index)],
 	]
-	## Khoá món đồ (không bán/giao dịch/vứt được) — mở khoá phải chờ 3 ngày; và đặt giá để bày bán.
-	SecurityLock.refresh_item(item)
-	match item.lock_state:
-		ItemInstance.LOCK_NORMAL:
-			actions.append(["Khoá món", func() -> void: _lock_item(item)])
-		ItemInstance.LOCK_LOCKED:
-			actions.append(["Mở khoá (chờ 3 ngày)", func() -> void: _unlock_item(item)])
-		_:
-			actions.append([SecurityLock.describe_item_lock(item), func() -> void: pass])
-	actions.append(["Đặt giá bán", func() -> void: _set_price(item)])
+	if PotionEffect.heals(item):
+		actions[0] = ["Dùng", _use.bind(index)]
+	if _partner_action.is_valid():
+		var extra: Array = _partner_action.call(item)
+		if not extra.is_empty():
+			actions.push_front(extra)
 	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
+
+## "Dùng" thuốc hồi sinh lực: chỉ trong trận (có nhân vật trên bản đồ). Thuốc không chồng (mỗi bình 1 ô) -> bỏ bình khỏi túi;
+## online server nhận việc bỏ món (ProfileGuard chỉ giữ món server biết).
+func _use(index: int) -> void:
+	if index >= _profile.inventory.size():
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		_show_message("Chỉ dùng được thuốc khi đang ở trên bản đồ.")
+		return
+	var item := _profile.inventory[index]
+	if item.count > 1:
+		item.count -= 1
+	else:
+		_profile.inventory.remove_at(index)
+	PotionEffect.drink(player, item)
+	_show_message("Đã dùng %s" % item.get_display_name())
+	_commit()
 
 func _equip(index: int) -> void:
 	var err := _profile.equip_from_inventory(index)
@@ -134,21 +186,6 @@ func _equip(index: int) -> void:
 
 ## "Vứt bỏ": trong trận thì món đồ RƠI XUỐNG ĐẤT ngay dưới chân nhân vật (nhấp vào để nhặt lại); ở ngoài trận (Hub, không có
 ## nhân vật trên bản đồ) thì không có chỗ rơi nên bỏ hẳn.
-func _lock_item(item: ItemInstance) -> void:
-	_show_message("Đã khoá món đồ." if SecurityLock.lock_item(item) else "Không khoá được món đồ này.")
-	_commit()
-
-func _unlock_item(item: ItemInstance) -> void:
-	_show_message("Bắt đầu chờ mở khoá: còn %s." % SecurityLock.describe_item_lock(item) if SecurityLock.request_unlock(item) else "Không mở khoá được.")
-	_commit()
-
-func _set_price(item: ItemInstance) -> void:
-	SocialWindow.prompt(self, "Đặt giá bán", "Giá (lượng), 0 = không bán", func(text: String) -> void:
-		var price := int(text.strip_edges()) if text.strip_edges().is_valid_int() else -1
-		var err := StallService.set_price(_profile, item, price)
-		_show_message(err if err != "" else ("Đã đặt giá %d lượng — mở quầy ở Giao lưu để bán." % price if price > 0 else "Đã bỏ giá bán."))
-		_commit(), str(item.trade_price) if item.trade_price > 0 else "")
-
 func _drop(index: int) -> void:
 	if index >= _profile.inventory.size():
 		return
@@ -183,14 +220,6 @@ func _on_sort_pressed() -> void:
 	_profile.sort_inventory()
 	_commit()
 
-func _on_sell_pressed() -> void:
-	if _profile == null:
-		return
-	var host: Node = get_tree().current_scene if get_tree().current_scene != null else get_parent()
-	var win := StallWindow.open(host, SocialHub.of(_profile))
-	if win != null and not win.tree_exiting.is_connected(_refresh):
-		win.tree_exiting.connect(_refresh)
-
 func _on_test_items_pressed() -> void:
 	for i in 10:
 		_profile.add_item(ItemGenerator.random_equipment(_profile.level))
@@ -203,6 +232,7 @@ func _show_message(text: String) -> void:
 func _commit() -> void:
 	SaveManager.save_profile(_profile)
 	_refresh()
+	profile_changed.emit()
 	if _on_changed.is_valid():
 		_on_changed.call()
 

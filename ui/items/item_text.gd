@@ -38,6 +38,8 @@ const NEED_SLOTS := {
 ## `with_name` = false: bỏ dòng tên (khung chi tiết ItemDetailPopup tự vẽ tên + cấp ở phần đầu).
 static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, part: int = -1,
 		with_name: bool = true) -> String:
+	if item.is_misc():
+		return _build_misc(item, with_name)
 	var base := item.get_base()
 	var gold := item.is_gold()
 	var out := []
@@ -100,6 +102,57 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 	if gold:
 		_append_gold_set(out, item, profile)
 	return "[center]%s[/center]" % "\n".join(out)
+
+## Món có HỆ (Sát Thủ lệnh/giản, Nguyên thạch...) — script gốc (killer_token/killer_sword.lua GetDesc) ghi "Thuộc tính ngũ hành".
+const MISC_WITH_SERIES := ["6_1_150", "6_1_152", "6_1_154", "6_1_399", "6_1_400"]
+## Món có CẤP riêng: Huyền Tinh (xuanjing_kuangshi.lua: "Phẩm chất thuộc tính: <cấp>") và lệnh bài Sát thủ.
+const MISC_WITH_LEVEL := ["6_1_147", "6_1_399", "6_1_400"]
+
+## Thuốc / khoáng thạch / lệnh bài: tên [Cấp], hệ, lời mô tả gốc, tác dụng thuốc (mỗi nửa giây × số frame / 18), số lượng.
+static func _build_misc(item: ItemInstance, with_name: bool) -> String:
+	var base := item.get_base()
+	var out := []
+	if with_name:
+		var title := str(base.get("name", "?"))
+		if item.misc_id in MISC_WITH_LEVEL:
+			title += " [lb]Cấp %d[rb]" % item.get_level()
+		out.append(_c(C_WHITE, title))
+	if item.misc_id in MISC_WITH_SERIES:
+		out.append("%s %s" % [_c(C_WHITE, "Thuộc tính ngũ hành:"), _element_name_colored(item.series)])
+	var intro := _misc_intro(str(base.get("intro", "")))
+	if intro != "":
+		out.append(intro)
+	var effects: Array = base.get("effects", [])
+	if not effects.is_empty():
+		out.append("")
+		for e in effects:
+			var text := format_attrib(str(e[0]), [int(e[1]), 0, 0])
+			if text != "":
+				out.append(_c(C_MAGIC, "%s (%d giây)" % [text, ceili(int(e[2]) / 18.0)]))
+	if item.count > 1:
+		out.append(_c(C_WHITE, "Số lượng: %d" % item.count))
+	return "[center]%s[/center]" % "\n".join(out)
+
+## Lời mô tả gốc có thẻ <color=yellow>...<color> và <enter> — đổi sang BBCode.
+static func _misc_intro(intro: String) -> String:
+	var out := ""
+	var open := false
+	var rest := intro.replace("<enter>", "\n").replace("[", "[lb]")
+	var re := RegEx.create_from_string("<color(=[a-zA-Z]+)?>")
+	var pos := 0
+	for m in re.search_all(rest):
+		out += rest.substr(pos, m.get_start() - pos)
+		if open:
+			out += "[/color]"
+			open = false
+		if m.get_string(1) != "":
+			out += "[color=%s]" % m.get_string(1).substr(1)
+			open = true
+		pos = m.get_end()
+	out += rest.substr(pos)
+	if open:
+		out += "[/color]"
+	return _c(C_WHITE, out.strip_edges())
 
 ## Màu tên theo phẩm chất: hoàng kim vàng, có dòng magic (đồ xanh) lam, đồ thường trắng.
 static func name_color_of(item: ItemInstance) -> String:

@@ -28,6 +28,7 @@ COLS = 5
 SHEETS = {
 	"hoa_nam": 21, "hoa_nu": 21, "kim_nam": 21, "moc_nam": 21,
 	"moc_nu": 21, "tho_nam": 20, "tho_nu": 21, "thuy_nu": 21,
+	"thuy_nam": 21, "kim_nu": 21,
 }
 
 

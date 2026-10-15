@@ -43,6 +43,9 @@ static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, s
 	ctx.world = caster.get_parent()
 	ctx.stats = stats
 	ctx.attacker_stats = caster.combat_stats if "combat_stats" in caster else null
+	## Người thi triển không phải nhân vật của mình (VD bot PK đánh người chơi) tự khai nhóm mục tiêu.
+	if "cast_target_group" in caster:
+		ctx.target_group = caster.cast_target_group
 	## Mục tiêu ảo (điểm phía trước mặt) chỉ dùng toạ độ — không bám theo.
 	var aim_node: Node2D = null if target.has_meta("cast_point") else target
 	var aim_point := VltkMath.logic_of(target)

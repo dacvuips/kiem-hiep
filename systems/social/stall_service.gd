@@ -3,6 +3,7 @@ class_name StallService
 ## BÀY BÁN (quầy bán cá nhân) — theo KProtocolProcess::TradeSet/TradeBuy + KPlayer::TradeStart/SendTradeItem của VLTK gốc:
 ##   - Người bán đặt GIÁ cho từng món trong hành trang (c2s_playertradeset). Món KHOÁ (khoá món / không giao dịch) không được đặt giá.
 ##   - Mở quầy (c2s_playertradestart) khi: không bị khoá bảo vệ, không đang giao dịch, không cưỡi ngựa, có ít nhất 1 món đã đặt giá.
+##   - Đang bày bán thì NGỒI tại chỗ, tên quầy hiện trên đầu (người khác bấm vào xem hàng); đứng dậy / di chuyển là dọn quầy.
 ##   - Chỉ món đã đặt giá, KHÔNG khoá, nằm trong hành trang mới hiện trên quầy.
 ##   - Người mua (c2s_playertradebuy) phải: không bị khoá bảo vệ, không ở chế độ chiến đấu, quầy còn mở, món còn đó, đủ tiền, đủ chỗ.
 ##     Mua xong: món chuyển sang người mua, tiền chuyển sang người bán (không thuế).
@@ -40,6 +41,8 @@ static func open_stall(p: PlayerProfile, title: String, riding := false) -> Stri
 	p.trade_open = false
 	p.stall_open = true
 	p.stall_title = title.strip_edges().left(40)
+	if p.stall_title == "":
+		p.stall_title = "Quầy của %s" % p.display_name   ## biển trên đầu luôn có chữ để người khác bấm vào
 	return ""
 
 static func close_stall(p: PlayerProfile) -> void:

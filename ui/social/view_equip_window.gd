@@ -9,19 +9,37 @@ var _turn := 0
 
 ## Mở cửa sổ từ kết quả ViewEquipService.view(); trả về null nếu có lỗi (lời lỗi nằm trong `out_error`).
 static func open_for(host: Node, viewer: PlayerProfile, target: MockPlayer, out_error: Array = []) -> ViewEquipWindow:
+	## Online: người chơi thật ở gần chỉ là MockPlayer dựng tạm (không có trang bị) -> xin server (S_VIEW_EQUIP), hiện "Đang tải" trong lúc chờ.
+	if NetClient.is_in_world():
+		if target == null:
+			out_error.append("Không thấy người chơi này.")
+			return null
+		NetClient.send_view_equip(target.id)
+		return open_snapshot(host, {"name": target.name, "level": target.level, "loading": true})
 	var res := ViewEquipService.view(viewer, target)
 	if str(res["error"]) != "":
 		out_error.append(str(res["error"]))
 		return null
 	return open_snapshot(host, res["snapshot"])
 
+## Mở bảng trang bị — đang mở bảng của người khác (hoặc bảng "Đang tải") thì thay bằng bảng mới.
 static func open_snapshot(host: Node, snapshot: Dictionary) -> ViewEquipWindow:
+	for w in host.get_tree().get_nodes_in_group("social_windows"):
+		if w is ViewEquipWindow and is_instance_valid(w) and not w.is_queued_for_deletion():
+			w.remove_from_group("social_windows")
+			(w as ViewEquipWindow).close_requested.emit()
 	return SocialWindow.present(host, ViewEquipWindow.new(snapshot), &"view_equip") as ViewEquipWindow
 
 func _init(snapshot: Dictionary = {}) -> void:
 	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), "Cấp %d · %s" % [int(snapshot.get("level", 1)), str(snapshot.get("sect_name", ""))], 640.0)
 	_snap = snapshot.duplicate()
 	if snapshot.is_empty():
+		return
+	if snapshot.get("loading", false):
+		body.add_child(SocialUi.label("Đang tải trang bị…", SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER))
+		var wait_close := SocialUi.stone_button("Đóng")
+		wait_close.pressed.connect(func() -> void: close_requested.emit())
+		body.add_child(wait_close)
 		return
 	var equipment := ViewEquipService.normalize_equipment(snapshot.get("equipment", {}))
 	_snap["equipment"] = equipment
@@ -55,7 +73,7 @@ func _init(snapshot: Dictionary = {}) -> void:
 	cols.add_child(left[0])
 
 	## ---- Phải: 11 ô trang bị
-	var right := SocialUi.section("Trang bị đang mặc", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var right := SocialUi.section("Trang bị đang mặc")
 	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var counts := Equipment.get_active_counts(equipment, int(snapshot.get("series", 0)))
 	var grid := GridContainer.new()
@@ -71,10 +89,13 @@ func _init(snapshot: Dictionary = {}) -> void:
 		slot.focus_mode = Control.FOCUS_NONE
 		slot.filled_backdrop = Color(0.06, 0.05, 0.04, 0.96)
 		slot.add_theme_font_size_override("font_size", 11)
-		slot.add_theme_stylebox_override("normal", SocialUi.box(Color(0.03, 0.035, 0.035), SocialUi.BORDER, 4, 1, 2))
-		slot.add_theme_stylebox_override("hover", SocialUi.box(Color(0.06, 0.07, 0.06), SocialUi.TITLE, 4, 1, 2))
-		slot.add_theme_stylebox_override("pressed", SocialUi.box(Color(0.06, 0.07, 0.06), SocialUi.TITLE, 4, 1, 2))
-		slot.add_theme_stylebox_override("disabled", SocialUi.box(Color(0.03, 0.035, 0.035), SocialUi.BORDER, 4, 1, 2))
+		## Ô trang bị (ô vật phẩm, không phải nút chữ) — giữ khung ô riêng, màu viền lấy từ GameUi
+		var slot_bg := Color(0.03, 0.035, 0.035)
+		var slot_hover := Color(0.06, 0.07, 0.06)
+		slot.add_theme_stylebox_override("normal", GameUi.box(slot_bg, GameUi.BORDER, 4, 1, 2))
+		slot.add_theme_stylebox_override("hover", GameUi.box(slot_hover, GameUi.BORDER_ACTIVE, 4, 1, 2))
+		slot.add_theme_stylebox_override("pressed", GameUi.box(slot_hover, GameUi.BORDER_ACTIVE, 4, 1, 2))
+		slot.add_theme_stylebox_override("disabled", GameUi.box(slot_bg, GameUi.BORDER, 4, 1, 2))
 		var item: ItemInstance = equipment.get(part)
 		slot.name = "Slot%d" % part
 		## Người ngoài xem nên không đánh giá yêu cầu dùng đồ (profile = null).

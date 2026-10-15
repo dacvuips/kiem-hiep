@@ -164,7 +164,10 @@ func refresh() -> void:
 	var s := _profile.get_combat_stats()
 
 	(%NameValue as Label).text = _profile.display_name
-	(%TitleValue as Label).text = _profile.title if not _profile.title.is_empty() else "—"
+	var title_parts := PackedStringArray()
+	if not _profile.title.is_empty():
+		title_parts.append(_profile.title)
+	(%TitleValue as Label).text = " · ".join(title_parts) if not title_parts.is_empty() else "—"
 	(%FuyuanValue as Label).text = str(_profile.fuyuan)
 	(%PrestigeValue as Label).text = str(_profile.prestige)
 	(%LevelValue as Label).text = str(_profile.level)
@@ -270,8 +273,7 @@ func _style_equipment_slots() -> void:
 
 ## Ô có đồ: hiện tên đồ màu theo phẩm chất + tooltip mô tả (dòng ẩn chưa kích hoạt xám); ô trống: trong.
 func _refresh_equipment_slots() -> void:
-	var sect := SectRegistry.get_by_id(_profile.sect_id)
-	var series: int = sect.element if sect else ElementTypes.ElementType.KIM
+	var series: int = _profile.get_element()
 	var counts := Equipment.get_active_counts(_profile.equipment, series)
 	for part in Equipment.Part.values():
 		var slot: ItemSlotButton = get_node("%%EquipSlot%d" % part)
@@ -286,8 +288,7 @@ func _on_equip_slot_pressed(part: int) -> void:
 	if item == null:
 		_open_inventory()
 		return
-	var sect := SectRegistry.get_by_id(_profile.sect_id)
-	var counts := Equipment.get_active_counts(_profile.equipment, sect.element if sect else 0)
+	var counts := Equipment.get_active_counts(_profile.equipment, _profile.get_element())
 	ItemDetailPopup.open(get_tree().current_scene, ItemText.build(item, _profile, counts.get(part, 0), part, false),
 		[["Tháo", func() -> void:
 			if _profile.unequip(part):
@@ -302,8 +303,7 @@ func _open_inventory() -> void:
 	InventoryPopup.open(get_tree().current_scene, _profile, refresh)
 
 func _sect_element() -> ElementTypes.ElementType:
-	var sect := SectRegistry.get_by_id(_profile.sect_id)
-	return sect.element if sect else ElementTypes.ElementType.THO
+	return _profile.get_element()
 
 ## Nút "+": mở popup nhập số điểm muốn cộng (không vượt số điểm tiềm năng đang có).
 func _on_add_stat_pressed(stat_index: int) -> void:
@@ -331,24 +331,17 @@ func _style_label(label: Label, text: String, color: Color, font_size: int, alig
 	label.text = text
 	label.horizontal_alignment = align
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", font_size)
+	GameUi.fit_label(label, font_size)   ## ô vẽ sẵn trên ảnh khung: chữ dài thì thu nhỏ cho vừa
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	label.add_theme_constant_override("outline_size", 2)
 	if bold:
-		## Chữ đậm: bản đậm (weight 700) của chính phông giao diện — Tahoma Bold của hệ thống (phông gốc VLTK), xem
-		## assets/fonts/default_theme.tres; thiếu thì lùi về Arial Bold / NotoSerif.
+		## Chữ đậm: bản đậm giả của font trong game (GameUi.game_font_bold).
 		label.add_theme_font_override("font", _bold_font())
 
-static var _bold_font_cache: SystemFont
 
-static func _bold_font() -> SystemFont:
-	if _bold_font_cache == null:
-		_bold_font_cache = SystemFont.new()
-		_bold_font_cache.font_names = PackedStringArray(["Tahoma", "Arial", "Segoe UI"])
-		_bold_font_cache.font_weight = 700
-		_bold_font_cache.fallbacks = [load("res://assets/fonts/NotoSerif-Variable.ttf")]
-	return _bold_font_cache
+static func _bold_font() -> Font:
+	return GameUi.game_font_bold()   ## chữ đậm trong game: font chung GameUi
 
 static func _format_number(value: int) -> String:
 	var digits := str(absi(value))

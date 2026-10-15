@@ -16,9 +16,8 @@ const ZOOM_STEP := 1.18
 const START_ZOOM := 1.0
 const DRAG_THRESHOLD := 6.0
 const ROUTE_DOT_GAP := 16.0
-const GOLD := Color(0.93, 0.78, 0.35)
-const PANEL_BG := Color(0.07, 0.055, 0.04, 0.97)
-const FIELD_BG := Color(0.13, 0.11, 0.09, 1.0)
+## Khung / tiêu đề / nút / ô nhập theo chuẩn GameUi; GOLD chỉ còn dùng để vẽ trên bản đồ.
+const GOLD := GameUi.GOLD
 
 var _mini: MiniMap
 var _player: Node2D
@@ -42,6 +41,7 @@ var _toast: Label
 var _toast_time := 0.0
 
 func setup(mini: MiniMap, player: Node2D) -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	_mini = mini
 	_player = player
 	_tex = mini.get_map_texture()
@@ -60,25 +60,16 @@ func _load_places() -> void:
 # ---------------------------------------------------------------- dựng giao diện
 
 func _build() -> void:
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.6)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var dim := GameUi.dim_rect()
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
 
-	var panel := PanelContainer.new()
+	var panel := GameUi.panel(GameUi.WINDOW)
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	panel.offset_left = MARGIN
 	panel.offset_top = MARGIN
 	panel.offset_right = -MARGIN
 	panel.offset_bottom = -MARGIN
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = PANEL_BG
-	sb.set_border_width_all(2)
-	sb.border_color = Color(0.55, 0.42, 0.22)
-	sb.set_corner_radius_all(6)
-	sb.set_content_margin_all(12)
-	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
 
 	var root := VBoxContainer.new()
@@ -88,16 +79,11 @@ func _build() -> void:
 	## --- tiêu đề + đóng
 	var title_row := HBoxContainer.new()
 	root.add_child(title_row)
-	var title := Label.new()
-	title.text = "Bản đồ"
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", GOLD)
+	var title := GameUi.title("Bản đồ")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_row.add_child(title)
-	var close := Button.new()
-	close.text = "✕"
-	close.custom_minimum_size = Vector2(44, 36)
-	close.focus_mode = Control.FOCUS_NONE
+	var close := GameUi.close_button()
 	close.pressed.connect(queue_free)
 	title_row.add_child(close)
 
@@ -111,8 +97,7 @@ func _build() -> void:
 	left.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
 	left.add_theme_constant_override("separation", 8)
 	body.add_child(left)
-	_search = LineEdit.new()
-	_search.placeholder_text = "Tìm tên NPC / địa điểm"
+	_search = GameUi.line_edit("Tìm tên NPC / địa điểm")
 	_search.clear_button_enabled = true
 	_search.text_changed.connect(func(_t: String) -> void: _fill_list())
 	left.add_child(_search)
@@ -140,7 +125,7 @@ func _build() -> void:
 	var map_name := Label.new()
 	map_name.text = _mini.get_title() if _mini.get_title() != "" else "Bản đồ"
 	map_name.add_theme_font_size_override("font_size", 26)
-	map_name.add_theme_color_override("font_color", Color(1.0, 0.93, 0.35))
+	map_name.add_theme_color_override("font_color", GameUi.TITLE)
 	names.add_child(map_name)
 	_pos_label = Label.new()
 	_pos_label.add_theme_font_size_override("font_size", 18)
@@ -150,24 +135,20 @@ func _build() -> void:
 	head.add_child(spacer)
 	_goto_label = Label.new()
 	_goto_label.add_theme_font_size_override("font_size", 18)
-	_goto_label.add_theme_color_override("font_color", Color(1, 0.92, 0.6))
+	_goto_label.add_theme_color_override("font_color", GameUi.ACTIVE_TEXT)
 	_goto_label.visible = false
 	head.add_child(_goto_label)
 	_x_input = _make_coord_input("X")
 	head.add_child(_x_input)
 	_y_input = _make_coord_input("Y")
 	head.add_child(_y_input)
-	var go := Button.new()
-	go.text = "✓"
+	var go := GameUi.button("✓")
 	go.custom_minimum_size = Vector2(48, 44)
-	go.focus_mode = Control.FOCUS_NONE
 	go.tooltip_text = "Đi tới toạ độ X/Y"
 	go.pressed.connect(_on_go_pressed)
 	head.add_child(go)
-	var locate := Button.new()
-	locate.text = "◎"
+	var locate := GameUi.button("◎")
 	locate.custom_minimum_size = Vector2(48, 44)
-	locate.focus_mode = Control.FOCUS_NONE
 	locate.tooltip_text = "Về chỗ nhân vật"
 	locate.pressed.connect(_center_on_player)
 	head.add_child(locate)
@@ -183,7 +164,7 @@ func _build() -> void:
 
 	_toast = Label.new()
 	_toast.add_theme_font_size_override("font_size", 18)
-	_toast.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	_toast.add_theme_color_override("font_color", GameUi.ACTIVE_TEXT)
 	_toast.add_theme_color_override("font_outline_color", Color.BLACK)
 	_toast.add_theme_constant_override("outline_size", 4)
 	_toast.visible = false
@@ -192,8 +173,7 @@ func _build() -> void:
 	_view.add_child(_toast)
 
 func _make_coord_input(hint: String) -> LineEdit:
-	var le := LineEdit.new()
-	le.placeholder_text = hint
+	var le := GameUi.line_edit(hint)
 	le.custom_minimum_size = Vector2(96, 44)
 	le.max_length = 5
 	le.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -210,24 +190,22 @@ func _fill_list() -> void:
 		var pname := str(place.get("name", ""))
 		if q != "" and not pname.to_lower().contains(q):
 			continue
-		var b := Button.new()
-		b.text = pname
+		var b := GameUi.button(pname)
 		b.custom_minimum_size = Vector2(0, 40)
-		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(_walk_to_coord.bind(Vector2i(int(place.get("x", 0)), int(place.get("y", 0)))))
 		_list.add_child(b)
 		shown += 1
 	if shown == 0:
 		var hint := Label.new()
 		hint.text = "Chưa có địa điểm nào." if _places.is_empty() else "Không tìm thấy."
-		hint.add_theme_color_override("font_color", Color(0.6, 0.57, 0.5))
+		hint.add_theme_color_override("font_color", GameUi.MUTED)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_list.add_child(hint)
 		if _places.is_empty():
 			var how := Label.new()
 			how.text = "Thêm vào data/map/places.json:\n{\"name\": \"Tên\", \"x\": 201, \"y\": 195}"
 			how.add_theme_font_size_override("font_size", 12)
-			how.add_theme_color_override("font_color", Color(0.5, 0.47, 0.42))
+			how.add_theme_color_override("font_color", GameUi.MUTED)
 			how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_list.add_child(how)
 
@@ -349,6 +327,8 @@ func _draw_view() -> void:
 		var a := _world_to_view(r.position)
 		var b := _world_to_view(r.end)
 		_view.draw_rect(Rect2(a, b - a), Color(GOLD, 0.9), false, 2.0)
+	## NPC hội thoại: chấm xanh + tên (dùng chung cách vẽ với mini map nhỏ).
+	MiniMap.draw_npc_labels(_view, _mini.npc_labels(), _world_to_view, Rect2(Vector2.ZERO, _view.size), 13, 3.0)
 	## Địa điểm trong danh sách.
 	for place in _places:
 		var pp := _world_to_view(_mini.coord_to_feet(Vector2i(int(place.get("x", 0)), int(place.get("y", 0)))))
@@ -371,6 +351,7 @@ func _draw_view() -> void:
 ## Chấm tròn đều nhau dọc đường gấp khúc (khoảng cách tính theo pixel màn hình).
 func _draw_dotted(pts: PackedVector2Array) -> void:
 	var carry := 0.0
+	var box := Rect2(Vector2.ZERO, _view.size).grow(4.0)   ## đường dài: chỉ vẽ phần trong khung bản đồ
 	for i in range(pts.size() - 1):
 		var a := pts[i]
 		var b := pts[i + 1]
@@ -379,8 +360,12 @@ func _draw_dotted(pts: PackedVector2Array) -> void:
 			continue
 		var dir := (b - a) / length
 		var d := ROUTE_DOT_GAP - carry
+		if not box.intersects(Rect2(a, Vector2.ZERO).expand(b)):
+			d += floorf((length - d) / ROUTE_DOT_GAP + 1.0) * ROUTE_DOT_GAP if d <= length else 0.0
 		while d <= length:
-			_view.draw_circle(a + dir * d, 3.2, Color(1.0, 0.85, 0.1))
+			var q := a + dir * d
+			if box.has_point(q):
+				_view.draw_circle(q, 3.2, Color(1.0, 0.85, 0.1))
 			d += ROUTE_DOT_GAP
 		carry = length - (d - ROUTE_DOT_GAP)
 		if carry < 0.0:

@@ -26,7 +26,7 @@ func _init(hub: SocialHub = null, seller: MockPlayer = null) -> void:
 	_gold = SocialUi.kv("Tiền của bạn:", "", SocialUi.LABEL_BLUE, SocialUi.GOLD)
 	info[1].add_child(_gold)
 	body.add_child(info[0])
-	var sec := SocialUi.section("🏷 Hàng đang bán", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var sec := SocialUi.section("🏷 Hàng đang bán")
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 5)
 	var scroll := ScrollContainer.new()

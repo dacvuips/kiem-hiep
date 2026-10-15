@@ -104,9 +104,9 @@ func _rebuild() -> void:
 		return
 	set_subtitle("%s · %s" % [_guild.guild_name(), GuildRules.figure_name(_guild.local_figure())])
 	for i in TAB_NAMES.size():
-		var b := SocialUi.small_button(TAB_NAMES[i])
+		var b := GameUi.button(TAB_NAMES[i], GameUi.TAB)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.disabled = i == _tab
+		GameUi.set_active(b, i == _tab)
 		b.pressed.connect(func() -> void:
 			_tab = i
 			_rebuild())
@@ -164,12 +164,13 @@ func _member_table(select_cb: Callable = Callable()) -> VBoxContainer:
 	tree.set_column_expand(2, false)
 	tree.set_column_custom_minimum_width(2, 110)
 	tree.custom_minimum_size = Vector2(380, 300)
-	tree.add_theme_stylebox_override("panel", SocialUi.box(Color(0.025, 0.03, 0.03), SocialUi.BORDER, 4, 1, 4))
-	tree.add_theme_color_override("font_color", SocialUi.TEXT)
-	tree.add_theme_color_override("title_button_color", SocialUi.GOLD)
-	tree.add_theme_color_override("font_selected_color", SocialUi.GOLD)
-	tree.add_theme_stylebox_override("selected", SocialUi.box(Color(0.16, 0.14, 0.05), SocialUi.TITLE, 3, 1, 2))
-	tree.add_theme_stylebox_override("selected_focus", SocialUi.box(Color(0.16, 0.14, 0.05), SocialUi.TITLE, 3, 1, 2))
+	## GameUi chưa có biến thể cho Tree → lấy khung/dòng chọn y như danh sách chung (GameUi.LIST)
+	var list_theme := GameUi.get_theme()
+	for st in [&"panel", &"selected", &"selected_focus"]:
+		tree.add_theme_stylebox_override(st, list_theme.get_stylebox(st, GameUi.LIST))
+	tree.add_theme_color_override("font_color", GameUi.TEXT)
+	tree.add_theme_color_override("title_button_color", GameUi.GOLD)
+	tree.add_theme_color_override("font_selected_color", GameUi.GOLD)
 	var rows := _filtered_members()
 	var pages := maxi(1, int(ceil(rows.size() / float(PAGE_SIZE))))
 	_page = clampi(_page, 0, pages - 1)
@@ -284,7 +285,7 @@ func _build_news() -> void:
 	if left_trial > 0:
 		var min_m := int(SocialRules.tong()["test_period"]["min_member"])
 		left.add_child(SocialUi.banner("Thử thách: còn %dh%02dp — cần đủ %d thành viên (hiện %d) kẻo bang giải tán." % [left_trial / 3600, (left_trial % 3600) / 60, min_m, _guild.members().size()], false))
-	var help := SocialUi.section("Giúp đỡ", SocialUi.MUTED, SocialUi.INFO_BG)
+	var help := SocialUi.info_box("Giúp đỡ")
 	for line in ["Bang chủ/Trưởng lão chiêu mộ người ở tab Chiêu Mộ.", "Bang chủ phân quyền ở tab Phân phối chức năng.", "Quyên góp quỹ ở tab Sử dụng chức năng: quỹ ≥ 1.000.000 mỗi 750 giây đổi ra kinh nghiệm bang.", "Công cáo, sự kiện và lịch sử ở tab Nhật ký."]:
 		var l := SocialUi.label("•  " + line, SocialUi.SUBTITLE, 12)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -299,7 +300,7 @@ func _build_recruit() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 10)
 	_content.add_child(cols)
-	var left := SocialUi.section("Tin tức chiêu mộ bang hội", SocialUi.WARN, SocialUi.SECTION_BG)
+	var left := SocialUi.section("Tin tức chiêu mộ bang hội")
 	left[0].custom_minimum_size = Vector2(420, 0)
 	var tend := _option_row("Khuynh hướng", GuildRules.TENDENCIES, str(g.get("tendency", GuildRules.TENDENCIES[0])), can)
 	var act := _option_row("Hoạt động chủ", GuildRules.ACTIVITIES, str(g.get("activity", GuildRules.ACTIVITIES[0])), can)
@@ -346,7 +347,7 @@ func _build_recruit() -> void:
 	left[1].add_child(publish)
 	cols.add_child(left[0])
 
-	var right := SocialUi.section("Danh sách thành viên xin gia nhập", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var right := SocialUi.info_box("Danh sách thành viên xin gia nhập")
 	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var list := SocialUi.item_list(Vector2(300, 260))
 	for a in _guild.applies():
@@ -388,7 +389,7 @@ func _option_row(label_text: String, options: Array, current: String, enabled: b
 # ------------------------------------------------------------------ tab Sử dụng chức năng
 func _build_use() -> void:
 	var g: Dictionary = _guild.data()
-	var fund := SocialUi.section("💰 Quyên góp quỹ bang", SocialUi.GOLD, SocialUi.INFO_BG)
+	var fund := SocialUi.info_box("💰 Quyên góp quỹ bang")
 	fund[1].add_child(SocialUi.kv("Quỹ hiện có:", "%s lượng" % InventoryPopup.format_money(int(g["fund"])), SocialUi.LABEL_BLUE, SocialUi.GOLD))
 	var drow := HBoxContainer.new()
 	drow.add_theme_constant_override("separation", 8)
@@ -404,7 +405,7 @@ func _build_use() -> void:
 	_content.add_child(fund[0])
 
 	if _guild.is_officer() and not _guild.is_full():
-		var near := SocialUi.section("👥 Mời người vào bang", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+		var near := SocialUi.info_box("👥 Mời người vào bang")
 		var count := 0
 		for m in SocialDirectory.players(_profile):
 			if m.guild_name != "" or m.team_tag != "":
@@ -425,7 +426,7 @@ func _build_use() -> void:
 		_content.add_child(near[0])
 
 	if _guild.has_perm(GuildRules.PERM_RENAME):
-		var rn := SocialUi.section("✎ Đổi tên bang", SocialUi.LABEL_GREEN, SocialUi.SECTION_BG)
+		var rn := SocialUi.section("✎ Đổi tên bang")
 		var rrow := HBoxContainer.new()
 		rrow.add_theme_constant_override("separation", 8)
 		var name_edit := SocialUi.line_edit("Tên bang mới")
@@ -438,7 +439,7 @@ func _build_use() -> void:
 		_content.add_child(rn[0])
 
 	if _guild.is_master():
-		var hand := SocialUi.section("👑 Nhường chức Bang chủ", SocialUi.WARN, SocialUi.INFO_BG)
+		var hand := SocialUi.info_box("👑 Nhường chức Bang chủ")
 		var any := false
 		for m in _guild.members():
 			if int(m["figure"]) == GuildRules.Figure.DIRECTOR:
@@ -471,7 +472,7 @@ func _build_perms() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 10)
 	_content.add_child(cols)
-	var left := SocialUi.section("Quyền hạn", SocialUi.LABEL_RED, SocialUi.SECTION_BG)
+	var left := SocialUi.section("Quyền hạn")
 	left[0].custom_minimum_size = Vector2(380, 0)
 	var is_master := _guild.is_master()
 	var selected_label := SocialUi.label("Chọn một thành viên ở danh sách bên phải.", SocialUi.SUBTITLE, 13)
@@ -534,9 +535,9 @@ func _build_log() -> void:
 	var sub := HBoxContainer.new()
 	sub.add_theme_constant_override("separation", 4)
 	for i in LOG_TABS.size():
-		var b := SocialUi.small_button(LOG_TABS[i])
+		var b := GameUi.button(LOG_TABS[i], GameUi.TAB)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.disabled = i == _log_tab
+		GameUi.set_active(b, i == _log_tab)
 		b.pressed.connect(func() -> void:
 			_log_tab = i
 			_rebuild())

@@ -31,6 +31,12 @@ func save_character(character_id: int, version: int, data: Dictionary, grant_ids
 	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id,
 		{"version": version, "data": data, "grant_ids": grant_ids})
 
+## Chiến trường Tống Kim: báo trạng thái trận (số người, điểm, giai đoạn, địa chỉ) — game đọc qua GET /v1/battle.
+func report_battle(state: Dictionary) -> void:
+	var r: Dictionary = await _call(HTTPClient.METHOD_POST, "/internal/game/battle", state)
+	if not r.ok:
+		push_warning("Báo trạng thái chiến trường lỗi: %s" % r.get("message", ""))
+
 func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()
 	http.timeout = 10.0

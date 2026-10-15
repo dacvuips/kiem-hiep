@@ -100,15 +100,9 @@ func _make_bar(key: String) -> Dictionary:
 	add_child(bar)
 	return {"bar": bar}
 
-static var _bold_font_cache: SystemFont
 
-static func _bold_font() -> SystemFont:
-	if _bold_font_cache == null:
-		_bold_font_cache = SystemFont.new()
-		_bold_font_cache.font_names = PackedStringArray(["Tahoma", "Arial", "Segoe UI"])
-		_bold_font_cache.font_weight = 700
-		_bold_font_cache.fallbacks = [load("res://assets/fonts/NotoSerif-Variable.ttf")]
-	return _bold_font_cache
+static func _bold_font() -> Font:
+	return GameUi.game_font_bold()   ## chữ đậm trong game: font chung GameUi
 
 func _style_text(label: Label, color: Color) -> void:
 	label.add_theme_font_override("font", _bold_font())

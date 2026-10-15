@@ -12,6 +12,7 @@ var eid := 0
 var display_name := ""
 var level := 1
 var camp := 0
+var nation := 0               ## Nation.Type — phe Tống / Kim trong trận Chiến trường Tống Kim (NONE ngoài trận)
 var avatar: CharacterAvatar
 var _label: Label
 var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo giờ server
@@ -20,6 +21,12 @@ var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở g
 var _look := {}
 ## Đang cừu sát với mình (giai đoạn đánh): là "địch" — chiêu của mình va chạm và gây sát thương (gửi qua server).
 var pk_enemy := false
+## Tên quầy đang bày bán ("" = không bày) — biển trên đầu, bấm vào mở quầy xem hàng.
+var stall_title := ""
+var _sign: StallSign
+## Bấm quầy khi đứng xa: chạy lại gần rồi tự mở (hết hạn sau STALL_APPROACH_SEC giây nếu không tới được).
+var _open_stall_until := 0
+const STALL_APPROACH_SEC := 15
 const PK_ENEMY_COLOR := Color(1.0, 0.3, 1.0)   ## gốc: tên đối thủ cừu sát màu tím hồng
 
 func setup(info: Dictionary) -> void:
@@ -27,13 +34,14 @@ func setup(info: Dictionary) -> void:
 	display_name = str(info.name)
 	level = int(info.level)
 	camp = int(info.camp)
+	nation = int(info.get("nation", Nation.Type.NONE))
 	add_to_group("other_players")
 	add_to_group("followable")
 	avatar = CharacterAvatar.new()
 	avatar.position = Vector2(0, FEET_OFFSET)
 	add_child(avatar)
 	_label = Label.new()
-	_label.text = display_name
+	_label.text = Nation.decorate_name(display_name, nation)
 	_label.add_theme_font_size_override("font_size", 13)
 	_label.add_theme_color_override("font_color", _camp_color())
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
@@ -42,7 +50,11 @@ func setup(info: Dictionary) -> void:
 	_label.size = Vector2(160, 18)
 	_label.position = Vector2(-80, -66)
 	add_child(_label)
+	_sign = StallSign.new()
+	_sign.clicked.connect(open_stall)
+	add_child(_sign)
 	set_look(info.look)
+	set_stall_title(str(info.get("stall_title", "")))
 	position = info.pos - Vector2(0, FEET_OFFSET)
 	_push(NetClient.server_now_ms() - INTERP_DELAY_MS, info)
 	_apply(info)
@@ -55,7 +67,7 @@ func set_pk_enemy(on: bool) -> void:
 		add_to_group("enemies")
 	else:
 		remove_from_group("enemies")
-	_label.add_theme_color_override("font_color", PK_ENEMY_COLOR if on else _camp_color())
+	refresh_name_color()
 
 ## Chiêu của mình trúng đối thủ cừu sát: không tự trừ máu ở đây — gói đòn gửi server, máy họ tự tính né / kháng / trừ máu.
 func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
@@ -72,13 +84,19 @@ func take_damage(amount: float) -> void:
 	take_damage_from(a, int(amount), int(amount))
 
 ## Màu tên theo phe như nhân vật của mình (Camp.COLORS: Tân thủ trắng, Chính phái cam, Tà phái tím, Trung lập xanh...).
+## Phe địch trong Chiến trường Tống Kim tô đỏ qua pk_enemy (BattleClient).
 func _camp_color() -> Color:
 	return Camp.get_color(camp)
 
-func set_camp(new_camp: int) -> void:
+func set_camp(new_camp: int, new_nation: int = nation) -> void:
 	camp = new_camp
-	if not pk_enemy:
-		_label.add_theme_color_override("font_color", _camp_color())
+	nation = new_nation
+	_label.text = Nation.decorate_name(display_name, nation)
+	refresh_name_color()
+
+## Tô lại màu tên (đổi phe của người này / của mình, bật-tắt cừu sát).
+func refresh_name_color() -> void:
+	_label.add_theme_color_override("font_color", PK_ENEMY_COLOR if pk_enemy else _camp_color())
 
 func set_look(look: Dictionary) -> void:
 	if look == _look:
@@ -89,6 +107,38 @@ func set_look(look: Dictionary) -> void:
 	avatar.set_gender(gender)
 	avatar.set_appearance(int(look.helm), int(look.armor), int(look.weapon), int(look.horse))
 	_label.position.y = -90 if int(look.horse) >= 0 else -66
+	_sign.place_above(_label.position.y)
+
+func set_stall_title(title: String) -> void:
+	stall_title = title
+	_sign.set_title(title)
+	if title == "":
+		_open_stall_until = 0
+
+## Mở quầy xem hàng (bấm biển tên quầy / "Xem quầy" ở menu người chơi). Xa quá thì chạy lại gần trước, tới nơi tự mở.
+func open_stall() -> void:
+	var me := get_tree().get_first_node_in_group("player") as Node2D
+	if stall_title == "" or me == null:
+		return
+	if me.has_method("get_ground_position") and me.get_ground_position().distance_to(get_ground_position()) > SocialServer.TRADE_RANGE * 0.8:
+		if me.has_method("walk_to_feet") and me.walk_to_feet(get_ground_position() + Vector2(0, 40)):
+			_open_stall_until = Time.get_ticks_msec() + STALL_APPROACH_SEC * 1000
+		elif me.has_method("notify"):
+			me.notify("Đứng gần quầy hàng hơn mới xem được.")
+		return
+	_open_stall_until = 0
+	var p := GameManager.local_profile
+	var seller := SocialDirectory.find_by_id(p, eid) if p else null
+	if seller != null:
+		StallBrowseWindow.open(get_tree().current_scene, SocialHub.of(p), seller)
+
+func _tick_stall_approach() -> void:
+	if Time.get_ticks_msec() > _open_stall_until:
+		_open_stall_until = 0
+		return
+	var me := get_tree().get_first_node_in_group("player") as Node2D
+	if me != null and me.has_method("get_ground_position") and me.get_ground_position().distance_to(get_ground_position()) <= SocialServer.TRADE_RANGE * 0.8:
+		open_stall()
 
 func push_state(server_ms: int, st: Dictionary) -> void:
 	_push(float(server_ms), st)
@@ -110,6 +160,8 @@ func is_dead() -> bool:
 	return _action == "die"
 
 func _process(_delta: float) -> void:
+	if _open_stall_until != 0:
+		_tick_stall_approach()
 	if _buffer.is_empty():
 		return
 	var render_t := NetClient.server_now_ms() - INTERP_DELAY_MS
@@ -130,9 +182,7 @@ func _process(_delta: float) -> void:
 	_apply(a)
 
 func _apply(st: Dictionary) -> void:
-	if int(st.flags) != flags:
-		flags = int(st.flags)
-		_label.text = display_name + ("  [Bày bán]" if (flags & NetProto.FLAG_STALL) != 0 else "")
+	flags = int(st.flags)
 	var dir := int(st.dir)
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))

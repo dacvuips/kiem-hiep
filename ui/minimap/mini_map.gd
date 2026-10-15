@@ -13,12 +13,13 @@ const BASE_SIZE := Vector2(130, 145)
 const MAP_RECT := Rect2(1, 1, 129, 128)
 const NAME_BAR_HEIGHT := 17.0
 const POS_BAR := Rect2(0, 129, 130, 14)
-const UI_SCALE := 1.5
+const UI_SCALE := 1.0   ## 1.5 cũ thu nhỏ 1/3 (khung thật 130x145)
 const SCREEN_MARGIN := 8.0
 const COORD_UNIT := 256.0               ## 1 đơn vị toạ độ hiển thị = 256 pixel map (gốc: logic/32/8)
 const ZOOMS := [0.75, 1.0, 1.5, 2.5]
 const META_PATH := "res://world/minimap/minimap.json"
 const BTN_DIR := "res://ui/minimap/"
+const NPC_FONT_SIZE := 8                ## tên NPC trên khung mini map nhỏ
 const ROUTE_DOT_GAP := 7.0           ## khoảng cách giữa các chấm lộ trình (pixel khung mini map)
 const GREEN := Color(0.0, 1.0, 0.0)
 const GOLD := Color(0.95, 0.78, 0.3)
@@ -61,6 +62,8 @@ func _load_assets() -> void:
 		var meta: Variant = JSON.parse_string(FileAccess.get_file_as_string(META_PATH))
 		if meta is Dictionary:
 			_title = str(meta.get("title", ""))
+	if not GameManager.field_map.is_empty():
+		_title = str(GameManager.field_map.get("name", ""))
 	## Ảnh + toạ độ lấy từ chính map chính: map.json["minimap"] do tool map xuất (file, px_per_region, min_x, min_y).
 	var world := VltkWorld.current
 	if world == null or world.map == null:
@@ -70,6 +73,57 @@ func _load_assets() -> void:
 		_tex = world.map.get_minimap_texture()
 		_origin = Vector2(float(info["min_x"]), float(info["min_y"])) * 512.0
 		_img_scale = 512.0 / float(info["px_per_region"])   ## 1 pixel ảnh = (512 / px_per_region) pixel map
+
+## NPC hội thoại của map (kind 3: dược điếm, tạp hoá, xa phu, thợ rèn...) — [{name, world}] để vẽ tên lên mini map / bản đồ lớn.
+## Bỏ số thứ tự cuối tên gốc ("Thư Sinh 3" -> "Thư Sinh"). Quái (kind 0) không vẽ.
+const NPC_KIND_TALK := 3
+var _npc_labels: Array = []
+var _npc_labels_built := false
+
+func npc_labels() -> Array:
+	if _npc_labels_built:
+		return _npc_labels
+	var world := VltkWorld.current
+	if world == null or world.map == null:
+		return _npc_labels
+	_npc_labels_built = true
+	var trailing_number := RegEx.create_from_string("\\s+\\d+$")
+	for n in world.map.npcs:
+		if int(n.get("kind", 0)) != NPC_KIND_TALK:
+			continue
+		var npc_name := trailing_number.sub(str(n.get("name_vi", n.get("name", ""))).strip_edges(), "")
+		if npc_name == "":
+			continue
+		_npc_labels.append({"name": npc_name, "world": Vector2(float(n.get("px", n.get("x", 0))), float(n.get("py", n.get("y", 0))))})
+	return _npc_labels
+
+## Vẽ chấm + tên NPC trong khung `box` (toạ độ của `canvas`). `to_view` đổi toạ độ map -> khung. Tên đè lên tên đã vẽ thì bỏ (chỉ chấm).
+static func draw_npc_labels(canvas: Control, labels: Array, to_view: Callable, box: Rect2, font_size: int, dot_radius: float) -> void:
+	var font: Font = canvas.get_theme_default_font()
+	var taken: Array[Rect2] = []
+	for npc in labels:
+		var p: Vector2 = to_view.call(npc.world)
+		if not box.has_point(p):
+			continue
+		canvas.draw_circle(p, dot_radius + 0.8, Color(0, 0, 0, 0.8))
+		canvas.draw_circle(p, dot_radius, Color(0.45, 0.9, 1.0))
+		var text: String = npc.name
+		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		var at := Vector2(p.x - w * 0.5, p.y - dot_radius - 2.0)
+		var r := Rect2(at.x, at.y - font_size, w, font_size + 2)
+		if not box.encloses(r):
+			at.x = clampf(at.x, box.position.x, box.end.x - w)
+			r.position.x = at.x
+		var clash := false
+		for t in taken:
+			if t.intersects(r):
+				clash = true
+				break
+		if clash:
+			continue
+		taken.append(r)
+		canvas.draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 3, Color(0, 0, 0, 0.85))
+		canvas.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.75, 0.95, 1.0))
 
 func _build() -> void:
 	var frame := Panel.new()
@@ -362,6 +416,9 @@ func _draw_view() -> void:
 		var a := _world_to_view(r.position, zoom, src)
 		var b := _world_to_view(r.end, zoom, src)
 		_view.draw_rect(Rect2(a, b - a), Color(GOLD, 0.9), false, 1.0)
+	## NPC hội thoại: chấm xanh + tên.
+	draw_npc_labels(_view, npc_labels(), func(w: Vector2) -> Vector2: return _world_to_view(w, zoom, src),
+			Rect2(Vector2.ZERO, MAP_RECT.size), NPC_FONT_SIZE, 1.3)
 	## Đích đang đi tới.
 	if _has_dest and _player != null and is_instance_valid(_player) and _player.is_moving_to_target():
 		## Lộ trình còn lại: chấm vàng từ nhân vật theo các điểm tới đích, rồi cờ đỏ nhỏ ở đích.
@@ -369,6 +426,7 @@ func _draw_view() -> void:
 		for w in _player.get_route_feet():
 			pts.append(_world_to_view(w, zoom, src))
 		var carry := 0.0
+		var box := Rect2(Vector2.ZERO, _view.size).grow(2.0)   ## đường dài: chỉ vẽ phần trong khung mini map
 		for i in range(pts.size() - 1):
 			var a := pts[i]
 			var b := pts[i + 1]
@@ -377,9 +435,14 @@ func _draw_view() -> void:
 				continue
 			var dir := (b - a) / length
 			var dist := ROUTE_DOT_GAP - carry
-			while dist <= length:
-				_view.draw_circle(a + dir * dist, 1.3, Color(1.0, 0.9, 0.15))
-				dist += ROUTE_DOT_GAP
+			if box.intersects(Rect2(a, Vector2.ZERO).expand(b)):
+				while dist <= length:
+					var q := a + dir * dist
+					if box.has_point(q):
+						_view.draw_circle(q, 1.3, Color(1.0, 0.9, 0.15))
+					dist += ROUTE_DOT_GAP
+			else:
+				dist += floorf((length - dist) / ROUTE_DOT_GAP + 1.0) * ROUTE_DOT_GAP if dist <= length else 0.0
 			carry = maxf(length - (dist - ROUTE_DOT_GAP), 0.0)
 		var d := _world_to_view(_dest, zoom, src)
 		_view.draw_line(d, d + Vector2(0, -9), Color(0.95, 0.95, 0.95), 1.2)

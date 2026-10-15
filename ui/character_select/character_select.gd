@@ -190,7 +190,10 @@ func _on_create_pressed() -> void:
 	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _selected_gender
-	profile.set_sect(_selected_sect)
+	if profile.has_sect():
+		profile.set_sect(_selected_sect)   ## offline: nhân vật đã vào phái vẫn đổi phái được (thử nghiệm)
+	else:
+		profile.choose_element(_selected_sect.element)   ## nhân vật mới: Vô Môn Phái, cấp 10 mới chọn phái (SectPrompt)
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
 

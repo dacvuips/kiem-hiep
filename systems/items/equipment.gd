@@ -158,8 +158,10 @@ static func get_weapon_damage(equipped: Dictionary) -> Dictionary:
 	}
 
 ## Thứ tự môn phái trong requiremenpai = settings/faction/门派设定.ini gốc.
+## Bản 15 phái thêm 10 Hoa Sơn, 11 Vũ Hồn, 12 Tiêu Dao, 13 Dương Gia, 14 Minh Giáo (= tools/vltk_source.SECTS).
 const MENPAI_ORDER := ["thieu_lam", "thien_vuong_bang", "duong_mon", "ngu_doc_giao", "nga_mi",
-	"thuy_yen_mon", "cai_bang", "thien_nhan_giao", "vo_dang", "con_lon"]
+	"thuy_yen_mon", "cai_bang", "thien_nhan_giao", "vo_dang", "con_lon",
+	"hoa_son", "vu_hon", "tieu_dao", "duong_gia", "minh_giao"]
 
 ## Chỉ số nhân vật để xét yêu cầu — KItemList::EnoughAttrib gốc so với chỉ số HIỆN TẠI (m_nCurStrength...,
 ## ĐÃ CỘNG đồ đang mặc/nội tại, VD nhẫn +20 Sức mạnh giúp mặc được vũ khí yêu cầu cao hơn), không phải
@@ -173,9 +175,8 @@ static func get_requirement_context(profile: PlayerProfile, exclude_part: int = 
 	return context_from_stats(profile, CombatantStats.build(b))
 
 static func context_from_stats(profile: PlayerProfile, stats: CombatantStats) -> Dictionary:
-	var sect := SectRegistry.get_by_id(profile.sect_id)
 	return {"level": profile.level, "str": stats.strength, "dex": stats.dexterity, "vit": stats.vitality,
-		"eng": stats.energy, "series": int(sect.element) if sect else -1, "sex": int(profile.gender),
+		"eng": stats.energy, "series": int(profile.get_element()), "sex": int(profile.gender),
 		"sect": profile.sect_id}
 
 ## 1 yêu cầu ([tên requireXXX, giá trị]) đã đạt chưa — EnoughAttrib gốc. `ctx` = get_requirement_context.
@@ -204,7 +205,8 @@ static func get_unmet_requirements(item: ItemInstance, profile: PlayerProfile, c
 	return unmet
 
 ## Loại vũ khí đang cầm theo cách KSkill::CanCastSkill gốc so với EqtLimit của skill: -1 = tay không / găng (Triền thủ,
-## HAND_PARTICULAR = 6), 0 kiếm, 1 đao, 2 côn, 3 thương, 4 chùy, 5 song đao; ám khí = 100 + loại (100 tiêu, 101 đao, 102 tiễn).
+## HAND_PARTICULAR = 6), 0 kiếm, 1 đao, 2 côn, 3 thương, 4 chùy, 5 song đao, 7 đao thuẫn, 8 thuẫn đao (bản 15 phái);
+## ám khí = 100 + loại (100 tiêu, 101 đao, 102 tiễn, 103 cầm, 104 cung).
 static func get_weapon_class(equipped: Dictionary) -> int:
 	var weapon: ItemInstance = equipped.get(Part.WEAPON)
 	if weapon == null:

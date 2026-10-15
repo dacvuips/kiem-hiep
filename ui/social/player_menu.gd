@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name PlayerMenu
 ## MENU NGƯỜI CHƠI — bấm vào người chơi khác trên map (PopUpContextPeopleMenu gốc). Mục nào không đủ điều kiện thì ẩn (như gốc):
-##   Tán gẫu (luôn) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
+##   Xem quầy (họ đang bày bán) · Tán gẫu (luôn) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
 ##   Sổ đen (chưa chặn) · Đóng.
 ## Bấm ra ngoài menu = đóng (không làm nhân vật chạy tới chỗ bấm).
 
@@ -30,6 +30,7 @@ static func close_current() -> void:
 	current = null
 
 func _build(screen_pos: Vector2) -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	## Nền trong suốt phủ màn hình: bấm ra ngoài menu thì đóng, cú bấm không lọt xuống map.
@@ -40,19 +41,18 @@ func _build(screen_pos: Vector2) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close_current())
 	add_child(back)
-	_panel = PanelContainer.new()
-	_panel.add_theme_stylebox_override("panel", SocialUi.box(SocialUi.BG, SocialUi.BORDER, 8, 1, 8))
+	_panel = GameUi.panel(GameUi.WINDOW)  # khung cửa sổ chung của game
 	_panel.custom_minimum_size = Vector2(WIDTH, 0)
 	add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	_panel.add_child(box)
-	box.add_child(SocialUi.label(_target.display_name, SocialUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(SocialUi.label("Cấp %d" % _target.level, SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(SocialUi.divider())
+	box.add_child(GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(GameUi.label("Cấp %d" % _target.level, GameUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(GameUi.divider())
 	for item in _items():
-		var b := SocialUi.small_button(str(item[0]))
-		b.custom_minimum_size = Vector2(WIDTH - 16, 32)
+		var b := GameUi.button(str(item[0]), GameUi.BUTTON)
+		b.custom_minimum_size = Vector2(WIDTH - 2 * GameUi.PAD_WINDOW, 32)
 		var action: Callable = item[1]
 		b.pressed.connect(func() -> void:
 			close_current()
@@ -72,12 +72,11 @@ func _items() -> Array:
 	var name := _target.display_name
 	var eid := _target.eid
 	var items := []
+	if _target.stall_title != "":
+		items.append(["Xem quầy", _target.open_stall])
 	items.append(["Tán gẫu", _chat])
-	if p == null or not p.friends.has(name):
-		items.append(["Hảo hữu", func() -> void: NetClient.send_friend(RelationServer.FRIEND_ASK, eid)])
 	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0:
 		items.append(["Giao dịch", _trade])
-	items.append(["Tổ đội", _team])
 	items.append(["Theo sau", func() -> void:
 		if is_instance_valid(_player) and is_instance_valid(_target) and _player.has_method("start_follow"):
 			_player.start_follow(_target)])

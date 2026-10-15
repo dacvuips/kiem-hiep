@@ -22,6 +22,8 @@ var small_icons: bool = false
 ## Hệ số phóng ảnh tối đa khi vẽ (1 = giữ kích thước gốc). Hành trang nhiều ô đặt > 1 để ảnh vừa khít khung món.
 var icon_max_scale: float = 1.0
 var _item_icon: Texture2D
+## Số lượng chồng (vật phẩm khác: thuốc, khoáng thạch...) — > 1 thì ghi số ở góc dưới phải ô.
+var _count: int = 1
 
 func _ready() -> void:
 	set_process(is_gold)
@@ -47,6 +49,7 @@ func show_item(item: ItemInstance, bbcode: String, empty_tooltip: String = "", u
 		item_bbcode = bbcode
 		tooltip_text = " "  ## khác rỗng để Godot gọi _make_custom_tooltip
 		is_gold = item.is_gold()
+		_count = item.count
 		queue_redraw()
 	else:
 		_item_icon = null
@@ -54,6 +57,7 @@ func show_item(item: ItemInstance, bbcode: String, empty_tooltip: String = "", u
 		item_bbcode = ""
 		tooltip_text = empty_tooltip
 		is_gold = false
+		_count = 1
 		queue_redraw()
 
 var _unusable: bool = false
@@ -106,6 +110,12 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size).grow(-1.0), UNUSABLE_BG)
 	if _item_icon:
 		_draw_item_icon()
+	if _count > 1:
+		var font := get_theme_default_font()
+		var label := str(_count)
+		var pos := Vector2(size.x - 3.0 - font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, size.y - 4.0)
+		draw_string_outline(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color.BLACK)
+		draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
 	if not is_gold:
 		return
 	var r := Rect2(Vector2(1, 1), size - Vector2(2, 2))

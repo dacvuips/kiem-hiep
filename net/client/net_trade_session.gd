@@ -52,8 +52,16 @@ func end(success: bool, message: String) -> void:
 	if not active:
 		return
 	active = false
+	## Server gửi bản chuẩn (S_PROFILE) TRƯỚC gói kết thúc: đồ đã về đúng chủ. Chỉ trả lại món chưa có ở đâu cả (mất bản chuẩn) —
+	## trả bừa sẽ thành đồ "ma" (đã đưa đi vẫn còn) hoặc nhân đôi uid (huỷ: mặc 1 bản, bản kia vẫn nằm trong túi).
+	var have := {}
+	for it in _profile.inventory:
+		have[it.uid] = true
+	for it in _profile.equipment.values():
+		have[(it as ItemInstance).uid] = true
 	for uid in _hidden:
-		_profile.inventory.append(_hidden[uid])   ## server sẽ gửi bản chuẩn ngay sau — trả tạm cho túi khỏi trống
+		if not have.has(uid):
+			_profile.inventory.append(_hidden[uid])
 	_hidden.clear()
 	finished.emit(success, message)
 

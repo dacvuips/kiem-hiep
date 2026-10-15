@@ -28,12 +28,6 @@ outline_color = Color(0.1, 0.04, 0.02, 1)
 content_margin_left = 4.0
 bg_color = Color(0.165, 0.145, 0.125, 1)
 
-[sub_resource type="LabelSettings" id="msg"]
-font_size = 26
-font_color = Color(1, 0.9, 0.62, 1)
-outline_size = 8
-outline_color = Color(0.1, 0.04, 0.02, 1)
-
 [sub_resource type="StyleBoxFlat" id="back_n"]
 bg_color = Color(0.1, 0.06, 0.04, 0.82)
 border_width_left = 2
@@ -57,6 +51,12 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="LabelSettings" id="msg"]
+font_size = 26
+font_color = Color(1, 0.9, 0.62, 1)
+outline_size = 8
+outline_color = Color(0.1, 0.04, 0.02, 1)
 
 [node name="CharacterCreate" type="Control" unique_id=1347634260]
 layout_mode = 3
@@ -125,35 +125,37 @@ offsets = Dictionary[String, Vector2]({
 "hoa_nam": Vector2(161, 21),
 "kim_nam": Vector2(3, 14),
 "moc_nam": Vector2(130, 15),
-"tho_nam": Vector2(135, 7)
+"tho_nam": Vector2(135, 7),
+"thuy_nam": Vector2(121, 19)
 })
 scales = Dictionary[String, float]({
 "hoa_nam": 0.76,
-"kim_nam": 1.07,
+"kim_nam": 1.05,
 "moc_nam": 0.8400000000000001,
-"tho_nam": 0.8400000000000001
+"tho_nam": 0.8400000000000001,
+"thuy_nam": 0.97
 })
-preview_character = "kim_nam"
-preview_scale = 1.07
-preview_offset = Vector2(3, 14)
+preview_character = "thuy_nam"
+preview_scale = 0.97
+preview_offset = Vector2(121, 19)
 
 [node name="FemalePortrait" type="Control" parent="Stage" unique_id=1176330758]
 unique_name_in_owner = true
 anchors_preset = 0
 offset_left = 901.6319
 offset_top = 226.1014
-offset_right = 1568.468
+offset_right = 1570.5027
 offset_bottom = 838.3792
 script = ExtResource("p")
 offsets = Dictionary[String, Vector2]({
 "tho_nu": Vector2(-10, -3)
 })
 scales = Dictionary[String, float]({
+"kim_nu": 1.2,
 "tho_nu": 1.15
 })
-preview_character = "tho_nu"
-preview_scale = 1.15
-preview_offset = Vector2(-10, -3)
+preview_character = "kim_nu"
+preview_scale = 1.2
 
 [node name="AccountButton" type="TextureButton" parent="Stage" unique_id=1790239987]
 unique_name_in_owner = true
@@ -349,7 +351,7 @@ texture_normal = ExtResource("be")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="BackButton" type="Button" parent="Stage"]
+[node name="BackButton" type="Button" parent="Stage" unique_id=1432210809]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 26.0
@@ -362,8 +364,8 @@ theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 0.85, 1)
 theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("back_n")
-theme_override_styles/hover = SubResource("back_h")
 theme_override_styles/pressed = SubResource("back_h")
+theme_override_styles/hover = SubResource("back_h")
 text = "‹  Quay lại"
 
 [node name="Message" type="Label" parent="Stage" unique_id=1733472458]

@@ -17,6 +17,9 @@ signal logged_out
 const DEFAULT_URL := "http://127.0.0.1:8080"
 const SETTING_URL := "kiem_hiep/network/account_url"
 const SESSION_PATH := "user://session.dat"
+## Cửa sổ game nào đang GIỮ file phiên (mã tiến trình). Mở 2 cửa sổ game trên 1 máy: cửa sổ thứ 2 không được tự đăng nhập bằng phiên
+## của cửa sổ 1 — nếu không, 2 cửa sổ cùng xoay vòng 1 refresh token, server coi là token bị đánh cắp và thu hồi mọi phiên (đá văng).
+const SESSION_LOCK_PATH := "user://session.lock"
 const TIMEOUT := 15.0
 ## Làm mới access token sớm chừng này giây trước khi hết hạn.
 const REFRESH_MARGIN := 30.0
@@ -113,9 +116,9 @@ func logout() -> void:
 	_clear_session()
 	logged_out.emit()
 
-## Có phiên đã ghi nhớ trên máy này không (để tự đăng nhập lại).
+## Có phiên đã ghi nhớ trên máy này không (để tự đăng nhập lại). Cửa sổ game khác đang giữ phiên thì coi như không có.
 func has_saved_session() -> bool:
-	return FileAccess.file_exists(SESSION_PATH)
+	return FileAccess.file_exists(SESSION_PATH) and _own_session_file()
 
 ## Tên tài khoản của phiên đã ghi nhớ (để điền sẵn), rỗng nếu không có.
 func saved_username() -> String:
@@ -141,6 +144,16 @@ func servers() -> Dictionary:
 ## Nhân vật của tài khoản trên 1 máy chủ: data = {"characters": [{id, slot, name, gender, sect_id, level, version, data}], "max": 4}.
 func characters(server_id: int) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_GET, "/v1/characters?server_id=%d" % server_id)
+
+## Bảng xếp hạng máy chủ: {level, money: [{rank, name, level, sect_id, gender, money}], sect_level, sect_money: {sect_id: [...]}}.
+## Server giữ kết quả ~60 giây (ttl_seconds) — mở lại bảng trong khoảng đó thấy cùng số liệu.
+func rankings(server_id: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/rankings?server_id=%d" % server_id)
+
+## Chiến trường Tống Kim của máy chủ: {open, phase, phase_left, song, jin, song_points, jin_points, balance, side_cap, min_level,
+## map_id, map_name, host, port, ws_url}. open = false khi battle server không chạy.
+func battle(server_id: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/battle?server_id=%d" % server_id)
 
 ## Tạo nhân vật ở ô `slot`. profile_data = PlayerProfile.to_dict(). Server kiểm tra tên (2–16 ký tự, không trùng trong máy chủ).
 func create_character(server_id: int, slot: int, character_name: String, profile_data: Dictionary) -> Dictionary:
@@ -170,6 +183,8 @@ func _apply_session(data: Variant) -> void:
 	_refresh = str(data.get("refresh_token", ""))
 	_access_expire_at = _now() + float(data.get("expires_in", 0))
 	account = data.get("account", {})
+	if not _own_session_file():
+		return   ## cửa sổ game khác đang giữ file phiên: không ghi đè / xoá phiên của nó
 	if _remember:
 		_write_session_file()
 	else:
@@ -183,8 +198,29 @@ func _clear_session() -> void:
 	_refresh = ""
 	_access_expire_at = 0.0
 	account = {}
-	if FileAccess.file_exists(SESSION_PATH):
+	if FileAccess.file_exists(SESSION_PATH) and _own_session_file():
 		DirAccess.remove_absolute(SESSION_PATH)
+
+## Cửa sổ game này có được dùng file phiên không: chưa ai giữ / người giữ đã tắt -> nhận giữ; cửa sổ khác còn chạy -> không.
+func _own_session_file() -> bool:
+	var me := OS.get_process_id()
+	var holder := 0
+	if FileAccess.file_exists(SESSION_LOCK_PATH):
+		holder = FileAccess.get_file_as_string(SESSION_LOCK_PATH).strip_edges().to_int()
+	if holder == me:
+		return true
+	if holder > 0 and OS.is_process_running(holder):
+		return false
+	var f := FileAccess.open(SESSION_LOCK_PATH, FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(str(me))
+	return true
+
+## Tắt game: trả quyền giữ file phiên cho cửa sổ mở sau.
+func _exit_tree() -> void:
+	if FileAccess.file_exists(SESSION_LOCK_PATH) 			and FileAccess.get_file_as_string(SESSION_LOCK_PATH).strip_edges().to_int() == OS.get_process_id():
+		DirAccess.remove_absolute(SESSION_LOCK_PATH)
 
 func _session_key() -> String:
 	## Không phải bí mật của server — chỉ gắn file phiên với máy này.

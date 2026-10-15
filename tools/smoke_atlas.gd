@@ -12,7 +12,7 @@ func _run() -> void:
 	var cam := Camera2D.new()
 	player.add_child(cam)
 	var map := VltkWorld.SortedMap.new()
-	map.map_dir = OS.get_environment("SMOKE_MAP") if OS.get_environment("SMOKE_MAP") != "" else "res://world/main_map"
+	map.map_dir = OS.get_environment("SMOKE_MAP") if OS.get_environment("SMOKE_MAP") != "" else "res://world/maps/map_321"
 	map.focus = player
 	map.bake_ground = OS.get_environment("SMOKE_BAKE") != "0"
 	add_child(map)

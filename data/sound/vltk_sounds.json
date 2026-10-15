@@ -26,6 +26,235 @@
     "fly": "skill/碧海潮生.wav"
    }
   },
+  "100030": {
+   "a": {
+    "fly": "skill/幽冥骷髅.wav"
+   }
+  },
+  "100031": {
+   "a": {
+    "fly": "skill/血手毒杀.wav"
+   }
+  },
+  "100032": {
+   "a": {
+    "collision": "skill/普通爆炸.wav",
+    "fly": "skill/幽冥骷髅.wav"
+   }
+  },
+  "100034": {
+   "a": {
+    "fly": "skill/朱蛤青冥.wav"
+   }
+  },
+  "100165": {
+   "a": {
+    "collision": "skill/普通爆炸.wav",
+    "fly": "skill/幽冥骷髅.wav"
+   }
+  },
+  "100190": {
+   "a": {
+    "collision": "skill/普通爆炸.wav",
+    "fly": "skill/幽冥骷髅.wav"
+   }
+  },
+  "100204": {
+   "a": {
+    "collision": "skill/sound_k038.wav",
+    "fly": "skill/霹雳弹.wav"
+   },
+   "b": {
+    "fly": "skill/霹雳弹.wav"
+   }
+  },
+  "100329": {
+   "a": {
+    "collision": "skill/普通爆炸.wav",
+    "fly": "skill/幽冥骷髅.wav"
+   }
+  },
+  "100357": {
+   "a": {
+    "collision": "skill/sound_k038.wav",
+    "fly": "skill/霹雳弹.wav"
+   },
+   "b": {
+    "fly": "skill/霹雳弹.wav"
+   }
+  },
+  "100412": {
+   "a": {
+    "collision": "skill/sound_k041.wav",
+    "fly": "skill/sound_k029.wav"
+   }
+  },
+  "100413": {
+   "a": {
+    "collision": "skill/sound_k041.wav",
+    "fly": "skill/sound_k029.wav"
+   }
+  },
+  "100420": {
+   "a": {
+    "collision": "skill/狂风骤电.wav",
+    "fly": "skill/狂风骤电.wav"
+   }
+  },
+  "100426": {
+   "a": {
+    "collision": "skill/冰爆.wav"
+   }
+  },
+  "100427": {
+   "a": {
+    "collision": "skill/冰爆.wav"
+   }
+  },
+  "100442": {
+   "a": {
+    "collision": "skill/sound_k037.wav",
+    "fly": "skill/亢龙无悔.wav"
+   }
+  },
+  "100446": {
+   "a": {
+    "collision": "skill/sound_k040.wav",
+    "fly": "skill/怒雷指.wav"
+   }
+  },
+  "100447": {
+   "a": {
+    "collision": "skill/sound_k040.wav",
+    "fly": "skill/亢龙无悔.wav"
+   }
+  },
+  "100448": {
+   "a": {
+    "collision": "skill/sound_k040.wav",
+    "fly": "skill/亢龙无悔.wav"
+   }
+  },
+  "100449": {
+   "a": {
+    "collision": "skill/sound_k037.wav",
+    "fly": "skill/行龙不雨.wav"
+   }
+  },
+  "100459": {
+   "a": {
+    "fly": "skill/天下无狗.wav"
+   }
+  },
+  "100461": {
+   "a": {
+    "collision": "skill/sound_k037.wav",
+    "fly": "skill/烈火情天.wav"
+   }
+  },
+  "100465": {
+   "a": {
+    "fly": "skill/剑飞惊天.wav"
+   }
+  },
+  "100467": {
+   "a": {
+    "collision": "skill/sound_k037.wav",
+    "fly": "skill/烈火情天.wav"
+   }
+  },
+  "100468": {
+   "a": {
+    "fly": "skill/天下无狗.wav"
+   }
+  },
+  "100536": {
+   "a": {
+    "fly": "skill/sf_xy_wgsx_a.wav"
+   }
+  },
+  "100538": {
+   "a": {
+    "fly": "skill/剑飞惊天.wav"
+   }
+  },
+  "100539": {
+   "a": {
+    "fly": "skill/剑飞惊天.wav"
+   }
+  },
+  "100540": {
+   "a": {
+    "fly": "skill/剑飞惊天.wav"
+   }
+  },
+  "100541": {
+   "a": {
+    "fly": "skill/sf_xy_sbys.wav"
+   }
+  },
+  "100543": {
+   "a": {
+    "fly": "skill/sf_xy_lyps.wav"
+   }
+  },
+  "100544": {
+   "a": {
+    "fly": "skill/sf_xy_gls_a.wav"
+   }
+  },
+  "100545": {
+   "a": {
+    "fly": "skill/sf_xy_gsls.wav"
+   }
+  },
+  "100546": {
+   "a": {
+    "fly": "skill/sf_xy_mhsn_a.wav"
+   }
+  },
+  "100547": {
+   "a": {
+    "fly": "skill/sf_xy_ygsd.wav"
+   }
+  },
+  "100548": {
+   "a": {
+    "fly": "skill/剑飞惊天.wav"
+   }
+  },
+  "100600": {
+   "a": {
+    "collision": "skill/sound_k038.wav",
+    "fly": "skill/sound_k038.wav"
+   }
+  },
+  "100601": {
+   "a": {
+    "fly": "skill/sound_k038.wav"
+   }
+  },
+  "100602": {
+   "a": {
+    "collision": "skill/sound_k038.wav"
+   }
+  },
+  "100610": {
+   "a": {
+    "collision": "skill/sound_k037.wav"
+   }
+  },
+  "100611": {
+   "a": {
+    "collision": "skill/sound_k038.wav",
+    "fly": "skill/sound_k037.wav"
+   }
+  },
+  "100612": {
+   "a": {
+    "collision": "skill/sound_k037.wav"
+   }
+  },
   "103": {
    "a": {
     "fly": "skill/不灭不绝.wav"
@@ -3904,6 +4133,18 @@
    "fm": "skill/sound_k010.wav",
    "man": "skill/sound_k005.wav"
   },
+  "100354": {
+   "fm": "skill/天罡地煞手f.wav",
+   "man": "skill/天罡地煞手m.wav"
+  },
+  "100383": {
+   "fm": "skill/天罡地煞手f.wav",
+   "man": "skill/天罡地煞手m.wav"
+  },
+  "100537": {
+   "fm": "skill/sound_k002.wav",
+   "man": "skill/sound_k002.wav"
+  },
   "1006": {
    "fm": "skill/sound_k010.wav",
    "man": "skill/sound_k005.wav"
@@ -3915,13 +4156,43 @@
   "101": {
    "fm": "skill/sound_k006.wav"
   },
+  "101094": {
+   "fm": "skill/天罡地煞手f.wav",
+   "man": "skill/天罡地煞手m.wav"
+  },
+  "101095": {
+   "fm": "skill/天罡地煞手f.wav",
+   "man": "skill/天罡地煞手m.wav"
+  },
+  "101096": {
+   "fm": "skill/天罡地煞手f.wav",
+   "man": "skill/天罡地煞手m.wav"
+  },
   "1013": {
    "fm": "skill/sound_k015.wav",
    "man": "skill/sound_k015.wav"
   },
+  "101361": {
+   "fm": "skill/sound_k008.wav",
+   "man": "skill/sound_k003.wav"
+  },
+  "101362": {
+   "fm": "skill/sound_k008.wav",
+   "man": "skill/sound_k003.wav"
+  },
   "1014": {
    "fm": "skill/sound_k015.wav",
    "man": "skill/sound_k015.wav"
+  },
+  "101411": {
+   "fm": "skill/五雷正法f.wav",
+   "man": "skill/五雷正法m.wav"
+  },
+  "101420": {
+   "fm": "skill/sound_k009.wav"
+  },
+  "101421": {
+   "fm": "skill/sound_k009.wav"
   },
   "1016": {
    "fm": "skill/sound_k010.wav",
@@ -3931,9 +4202,37 @@
    "fm": "skill/sound_k010.wav",
    "man": "skill/sound_k005.wav"
   },
+  "101763": {
+   "fm": "skill/sound_k015.wav",
+   "man": "skill/sound_k015.wav"
+  },
   "1018": {
    "fm": "skill/sound_k010.wav",
    "man": "skill/sound_k005.wav"
+  },
+  "101805": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "101806": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "101807": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "101808": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "101978": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "101992": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
   },
   "102": {
    "fm": "skill/sound_k007.wav"
@@ -4931,9 +5230,101 @@
    "fm": "skill/sound_k007.wav",
    "man": "skill/sound_k002.wav"
   },
+  "1737": {
+   "fm": "skill/sound_k015.wav",
+   "man": "skill/sound_k015.wav"
+  },
+  "1741": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1743": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1744": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1748": {
+   "fm": "skill/sound_k002.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1749": {
+   "fm": "skill/sound_k015.wav",
+   "man": "skill/sound_k015.wav"
+  },
+  "1752": {
+   "fm": "skill/sound_k005.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1754": {
+   "fm": "skill/sound_k005.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1755": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1758": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
   "176": {
    "fm": "skill/sound_k008.wav",
    "man": "skill/sound_k003.wav"
+  },
+  "1761": {
+   "fm": "skill/sound_k015.wav",
+   "man": "skill/sound_k015.wav"
+  },
+  "1765": {
+   "fm": "skill/sound_k015.wav",
+   "man": "skill/sound_k015.wav"
+  },
+  "1766": {
+   "fm": "skill/sound_k008.wav",
+   "man": "skill/sound_k003.wav"
+  },
+  "1767": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1770": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1771": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "1772": {
+   "fm": "skill/sound_k009.wav",
+   "man": "skill/sound_k004.wav"
+  },
+  "1773": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1774": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "1780": {
+   "fm": "skill/sound_k009.wav",
+   "man": "skill/sound_k004.wav"
+  },
+  "1781": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1783": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1784": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
   },
   "179": {
    "fm": "skill/狂雷震地f.wav",
@@ -5154,9 +5545,33 @@
    "fm": "skill/sound_k010.wav",
    "man": "skill/sound_k005.wav"
   },
+  "1896": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
   "19": {
    "fm": "skill/摩诃无量.wav",
    "man": "skill/摩诃无量.wav"
+  },
+  "1905": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "1907": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1909": {
+   "fm": "skill/sound_k006.wav",
+   "man": "skill/sound_k001.wav"
+  },
+  "1910": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1911": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
   },
   "1917": {
    "fm": "skill/sound_k009.wav"
@@ -5221,7 +5636,47 @@
    "fm": "skill/sound_k009.wav",
    "man": "skill/sound_k004.wav"
   },
+  "1963": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1967": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1969": {
+   "fm": "skill/sound_k010.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1971": {
+   "fm": "skill/sound_k009.wav",
+   "man": "skill/sound_k005.wav"
+  },
+  "1972": {
+   "fm": "skill/sound_k003.wav",
+   "man": "skill/sound_k003.wav"
+  },
+  "1974": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1977": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1979": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
   "1980": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1981": {
+   "fm": "skill/sound_k007.wav",
+   "man": "skill/sound_k002.wav"
+  },
+  "1982": {
    "fm": "skill/sound_k007.wav",
    "man": "skill/sound_k002.wav"
   },

@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name ItemDetailPopup
 ## Khung xem chi tiết 1 món đồ kiểu VLTK mobile: tên (màu theo phẩm chất) trên cùng, ô ảnh vật phẩm + Cấp / loại đồ, phần mô tả thuộc tính (cuộn được nếu dài), cột nút hành động lớn bên phải (VD Trang bị, Vứt bỏ, Tháo).
-## Bấm ra ngoài để tắt. Bố cục/màu nằm trong ItemDetailPopup.tscn.
+## Bấm ra ngoài để tắt. Bố cục nằm trong ItemDetailPopup.tscn, khung/nút lấy từ GameUi (chỉ tên món giữ màu theo phẩm chất).
 
 const SCENE_PATH := "res://ui/items/ItemDetailPopup.tscn"
 ## Chiều cao tối đa phần mô tả — dài hơn thì cuộn.
@@ -22,7 +22,10 @@ static func open(parent: Node, bbcode: String, actions: Array, item: ItemInstanc
 	return popup
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	GameUi.apply()
+	(%Dim as ColorRect).color = GameUi.DIM
 	%Dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			queue_free())

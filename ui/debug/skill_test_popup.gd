@@ -42,6 +42,7 @@ var _skill: SkillDefinition
 var _dummies: Array = []
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_preset(Control.PRESET_TOP_LEFT)

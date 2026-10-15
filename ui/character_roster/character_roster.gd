@@ -141,8 +141,7 @@ func _map_name() -> String:
 func _make_character_slot(i: int, profile: PlayerProfile, map_name: String) -> Dictionary:
 	var slot := {"profile": profile}
 	slot["card"] = _make_card(i, profile, map_name)
-	var sect := SectRegistry.get_by_id(profile.sect_id)
-	var element: ElementTypes.ElementType = sect.element if sect else ElementTypes.ElementType.KIM
+	var element: ElementTypes.ElementType = profile.get_element()
 	var gender_key := "nu" if profile.gender == PlayerProfile.Gender.FEMALE else "nam"
 	var key := "%s_%s" % [ELEMENT_KEY[element], gender_key]
 	var meta := _chars_meta()
@@ -205,8 +204,7 @@ func _make_card(i: int, profile: PlayerProfile, map_name: String) -> Button:
 		var lv := _line(str(profile.level), Vector2(26, 66), 19, Color(0.95, 0.3, 0.25))
 		card.add_child(lv)
 		card.add_child(_line("-  %s" % profile.sect_name, Vector2(26 + 22 + 6 * str(profile.level).length(), 66), 19, Color(1.0, 0.9, 0.35)))
-		var sect := SectRegistry.get_by_id(profile.sect_id)
-		var orb_color: Color = ElementTypes.ELEMENT_COLOR.get(sect.element, Color.WHITE) if sect else Color.WHITE
+		var orb_color: Color = ElementTypes.ELEMENT_COLOR.get(profile.get_element(), Color.WHITE)
 		var orb := _Orb.new()
 		orb.color = orb_color
 		orb.position = Vector2(CARD_SIZE.x - 50, 24)
@@ -270,6 +268,7 @@ func _on_enter_pressed() -> void:
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]
 		SaveManager.set_online_character(int(c["id"]), int(c["version"]))
+	## "Vào game" = vào Character Hub trước; từ Hub bấm "Chơi" mới vào map chính.
 	_go(HUB_SCENE)
 
 func _go(path: String) -> void:

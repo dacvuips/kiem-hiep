@@ -6,6 +6,7 @@ import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
 import AccountsPage from './pages/Accounts'
 import AccountDetailPage from './pages/AccountDetail'
+import CharacterEditPage from './pages/CharacterEdit'
 import PunishmentsPage from './pages/Punishments'
 import ServersPage from './pages/Servers'
 import ShopPage from './pages/Shop'
@@ -36,6 +37,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="accounts/:id" element={<AccountDetailPage />} />
+        <Route path="characters/:cid" element={<CharacterEditPage />} />
         <Route path="punishments" element={<PunishmentsPage />} />
         <Route path="servers" element={<ServersPage />} />
         <Route path="shop" element={<ShopPage />} />

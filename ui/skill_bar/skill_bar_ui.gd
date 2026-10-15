@@ -30,6 +30,9 @@ const LOOP_SLOT_BASE := 100
 @onready var _horse_button: Button = %HorseButton
 @onready var _follow_button: Button = %FollowButton
 @onready var _sit_button: Button = %SitButton
+## Bật/tắt "mở giao dịch" (như nút trong cửa sổ Bày bán) — dựng bằng code, nằm trên nút ngồi.
+var _trade_button: Button
+var _last_weapon_class := -999
 @onready var _loop_buttons: Array[SkillButton] = [%Loop1]
 
 var _player: Node
@@ -102,6 +105,22 @@ func _place_auto_button() -> void:
 	_auto_button.offset_bottom = top + AUTO_BUTTON_SIZE.y
 	_auto_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_auto_button.grow_vertical = Control.GROW_DIRECTION_END
+	## Nút ⚙ "Thiết lập auto đánh" nằm ngay bên trái nút Auto.
+	var gear := Button.new()
+	gear.text = "⚙"
+	gear.tooltip_text = "Thiết lập auto đánh"
+	gear.focus_mode = Control.FOCUS_NONE
+	gear.add_theme_font_size_override("font_size", 22)
+	gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	gear.offset_right = _auto_button.offset_left - AUTO_BUTTON_GAP
+	gear.offset_left = gear.offset_right - AUTO_BUTTON_SIZE.x
+	gear.offset_top = top
+	gear.offset_bottom = top + AUTO_BUTTON_SIZE.y
+	gear.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	gear.pressed.connect(func() -> void:
+		if GameManager.local_profile != null:
+			AutoSettingsWindow.open(get_tree().current_scene, GameManager.local_profile))
+	_auto_button.add_sibling(gear)
 
 func _ready() -> void:
 	_main_button.pressed.connect(_on_main_pressed)
@@ -123,14 +142,18 @@ func _ready() -> void:
 	_style_round_button(_horse_button, "hourse", 0, 1)
 	_style_round_button(_follow_button, "party", 0, 2)
 	_style_round_button(_sit_button, "sit", 0, 2)
+	_build_trade_button()
 	for p in _page_buttons.size():
 		_page_buttons[p].pressed.connect(_set_page.bind(p))
 	_main_button.gui_input.connect(_on_main_gui_input)
 	_build_page_swap()
 	_capture_base_offsets()
 
-## Nút mũi tên đảo chiều giữa "1" và "2": bấm là chuyển nhóm skill 1 <-> 2.
+## Nút tròn đổi nhóm skill 1 <-> 2 (thay chỗ 2 nút "1"/"2" — hai nút đó ẩn đi, chỉ giữ logic trang).
 func _build_page_swap() -> void:
+	for b in _page_buttons:
+		b.visible = false
+	const SIZE := 52.0
 	_page_swap = Button.new()
 	_page_swap.name = "PageSwap"
 	_page_swap.text = "⇄"
@@ -138,23 +161,31 @@ func _build_page_swap() -> void:
 	_page_swap.tooltip_text = "Đổi nhóm kỹ năng 1 <-> 2"
 	_page_swap.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	var p1 := _page_buttons[0]
-	var p2 := _page_buttons[1]
-	var gap_left := p1.offset_right
-	var gap_right := p2.offset_left
-	var width := minf(54.0, maxf(40.0, gap_right - gap_left))
-	_page_swap.offset_left = (gap_left + gap_right) * 0.5 - width * 0.5
-	_page_swap.offset_right = _page_swap.offset_left + width
-	_page_swap.offset_top = p1.offset_top
-	_page_swap.offset_bottom = p1.offset_bottom
+	var cx := (p1.offset_left + p1.offset_right) * 0.5
+	var cy := (p1.offset_top + p1.offset_bottom) * 0.5
+	_page_swap.offset_left = cx - SIZE * 0.5
+	_page_swap.offset_right = cx + SIZE * 0.5
+	_page_swap.offset_top = cy - SIZE * 0.5
+	_page_swap.offset_bottom = cy + SIZE * 0.5
 	_page_swap.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_page_swap.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_page_swap.add_theme_font_size_override("font_size", 24)
+	_page_swap.add_theme_font_size_override("font_size", 26)
 	_page_swap.add_theme_color_override("font_color", Color(1, 0.9, 0.55))
+	_page_swap.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
+	_page_swap.add_theme_color_override("font_pressed_color", Color.WHITE)
 	_page_swap.add_theme_color_override("font_outline_color", Color.BLACK)
 	_page_swap.add_theme_constant_override("outline_size", 4)
-	_page_swap.add_theme_stylebox_override("normal", p1.get_theme_stylebox("normal"))
-	_page_swap.add_theme_stylebox_override("hover", p1.get_theme_stylebox("pressed"))
-	_page_swap.add_theme_stylebox_override("pressed", p1.get_theme_stylebox("pressed"))
+	var circle := func(bg: Color, border: Color) -> StyleBoxFlat:
+		var s := StyleBoxFlat.new()
+		s.bg_color = bg
+		s.border_color = border
+		s.set_border_width_all(2)
+		s.set_corner_radius_all(int(SIZE * 0.5))
+		s.anti_aliasing = true
+		return s
+	_page_swap.add_theme_stylebox_override("normal", circle.call(Color(0.08, 0.07, 0.05, 0.85), Color(0.95, 0.95, 0.95)))
+	_page_swap.add_theme_stylebox_override("hover", circle.call(Color(0.2, 0.17, 0.1, 0.9), Color(1, 0.85, 0.35)))
+	_page_swap.add_theme_stylebox_override("pressed", circle.call(Color(0.38, 0.3, 0.12, 0.95), Color(1, 0.85, 0.35)))
 	_page_swap.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_page_swap.pressed.connect(func() -> void:
 		var profile := GameManager.local_profile
@@ -316,6 +347,39 @@ func _on_sit_pressed() -> void:
 	if not editing_hotbar:
 		_player.toggle_sit()
 
+func _build_trade_button() -> void:
+	_trade_button = Button.new()
+	_trade_button.name = "TradeButton"
+	_trade_button.toggle_mode = true
+	_trade_button.focus_mode = Control.FOCUS_NONE
+	_trade_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_trade_button.offset_top = _sit_button.offset_top - 60.0
+	_trade_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_trade_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_style_round_button(_trade_button, "exchange", 0, 1)
+	_trade_button.pressed.connect(_on_trade_pressed)
+	_sit_button.add_sibling(_trade_button)
+
+## Giống StallWindow._on_trade(): đổi cờ trong profile, online thì báo server (server bật cờ FLAG_TRADE_OPEN cho người khác thấy).
+func _on_trade_pressed() -> void:
+	var profile := GameManager.local_profile
+	if editing_hotbar or profile == null:
+		return
+	var msg := ""
+	if profile.trade_open:
+		StallService.close_trade(profile)
+		msg = "Đã tắt mở giao dịch."
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_CLOSE)
+	else:
+		var err := StallService.open_trade(profile)
+		msg = err if err != "" else "Đã mở giao dịch — người khác có thể xin giao dịch với bạn."
+		if err == "" and NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_OPEN)
+	SaveManager.save_profile(profile)
+	if _player != null and _player.has_method("notify"):
+		_player.notify(msg)
+
 func _on_follow_pressed() -> void:
 	if not editing_hotbar:
 		_player.toggle_follow()
@@ -343,6 +407,11 @@ func _process(_delta: float) -> void:
 		if _player.skill_controller.try_cast_main(_player, _player.make_aim_target(_main_button.skill)):
 			_player.play_cast()
 	var controller: SectSkillController = _player.skill_controller
+	## Đổi vũ khí (cận chiến <-> phi tiêu/phi đao/tụ tiễn) khi nút chính đang đánh thường: đổi icon bàn tay <-> phi đao.
+	var weapon_class := Equipment.get_weapon_class(GameManager.local_profile.equipment)
+	if weapon_class != _last_weapon_class:
+		_last_weapon_class = weapon_class
+		refresh_sub_skills()
 	## Hào quang đang bật: nút sáng vàng.
 	for b in [_main_button] + _sub_buttons:
 		(b as Control).modulate = AURA_ON_TINT if controller.is_aura_active(b.skill) else Color.WHITE
@@ -377,6 +446,9 @@ func _process(_delta: float) -> void:
 	_sit_button.modulate = Color(1, 1, 1, 0.45) if _player.is_riding() else Color.WHITE
 	_jump_button.modulate = Color(1, 1, 1, 0.45) if _player.is_riding() else Color.WHITE
 	_follow_button.modulate = COLOR_AUTO_ON.lightened(0.5) if _player.is_following() else Color.WHITE
+	var trade_on := GameManager.local_profile.trade_open
+	_trade_button.set_pressed_no_signal(trade_on)
+	_trade_button.tooltip_text = "Đang MỞ giao dịch — bấm để tắt" if trade_on else "Mở giao dịch (cho người khác xin giao dịch)"
 
 ## ---- Ngắm hướng bằng nút chính ----
 func _on_main_gui_input(event: InputEvent) -> void:

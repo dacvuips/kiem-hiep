@@ -122,6 +122,10 @@ static func action_frames(m: Dictionary, action_name: String) -> int:
 ## Chỉ số gốc của quái theo cấp — công thức script gốc npclevelscript (data/monsters/monsters.json, "stats"):
 ## floor(a*cấp² + b*cấp + c) nhân hệ số % (cột <Tên>Param, thường 100).
 ## stat: "life" | "exp" | "attack_rating" | "defense" | "min_damage" | "max_damage". Quái chưa có dữ liệu -> -1.
+## Script cấp "soldier5" / "soldier6" (lính chiến trường: Đại tướng, Nguyên Soái): sinh lực / chính xác / phòng thủ / sát thương KHÔNG theo
+## đa thức mà theo BẬC cấp — cấp <= 70 lấy số 1, <= 90 số 2, còn lại số 3 (npclevelscript/soldier6.lua SetKeyData).
+const BAND_LEVEL_SCRIPTS := ["soldier5", "soldier6"]
+const BAND_STATS := ["life", "attack_rating", "defense", "min_damage", "max_damage"]
 const LIFE_CAP_MAX_LEVEL := 10
 const LIFE_CAP_LEVEL_10 := 200
 
@@ -132,6 +136,8 @@ static func stat_at_level(m: Dictionary, stat: String, level: int) -> int:
 	var p: Array = s[stat]
 	var lv := float(maxi(1, level))
 	var value := floorf(float(p[1]) * lv * lv + float(p[2]) * lv + float(p[3]))
+	if BAND_STATS.has(stat) and BAND_LEVEL_SCRIPTS.has(str(m.get("level_script", ""))):
+		value = floorf(float(p[1] if level <= 70 else (p[2] if level <= 90 else p[3])))
 	var result := int(floorf(value * float(p[0]) / 100.0))
 	## TẠM THỜI (theo số đo trên server thật: Heo rừng/Nhím cấp 10 ở Hoa Sơn chết sau đúng 200 sát thương): quái từ cấp 10
 	## trở xuống tối đa LIFE_CAP_LEVEL_10 máu; trên cấp 10 theo công thức gốc. Bỏ khi tìm ra công thức máu của server.

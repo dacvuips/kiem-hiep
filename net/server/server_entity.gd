@@ -8,6 +8,8 @@ var kind := NetProto.KIND_PLAYER
 var name := ""
 var level := 1
 var camp := 0
+var stall_title := ""           ## tên quầy đang bày bán ("" = không bày) — biển trên đầu, bấm vào xem hàng
+var nation := 0                  ## Nation.Type — phe Tống / Kim (khác phe với người xem thì tên đỏ)
 var pos := Vector2.ZERO          ## toạ độ chân
 var dir := 0                     ## 0..7 như CharacterAvatar
 var action := 0                  ## chỉ số NetProto.ACTIONS
@@ -29,6 +31,8 @@ func write_spawn(b: StreamPeerBuffer) -> void:
 	NetProto.put_str(b, name)
 	b.put_u16(level)
 	b.put_8(camp)
+	b.put_u8(nation)
+	NetProto.put_str(b, stall_title)
 	b.put_float(pos.x)
 	b.put_float(pos.y)
 	b.put_u8(dir)

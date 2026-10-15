@@ -18,6 +18,12 @@ const DEBUG_COOLDOWN := 0.05
 const USE_VLTK_SKILL_FX := true
 
 var sect: SectDefinition
+## Hồ sơ nhân vật của người thi triển — null = nhân vật của mình (GameManager.local_profile). Bot PK (PkBot) gán hồ sơ riêng
+## để dùng chung bộ điều khiển skill: cấp skill, đòn chính, hào quang đọc từ hồ sơ này.
+var owner_profile: PlayerProfile = null
+
+func _profile() -> PlayerProfile:
+	return owner_profile if owner_profile != null else GameManager.local_profile
 var _cooldowns: Dictionary = {}  ## skill_id (String) -> giây còn lại
 var _cooldown_totals: Dictionary = {}  ## skill_id (String) -> cooldown gốc (để tính % cho UI)
 
@@ -38,34 +44,30 @@ func get_cooldown_ratio(skill_id: String) -> float:
 	return clampf(_cooldowns.get(skill_id, 0.0) / total, 0.0, 1.0)
 
 ## Skill ở NÚT CHÍNH (cũng là skill Auto tự đánh): skill người chơi đã gắn (PlayerProfile.
-## main_skill_id) nếu còn hợp lệ và dùng được, không thì đòn chính mặc định của phái.
+## main_skill_id) nếu còn hợp lệ và dùng được, không thì ĐÁNH THƯỜNG hợp vũ khí đang cầm.
 func get_main_skill() -> SkillDefinition:
-	if sect == null:
-		return null
-	if GameManager.local_profile:
-		var custom := _find_skill(GameManager.local_profile.main_skill_id)
-		if custom and is_skill_usable(custom):
+	if sect != null and _profile():
+		var custom := _find_skill(_profile().main_skill_id)
+		if custom and is_skill_usable(custom) and not custom.is_basic_attack:
 			return custom
 	return get_default_main_skill()
 
+## Nút chính trống: đánh thường — tay không / vũ khí cận chiến = bàn tay, phi tiêu / phi đao / tụ tiễn = phi đao.
+## Vô Môn Phái (sect == null) cũng đánh thường được.
 func get_default_main_skill() -> SkillDefinition:
-	if sect == null:
-		return null
-	for skill in sect.skills:
-		if skill.is_main_attack:
-			return skill
-	return null
+	var profile := _profile()
+	return SectRegistry.basic_attack_for(profile.equipment if profile else {})
 
 ## Đòn chính mặc định luôn dùng được (không cần học); skill khác phải học >= 1 cấp.
 func is_skill_usable(skill: SkillDefinition) -> bool:
-	return skill.is_main_attack or skill.is_basic_attack or DEBUG_UNLOCK_ALL_SKILLS or GameManager.local_profile.get_skill_level(skill.id) > 0
+	return skill.is_main_attack or skill.is_basic_attack or DEBUG_UNLOCK_ALL_SKILLS or _profile().get_skill_level(skill.id) > 0
 
 ## Luôn đủ PlayerProfile.HOTBAR_SLOT_COUNT phần tử theo đúng thứ tự ô người chơi đã gắn trong bảng
 ## Kỹ Năng Võ Công — phần tử null = ô trống (chưa gắn, hoặc skill đã gắn không còn hợp lệ). Chỉ số
 ## 0-3 dùng chung cho phím skill_1-4 và nút bấm trên SkillBarUI.
 ## Skill đang gắn ở ô thi triển liên tục `index` (null = ô trống / chưa đủ điều kiện dùng).
 func get_loop_skill(index: int) -> SkillDefinition:
-	var profile := GameManager.local_profile
+	var profile := _profile()
 	if sect == null or profile == null or index < 0 or index >= profile.loop_skill_ids.size():
 		return null
 	var skill := _find_skill(profile.loop_skill_ids[index])
@@ -77,15 +79,15 @@ var loop_enabled: Array[bool] = [true]
 func get_sub_skills() -> Array[SkillDefinition]:
 	var result: Array[SkillDefinition] = []
 	result.resize(PlayerProfile.HOTBAR_SLOT_COUNT)
-	if sect == null or GameManager.local_profile == null:
+	if sect == null or _profile() == null:
 		return result
-	var ids := GameManager.local_profile.hotbar_skill_ids
+	var ids := _profile().hotbar_skill_ids
 	for i in PlayerProfile.HOTBAR_SLOT_COUNT:
 		result[i] = _find_skill(ids[i])
 	return result
 
 func _find_skill(skill_id: String) -> SkillDefinition:
-	if skill_id == "":
+	if skill_id == "" or sect == null:
 		return null
 	for skill in sect.skills:
 		if skill.id == skill_id and skill.can_assign_to_hotbar():
@@ -108,15 +110,9 @@ func try_cast_skill(index: int, caster: Node2D, target: Node2D) -> bool:
 		return false
 	return _try_cast(skill, caster, target)
 
-## Chế độ Auto: CHỈ tự động đánh skill ở nút chính (get_main_skill) — skill phụ vẫn phải người chơi tự
-## bấm thủ công (phím skill_1-4), kể cả khi đang bật Auto. Tránh tự ý dùng hết cooldown skill phụ
-## thay người chơi (VD skill phụ có hiệu ứng đặc biệt muốn để dành đúng lúc).
 ## Ra chiêu skill ở ô thi triển liên tục (cùng điều kiện như bấm tay: hồi chiêu, vũ khí/ngựa, choáng...).
 func try_cast_loop(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
 	return _try_cast(skill, caster, target)
-
-func try_cast_auto(caster: Node2D, target: Node2D) -> bool:
-	return try_cast_main(caster, target)
 
 ## Buff hỗ trợ (skill trạng thái không nhắm địch, VD Thanh Phong phù) — tâm là người thi triển, không
 ## cần mục tiêu.
@@ -134,7 +130,7 @@ static func state_meta(skill: SkillDefinition) -> Dictionary:
 
 ## Lý do skill không thi triển được vì vũ khí đang cầm / ngựa ("" = được). Người thi triển không phải player thì bỏ qua.
 func get_cast_block_reason(skill: SkillDefinition, caster: Node2D) -> String:
-	var profile := GameManager.local_profile
+	var profile := _profile()
 	if profile == null or not caster.has_method("is_riding"):
 		return ""
 	return skill.get_cast_block_reason(Equipment.get_weapon_class(profile.equipment), caster.is_riding())
@@ -216,7 +212,7 @@ func _net_cast(skill: SkillDefinition, caster: Node2D, target: Node2D, support: 
 const AURA_TOGGLE_DELAY := 0.5
 
 func _toggle_aura(skill: SkillDefinition, caster: Node2D) -> void:
-	var profile := GameManager.local_profile
+	var profile := _profile()
 	profile.active_aura_id = "" if profile.active_aura_id == skill.id else skill.id
 	SaveManager.save_profile(profile)
 	if caster.has_method("refresh_combat_stats"):
@@ -233,7 +229,7 @@ const AURA_CASTS_PER_TICK := 2   ## số lần thi triển skill con của hào 
 var _aura_time: float = 0.0
 
 func tick_aura(caster: Node2D, delta: float) -> void:
-	var profile := GameManager.local_profile
+	var profile := _profile()
 	if profile == null or profile.active_aura_id == "" or not USE_VLTK_SKILL_FX:
 		_aura_time = 0.0
 		return
@@ -262,8 +258,8 @@ func tick_aura(caster: Node2D, delta: float) -> void:
 		VltkSkillCaster.cast(ctx, child, level, ctx.launcher_logic(), null)
 
 func is_aura_active(skill: SkillDefinition) -> bool:
-	return skill != null and skill.is_aura and GameManager.local_profile != null \
-			and GameManager.local_profile.active_aura_id == skill.id
+	return skill != null and skill.is_aura and _profile() != null \
+			and _profile().active_aura_id == skill.id
 
 func _cast_support_buff(skill: SkillDefinition, caster: Node2D) -> void:
 	var payload := skill.get_state_payload(_learned_level(skill))
@@ -297,7 +293,7 @@ func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D =
 		VltkSkillRunner.play_support(caster, target, skill, _learned_level(skill))
 
 func _learned_level(skill: SkillDefinition) -> int:
-	return maxi(1, GameManager.local_profile.get_skill_level(skill.id))
+	return maxi(1, _profile().get_skill_level(skill.id))
 
 ## Hiệu ứng trúng đòn — NGUYÊN VĂN KNpc::AppendSkillEffect gốc (giá trị skill đọc từ vltk_attribs):
 ##   Làm chậm  = colddamage_v[2] + m_CurrentColdEnhance (khi skill có Băng sát); có thêm "Băng sát" của
@@ -406,13 +402,16 @@ func get_echo_damage(skill: SkillDefinition, caster: Node2D) -> Vector2i:
 
 func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
-	var profile := GameManager.local_profile
+	var profile := _profile()
 	var learned_level: int = maxi(1, profile.get_skill_level(skill.id))
 	var real := skill.get_combat_damage_at_level(learned_level)
 	var enhance_percent: float = real["physics_enhance"]
 	var physics_flat: Vector2i = real["physics_flat"]
 	var skill_elements: Dictionary = real["elements"]
-	var add_damage_p := skill.get_support_percent_from_other_skills(sect.skills, profile)
+	var sect_skills: Array[SkillDefinition] = []
+	if sect:
+		sect_skills = sect.skills
+	var add_damage_p := skill.get_support_percent_from_other_skills(sect_skills, profile)
 	var is_physical := skill.is_physical()
 
 	var combat_stats: CombatantStats = caster.combat_stats if "combat_stats" in caster else CombatantStats.new()

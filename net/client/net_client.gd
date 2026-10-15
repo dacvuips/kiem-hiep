@@ -23,6 +23,7 @@ signal trade_invite(from_eid: int, from_name: String)
 signal trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary)
 signal trade_end(success: bool, message: String)
 signal stall_items(seller_eid: int, title: String, items: Array)
+signal stall_sign(eid: int, title: String)
 signal team_state(state: Dictionary)
 signal team_invite(captain_eid: int, captain_name: String)
 signal guild_received(data: Dictionary)
@@ -31,11 +32,13 @@ signal guild_invite(guild_name: String, from_name: String)
 signal player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2)
 signal enmity_state(state: int, other_eid: int, other_name: String, launcher: bool)
 signal pvp_hit(attacker_eid: int, hit: Dictionary)
-signal camp_changed(eid: int, camp: int)
+signal camp_changed(eid: int, camp: int, nation: int)
 signal friend_invite(from_eid: int, from_name: String)
 signal friend_list(list: Array)
 signal view_equip(snapshot: Dictionary)
 signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
+## Chiến trường Tống Kim (battle server): {op: "state" | "joined" | "reject" | "result", ...}.
+signal battle_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -75,9 +78,15 @@ func connect_to(server: Dictionary, access_token: String, character_id: int) -> 
 		if _peer is ENetMultiplayerPeer:
 			NetProto.tune_enet_peer((_peer as ENetMultiplayerPeer).get_peer(1))
 		_send_hello(access_token, character_id))
+	var this_peer := _peer
 	_peer.peer_disconnected.connect(func(_id: int) -> void:
-		_fail(_last_error[0] if _last_error[0] != "" else "disconnected",
-			_last_error[1] if _last_error[1] != "" else "Mất kết nối với máy chủ game"))
+		# Tín hiệu này phát ra giữa _peer.poll(): đóng/giải phóng peer ngay tại đây làm Godot sập (signal 11),
+		# nên dời sang cuối khung hình, và bỏ qua nếu lúc đó đã đổi sang kết nối khác.
+		(func() -> void:
+			if _peer != this_peer:
+				return
+			_fail(_last_error[0] if _last_error[0] != "" else "disconnected",
+				_last_error[1] if _last_error[1] != "" else "Mất kết nối với máy chủ game")).call_deferred())
 
 func disconnect_from_server() -> void:
 	if _peer:
@@ -211,6 +220,15 @@ func send_guild(op: int, args := {}) -> void:
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
 
+## Chiến trường Tống Kim: op = BattleServer.OP_* (JOIN {side}).
+func send_battle(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b)
+
 func send_chat(channel: int, to_name: String, text: String) -> void:
 	if status != Status.IN_WORLD:
 		return
@@ -279,6 +297,11 @@ func send_discard(item_uid: String) -> void:
 	NetProto.put_str(b, item_uid)
 	_send(b)
 
+func send_revive() -> void:
+	if status != Status.IN_WORLD:
+		return
+	_send(NetProto.writer(NetProto.C_REVIVE))
+
 func send_look(look: Dictionary) -> void:
 	if status != Status.IN_WORLD:
 		return
@@ -290,8 +313,9 @@ func send_look(look: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if _peer == null:
 		return
-	_peer.poll()
-	if _peer == null:
+	var peer := _peer   # giữ tham chiếu để peer không bị giải phóng giữa lúc poll()
+	peer.poll()
+	if _peer != peer:
 		return
 	if status == Status.CONNECTING and Time.get_ticks_msec() / 1000.0 > _connect_deadline:
 		_fail("timeout", "Máy chủ game không phản hồi")
@@ -309,7 +333,7 @@ func _process(delta: float) -> void:
 func _read_spawn(b: StreamPeerBuffer) -> void:
 	var info := {
 		"eid": b.get_u32(), "kind": b.get_u8(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
-		"pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
+		"nation": b.get_u8(), "stall_title": NetProto.get_str(b), "pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
 		"flags": b.get_u8(), "hp": b.get_u8(),
 	}
 	if int(info.kind) == NetProto.KIND_PLAYER:
@@ -453,6 +477,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var raw := NetProto.get_str(b, 1 << 20)
 			var parsed: Variant = JSON.parse_string(raw) if raw != "" else null
 			guild_received.emit(parsed if parsed is Dictionary else {})
+		NetProto.S_BATTLE:
+			var msg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
+			if msg is Dictionary:
+				battle_message.emit(msg)
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list.emit(parsed if parsed is Array else [])
@@ -470,7 +498,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					pvp_hit.emit(attacker, hit)
 		NetProto.S_CAMP:
 			var ceid := b.get_u32()
-			camp_changed.emit(ceid, b.get_8())
+			var cv := b.get_8()
+			camp_changed.emit(ceid, cv, b.get_u8())
 		NetProto.S_FRIEND_INVITE:
 			var feid := b.get_u32()
 			friend_invite.emit(feid, NetProto.get_str(b))
@@ -491,6 +520,9 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TEAM_INVITE:
 			var cap := b.get_u32()
 			team_invite.emit(cap, NetProto.get_str(b))
+		NetProto.S_STALL_SIGN:
+			var seid := b.get_u32()
+			stall_sign.emit(seid, NetProto.get_str(b))
 		NetProto.S_STALL_ITEMS:
 			var seller := b.get_u32()
 			var title := NetProto.get_str(b)

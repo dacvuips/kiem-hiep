@@ -6,7 +6,7 @@ class_name CharacterCreateScreen
 ## Bố cục đặt theo toạ độ ảnh mockup 1672x941 trong node Stage, Stage được scale "fit" + căn giữa
 ## theo kích thước viewport; nền phủ kiểu "cover".
 ##
-## Chưa có UI chọn môn phái trong mockup -> tạm gán môn phái đầu tiên của hệ đã chọn.
+## Chỉ chọn hệ: nhân vật mới là Vô Môn Phái, đủ cấp PlayerProfile.NEWBIE_LEVEL mới chọn phái của hệ (SectPrompt).
 ## Sheet nhân vật còn thiếu: Kim-Nữ, Thủy-Nam (hiện báo "Sắp ra mắt", không cho chọn giới tính đó).
 
 const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
@@ -104,9 +104,7 @@ func _ready() -> void:
 	if existing:
 		_name_input.text = existing.display_name
 		_gender = existing.gender
-		var sect := SectRegistry.get_by_id(existing.sect_id)
-		if sect:
-			_element = sect.element
+		_element = existing.get_element()
 	_select_element(_element)
 
 	modulate.a = 0.0
@@ -152,9 +150,12 @@ func _select_element(element: ElementTypes.ElementType) -> void:
 		_gender = PlayerProfile.Gender.MALE
 	_select_gender(_gender)
 
-## Trả về false nếu hệ này chưa có sheet cho giới tính đó.
+## Trả về false nếu hệ này chưa có sheet cho giới tính đó. Hệ thiếu sheet 1 giới tính (nữ Kim, nam Thủy — bản 15 phái
+## có Dương Môn/Hoa Sơn nhận cả hai) thì TẠM dùng sheet giới tính kia của cùng hệ; thả <he>_<gioi>.png + mục chars.json
+## vào chars/ là tự dùng ảnh thật.
 func _setup_portrait(portrait: AnimatedPortrait, gender_key: String) -> bool:
-	var key := "%s_%s" % [ELEMENT_KEY[_element], gender_key]
+	var char_key := "%s_%s" % [ELEMENT_KEY[_element], gender_key]   ## khoá chỉnh cỡ/vị trí (offsets/scales) — giữ tên thật
+	var key := AnimatedPortrait.sheet_for(char_key)
 	var path := "%s%s.png" % [CHARS_DIR, key]
 	if not _meta.has(key) or not ResourceLoader.exists(path):
 		portrait.visible = false
@@ -162,7 +163,7 @@ func _setup_portrait(portrait: AnimatedPortrait, gender_key: String) -> bool:
 		return false
 	## Vị trí đứng / cỡ nhân vật và vòng hào quang do người chỉnh trong editor (kéo node MalePortrait/FemalePortrait và
 	## MaleAura/FemaleAura trong Stage) — code chỉ đổi hình.
-	portrait.setup(load(path), _meta[key], key)
+	portrait.setup(load(path), _meta[key], char_key)
 	portrait.visible = true
 	portrait.set_playing(false)
 	return true
@@ -209,34 +210,38 @@ func _on_create_pressed() -> void:
 		_show_message("Hệ này chưa có môn phái")
 		return
 	if AccountApi.is_logged_in():
-		_create_online(player_name, sects[0])
+		_create_online(player_name)
 		return
 
-	## Đã có nhân vật thì chỉ đổi tên/giới tính/môn phái, giữ nguyên tiến trình.
+	## Đã có nhân vật thì chỉ đổi tên/giới tính/hệ, giữ nguyên tiến trình (đổi hệ thì bỏ phái cũ, về Vô Môn Phái).
+	var is_new := GameManager.local_profile == null
 	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _gender
-	if profile.sect_id.is_empty() or SectRegistry.get_by_id(profile.sect_id) == null \
-			or SectRegistry.get_by_id(profile.sect_id).element != _element:
-		profile.set_sect(sects[0])
+	if profile.get_element() != _element or (not profile.has_sect() and profile.element < 0):
+		profile.choose_element(_element)
 	var need_gender := PlayerProfile.required_gender(int(_element))
 	if need_gender >= 0:
-		profile.gender = need_gender as PlayerProfile.Gender   ## Kim chỉ nam, Thủy chỉ nữ
+		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
+	if is_new:
+		StarterKit.apply(profile)   ## quà tân thủ: cấp 10 + đồ trong túi (vào game là phải chọn phái)
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
 	_show_message("Đã tạo nhân vật %s — %s" % [player_name, profile.sect_name])
 
 ## Tạo nhân vật trên server (tài khoản + máy chủ đang chọn, ô target_slot) rồi vào game luôn.
-func _create_online(player_name: String, sect: SectDefinition) -> void:
+func _create_online(player_name: String) -> void:
 	if _create_button.disabled:
 		return
 	var profile := PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _gender
-	profile.set_sect(sect)
+	profile.choose_element(_element)
 	var need_gender := PlayerProfile.required_gender(int(_element))
 	if need_gender >= 0:
-		profile.gender = need_gender as PlayerProfile.Gender   ## Kim chỉ nam, Thủy chỉ nữ
+		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
+	## Quà tân thủ để Hub hiện ngay cấp 10 + đồ; bản thật do game server phát lại lúc vào map lần đầu (ProfileGuard.sanitize_new).
+	StarterKit.apply(profile)
 	_create_button.disabled = true
 	_enter_button.disabled = true
 	_show_message("Đang tạo nhân vật…")

@@ -60,6 +60,8 @@ const WEAPON_LIMIT_TEXT := {
 	-1: ["Quyền Thủ", "ff6040"], 0: ["Kiếm", "40e0ff"], 1: ["Đơn Đao", "60ff60"], 2: ["Côn Bổng", "c0a060"],
 	3: ["Thương", "ffff40"], 4: ["Song Chùy", "ff80c0"], 5: ["Song Đao", "e0e0e0"], 100: ["Phi Tiêu", "d0a060"],
 	101: ["Phi Đao", "60a0ff"], 102: ["Tụ Tiễn", "4080ff"],
+	## Bản 15 phái (loại vũ khí Equipment.get_weapon_class): Vũ Hồn dùng đao thuẫn / thuẫn đao.
+	7: ["Đao Thuẫn", "ff8040"], 8: ["Thuẫn Đao", "ff8040"], 103: ["Cầm", "c080ff"], 104: ["Cung", "d0a060"],
 }
 
 ## Lý do KHÔNG thi triển được ("" = được) theo KSkill::CanCastSkill gốc: `weapon_class` = loại vũ khí đang cầm

@@ -11,6 +11,7 @@ var _mine_view: ItemRoomView
 var _theirs_view: ItemRoomView
 var _bag_view: ItemRoomView
 var _bag := 0
+var _bag_tabs: Array[Button] = []
 var _their_money: Button
 var _my_money: Button
 var _bag_money: Label
@@ -47,7 +48,7 @@ func _init(hub: SocialHub = null) -> void:
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 8)
 	cols.add_child(left)
-	var theirs := SocialUi.section(partner_name, SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var theirs := SocialUi.section(partner_name)
 	_theirs_view = ItemRoomView.new()
 	_theirs_view.cell = _cell
 	_theirs_view.interactive = false
@@ -62,7 +63,7 @@ func _init(hub: SocialHub = null) -> void:
 	theirs[1].add_child(_comment)
 	left.add_child(theirs[0])
 
-	var mine := SocialUi.section("Vật phẩm đặt vào", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var mine := SocialUi.info_box("Vật phẩm đặt vào")
 	_mine_view = ItemRoomView.new()
 	_mine_view.cell = _cell
 	mine[1].add_child(_mine_view)
@@ -71,15 +72,16 @@ func _init(hub: SocialHub = null) -> void:
 	left.add_child(mine[0])
 
 	## ---- Cột phải: hành trang của tôi
-	var bag := SocialUi.section("Vật phẩm của tôi — bấm hoặc kéo món vào ô đặt", SocialUi.GOLD, SocialUi.SECTION_BG)
+	var bag := SocialUi.section("Vật phẩm của tôi — bấm hoặc kéo món vào ô đặt")
 	var tabs := HBoxContainer.new()
 	bag[1].add_child(tabs)
 	for i in PlayerProfile.OPEN_BAGS:
-		var b := SocialUi.small_button("Túi %d" % (i + 1))
+		var b := GameUi.button("Túi %d" % (i + 1), GameUi.TAB)
 		b.pressed.connect(func() -> void:
 			_bag = i
 			_refresh())
 		tabs.add_child(b)
+		_bag_tabs.append(b)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 21 + 8, 400)
@@ -136,9 +138,10 @@ func _init(hub: SocialHub = null) -> void:
 
 ## Thanh tiền kiểu ô dài "N lượng" (bấm ở phần của mình để nhập số tiền).
 func _money_bar() -> Button:
-	var b := SocialUi.small_button("0 lượng")
-	b.add_theme_color_override("font_color", SocialUi.LABEL_GREEN)
-	b.add_theme_color_override("font_disabled_color", SocialUi.LABEL_GREEN)
+	var b := GameUi.button("0 lượng", GameUi.BUTTON)
+	## Chữ tiền màu xanh lá (màu ngữ nghĩa, giữ cả khi nút bị khoá)
+	b.add_theme_color_override("font_color", GameUi.LABEL_GREEN)
+	b.add_theme_color_override("font_disabled_color", GameUi.LABEL_GREEN)
 	b.custom_minimum_size = Vector2(0, 28)
 	return b
 
@@ -185,6 +188,8 @@ func _refresh() -> void:
 	_mine_view.setup(mine.room, _profile)
 	_theirs_view.setup(theirs.room, _profile)
 	_bag_view.bag = _bag
+	for i in _bag_tabs.size():
+		GameUi.set_active(_bag_tabs[i], i == _bag)
 	_bag_view.setup(_profile)
 	_my_money.text = "%s lượng" % InventoryPopup.format_money(mine.money)
 	_their_money.text = "%s lượng" % InventoryPopup.format_money(theirs.money)
@@ -211,6 +216,11 @@ func _on_cancel() -> void:
 
 func _on_finished(success: bool, message: String) -> void:
 	_finished = true
+	if success:
+		## Xong thì đóng ngay cửa sổ của cả 2 bên — lời báo "Giao dịch thành công!" đã hiện qua SocialHub.notice.
+		SaveManager.save_profile(_profile)
+		close_requested.emit()
+		return
 	SocialUi.set_banner(_msg, message, success)
 	_msg.visible = true
 	for b in [_lock_btn, _ok_btn, _my_money]:

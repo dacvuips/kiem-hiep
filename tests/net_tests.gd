@@ -7,7 +7,8 @@ extends Node
 
 const API := "http://127.0.0.1:8080"
 const HOST := "127.0.0.1"
-const PORT := 7777
+## Cổng ENet của game server cần thử (GAME_ENET_PORT, mặc định 7777) — chạy bản thử song song server đang mở.
+var PORT := int(OS.get_environment("GAME_ENET_PORT")) if OS.has_environment("GAME_ENET_PORT") else 7777
 
 var _pass := 0
 var _fail := 0
@@ -243,11 +244,31 @@ func test_trade_and_stall() -> void:
 	x.stall_op(SocialServer.STALL_BROWSE, "", y.eid)
 	check("C2: X xem quầy thấy món có giá", await wait_until(func() -> bool:
 		return x.stall.get("items", []).any(func(d: Dictionary) -> bool: return str(d.uid) == item_uid and int(d.price) == 5), 3.0), [x.stall, y.notices])
+	check("Bày bán: người xung quanh thấy biển tên quầy trên đầu", str(x.known[y.eid].get("stall_title", "")) == "Hàng tốt giá rẻ", x.known[y.eid])
+	check("Bày bán: người bán hiện đang ngồi", await wait_until(func() -> bool:
+		return int(x.known[y.eid].get("action", -1)) == NetProto.action_index("sit") and (int(x.known[y.eid].get("flags", 0)) & NetProto.FLAG_SITTING) != 0, 3.0),
+		x.known[y.eid])
 	var x_gold := int(x.profile.get("gold", 0))
 	x.stall_op(SocialServer.STALL_BUY, "", y.eid, item_uid)
 	check("C2: mua ở quầy: đồ về X, tiền sang Y", await wait_until(func() -> bool:
 		return x.inventory_uids().has(item_uid) and int(x.profile.gold) == x_gold - 5 and int(y.profile.gold) == 5, 3.0),
 		[x.notices, y.notices, x.profile.get("gold"), y.profile.get("gold")])
+	check("Bày bán: hết hàng thì tự dọn quầy, biển trên đầu biến mất", await wait_until(func() -> bool:
+		return str(x.known[y.eid].get("stall_title", "x")) == "", 3.0), x.known[y.eid])
+	## Bày bán rồi đứng dậy đi chỗ khác: server tự dọn quầy, người xung quanh mất biển
+	var px := x.profile.duplicate(true)
+	for it in px.inventory:
+		if str(it.uid) == item_uid:
+			it["price"] = 7
+	x.send_profile(px)
+	await get_tree().create_timer(0.6).timeout
+	x.stall_op(SocialServer.STALL_OPEN, "")
+	check("Bày bán: không đặt tên quầy thì dùng tên mặc định", await wait_until(func() -> bool:
+		return str(y.known[x.eid].get("stall_title", "")).begins_with("Quầy của "), 3.0), y.known[x.eid])
+	await get_tree().create_timer(0.3).timeout
+	x.move_to(x.feet + Vector2(20, 0))
+	check("Bày bán: di chuyển thì quầy tự dọn", await wait_until(func() -> bool:
+		return str(y.known[x.eid].get("stall_title", "x")) == "" and x.my_stall_sign == "", 3.0), [y.known[x.eid], x.my_stall_sign])
 	x.close()
 	y.close()
 	await get_tree().create_timer(1.5).timeout
@@ -583,6 +604,32 @@ func http_put(path: String, body: Dictionary, token: String) -> Dictionary:
 	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
 	return d if d is Dictionary else {}
 
+## Thoát game rồi vào lại -> đứng đúng chỗ lúc thoát (server lưu "pos" khi rời map).
+func test_saved_position() -> void:
+	var info := await make_player("p")
+	var p := bot(info[0], info[1])
+	if not await wait_until(func() -> bool: return p.in_world):
+		check("Vị trí: vào map", false, p.error_code)
+		return
+	var first := p.feet
+	await _walk(p, first + Vector2(60, 30))
+	await get_tree().create_timer(0.3).timeout
+	var left_at := p.feet
+	check("Vị trí: đã đi khỏi chỗ xuất phát", left_at.distance_to(first) > 30.0, [first, left_at])
+	p.close()
+	var saved := false
+	for i in 20:
+		var d: Variant = (await _character(info)).get("data", {}).get("pos")
+		if d is Array and Vector2(float(d[0]), float(d[1])).distance_to(left_at) < 2.0:
+			saved = true
+			break
+		await get_tree().create_timer(0.25).timeout
+	check("Vị trí: lưu khi thoát", saved)
+	var again := bot(info[0], info[1])
+	check("Vị trí: vào lại đúng chỗ cũ", await wait_until(func() -> bool: return again.in_world)
+		and again.feet.distance_to(left_at) < 2.0, [left_at, again.feet])
+	again.close()
+
 func _character(info: Array) -> Dictionary:
 	var list := await http("GET", "/v1/characters?server_id=1", {}, info[0])
 	for c in list.get("characters", []):
@@ -691,3 +738,4 @@ func run() -> void:
 	await test_cast()
 	await test_relations()
 	await test_shop()
+	await test_saved_position()

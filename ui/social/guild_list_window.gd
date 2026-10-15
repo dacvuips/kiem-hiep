@@ -32,7 +32,7 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 		req[1].add_child(SocialUi.label("✔ Bạn đủ điều kiện — bấm [Tạo mới]." if blockers.is_empty() else "Chưa đạt: " + "; ".join(blockers), SocialUi.LABEL_GREEN if blockers.is_empty() else SocialUi.LABEL_RED, 12))
 		into.add_child(req[0])
 	var wait := guild.join_cooldown_left()
-	var sec := SocialUi.section("📜 Bang hội đang tuyển người", SocialUi.LABEL_BLUE, SocialUi.INFO_BG)
+	var sec := SocialUi.info_box("📜 Bang hội đang tuyển người")
 	if wait > 0:
 		sec[1].add_child(SocialUi.label("Mới rời bang — còn %d giờ nữa mới xin vào bang khác được." % int(ceil(wait / 3600.0)), SocialUi.WARN, 13))
 	if NetClient.is_in_world() and NetWorldSync.current != null:

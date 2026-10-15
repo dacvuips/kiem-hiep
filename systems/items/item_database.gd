@@ -17,8 +17,10 @@ const DETAIL_NAMES := {
 }
 ## Tên loại cụ thể của vũ khí (ParticularType gốc) — loại khác dùng tên món cấp thấp nhất làm nhãn.
 const WEAPON_PARTICULAR_NAMES := {
-	Detail.MELEE: {0: "Kiếm", 1: "Đao", 2: "Côn (bổng)", 3: "Thương", 4: "Chùy", 5: "Song đao", 6: "Triền thủ"},
-	Detail.RANGE: {0: "Phi tiêu", 1: "Phi đao", 2: "Tụ tiễn"},
+	Detail.MELEE: {0: "Kiếm", 1: "Đao", 2: "Côn (bổng)", 3: "Thương", 4: "Chùy", 5: "Song đao", 6: "Triền thủ",
+		7: "Đao thuẫn", 8: "Thuẫn đao"},
+	## 3 Cầm (Tiêu Dao), 4 Cung (Dương Gia) — bản 15 phái.
+	Detail.RANGE: {0: "Phi tiêu", 1: "Phi đao", 2: "Tụ tiễn", 3: "Cầm", 4: "Cung"},
 }
 
 static var _equipment: Array = []
@@ -53,6 +55,19 @@ static func _ensure_gold_loaded() -> void:
 			(_gold_groups.get_or_add(group, []) as Array).append(i)
 
 static var _skill_names: Dictionary = {}
+static var _remap: Dictionary = {}
+
+## Chỉ số đồ trong save CŨ (dữ liệu trước khi nhập lại bản 15 phái) -> chỉ số hiện tại; -1 = món không còn trong
+## dữ liệu mới. `table` = "base" / "gold". Bảng data/items/index_remap.json do tools/import_vltk_items.py sinh.
+static func remap_index(table: String, old_index: int) -> int:
+	if old_index < 0:
+		return old_index
+	if _remap.is_empty():
+		var file := FileAccess.open("res://data/items/index_remap.json", FileAccess.READ)
+		var data = JSON.parse_string(file.get_as_text()) if file else null
+		_remap = data if data is Dictionary else {"_": ""}
+	var arr: Array = _remap.get(table, [])
+	return int(arr[old_index]) if old_index < arr.size() else -1
 
 ## Tên kỹ năng VLTK theo SkillId số (Skills.txt) — cho dòng "Kỹ năng [ <tên> ]: +N cấp".
 static func get_vltk_skill_name(skill_id: int) -> String:
@@ -108,7 +123,10 @@ static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
 	var image: String = base.get("image", "")
 	if image == "":
 		return null
-	var key := image.replace("\\", "/").get_file().get_basename().to_lower()
+	## Vật phẩm khác (misc_items.json) có sẵn tên ảnh "icon" (tên ảnh gốc chữ Hán / trùng tên đã đổi sang ASCII).
+	var key: String = base.get("icon", "")
+	if key == "":
+		key = image.replace("\\", "/").get_file().get_basename().to_lower()
 	var path := (ICON_SMALL_DIR if small else ICON_DIR) + key + ".png"
 	if not _icons.has(path):
 		_icons[path] = load(path) if ResourceLoader.exists(path) else null
@@ -150,6 +168,31 @@ static func get_gold(gold_index: int) -> Dictionary:
 	_ensure_gold_loaded()
 	return _gold[gold_index] if gold_index >= 0 and gold_index < _gold.size() else {}
 
+## Chỉ số hoàng kim của dòng gốc `row` (cột "row" = số dòng trong goldequip.txt, AddGoldItem(0, row + 1) của script gốc). -1 nếu không có.
+static func gold_index_of_row(row: int) -> int:
+	_ensure_gold_loaded()
+	for i in _gold.size():
+		if int(_gold[i].get("row", -1)) == row:
+			return i
+	return -1
+
+## ---- Vật phẩm KHÔNG phải trang bị (misc_items.json: thuốc, khoáng thạch, lệnh bài...) ----
+## Mã "genre_detail_particular" (thuốc thêm "_cấp") — ItemInstance lưu mã này (không lưu chỉ số) để nhập lại dữ liệu không lệch.
+const MISC_PATH := "res://data/items/misc_items.json"
+static var _misc: Dictionary = {}
+
+## ~2.4MB — chỉ nạp khi thật sự cần (tạo/hiện vật phẩm khác).
+static func get_misc(misc_id: String) -> Dictionary:
+	if _misc.is_empty():
+		for m in _load_json(MISC_PATH):
+			_misc[str(m["id"])] = m
+	return _misc.get(misc_id, {})
+
+## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
+static func list_misc(source: String) -> Array:
+	get_misc("")
+	return _misc.values().filter(func(m: Dictionary) -> bool: return m.get("source", "") == source)
+
 ## Chỉ số đồ gốc theo (loại chi tiết, loại cụ thể, cấp 1-10) — -1 nếu không có.
 static func find_base(detail: int, particular: int, level: int) -> int:
 	_ensure_loaded()
@@ -180,7 +223,7 @@ static func get_magic_records() -> Array:
 	_ensure_loaded()
 	return _magic
 
-## Chỉ số hoàng kim khớp bộ lọc. `menpai`: -2 = tất cả, -1 = không môn phái, 0-9 = MENPAI_ORDER.
+## Chỉ số hoàng kim khớp bộ lọc. `menpai`: -2 = tất cả, -1 = không môn phái, 0-14 = MENPAI_ORDER.
 static func find_gold(detail: int, menpai: int = -2, particular: int = -1) -> Array[int]:
 	_ensure_gold_loaded()
 	var out: Array[int] = []

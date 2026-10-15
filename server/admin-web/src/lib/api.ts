@@ -129,6 +129,26 @@ export interface CharacterRow {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  online: boolean
+}
+// Nhân vật đầy đủ để sửa: data = PlayerProfile.to_dict() của game.
+export interface CharacterFull {
+  id: number
+  server_id: number
+  slot: number
+  name: string
+  gender: number
+  sect_id: string
+  level: number
+  version: number
+  updated_at: string
+  data: Record<string, unknown>
+  account_id: number
+  username: string
+  server: string
+  deleted_at: string | null
+  online: boolean
+  reload_pending: boolean
 }
 export interface LoginRow {
   ok: boolean

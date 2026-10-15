@@ -44,9 +44,29 @@ services:
       GAME_SERVICE_KEY: ${GAME_SERVICE_KEY:?thiếu GAME_SERVICE_KEY trong .env}
       GAME_ACCOUNT_URL: http://account:8080
       GAME_SERVER_ID: "1"
+      GAME_DEV_TRUST_CLIENT: ${GAME_DEV_TRUST_CLIENT:-0}   # 1 = chỉ khi phát triển (xem .env.example)
     ports: ["7777:7777/udp", "7778:7778"]
     depends_on: [account]
     profiles: [game]      # chạy cùng: docker compose --profile game up -d
+
+  # Chiến trường Tống Kim: cùng bản build game server, chạy map chiến trường ở cổng riêng (BattleServer).
+  battle:
+    build: ./game
+    environment:
+      GAME_SERVICE_KEY: ${GAME_SERVICE_KEY:?thiếu GAME_SERVICE_KEY trong .env}
+      GAME_ACCOUNT_URL: http://account:8080
+      GAME_SERVER_ID: "1"           # cùng máy chủ với server thế giới (nhân vật của máy chủ 1)
+      GAME_BATTLE: "1"
+      GAME_MAP_DIR: res://world/maps/map_378
+      GAME_ENET_PORT: "7787"
+      GAME_WS_PORT: "7788"
+      GAME_PUBLIC_HOST: ${GAME_PUBLIC_HOST:-127.0.0.1}   # địa chỉ người chơi kết nối tới (báo qua /v1/battle)
+      GAME_BATTLE_SIGNUP: ${GAME_BATTLE_SIGNUP:-600}     # giây báo danh (gốc 10 phút)
+      GAME_BATTLE_FIGHT: ${GAME_BATTLE_FIGHT:-3600}      # giây khai chiến (gốc 60 phút)
+      GAME_DEV_TRUST_CLIENT: ${GAME_DEV_TRUST_CLIENT:-0}
+    ports: ["7787:7787/udp", "7788:7788"]
+    depends_on: [account]
+    profiles: [game]
 
 volumes:
   pgdata:

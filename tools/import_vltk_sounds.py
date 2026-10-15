@@ -1,6 +1,7 @@
 """Nhập ÂM THANH VLTK gốc: âm UI, âm ra chiêu / đạn của skill, âm quái, nhạc nền theo map.
 
     python tools/import_vltk_sounds.py
+    python tools/import_vltk_sounds.py --jx15   # chỉ thêm tiếng skill/đạn 5 phái mới (bản 15 phái), giữ phần còn lại
 
 Nguồn (theo mã nguồn gốc Core/Src):
   - UI: settings/SoundList.txt ([Ui], [Game]) — client VNG (pak).
@@ -209,6 +210,55 @@ def sound(ref: str):
 	copied[rel] = True
 	return rel
 
+
+if "--jx15" in sys.argv:
+	## 5 phái mới (bản 15 phái — tools/vltk_source.py): chỉ THÊM tiếng ra chiêu của skill phái mới và tiếng đạn của bản
+	## 15 phái vào json sẵn có (đạn theo khoá + FX_ID_OFFSET như data/skill_fx/missiles.json). Chạy SAU import_vltk_skill_fx.py.
+	import vltk_source
+	pl = vltk_source.paks()
+	with open(OUT_JSON, encoding="utf-8") as f:
+		out = json.load(f)
+	fx_skills = json.load(open(os.path.join(ROOT, "data", "skill_fx", "skills.json"), encoding="utf-8"))
+	fx_missiles = json.load(open(os.path.join(ROOT, "data", "skill_fx", "missiles.json"), encoding="utf-8"))
+	off = vltk_source.FX_ID_OFFSET
+	roots = set()
+	for sect in vltk_source.JX15_DATA_SECTS:
+		tres = open(os.path.join(ROOT, "systems", "sect", "data", sect + ".tres"), encoding="utf-8").read()
+		roots |= {int(x) for x in re.findall(r"^vltk_skill_id = (\d+)", tres, re.M)}
+	want_skills = {i: str(i) for i in roots} | {int(k) - off: k for k in fx_skills if int(k) >= off}
+	_, rows = gbk_table(vltk_source.settings_file("skills.txt").read_bytes())
+	n_skill = n_missile = 0
+	for r in rows:
+		sid = r.get("SkillId", "").strip()
+		if not sid.isdigit() or int(sid) not in want_skills:
+			continue
+		man, fm = sound(r.get("ManCastSnd", "")), sound(r.get("FMCastSnd", ""))
+		if man or fm:
+			out["skills"][want_skills[int(sid)]] = {k: v for k, v in (("man", man), ("fm", fm or man)) if v}
+			n_skill += 1
+	want_missiles = {int(k) - off: k for k in fx_missiles if int(k) >= off}
+	_, rows = gbk_table(vltk_source.settings_file("missles.txt").read_bytes())
+	for r in rows:
+		mid = r.get("MissleId", r.get("MissileId", "")).strip()
+		if not mid.isdigit() or int(mid) not in want_missiles:
+			continue
+		entry = {}
+		for suffix, tag in (("", "a"), ("B", "b")):
+			phases = {}
+			for i, phase in enumerate(MISSILE_PHASES, 1):
+				rel = sound(r.get("SndFile%s%d" % (suffix, i), ""))
+				if rel:
+					phases[phase] = rel
+			if phases:
+				entry[tag] = phases
+		if entry:
+			out["missiles"][want_missiles[int(mid)]] = entry
+			n_missile += 1
+	with open(OUT_JSON, "w", encoding="utf-8") as f:
+		json.dump(out, f, ensure_ascii=False, indent=1, sort_keys=True)
+	print("bản 15 phái — skill có tiếng:", n_skill, "| đạn có tiếng:", n_missile, "| file mới chép:",
+		sum(1 for v in copied.values() if v), "| thiếu:", sorted(missing))
+	sys.exit(0)
 
 out: dict = {}
 

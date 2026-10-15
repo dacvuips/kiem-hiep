@@ -61,6 +61,8 @@ var _max_radius: float = -1.0
 ## ONLINE: quái do game server điều khiển (net_eid != 0). Không chạy AI / không tự trừ máu: vị trí + động tác lấy từ
 ## server (nội suy), sát thương mình gây được báo lên server, chiêu của quái chỉ ra khi server báo (S_MATTACK).
 var net_eid: int = 0
+## > 0: máu cố định (bỏ qua máu theo cấp của bảng quái) — quái ải Thách Thức Thời Gian dùng máu gốc của script ải.
+var hp_override: int = 0
 var _net_buffer: Array = []       ## [{t, pos, dir, action, hp, flags}] theo giờ server
 var _net_real_attack := false     ## đòn đang ra nhắm vào chính mình -> gây sát thương thật
 const NET_INTERP_DELAY_MS := 140.0
@@ -138,6 +140,8 @@ func _apply_vltk_stats(stats: CombatantStats) -> void:
 	var life := MonsterData.stat_at_level(data, "life", level)
 	if life >= 0:
 		stats.max_hp = maxi(1, life)
+	if hp_override > 0:
+		stats.max_hp = hp_override
 	var ar := MonsterData.stat_at_level(data, "attack_rating", level)
 	if ar >= 0:
 		stats.attack_rating = ar

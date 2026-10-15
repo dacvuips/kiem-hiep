@@ -5,6 +5,8 @@ extends Node2D
 ## 3. Add your characters as children of `objects_root` so they are depth-sorted with buildings and trees
 ##    (they can walk behind houses). `ground_root` holds the ground, `above_root` roof-like objects.
 ## map.json "ground_mode": "tiles" = baked 512x512 pictures (tiles/X_Y.webp), "atlas" = ground cells drawn from atlas/atlas_N.png + loose cover sprites.
+## map.json "format": "chunks" (big maps) = the regions are packed in chunks/CX_CY.json.gz (32x32 regions each), loaded in the
+## background around `focus`; the path-finding `grid` then covers only `nav_radius_regions` around the focus and follows it.
 class_name VltkMap
 
 signal region_loaded(rx: int, ry: int)
@@ -23,6 +25,8 @@ signal monster_respawned(node: Node2D)
 ## memory freed with the region); false = every ground cell is drawn from the atlas each frame (slower on weak phones).
 @export var bake_ground: bool = true
 @export var cache_root: String = "user://vltk_cache"
+## Chunk maps: the path-finding grid covers this many regions on each side of the focus (rebuilt when the focus has moved half of it).
+@export var nav_radius_regions: int = 10
 
 var data: Dictionary
 var tile_ext: String
@@ -70,6 +74,20 @@ var _actors: Array = []
 var _dead_until := {}            # uid -> time (s) when a killed monster is back; kept while its region is unloaded
 var _rng := RandomNumberGenerator.new()
 
+# ---- chunk maps (map.json "format": "chunks")
+var chunk_mode := false
+var chunk_size := 32
+var _chunk_have := {}            # "cx,cy" -> true: chunk files of the map
+var _chunks := {}                # "cx,cy" -> {"x,y": region doc} chunks in memory
+var _chunk_jobs := {}            # "cx,cy" -> WorkerThreadPool task reading that chunk
+var _chunk_ready := {}           # "cx,cy" -> parsed chunk, handed over by the worker threads
+var _chunk_mutex := Mutex.new()
+var _obs := {}                   # "x,y" -> PackedByteArray(512) obstacle values of the regions in memory (index cx * 32 + cy); empty = all free
+var _nav_center := Vector2i(1 << 30, 1 << 30)
+var _nav_dirty := true
+var _region_idx := {}            # one-file-per-region maps: Vector2i -> [rx, ry, has_ground, has_objects]
+var _npcs_by_region := {}        # one-file-per-region maps: "x,y" -> NPC entries
+
 
 func _ready() -> void:
 	ground_root.name = "Ground"
@@ -109,8 +127,15 @@ func load_map(dir: String) -> void:
 	tile_px = int(parsed["tile_px"])
 	npcs = parsed.get("npcs", [])
 	ground_mode = str(parsed.get("ground_mode", "tiles"))
+	chunk_mode = str(parsed.get("format", "")) == "chunks"
+	if chunk_mode:
+		chunk_size = int(parsed.get("chunk", 32))
+		for k in parsed.get("chunks", {}):
+			_chunk_have[str(k)] = true
 	if base_url != "":
 		var boot: Array = []
+		if chunk_mode:
+			boot.append(str(parsed.get("spawns", "spawns.json.gz")))
 		if ground_mode == "atlas":
 			boot.append(str(parsed["atlas"]))
 		if parsed.get("minimap") != null:
@@ -124,11 +149,17 @@ func load_map(dir: String) -> void:
 				for pg in JSON.parse_string(af.get_as_text())["pages"]:
 					pages.append("atlas/" + str(pg))
 				await _ensure_files(pages)
+	if chunk_mode:                                  # every NPC / monster of the map (for all_spawns, minimap, quests)
+		var sp = _read_gz_json(_p(str(parsed.get("spawns", "spawns.json.gz"))))
+		npcs = sp if sp is Array else []
 	data = parsed
 	if ground_mode == "atlas":
 		_load_atlas()
 	_build_grid()
 	if focus == null:
+		if chunk_mode:
+			push_warning("VltkMap: chunk map without `focus` - set a focus node, the whole map is never loaded at once")
+			return
 		for r in data["regions"]:
 			_request_region(int(r[0]), int(r[1]))
 
@@ -136,6 +167,181 @@ func load_map(dir: String) -> void:
 ## Local path of a file of the exported map: inside the project, or in the download cache.
 func _p(rel: String) -> String:
 	return _cache_dir.path_join(rel) if base_url != "" else map_dir.path_join(rel)
+
+
+# ---------------------------------------------------------------- regions (one file each, or packed in chunks)
+func _read_gz_json(path: String) -> Variant:
+	var raw := FileAccess.get_file_as_bytes(path)
+	if raw.is_empty():
+		return null
+	return JSON.parse_string(raw.decompress_dynamic(1 << 30, FileAccess.COMPRESSION_GZIP).get_string_from_utf8())
+
+
+func chunk_of(rx: int, ry: int) -> Vector2i:
+	return Vector2i(floori(float(rx) / chunk_size), floori(float(ry) / chunk_size))
+
+
+func _chunk_rel(c: Vector2i) -> String:
+	return "chunks/%d_%d.json.gz" % [c.x, c.y]
+
+
+## Read + unzip + parse a chunk and unpack its obstacles (runs on a worker thread, or inline).
+func _parse_chunk(path: String) -> Dictionary:
+	var d = _read_gz_json(path)
+	if not (d is Dictionary and d.has("r")):
+		return {}
+	var regs: Dictionary = d["r"]
+	var fills := {}
+	for rk in regs:
+		var doc: Dictionary = regs[rk]
+		var ob := PackedByteArray()
+		if doc.has("ob"):                    # RLE [value, count, ...] -> 512 bytes, built from pre-filled slices
+			var runs: Array = doc["ob"]
+			var j := 0
+			while j + 1 < runs.size():
+				var v := int(runs[j]) & 0xff
+				if not fills.has(v):
+					var f := PackedByteArray()
+					f.resize(512)
+					f.fill(v)
+					fills[v] = f
+				ob.append_array((fills[v] as PackedByteArray).slice(0, int(runs[j + 1])))
+				j += 2
+			ob.resize(512)
+		doc["_ob"] = ob
+	return regs
+
+
+func _chunk_task(k: String, path: String) -> void:
+	var regs := _parse_chunk(path)
+	_chunk_mutex.lock()
+	_chunk_ready[k] = regs
+	_chunk_mutex.unlock()
+
+
+## Start reading a chunk in the background (nothing happens when it is in memory / already loading / not in the map).
+func _prefetch_chunk(c: Vector2i) -> void:
+	var k := "%d,%d" % [c.x, c.y]
+	if _chunks.has(k) or _chunk_jobs.has(k) or not _chunk_have.has(k):
+		return
+	if base_url != "" and not _valid(_chunk_rel(c)):
+		_ensure_files([_chunk_rel(c)])             # downloads in the background, read on a later tick
+		return
+	_chunk_jobs[k] = WorkerThreadPool.add_task(_chunk_task.bind(k, _p(_chunk_rel(c))))
+
+
+func _collect_chunks() -> void:
+	_chunk_mutex.lock()
+	var ready := _chunk_ready
+	_chunk_ready = {}
+	_chunk_mutex.unlock()
+	for k in ready:
+		if _chunk_jobs.has(k):
+			WorkerThreadPool.wait_for_task_completion(_chunk_jobs[k])
+			_chunk_jobs.erase(k)
+		_install_chunk(k, ready[k])
+
+
+func _install_chunk(k: String, regs: Dictionary) -> void:
+	if _chunks.has(k):
+		return
+	_chunks[k] = regs
+	for rk in regs:
+		_obs[rk] = regs[rk].get("_ob", PackedByteArray())
+	_nav_dirty = true
+
+
+## Regions of a chunk ({"x,y": doc}); a chunk that is not in memory yet is read now (blocking).
+func _chunk_regions(c: Vector2i) -> Dictionary:
+	var k := "%d,%d" % [c.x, c.y]
+	if _chunks.has(k):
+		return _chunks[k]
+	if not _chunk_have.has(k):
+		return {}
+	if _chunk_jobs.has(k):
+		WorkerThreadPool.wait_for_task_completion(_chunk_jobs[k])
+	_collect_chunks()
+	if not _chunks.has(k):
+		_install_chunk(k, _parse_chunk(_p(_chunk_rel(c))))
+	return _chunks.get(k, {})
+
+
+## Forget the chunks far from chunk `c` (keeps the 5x5 around it).
+func _drop_far_chunks(c: Vector2i) -> void:
+	for k in _chunks.keys():
+		var p: PackedStringArray = str(k).split(",")
+		if absi(int(p[0]) - c.x) <= 2 and absi(int(p[1]) - c.y) <= 2:
+			continue
+		for rk in _chunks[k]:
+			_obs.erase(rk)
+		_chunks.erase(k)
+
+
+## Keep the chunks around the focus region `c` coming in (background threads) and the path-finding grid around it.
+func stream_tick(c: Vector2i) -> void:
+	if not chunk_mode or data.is_empty():
+		return
+	_collect_chunks()
+	var cc := chunk_of(c.x, c.y)
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			_prefetch_chunk(cc + Vector2i(dx, dy))
+	_update_nav(c)
+	if Engine.get_process_frames() % 120 == 0:
+		_drop_far_chunks(cc)
+
+
+## Make the area around a world point usable right now (chunks read, path-finding grid there): before placing a player.
+func prepare_around(world_pos: Vector2) -> void:
+	if not chunk_mode:
+		return
+	var c := world_to_region(world_pos)
+	_nav_dirty = true
+	_update_nav(c)
+
+
+## [rx, ry, has_ground, has_objects] of a region, [] when the map has no such region.
+func region_info(v: Vector2i) -> Array:
+	if chunk_mode:
+		var regs := _chunk_regions(chunk_of(v.x, v.y))
+		var d = regs.get("%d,%d" % [v.x, v.y])
+		if d == null:
+			return []
+		return [v.x, v.y, 1 if (d as Dictionary).has("g") else 0, 1]
+	if _region_idx.is_empty():
+		for r in data.get("regions", []):
+			_region_idx[Vector2i(int(r[0]), int(r[1]))] = r
+	return _region_idx.get(v, [])
+
+
+## Ground cells / covers / objects of a region: its regions/X_Y.json, or its entry in the chunk file.
+func region_doc(rx: int, ry: int) -> Dictionary:
+	if chunk_mode:
+		return _chunk_regions(chunk_of(rx, ry)).get("%d,%d" % [rx, ry], {})
+	var f := FileAccess.open(_p("regions/%d_%d.json" % [rx, ry]), FileAccess.READ)
+	if f == null:
+		return {}
+	var d = JSON.parse_string(f.get_as_text())
+	return d if d is Dictionary else {}
+
+
+## NPC / monster entries that stand in a region.
+func region_npcs(rx: int, ry: int) -> Array:
+	if chunk_mode:
+		return region_doc(rx, ry).get("npcs", [])
+	if not _npcs_by_region.has("_built"):
+		_npcs_by_region["_built"] = []
+		for n in npcs:
+			var k := "%d,%d" % [int(n["rx"]), int(n["ry"])]
+			if not _npcs_by_region.has(k):
+				_npcs_by_region[k] = []
+			_npcs_by_region[k].append(n)
+	return _npcs_by_region.get("%d,%d" % [rx, ry], [])
+
+
+## Which NPC entries the base map spawns itself (a game can take some over, e.g. real monsters).
+func _spawn_filter(_n: Dictionary) -> bool:
+	return true
 
 
 ## Ground drawn straight from the atlas: one canvas item per region, a single draw call per atlas page batch.
@@ -219,6 +425,7 @@ func _process(_dt: float) -> void:
 	if focus == null or data.is_empty():
 		return
 	var c := world_to_region(focus.global_position - global_position)
+	stream_tick(c)
 	var want := {}
 	_want = want
 	for ry in range(c.y - load_radius_regions, c.y + load_radius_regions + 1):
@@ -237,10 +444,7 @@ func world_to_region(p: Vector2) -> Vector2i:
 
 
 func _region_info(rx: int, ry: int) -> Array:
-	for r in data["regions"]:
-		if int(r[0]) == rx and int(r[1]) == ry:
-			return r
-	return []
+	return region_info(Vector2i(rx, ry))
 
 
 func _load_tex(path: String) -> Texture2D:
@@ -377,6 +581,10 @@ func _request_region(rx: int, ry: int) -> void:
 	var key := "%d,%d" % [rx, ry]
 	if _loading.has(key):
 		return
+	if chunk_mode and not _valid(_chunk_rel(chunk_of(rx, ry))):
+		_loading[key] = true
+		await _ensure_files([_chunk_rel(chunk_of(rx, ry))])
+		_loading.erase(key)
 	var info := _region_info(rx, ry)
 	if info.is_empty():
 		return
@@ -385,18 +593,15 @@ func _request_region(rx: int, ry: int) -> void:
 	if ground_mode == "tiles" and int(info[2]) == 1:
 		files.append("tiles/%d_%d.%s" % [rx, ry, tile_ext])
 	if int(info[3]) == 1:
-		var jrel := "regions/%d_%d.json" % [rx, ry]
-		await _ensure_files([jrel])
-		var f := FileAccess.open(_local_path(jrel), FileAccess.READ)
-		if f:
-			var doc = JSON.parse_string(f.get_as_text())
-			if doc is Dictionary:
-				for o in doc.get("objects", []):
-					files.append(str(o["img"]))
-				for c in doc.get("covers", []):
-					files.append(str(c[0]))
-	for n in npcs:
-		if int(n["rx"]) == rx and int(n["ry"]) == ry and n.has("img"):
+		if not chunk_mode:
+			await _ensure_files(["regions/%d_%d.json" % [rx, ry]])
+		var doc := region_doc(rx, ry)
+		for o in doc.get("objects", []):
+			files.append(str(o["img"]))
+		for c in doc.get("covers", []):
+			files.append(str(c[0]))
+	for n in region_npcs(rx, ry):
+		if n.has("img"):
 			files.append(str(n["img"]))
 	await _ensure_files(files)
 	_loading.erase(key)
@@ -422,9 +627,8 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 			_g_base.add_child(s)
 			_tiles[key] = s
 	if int(info[3]) == 1:
-		var f := FileAccess.open(_p("regions/%d_%d.json" % [rx, ry]), FileAccess.READ)
-		if f:
-			var doc: Dictionary = JSON.parse_string(f.get_as_text())
+		var doc := region_doc(rx, ry)
+		if not doc.is_empty():
 			if ground_mode == "atlas":
 				if doc.has("g") and bake_ground and not _atlas_img.is_empty() and _atlas_img[0] != null:
 					var gs := Sprite2D.new()
@@ -452,7 +656,7 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 					cs.position = Vector2(float(c[1]), float(c[2]))
 					_insert_cover(cs, int(c[3]) * 1000000000000 + (int(c[4]) + 1000) * 1000000000 + int(c[5]))
 					made.append(cs)
-			for o in doc["objects"]:
+			for o in doc.get("objects", []):
 				var tex := _load_tex(_p(str(o["img"])))
 				if tex == null:
 					continue
@@ -487,8 +691,8 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 
 ## NPCs / monsters of the region: their picture (depth-sorted with houses) and a name label.
 func _spawn_npcs(rx: int, ry: int, made: Array) -> void:
-	for n in npcs:
-		if int(n["rx"]) != rx or int(n["ry"]) != ry:
+	for n in region_npcs(rx, ry):
+		if not _spawn_filter(n):
 			continue
 		var tex: Texture2D = null
 		if n.has("img"):
@@ -529,19 +733,11 @@ func _spawn_npcs(rx: int, ry: int, made: Array) -> void:
 		npc_spawned.emit(holder, n)
 
 
-var _actor_prune_time := 0.0
-
 func _update_actors(delta: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
-	_actor_prune_time -= delta
-	if _actor_prune_time <= 0.0:   ## dọn actor đã bị xoá: 1 giây/lần là đủ (trước đây mỗi khung hình)
-		_actor_prune_time = 1.0
-		_actors = _actors.filter(func(a): return is_instance_valid(a["holder"]) and not a["holder"].is_queued_for_deletion())
+	_actors = _actors.filter(func(a): return is_instance_valid(a["holder"]) and not a["holder"].is_queued_for_deletion())
 	for a in _actors:
-		var holder_ref: Variant = a["holder"]   ## kiểm tra trên Variant: gán thẳng node đã bị giải phóng vào biến Node2D sẽ báo lỗi
-		if not is_instance_valid(holder_ref):
-			continue
-		var h: Node2D = holder_ref
+		var h: Node2D = a["holder"]
 		var uid: String = a["uid"]
 		if _dead_until.has(uid):
 			if now < float(_dead_until[uid]):
@@ -662,6 +858,17 @@ func _hide_region(key: String) -> void:
 
 
 func _build_grid() -> void:
+	traps.clear()
+	for t in data.get("traps", []):        # [region_x, region_y, cell_x, cell_y, count, id, script]
+		for i in int(t[4]):
+			traps[Vector2i(int(t[0]) * 16 + int(t[2]) + i, int(t[1]) * 32 + int(t[3]))] = int(t[5])
+	if chunk_mode:                          # the grid follows the focus (_update_nav), the whole map would not fit in memory
+		grid = AStarGrid2D.new()
+		grid.cell_size = cell
+		grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+		grid.region = Rect2i(0, 0, 1, 1)
+		grid.update()
+		return
 	var minx: int = int(data["min_x"])
 	var miny: int = int(data["min_y"])
 	var cols: int = (int(data["max_x"]) - minx + 1) * 16
@@ -682,9 +889,39 @@ func _build_grid() -> void:
 			for cy in 32:
 				if (int(arr[cx * 32 + cy]) >> 4) != 0:
 					grid.set_point_solid(Vector2i(ox + cx, oy + cy), true)
-	for t in data["traps"]:        # [region_x, region_y, cell_x, cell_y, count, id, script]
-		for i in int(t[4]):
-			traps[Vector2i(int(t[0]) * 16 + int(t[2]) + i, int(t[1]) * 32 + int(t[3]))] = int(t[5])
+
+
+## Chunk maps: path-finding grid of the (2 * nav_radius_regions + 1)^2 regions around region `c`; the same AStarGrid2D object
+## is reused (code holding `grid` keeps working). Rebuilt when the focus moved half the radius or new chunks came in.
+func _update_nav(c: Vector2i) -> void:
+	if not chunk_mode:
+		return
+	var half := maxi(1, nav_radius_regions / 2)
+	if not _nav_dirty and absi(c.x - _nav_center.x) <= half and absi(c.y - _nav_center.y) <= half:
+		return
+	_nav_dirty = false
+	_nav_center = c
+	var r := nav_radius_regions
+	grid.region = Rect2i((c.x - r) * 16, (c.y - r) * 32, (2 * r + 1) * 16, (2 * r + 1) * 32)
+	grid.update()
+	for ry in range(c.y - r, c.y + r + 1):
+		for rx in range(c.x - r, c.x + r + 1):
+			var regs := _chunk_regions(chunk_of(rx, ry))
+			var d = regs.get("%d,%d" % [rx, ry])
+			if d == null:                  # no region there: nobody walks in
+				grid.fill_solid_region(Rect2i(rx * 16, ry * 32, 16, 32), true)
+				continue
+			var runs: Array = (d as Dictionary).get("ob", [])
+			var i := 0
+			var j := 0
+			while j + 1 < runs.size():
+				var n := int(runs[j + 1])
+				if (int(runs[j]) >> 4) != 0:
+					for q in range(i, mini(i + n, 512)):
+						grid.set_point_solid(Vector2i(rx * 16 + q / 32, ry * 32 + q % 32), true)
+				i += n
+				j += 2
+	_nav_dirty = false
 
 
 func get_minimap_texture() -> Texture2D:
@@ -812,6 +1049,15 @@ func walk_step(pos: Vector2, path: PackedVector2Array, dist: float) -> Array:
 
 func is_blocked(world_pos: Vector2) -> bool:
 	var c := world_to_cell(world_pos)
+	if chunk_mode:                          # any loaded region, also outside the path-finding window
+		var rx := floori(c.x / 16.0)
+		var ry := floori(c.y / 32.0)
+		var ob = _obs.get("%d,%d" % [rx, ry])
+		if ob == null:
+			return true                     # not loaded / outside the map
+		if (ob as PackedByteArray).is_empty():
+			return false
+		return ((ob as PackedByteArray)[(c.x - rx * 16) * 32 + (c.y - ry * 32)] >> 4) != 0
 	return grid.is_in_boundsv(c) and grid.is_point_solid(c)
 
 

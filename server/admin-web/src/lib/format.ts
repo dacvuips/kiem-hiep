@@ -70,6 +70,8 @@ export const ACTION_LABEL: Record<string, string> = {
   'account.reset-password': 'Đặt lại mật khẩu',
   'account.email': 'Đổi email',
   'character.restore': 'Khôi phục nhân vật',
+  'character.edit': 'Sửa nhân vật',
+  'character.kick': 'Đá nhân vật khỏi game',
   'server.create': 'Tạo máy chủ',
   'server.update': 'Sửa máy chủ',
   'shop.order.approve': 'Duyệt đơn nạp',

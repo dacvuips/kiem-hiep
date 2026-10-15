@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, Ban, Copy, KeyRound, LogOut, Mail, MessageSquareOff, RotateCcw, ShieldCheck, Unlock, Volume2,
+  ArrowLeft, Ban, Copy, KeyRound, LogOut, Mail, MessageSquareOff, Pencil, RotateCcw, ShieldCheck, Unlock, Volume2,
 } from 'lucide-react'
 import { api, type AccountDetail } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -107,7 +107,7 @@ export default function AccountDetailPage() {
               ]}
             />
           </div>
-          {tab === 'characters' && <Characters d={d} canRestore={can('punish')} />}
+          {tab === 'characters' && <Characters d={d} canRestore={can('punish')} canEdit={can('characters.write')} />}
           {tab === 'logins' && (
             <SimpleTable
               empty="Chưa có lượt đăng nhập"
@@ -189,7 +189,7 @@ function SimpleTable({ head, rows, empty }: { head: string[]; rows: ReactNode[][
   )
 }
 
-function Characters({ d, canRestore }: { d: AccountDetail; canRestore: boolean }) {
+function Characters({ d, canRestore, canEdit }: { d: AccountDetail; canRestore: boolean; canEdit: boolean }) {
   const qc = useQueryClient()
   const toast = useToast()
   const [restoreId, setRestoreId] = useState<number | null>(null)
@@ -210,7 +210,8 @@ function Characters({ d, canRestore }: { d: AccountDetail; canRestore: boolean }
         head={['Nhân vật', 'Máy chủ', 'Cấp', 'Môn phái', 'Cập nhật', '']}
         rows={d.characters.map((c) => [
           <div>
-            <div className="font-medium">{c.name}</div>
+            <Link to={`/characters/${c.id}`} className="font-medium text-accent hover:underline">{c.name}</Link>
+            {c.online && <span className="ml-2"><Badge tone="ok" dot>Online</Badge></span>}
             <div className="text-xs text-muted">Ô {c.slot + 1} · {c.gender === 1 ? 'Nữ' : 'Nam'}</div>
           </div>,
           c.server,
@@ -225,7 +226,12 @@ function Characters({ d, canRestore }: { d: AccountDetail; canRestore: boolean }
               )}
             </div>
           ) : (
-            <div className="text-right"><Badge tone="ok">Đang dùng</Badge></div>
+            <div className="flex items-center justify-end gap-2">
+              <Badge tone="ok">Đang dùng</Badge>
+              <Link to={`/characters/${c.id}`}>
+                <Button size="sm" variant="ghost" icon={<Pencil className="h-3.5 w-3.5" />}>{canEdit ? 'Xem / sửa' : 'Xem'}</Button>
+              </Link>
+            </div>
           ),
         ])}
       />

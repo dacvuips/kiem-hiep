@@ -30,8 +30,8 @@ const NAV_ITEMS := [
 	["equipment", "Trang Bị"],
 	["skills", "Kỹ Năng"],
 	["guild", "Bang Hội"],
-	["social", "Giao Lưu"],
-	["herb_garden", "Dược Viên"],
+	["social", "Giao Dịch"],
+	["herb_garden", "Chế Tạo"],
 	["ranking", "BXH"],
 	["settings", "Cài Đặt"],
 ]
@@ -80,7 +80,6 @@ func _ready() -> void:
 	## nhóm (Quay Lại, thẻ Tiến độ, Vượt Ải) lên trên cùng lại để không bị che/bấm được.
 	for node in _bottom_bar_nodes:
 		node.move_to_front()
-	_setup_debug_cheat_panel()
 	refresh()
 
 	modulate.a = 0.0
@@ -113,13 +112,16 @@ func refresh() -> void:
 ## Toàn bộ skill của môn phái (active lẫn passive) — nguồn dữ liệu cho SkillBookScreen.
 func _load_all_skills() -> Array[SkillDefinition]:
 	var sect := SectRegistry.get_by_id(_profile.sect_id)
-	return sect.skills if sect else []
+	var empty: Array[SkillDefinition] = []   ## Vô Môn Phái: chưa có skill phái
+	return sect.skills if sect else empty
 
 # ---------------------------------------------------------------- style cho node tĩnh (đã đặt sẵn vị trí trong .tscn)
 
 func _style_header() -> void:
-	for label in [%GoldValueLabel, %JadeValueLabel, %StaminaValueLabel]:
-		_style_label(label, 15, COLOR_CREAM)
+	## Tiền/ngọc canh phải sát nút + (chừa chỗ icon đè đầu trái ô); thể lực canh giữa.
+	for label in [%GoldValueLabel, %JadeValueLabel]:
+		_style_label(label, 15, COLOR_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true, 28.0)
+	_style_label(%StaminaValueLabel, 15, COLOR_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true, 28.0)
 	for button: Button in [%GoldPlusButton, %JadePlusButton, %StaminaPlusButton]:
 		_style_as_hit_area(button)
 		button.pressed.connect(_show_toast.bind("Nạp / mua thêm: đang phát triển"))
@@ -133,19 +135,20 @@ func _style_bottom_bar() -> void:
 	(%BackButton as Button).pressed.connect(_on_back_pressed)
 	_style_label(%BackLabel, 14, COLOR_CREAM)
 
-	_style_as_hit_area(%StageButton)
-	(%StageButton as Button).pressed.connect(_on_stage_button_pressed)
+	## Chế độ Ải cũ (StageData = 1 ô vuông trên map chính) đã tắt cùng map chính: ẩn cả thẻ Tiến độ ải.
+	for node: Control in [%FrameStage, %StageButton, %StageNameLabel, %StageProgressLabel]:
+		node.visible = false
 	_style_label(%StageNameLabel, 13, COLOR_CREAM, HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(%StageProgressLabel, 13, COLOR_CREAM, HORIZONTAL_ALIGNMENT_LEFT)
 
 	_style_as_hit_area(%ChallengeButton)
-	(%ChallengeButton as Button).pressed.connect(_start_current_stage)
+	(%ChallengeButton as Button).pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
 	_style_label(%ChallengeLabel, 32, COLOR_GOLD)
 
-	## "Chơi" = vào MAP CHÍNH đi lại tự do (không ô vuông, không sinh quái) — khác hẳn chế độ "Vượt Ải". Nút riêng vì 2 label
-	## không dùng chung 1 vùng bấm (PlayLabel nằm ngoài rect của ChallengeButton).
+	## "PK": popup PK (Đại hội võ lâm / Võ lâm Liên đấu) — vào trận thì đổi cảnh như Vượt Ải. Nút riêng vì 2 label không dùng
+	## chung 1 vùng bấm (PlayLabel nằm ngoài rect của ChallengeButton).
 	_style_as_hit_area(%PlayButton)
-	(%PlayButton as Button).pressed.connect(_start_main_map)
+	(%PlayButton as Button).pressed.connect(func() -> void: PkWindow.open(self, _profile, _enter_field_map))
 	_style_label(%PlayLabel, 32, COLOR_GOLD)
 
 func _style_character_card() -> void:
@@ -195,6 +198,9 @@ func _build_nav() -> void:
 		if id == "social":
 			button.pressed.connect(func() -> void: SocialMenuWindow.open(self, _profile))
 			continue
+		if id == "ranking":
+			button.pressed.connect(func() -> void: RankingWindow.open(self, _profile))
+			continue
 		if id == "settings":
 			button.pressed.connect(func() -> void: AccountDialog.open(self))
 			continue
@@ -207,36 +213,30 @@ func _build_nav() -> void:
 func _build_character_status_panel() -> void:
 	_status_screen = CharacterStatusScreen.attach(%CharacterStatusWrap, _profile)
 
-## Nút TEST (chỉ debug build) — lên cấp/cộng điểm xong thì vẽ lại cả Hub lẫn panel Thuộc Tính.
-func _setup_debug_cheat_panel() -> void:
-	var panel: DebugCheatPanel = %DebugCheatPanel
-	panel.move_to_front()  ## trên panel Thuộc Tính (dựng sau trong _ready)
-	panel.profile_changed.connect(func() -> void:
-		refresh()
-		_status_screen.refresh())
-
 # ---------------------------------------------------------------- hành động
 
-## Nút "Chơi": vào map chính, đi lại tự do.
+## Đổi sang cảnh chơi ở chế độ đi lại tự do; map nào là do GameManager.field_map (màn Vượt Ải) quyết định.
 func _start_main_map() -> void:
 	GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+	GameManager.field_map = {}
 	GameManager.current_stage = null
 	GameManager.is_game_over = false
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tween.tween_callback(get_tree().change_scene_to_file.bind(GAME_SCENE_PATH))
 
-func _start_current_stage() -> void:
-	_enter_stage(_current_stage())
+## Nút "Vượt Ải" -> MapSelectWindow -> bấm [Vào] 1 map luyện công: vào thẳng map đó (đi lại tự do, quái của map).
+func _enter_field_map(entry: Dictionary) -> void:
+	_start_main_map()
+	GameManager.field_map = entry
 
-## Nút "Vượt Ải" luôn vào ải TIẾP THEO (_current_stage, dựa theo stages_cleared) — nhưng
-## người chơi cũng có thể chọn CHƠI LẠI 1 ải bất kỳ đã mở khoá qua màn Chọn Ải, xem
-## _on_stage_button_pressed().
+## Vào 1 ải (StageData) — qua màn Chọn Ải, xem _on_stage_button_pressed().
 func _enter_stage(stage: StageData) -> void:
 	if stage == null:
 		_show_toast("Chưa có ải nào")
 		return
 	GameManager.game_mode = GameManager.GameMode.STAGE
+	GameManager.field_map = {}
 	GameManager.current_stage = stage
 	GameManager.is_game_over = false
 	var tween := create_tween()
@@ -244,7 +244,7 @@ func _enter_stage(stage: StageData) -> void:
 	tween.tween_callback(get_tree().change_scene_to_file.bind(GAME_SCENE_PATH))
 
 ## Nút "Chọn Ải" ở thanh dưới cùng — mở màn liệt kê toàn bộ `stages`, cho chọn 1 map cụ thể để
-## chơi/chơi lại (khác _start_current_stage() luôn cố định vào ải tiếp theo).
+## chơi/chơi lại.
 func _on_stage_button_pressed() -> void:
 	StageSelectScreen.open(self, _profile, stages, _enter_stage, func() -> void: pass)
 
@@ -259,6 +259,7 @@ func _on_back_pressed() -> void:
 ## hotbar) để học/nâng cấp.
 func _on_skills_nav_pressed() -> void:
 	if _all_skills.is_empty():
+		_show_toast("Chưa gia nhập môn phái — vào game để chọn phái")
 		return
 	SkillBookScreen.open(self, _profile, _all_skills, func() -> void: refresh())
 
@@ -289,12 +290,12 @@ func _current_stage() -> StageData:
 # ---------------------------------------------------------------- tiện ích
 
 ## Gán style/màu cho 1 Label ĐÃ CÓ SẴN trong scene (vị trí/anchor do .tscn quyết định).
-func _style_label(label: Label, font_size: int, color: Color, align := HORIZONTAL_ALIGNMENT_CENTER, outline := true) -> void:
+func _style_label(label: Label, font_size: int, color: Color, align := HORIZONTAL_ALIGNMENT_CENTER, outline := true, pad := 0.0) -> void:
 	label.horizontal_alignment = align
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.clip_text = true
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_size_override("font_size", font_size)
+	GameUi.fit_label(label, font_size, 9, pad)   ## ô vẽ sẵn trên ảnh: chữ dài thì thu nhỏ cho vừa
 	label.add_theme_color_override("font_color", color)
 	if outline:
 		label.add_theme_color_override("font_outline_color", COLOR_OUTLINE)

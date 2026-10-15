@@ -10,7 +10,8 @@ import (
 //   - cấp, kinh nghiệm, tên, môn phái, giới tính, cờ server_seen: giữ bản đã lưu;
 //   - tiền (lượng + tiền rương) không tăng; nguyên bảo không tăng;
 //   - đồ: chỉ món đã có (theo uid), chỉ số giữ bản đã lưu, chỉ nhận vị trí / khoá / giá; bỏ món lạ / trùng uid;
-//   - tổng (4 chỉ số + điểm tiềm năng) không tăng; tổng (cấp các skill + điểm kỹ năng) không tăng.
+//   - tổng (4 chỉ số + điểm tiềm năng) không tăng; tổng (cấp các skill + điểm kỹ năng) không tăng;
+//   - phe Tống / Kim: chỉ chọn được 1 lần khi chưa có phe và cấp đã lưu >= 50.
 //
 // Nhân vật chưa vào map lần nào (server_seen = 0) thì không chặn: lần vào map đầu game server tự khởi tạo lại phần kinh tế.
 var ownerItemFields = []string{"rx", "ry", "rb", "lock", "unlock_at", "price"}
@@ -23,13 +24,16 @@ func guardClientSave(oldRaw json.RawMessage, incoming map[string]any) map[string
 	if num(old["server_seen"]) == 0 {
 		return incoming
 	}
-	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "gender", "server_seen", "lead_level", "lead_exp", "guild", "guild_join_after", "camp", "security_hash", "security_locked"} {
+	for _, k := range []string{"level", "exp", "name", "sect_id", "sect_name", "element", "gender", "server_seen", "starter_kit", "lead_level", "lead_exp", "guild", "guild_join_after", "camp", "security_hash", "security_locked"} {
 		if v, ok := old[k]; ok {
 			incoming[k] = v
 		}
 	}
-	// Hảo hữu + điểm PK chỉ game server đổi: bản cũ chưa có thì game cũng không được tự thêm.
-	for _, k := range []string{"friends", "pk_value"} {
+	// Đã bỏ phe Tống / Kim cố định của nhân vật (phe chỉ chọn trong trận Chiến trường Tống Kim).
+	delete(incoming, "nation")
+	// Hảo hữu + điểm PK + điểm tích lũy Tống Kim chỉ game server đổi: bản cũ chưa có thì game cũng không được tự thêm.
+	// test_attribs = chỉ số cộng thêm của nút TEST (bản debug): chỉ lưu được khi bật DEV_TRUST_CLIENT_SAVES.
+	for _, k := range []string{"friends", "pk_value", "songjin_points", "test_attribs"} {
 		if v, ok := old[k]; ok {
 			incoming[k] = v
 		} else {

@@ -1,12 +1,8 @@
 extends CanvasLayer
 
-const GOLD = Color(0.83, 0.68, 0.21)
-const GOLD_DIM = Color(0, 0, 0)
-const PANEL_BG = Color(0.06, 0.07, 0.1, 0.96)
-const CARD_BG = Color(0.1, 0.12, 0.16, 1.0)
-const CARD_BG_HOVER = Color(0.16, 0.18, 0.24, 1.0)
-const TEXT_LIGHT = Color(0.92, 0.92, 0.9)
-const TEXT_DIM = Color(0.65, 0.65, 0.62)
+## Khung bảng / tiêu đề / thẻ nâng cấp lấy từ GameUi (Theme Type Variation trong .tscn + GameUi.BUTTON cho thẻ).
+const GOLD = GameUi.GOLD
+const TEXT_LIGHT = GameUi.TEXT
 
 ## Kéo các file UpgradeData (.tres) vào đây trong Inspector — đây là "sổ danh mục"
 ## nâng cấp. Muốn thêm nâng cấp mới, chỉ cần tạo thêm 1 UpgradeData và thêm vào danh sách này.
@@ -32,19 +28,9 @@ func _ready() -> void:
 	PlayerStats.leveled_up.connect(_on_leveled_up)
 
 func _style_background() -> void:
-	dim_overlay.color = Color(0, 0, 0, 0.65)
+	GameUi.apply()
+	dim_overlay.color = GameUi.DIM
 	dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = PANEL_BG
-	panel_style.border_color = GOLD
-	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(10)
-	panel_style.set_content_margin_all(24)
-	panel.add_theme_stylebox_override("panel", panel_style)
-
-	title_label.add_theme_color_override("font_color", GOLD)
-	title_label.add_theme_font_size_override("font_size", 28)
 
 func _on_leveled_up(_new_level: int) -> void:
 	## Đang hiện 1 bảng chưa xử lý xong — xếp hàng thay vì gọi show_upgrade_choices() ngay,
@@ -69,25 +55,10 @@ func show_upgrade_choices() -> void:
 		choices_container.add_child(_build_card(upgrade))
 
 func _build_card(upgrade: UpgradeData) -> Control:
-	var card := Button.new()
+	## Thẻ = nút phụ chuẩn GameUi (nền tối, hover/bấm viền vàng).
+	var card := GameUi.button("", GameUi.BUTTON)
 	card.custom_minimum_size = Vector2(200, 240)
 	card.clip_text = false
-	card.focus_mode = Control.FOCUS_NONE
-
-	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = CARD_BG
-	normal_style.border_color = GOLD_DIM
-	normal_style.set_border_width_all(2)
-	normal_style.set_corner_radius_all(8)
-	normal_style.set_content_margin_all(12)
-
-	var hover_style := normal_style.duplicate()
-	hover_style.bg_color = CARD_BG_HOVER
-	hover_style.border_color = GOLD
-
-	card.add_theme_stylebox_override("normal", normal_style)
-	card.add_theme_stylebox_override("hover", hover_style)
-	card.add_theme_stylebox_override("pressed", hover_style)
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER

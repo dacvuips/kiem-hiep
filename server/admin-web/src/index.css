@@ -49,4 +49,7 @@ body { @apply bg-bg text-fg font-sans antialiased; }
   .label { @apply mb-1.5 block text-sm font-medium text-fg; }
   .th { @apply px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted whitespace-nowrap; }
   .td { @apply px-4 py-3 text-sm; }
+  /* Ô số hẹp: bỏ mũi tên tăng/giảm để không che số. */
+  .no-spin { -moz-appearance: textfield; }
+  .no-spin::-webkit-outer-spin-button, .no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 }

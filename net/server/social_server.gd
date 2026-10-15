@@ -531,6 +531,9 @@ func on_stall(c, b: StreamPeerBuffer) -> void:
 				c.stall_open = true
 				c.trade_open = false
 				c.stall_title = c.profile.stall_title
+				c.entity.action = NetProto.action_index("sit")   ## người khác thấy ngồi ngay, không chờ gói di chuyển
+				c.entity.flags |= NetProto.FLAG_SITTING
+				c.entity.touch()
 			_flags(c)
 		STALL_CLOSE:
 			c.stall_open = false
@@ -551,6 +554,16 @@ func on_stall(c, b: StreamPeerBuffer) -> void:
 			var seller_eid := b.get_u32()
 			_buy(c, seller_eid, NetProto.get_str(b, 64))
 
+## Dọn quầy do server (người bán rời chỗ ngồi...). `why` = thông báo cho người bán.
+func close_stall(c, why := "") -> void:
+	if not c.stall_open:
+		return
+	c.stall_open = false
+	c.profile.stall_open = false
+	_flags(c)
+	if why != "":
+		gs.notice(c, why)
+
 func _flags(c) -> void:
 	var f: int = c.entity.flags & ~(NetProto.FLAG_STALL | NetProto.FLAG_TRADE_OPEN)
 	if c.stall_open:
@@ -560,6 +573,14 @@ func _flags(c) -> void:
 	if f != c.entity.flags:
 		c.entity.flags = f
 		c.entity.touch()
+	## Biển quầy trên đầu: chỉ nằm trong gói xuất hiện nên đổi thì báo riêng người đang thấy + chính mình.
+	var sign: String = c.stall_title if c.stall_open else ""
+	if sign != c.entity.stall_title:
+		c.entity.stall_title = sign
+		var b := NetProto.writer(NetProto.S_STALL_SIGN)
+		b.put_u32(c.entity.eid)
+		NetProto.put_str(b, sign)
+		gs.send_to_viewers(c, b)
 
 func _browse(c, seller_eid: int) -> void:
 	var s = gs.conn_of_eid(seller_eid)
@@ -604,7 +625,5 @@ func _buy(c, seller_eid: int, uid: String) -> void:
 	gs.notice(c, "Đã mua %s giá %d lượng." % [name_of, price])
 	gs.notice(s, "%s đã mua %s của bạn: +%d lượng." % [c.entity.name, name_of, price])
 	if StallService.priced_items(s.profile).is_empty():
-		s.stall_open = false   ## hết hàng thì tự dọn quầy
-		_flags(s)
-		gs.notice(s, "Quầy đã hết hàng.")
+		close_stall(s, "Quầy đã hết hàng.")   ## hết hàng thì tự dọn quầy
 	_browse(c, seller_eid)

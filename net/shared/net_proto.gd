@@ -6,7 +6,7 @@ class_name NetProto
 ## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
-const VERSION := 2
+const VERSION := 3
 const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK gốc)
 const SNAPSHOT_EVERY := 2         ## gửi vị trí mỗi 2 tick = 9 lần/giây
 const CLIENT_SEND_RATE := 15.0    ## game gửi vị trí của mình tối đa 15 lần/giây
@@ -29,6 +29,7 @@ const C_PROFILE := 5      ## u32 grant_ack, json(PlayerProfile.to_dict) nén —
                           ## grant_ack = số thứ tự "quà" (đồ / tiền server cho) cuối cùng game đã áp vào hồ sơ
 const C_PICKUP := 6       ## u32 drop_id — nhặt đồ rơi
 const C_DISCARD := 7      ## str item_uid — vứt món trong túi xuống đất
+const C_REVIVE := 8       ## (không thân) — chết bấm "Về thành dưỡng sức": server đưa về điểm xuất phát (chỉ khi đang chết)
 const C_PING := 9         ## u32 client_ms
 const C_TRADE_REQ := 10   ## u32 target_eid — xin giao dịch
 const C_TRADE_ANSWER := 11 ## u32 from_eid, u8 accept
@@ -38,6 +39,7 @@ const C_FRIEND := 19      ## u8 op (RelationServer.FRIEND_*), u32 eid, u8 arg, s
 const C_VIEW_EQUIP := 20  ## u32 target_eid — "Tin tức": xem trang bị người đứng gần
 const C_ENMITY := 21      ## u32 target_eid — "Cừu sát": tuyên bố cừu sát người đứng gần
 const C_PVP_HIT := 22     ## u32 target_eid, u32 n, n byte PvpHit — đòn đánh trúng đối thủ cừu sát (máy người đánh tính)
+const C_BATTLE := 23      ## u8 op (BattleServer.OP_*), str json tham số — chiến trường Tống Kim (chỉ battle server)
 const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 — khoá bảo vệ (gửi MÃ BĂM, không gửi mật mã)
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
@@ -47,7 +49,7 @@ const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CL
 # server -> game
 const S_WELCOME := 1      ## u32 my_eid, f32 x, f32 y, str name
 const S_ERROR := 2        ## str code, str message (rồi ngắt kết nối)
-const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp,
+const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, u8 nation, str stall_title ("" = không bày bán), f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp,
                           ## rồi: người chơi = look; quái = u16 monster_id, u8 series, u8 blue_boss
 const S_DESPAWN := 4      ## u32 eid
 const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, u24 x*2, u24 y*2, u8 dir|action<<3, u8 z, u8 flags, u8 hp) — 14 byte/mục
@@ -78,7 +80,9 @@ const S_FRIEND_LIST := 32   ## str json [{name, online, level}]
 const S_VIEW_EQUIP := 33    ## json snapshot (ViewEquipService.snapshot_of_profile)
 const S_ENMITY := 34      ## u8 state (RelationServer.ENMITY_*), u32 other_eid, str other_name, u8 launcher
 const S_PVP_HIT := 35     ## u32 attacker_eid, u32 n, n byte PvpHit (đã cắt theo trần) — máy bị đánh tự trừ máu
-const S_CAMP := 36        ## u32 eid, i8 camp — phe (màu tên) người chơi đổi (lên cấp 10, vào/rời bang...)
+const S_CAMP := 36        ## u32 eid, i8 camp, u8 nation — phe (màu tên) / phe Tống-Kim người chơi đổi (lên cấp 10, vào/rời bang, chọn phe...)
+const S_STALL_SIGN := 37  ## u32 eid, str title ("" = dọn quầy) — biển quầy trên đầu người bày bán (gửi người đang thấy + chính mình)
+const S_BATTLE := 38      ## str json {op: "state" | "joined" | "reject" | "result", ...} — chiến trường Tống Kim
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name

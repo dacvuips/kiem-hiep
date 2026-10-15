@@ -9,6 +9,126 @@
   "loop": true,
   "type": "Head"
  },
+ "100006": {
+  "anim": "fx_db45c230",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 30,
+  "interval": 18,
+  "loop": true,
+  "type": "Foot"
+ },
+ "100007": {
+  "anim": "fx_710ec859",
+  "back_end": 15,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 20,
+  "interval": 12,
+  "loop": true,
+  "type": "Body"
+ },
+ "100008": {
+  "anim": "fx_ae5fcf0c",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 30,
+  "interval": 18,
+  "loop": true,
+  "type": "Head"
+ },
+ "100009": {
+  "anim": "fx_f0d4dbe9",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 30,
+  "interval": 18,
+  "loop": true,
+  "type": "Head"
+ },
+ "100010": {
+  "anim": "fx_9dcdf8a5",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 30,
+  "interval": 18,
+  "loop": true,
+  "type": "Head"
+ },
+ "100011": {
+  "anim": "fx_c9685a7e",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 30,
+  "interval": 18,
+  "loop": true,
+  "type": "Head"
+ },
+ "100012": {
+  "anim": "fx_2c1c1ad0",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 20,
+  "interval": 12,
+  "loop": true,
+  "type": "Head"
+ },
+ "100054": {
+  "anim": "fx_e1be8261",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 15,
+  "interval": 15,
+  "loop": true,
+  "type": "Head"
+ },
+ "100137": {
+  "anim": "title_new_yl_f5c7",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 11,
+  "interval": 18,
+  "loop": true,
+  "type": "Foot"
+ },
+ "100147": {
+  "anim": "lvguagnhuan_23a4",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 15,
+  "interval": 15,
+  "loop": true,
+  "type": "Foot"
+ },
+ "100189": {
+  "anim": "fx_9b7f36b4",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 20,
+  "interval": 40,
+  "loop": true,
+  "type": "Body"
+ },
+ "100192": {
+  "anim": "fx_819444ff",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 20,
+  "interval": 40,
+  "loop": true,
+  "type": "Body"
+ },
  "11": {
   "anim": "fx_c9685a7e",
   "back_end": 0,

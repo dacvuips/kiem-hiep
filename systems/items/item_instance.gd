@@ -5,6 +5,9 @@ class_name ItemInstance
 ## dòng magic (dòng 1/3/5 = tiền tố, luôn hiệu lực; dòng 2/4/6 = hậu tố, ẨN tới khi được kích hoạt
 ## bằng ngũ hành — xem Equipment.get_active_counts).
 
+## Phiên bản dữ liệu đồ (data/items) mà base_index/gold_index trỏ vào — 2 = nhập lại từ bản 15 phái. Save cũ không có
+## "dv" được đổi chỉ số qua ItemDatabase.remap_index (= DATA_VERSION trong tools/import_vltk_items.py).
+const DATA_VERSION := 2
 const MAX_MAGIC := 6  ## MAX_ITEM_NORMAL_MAGICATTRIB gốc (2 dòng mở rộng 7-8 là của hoàng kim, chưa có)
 
 var base_index: int = -1
@@ -12,6 +15,12 @@ var base_index: int = -1
 var gold_index: int = -1
 ## 2 dòng mở rộng của hoàng kim (ExpandMagic gốc) — bật theo số món CÙNG BỘ đang mặc (Equipment).
 var expand_magic: Array = []
+## Vật phẩm KHÔNG phải trang bị (thuốc, khoáng thạch, lệnh bài...): mã trong misc_items.json (ItemDatabase.get_misc) — "" = trang bị.
+## Món loại này dùng `count` (số lượng chồng), `item_level` (cấp vật phẩm gốc — VD Huyền Tinh 1-10, Sát Thủ lệnh 20-90)
+## và `series` (hệ — Sát Thủ lệnh/giản, Nguyên thạch); không có thuộc tính gốc/dòng magic.
+var misc_id: String = ""
+var count: int = 1
+var item_level: int = 0
 var series: int = ElementTypes.ElementType.KIM
 ## Giá trị thuộc tính gốc đã roll: [[tên, giá trị], ...] (VD weapondamagemin_v 4, durability_v 20).
 var base_values: Array = []
@@ -51,7 +60,12 @@ func get_size() -> Vector2i:
 	return ItemDatabase.size_of(get_base())
 
 func get_base() -> Dictionary:
+	if misc_id != "":
+		return ItemDatabase.get_misc(misc_id)
 	return ItemDatabase.get_gold(gold_index) if gold_index >= 0 else ItemDatabase.get_base(base_index)
+
+func is_misc() -> bool:
+	return misc_id != ""
 
 ## Ảnh vật phẩm (null = không có ảnh -> ô hiện tên chữ). small = bản thu nhỏ sẵn cho ô hành trang 48px.
 func get_icon(small: bool = false) -> Texture2D:
@@ -68,10 +82,13 @@ func get_set_group() -> int:
 func get_set_need(key: String) -> int:
 	return int(get_base().get(key, 0))
 
+## Vật phẩm khác trả -1 — "detail" của chúng (VD thuốc 0-9) trùng số loại trang bị, không được coi là đồ mặc được.
 func get_detail() -> int:
-	return int(get_base().get("detail", -1))
+	return -1 if is_misc() else int(get_base().get("detail", -1))
 
 func get_level() -> int:
+	if is_misc() and item_level > 0:
+		return item_level
 	return int(get_base().get("level", 1))
 
 func is_weapon() -> bool:
@@ -88,6 +105,8 @@ func get_max_durability() -> int:
 
 ## Tên hiển thị: tên đồ gốc (+ hệ). Màu theo phẩm chất: get_quality_color().
 func get_display_name() -> String:
+	if is_misc():
+		return "%s x%d" % [get_base().get("name", "?"), count] if count > 1 else str(get_base().get("name", "?"))
 	return "%s (%s)" % [get_base().get("name", "?"), ElementTypes.ELEMENT_NAME.get(series, "?")]
 
 ## Thường trắng, có dòng magic xanh lam (đồ xanh VLTK), hoàng kim vàng.
@@ -102,10 +121,11 @@ func get_requirements() -> Array:
 	return get_base().get("require", [])
 
 func to_dict() -> Dictionary:
-	return {"base": base_index, "gold": gold_index, "series": series, "base_values": base_values.duplicate(true),
+	return {"dv": DATA_VERSION, "base": base_index, "gold": gold_index, "series": series, "base_values": base_values.duplicate(true),
 		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability,
 		"seed": gen_seed, "luck": luck, "rx": room_x, "ry": room_y, "rb": room_bag,
-		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price, "uid": _ensure_uid()}
+		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price, "uid": _ensure_uid(),
+		"mid": misc_id, "count": count, "ilv": item_level}
 
 func _ensure_uid() -> String:
 	if uid == "":
@@ -116,6 +136,9 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	var item := ItemInstance.new()
 	item.base_index = int(data.get("base", -1))
 	item.gold_index = int(data.get("gold", -1))
+	if int(data.get("dv", 1)) < DATA_VERSION:
+		item.base_index = ItemDatabase.remap_index("base", item.base_index)
+		item.gold_index = ItemDatabase.remap_index("gold", item.gold_index)
 	item.series = int(data.get("series", 0))
 	item.base_values = data.get("base_values", []).duplicate(true)
 	for line in data.get("magic", []):
@@ -136,6 +159,9 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.unlock_at = int(data.get("unlock_at", 0))
 	item.trade_price = int(data.get("price", 0))
 	item.uid = str(data.get("uid", ""))
+	item.misc_id = str(data.get("mid", ""))
+	item.count = maxi(int(data.get("count", 1)), 1)
+	item.item_level = int(data.get("ilv", 0))
 	if item.uid == "":
 		item.uid = new_uid()
 	return item

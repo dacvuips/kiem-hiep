@@ -35,6 +35,16 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		c.entity.touch()
 		gs.profile_changed(c)
 		return
+	## CHỈ khi GAME_TEST_MODE=1: "/testgold N" cộng N lượng (tối đa 100 triệu/lần) để thử giao dịch / bày bán.
+	if gs.test_mode and text.begins_with("/testgold "):
+		if c.trade:
+			gs.notice(c, "Đang giao dịch, không cộng tiền được.")
+			return
+		var add := clampi(int(text.get_slice(" ", 1)), 0, 100_000_000)
+		c.profile.gold += add
+		gs.profile_changed(c)
+		gs.notice(c, "[Thử nghiệm] Đã cộng %d lượng." % add)
+		return
 	var now := gs.now()
 	var unix := Time.get_unix_time_from_system()
 	if c.muted_until > unix:

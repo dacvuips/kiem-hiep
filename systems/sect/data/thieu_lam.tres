@@ -1783,6 +1783,7 @@ stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_138")])
 
 [resource]
 script = ExtResource("1_sect")
+required_gender = 0
 id = "thieu_lam"
 sect_name = "Thiếu Lâm"
 element = 0

@@ -237,7 +237,8 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	if c.pvp_msgs > MAX_PVP_HITS_PER_SEC:
 		return
 	var t = gs.conn_of_eid(eid)
-	if not _fighting(c, t) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
+	var battle_hit: bool = gs.battle != null and gs.battle.allows_hit(c, t)   ## chiến trường: 2 phe đánh nhau lúc khai chiến
+	if not (_fighting(c, t) or battle_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
 	if (t.entity.pos as Vector2).distance_to(c.entity.pos) > GameServer.MAX_HIT_DISTANCE:
 		return

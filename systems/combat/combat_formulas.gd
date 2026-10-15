@@ -220,6 +220,10 @@ class DamageResult:
 ##   freeze/poison/stun_*: hiệu ứng trúng đòn (frame VLTK, 18/giây) — đã gồm bonus của người đánh
 ##     (coldenhance/poisonenhance), CHƯA trừ giảm thời gian của bên bị trúng (StatusEffectController
 ##     .apply_vltk_hit tự trừ theo CombatantStats của chính nó, đúng ReceiveDamage gốc).
+## Hệ số sát thương khi người chơi đánh người chơi: settings/npc/player/pkrate.ini gốc [PK] rate=20 (KNpcSet.cpp đọc vào
+## m_nPKDamageRate, KNpc.cpp:2592 nhân vào damage khi cả 2 bên là kind_player).
+const PK_DAMAGE_RATE_PERCENT := 20
+
 class HitModifiers:
 	var extra_damages: Dictionary = {}
 	var is_deadly_strike: bool = false
@@ -247,6 +251,8 @@ class HitModifiers:
 	var state_radius: float = 0.0
 	## true = đòn chỉ mang trạng thái, không tính damage/không hiện "trượt".
 	var is_state_only: bool = false
+	## Người chơi đánh người chơi (kể cả bot PK) — nhân PK_DAMAGE_RATE_PERCENT (HitResolver.receive đặt).
+	var is_pk: bool = false
 
 ## 1 đòn gồm NHIỀU loại damage cùng lúc (VD skill Đường Môn: vật lý + Độc sát) — mỗi loại đi qua
 ## resolve_damage() RIÊNG với giáp/% kháng của đúng loại đó (đúng VLTK: m_DamageAttribs lưu từng
@@ -274,6 +280,8 @@ static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantSt
 		if mods:
 			ctx.five_elements_damage_p = mods.five_elements_damage_p
 			ctx.is_deadly_strike = mods.is_deadly_strike
+			ctx.is_pk = mods.is_pk
+			ctx.pk_damage_rate_percent = PK_DAMAGE_RATE_PERCENT
 		ctx.attacker_five_elements_enhance = attacker.five_elements_enhance
 		ctx.defender_five_elements_resist = defender.five_elements_resist
 		ctx.defender_resist_percent = defender.get_capped_resist(damage_type)

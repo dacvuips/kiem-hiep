@@ -16,10 +16,10 @@ func _init(profile: PlayerProfile = null) -> void:
 	_profile = profile
 	if _profile == null:
 		return
-	var fr := SocialUi.section("🤝 Hảo hữu", SocialUi.LABEL_GREEN, SocialUi.SECTION_BG)
+	var fr := SocialUi.section("🤝 Hảo hữu")
 	_friend_box = fr[1]
 	body.add_child(fr[0])
-	var bl := SocialUi.section("⛔ Sổ đen (không nhận tin nhắn)", SocialUi.LABEL_RED, SocialUi.SECTION_BG)
+	var bl := SocialUi.section("⛔ Sổ đen (không nhận tin nhắn)")
 	_black_box = bl[1]
 	body.add_child(bl[0])
 	var close := SocialUi.stone_button("Đóng")

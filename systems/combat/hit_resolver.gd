@@ -23,6 +23,8 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	if (mods == null or mods.use_attack_rating) and not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense):
 		return MISSED
 
+	if mods and is_player_like(defender) and is_player_like(mods.attacker_node):
+		mods.is_pk = true
 	var parts := mods.extra_damages.duplicate() if mods else {}
 	var main_part: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main_part + Vector2i(min_damage, max_damage)
@@ -39,6 +41,10 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 		_apply_hit_state(defender, status, mods)
 	_apply_return_and_steal(defender_stats, attacker_stats, final_damage, dealt, mods)
 	return final_damage
+
+## Nhân vật người chơi (mình / người khác online / bot PK) — dùng cho hệ số sát thương PK (CombatFormulas.PK_DAMAGE_RATE_PERCENT).
+static func is_player_like(node: Node) -> bool:
+	return node != null and is_instance_valid(node) and (node.is_in_group("player") or node.is_in_group("other_players") or node is PkBot)
 
 ## Trạng thái đạn mang theo (bùa): có bán kính thì áp cho MỌI kẻ địch của người bắn trong vùng quanh chỗ
 ## trúng (KMissle::ProcessCollision gốc quét vùng), không thì chỉ mục tiêu trúng.

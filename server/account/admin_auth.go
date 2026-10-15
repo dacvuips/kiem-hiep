@@ -37,11 +37,12 @@ const (
 	permManageAdmins = "admins.manage" // tạo / sửa admin
 	permShop         = "shop.write"    // duyệt / huỷ đơn nạp, cộng / trừ Xu tay
 	permShopSettings = "shop.settings" // đổi tỉ lệ quy đổi
+	permCharEdit     = "characters.write" // sửa dữ liệu nhân vật (tên, đồ, hành trang, rương, điểm), tặng đồ, đá khỏi game
 )
 
 var permMinRole = map[string]string{
 	permRead: "viewer", permSupport: "support", permPunish: "gm", permServers: "super", permManageAdmins: "super",
-	permShop: "gm", permShopSettings: "super",
+	permShop: "gm", permShopSettings: "super", permCharEdit: "super",
 }
 
 var (

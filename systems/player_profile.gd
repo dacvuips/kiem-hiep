@@ -22,13 +22,57 @@ var title: String = ""
 ## 0/rỗng thay vì hard-code trong UI, sẵn sàng gắn logic thật khi tính năng tương ứng ra đời.
 var fuyuan: int = 0
 var prestige: int = 0
+## Điểm tích lũy Tống Kim (PL_BATTLEPOINT gốc): cộng dồn qua mọi trận chiến trường — chỉ battle server cộng (ProfileGuard giữ bản server).
+var songjin_points: int = 0
 var world_rank: String = ""
-## id trong SectDefinition ("" = chưa chọn — chỉ xảy ra với save rất cũ trước khi có hệ môn phái).
+## id trong SectDefinition. "" = VÔ MÔN PHÁI: nhân vật mới chỉ chọn hệ, đủ NEWBIE_LEVEL mới gia nhập 1 phái của hệ
+## (SectPrompt, giống VLTK gốc) — trước đó chỉ có đánh thường, không có skill phái.
 var sect_id: String = ""
-var sect_name: String = "Vô Môn Phái"
+const NO_SECT_NAME := "Vô Môn Phái"
+var sect_name: String = NO_SECT_NAME
+## Hệ ngũ hành chọn lúc tạo nhân vật (ElementTypes.ElementType); -1 = save cũ, lấy theo phái. Đã có phái thì luôn = hệ của phái.
+var element: int = -1
 ## Phe hiện tại (Camp.Type) = MÀU TÊN, quyết định ai là đồng đội (cùng màu). -1 = theo phe mặc định của
 ## môn phái (Camp.default_for_sect); đặt giá trị khác khi nhân vật đổi phe (sự kiện, bang chiến...).
 var camp: int = -1
+
+## Hệ ngũ hành của nhân vật (theo phái nếu đã vào phái, không thì theo lúc tạo).
+func get_element() -> ElementTypes.ElementType:
+	var sect := SectRegistry.get_by_id(sect_id)
+	if sect:
+		return sect.element
+	return (element if element >= 0 else ElementTypes.ElementType.KIM) as ElementTypes.ElementType
+
+func has_sect() -> bool:
+	return SectRegistry.get_by_id(sect_id) != null
+
+## Đủ cấp mà chưa vào phái -> game phải hỏi (SectPrompt).
+func needs_sect() -> bool:
+	return not has_sect() and level >= NEWBIE_LEVEL
+
+## Gia nhập phái được không: chưa có phái, đủ NEWBIE_LEVEL, phái thuộc đúng hệ đã chọn lúc tạo nhân vật, phái nhận giới tính này.
+func can_join_sect(sect_def: SectDefinition) -> bool:
+	return sect_def != null and needs_sect() and sect_def.element == get_element() and gender_fits(sect_def)
+
+func gender_fits(sect_def: SectDefinition) -> bool:
+	return sect_def.required_gender < 0 or sect_def.required_gender == int(gender)
+
+## Gia nhập phái (1 lần, không đổi được) — false nếu không đủ điều kiện (can_join_sect).
+func join_sect(sect_def: SectDefinition) -> bool:
+	if not can_join_sect(sect_def):
+		return false
+	set_sect(sect_def)
+	return true
+
+## Tạo nhân vật: chỉ chọn hệ, chưa vào phái (Vô Môn Phái). Giới tính + 4 chỉ số khởi điểm theo hệ.
+func choose_element(e: ElementTypes.ElementType) -> void:
+	sect_id = ""
+	sect_name = NO_SECT_NAME
+	element = int(e)
+	var need := required_gender(int(e))
+	if need >= 0:
+		gender = need as Gender
+	apply_start_stats()
 
 ## VLTK gốc: chưa gia nhập môn phái (cần cấp 10) thì thuộc phe Tân thủ — tên trắng, không cừu sát được. Game này gắn phái
 ## ngay lúc tạo nhân vật nên coi "gia nhập" = đủ cấp NEWBIE_LEVEL; từ đó phe/màu tên theo phái (hoặc phe bang nếu có).
@@ -37,7 +81,7 @@ const NEWBIE_LEVEL := 10
 func get_current_camp() -> int:
 	if camp >= 0:
 		return camp
-	if level < NEWBIE_LEVEL:
+	if level < NEWBIE_LEVEL or not has_sect():
 		return Camp.Type.BEGIN
 	return Camp.default_for_sect(SectRegistry.get_by_id(sect_id))
 
@@ -58,9 +102,7 @@ const START_STATS := [[35, 25, 25, 15], [20, 35, 20, 25], [25, 25, 25, 25], [30,
 
 ## [Sức mạnh, Thân pháp, Sinh khí, Nội công] khởi điểm của hệ môn phái hiện tại (chưa chọn phái = Kim).
 func get_start_stats() -> Array:
-	var sect := SectRegistry.get_by_id(sect_id)
-	var element: int = int(sect.element) if sect else 0
-	return START_STATS[clampi(element, 0, START_STATS.size() - 1)]
+	return START_STATS[clampi(int(get_element()), 0, START_STATS.size() - 1)]
 
 ## Đặt 4 chỉ số gốc về khởi điểm của hệ (chỉ dùng khi tạo nhân vật / tẩy điểm — không đụng điểm tiềm năng).
 func apply_start_stats() -> void:
@@ -119,6 +161,30 @@ var skill_settings: Dictionary = {"no_target": false, "face_direction": false, "
 
 func get_skill_setting(key: String) -> bool:
 	return bool(skill_settings.get(key, false))
+
+## Thiết lập auto đánh: 2 bộ [AUTO - Luyện công, AUTO - PK] (AutoSettings) + bộ đang dùng (auto_mode = AutoSettings.Mode).
+## auto_log = chiến báo gần đây [{t: giây unix, kind, text}], tối đa AUTO_LOG_MAX dòng. kind: "death" / "tdp" / "report" / "".
+const AUTO_LOG_MAX := 50
+var auto_mode: int = AutoSettings.Mode.TRAIN
+var auto_presets: Array[AutoSettings] = [AutoSettings.new(), AutoSettings.pk_default()]
+var auto_log: Array = []
+
+func get_auto_settings() -> AutoSettings:
+	return auto_presets[clampi(auto_mode, 0, auto_presets.size() - 1)]
+
+## Số dòng chiến báo loại `kind` trong `minutes` phút gần nhất.
+func count_auto_log(kind: String, minutes: int) -> int:
+	var since := int(Time.get_unix_time_from_system()) - minutes * 60
+	var n := 0
+	for e in auto_log:
+		if str(e.get("kind", "")) == kind and int(e.get("t", 0)) >= since:
+			n += 1
+	return n
+
+func add_auto_log(text: String, kind := "") -> void:
+	auto_log.append({"t": int(Time.get_unix_time_from_system()), "kind": kind, "text": text})
+	if auto_log.size() > AUTO_LOG_MAX:
+		auto_log = auto_log.slice(auto_log.size() - AUTO_LOG_MAX)
 ## Skill người chơi tự gắn vào NÚT CHÍNH (nút lớn, cũng là skill chế độ Auto tự đánh) — "" = dùng
 ## đòn chính mặc định của môn phái (SkillDefinition.is_main_attack).
 var main_skill_id: String = ""
@@ -165,6 +231,10 @@ const MAX_BLACKLIST := 100
 var pk_value: int = 0
 ## Câu rao bán khi mở quầy bày bán.
 var stall_title: String = ""
+## Đồ web Admin tặng, CHƯA sinh thành món thật (web không có bộ sinh đồ): [{kind: "equip", detail, particular, level, series,
+## magic: [cấp 6 dòng], luck, seed} | {kind: "gold", gold, perfection, seed}]. Game server sinh khi nhân vật vào map
+## (apply_admin_grants) — seed cố định nên sinh lại vẫn ra đúng món đó. Hết chỗ trong hành trang thì để chờ lần sau.
+var admin_grants: Array = []
 ## Trạng thái ĐANG chạy (không lưu): đang bày bán / đang mở giao dịch (nhận lời xin giao dịch). Hai trạng thái loại trừ nhau.
 var stall_open: bool = false
 var trade_open: bool = false
@@ -187,8 +257,12 @@ func _init() -> void:
 	loop_skill_ids.fill("")
 
 ## TẠM THỜI — đường cong EXP ngoài trận, chỉnh khi cân bằng game.
+## Đã giảm: cấp < 80 còn 1/3 (giảm 2/3), cấp 80 trở lên còn 1/2.
 func get_exp_to_next_level() -> int:
-	return 100 + (level - 1) * 150
+	var base := 100 + (level - 1) * 150
+	if level >= 80:
+		return int(base / 2)
+	return int(base / 3)
 
 func is_gem_slot_unlocked(index: int) -> bool:
 	return level >= GEM_SLOT_UNLOCK_LEVELS[index]
@@ -201,8 +275,7 @@ func get_combat_stats(state_sources: Array[Dictionary] = []) -> CombatantStats:
 func to_build() -> CombatantBuild:
 	var b := CombatantBuild.new()
 	b.level = level
-	var sect := SectRegistry.get_by_id(sect_id)
-	b.element = sect.element if sect else ElementTypes.ElementType.KIM
+	b.element = get_element()
 	b.strength = strength
 	b.dexterity = dexterity
 	b.vitality = vitality
@@ -216,6 +289,8 @@ func to_build() -> CombatantBuild:
 	b.equipment = equipment.duplicate()
 	b.riding = riding
 	b.active_aura_id = active_aura_id
+	for k in test_attribs:   ## thuộc tính VLTK = Vector3i (giá trị ở x), như dòng thuộc tính trang bị
+		b.extra_attribs[k] = Vector3i(int(test_attribs[k]), 0, 0)
 	return b
 
 ## Gán môn phái đã chọn ở màn Chọn Nhân Vật — cập nhật cả sect_id (nguồn sự thật) lẫn sect_name
@@ -226,9 +301,9 @@ func set_sect(sect_def: SectDefinition) -> void:
 	var untouched: bool = (level == 1 and potential_points == 0) or [strength, dexterity, vitality, energy] == get_start_stats()
 	sect_id = sect_def.id
 	sect_name = sect_def.sect_name
-	var need := required_gender(int(sect_def.element))
-	if need >= 0:
-		gender = need as Gender
+	element = int(sect_def.element)
+	if sect_def.required_gender >= 0:
+		gender = sect_def.required_gender as Gender
 	if untouched:
 		apply_start_stats()
 
@@ -354,21 +429,24 @@ func refund_all_points() -> Dictionary:
 	main_skill_id = fresh.main_skill_id
 	return {"potential": maxi(spent_potential, 0), "skill": spent_skill}
 
-## Giới tính được phép của hệ: Kim = chỉ nam, Thủy = chỉ nữ (Nga Mi, Thúy Yên chỉ nhận nữ), hệ khác cả hai. Trả về -1 = cả hai.
+## Giới tính bắt buộc của HỆ (lúc tạo nhân vật): chỉ khi MỌI phái của hệ cùng đòi 1 giới tính (SectDefinition.required_gender).
+## Bản 15 phái: Thủy có Hoa Sơn, Kim có Dương Môn nhận cả nam lẫn nữ -> mọi hệ đều -1 (cả hai); giới tính lệch phái thì bảng
+## chọn phái không cho vào (gender_fits). Trả về -1 = cả hai.
 static func required_gender(element: int) -> int:
-	if element == ElementTypes.ElementType.KIM:
-		return Gender.MALE
-	if element == ElementTypes.ElementType.THUY:
-		return Gender.FEMALE
-	return -1
+	var need := -2
+	for sect in SectRegistry.get_by_element(element as ElementTypes.ElementType):
+		if need == -2:
+			need = sect.required_gender
+		elif need != sect.required_gender:
+			return -1
+	return maxi(need, -1)
 
 ## Nhân vật lưu từ bản cũ: (1) giới tính không hợp hệ -> đổi theo hệ; (2) còn nguyên khởi điểm Kim dù hệ khác, cấp 1 và chưa có điểm
 ## tiềm năng nào (không thể đã cộng) -> đổi sang khởi điểm đúng của hệ; (3) thể lực khởi điểm cũ 120 -> 100 (bản gốc).
 func _migrate_vltk_start_values() -> void:
-	var sect := SectRegistry.get_by_id(sect_id)
-	if sect == null:
+	if not has_sect() and element < 0:
 		return
-	var need := required_gender(int(sect.element))
+	var need := required_gender(int(get_element()))
 	if need >= 0 and gender != need:
 		gender = need as Gender
 	if level == 1 and potential_points == 0 and [strength, dexterity, vitality, energy] == START_STATS[0]:
@@ -405,6 +483,39 @@ func add_item(item: ItemInstance) -> bool:
 	item.room_bag = spot.z
 	inventory.append(item)
 	return true
+
+## Sinh đồ web Admin tặng (admin_grants) vào hành trang — trả số món đã thêm; món không đủ chỗ / hỏng thì giữ / bỏ.
+func apply_admin_grants() -> int:
+	var added := 0
+	var left: Array = []
+	for g in admin_grants:
+		if not g is Dictionary:
+			continue
+		var item := _make_admin_item(g)
+		if item == null:
+			push_warning("Bỏ đồ Admin tặng không hợp lệ: %s" % g)
+			continue
+		if add_item(item):
+			added += 1
+		else:
+			left.append(g)
+	admin_grants = left
+	return added
+
+static func _make_admin_item(g: Dictionary) -> ItemInstance:
+	var gen_seed := int(g.get("seed", -1))
+	var item: ItemInstance
+	if str(g.get("kind", "")) == "gold":
+		item = ItemGenerator.generate_gold(int(g.get("gold", -1)), int(g.get("perfection", 10)), gen_seed)
+	else:
+		var levels: Array = []
+		for v in g.get("magic", []):
+			levels.append(clampi(int(v), 0, 10))
+		item = ItemGenerator.generate(int(g.get("detail", 0)), int(g.get("particular", 0)), int(g.get("level", 1)),
+			clampi(int(g.get("series", 0)), 0, 4), levels, clampi(int(g.get("luck", 0)), 0, 100), gen_seed)
+	if item != null and g.has("lock"):
+		item.lock_state = int(g.get("lock", ItemInstance.LOCK_NORMAL))
+	return item
 
 ## Số hàng đang hiển thị của túi `bag`: tối thiểu ROOM_HEIGHT, dài hơn nếu có món (từ save cũ) nằm dưới hàng cuối.
 func get_room_height(bag: int = 0) -> int:
@@ -690,12 +801,20 @@ func copy_from(other: PlayerProfile) -> void:
 		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
 			set(p.name, other.get(p.name))
 
+## CHỈ ĐỂ THỬ (nút TEST trên màn chơi, bản debug): thuộc tính cộng thêm theo tên VLTK (lifemax_v, fastwalkrun_p...) -> giá trị — cộng vào
+## chỉ số như 1 món trang bị (CombatantBuild.extra_attribs). Server chỉ nhận khi bật chế độ dev (GAME_DEV_TRUST_CLIENT / DEV_TRUST_CLIENT_SAVES).
+var test_attribs: Dictionary = {}
+
 ## Online: game server đã kiểm tra / khởi tạo phần kinh tế của nhân vật này (lần đầu vào map). 0 = chưa.
 var server_seen: int = 0
+## Quà tân thủ (StarterKit): bit STARTER_ITEMS = đã nhận đồ + lên cấp khởi đầu, STARTER_WEAPON = đã nhận vũ khí sau khi vào phái.
+## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
+var starter_kit: int = 0
 
 func to_dict() -> Dictionary:
 	return {
 		"server_seen": server_seen,
+		"starter_kit": starter_kit,
 		"name": display_name,
 		"gender": gender,
 		"level": level,
@@ -703,9 +822,11 @@ func to_dict() -> Dictionary:
 		"title": title,
 		"fuyuan": fuyuan,
 		"prestige": prestige,
+		"songjin_points": songjin_points,
 		"world_rank": world_rank,
 		"sect_id": sect_id,
 		"sect_name": sect_name,
+		"element": element,
 		"camp": camp,
 		"inventory": inventory.map(func(it: ItemInstance) -> Dictionary: return it.to_dict()),
 		"equipment": _equipment_to_dict(),
@@ -730,6 +851,8 @@ func to_dict() -> Dictionary:
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
 		"skill_settings": skill_settings,
+		"auto": {"mode": auto_mode, "presets": auto_presets.map(func(a: AutoSettings) -> Dictionary: return a.to_dict()),
+			"log": auto_log},
 		"main_skill_id": main_skill_id,
 		"storage": storage.to_array(),
 		"storage_extra": storage_extra,
@@ -744,6 +867,8 @@ func to_dict() -> Dictionary:
 		"friends": friends.duplicate(),
 		"blacklist": blacklist.duplicate(),
 		"pk_value": pk_value,
+		"admin_grants": admin_grants.duplicate(true),
+		"test_attribs": test_attribs.duplicate(),
 	}
 
 static func from_dict(data: Dictionary) -> PlayerProfile:
@@ -755,11 +880,24 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.title = str(data.get("title", ""))
 	profile.fuyuan = int(data.get("fuyuan", 0))
 	profile.prestige = int(data.get("prestige", 0))
+	profile.songjin_points = int(data.get("songjin_points", 0))
 	profile.world_rank = str(data.get("world_rank", ""))
 	profile.sect_id = str(data.get("sect_id", ""))
 	profile.sect_name = str(data.get("sect_name", profile.sect_name))
+	profile.element = int(data.get("element", -1))
+	var ta: Variant = data.get("test_attribs", {})
+	if ta is Dictionary:
+		for k in ta:
+			profile.test_attribs[str(k)] = int(ta[k])
+	if profile.has_sect():
+		profile.element = int(profile.get_element())
+	elif profile.sect_id != "" and not SectRegistry.load_all().is_empty():   ## phái không còn tồn tại -> về Vô Môn Phái, giữ hệ
+		## (danh sách phái rỗng = không nạp được dữ liệu phái: KHÔNG xoá, tránh mất phái đã lưu)
+		profile.sect_id = ""
+		profile.sect_name = NO_SECT_NAME
 	profile.camp = int(data.get("camp", -1))
 	profile.server_seen = int(data.get("server_seen", 0))
+	profile.starter_kit = int(data.get("starter_kit", 0))
 	for item_data in data.get("inventory", []):
 		profile.inventory.append(ItemInstance.from_dict(item_data))
 	profile._layout_inventory()
@@ -812,9 +950,18 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.friends = _name_list(data.get("friends", []), 100)
 	profile.blacklist = _name_list(data.get("blacklist", []), MAX_BLACKLIST)
 	profile.pk_value = clampi(int(data.get("pk_value", 0)), 0, 10)
+	var grants: Variant = data.get("admin_grants", [])
+	profile.admin_grants = (grants as Array).duplicate(true) if grants is Array else []
 	profile._migrate_vltk_start_values()
 	profile._clamp_skill_levels()
 	var saved_settings: Dictionary = data.get("skill_settings", {})
 	for key in profile.skill_settings:
 		profile.skill_settings[key] = bool(saved_settings.get(key, false))
+	var auto_data: Dictionary = data.get("auto", {})
+	profile.auto_mode = clampi(int(auto_data.get("mode", 0)), 0, 1)
+	var presets: Array = auto_data.get("presets", [])
+	for i in mini(presets.size(), profile.auto_presets.size()):
+		if presets[i] is Dictionary:
+			AutoSettings.from_dict(presets[i], profile.auto_presets[i])
+	profile.auto_log = (auto_data.get("log", []) as Array).filter(func(e: Variant) -> bool: return e is Dictionary)
 	return profile

@@ -3,6 +3,7 @@ systems/skill_fx (VltkSkillRunner / VltkMissile).
 
     python tools/import_vltk_skill_fx.py [phái ...]      # mặc định: nga_mi (đợt thử nghiệm)
     python tools/import_vltk_skill_fx.py --all            # cả 10 phái
+    python tools/import_vltk_skill_fx.py hoa_son vu_hon tieu_dao duong_gia minh_giao   # 5 phái mới (nguồn 15 phái)
     python tools/import_vltk_skill_fx.py --monsters       # skill + đạn của mọi quái (cần chạy import_vltk_monsters.py trước)
 
 Nguồn (không đoán số):
@@ -15,6 +16,10 @@ Nguồn (không đoán số):
     xuyên/biến mất khi trúng, 4 ảnh theo giai đoạn (chờ/bay/va chạm/biến mất) + bộ B (MultiShow), AnimFileInfo
     "số frame, số hướng, nhịp" (KMissle::GetInfoFromTabFile).
   - client pak: file .spr -> PNG.
+
+5 phái mới + Ngũ Độc (vltk_source.JX15_DATA_SECTS) lấy từ bản 15 phái (tools/vltk_source.py): đọc Skills.txt/Missles.txt/lua của
+server 15 phái + pak client 15 phái, và cộng vltk_source.FX_ID_OFFSET vào số của mọi skill con, đạn, hình trạng thái
+(bản 15 phái dùng lại số của VNG cho thứ khác). Phải chạy riêng, không trộn với 10 phái cũ.
 
 Đầu ra (key tiếng Anh/số, không giữ chữ Hán):
   data/skill_fx/skills.json    {SkillId: {...}} — gồm skill người chơi của phái + mọi skill con/skill sự kiện.
@@ -40,6 +45,7 @@ from vltk_pak import PakList, file_name_to_id, normalize  # noqa: E402
 import spr_to_png  # noqa: E402
 import vltk_pak  # noqa: E402
 import import_vltk_hit_effects as hit  # noqa: E402  (parser bảng lua)
+import vltk_source  # noqa: E402
 from import_vltk_avatar import write_keep_import, CLIENT, Tables  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -372,7 +378,20 @@ def parse_anim_info(text):
     return [n if n >= 0 else d for n, d in zip(nums[:3], defaults)]
 
 
-def build_missile(viet, gbk, paks, anim_cache):
+def fit_to_spr(info, anim):
+    """Bản 15 phái điền AnimFileInfo giả "100,16/1,1" cho MỌI đạn mới (SPR thật 80/128/192... khung) -> chia khung theo
+    hướng sai, đạn bay ngược/lệch hướng. Bảng lệch SPR thì lấy số khung thật; số hướng giữ theo bảng nếu chia hết, không
+    thì theo đầu SPR. (Bản VNG giữ nguyên bảng — đã khớp và vài chỗ lệch là cố ý của gốc.)"""
+    frames, dirs, interval = info
+    if not anim or anim["frames"] == frames:
+        return info
+    real = anim["frames"]
+    if not (dirs > 1 and real % dirs == 0):
+        dirs = max(1, anim["dirs"])
+    return real, dirs, interval
+
+
+def build_missile(viet, gbk, paks, anim_cache, trust_spr=False):
     m = {"name": viet_name(viet, gbk, "MissleName")}
     for key, col in MISSLE_INT_COLUMNS.items():
         m[key] = to_int(viet.get(col, ""))
@@ -381,6 +400,8 @@ def build_missile(viet, gbk, paks, anim_cache):
         for i in range(1, 5):
             key = export_anim(paks, gbk.get(f"{prefix}{i}", ""), anim_cache)
             info = parse_anim_info(viet.get(f"AnimFileInfo{prefix[8:]}{i}", ""))
+            if trust_spr and key:
+                info = fit_to_spr(info, anim_cache.get(key))
             phases.append({"anim": key, "frames": info[0], "dirs": info[1], "interval": info[2]} if key else None)
         m[field] = phases
     return m
@@ -389,10 +410,10 @@ def build_missile(viet, gbk, paks, anim_cache):
 STATE_TABLE = "\u72b6\u6001\u56fe\u5f62\u5bf9\u7167\u8868.txt"   # bảng đối chiếu trạng thái - hình ảnh
 
 
-def export_states(paks, state_ids, anim_cache):
+def export_states(paks, state_ids, anim_cache, lines=None):
     """CStateMagicTable gốc: dòng n của bảng = trạng thái n (StateSpecialId); cột: Status, file, Head/Foot/Body,
     Loop, khung nền bắt đầu/kết thúc, tổng frame, số hướng, nhịp. Ảnh gắn lên người suốt lúc trạng thái còn hiệu lực."""
-    lines = Tables().lines(STATE_TABLE)
+    lines = lines or Tables().lines(STATE_TABLE)
     out = {}
     for sid in sorted(state_ids):
         if sid <= 0 or sid >= len(lines):
@@ -410,22 +431,52 @@ def export_states(paks, state_ids, anim_cache):
     return out
 
 
+def remap_jx15(new_skills, new_missiles, new_states, roots):
+    """Bản 15 phái -> khoá riêng: skill con/sự kiện, đạn, trạng thái + FX_ID_OFFSET (skill gốc của phái giữ số)."""
+    off = vltk_source.FX_ID_OFFSET
+    sk = lambda i: i if i <= 0 or i in roots else i + off  # noqa: E731
+    out = {}
+    for sid, s in new_skills.items():
+        s["child"] = (s["child"] + off if s["child"] > 0 else s["child"]) if s["base"] == 1 else sk(s["child"])
+        for col in ("start_skill", "fly_skill", "collide_skill", "vanish_skill"):
+            s[col] = sk(s[col])
+        for attr in EVENT_ATTRS:
+            for v in s["levels"].get(attr, []):
+                v[2] = sk(v[2])
+        if s.get("state", 0) > 0:
+            s["state"] += off
+        out[str(sk(sid))] = s
+    return (out, {str(int(k) + off): v for k, v in new_missiles.items()},
+            {str(int(k) + off): v for k, v in new_states.items()})
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     monsters_only = "--monsters" in sys.argv and not args and "--all" not in sys.argv
     sects = [] if monsters_only else (ALL_SECTS if "--all" in sys.argv else (args or ["nga_mi"]))
+    jx15 = bool(sects) and all(x in vltk_source.JX15_DATA_SECTS for x in sects)
+    if not jx15 and any(x in vltk_source.JX15_DATA_SECTS for x in sects):
+        raise SystemExit("Các phái bản 15 phái (%s) phải chạy riêng." % ", ".join(vltk_source.JX15_DATA_SECTS))
     OUT_DATA.mkdir(parents=True, exist_ok=True)
     OUT_PNG.mkdir(parents=True, exist_ok=True)
+    skills_txt, missles_txt, paks, state_lines = SKILLS_TXT, MISSLES_TXT, _PAKS, None
+    if jx15:
+        skills_txt, missles_txt, paks = (vltk_source.settings_file("skills.txt"),
+                                         vltk_source.settings_file("missles.txt"), vltk_source.paks())
+        hit.LUA_DIRS[:] = hit.NEW_LUA_DIRS
+        state_lines = vltk_source.settings_file("npcres/" + STATE_TABLE).read_bytes().decode("gbk", "replace").splitlines()
 
-    _h, skill_rows = read_table(SKILLS_TXT)
+    _h, skill_rows = read_table(skills_txt)
     skill_rows = {to_int(v["SkillId"]): (v, g) for v, g in skill_rows if to_int(v.get("SkillId", ""), -1) > 0}
-    _h, missle_rows = read_table(MISSLES_TXT)
+    _h, missle_rows = read_table(missles_txt)
     missle_rows = {to_int(v["MissleId"]): (v, g) for v, g in missle_rows if to_int(v.get("MissleId", ""), -1) > 0}
 
     skills_path, missiles_path, anims_path = OUT_DATA / "skills.json", OUT_DATA / "missiles.json", OUT_DATA / "anims.json"
     load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}  # noqa: E731
     skills, missiles, anims = load(skills_path), load(missiles_path), load(anims_path)
-    paks = _PAKS
+    all_skills, all_missiles = skills, missiles
+    if jx15:   ## dựng riêng rồi đổi khoá (remap_jx15) mới gộp — không đè khoá của bản VNG.
+        skills, missiles = {}, {}
     anim_cache = dict(anims)
 
     roots = sect_root_skills(sects)
@@ -440,19 +491,22 @@ def main():
             continue
         seen.add(sid)
         s = build_skill(*skill_rows[sid])
-        s.update(SERVER_OVERRIDES.get(sid, {}))
+        if not jx15:
+            s.update(SERVER_OVERRIDES.get(sid, {}))
         precast = export_anim(paks, s.pop("precast"), anim_cache)
         s["precast"] = precast or ""
-        if skills.get(str(sid), {}).get("name"):
-            s["name"] = skills[str(sid)]["name"]   ## giữ tên đã đặt sẵn (cột tên trong bảng VNG lẫn GBK/TCVN3, dễ hỏng dấu)
+        name_key = str(sid if not jx15 or sid in roots else sid + vltk_source.FX_ID_OFFSET)
+        if all_skills.get(name_key, {}).get("name"):
+            s["name"] = all_skills[name_key]["name"]   ## giữ tên đã đặt sẵn (cột tên trong bảng VNG lẫn GBK/TCVN3, dễ hỏng dấu)
         skills[str(sid)] = s
         for ref in referenced_skills(s):
             parent_of.setdefault(ref, sid)
             todo.append(ref)
         if s["base"] == 1 and s["child"] > 0 and s["child"] in missle_rows:
-            m = build_missile(*missle_rows[s["child"]], paks, anim_cache)
-            if missiles.get(str(s["child"]), {}).get("name"):
-                m["name"] = missiles[str(s["child"])]["name"]
+            m = build_missile(*missle_rows[s["child"]], paks, anim_cache, trust_spr=jx15)
+            m_key = str(s["child"] + (vltk_source.FX_ID_OFFSET if jx15 else 0))
+            if all_missiles.get(m_key, {}).get("name"):
+                m["name"] = all_missiles[m_key]["name"]
             missiles[str(s["child"])] = m
             m["name"] = m["name"] or s["name"]
 
@@ -467,12 +521,20 @@ def main():
 
     states_path = OUT_DATA / "states.json"
     states = load(states_path)
-    states.update(export_states(paks, {int(skills[str(i)].get("state", 0)) for i in seen}, anim_cache))
+    new_states = export_states(paks, {int(skills[str(i)].get("state", 0)) for i in seen}, anim_cache, state_lines)
+    if jx15:
+        counts = (len(skills), len({skills[str(i)]["child"] for i in seen if skills[str(i)]["base"] == 1}))
+        skills, missiles, new_states = remap_jx15({int(k): v for k, v in skills.items()}, missiles, new_states,
+                                                  set(roots))
+        all_skills.update(skills)
+        all_missiles.update(missiles)
+        skills, missiles = all_skills, all_missiles
+    states.update(new_states)
     anims = {k: v for k, v in anim_cache.items() if v}
     for path, data in ((skills_path, skills), (missiles_path, missiles), (anims_path, anims), (states_path, states)):
         path.write_text(json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
     print("phái:", ", ".join(sects), "| skill gốc:", len(roots), "| skill (gồm con/sự kiện):", len(seen),
-          "| đạn:", len({str(skills[str(s)]["child"]) for s in seen if skills[str(s)]["base"] == 1}),
+          "| đạn:", counts[1] if jx15 else len({str(skills[str(s)]["child"]) for s in seen if skills[str(s)]["base"] == 1}),
           "| ảnh:", len(anims), "| trạng thái:", len(states))
 
 

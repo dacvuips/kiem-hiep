@@ -148,10 +148,10 @@ class PakFile:
 class PakList:
     """Toàn bộ pak của 1 client, tìm theo thứ tự package.ini; file rời trên đĩa được ưu tiên."""
 
-    def __init__(self, client_dir):
+    def __init__(self, client_dir, package_ini="package.ini"):
         self.client_dir = client_dir
         self.paks = []
-        ini = os.path.join(client_dir, "package.ini")
+        ini = os.path.join(client_dir, package_ini)
         names = []
         for line in open(ini, encoding="latin1"):
             key, _, value = line.strip().partition("=")

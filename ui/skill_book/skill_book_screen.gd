@@ -11,11 +11,12 @@ class_name SkillBookScreen
 
 const SCENE_PATH := "res://ui/skill_book/SkillBookScreen.tscn"
 
-const COLOR_GOLD := Color(1, 0.85, 0.35)
+## Khung/nút/thẻ lấy từ GameUi (đặt Theme Type Variation trong .tscn); ở đây chỉ còn màu ngữ nghĩa của nội dung.
+const COLOR_GOLD := GameUi.GOLD
 const COLOR_STAT := Color(0.94, 0.94, 0.9)
 const COLOR_CURRENT_LEVEL := Color(0.35, 0.95, 0.4)
 const COLOR_NEXT := Color(0.95, 0.25, 0.22)
-const COLOR_WARNING := Color(0.95, 0.35, 0.3)
+const COLOR_WARNING := GameUi.LABEL_RED
 const COLOR_LINKED_SKILL := Color(0.45, 0.85, 0.4)
 const COLOR_NOT_LEARNED := Color(0.75, 0.75, 0.7)
 
@@ -62,13 +63,17 @@ static func open(parent: Node, profile: PlayerProfile, skills: Array[SkillDefini
 	var screen: SkillBookScreen = load(SCENE_PATH).instantiate()
 	screen._profile = profile
 	screen._all_skills = skills
-	screen._skills = skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden)
+	## Đánh thường không hiện trong bảng: nút chính trống tự dùng đòn đánh thường hợp vũ khí (SectSkillController.get_default_main_skill).
+	screen._skills = skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden and not s.is_basic_attack)
 	screen._on_closed = on_closed
 	parent.add_child(screen)
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	## Vẫn bấm được khi main.gd tạm dừng game lúc mở bảng trong trận.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	GameUi.apply()
+	(%Dim as ColorRect).color = GameUi.DIM
 	%CloseButton.pressed.connect(_on_close_pressed)
 	%TestButton.pressed.connect(func() -> void:
 		if _selected and _profile.debug_raise_skill(_selected.id):
@@ -96,14 +101,14 @@ func _bind_setting(check: CheckBox, key: String) -> void:
 static func _make_check_icon(checked: bool) -> Texture2D:
 	const SIZE := 20
 	var img := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0.05, 0.05, 0.04, 1))
-	var border := Color(0.85, 0.7, 0.38)
+	img.fill(GameUi.BG_INNER)
+	var border := GameUi.BORDER_ACTIVE
 	for i in SIZE:
 		for t in 2:
 			img.set_pixel(i, t, border); img.set_pixel(i, SIZE - 1 - t, border)
 			img.set_pixel(t, i, border); img.set_pixel(SIZE - 1 - t, i, border)
 	if checked:
-		img.fill_rect(Rect2i(5, 5, SIZE - 10, SIZE - 10), Color(1, 0.85, 0.35))
+		img.fill_rect(Rect2i(5, 5, SIZE - 10, SIZE - 10), GameUi.GOLD)
 	return ImageTexture.create_from_image(img)
 
 # ---------------------------------------------------------------- lưới skill (trái)
@@ -153,13 +158,11 @@ func _refresh() -> void:
 		var label: Label = b.get_node("LevelLabel")
 		label.text = str(lv) if lv > 0 else "Chưa học"
 		label.add_theme_color_override("font_color", COLOR_STAT if lv > 0 else COLOR_NOT_LEARNED)
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.05, 0.06, 0.05)
+		## Khung ảnh ô skill: đang chọn = viền vàng GameUi, đã học = viền xanh lục, chưa học = viền xám.
 		var selected := _selected != null and _selected.id == skill.id
-		style.border_color = Color(1, 0.85, 0.35) if selected else (Color(0.35, 0.6, 0.4) if lv > 0 else Color(0.3, 0.3, 0.26))
-		style.set_border_width_all(3 if selected else 2)
-		style.set_corner_radius_all(4)
-		(b.get_node("Frame") as Panel).add_theme_stylebox_override("panel", style)
+		var border: Color = GameUi.BORDER_ACTIVE if selected else (GameUi.SECTION_ACCENT if lv > 0 else GameUi.BORDER)
+		(b.get_node("Frame") as Panel).add_theme_stylebox_override("panel",
+				GameUi.box(GameUi.BG_INNER, border, 4, 3 if selected else 2, 0))
 	_refresh_wheel()
 
 # ---------------------------------------------------------------- chi tiết (giữa)
@@ -328,6 +331,7 @@ func _build_wheel() -> void:
 		b.size = WHEEL_PAGE_SIZE * WHEEL_SCALE
 		b.position = origin + WHEEL_PAGES[p] * WHEEL_SCALE - b.size * 0.5
 		b.tooltip_text = "Trang thanh kỹ năng %d" % (p + 1)
+		b.theme_type_variation = GameUi.TAB   ## trang đang chọn = pressed
 		b.add_theme_font_size_override("font_size", 20)
 		b.pressed.connect(func() -> void:
 			_profile.hotbar_page = p
@@ -339,6 +343,7 @@ func _build_wheel() -> void:
 	swap.text = "⇄"
 	swap.focus_mode = Control.FOCUS_NONE
 	swap.tooltip_text = "Đổi nhóm kỹ năng 1 <-> 2"
+	swap.theme_type_variation = GameUi.BUTTON
 	swap.add_theme_font_size_override("font_size", 20)
 	swap.size = Vector2(40, WHEEL_PAGE_SIZE.y * WHEEL_SCALE)
 	var mid := (_wheel_page_buttons[0].position + _wheel_page_buttons[0].size * 0.5 + _wheel_page_buttons[1].position + _wheel_page_buttons[1].size * 0.5) * 0.5
@@ -348,21 +353,14 @@ func _build_wheel() -> void:
 		_save_hotbar())
 	wheel.add_child(swap)
 	## Công cụ sắp xếp vị trí nút.
-	_arrange_button = Button.new()
-	_arrange_button.text = "Sắp xếp"
-	_arrange_button.toggle_mode = true
-	_arrange_button.focus_mode = Control.FOCUS_NONE
+	_arrange_button = GameUi.button("Sắp xếp", GameUi.TAB)   ## đang bật = pressed
 	_arrange_button.tooltip_text = "Sắp xếp vị trí: bật rồi KÉO các nút để đổi chỗ (cụm nút trong trận đổi theo)"
-	_arrange_button.add_theme_font_size_override("font_size", 13)
 	_arrange_button.position = Vector2(2, 2)
 	_arrange_button.custom_minimum_size = Vector2(92, 26)
 	_arrange_button.toggled.connect(_set_arranging)
 	wheel.add_child(_arrange_button)
-	var reset := Button.new()
-	reset.text = "Mặc định"
-	reset.focus_mode = Control.FOCUS_NONE
+	var reset := GameUi.button("Mặc định")
 	reset.tooltip_text = "Đưa mọi nút về vị trí ban đầu"
-	reset.add_theme_font_size_override("font_size", 13)
 	reset.position = Vector2(2, 32)
 	reset.custom_minimum_size = Vector2(92, 26)
 	reset.pressed.connect(_reset_layout)
@@ -446,15 +444,12 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 	holder.add_child(key_label)
 	return holder
 
-## Đòn chính đang gắn: main_skill_id, trống thì đòn chính mặc định của phái (is_main_attack).
+## Đòn chính đang gắn: main_skill_id, trống thì đánh thường hợp vũ khí đang cầm (bàn tay / phi đao).
 func _main_skill() -> SkillDefinition:
 	var found := _find_skill(_profile.main_skill_id)
-	if found:
+	if found and not found.is_basic_attack:
 		return found
-	for s in _all_skills:
-		if s.is_main_attack:
-			return s
-	return null
+	return SectRegistry.basic_attack_for(_profile.equipment)
 
 func _wheel_skill(slot: int) -> SkillDefinition:
 	if slot == MAIN_SLOT:
@@ -560,14 +555,9 @@ func _show_toast(message: String) -> void:
 		_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_toast.add_theme_font_size_override("font_size", 16)
-		_toast.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.1, 0.03, 0.02, 0.92)
-		style.border_color = COLOR_WARNING
-		style.set_border_width_all(1)
-		style.set_corner_radius_all(8)
-		style.set_content_margin_all(12)
-		_toast.add_theme_stylebox_override("normal", style)
+		_toast.add_theme_color_override("font_color", GameUi.GOLD)
+		## Label không nhận biến thể PanelContainer → dựng hộp báo lỗi bằng đúng màu của GameUi.BANNER_BAD.
+		_toast.add_theme_stylebox_override("normal", GameUi.box(GameUi.BAD_BG, GameUi.BAD_BORDER, 8, 1, 12))
 		add_child(_toast)
 	_toast.text = message
 	_toast.visible = true

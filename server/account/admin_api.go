@@ -220,6 +220,7 @@ type adminCharacterView struct {
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
+	Online    bool       `json:"online"`
 }
 
 type loginView struct {
@@ -257,14 +258,15 @@ func (s *server) handleAdminAccount(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 	chars := []adminCharacterView{}
-	rows, err := s.db.Query(ctx, `SELECT c.id, c.server_id, g.name, c.slot, c.name, c.gender, c.sect_id, c.level, c.created_at, c.updated_at, c.deleted_at
-		FROM characters c JOIN game_servers g ON g.id=c.server_id WHERE c.account_id=$1 ORDER BY c.deleted_at NULLS FIRST, c.server_id, c.slot`, id)
+	rows, err := s.db.Query(ctx, `SELECT c.id, c.server_id, g.name, c.slot, c.name, c.gender, c.sect_id, c.level, c.created_at, c.updated_at, c.deleted_at,
+		coalesce(c.online_at > now() - $2::interval, false)
+		FROM characters c JOIN game_servers g ON g.id=c.server_id WHERE c.account_id=$1 ORDER BY c.deleted_at NULLS FIRST, c.server_id, c.slot`, id, onlineWindow)
 	if err != nil {
 		return err
 	}
 	for rows.Next() {
 		var c adminCharacterView
-		if err := rows.Scan(&c.ID, &c.ServerID, &c.Server, &c.Slot, &c.Name, &c.Gender, &c.SectID, &c.Level, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.ServerID, &c.Server, &c.Slot, &c.Name, &c.Gender, &c.SectID, &c.Level, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.Online); err != nil {
 			rows.Close()
 			return err
 		}

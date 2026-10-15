@@ -1,6 +1,11 @@
-"""Nhập dữ liệu NHÂN VẬT GHÉP BỘ PHẬN từ client VLTK gốc -> data/avatar/<gender>.json + PNG (assets/avatar/<gender>/).
+"""Nhập dữ liệu NHÂN VẬT GHÉP BỘ PHẬN từ client VLTK 15 phái -> data/avatar/<gender>.json + PNG (assets/avatar/<gender>/).
 
-    python tools/import_vltk_avatar.py [male|female]
+    python -X utf8 -I tools/import_vltk_avatar.py [male|female] [--fresh]
+
+--fresh: xuất lại MỌI sprite (bỏ qua PNG đã có) — dùng khi đổi client nguồn.
+Nguồn: tools/vltk_source.py — bảng settings/npcres + settings/item/*Res.txt đọc trong pak client 15 phái (jxthaipham.pak
+trước; bản này có thêm động tác Đao thuẫn/Thuẫn đao/Cầm/Cung). Bảng npcres 15 phái KHÁC hẳn client cũ về thứ tự hàng/cột,
+nên *Res.txt cũng phải lấy cùng client (mã hình = chỉ số hàng bảng mới).
 
 Nguồn (client gốc, settings/npcres — tên file gốc tiếng Trung, ở đây chỉ dùng để mở file):
   - bảng bộ phận (đầu, tóc, vai, thân, tay trái/phải, vũ khí trái/phải): mỗi hàng = 1 mã hình, mỗi cột = 1 động tác
@@ -25,17 +30,18 @@ về hình mặc định.
 """
 import json
 import os
+import posixpath
 import re
 import sys
 
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(__file__))
-from vltk_pak import PakList  # noqa: E402
+from vltk_pak import PakFile, file_name_to_id, normalize  # noqa: E402
 import spr_to_png  # noqa: E402
+import vltk_source  # noqa: E402
 
-CLIENT = r"D:/game/source_vo-lam-truyen-ky/Client_VLTK/Client_VLTK"
-ITEM_SETTINGS = r"D:/game/source_vo-lam-truyen-ky/anh-viet/Server + client full-001/server/settings/item"
+CLIENT = str(vltk_source.CLIENT)
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 GENDERS = {
@@ -81,29 +87,58 @@ USED_ACTIONS = ["stand", "run", "attack", "cast", "jump", "sit"]
 DIRS = 8
 
 
-def _real(name):
-    try:
-        return name.encode("latin1").decode("gbk")
-    except UnicodeError:
-        return name
-
-
 class Tables:
-    def __init__(self):
-        d = os.path.join(CLIENT, "settings", "npcres")
-        self.files = {_real(n): os.path.join(d, n) for n in os.listdir(d)}
+    """Bảng settings/npcres trong pak client 15 phái (tên file tiếng Trung, mã GBK)."""
 
     def lines(self, name):
-        return open(self.files[name], "rb").read().decode("gbk", "replace").splitlines()
+        data = vltk_source.client_file("settings/npcres/" + name)
+        if data is None:
+            raise FileNotFoundError("settings/npcres/" + name)
+        return data.decode("gbk", "replace").splitlines()
 
     def tab(self, name):
         rows = [r.split("\t") for r in self.lines(name) if r.strip()]
         return rows[0], rows[1:]
 
 
+class Sprites:
+    """Đọc sprite: pak theo package1.ini -> các pak KHÁC trong data/ của client (VD serverlist.pak)."""
+
+    def __init__(self):
+        self.paks = vltk_source.paks()
+        listed = {os.path.normcase(p.path) for p in self.paks.paks}
+        data_dir = os.path.join(CLIENT, "data")
+        self.extra = []
+        for name in sorted(os.listdir(data_dir)):
+            path = os.path.join(data_dir, name)
+            if name.lower().endswith(".pak") and os.path.normcase(path) not in listed:
+                try:
+                    self.extra.append(PakFile(path))
+                except Exception:  # noqa: BLE001 — pak hỏng / không đúng định dạng: bỏ qua
+                    pass
+
+    def read(self, path):
+        data = self.paks.read(path)
+        if data is not None:
+            return data
+        uid = file_name_to_id(normalize(path))
+        for pak in self.extra:
+            if uid in pak.index:
+                return pak.read(uid)
+        return None
+
+
+def read_res_lines(file_name):
+    """settings/item/<file> — ưu tiên bản trong client (KItemChangeRes chạy ở client), không có thì bản server."""
+    data = vltk_source.client_file("settings/item/" + file_name.lower())
+    if data is None:
+        data = vltk_source.settings_file("item/" + file_name).read_bytes()
+    return data.decode("gbk", "replace").splitlines()
+
+
 def read_item_res(file_name):
     """*Res.txt -> {số hàng KTabFile (1 = tiêu đề): giá trị cột 2}."""
-    rows = open(os.path.join(ITEM_SETTINGS, file_name), "rb").read().decode("gbk", "replace").splitlines()
+    rows = read_res_lines(file_name)
     out = {}
     for i, line in enumerate(rows, 1):
         cols = line.split("\t")
@@ -181,8 +216,9 @@ def _auto_export(maps, weapon_rows):
     gold_res = gold_res_map()
     for item in gold:
         group = {0: "weapon", 1: "weapon", 2: "armor", 7: "helm"}.get(item["detail"])
-        if group and str(item.get("row", -1)) in gold_res:
-            out[group].add(gold_res[str(item["row"])])
+        row = str(item.get("row", -1))
+        if group and row in gold_res:
+            out[group].add(gold_res[row])
     out["weapon"] = {w for w in out["weapon"] if w < weapon_rows}
     return {k: sorted(v) for k, v in out.items()}
 
@@ -190,7 +226,7 @@ def _auto_export(maps, weapon_rows):
 def gold_res_map():
     """GoldEquipRes.txt (KItemChangeRes::GetGoldItemRes): mã hình riêng của đồ hoàng kim, tra theo số hàng gốc + 1.
     Chỉ giữ vũ khí/áo/mũ -> {row: mã hình}."""
-    rows = open(os.path.join(ITEM_SETTINGS, "GoldEquipRes.txt"), "rb").read().decode("gbk", "replace").splitlines()
+    rows = read_res_lines("GoldEquipRes.txt")
     by_id = {}
     for line in rows[1:]:
         cols = line.split("\t")
@@ -199,8 +235,9 @@ def gold_res_map():
     gold = json.load(open(os.path.join(PROJECT, "data", "items", "gold_equipment.json"), encoding="utf-8"))
     out = {}
     for item in gold:
-        if item["detail"] in (0, 1, 2, 7) and item.get("row", -1) + 1 in by_id:
-            out[str(item["row"])] = by_id[item["row"] + 1]
+        row = item.get("row", -1)
+        if item["detail"] in (0, 1, 2, 7) and row >= 0 and row + 1 in by_id:
+            out[str(row)] = by_id[row + 1]
     return out
 
 
@@ -218,7 +255,8 @@ def write_keep_import(png_path):
 
 def export_png(paks, spr_dir, spr_name, out_dir):
     """1 file .spr -> sheet PNG cắt sát (cột = frame/hướng, hàng = hướng). Trả về mô tả cho json, None nếu thiếu."""
-    data = paks.read(spr_dir + "/" + spr_name)
+    ## Ngựa nữ dùng chung hình nam dạng "..\man\xxx.spr" — pak tra theo đường dẫn đã gộp "..".
+    data = paks.read(posixpath.normpath(spr_dir + "/" + spr_name.replace("\\", "/")))
     if data is None:
         return None
     tmp = os.path.join(out_dir, "_tmp.spr")
@@ -238,6 +276,9 @@ def export_png(paks, spr_dir, spr_name, out_dir):
     w, h = right - left, bottom - top
     dirs = max(meta["directions"], 1)
     per_dir = meta["frames"] // dirs
+    if per_dir < 1 or w * per_dir * h * dirs > 64_000_000:  ## đầu file hỏng (số frame/hướng vô lý): bỏ qua
+        print("  bỏ qua file lạ:", spr_name, meta["frames"], dirs, w, h)
+        return None
     sheet = Image.new("RGBA", (w * per_dir, h * dirs))
     for i, im in enumerate(images[:per_dir * dirs]):
         sheet.paste(im.crop((left, top, right, bottom)), ((i % per_dir) * w, (i // per_dir) * h))
@@ -251,7 +292,7 @@ def export_png(paks, spr_dir, spr_name, out_dir):
 def build(gender):
     prefix, spr_dir = GENDERS[gender]
     tables = Tables()
-    paks = PakList(CLIENT)
+    paks = Sprites()
     action_names = [r.strip() for r in tables.lines(TABLE_ACTION_ID + ".txt")[1:] if r.strip()]
     order = read_draw_order(tables, prefix)
     maps = item_res_maps()
@@ -288,11 +329,11 @@ def build(gender):
     files, sprites = {}, {}
     out_json = os.path.join(PROJECT, "data", "avatar", gender + ".json")
     previous = {}
-    if os.path.isfile(out_json):
+    if os.path.isfile(out_json) and not FRESH:
         previous = json.load(open(out_json, encoding="utf-8")).get("files", {})
     ## Bộ nhớ đệm từng phần (ghi mỗi 50 file) — lần chạy bị ngắt giữa chừng vẫn dùng lại được file đã xuất.
     cache_path = os.path.join(out_dir, "_cache.json")
-    if os.path.isfile(cache_path):
+    if os.path.isfile(cache_path):  ## --fresh vẫn dùng bộ đệm: chỉ chứa file chính lần chạy dở này xuất ra
         previous.update(json.load(open(cache_path, encoding="utf-8")))
     new_count = [0]
 
@@ -328,7 +369,8 @@ def build(gender):
                 elif group == "horse":
                     actions = sorted(ride_actions)
                 for action in actions:
-                    col = action_names.index(action) + 1
+                    ## Cột theo tiêu đề (bảng 15 phái ghi tên động tác tiếng Anh), không có thì theo bảng mã động tác.
+                    col = hdr.index(action) if action in hdr else action_names.index(action) + 1
                     add(part, res, action, rows[res][col] if col < len(rows[res]) else "")
             print("xong", part, len(sprites.get(part, {})), "mã hình")
     ## Bóng: hàng đầu = nam, hàng 2 = nữ.
@@ -397,5 +439,8 @@ def build(gender):
     print("PNG: %d file, %.1f MB; json %.1f KB" % (len(data["files"]), total / 1e6, os.path.getsize(out_json) / 1e3))
 
 
+FRESH = "--fresh" in sys.argv
+
 if __name__ == "__main__":
-    build(sys.argv[1] if len(sys.argv) > 1 else "male")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    build(args[0] if args else "male")

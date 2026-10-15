@@ -1,11 +1,11 @@
-"""Lấy ẢNH VẬT PHẨM (icon trong hành trang / ô trang bị) của mọi món đồ từ client VLTK gốc -> assets/items/icons/.
+"""Lấy ẢNH VẬT PHẨM (icon trong hành trang / ô trang bị) của mọi món đồ từ client VLTK 15 phái -> assets/items/icons/.
 
-    python tools/import_vltk_item_icons.py
+    python -X utf8 -I tools/import_vltk_item_icons.py
 
-Đường dẫn ảnh lấy từ trường "image" của data/items/equipment.json + gold_equipment.json (cột Image gốc, VD
-\\spr\\item\\equip\\closeweapon\\obj-sword01.spr). Sprite đọc qua tools/vltk_pak.py (file rời hoặc trong .pak), lấy
-frame đầu, cắt sát nội dung, lưu <tên file viết thường>.png (+ bản nhỏ icons_small/ cho ô hành trang). Game tra theo
-tên file: ItemDatabase.get_icon().
+Đường dẫn ảnh lấy từ trường "image" của data/items/equipment.json + gold_equipment.json + misc_items.json (cột Image
+gốc, VD \\spr\\item\\equip\\closeweapon\\obj-sword01.spr). Sprite đọc qua vltk_source.paks() (pak theo package1.ini,
+jxthaipham.pak trước), lấy frame đầu, cắt sát nội dung, lưu <tên file viết thường>.png (+ bản nhỏ icons_small/ cho ô
+hành trang). Game tra theo tên file: ItemDatabase.get_icon(). Luôn ghi đè (ảnh bản mới có thể khác bản cũ).
 """
 import json
 import os
@@ -14,10 +14,13 @@ import sys
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(__file__))
-from vltk_pak import PakList  # noqa: E402
 import spr_to_png  # noqa: E402
+import vltk_source  # noqa: E402
+from vltk_pak import PakFile, PakList, file_name_to_id, normalize  # noqa: E402
 
-CLIENT = r"D:/game/source_vo-lam-truyen-ky/Client_VLTK/Client_VLTK"
+CLIENT = str(vltk_source.CLIENT)
+## Client cũ — chỉ dùng khi ảnh không có ở đâu trong client 15 phái (không có thư mục thì bỏ qua).
+OLD_CLIENT = r"D:/game/source_vo-lam-truyen-ky/Client_VLTK/Client_VLTK"
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(PROJECT, "assets", "items", "icons")
 ## Bản NHỎ cho ô hành trang (ô 54px, lòng 48px): ảnh lớn hơn được thu nhỏ trước bằng Lanczos (nét hơn nhiều so với
@@ -40,23 +43,56 @@ def icon_name(image_path):
     return os.path.splitext(os.path.basename(image_path.replace("\\", "/")))[0].lower()
 
 
+def open_readers():
+    """Danh sách hàm đọc theo thứ tự ưu tiên: pak theo package1.ini -> các pak KHÁC trong data/ của client 15 phái
+    (vài pak không có trong package1.ini, VD serverlist.pak chứa ~200 ảnh vật phẩm sự kiện) -> client cũ."""
+    readers = [vltk_source.paks().read]
+    listed = {os.path.normcase(p.path) for p in vltk_source.paks().paks if hasattr(p, "path")}
+    data_dir = os.path.join(CLIENT, "data")
+    extra = []
+    for name in sorted(os.listdir(data_dir)):
+        path = os.path.join(data_dir, name)
+        if name.lower().endswith(".pak") and os.path.normcase(path) not in listed:
+            try:
+                extra.append(PakFile(path))
+            except Exception:  ## noqa: BLE001 — pak hỏng / không đúng định dạng: bỏ qua
+                pass
+
+    def read_extra(path):
+        uid = file_name_to_id(normalize(path))
+        for pak in extra:
+            if uid in pak.index:
+                return pak.read(uid)
+        return None
+    readers.append(read_extra)
+    if os.path.isdir(OLD_CLIENT):
+        readers.append(PakList(OLD_CLIENT).read)
+    return readers
+
+
+def read_any(readers, path):
+    for read in readers:
+        data = read(path)
+        if data is not None:
+            return data
+    return None
+
+
 def main():
-    paths = set()
-    for name in ("equipment.json", "gold_equipment.json"):
+    ## đường dẫn ảnh gốc -> tên file png (vật phẩm khác có sẵn trường "icon": tên ASCII, không trùng).
+    paths = {}
+    for name in ("equipment.json", "gold_equipment.json", "misc_items.json"):
         for item in json.load(open(os.path.join(PROJECT, "data", "items", name), encoding="utf-8")):
             if item.get("image"):
-                paths.add(item["image"])
+                paths[item["image"]] = item.get("icon") or icon_name(item["image"])
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(SMALL_DIR, exist_ok=True)
-    paks = PakList(CLIENT)
+    readers = open_readers()
     ok, missing, sizes = 0, [], []
     tmp = os.path.join(OUT_DIR, "_tmp.spr")
     for path in sorted(paths):
-        out = os.path.join(OUT_DIR, icon_name(path) + ".png")
-        if os.path.isfile(out):
-            ok += 1
-            continue
-        data = paks.read(path)
+        out = os.path.join(OUT_DIR, paths[path] + ".png")
+        data = read_any(readers, path)
         if data is None:
             missing.append(path)
             continue
@@ -75,6 +111,10 @@ def main():
         ok += 1
     if os.path.isfile(tmp):
         os.remove(tmp)
+    ## Ảnh cũ vẫn giữ (save cũ / thuốc Tống Kim còn dùng) — chỉ báo số ảnh không còn món nào tham chiếu.
+    wanted = set(paths.values())
+    stale = [n for n in os.listdir(OUT_DIR) if n.endswith(".png") and n[:-4] not in wanted]
+    print("ảnh không món nào dùng (giữ nguyên):", len(stale))
     for name in os.listdir(OUT_DIR):
         if name.endswith(".png"):
             make_small(os.path.join(OUT_DIR, name), os.path.join(SMALL_DIR, name))

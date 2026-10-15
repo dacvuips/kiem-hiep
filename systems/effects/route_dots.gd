@@ -28,6 +28,8 @@ func _draw() -> void:
 		return
 	var pts := PackedVector2Array([_player.global_position + Vector2(0, VltkWorld.FEET_OFFSET)])
 	pts.append_array(_player.get_route_feet())
+	## Đường dài toàn map có thể hàng chục nghìn px (hàng nghìn chấm): chỉ vẽ phần nằm trong khung nhìn của camera.
+	var view := (get_viewport().get_canvas_transform().affine_inverse() * get_viewport_rect()).grow(8.0)
 	var carry := _phase
 	for i in range(pts.size() - 1):
 		var a := pts[i]
@@ -35,11 +37,15 @@ func _draw() -> void:
 		var length := a.distance_to(b)
 		if length < 0.01:
 			continue
+		if not view.intersects(Rect2(a, Vector2.ZERO).expand(b)):
+			carry = fmod(carry + length, GAP)   ## đoạn ngoài khung: chỉ giữ nhịp chấm cho liền mạch
+			continue
 		var dir := (b - a) / length
 		var dist := GAP - carry
 		while dist <= length:
 			var p := a + dir * dist
-			draw_circle(p, 3.6, Color(0, 0, 0, 0.55))
-			draw_circle(p, 2.6, COLOR)
+			if view.has_point(p):
+				draw_circle(p, 3.6, Color(0, 0, 0, 0.55))
+				draw_circle(p, 2.6, COLOR)
 			dist += GAP
 		carry = fmod(carry + length, GAP)

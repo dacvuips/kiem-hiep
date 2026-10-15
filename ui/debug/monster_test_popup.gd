@@ -36,6 +36,7 @@ var _pv_frames: float = 0.0
 var _spawned: Array = []        ## quái đã tạo từ popup (để xoá)
 
 func _ready() -> void:
+	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	## Chiếm gần hết màn hình (lề 24px) — luôn vừa cửa sổ dù nhỏ.

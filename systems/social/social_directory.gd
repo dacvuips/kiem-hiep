@@ -67,9 +67,8 @@ static func _generate(profile: PlayerProfile) -> Array[MockPlayer]:
 		p.sect_id = sect.id
 		p.sect_name = sect.sect_name
 		p.female = rng.randf() < 0.5
-		var need := PlayerProfile.required_gender(int(sect.element))
-		if need >= 0:
-			p.female = need == PlayerProfile.Gender.FEMALE
+		if sect.required_gender >= 0:
+			p.female = sect.required_gender == PlayerProfile.Gender.FEMALE
 		p.camp = Camp.default_for_sect(sect)
 		p.lead_level = clampi(p.level / 4 + rng.randi_range(-3, 3), 0, 60)
 		p.fuyuan = rng.randi_range(0, 900)
