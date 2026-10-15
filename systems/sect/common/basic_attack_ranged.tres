@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://systems/sect/skill_definition.gd" id="1_skill"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/co_ban_at.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_skill")
+id = "basic_attack_ranged"
+skill_name = "Đánh thường"
+icon = ExtResource("2_icon")
+target_enemy = true
+max_level = 1
+req_level = 1
+vltk_skill_id = 2
+description = "Đòn công kích vật lý tầm xa khi cầm phi tiêu / phi đao / tụ tiễn (VLTK gốc SkillId 2), phái nào cũng có."
+school_text = "Phi Tiêu/Phi đao/Tụ tiễn (Ngoại công)"
+is_active = true
+category = 0
+vltk_is_physical = 1
+vltk_missle_form = 1
+vltk_attack_radius = 320
+base_damage = 10.0
+mana_cost = 0.0
+cooldown = 0.8
+range = 380.0
+element = 0
+is_basic_attack = true

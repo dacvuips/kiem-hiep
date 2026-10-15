@@ -1,0 +1,396 @@
+[
+ {
+  "id": "6_155",
+  "name": "Chiến Cổ",
+  "image": "\\spr\\item\\songjin\\wardrum.spr",
+  "points": 3000,
+  "stack": 50,
+  "aura": "team",
+  "skill_id": 491,
+  "effects": [
+   [
+    "lifemax_p",
+    30,
+    3240
+   ],
+   [
+    "allres_p",
+    30,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, bản thân và đồng đội xung quanh tăng 30% sinh lực tối đa và 30% kháng tất cả.",
+  "icon": "wardrum",
+  "songjin_only": true
+ },
+ {
+  "id": "6_156",
+  "name": "Lệnh Bài",
+  "image": "\\spr\\item\\songjin\\token.spr",
+  "points": 2000,
+  "stack": 50,
+  "aura": "team",
+  "skill_id": 492,
+  "effects": [
+   [
+    "fastwalkrun_p",
+    30,
+    3240
+   ],
+   [
+    "attackspeed_v",
+    50,
+    3240
+   ],
+   [
+    "castspeed_v",
+    50,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, bản thân và đồng đội xung quanh tăng 30% tốc độ di chuyển, 50% tốc độ đánh và xuất chiêu.",
+  "icon": "token",
+  "songjin_only": true
+ },
+ {
+  "id": "6_213",
+  "name": "Kháng Đơn Chi Giác",
+  "image": "\\spr\\item\\songjin\\clarion.spr",
+  "points": 3000,
+  "stack": 50,
+  "aura": "enemy",
+  "skill_id": 510,
+  "effects": [
+   [
+    "meleedamagereturn_p",
+    -20,
+    3240
+   ],
+   [
+    "rangedamagereturn_p",
+    -20,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, kẻ địch xung quanh bị giảm 20% phản đòn cận chiến và tầm xa (bài VNG gọi là \"Chống phản đòn\").",
+  "icon": "clarion",
+  "songjin_only": true
+ },
+ {
+  "id": "6_177",
+  "name": "Ngoại Phổ Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 487,
+  "effects": [
+   [
+    "addphysicsdamage_p",
+    50,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, sát thương vật lý ngoại công tăng 50%.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_178",
+  "name": "Ngoại Độc Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 485,
+  "effects": [
+   [
+    "addpoisondamage_v",
+    50,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, độc sát ngoại công tăng 50 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_179",
+  "name": "Ngoại Băng Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 486,
+  "effects": [
+   [
+    "addcolddamage_v",
+    100,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, băng sát ngoại công tăng 100 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_180",
+  "name": "Nội Phổ Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 479,
+  "effects": [
+   [
+    "addphysicsmagic_v",
+    100,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, sát thương vật lý nội công tăng 100 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_181",
+  "name": "Nội Độc Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 480,
+  "effects": [
+   [
+    "addpoisonmagic_v",
+    50,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, độc sát nội công tăng 50 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_182",
+  "name": "Nội Băng Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 481,
+  "effects": [
+   [
+    "addcoldmagic_v",
+    100,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, băng sát nội công tăng 100 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_183",
+  "name": "Nội Hỏa Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 482,
+  "effects": [
+   [
+    "addfiremagic_v",
+    100,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, hỏa sát nội công tăng 100 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_184",
+  "name": "Nội Lôi Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 483,
+  "effects": [
+   [
+    "addlightingmagic_v",
+    100,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, lôi sát nội công tăng 100 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_185",
+  "name": "Trường Mệnh Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 300,
+  "stack": 50,
+  "skill_id": 488,
+  "effects": [
+   [
+    "lifemax_v",
+    500,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, sinh lực tối đa tăng 500 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_186",
+  "name": "Gia Tốc Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 300,
+  "stack": 50,
+  "skill_id": 493,
+  "effects": [
+   [
+    "fastwalkrun_p",
+    20,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, tốc độ di chuyển tăng 20% (bản gốc tên \"Gia Bào hoàn\").",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_187",
+  "name": "Cao Thiểm Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 300,
+  "stack": 50,
+  "skill_id": 494,
+  "effects": [
+   [
+    "adddefense_v",
+    500,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, né tránh tăng 500 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_188",
+  "name": "Cao Trung Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 300,
+  "stack": 50,
+  "skill_id": 495,
+  "effects": [
+   [
+    "attackratingenhance_v",
+    500,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, chính xác tăng 500 điểm.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_189",
+  "name": "Phi Tốc Hoàn",
+  "image": "\\spr\\item\\medecine\\obj-potion15.spr",
+  "points": 600,
+  "stack": 50,
+  "skill_id": 496,
+  "effects": [
+   [
+    "attackspeed_v",
+    50,
+    3240
+   ],
+   [
+    "castspeed_v",
+    50,
+    3240
+   ]
+  ],
+  "desc": "Trong 3 phút, tốc độ đánh và xuất chiêu tăng 50%.",
+  "icon": "obj-potion15",
+  "songjin_only": true
+ },
+ {
+  "id": "6_215",
+  "name": "Càn Khôn Tạo Hóa Đan (trung)",
+  "image": "\\spr\\item\\medecine\\obj-potion13.spr",
+  "money": 6000,
+  "stack": 10,
+  "effects": [
+   [
+    "lifereplenish_v",
+    1000,
+    100
+   ],
+   [
+    "manareplenish_v",
+    1000,
+    100
+   ]
+  ],
+  "desc": "Mỗi nửa giây hồi 1000 sinh lực và 1000 nội lực, trong khoảng 5 giây.",
+  "icon": "obj-potion13",
+  "songjin_only": true
+ },
+ {
+  "id": "6_216",
+  "name": "Càn Khôn Tạo Hóa Đan (tiểu)",
+  "image": "\\spr\\item\\medecine\\obj-potion13.spr",
+  "money": 3000,
+  "stack": 10,
+  "effects": [
+   [
+    "lifereplenish_v",
+    500,
+    100
+   ],
+   [
+    "manareplenish_v",
+    500,
+    100
+   ]
+  ],
+  "desc": "Mỗi nửa giây hồi 500 sinh lực và 500 nội lực, trong khoảng 5 giây.",
+  "icon": "obj-potion13",
+  "songjin_only": true
+ },
+ {
+  "id": "1_0_cuuchuyen",
+  "name": "Cửu Chuyển Hoàn Hồn Đan",
+  "image": "\\spr\\item\\medecine\\obj-potion03.spr",
+  "money": 2000,
+  "stack": 1,
+  "effects": [
+   [
+    "lifereplenish_v",
+    500,
+    100
+   ]
+  ],
+  "desc": "Mỗi nửa giây hồi 500 sinh lực, trong khoảng 5 giây.",
+  "icon": "obj-potion03",
+  "songjin_only": true
+ },
+ {
+  "id": "1_1_odau",
+  "name": "Ô Đầu Hoàn Thần Đan",
+  "image": "\\spr\\item\\medecine\\obj-potion08.spr",
+  "money": 2000,
+  "stack": 1,
+  "effects": [
+   [
+    "manareplenish_v",
+    500,
+    100
+   ]
+  ],
+  "desc": "Mỗi nửa giây hồi 500 nội lực, trong khoảng 5 giây.",
+  "icon": "obj-potion08",
+  "songjin_only": true
+ }
+]
