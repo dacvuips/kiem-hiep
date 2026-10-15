@@ -356,6 +356,11 @@ class SortedMap extends VltkMap:
 		m.data = MonsterData.monster(m.monster_id).duplicate()
 		m.data["series"] = clampi(int(n.get("series", m.data.get("series", 0))), 0, 4)   ## hệ do map đặt
 		m.level = maxi(1, int(n.get("lv", 1)))
+		## Map Địa Ngục (Vượt Ải): quái cấp 110 / 120, máu - sát thương - rơi đồ nhân số sao.
+		var hell: Dictionary = GameManager.field_map.get("hell", {})
+		if not hell.is_empty():
+			m.level = int(hell.get("level", m.level))
+			m.hell_stars = clampi(int(hell.get("stars", 1)), 1, MapCatalog.HELL_MAX_STARS)
 		m.ai_enabled = true
 		m.blue_boss = randf() < DropTable.BLUE_BOSS_CHANCE   ## như script Revive gốc: mỗi lần sinh / sinh lại có ~2% thành boss xanh
 		m.position = Vector2(float(n["px"]), float(n["py"]))

@@ -48,31 +48,6 @@ offset_right = 658.0
 offset_bottom = 75.0
 theme_override_font_sizes/font_size = 20
 
-[node name="CharacterButton" type="Button" parent="UI" unique_id=1900000003]
-offset_left = 150.0
-offset_top = 36.0
-offset_right = 260.0
-offset_bottom = 72.0
-focus_mode = 0
-text = "Nhân vật"
-
-[node name="InventoryButton" type="Button" parent="UI" unique_id=1900000004]
-offset_left = 270.0
-offset_top = 36.0
-offset_right = 380.0
-offset_bottom = 72.0
-focus_mode = 0
-text = "Hành trang"
-
-[node name="SkillsButton" type="Button" parent="UI" unique_id=1900000006]
-offset_left = 390.0
-offset_top = 36.0
-offset_right = 500.0
-offset_bottom = 72.0
-focus_mode = 0
-tooltip_text = "Bảng Kỹ Năng (phím G)"
-text = "Kỹ năng"
-
 [node name="PlayerStatusHud" parent="UI" unique_id=1900000005 instance=ExtResource("18_status_hud")]
 
 [node name="SkillBarUI" parent="UI" unique_id=1900000001 instance=ExtResource("16_skill_bar")]

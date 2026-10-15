@@ -95,15 +95,20 @@ func main() {
 	mux.HandleFunc("DELETE /v1/characters/{id}", wrap(s.handleDeleteCharacter))
 	mux.HandleFunc("GET /v1/rankings", wrap(s.handleRankings))
 	mux.HandleFunc("GET /v1/battle", wrap(s.handleBattle))
+	mux.HandleFunc("GET /v1/arena", wrap(s.handleArena))
 
 	// Nội bộ: game server
 	mux.HandleFunc("POST /internal/game/join", wrap(s.handleInternalJoin))
 	mux.HandleFunc("PUT /internal/game/characters/{id}", wrap(s.handleInternalSave))
 	mux.HandleFunc("POST /internal/game/status", wrap(s.handleInternalStatus))
 	mux.HandleFunc("POST /internal/game/battle", wrap(s.handleInternalBattle))
+	mux.HandleFunc("POST /internal/game/arena", wrap(s.handleInternalArena))
 	mux.HandleFunc("GET /internal/game/guilds", wrap(s.handleInternalGuilds))
 	mux.HandleFunc("PUT /internal/game/guilds", wrap(s.handleInternalSaveGuild))
 	mux.HandleFunc("DELETE /internal/game/guilds", wrap(s.handleInternalDeleteGuild))
+	mux.HandleFunc("GET /internal/game/market", wrap(s.handleInternalMarket))
+	mux.HandleFunc("PUT /internal/game/market", wrap(s.handleInternalSaveMarket))
+	mux.HandleFunc("DELETE /internal/game/market", wrap(s.handleInternalDeleteMarket))
 
 	// Web Admin
 	mux.HandleFunc("POST /admin/api/login", wrap(s.handleAdminLogin))

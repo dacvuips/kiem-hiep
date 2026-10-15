@@ -88,6 +88,15 @@ func take_damage(amount: float) -> void:
 func _camp_color() -> Color:
 	return Camp.get_color(camp)
 
+## Độ cao nhãn tên (cưỡi ngựa thì cao hơn) — ChatBubble hiện lời nói ngay trên đó.
+func chat_anchor_y() -> float:
+	return _label.position.y if _label else -66.0
+
+## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc.
+func set_name_label_visible(on: bool) -> void:
+	if _label:
+		_label.visible = on
+
 func set_camp(new_camp: int, new_nation: int = nation) -> void:
 	camp = new_camp
 	nation = new_nation

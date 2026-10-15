@@ -26,6 +26,8 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	var merged := client_data.duplicate(true)
 	## Đồ web Admin tặng chưa sinh: chỉ server giữ (game không được tự thêm / xoá hàng chờ).
 	merged["admin_grants"] = server_data.get("admin_grants", []).duplicate(true)
+	## Chợ online nằm ở MarketServer — hàng treo offline trong hồ sơ không được mang lên server.
+	merged["market"] = []
 	if trust:
 		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points"]:
 			if server_data.has(k):
@@ -208,7 +210,11 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 	var fresh := PlayerProfile.new()
 	fresh.display_name = src.display_name
 	fresh.gender = src.gender
-	fresh.choose_element(src.get_element())   ## luôn Vô Môn Phái: đủ cấp mới gia nhập phái trong game
+	fresh.choose_element(src.get_element())
+	## Phái đã chọn ở Character Hub ngay sau khi tạo (nhân vật mới bắt đầu ở StarterKit.START_LEVEL): giữ nếu đúng hệ + nhận giới tính.
+	var sect := SectRegistry.get_by_id(src.sect_id)
+	if sect != null and sect.element == fresh.get_element() and fresh.gender_fits(sect):
+		fresh.set_sect(sect)
 	fresh.camp = -1   ## phe do server tính (Tân thủ -> phái -> bang); không nhận phe game tự đặt lúc tạo nhân vật
 	fresh.riding = src.riding
 	fresh.skill_settings = src.skill_settings

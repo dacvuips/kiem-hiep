@@ -22,6 +22,7 @@ signal server_notice(text: String)
 signal trade_invite(from_eid: int, from_name: String)
 signal trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary)
 signal trade_end(success: bool, message: String)
+signal market_received(data: Dictionary)
 signal stall_items(seller_eid: int, title: String, items: Array)
 signal stall_sign(eid: int, title: String)
 signal team_state(state: Dictionary)
@@ -39,6 +40,8 @@ signal view_equip(snapshot: Dictionary)
 signal chat_received(channel: int, from_eid: int, from_name: String, to_name: String, text: String)
 ## Chiến trường Tống Kim (battle server): {op: "state" | "joined" | "reject" | "result", ...}.
 signal battle_message(msg: Dictionary)
+## Đấu trường PK: tin S_ARENA {op: room | state | result | reject | searching | no_match} (ArenaClient).
+signal arena_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -172,6 +175,21 @@ func send_trade_request(target_eid: int) -> void:
 	b.put_u32(target_eid)
 	_send(b)
 
+func send_trade_request_id(character_id: int) -> void:
+	var b := NetProto.writer(NetProto.C_TRADE_REQ_ID)
+	b.put_u32(character_id)
+	_send(b)
+
+## Chợ Giao Thương: op + tham số (xem NetProto.C_MARKET). Server trả S_MARKET.
+func send_market(op: String, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var a: Dictionary = args.duplicate()
+	a["op"] = op
+	var b := NetProto.writer(NetProto.C_MARKET)
+	NetProto.put_str(b, JSON.stringify(a))
+	_send(b)
+
 func send_trade_answer(from_eid: int, accept: bool) -> void:
 	var b := NetProto.writer(NetProto.C_TRADE_ANSWER)
 	b.put_u32(from_eid)
@@ -225,6 +243,15 @@ func send_battle(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:
 		return
 	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b)
+
+## Đấu trường PK: op ArenaServer.OP_* + tham số json.
+func send_arena(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_ARENA)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
@@ -455,6 +482,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 						d.items.append(parsed)
 				sides.append(d)
 			trade_state.emit(pid, pname, sides[0], sides[1])
+		NetProto.S_MARKET:
+			market_received.emit(NetProto.get_json(b))
 		NetProto.S_TRADE_END:
 			var ok := b.get_u8() != 0
 			trade_end.emit(ok, NetProto.get_str(b))
@@ -481,6 +510,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var msg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if msg is Dictionary:
 				battle_message.emit(msg)
+		NetProto.S_ARENA:
+			var amsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
+			if amsg is Dictionary:
+				arena_message.emit(amsg)
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list.emit(parsed if parsed is Array else [])

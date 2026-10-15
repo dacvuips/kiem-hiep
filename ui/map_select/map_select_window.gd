@@ -6,7 +6,8 @@ class_name MapSelectWindow
 ##   - Ải: Thách Thức Thời Gian (NPC Nhiếp Thí Trần, script gốc VLTK 15 phái — TimeChallenge): 28 ải trong 30 phút.
 ##         Chiến Trường Tống Kim (BattleServer): số người / điểm mỗi phe + giai đoạn (server tài khoản /v1/battle, làm mới mỗi
 ##         BATTLE_POLL giây), chọn phe Tống / Kim — lệch quân thì không cho vào; bấm xong phải chờ BATTLE_COOLDOWN giây mới bấm lại.
-##   - Địa Ngục: chưa làm.
+##   - Địa Ngục: map 10x / 11x / 12x (quái cấp 100 / 110 / 120 — MapCatalog.hell_maps), mỗi map chọn 1-5 sao: máu, sát thương,
+##     tỉ lệ rơi đồ của quái nhân số sao; 5 sao đồ rơi ra luôn đủ dòng magic (DropTable.roll_hell). Giao diện tông đỏ máu.
 ## Vào map: gọi on_play(entry) — Character Hub lo đổi cảnh (đóng cửa sổ trước khi gọi).
 
 const TABS := ["Thường", "Ải", "Địa Ngục"]
@@ -75,10 +76,7 @@ func _select_tab(i: int) -> void:
 	if i == 1:
 		_build_ai()
 		return
-	var wip := SocialUi.label("%s: đang phát triển" % TABS[i], SocialUi.MUTED, 16, HORIZONTAL_ALIGNMENT_CENTER)
-	wip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	wip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_content.add_child(wip)
+	_build_hell()
 
 # ---------------------------------------------------------------- tab Ải (Thách Thức Thời Gian)
 
@@ -408,6 +406,197 @@ func _map_card(m: Dictionary) -> Control:
 	play.pressed.connect(_play.bind(m))
 	row.add_child(play)
 	return card
+
+# ---------------------------------------------------------------- tab Địa Ngục
+
+const HELL_CARD := Color(0.120, 0.030, 0.028)
+const HELL_BORDER := Color(0.55, 0.10, 0.08)
+const HELL_HOT := Color(0.95, 0.22, 0.12)       ## viền / chữ cảnh báo
+const HELL_TITLE := Color(1.0, 0.42, 0.22)
+const HELL_TEXT := Color(0.90, 0.78, 0.72)
+const HELL_DIM := Color(0.55, 0.40, 0.38)
+const STAR_ON := Color(1.0, 0.80, 0.25)
+const STAR_OFF := Color(0.30, 0.20, 0.19)
+const HELL_RANKS := ["", "Khó", "Rất khó", "Ác mộng", "Luyện ngục", "Tuyệt vọng"]
+const HELL_RANK_COLORS := [Color.WHITE, Color(1.0, 0.62, 0.25), Color(1.0, 0.45, 0.20), Color(0.98, 0.28, 0.18),
+	Color(0.90, 0.12, 0.12), Color(0.80, 0.05, 0.30)]
+
+var _hell_tier: int = MapCatalog.HELL_TIERS[0]
+var _hell_tier_buttons: Array[Button] = []
+## Số sao đã chọn cho từng map (giữ khi đóng / mở lại cửa sổ).
+static var _hell_stars: Dictionary = {}
+
+func _build_hell() -> void:
+	_hell_tier_buttons.clear()
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 10)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.add_child(page)
+	page.add_child(_hell_banner())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(row)
+	var tiers := VBoxContainer.new()
+	tiers.add_theme_constant_override("separation", 8)
+	tiers.custom_minimum_size.x = 110
+	row.add_child(tiers)
+	for t in MapCatalog.HELL_TIERS:
+		var b := _hell_button("%dx" % t, Vector2(110, 52), 20)
+		b.toggle_mode = true
+		b.pressed.connect(_select_hell_tier.bind(t))
+		tiers.add_child(b)
+		_hell_tier_buttons.append(b)
+	tiers.add_child(SocialUi.label("Quái cấp\n%d - %d" % [MapCatalog.hell_level(MapCatalog.HELL_TIERS[0]),
+		MapCatalog.hell_level(MapCatalog.HELL_TIERS[-1])], HELL_DIM, 12, HORIZONTAL_ALIGNMENT_CENTER))
+	var scroll := ScrollContainer.new()
+	scroll.name = "HellList"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(LIST_SIZE.x, LIST_SIZE.y - 96)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(scroll)
+	_select_hell_tier(_hell_tier)
+
+## Băng rôn cảnh báo đầu tab: nền đỏ thẫm viền đỏ rực phát sáng, tiêu đề lớn + luật sao.
+func _hell_banner() -> Control:
+	var panel := PanelContainer.new()
+	var style := GameUi.box(Color(0.16, 0.02, 0.02), HELL_HOT, 8, 2, 10)
+	style.shadow_color = Color(0.9, 0.1, 0.05, 0.35)
+	style.shadow_size = 8
+	panel.add_theme_stylebox_override("panel", style)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 2)
+	panel.add_child(v)
+	var title := SocialUi.label("☠  ĐỊA NGỤC  ☠", HELL_TITLE, 26, HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_outline_color", Color(0.35, 0.0, 0.0))
+	title.add_theme_constant_override("outline_size", 6)
+	v.add_child(title)
+	v.add_child(SocialUi.label("Màn chơi CỰC KHÓ — chỉ dành cho cao thủ.", HELL_HOT, 13, HORIZONTAL_ALIGNMENT_CENTER))
+	v.add_child(SocialUi.label("Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)",
+		HELL_TEXT, 12, HORIZONTAL_ALIGNMENT_CENTER))
+	return panel
+
+func _select_hell_tier(t: int) -> void:
+	_hell_tier = t
+	for k in _hell_tier_buttons.size():
+		_hell_tier_buttons[k].set_pressed_no_signal(MapCatalog.HELL_TIERS[k] == t)
+	var scroll := _content.find_child("HellList", true, false) as ScrollContainer
+	if scroll == null:
+		return
+	for c in scroll.get_children():
+		c.queue_free()
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 10)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	var maps := MapCatalog.hell_maps(t)
+	if maps.is_empty():
+		list.add_child(SocialUi.label("Chưa có bản đồ Địa Ngục %dx." % t, HELL_DIM, 14))
+		return
+	for m in maps:
+		list.add_child(_hell_card(m))
+
+## Thẻ 1 map Địa Ngục: ảnh map phủ đỏ + đầu lâu, tên + bậc khó, hàng 5 sao bấm chọn, hệ số theo sao, nút Khiêu chiến.
+## Chọn sao càng cao thẻ càng đỏ, viền càng dày.
+func _hell_card(m: Dictionary) -> Control:
+	var id := int(m["id"])
+	var card := PanelContainer.new()
+	var style := GameUi.box(HELL_CARD, HELL_BORDER, 8, 1, 10)
+	card.add_theme_stylebox_override("panel", style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+
+	var frame := _minimap_frame(m)
+	frame.add_theme_stylebox_override("panel", GameUi.box(Color.BLACK, HELL_BORDER, 4, 1, 2))
+	var tint := ColorRect.new()
+	tint.color = Color(0.55, 0.0, 0.0, 0.35)
+	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(tint)
+	var skull := SocialUi.label("☠", HELL_TITLE, 22, HORIZONTAL_ALIGNMENT_RIGHT)
+	skull.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	skull.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(skull)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(frame)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 4)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	info.add_child(head)
+	head.add_child(SocialUi.label(str(m["name"]), HELL_TITLE, 18))
+	var rank := SocialUi.label("", HELL_HOT, 13)
+	rank.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(rank)
+	info.add_child(SocialUi.label("Quái cấp %d  ·  %d quái" % [int(m["level"]), int(m.get("monster_count", 0))], HELL_TEXT, 13))
+	var star_row := HBoxContainer.new()
+	star_row.add_theme_constant_override("separation", 2)
+	info.add_child(star_row)
+	var star_buttons: Array[Button] = []
+	for k in MapCatalog.HELL_MAX_STARS:
+		var b := Button.new()
+		b.text = "★"
+		b.flat = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(34, 32)
+		b.add_theme_font_size_override("font_size", 26)
+		b.tooltip_text = "%d sao — %s" % [k + 1, HELL_RANKS[k + 1]]
+		star_row.add_child(b)
+		star_buttons.append(b)
+	var effect := SocialUi.label("", HELL_TEXT, 13)
+	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(effect)
+	if _profile and _profile.level < int(m["level"]) - 10:
+		info.add_child(SocialUi.label("⚠ Cấp của bạn quá thấp — khuyến nghị cấp %d trở lên." % (int(m["level"]) - 10), HELL_HOT, 12))
+
+	var play := _hell_button("Khiêu chiến", Vector2(120, 48), 16)
+	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	play.disabled = not MapCatalog.is_playable(m)
+	row.add_child(play)
+
+	var paint := func(n: int) -> void:
+		for k in star_buttons.size():
+			var c := STAR_ON if k < n else STAR_OFF
+			for st in ["font_color", "font_pressed_color", "font_focus_color"]:
+				star_buttons[k].add_theme_color_override(st, c)
+			star_buttons[k].add_theme_color_override("font_hover_color", c.lightened(0.25))
+		rank.text = "· %s" % HELL_RANKS[n]
+		rank.add_theme_color_override("font_color", HELL_RANK_COLORS[n])
+		effect.text = "Máu ×%d  ·  Sát thương ×%d  ·  Rơi đồ ×%d  ·  Đủ dòng %d%%" % [n, n, n, n * 20]
+		style.bg_color = Color(0.10 + n * 0.035, 0.025, 0.025)
+		style.border_color = (HELL_RANK_COLORS[n] as Color).darkened(0.25)
+		@warning_ignore("integer_division")
+		style.set_border_width_all(1 + n / 2)
+	for k in star_buttons.size():
+		star_buttons[k].pressed.connect(func() -> void:
+			_hell_stars[id] = k + 1
+			paint.call(k + 1))
+	play.pressed.connect(func() -> void: _play(MapCatalog.hell_entry(m, int(_hell_stars.get(id, 1)))))
+	paint.call(int(_hell_stars.get(id, 1)))
+	return card
+
+## Nút tông đỏ máu (cột 11x / 12x, nút Khiêu chiến).
+func _hell_button(text: String, min_size: Vector2, font_size: int) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = min_size
+	b.add_theme_font_size_override("font_size", font_size)
+	var pressed := GameUi.box(Color(0.55, 0.08, 0.05), STAR_ON, 6, 2, 8)
+	b.add_theme_stylebox_override("normal", GameUi.box(Color(0.30, 0.04, 0.03), HELL_BORDER, 6, 1, 8))
+	b.add_theme_stylebox_override("hover", GameUi.box(Color(0.42, 0.06, 0.04), HELL_HOT, 6, 1, 8))
+	b.add_theme_stylebox_override("pressed", pressed)
+	b.add_theme_stylebox_override("hover_pressed", pressed)
+	b.add_theme_stylebox_override("disabled", GameUi.box(Color(0.12, 0.05, 0.05), Color(0.25, 0.1, 0.1), 6, 1, 8))
+	b.add_theme_color_override("font_color", Color(1.0, 0.85, 0.75))
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", STAR_ON)
+	b.add_theme_color_override("font_hover_pressed_color", STAR_ON)
+	b.add_theme_color_override("font_disabled_color", Color(0.4, 0.3, 0.3))
+	return b
 
 func _play(m: Dictionary) -> void:
 	close_requested.emit()

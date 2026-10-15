@@ -1,7 +1,8 @@
 extends PanelContainer
 class_name ChatBox
 ## Khung CHAT online (giữa, sát đáy màn hình): kênh Gần / Thế giới / Tổ đội / Bang hội / Riêng.
-## Tin gửi qua game server (ChatServer kiểm tra cấm chat, tốc độ, độ dài). Bấm "Chat" để thu gọn / mở (điện thoại).
+## Tin gửi qua game server (ChatServer kiểm tra cấm chat, tốc độ, độ dài). Bấm "Chat" để thu gọn / mở phần tin (điện thoại) — hàng nhập
+## (kênh mặc định "Gần") luôn hiện. Chơi offline (map luyện công): vẫn có khung, tin kênh Gần chỉ hiện ở máy mình.
 ## Đang gõ thì phím không điều khiển nhân vật (Player._typing()).
 
 const MAX_LINES := 80
@@ -21,6 +22,23 @@ var _step := 0
 
 static func create() -> ChatBox:
 	return ChatBox.new()
+
+## Đặt khung chat vào giữa đáy màn chơi (node "UI" của Main).
+static func attach(ui: Node) -> ChatBox:
+	var box := ChatBox.create()
+	box.name = "ChatBox"
+	box.anchor_left = 0.5
+	box.anchor_right = 0.5
+	box.anchor_top = 1.0
+	box.anchor_bottom = 1.0
+	box.offset_left = -240   ## lệch trái 40px: chừa chỗ hàng nút Ngồi / Nhảy / Ngựa sát đáy bên phải
+	box.offset_right = 160
+	box.offset_top = -8
+	box.offset_bottom = -8
+	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	ui.add_child(box)
+	return box
 
 func _init() -> void:
 	add_theme_stylebox_override("panel", SocialUi.box(Color(0.04, 0.035, 0.03, 0.62), Color(0.55, 0.45, 0.25, 0.7), 6, 1, 6))
@@ -69,7 +87,8 @@ func _init() -> void:
 	var send := SocialUi.small_button("Gửi")
 	send.pressed.connect(_send)
 	row.add_child(send)
-	_body.add_child(row)
+	_channel.select(ChatServer.NEAR)
+	root.add_child(row)   ## hàng nhập nằm ngoài phần thu gọn -> luôn hiện
 	NetClient.chat_received.connect(_on_chat)
 	NetClient.server_notice.connect(func(text: String) -> void: add_line("[color=#b8b0a0]%s[/color]" % _esc(text)))
 
@@ -120,11 +139,17 @@ func _send() -> void:
 	if ch == ChatServer.PRIVATE and _to.text.strip_edges().is_empty():
 		add_line("[color=#e88]Hãy nhập tên người nhận.[/color]")
 		return
-	NetClient.send_chat(ch, _to.text.strip_edges(), text)
+	if NetClient.is_in_world():
+		NetClient.send_chat(ch, _to.text.strip_edges(), text)
+	elif ch == ChatServer.NEAR:   ## offline: không có ai khác, chỉ hiện ở máy mình
+		var p := GameManager.local_profile
+		_on_chat(ch, 0, p.display_name if p else "Bạn", "", text)
+	else:
+		add_line("[color=#e88]Kênh %s chỉ dùng khi chơi trên máy chủ.[/color]" % ChatServer.CHANNEL_NAMES[ch])
 	_input.text = ""
 	_input.release_focus()   ## gửi xong trả phím về cho nhân vật
 
-func _on_chat(channel: int, _from_eid: int, from_name: String, to_name: String, text: String) -> void:
+func _on_chat(channel: int, from_eid: int, from_name: String, to_name: String, text: String) -> void:
 	## Sổ đen: bỏ tin nhắn (kênh lẫn nhắn riêng) của người bị chặn — như gốc, chỉ lọc ở máy mình.
 	var p := GameManager.local_profile
 	if p and p.blacklist.has(from_name) and from_name != p.display_name:
@@ -134,6 +159,14 @@ func _on_chat(channel: int, _from_eid: int, from_name: String, to_name: String, 
 	if channel == ChatServer.PRIVATE:
 		who = "%s → %s" % [who, _esc(to_name)]
 	add_line("[color=#%s][%s] %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[channel], who, _esc(text)])
+	if channel == ChatServer.NEAR:
+		ChatBubble.show_on(_speaker_node(from_eid), from_name, text)
+
+## Nhân vật đang nói: chính mình (eid của mình / offline eid 0) hoặc người chơi khác đang thấy.
+func _speaker_node(eid: int) -> Node2D:
+	if eid == 0 or eid == NetClient.my_eid:
+		return get_tree().get_first_node_in_group("player") as Node2D
+	return NetWorldSync.current.remote_of(eid) if NetWorldSync.current else null
 
 func add_line(bbcode: String) -> void:
 	if _lines >= MAX_LINES:

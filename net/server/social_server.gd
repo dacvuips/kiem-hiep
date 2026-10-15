@@ -87,18 +87,37 @@ func on_trade_request(c, target_eid: int) -> void:
 	if c.entity.pos.distance_to(t.entity.pos) > TRADE_RANGE:
 		gs.notice(c, "Đứng gần hơn mới giao dịch được.")
 		return
+	_invite(c, t, true)
+
+## Xin giao dịch theo ID nhân vật (Chợ › Giao dịch): bất kể đứng đâu trên máy chủ, đối phương không cần "mở giao dịch" —
+## họ nhận hộp hỏi đồng ý như lời mời thường; đồng ý thì on_trade_answer mở giao dịch.
+func on_trade_request_id(c, character_id: int) -> void:
+	var t = gs.conn_of_character(character_id)
+	if t == c:
+		gs.notice(c, "Không thể giao dịch với chính mình.")
+		return
+	if t == null or gs.battle:
+		gs.notice(c, "Không tìm thấy người chơi có ID %d hoặc họ đang không trực tuyến." % character_id)
+		return
+	_invite(c, t, false)
+
+## `need_open` = lời mời tại chỗ (bấm người đứng gần): đối phương phải đang mở giao dịch.
+func _invite(c, t, need_open: bool) -> void:
 	var err := SecurityLock.check(c.profile, SecurityLock.A_TRADE_START)
 	if err == "":
 		if c.trade or t.trade:
 			err = "Bạn hoặc đối phương đang trong một giao dịch."
-		elif not t.trade_open:
+		elif need_open and not t.trade_open:
 			err = "Đối phương không mở giao dịch."
 		elif t.stall_open:
 			err = "Đối phương đang bày bán."
+	var key := "%d:%d" % [c.entity.eid, t.entity.eid]
+	if err == "" and _invites.has(key):
+		err = "Đã gửi lời mời tới %s — hãy chờ trả lời." % t.entity.name   ## chống gửi dồn lời mời (nhất là mời theo ID)
 	if err != "":
 		gs.notice(c, err)
 		return
-	_invites["%d:%d" % [c.entity.eid, t.entity.eid]] = gs.now() + INVITE_SECONDS
+	_invites[key] = gs.now() + INVITE_SECONDS
 	var b := NetProto.writer(NetProto.S_TRADE_INVITE)
 	b.put_u32(c.entity.eid)
 	NetProto.put_str(b, c.entity.name)

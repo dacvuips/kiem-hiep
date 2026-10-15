@@ -6,6 +6,7 @@ class_name SkillBarUI
 ## chiêu, kéo thả gắn/gỡ skill và bật/tắt Auto. Bấm nút = thi triển skill qua SectSkillController
 ## của Player (song song với phím tắt, không thay thế).
 
+const GROUP := &"skill_bar_ui"
 const SUB_BUTTON_SIZE := 64.0  ## Kích thước ảnh kéo thả (make_drag_preview), khớp nút phụ trong scene.
 const COLOR_AUTO_ON := Color(0.3, 0.75, 0.35, 1.0)
 const COLOR_AUTO_OFF := Color(0.25, 0.25, 0.25, 0.9)
@@ -28,10 +29,8 @@ const LOOP_SLOT_BASE := 100
 ## Nhảy / lên-xuống ngựa nhanh / đi theo — cùng chức năng với phím Space / M / F (xem Player).
 @onready var _jump_button: Button = %JumpButton
 @onready var _horse_button: Button = %HorseButton
-@onready var _follow_button: Button = %FollowButton
 @onready var _sit_button: Button = %SitButton
 ## Bật/tắt "mở giao dịch" (như nút trong cửa sổ Bày bán) — dựng bằng code, nằm trên nút ngồi.
-var _trade_button: Button
 var _last_weapon_class := -999
 @onready var _loop_buttons: Array[SkillButton] = [%Loop1]
 
@@ -123,6 +122,7 @@ func _place_auto_button() -> void:
 	_auto_button.add_sibling(gear)
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	_main_button.pressed.connect(_on_main_pressed)
 	_main_button.set_drag_forwarding(_get_slot_drag_data.bind(MAIN_SLOT), _can_drop_on_slot.bind(MAIN_SLOT), _drop_on_slot.bind(MAIN_SLOT))
 	for i in _sub_buttons.size():
@@ -136,13 +136,10 @@ func _ready() -> void:
 		_loop_buttons[i].set_drag_forwarding(_get_slot_drag_data.bind(slot), _can_drop_on_slot.bind(slot), _drop_on_slot.bind(slot))
 	_jump_button.pressed.connect(_on_jump_pressed)
 	_horse_button.pressed.connect(_on_horse_pressed)
-	_follow_button.pressed.connect(_on_follow_pressed)
 	_sit_button.pressed.connect(_on_sit_pressed)
-	_style_round_button(_jump_button, "run", 0, 1)
+	_style_round_button(_jump_button, "jump", 0, 0)   ## icon nhảy gốc (MiTom_Pak_SPR ID_C950DFE5.spr, 1 khung)
 	_style_round_button(_horse_button, "hourse", 0, 1)
-	_style_round_button(_follow_button, "party", 0, 2)
 	_style_round_button(_sit_button, "sit", 0, 2)
-	_build_trade_button()
 	for p in _page_buttons.size():
 		_page_buttons[p].pressed.connect(_set_page.bind(p))
 	_main_button.gui_input.connect(_on_main_gui_input)
@@ -160,13 +157,12 @@ func _build_page_swap() -> void:
 	_page_swap.focus_mode = Control.FOCUS_NONE
 	_page_swap.tooltip_text = "Đổi nhóm kỹ năng 1 <-> 2"
 	_page_swap.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	var p1 := _page_buttons[0]
-	var cx := (p1.offset_left + p1.offset_right) * 0.5
-	var cy := (p1.offset_top + p1.offset_bottom) * 0.5
-	_page_swap.offset_left = cx - SIZE * 0.5
-	_page_swap.offset_right = cx + SIZE * 0.5
-	_page_swap.offset_top = cy - SIZE * 0.5
-	_page_swap.offset_bottom = cy + SIZE * 0.5
+	## Sát góc dưới phải màn hình (cách mép MARGIN).
+	const MARGIN := 8.0
+	_page_swap.offset_right = -MARGIN
+	_page_swap.offset_left = -MARGIN - SIZE
+	_page_swap.offset_bottom = -MARGIN
+	_page_swap.offset_top = -MARGIN - SIZE
 	_page_swap.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_page_swap.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_page_swap.add_theme_font_size_override("font_size", 26)
@@ -200,6 +196,10 @@ func _layout_nodes() -> Dictionary:
 		out["s%d" % i] = _sub_buttons[i]
 	for i in _loop_buttons.size():
 		out["loop%d" % i] = _loop_buttons[i]
+	## Nút tiện ích (Ngồi / Nhảy / Ngựa) cũng sắp xếp được trong bảng Kỹ năng.
+	out["sit"] = _sit_button
+	out["jump"] = _jump_button
+	out["horse"] = _horse_button
 	return out
 
 func _capture_base_offsets() -> void:
@@ -208,7 +208,8 @@ func _capture_base_offsets() -> void:
 		var c: Control = nodes[key]
 		_base_offsets[key] = [c.offset_left, c.offset_top, c.offset_right, c.offset_bottom]
 
-## Áp độ dời tự sắp xếp của người chơi lên vị trí mặc định.
+## Áp bố cục tự sắp xếp của người chơi: độ dời so với vị trí mặc định, bật / tắt ô (PlayerProfile.skill_slots) và cỡ ô
+## (scale quanh tâm — vùng bấm to / nhỏ theo).
 func apply_layout() -> void:
 	var profile := GameManager.local_profile
 	var nodes := _layout_nodes()
@@ -222,6 +223,11 @@ func apply_layout() -> void:
 		c.offset_right = b[2] + d.x
 		c.offset_top = b[1] + d.y
 		c.offset_bottom = b[3] + d.y
+		var k := float(profile.get_skill_slot_size(key)) if profile != null else 1.0
+		c.pivot_offset = Vector2(b[2] - b[0], b[3] - b[1]) * 0.5
+		c.scale = Vector2(k, k)
+		if key != "main":
+			c.visible = profile == null or profile.is_skill_slot_on(key)
 
 func setup(player: Node) -> void:
 	_player = player
@@ -347,43 +353,6 @@ func _on_sit_pressed() -> void:
 	if not editing_hotbar:
 		_player.toggle_sit()
 
-func _build_trade_button() -> void:
-	_trade_button = Button.new()
-	_trade_button.name = "TradeButton"
-	_trade_button.toggle_mode = true
-	_trade_button.focus_mode = Control.FOCUS_NONE
-	_trade_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_trade_button.offset_top = _sit_button.offset_top - 60.0
-	_trade_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_trade_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_style_round_button(_trade_button, "exchange", 0, 1)
-	_trade_button.pressed.connect(_on_trade_pressed)
-	_sit_button.add_sibling(_trade_button)
-
-## Giống StallWindow._on_trade(): đổi cờ trong profile, online thì báo server (server bật cờ FLAG_TRADE_OPEN cho người khác thấy).
-func _on_trade_pressed() -> void:
-	var profile := GameManager.local_profile
-	if editing_hotbar or profile == null:
-		return
-	var msg := ""
-	if profile.trade_open:
-		StallService.close_trade(profile)
-		msg = "Đã tắt mở giao dịch."
-		if NetClient.is_in_world():
-			NetClient.send_stall(SocialServer.TRADE_CLOSE)
-	else:
-		var err := StallService.open_trade(profile)
-		msg = err if err != "" else "Đã mở giao dịch — người khác có thể xin giao dịch với bạn."
-		if err == "" and NetClient.is_in_world():
-			NetClient.send_stall(SocialServer.TRADE_OPEN)
-	SaveManager.save_profile(profile)
-	if _player != null and _player.has_method("notify"):
-		_player.notify(msg)
-
-func _on_follow_pressed() -> void:
-	if not editing_hotbar:
-		_player.toggle_follow()
-
 func _on_auto_pressed() -> void:
 	_player.is_auto_mode = not _player.is_auto_mode
 	_refresh_auto_button_style()
@@ -445,10 +414,6 @@ func _process(_delta: float) -> void:
 	_sit_button.set_pressed_no_signal(_player.is_sitting())
 	_sit_button.modulate = Color(1, 1, 1, 0.45) if _player.is_riding() else Color.WHITE
 	_jump_button.modulate = Color(1, 1, 1, 0.45) if _player.is_riding() else Color.WHITE
-	_follow_button.modulate = COLOR_AUTO_ON.lightened(0.5) if _player.is_following() else Color.WHITE
-	var trade_on := GameManager.local_profile.trade_open
-	_trade_button.set_pressed_no_signal(trade_on)
-	_trade_button.tooltip_text = "Đang MỞ giao dịch — bấm để tắt" if trade_on else "Mở giao dịch (cho người khác xin giao dịch)"
 
 ## ---- Ngắm hướng bằng nút chính ----
 func _on_main_gui_input(event: InputEvent) -> void:
@@ -494,7 +459,7 @@ func _on_sub_pressed(index: int) -> void:
 
 
 ## Nút tròn kiểu VLTK: ảnh gốc trong assets/ui/toolbar (tools: spr_to_png từ Spr/Ui3/UiToolsControlBar), các frame ghép ngang —
-## `normal_frame` lúc thường, `active_frame` lúc rê chuột/đang bật. Bỏ chữ, khung vuông 56x56.
+## `normal_frame` lúc thường, `active_frame` lúc rê chuột/đang bật. Bỏ chữ; vị trí / cỡ nút đặt trong SkillBarUI.tscn.
 func _style_round_button(button: Button, sheet_name: String, normal_frame: int, active_frame: int) -> void:
 	var sheet: Texture2D = load("res://assets/ui/toolbar/%s.png" % sheet_name)
 	if sheet == null:
@@ -515,6 +480,3 @@ func _style_round_button(button: Button, sheet_name: String, normal_frame: int, 
 	button.add_theme_stylebox_override("pressed", make.call(active_frame))
 	button.add_theme_stylebox_override("hover_pressed", make.call(active_frame))
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	button.offset_left = -408.0
-	button.offset_right = -352.0
-	button.offset_bottom = button.offset_top + 56.0

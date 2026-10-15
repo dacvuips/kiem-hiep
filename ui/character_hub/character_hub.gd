@@ -84,6 +84,26 @@ func _ready() -> void:
 
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	_ask_sect_if_needed.call_deferred()
+
+## Nhân vật mới tạo (cấp 10 nhờ StarterKit, chưa có phái): BẮT BUỘC chọn phái ngay ở Hub. Online chỉ khi nhân vật chưa vào map lần
+## nào (server_seen 0 — game server nhận phái này lúc vào map lần đầu, ProfileGuard.sanitize_new); nhân vật đã vào map thì chọn trong
+## game (SectPrompt, server xác nhận cấp thật).
+func _ask_sect_if_needed() -> void:
+	if _profile == null or not _profile.needs_sect():
+		return
+	if AccountApi.is_logged_in() and _profile.server_seen != 0:
+		return
+	var win := SectChoiceWindow.open(self, _profile)
+	win.chosen.connect(_on_sect_chosen)
+
+## Vừa vào phái: vũ khí tân thủ đúng loại phái (online: bản thật do game server phát lại lúc vào map lần đầu), lưu, vẽ lại Hub.
+func _on_sect_chosen(sect: SectDefinition) -> void:
+	var weapon := StarterKit.give_sect_weapon(_profile)
+	SaveManager.save_profile(_profile)
+	_all_skills = _load_all_skills()
+	refresh()
+	_show_toast("Đã gia nhập %s!%s" % [sect.sect_name, " Môn phái tặng %s." % weapon.get_base().get("name", "?") if weapon else ""])
 
 ## Quy đổi PlayerStats.level đạt được ở lượt chơi VỪA kết thúc (nếu có) thành EXP nhân vật lâu
 ## dài — chỉ cộng 1 lần nhờ GameManager reset last_run_stats_level về -1 ngay sau khi đọc, để mở
@@ -196,7 +216,7 @@ func _build_nav() -> void:
 			button.pressed.connect(func() -> void: GuildWindow.open(self, SocialHub.of(_profile)))
 			continue
 		if id == "social":
-			button.pressed.connect(func() -> void: SocialMenuWindow.open(self, _profile))
+			button.pressed.connect(func() -> void: MarketWindow.open(self, _profile))
 			continue
 		if id == "ranking":
 			button.pressed.connect(func() -> void: RankingWindow.open(self, _profile))

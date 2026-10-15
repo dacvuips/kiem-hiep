@@ -62,10 +62,40 @@ func _ready() -> void:
 		p.add_item(ItemGenerator.random_equipment(40))
 	var hub := SocialHub.of(p)
 
-	## Menu giao lưu
-	var menu := SocialMenuWindow.open(self, p)
+	## Chợ Giao Thương: 3 tab, có hàng người chơi giả, treo bán 1 món rồi huỷ treo, tab Giao Dịch có danh sách người quanh đây
+	var market := MarketWindow.open(self, p)
 	await frames()
-	check("ui: menu giao lưu dựng được + có người quanh đây", menu != null and not menu.find_children("*", "Button", true, false).is_empty())
+	check("ui: chợ dựng được + có thẻ hàng", market != null and market._grid.get_child_count() > 0)
+	var bag_n := p.inventory.size()
+	var listed: ItemInstance = p.inventory[0]
+	var sold := OfflineMarket.handle(p, "sell", {"uid": listed.uid, "price": 50000, "cur": MarketBook.CUR_GOLD})
+	check("chợ: treo bán -> món rời hành trang, vào Của Tôi", bool(sold.ok) and not p.inventory.has(listed) and p.market.size() == 1)
+	var mine := OfflineMarket.handle(p, "mine", {})
+	var back := OfflineMarket.handle(p, "cancel", {"id": str(mine["items"][0]["id"])})
+	check("chợ: huỷ treo -> món về hành trang", bool(back.ok) and p.market.is_empty() and p.inventory.size() == bag_n)
+	var offers := OfflineMarket.handle(p, "list", {"filter": {"cur": MarketBook.CUR_GOLD}})
+	var gold_before := p.gold
+	var pick: Dictionary = offers["items"][0]
+	var bought := OfflineMarket.handle(p, "buy", {"id": str(pick["id"])})
+	check("chợ: mua hàng người chơi giả -> trừ tiền, thêm món", bool(bought.ok) and p.gold == gold_before - int(pick["price"]) and p.inventory.size() == bag_n + 1)
+	market._show_tab(MarketWindow.Tab.TRADE)
+	await frames()
+	check("ui: chợ tab Giao Dịch có người quanh đây", market._near_box.get_child_count() > 0)
+	market.close_requested.emit()
+	await frames()
+
+	## Vượt Ải › Địa Ngục: 11x / 12x có thẻ map, vào map mang theo độ khó (quái cấp 110 / 120, số sao)
+	var maps_win := MapSelectWindow.open(self, p, func(_e: Dictionary) -> void: pass)
+	maps_win._select_tab(2)
+	await frames()
+	check("ui: tab Địa Ngục có thẻ map 11x", maps_win.find_children("*", "Button", true, false).any(
+		func(b: Button) -> bool: return b.text == "Khiêu chiến"))
+	var hell := MapCatalog.hell_entry(MapCatalog.hell_maps(12)[0], 5)
+	check("địa ngục: mục map 12x 5 sao", int(hell["hell"]["level"]) == 120 and int(hell["hell"]["stars"]) == 5)
+	var full := DropTable._roll_blue_item(DropTable.TIERS[10], 0, ItemInstance.MAX_MAGIC)
+	check("địa ngục: đồ đủ dòng có đủ %d dòng" % ItemInstance.MAX_MAGIC, full != null and full.magic.size() == ItemInstance.MAX_MAGIC)
+	maps_win.close_requested.emit()
+	await frames()
 
 	## Bàn phím số: 10 phím chữ số ngẫu nhiên + Đính chính
 	var kp := KeypadWindow.ask(self, "Thử", "Nhập", func(_c: String) -> void: pass)

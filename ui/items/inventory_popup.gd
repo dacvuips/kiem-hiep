@@ -152,16 +152,18 @@ func _on_item_pressed(item: ItemInstance) -> void:
 		["Trang bị", _equip.bind(index)],
 		["Vứt bỏ", _drop.bind(index)],
 	]
-	if PotionEffect.heals(item):
+	if PotionEffect.usable(item):
 		actions[0] = ["Dùng", _use.bind(index)]
+		## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): gắn loại thuốc này vào 1 ô.
+		for i in _profile.quick_items.size():
+			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if _partner_action.is_valid():
 		var extra: Array = _partner_action.call(item)
 		if not extra.is_empty():
 			actions.push_front(extra)
 	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
-## "Dùng" thuốc hồi sinh lực: chỉ trong trận (có nhân vật trên bản đồ). Thuốc không chồng (mỗi bình 1 ô) -> bỏ bình khỏi túi;
-## online server nhận việc bỏ món (ProfileGuard chỉ giữ món server biết).
+## "Dùng" thuốc / đan: chỉ trong trận (có nhân vật trên bản đồ) — PotionEffect.consume.
 func _use(index: int) -> void:
 	if index >= _profile.inventory.size():
 		return
@@ -170,13 +172,17 @@ func _use(index: int) -> void:
 		_show_message("Chỉ dùng được thuốc khi đang ở trên bản đồ.")
 		return
 	var item := _profile.inventory[index]
-	if item.count > 1:
-		item.count -= 1
-	else:
-		_profile.inventory.remove_at(index)
-	PotionEffect.drink(player, item)
+	if not PotionEffect.consume(_profile, player, item):
+		return
 	_show_message("Đã dùng %s" % item.get_display_name())
 	_commit()
+
+func _set_quick_slot(misc_id: String, slot: int) -> void:
+	_profile.quick_items[slot] = misc_id
+	_show_message("Đã gắn %s vào ô thuốc %d" % [str(ItemDatabase.get_misc(misc_id).get("name", "")), slot + 1])
+	_commit()
+	for bar in get_tree().get_nodes_in_group(QuickItemBar.GROUP):
+		(bar as QuickItemBar).refresh()
 
 func _equip(index: int) -> void:
 	var err := _profile.equip_from_inventory(index)

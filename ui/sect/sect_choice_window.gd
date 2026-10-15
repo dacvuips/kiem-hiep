@@ -14,6 +14,7 @@ const LOCKED_TINT := Color(0.38, 0.38, 0.38, 0.8)
 
 var _profile: PlayerProfile
 var _done := false
+var _status: Label
 
 static func open(host: Node, profile: PlayerProfile) -> SectChoiceWindow:
 	var win := SocialWindow.present(host, SectChoiceWindow.new(profile), &"sect_choice") as SectChoiceWindow
@@ -38,6 +39,10 @@ func _init(profile: PlayerProfile = null) -> void:
 	for sect in SectRegistry.get_by_element(element):
 		cards.add_child(_card(sect))
 	close_button.visible = false   ## bắt buộc chọn phái: không đóng được
+	## Lý do không vào được phái (ở Hub không có nhân vật để báo -> hiện ngay trên bảng).
+	_status = SocialUi.label("", SocialUi.WARN, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	_status.visible = false
+	body.add_child(_status)
 
 func _card(sect: SectDefinition) -> PanelContainer:
 	var color: Color = ElementTypes.ELEMENT_COLOR.get(sect.element, SocialUi.TEXT)
@@ -60,6 +65,13 @@ func _card(sect: SectDefinition) -> PanelContainer:
 	v.add_child(scroll)
 	for skill in skills:
 		grid.add_child(_skill_tile(skill))
+	## Phái chỉ nhận 1 giới (Nga Mi / Thúy Yên chỉ nhận nữ, Thiếu Lâm chỉ nhận nam — detu*.lua gốc GetSex): khoá nút, ghi rõ.
+	if _profile != null and not _profile.gender_fits(sect):
+		var only := SocialUi.stone_button("Chỉ nhận đệ tử %s" % ("nữ" if sect.required_gender == PlayerProfile.Gender.FEMALE else "nam"))
+		only.disabled = true
+		v.add_child(only)
+		panel.modulate = LOCKED_TINT.lightened(0.4)
+		return panel
 	var b := SocialUi.stone_button("Gia nhập %s" % sect.sect_name)
 	b.pressed.connect(func() -> void:
 		SocialWindow.confirm(get_parent(), "Xác nhận gia nhập",
@@ -103,9 +115,8 @@ func _choose(sect: SectDefinition) -> void:
 			else ("%s chỉ nhận đệ tử %s." % [sect.sect_name, "nam" if sect.required_gender == 0 else "nữ"]) \
 			if not _profile.gender_fits(sect) \
 			else "Chưa thể gia nhập môn phái: cần đạt cấp %d (hiện cấp %d)." % [PlayerProfile.NEWBIE_LEVEL, _profile.level]
-		var player := get_tree().get_first_node_in_group("player")
-		if player != null and player.has_method("_notice"):
-			player._notice(why)
+		_status.text = why
+		_status.visible = true
 		return
 	_done = true
 	chosen.emit(sect)

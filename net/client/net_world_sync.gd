@@ -9,7 +9,7 @@ class_name NetWorldSync
 const RECONNECT_DELAY := 5.0
 ## Lỗi này thì không tự kết nối lại (phải xử lý ở màn trước).
 const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "character_not_found", "service_key",
-	"battle_end", "battle_no_side"]
+	"battle_end", "battle_no_side", "arena_end"]
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
@@ -97,19 +97,8 @@ func _add_chat_box() -> void:
 	var ui: Node = get_parent().get_node_or_null("UI")
 	if ui == null:
 		return
-	var box := ChatBox.create()
-	box.name = "ChatBox"
-	box.anchor_left = 0.5
-	box.anchor_right = 0.5
-	box.anchor_top = 1.0
-	box.anchor_bottom = 1.0
-	box.offset_left = -200
-	box.offset_right = 200
-	box.offset_top = -8
-	box.offset_bottom = -8
-	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	ui.add_child(box)
+	if ui.get_node_or_null("ChatBox") == null:
+		ChatBox.attach(ui)
 
 func _connect() -> void:
 	_reconnect_in = -1.0

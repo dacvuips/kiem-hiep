@@ -30,6 +30,8 @@ var level: int = 1
 ## BOSS XANH (script server Revive: ~2% mỗi lần quái sinh): tên xanh dương, kháng 75% mọi loại, sát thương x3 (cấp 50+, thấp hơn thì x2),
 ## nhanh hơn, rớt 5 lần (DropTable.roll_blue_boss). Đặt TRƯỚC khi add_child.
 var blue_boss: bool = false
+## Độ khó ĐỊA NGỤC (1-5 sao, 0 = map thường): máu, sát thương và tỉ lệ rơi đồ nhân số sao (DropTable.roll_hell). Đặt TRƯỚC khi add_child.
+var hell_stars: int = 0
 ## false = quái đứng yên (tắt AI) — để xem hình hoặc để người chơi tập đánh.
 var ai_enabled: bool = true
 var camp: int = Camp.Type.ANIMAL
@@ -115,8 +117,66 @@ func _ready() -> void:
 	_origin_logic = VltkMath.to_logic(global_position)
 	_cur_active = float(data.get("active", 400))
 	_dir64 = randi() % VltkMath.MAX_DIR
+	_apply_level_script()
 	_build_stats()
 	_enter(State.IDLE, "stand")
+
+## SCRIPT CẤP GỐC (npclevelscript qua MonsterData.level_table): engine gốc gọi lúc sinh quái với HỆ + CẤP của điểm sinh ->
+## chiêu Skill1-4 + cấp chiêu Level1-4 (VD animal.lua: cận chiến ngũ hành 419..423 theo hệ), tham số AI; chỉ số (máu, chính xác,
+## phòng thủ, sát thương) đọc ở MonsterData.stat_at_level, kháng + sát thương cơ bản ở _apply_vltk_stats. Quái không có script giữ
+## dữ liệu Npcs.txt như cũ.
+var _level_table: Dictionary = {}
+
+func _apply_level_script() -> void:
+	_level_table = MonsterData.level_table(monster_id, int(data.get("series", 0)))
+	if _level_table.is_empty():
+		return
+	data = data.duplicate()   ## không ghi vào bảng quái dùng chung
+	data["level_table"] = _level_table
+	var skills := []
+	for i in range(1, 5):
+		var id := MonsterData.level_value(_level_table, "Skill%d" % i, level)
+		skills.append([maxi(id, 0), maxi(1, MonsterData.level_value(_level_table, "Level%d" % i, level))])
+	data["skills"] = skills
+	data["skill_levels_exact"] = true
+	var ai_mode := MonsterData.level_value(_level_table, "AIMode", level)
+	if ai_mode > 0:
+		data["ai_mode"] = ai_mode
+		var params := []
+		for i in range(1, 10):
+			params.append(maxi(0, MonsterData.level_value(_level_table, "AIParam%d" % i, level)))
+		data["ai_params"] = params
+
+## Kháng (%) + sát thương cơ bản của script cấp -> CombatantStats (cùng trường như người chơi): *DamageBase = ngoại công,
+## *MagicBase = nội công (cộng vào chiêu ngoại / nội công tương ứng ở _make_hit_stats).
+const LEVEL_RESISTS := {"PhysicsResist": CombatFormulas.DamageType.PHYSICS, "ColdResist": CombatFormulas.DamageType.COLD,
+	"FireResist": CombatFormulas.DamageType.FIRE, "LightResist": CombatFormulas.DamageType.LIGHT,
+	"PoisonResist": CombatFormulas.DamageType.POISON}
+## Thứ tự mảng data["resist_max"] (cột *ResistMax của Npcs.txt, tools/import_vltk_monsters.py).
+const RESIST_MAX_ORDER := ["FireResist", "ColdResist", "LightResist", "PoisonResist", "PhysicsResist"]
+const LEVEL_ELEMENT_BASES := {"Poison": CombatFormulas.DamageType.POISON, "Cold": CombatFormulas.DamageType.COLD,
+	"Fire": CombatFormulas.DamageType.FIRE, "Lighting": CombatFormulas.DamageType.LIGHT}
+
+func _apply_level_combat(stats: CombatantStats) -> void:
+	if _level_table.is_empty():
+		return
+	var caps: Array = data.get("resist_max", [])
+	for field in LEVEL_RESISTS:
+		var type: int = LEVEL_RESISTS[field]
+		var at := RESIST_MAX_ORDER.find(field)
+		var cap := int(caps[at]) if at >= 0 and at < caps.size() and int(caps[at]) > 0 else 75
+		stats.resist_percent[type] = mini(MonsterData.level_value(_level_table, field, level), cap)
+		stats.resist_percent_cap[type] = cap
+	stats.add_physics_damage = maxi(0, MonsterData.level_value(_level_table, "PhysicalDamageBase", level))
+	stats.add_physics_magic = maxi(0, MonsterData.level_value(_level_table, "PhysicalMagicBase", level))
+	for name in LEVEL_ELEMENT_BASES:
+		var type: int = LEVEL_ELEMENT_BASES[name]
+		var outer := MonsterData.level_value(_level_table, name + "DamageBase", level)
+		var inner := MonsterData.level_value(_level_table, name + "MagicBase", level)
+		if outer > 0:
+			stats.outer_element_damage[type] = Vector2i(outer, outer)
+		if inner > 0:
+			stats.inner_element_damage[type] = Vector2i(inner, inner)
 
 ## Chỉ số thử nghiệm theo cấp: máu theo Vitality, trúng/né theo Dexterity, ngũ hành theo Series gốc.
 func _build_stats() -> void:
@@ -142,12 +202,14 @@ func _apply_vltk_stats(stats: CombatantStats) -> void:
 		stats.max_hp = maxi(1, life)
 	if hp_override > 0:
 		stats.max_hp = hp_override
+	stats.max_hp *= _hell_mult()
 	var ar := MonsterData.stat_at_level(data, "attack_rating", level)
 	if ar >= 0:
 		stats.attack_rating = ar
 	var def := MonsterData.stat_at_level(data, "defense", level)
 	if def >= 0:
 		stats.defense = def
+	_apply_level_combat(stats)
 	if blue_boss:
 		for type in [CombatFormulas.DamageType.PHYSICS, CombatFormulas.DamageType.COLD, CombatFormulas.DamageType.FIRE, CombatFormulas.DamageType.LIGHT, CombatFormulas.DamageType.POISON]:
 			stats.resist_percent[type] = 75
@@ -174,6 +236,10 @@ func get_body_height() -> float:
 
 func is_dead() -> bool:
 	return _state == State.DEAD
+
+## Quái đang giao chiến với `node` (nhắm vào nó và nó trong tầm nhìn — như _ai_think khoá địch). Auto dùng để tự vệ.
+func is_engaging(node: Node2D) -> bool:
+	return node != null and target == node and not is_dead() 			and VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(node)) <= float(data.get("vision", 400))
 
 # ---------------------------------------------------------------- trạng thái / hoạt ảnh
 
@@ -396,10 +462,10 @@ func _fire_skill() -> void:
 		## Đòn cận chiến = sát thương cơ bản theo cấp + sát thương cộng thêm của chính skill (thú/quái cơ bản có
 		## min/max cơ bản = 0, toàn bộ sát thương nằm ở skill) — giống _make_hit_stats.
 		var dmg := MonsterData.melee_damage(data, level, skill_id, skill_level)
-		var dmg_min := int(dmg.x * _boss_damage_mult())
-		var dmg_max := int(dmg.y * _boss_damage_mult())
+		var dmg_min := int(dmg.x * _boss_damage_mult() * _hell_mult())
+		var dmg_max := int(dmg.y * _boss_damage_mult() * _hell_mult())
 		if dmg_min < 0:  # chưa có dữ liệu gốc
-			dmg_min = int(_test_damage())
+			dmg_min = int(_test_damage() * _hell_mult())
 			dmg_max = dmg_min
 		var mods := CombatFormulas.HitModifiers.new()
 		mods.attacker_node = self
@@ -415,6 +481,9 @@ func _damage_range() -> Vector2:
 		return Vector2(lo, maxf(lo, hi))
 	var d := _test_damage()
 	return Vector2(d, d)
+
+func _hell_mult() -> int:
+	return maxi(1, hell_stars)
 
 func _boss_damage_mult() -> float:
 	return (3.0 if DropTable.tier_of(level) >= 5 else 2.0) if blue_boss else 1.0
@@ -434,7 +503,8 @@ func _test_damage() -> float:
 ## Cấp skill hiệu dụng = cấp skill gốc + cấp quái / 5 (giá trị gốc ở cấp 1 rất nhỏ, quái cấp cao cần mạnh hơn).
 func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
-	var lv := clampi(skill_level + level / 5, 1, 30)
+	## Có script cấp: cấp chiêu đúng như script trả (Level1-4); không có: cấp gốc + cấp quái / 5 (số gốc cấp 1 quá nhỏ).
+	var lv := skill_level if data.get("skill_levels_exact", false) else clampi(skill_level + level / 5, 1, 30)
 	var base := _base_damage()
 	var skill := VltkSkillData.skill(skill_id, skill_level)
 	var series := int(skill.get("series", -1))
@@ -479,6 +549,17 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 		stats.damage = base       # skill không khai báo gì: đòn vật lý thường
 	else:
 		stats.damage = 0.0        # chỉ có sát thương nguyên tố
+	## Sát thương cơ bản của script cấp: chiêu ngoại công cộng *DamageBase, nội công cộng *MagicBase (như người chơi).
+	var physical := int(skill.get("physical", 1)) == 1
+	var extra: Dictionary = combat_stats.outer_element_damage if physical else combat_stats.inner_element_damage
+	for t in extra:
+		elements[t] = elements.get(t, Vector2i.ZERO) + extra[t]
+	if stats.damage > 0.0 or elements.is_empty():
+		stats.damage += float(combat_stats.add_physics_damage if physical else combat_stats.add_physics_magic)
+	if hell_stars > 1:
+		stats.damage *= hell_stars
+		for t in elements:
+			elements[t] = (elements[t] as Vector2i) * hell_stars
 	stats.extra_damage_ranges = elements
 	return stats
 
@@ -563,7 +644,11 @@ func die() -> void:
 ## Online: chỉ gọi khi server báo mình được thưởng; `with_drops` = mình là người hạ đòn cuối.
 func grant_rewards(with_drops := true) -> void:
 	if with_drops and net_eid == 0:   ## online: đồ rơi do server tung (S_DROPS)
-		var drops := DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
+		var drops: Array
+		if hell_stars > 0:
+			drops = DropTable.roll_hell(level, int(_build.element), hell_stars, blue_boss)
+		else:
+			drops = DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
 		if not drops.is_empty():
 			GroundDrop.spawn_drops(get_parent(), position, drops)
 	if net_eid != 0:

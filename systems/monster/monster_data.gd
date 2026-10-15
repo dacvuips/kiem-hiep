@@ -56,6 +56,34 @@ static func monster(id: int) -> Dictionary:
 	_ensure()
 	return _monsters.get(str(id), {})
 
+## ---- Script cấp gốc (npclevelscript, xuất bởi tools/import_vltk_npc_levels.py -> npc_levels.json) ----
+## Mỗi quái: hệ 0-4 -> trường (Skill1..4, Level1..4, kháng, sát thương cơ bản, AIParam, Life/AttackRating/Defense/MinDamage/
+## MaxDamage/Exp) -> giá trị cấp 1..levels. Engine gốc gọi script này mỗi lần sinh quái với hệ + cấp của điểm sinh.
+static var _levels: Dictionary = {}
+static var _level_pool: Array = []
+static var _level_max := 0
+
+## Bảng {trường: [giá trị theo cấp]} của quái `id` ở hệ `series` — {} nếu quái không có script cấp.
+static func level_table(id: int, series: int) -> Dictionary:
+	if _level_max == 0:
+		_level_max = -1
+		var parsed := _load_json("npc_levels.json")
+		_levels = parsed.get("npcs", {})
+		_level_pool = parsed.get("pool", [])
+		_level_max = int(parsed.get("levels", 0))
+	var per: Dictionary = _levels.get(str(id), {}).get(str(clampi(series, 0, 4)), {})
+	var out := {}
+	for field in per:
+		out[field] = _level_pool[int(per[field])]
+	return out
+
+## Giá trị trường `field` ở cấp `level` trong bảng level_table (cấp ngoài khoảng -> cấp gần nhất); -1 nếu không có.
+static func level_value(table: Dictionary, field: String, level: int) -> int:
+	var arr: Array = table.get(field, [])
+	if arr.is_empty():
+		return -1
+	return int(arr[clampi(level, 1, arr.size()) - 1])
+
 static func has_data() -> bool:
 	_ensure()
 	return not _monsters.is_empty()
@@ -129,7 +157,16 @@ const BAND_STATS := ["life", "attack_rating", "defense", "min_damage", "max_dama
 const LIFE_CAP_MAX_LEVEL := 10
 const LIFE_CAP_LEVEL_10 := 200
 
+## Quái đã gắn bảng script cấp (m["level_table"], VltkMonster lúc sinh) dùng đúng số của script gốc.
+const LEVEL_KEYS := {"life": "Life", "exp": "Exp", "attack_rating": "AttackRating", "defense": "Defense",
+	"min_damage": "MinDamage", "max_damage": "MaxDamage"}
+
 static func stat_at_level(m: Dictionary, stat: String, level: int) -> int:
+	var table: Dictionary = m.get("level_table", {})
+	if not table.is_empty() and LEVEL_KEYS.has(stat):
+		var v := level_value(table, LEVEL_KEYS[stat], level)
+		if v >= 0:
+			return v
 	var s: Dictionary = m.get("stats", {})
 	if not s.has(stat):
 		return -1

@@ -7,9 +7,13 @@ class_name PkWindow
 ##   - [Tự tìm đối thủ]: tìm phòng chờ hợp (chênh <= 10 cấp, Đại hội: cùng phái); quá 1 phút không có -> đấu với bot cùng cấp
 ##     (tên, phái ngẫu nhiên — Đại hội: cùng phái), PkBotProfile.
 ## Vào trận: on_play(PkRules.arena_entry(...)) — Character Hub đổi cảnh như Vượt Ải.
+## ONLINE (đã đăng nhập + arena server đang mở, GET /v1/arena mỗi POLL_SEC giây): danh sách là phòng thật của mọi người; tạo / vào /
+## xem / tự tìm đều vào thẳng arena server (ArenaServer kiểm tra mật khẩu, cấp, phái; ArenaClient lo phần còn lại). Chưa đăng nhập /
+## arena server chưa mở: chạy cục bộ như trên (PkLobby + bot).
 
 const LIST_SIZE := Vector2(300, 220)
 const FOUND_DELAY := 2.0           ## tìm được đối thủ: hiện tên đối thủ chừng này giây rồi mới vào trận
+const POLL_SEC := 2.0
 
 enum View { LOBBY, ROOM, SEARCH }
 
@@ -28,6 +32,9 @@ var _search_time := 0.0
 var _found_in := -1.0
 var _found_entry: Dictionary = {}
 var _timer_label: Label
+var _arena: Dictionary = {}        ## GET /v1/arena: {open, host, port, ws_url, rooms}
+var _poll := 0.0
+var _fetching := false
 
 static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> PkWindow:
 	var win := PkWindow.new(profile, on_play)
@@ -51,10 +58,47 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_content.add_theme_constant_override("separation", 8)
 	body.add_child(_content)
 	_select_mode(PkRules.Mode.DAI_HOI if profile != null and profile.has_sect() else PkRules.Mode.LIEN_DAU)
+	_fetch_arena()
 	## Đóng popup khi đang chờ trong phòng: huỷ luôn phòng (không để phòng "ma" trong danh sách).
 	close_requested.connect(func() -> void:
 		if _view == View.ROOM:
 			PkLobby.close_own(_profile))
+
+## Đấu trường online đang mở (đã đăng nhập + arena server báo về).
+func _online() -> bool:
+	return AccountApi.is_logged_in() and bool(_arena.get("open", false))
+
+func _fetch_arena() -> void:
+	if _fetching or not AccountApi.is_logged_in():
+		return
+	_fetching = true
+	var r: Dictionary = await AccountApi.arena(ServerSelectScreen.selected_server_id)
+	_fetching = false
+	if not is_inside_tree():
+		return
+	_arena = r.data if r.ok and r.data is Dictionary else {}
+	if _view == View.LOBBY:
+		_refresh_lists()
+
+## Vào arena server làm việc `action` ({op: create | join | watch | match, room, password}).
+func _enter_online(action: Dictionary) -> void:
+	var server := {"host": str(_arena.get("host", "")), "port": int(_arena.get("port", 7797)), "ws_url": str(_arena.get("ws_url", "")),
+		"name": "Đấu trường PK"}
+	_enter(PkRules.arena_entry({"mode": _mode, "online": true, "server": server, "action": action}))
+
+## Phòng của arena server ở tab đang xem: chờ đánh (waiting) / đang đánh (prepare, fight).
+func _online_rooms(waiting: bool) -> Array:
+	var out := []
+	for r in _arena.get("rooms", []):
+		if int(r.get("mode", -1)) != _mode:
+			continue
+		var st := str(r.get("state", ""))
+		if (waiting and st == "waiting") or (not waiting and st in ["prepare", "fight"]):
+			out.append(r)
+	return out
+
+static func _locked(r: Dictionary) -> bool:
+	return bool(r.get("locked", false)) or str(r.get("password", "")) != ""
 
 func _select_mode(m: PkRules.Mode) -> void:
 	if _view != View.LOBBY:
@@ -141,7 +185,8 @@ func _refresh_lists() -> void:
 		var list: VBoxContainer = pair[0]
 		for c in list.get_children():
 			c.queue_free()
-		var rooms := PkLobby.rooms(_mode, pair[1]).filter(func(r: Dictionary) -> bool: return query == "" or str(r["id"]).begins_with(query))
+		var source: Array = _online_rooms(pair[1] == PkLobby.WAITING) if _online() else PkLobby.rooms(_mode, pair[1])
+		var rooms := source.filter(func(r: Dictionary) -> bool: return query == "" or str(r["id"]).begins_with(query))
 		for r in rooms:
 			list.add_child(_room_row(r, pair[1] == PkLobby.WAITING))
 		if rooms.is_empty():
@@ -153,11 +198,14 @@ func _refresh_lists() -> void:
 func _room_row(r: Dictionary, waiting: bool) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
-	var lock := "🔒 " if str(r["password"]) != "" else ""
+	var lock := "🔒 " if _locked(r) else ""
 	var text := "%s#%s  %s\nCấp %d · %s" % [lock, r["id"], r["host"], int(r["level"]), r["sect_name"]]
-	if not waiting:
-		text = "#%s
-%s vs %s" % [r["id"], r["host"], r["guest"]]
+	if not waiting and r.has("fighters"):   ## phòng của arena server
+		var f: Array = r["fighters"]
+		text = "%s#%s · %d người xem\n%s vs %s" % [lock, r["id"], int(r.get("spectators", 0)), f[0] if f.size() > 0 else "?",
+				f[1] if f.size() > 1 else "?"]
+	elif not waiting:
+		text = "#%s\n%s vs %s" % [r["id"], r["host"], r["guest"]]
 	var l := SocialUi.label(text, SocialUi.TEXT, 13)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -169,6 +217,13 @@ func _room_row(r: Dictionary, waiting: bool) -> Control:
 	return row
 
 func _join_room(r: Dictionary) -> void:
+	if _online():
+		var why := PkRules.check_entry(_profile, _mode)
+		if why != "":
+			_flash(why)
+			return
+		_with_password(r, func(pw: String) -> void: _enter_online({"op": "join", "room": str(r["id"]), "password": pw}))
+		return
 	if str(r["host"]) == _profile.display_name:
 		_show_room(r)
 		return
@@ -185,8 +240,18 @@ func _join_room(r: Dictionary) -> void:
 		_flash("Sai mật khẩu." if pw != str(r["password"]) else "Vào đấu với người chơi khác cần chơi online (đang phát triển)."),
 		"", true)
 
-func _watch_room(_r: Dictionary) -> void:
-	_flash("Vào xem trận cần chơi online (đang phát triển).")
+func _watch_room(r: Dictionary) -> void:
+	if not _online():
+		_flash("Vào xem trận cần chơi online.")
+		return
+	_with_password(r, func(pw: String) -> void: _enter_online({"op": "watch", "room": str(r["id"]), "password": pw}))
+
+## Phòng có khoá: hỏi mật khẩu (server kiểm tra) rồi gọi then_do(mật khẩu); không khoá: gọi luôn với "".
+func _with_password(r: Dictionary, then_do: Callable) -> void:
+	if not _locked(r):
+		then_do.call("")
+		return
+	SocialWindow.prompt(self, "Phòng #%s" % r["id"], "Mật khẩu phòng", func(pw: String) -> void: then_do.call(pw.strip_edges()), "", true)
 
 func _flash(text: String) -> void:
 	if _status and is_instance_valid(_status):
@@ -204,10 +269,17 @@ func _ask_create_room() -> void:
 					if pw == "":
 						_flash("Chưa nhập mật khẩu — chưa tạo phòng.")
 						return
-					_show_room(PkLobby.create(_profile, _mode, pw)), "", true)
+					_create_room(pw), "", true)
 			else:
-				_show_room(PkLobby.create(_profile, _mode, "")),
+				_create_room(""),
 		"Có", "Không")
+
+## Online: vào arena server mở phòng; offline: phòng cục bộ (PkLobby).
+func _create_room(password: String) -> void:
+	if _online():
+		_enter_online({"op": "create", "password": password})
+	else:
+		_show_room(PkLobby.create(_profile, _mode, password))
 
 func _show_room(room: Dictionary) -> void:
 	_view = View.ROOM
@@ -242,6 +314,9 @@ func _start_search() -> void:
 	if reason != "":
 		_flash(reason)
 		return
+	if _online():   ## arena server ghép người thật; quá 1 phút không có thì ArenaClient chuyển sang đấu bot
+		_enter_online({"op": "match"})
+		return
 	_view = View.SEARCH
 	_search_time = 0.0
 	_found_in = -1.0
@@ -264,6 +339,11 @@ func _start_search() -> void:
 	row.add_child(cancel)
 
 func _process(delta: float) -> void:
+	if _view == View.LOBBY and AccountApi.is_logged_in():
+		_poll -= delta
+		if _poll <= 0.0:
+			_poll = POLL_SEC
+			_fetch_arena()
 	match _view:
 		View.ROOM:
 			_search_time += delta

@@ -51,12 +51,32 @@ func start_trade(partner: MockPlayer) -> String:
 	s.finished.connect(func(_ok: bool, msg: String) -> void: notice.emit(msg, _ok))
 	return ""
 
+## Giao dịch theo ID nhân vật (tab "Giao dịch" của Chợ): không cần đứng gần / đối phương mở giao dịch — bên kia nhận hộp hỏi đồng ý.
+## Online: ID = mã nhân vật trên máy chủ, server gửi lời mời, đồng ý thì mở cửa sổ giao dịch. Offline: ID người chơi giả.
+func start_trade_by_id(player_id: int) -> String:
+	if trade != null and trade.active:
+		return "Bạn đang trong một giao dịch."
+	if player_id <= 0:
+		return "ID không hợp lệ."
+	if NetClient.is_in_world():
+		if player_id == SaveManager.online_character_id:
+			return "Không thể giao dịch với chính mình."
+		NetClient.send_trade_request_id(player_id)
+		return "online"
+	var partner := SocialDirectory.find_by_id(profile, player_id)
+	if partner == null:
+		return "Không tìm thấy người chơi có ID %d (hoặc đang không trực tuyến)." % player_id
+	partner.trade_open = true   ## mời theo ID: đối phương tự quyết đồng ý hay không (invite_accept_rate)
+	return start_trade(partner)
+
 ## Nhịp chạy nền (gọi mỗi frame từ SocialTicker hoặc cửa sổ đang mở): khách giả mua hàng, người xin vào đội/bang, quỹ bang, thử thách bang.
 func tick(delta: float) -> void:
 	if trade != null and trade.active:
 		trade.tick(delta)
 	if NetClient.is_in_world():
 		return   ## online: khách mua hàng / người xin vào là người thật (server báo) — không giả lập
+	for line in OfflineMarket.tick(profile, delta, _rng):
+		notice.emit(line, true)
 	if profile.stall_open:
 		_stall_clock += delta
 		if _stall_clock >= 6.0:

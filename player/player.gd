@@ -151,6 +151,15 @@ func refresh_sect() -> void:
 	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
 
 ## Tên nhân vật trên đầu, tô màu theo phe (giống VLTK) — đặt ngay trên thanh máu.
+## Độ cao nhãn tên hiện tại (đổi khi cưỡi ngựa / nhảy) — ChatBubble hiện lời nói ngay trên đó.
+func chat_anchor_y() -> float:
+	return _name_label.position.y if _name_label else NAME_LABEL_Y
+
+## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc.
+func set_name_label_visible(on: bool) -> void:
+	if _name_label:
+		_name_label.visible = on
+
 func _build_name_label(display_name: String) -> void:
 	_name_label = Label.new()
 	_name_label.text = display_name
@@ -988,8 +997,9 @@ func start_invincibility() -> void:
 ## "Bạn đã bị trọng thương!" + "Về thành dưỡng sức" (DeathPopup).
 var _dead := false
 signal died
-## false = trúng đòn không được bất tử INVINCIBLE_DURATION giây (trận PK: 2 bên ngang nhau như VLTK gốc — PkMatch tắt).
-var hurt_invincible := true
+## true = trúng đòn được bất tử INVINCIBLE_DURATION giây (cơ chế cũ kiểu game sinh tồn). VLTK gốc KHÔNG có -> mặc định tắt:
+## trúng đòn là mất máu ngay, quái đánh dồn được như gốc.
+var hurt_invincible := false
 ## true = chết không hiện bảng "Bạn đã bị trọng thương!" (trận PK tự xử lý thắng/thua và đưa về Hub — PkMatch).
 var suppress_death_popup := false
 

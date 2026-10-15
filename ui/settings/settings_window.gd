@@ -3,6 +3,7 @@ class_name SettingsWindow
 ## Khung "Cài đặt" (nút Cài đặt trên màn chơi) — cài đặt của MÁY, đổi là lưu ngay vào user://settings.cfg:
 ##   - Nhạc nền bật/tắt (MusicManager.enabled).
 ##   - Lăn chuột để zoom camera bật/tắt + thanh trượt mức zoom (GameSettings; áp ngay lên camera nhân vật).
+##   - Mở từ màn chơi (on_exit hợp lệ): thêm nút "Thoát về Character Hub".
 
 const ZOOM_STEP := 0.025
 
@@ -11,8 +12,16 @@ var _music: CheckButton
 var _zoom_slider: HSlider
 var _zoom_value: Label
 
-static func open(host: Node) -> SettingsWindow:
-	return SocialWindow.present(host, SettingsWindow.new(), &"settings") as SettingsWindow
+static func open(host: Node, on_exit: Callable = Callable()) -> SettingsWindow:
+	var win := SettingsWindow.new()
+	if on_exit.is_valid():
+		var exit := SocialUi.stone_button("Thoát về Character Hub")
+		exit.pressed.connect(func() -> void:
+			win.close_requested.emit()
+			on_exit.call())
+		win.body.add_child(SocialUi.divider())
+		win.body.add_child(exit)
+	return SocialWindow.present(host, win, &"settings") as SettingsWindow
 
 func _init() -> void:
 	super._init("Cài đặt", "", 380.0)

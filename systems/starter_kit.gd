@@ -4,7 +4,7 @@ class_name StarterKit
 ## CFG_HoTroTanThu = 1) khi nhân vật cấp 1 đăng nhập lần đầu; danh sách đồ trong script/global/nobitaxd/config/cfg_activity_bonus.lua:
 ##   Thần Hành Phù (6,1,1266), Hồi thành phù (6,1,438 = Thổ địa phù dùng vô hạn), 9 món Trang Bị Kim Phong (AddGoldItem 177..185),
 ##   Nhẫn tân thủ (AddGoldItem 514 = Thuần Tịnh Chi Giới), ngựa Túc Sương (0,10,2,9).
-##   Mặt nạ tân thủ (0,11,561) bỏ qua — game chưa có ô mặt nạ. Lệnh bài tân thủ (6,1,4258) không có trong dữ liệu vật phẩm.
+##   Thần Hành Phù + Hồi thành phù bỏ theo yêu cầu người dùng. Mặt nạ tân thủ (0,11,561) bỏ qua — game chưa có ô mặt nạ. Lệnh bài tân thủ (6,1,4258) không có trong dữ liệu vật phẩm.
 ## Khác gốc (người dùng yêu cầu): cấp khởi đầu START_LEVEL (gốc Level_KhoiTao = 1) + thuốc hồi sinh lực / nội lực (gốc không phát),
 ## và 1 vũ khí đúng loại môn phái khi gia nhập phái (give_sect_weapon — bộ Kim Phong gốc không có vũ khí).
 ##
@@ -15,7 +15,6 @@ const WEAPON := 2
 const START_LEVEL := 10            ## = PlayerProfile.NEWBIE_LEVEL: vào game là đủ cấp chọn phái
 const GOLD_ROWS := [176, 177, 178, 179, 180, 181, 182, 183, 184, 513]   ## AddGoldItem 177..185 (Kim Phong) + 514 (nhẫn tân thủ)
 const HORSE := [ItemDatabase.Detail.HORSE, 2, 9]                       ## Túc Sương
-const MISC := [["6_1_1266", 1], ["6_1_438", 1]]                         ## Thần Hành Phù, Thổ địa phù
 ## [mã thuốc, số bình]: Kim Sáng Dược (trung) hồi sinh lực, Ngưng Thần đan (trung) hồi nội lực — thuốc không chồng nên mỗi bình 1 ô.
 const POTIONS := [["1_0_0_2", 10], ["1_1_0_2", 10]]
 
@@ -33,8 +32,6 @@ static func apply(p: PlayerProfile) -> int:
 	var horse := ItemDatabase.find_base(HORSE[0], HORSE[1], HORSE[2])
 	if horse >= 0:
 		added += _add(p, ItemGenerator.generate(HORSE[0], HORSE[1], HORSE[2], p.get_element(), []))
-	for m in MISC:
-		added += _add(p, ItemGenerator.generate_misc(str(m[0]), 0, 0, int(m[1])))
 	for pot in POTIONS:
 		for i in int(pot[1]):
 			added += _add(p, ItemGenerator.generate_misc(str(pot[0])))

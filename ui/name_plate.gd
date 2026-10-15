@@ -1,24 +1,30 @@
 extends Node2D
 class_name NamePlate
-## Bảng tên trên đầu quái / NPC (như VLTK gốc): chấm tròn MÀU HỆ NGŨ HÀNH + tên, nằm ngay trên thanh máu.
-## Màu chấm = ElementTypes.ELEMENT_COLOR (cùng màu hệ dùng ở mọi nơi khác trong game). Gốc node = giữa, ngay trên thanh máu
-## (đặt bằng place_above()). Chỉ vẽ lại khi đổi tên/hệ -> rẻ cho mobile.
+## Bảng tên trên đầu quái / NPC (như VLTK gốc): ẢNH HỆ NGŨ HÀNH + tên, nằm ngay trên thanh máu.
+## Ảnh hệ = ảnh gốc Spr/Ui3/Npc/series<hệ>.spr (GameSetting.ini [Series] Image, KNpc::PaintName) — xuất bởi
+## tools/import_vltk_series_icons.py ra assets/ui/series/. Gốc node = giữa, ngay trên thanh máu (đặt bằng place_above()).
+## Chỉ vẽ lại khi đổi tên/hệ -> rẻ cho mobile.
 
 const FONT_SIZE := 13
-const ORB_RADIUS := 6.0
-const GAP := 5.0
+const GAP := 4.0
 const NAME_COLOR := Color(0.96, 0.95, 0.88)
 const BOSS_NAME_COLOR := Color(0.45, 0.72, 1.0)   ## boss xanh: tên màu xanh dương
 const OUTLINE_SIZE := 3
+## Thứ tự hệ = ElementTypes (Kim, Mộc, Thủy, Hỏa, Thổ) = số hệ của series%d.spr gốc.
+const SERIES_ICONS: Array[Texture2D] = [
+	preload("res://assets/ui/series/series_0.png"), preload("res://assets/ui/series/series_1.png"),
+	preload("res://assets/ui/series/series_2.png"), preload("res://assets/ui/series/series_3.png"),
+	preload("res://assets/ui/series/series_4.png"),
+]
 
 var _text := ""
-var _color := Color.WHITE
+var _icon: Texture2D
 var _name_color := NAME_COLOR
 
 func setup(display_name: String, element: ElementTypes.ElementType, boss: bool = false) -> void:
 	_text = display_name
 	_name_color = BOSS_NAME_COLOR if boss else NAME_COLOR
-	_color = ElementTypes.ELEMENT_COLOR.get(element, Color.WHITE)
+	_icon = SERIES_ICONS[clampi(int(element), 0, SERIES_ICONS.size() - 1)]
 	z_index = 5
 	queue_redraw()
 
@@ -31,14 +37,10 @@ func _draw() -> void:
 		return
 	var font := ThemeDB.fallback_font
 	var text_size := font.get_string_size(_text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE)
-	var total := ORB_RADIUS * 2.0 + GAP + text_size.x
-	var left := -total * 0.5
-	var orb_center := Vector2(left + ORB_RADIUS, -text_size.y * 0.5 + 1.0)
-	## Chấm tròn: viền tối + màu hệ + đốm sáng nhỏ cho có khối.
-	draw_circle(orb_center, ORB_RADIUS + 1.2, Color(0, 0, 0, 0.85))
-	draw_circle(orb_center, ORB_RADIUS, _color.lightened(0.15))
-	draw_arc(orb_center, ORB_RADIUS - 0.8, 0.0, TAU, 20, _color.darkened(0.25), 1.6)
-	draw_circle(orb_center + Vector2(-1.6, -1.8), ORB_RADIUS * 0.35, Color(1, 1, 1, 0.55))
-	var pos := Vector2(left + ORB_RADIUS * 2.0 + GAP, 0.0)
+	var icon_size := _icon.get_size()
+	var left := roundf(-(icon_size.x + GAP + text_size.x) * 0.5)
+	## Ảnh hệ (gốc 18x18, vẽ đúng cỡ, toạ độ nguyên cho nét) căn giữa theo chiều cao chữ, đứng trước tên.
+	draw_texture(_icon, Vector2(left, roundf(-text_size.y * 0.5 + 1.0 - icon_size.y * 0.5)))
+	var pos := Vector2(left + icon_size.x + GAP, 0.0)
 	draw_string_outline(font, pos, _text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, OUTLINE_SIZE, Color(0, 0, 0, 0.9))
 	draw_string(font, pos, _text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, _name_color)

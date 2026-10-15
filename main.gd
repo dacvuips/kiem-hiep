@@ -56,18 +56,15 @@ func _ready() -> void:
 		$UI.add_child(mini_map)
 		mini_map.setup(player)
 
-	_build_exit_button()
-	_build_social_buttons()
+	_build_side_menu()
+	$UI.add_child(QuickItemBar.new())   ## 4 ô thuốc nhanh ngay trên cụm nút skill
 	add_child(SocialTicker.new())   ## nhịp nền xã hội: khách mua hàng bày bán, người xin vào đội/bang
 	_sect_prompt = SectPrompt.new()   ## Vô Môn Phái đủ cấp 10 thì hỏi gia nhập môn phái
 	add_child(_sect_prompt)
-	_build_monster_test_button()
-	_build_skill_test_button()
-	_build_settings_button()
-	_build_test_button()
-	$UI/CharacterButton.pressed.connect(_toggle_status_window)
-	$UI/InventoryButton.pressed.connect(_toggle_inventory_window)
-	$UI/SkillsButton.pressed.connect(_open_skill_book)
+	if OS.is_debug_build():   ## công cụ thử (chỉ bản debug): hàng nút nhỏ góc trên trái
+		_build_debug_button("Quái", "Danh sách quái VLTK — tạo quái để thử", _toggle_monster_popup)
+		_build_debug_button("Skill", "Bảng tất cả skill theo phái — thi triển thử", _toggle_skill_popup)
+		_build_debug_button("TEST", "Thử nhân vật: lên cấp, đồ, tiền, cộng chỉ số", _open_test_window)
 
 ## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
 ## Vẫn giữ nguyên: skill + thanh skill, trang bị, cộng chỉ số, di chuyển, ngựa, mini map.
@@ -82,7 +79,10 @@ func _enter_main_map() -> void:
 	var field := GameManager.field_map
 	## Chiến trường Tống Kim (tab Ải): luôn online, nối tới battle server riêng ({side, server}).
 	var battle: Dictionary = field.get("battle", {})
-	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty()
+	## Đấu trường PK online (popup PK lúc đã đăng nhập): nối tới arena server riêng ({mode, online, server, action}).
+	var pk: Dictionary = field.get("pk", {})
+	var pk_online := bool(pk.get("online", false))
+	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty() or pk_online
 	VltkWorld.net_monsters = online
 	if VltkWorld.current != null:
 		if not field.is_empty():
@@ -93,8 +93,8 @@ func _enter_main_map() -> void:
 		var challenge := TimeChallenge.new()
 		challenge.name = "TimeChallenge"
 		add_child(challenge)
-	## Trận PK (nút PK ở Character Hub): đấu trường map 397, đối thủ bot.
-	if field.has("pk"):
+	## Trận PK với bot (nút PK ở Character Hub, offline / không tìm được người): đấu trường map 397.
+	if field.has("pk") and not pk_online:
 		var match_node := PkMatch.new()
 		match_node.name = "PkMatch"
 		add_child(match_node)
@@ -105,10 +105,14 @@ func _enter_main_map() -> void:
 		var sync := NetWorldSync.new()
 		sync.name = "NetWorldSync"
 		sync.player = get_tree().get_first_node_in_group("player")
-		sync.server_override = battle.get("server", {})
+		sync.server_override = pk.get("server", {}) if pk_online else battle.get("server", {})
 		add_child(sync)
+	else:
+		ChatBox.attach($UI)   ## offline vẫn có ô chat Gần (online: NetWorldSync tự thêm)
 	if not battle.is_empty():
 		add_child(BattleClient.create(str(battle["side"]), int(field["id"])))
+	if pk_online:
+		add_child(ArenaClient.create(pk))
 
 func load_stage(stage: StageData) -> void:
 	GameManager.start_stage(stage)
@@ -178,14 +182,10 @@ func _open_skill_book() -> void:
 		player._notice("Chưa gia nhập môn phái — đạt cấp %d để chọn phái và học võ công." % PlayerProfile.NEWBIE_LEVEL)
 		return
 	_skill_book_open = true
-	get_tree().paused = true
-	## Ẩn joystick trong lúc mở bảng (bảng phủ gần kín màn). Gắn skill lên thanh kỹ năng làm ngay trong cột
-	## "Tùy chỉnh kỹ năng" của bảng, đóng bảng thì thanh skill trong trận vẽ lại theo profile.
-	joystick.visible = false
+	## Chỉ mở bảng — trận vẫn chạy bình thường (không dừng game, không tắt nhạc, giữ joystick). Gắn skill lên thanh kỹ năng làm
+	## ngay trong cột "Tùy chỉnh kỹ năng" của bảng, đóng bảng thì thanh skill trong trận vẽ lại theo profile.
 	SkillBookScreen.open(self, GameManager.local_profile, sect.skills, func() -> void:
 		_skill_book_open = false
-		get_tree().paused = false
-		joystick.visible = _joystick_enabled
 		skill_bar_ui.refresh_sub_skills()
 		## Skill nội tại vừa học trong bảng cộng bonus vào combat_stats — áp dụng ngay, không đợi trận sau.
 		if is_instance_valid(player):
@@ -221,44 +221,8 @@ func _on_panel_profile_changed() -> void:
 	if player:
 		player.refresh_combat_stats()
 
-## Hàng nút xã hội RIÊNG LẺ (mỗi chức năng 1 nút) nằm dưới thanh trạng thái, bên phải khung thông tin nhân vật:
-## Giao dịch · Bang hội (Tổ đội, Rương, Bày bán, Khoá bảo vệ, Hảo hữu đã bỏ khỏi giao diện — code hệ thống vẫn giữ).
-func _build_social_buttons() -> void:
-	var entries := [
-		["Giao dịch", "Người chơi ở gần: giao dịch, xem quầy, xem trang bị", func(p: PlayerProfile) -> void: SocialMenuWindow.open(self, p)],
-		["Bang hội", "Bang hội: tin tức, chiêu mộ, quyền hạn, nhật ký", func(p: PlayerProfile) -> void: GuildWindow.open(self, SocialHub.of(p))],
-	]
-	var x := 310.0
-	for e in entries:
-		var button := Button.new()
-		button.text = e[0]
-		button.offset_left = x
-		button.offset_top = 80
-		button.offset_right = x + 108
-		button.offset_bottom = 114
-		button.focus_mode = Control.FOCUS_NONE
-		button.tooltip_text = e[1]
-		var open_fn: Callable = e[2]
-		button.pressed.connect(func() -> void:
-			if GameManager.local_profile != null:
-				open_fn.call(GameManager.local_profile))
-		$UI.add_child(button)
-		x += 116.0
-
 ## Nút "Quái" — mở/đóng popup thử quái VLTK (danh sách mọi quái, xem động tác, tạo quái quanh người chơi để thử).
 var _monster_popup: MonsterTestPopup
-
-func _build_monster_test_button() -> void:
-	var button := Button.new()
-	button.text = "Quái"
-	button.offset_left = 510
-	button.offset_top = 36
-	button.offset_right = 600
-	button.offset_bottom = 72
-	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = "Danh sách quái VLTK — tạo quái để thử"
-	button.pressed.connect(_toggle_monster_popup)
-	$UI.add_child(button)
 
 func _toggle_monster_popup() -> void:
 	if _monster_popup == null or not is_instance_valid(_monster_popup):
@@ -270,18 +234,6 @@ func _toggle_monster_popup() -> void:
 ## Nút "Skill" — mở/đóng bảng tổng hợp skill (chia theo phái) để thi triển thử.
 var _skill_popup: SkillTestPopup
 
-func _build_skill_test_button() -> void:
-	var button := Button.new()
-	button.text = "Skill"
-	button.offset_left = 660
-	button.offset_top = 36
-	button.offset_right = 750
-	button.offset_bottom = 72
-	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = "Bảng tất cả skill theo phái — thi triển thử"
-	button.pressed.connect(_toggle_skill_popup)
-	$UI.add_child(button)
-
 func _toggle_skill_popup() -> void:
 	if _skill_popup == null or not is_instance_valid(_skill_popup):
 		_skill_popup = SkillTestPopup.new()
@@ -289,51 +241,56 @@ func _toggle_skill_popup() -> void:
 		return
 	_skill_popup.visible = not _skill_popup.visible
 
-## Nút "Cài đặt" — mở khung cài đặt của máy (bật/tắt nhạc nền, lăn chuột zoom camera, mức zoom).
-## Nút "TEST" (chỉ bản debug) — bảng thử nhân vật ngay trên màn chơi: lên cấp, đồ, tiền, cộng chỉ số (TestWindow).
-func _build_test_button() -> void:
-	if not OS.is_debug_build():
+## Cột nút tiện ích bên trái (kiểu VLTK mobile) — SideMenu (hàng ngang góc trên phải): Nhân vật, Hành trang, Kỹ năng, sát bên trái nút Cài đặt (có Thoát) cạnh mini map.
+func _build_side_menu() -> void:
+	var menu := SideMenu.new()
+	menu.name = "SideMenu"
+	menu.add_entry("status", "", "Nhân vật", _toggle_status_window)
+	menu.add_entry("items", "", "Hành trang", _toggle_inventory_window)
+	menu.add_entry("skills", "", "Kỹ năng (phím G)", _open_skill_book)
+	## Nút Cài đặt: góc trên phải, sát bên trái mini map. Nút "Thoát về Character Hub" nằm trong khung Cài đặt.
+	var exit_button := SideMenu.make_button("", "⚙", "Cài đặt: nhạc nền, zoom camera, thoát", func() -> void:
+		SettingsWindow.open(self, _on_exit_button_pressed))
+	exit_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	var right := MiniMap.SCREEN_MARGIN + MiniMap.BASE_SIZE.x * MiniMap.UI_SCALE + 6.0
+	exit_button.offset_right = -right
+	exit_button.offset_left = -right - SideMenu.SLOT
+	exit_button.offset_top = MiniMap.SCREEN_MARGIN
+	exit_button.offset_bottom = MiniMap.SCREEN_MARGIN + SideMenu.SLOT
+	exit_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	$UI.add_child(exit_button)
+	## 3 nút Nhân vật / Hành trang / Kỹ năng: hàng ngang sát bên trái nút Cài đặt.
+	menu.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	menu.offset_right = exit_button.offset_left - SideMenu.GAP
+	menu.offset_left = menu.offset_right - (3 * SideMenu.SLOT + 2 * SideMenu.GAP)
+	menu.offset_top = exit_button.offset_top
+	menu.offset_bottom = exit_button.offset_bottom
+	menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	menu.alignment = BoxContainer.ALIGNMENT_END
+	$UI.add_child(menu)
+
+## Nút công cụ thử (chỉ bản debug) — xếp thành hàng nhỏ ở góc trên trái.
+var _debug_x := 8.0
+
+func _build_debug_button(text: String, tip: String, on_press: Callable) -> void:
+	var button := Button.new()
+	button.text = text
+	button.tooltip_text = tip
+	button.focus_mode = Control.FOCUS_NONE
+	button.offset_left = _debug_x
+	button.offset_top = 4
+	button.offset_right = _debug_x + 72
+	button.offset_bottom = 34
+	button.pressed.connect(on_press)
+	$UI.add_child(button)
+	_debug_x += 80.0
+
+func _open_test_window() -> void:
+	if GameManager.local_profile == null:
 		return
-	var button := Button.new()
-	button.text = "TEST"
-	button.offset_left = 870
-	button.offset_top = 36
-	button.offset_right = 950
-	button.offset_bottom = 72
-	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = "Thử nhân vật: lên cấp, đồ, tiền, cộng chỉ số (chỉ bản debug)"
-	button.pressed.connect(func() -> void:
-		if GameManager.local_profile == null:
-			return
-		var win := TestWindow.open(self, GameManager.local_profile)
-		if not win.profile_changed.is_connected(_on_panel_profile_changed):
-			win.profile_changed.connect(_on_panel_profile_changed))
-	$UI.add_child(button)
-
-func _build_settings_button() -> void:
-	var button := Button.new()
-	button.text = "Cài đặt"
-	button.offset_left = 760
-	button.offset_top = 36
-	button.offset_right = 860
-	button.offset_bottom = 72
-	button.focus_mode = Control.FOCUS_NONE
-	button.tooltip_text = "Nhạc nền, zoom camera"
-	button.pressed.connect(func() -> void: SettingsWindow.open(self))
-	$UI.add_child(button)
-
-## Nút "Thoát Trận" góc trên trái — bấm hiện popup xác nhận trước khi quay về Character Hub,
-## tránh mất tiến độ trận đang chơi do bấm nhầm.
-func _build_exit_button() -> void:
-	var ui: CanvasLayer = $UI
-	var button := Button.new()
-	button.text = "Thoát" if GameManager.game_mode == GameManager.GameMode.MAIN_MAP else "Thoát Trận"
-	button.offset_left = 20
-	button.offset_top = 36
-	button.offset_right = 140
-	button.offset_bottom = 72
-	button.pressed.connect(_on_exit_button_pressed)
-	ui.add_child(button)
+	var win := TestWindow.open(self, GameManager.local_profile)
+	if not win.profile_changed.is_connected(_on_panel_profile_changed):
+		win.profile_changed.connect(_on_panel_profile_changed)
 
 func _on_exit_button_pressed() -> void:
 	if _exit_confirm:

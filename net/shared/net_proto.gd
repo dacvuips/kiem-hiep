@@ -44,6 +44,9 @@ const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 �
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
 const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
 const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá trị), u8 arg2 (đồng ý / chế độ)
+const C_TRADE_REQ_ID := 24 ## u32 character_id — xin giao dịch theo ID nhân vật (Chợ › Giao dịch): không cần đứng gần
+const C_MARKET := 25      ## str json {op: "list" {filter} | "mine" | "sell" {uid, price, cur} | "buy" {id} | "cancel" {id}} — Chợ Giao Thương
+const C_ARENA := 26       ## u8 op (ArenaServer.OP_*) + str json — đấu trường PK (tạo / vào / xem phòng, tự tìm đối thủ, rời)
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
@@ -83,6 +86,8 @@ const S_PVP_HIT := 35     ## u32 attacker_eid, u32 n, n byte PvpHit (đã cắt 
 const S_CAMP := 36        ## u32 eid, i8 camp, u8 nation — phe (màu tên) / phe Tống-Kim người chơi đổi (lên cấp 10, vào/rời bang, chọn phe...)
 const S_STALL_SIGN := 37  ## u32 eid, str title ("" = dọn quầy) — biển quầy trên đầu người bày bán (gửi người đang thấy + chính mình)
 const S_BATTLE := 38      ## str json {op: "state" | "joined" | "reject" | "result", ...} — chiến trường Tống Kim
+const S_MARKET := 39      ## json nén {op: "list" | "mine" | "done", items: [listing MarketBook], now, slots, ok, msg} — Chợ Giao Thương
+const S_ARENA := 40       ## str json {op: "room" | "state" | "result" | "reject" | "searching" | "no_match", ...} — đấu trường PK
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name

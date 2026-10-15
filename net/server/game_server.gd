@@ -123,9 +123,13 @@ var max_players := 2000
 var social: SocialServer
 var chat: ChatServer
 var guild: GuildServer
+## Chợ Giao Thương — chỉ máy chủ thế giới (null ở tiến trình chiến trường).
+var market: MarketServer
 var relation: RelationServer
 ## Chiến trường Tống Kim (chỉ tiến trình GAME_BATTLE=1), null = server thế giới thường.
 var battle: BattleServer
+## Đấu trường PK (GAME_ARENA=1, map 397): phòng 1 chọi 1 + người xem — ArenaServer.
+var arena: ArenaServer
 var map_dir := DEFAULT_MAP_DIR
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
@@ -180,7 +184,12 @@ func _ready() -> void:
 		if not battle.is_ready():
 			get_tree().quit(1)
 			return
+	if _env("GAME_ARENA", "0") == "1":
+		arena = ArenaServer.new(self)
 	guild.load_all()
+	if battle == null and arena == null:
+		market = MarketServer.new(self)
+		market.load_all()
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
 	var ws_port := int(_env("GAME_WS_PORT", "7778"))
@@ -239,8 +248,12 @@ func _process(delta: float) -> void:
 		social.tick(step, _now)
 		relation.tick(_now)
 		guild.tick(step)
+		if market:
+			market.tick(step)
 		if battle:
 			battle.tick(step)
+		if arena:
+			arena.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -366,6 +379,8 @@ func _drop(c: Conn) -> void:
 		relation.on_leave(c)
 		if battle:
 			battle.on_leave(c)
+		if arena:
+			arena.on_leave(c)
 	_conns.erase(c.key)
 	if c.entity and c.character_id != 0:
 		c.dirty = true   ## vị trí lúc thoát luôn phải lưu
@@ -449,6 +464,12 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_TRADE_REQ:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
 				social.on_trade_request(c, b.get_u32())
+		NetProto.C_TRADE_REQ_ID:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
+				social.on_trade_request_id(c, b.get_u32())
+		NetProto.C_MARKET:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2 and market:
+				market.on_market(c, b)
 		NetProto.C_TRADE_ANSWER:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 5:
 				var from := b.get_u32()
@@ -502,6 +523,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_BATTLE:
 			if battle and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				battle.on_battle(c, b)
+		NetProto.C_ARENA:
+			if arena and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				arena.on_arena(c, b)
 		NetProto.C_PING:
 			if b.get_available_bytes() >= 4:
 				var r := NetProto.writer(NetProto.S_PONG)
@@ -558,6 +582,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.profile = PlayerProfile.from_dict(data)
 	## Nhân vật mới: quà tân thủ (cấp khởi đầu + đồ) do server sinh -> uid đồ là của server, qua được ProfileGuard.
 	var starter_items := StarterKit.apply(c.profile) if new_character else 0
+	if new_character and StarterKit.give_sect_weapon(c.profile) != null:   ## đã chọn phái ở Hub trước lần vào map đầu
+		starter_items += 1
 	var admin_items := c.profile.apply_admin_grants()   ## đồ web Admin tặng: sinh thành món thật (lưu ngay ở lần lưu tới)
 	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
 	c.dirty = true
@@ -585,6 +611,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	e.flags = NetProto.FLAG_RIDING if int(e.look.horse) >= 0 else 0
 	if battle:   ## chiến trường: chưa có phe thì đứng tạm ở điểm xuất phát (vị trí đã lưu là vị trí ngoài thế giới)
 		e.pos = grid.free_near(grid.default_center())
+	elif arena:   ## đấu trường PK: chưa vào phòng thì đứng ở chỗ người xem (không ai thấy cho tới khi vào phòng)
+		e.pos = arena.entry_pos()
 	else:
 		e.pos = take_over.entity.pos if take_over and take_over.entity else saved_pos(data)
 	c.entity = e
@@ -601,6 +629,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	NetProto.put_str(w, e.name)
 	_send(c, w)
 	guild.on_join(c)
+	if market:
+		market.on_join(c)
 	send_profile(c)
 	if admin_items > 0 and not take_over:
 		notice(c, "Nhận %d vật phẩm từ Quản trị viên (xem hành trang)." % admin_items)
@@ -655,6 +685,8 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 	if (flags & NetProto.FLAG_DEAD) != 0 and (e.flags & NetProto.FLAG_DEAD) == 0:
 		if battle:
 			battle.on_died(c)
+		if arena:
+			arena.on_died(c)
 		relation.on_died(c)
 	## Bày bán = ngồi yên tại chỗ: rời chỗ / lên ngựa / nhảy / chết thì tự dọn quầy, còn lại người khác luôn thấy đang ngồi.
 	if c.stall_open:
@@ -682,6 +714,8 @@ func _on_revive(c: Conn) -> void:
 		return
 	e.flags &= ~NetProto.FLAG_DEAD
 	if battle and battle.on_revive(c):   ## chiến trường: về hậu doanh phe mình
+		return
+	if arena and arena.on_revive(c):     ## đấu trường PK: đứng lại chỗ của mình trong phòng
 		return
 	e.pos = grid.free_near(grid.default_center())
 	e.touch()
@@ -1077,6 +1111,11 @@ func kick(c: Conn, code: String, message: String) -> void:
 func now() -> float:
 	return _now
 
+## Người đang trong map có mã nhân vật này (null = không online / chưa vào map).
+func conn_of_character(character_id: int) -> Conn:
+	var c: Conn = _by_character.get(character_id)
+	return c if c and c.state == ConnState.IN_WORLD and c.entity and _conns.has(c.key) else null
+
 func conn_of_name(character_name: String) -> Conn:
 	var key := character_name.strip_edges().to_lower()
 	for c: Conn in _conns.values():
@@ -1164,6 +1203,11 @@ func _apply_web_grants(c: Conn, list: Variant) -> void:
 func send(c: Conn, b: StreamPeerBuffer) -> void:
 	_send(c, b)
 
+## Lưu nhân vật ngay (sau khi đồ / tiền đổi chủ ở chợ) thay vì chờ SAVE_INTERVAL.
+func save_now(c: Conn) -> void:
+	if _conns.has(c.key) and c.state == ConnState.IN_WORLD:
+		_save(c)
+
 func _save_due() -> void:
 	for c: Conn in _conns.values():
 		if c.state == ConnState.IN_WORLD and c.dirty and not c.saving and _now - c.last_save >= SAVE_INTERVAL:
@@ -1177,7 +1221,7 @@ func _save(c: Conn) -> void:
 		return
 	c.saving = true
 	c.dirty = false
-	if c.entity and battle == null:   ## vị trí do server giữ (game không được tự ghi "pos"); chiến trường giữ vị trí ngoài thế giới
+	if c.entity and battle == null and arena == null:   ## vị trí do server giữ (game không được tự ghi "pos"); chiến trường giữ vị trí ngoài thế giới
 		c.data["pos"] = [snappedf(c.entity.pos.x, 0.1), snappedf(c.entity.pos.y, 0.1)]
 	c.last_save = _now
 	var char_id := c.character_id
@@ -1258,24 +1302,24 @@ func _send_snapshots() -> void:
 			for dx in range(-1, 2):
 				for dy in range(-1, 2):
 					for e: ServerEntity in aoi.bucket(center + Vector2i(dx, dy)).values():
-						if e != me and not known.has(e.eid):
+						if e != me and not known.has(e.eid) and can_see(c, e):
 							known[e.eid] = 0
 							e.write_spawn(spawns)
 							n_spawn += 1
 			for eid: int in known:
-				if not _in_view(eid, center):
+				if not _in_view(c, eid, center):
 					gone.append(eid)
 		else:
 			for dx in range(-1, 2):
 				for dy in range(-1, 2):
 					var cell := center + Vector2i(dx, dy)
 					for e: ServerEntity in aoi.entered_in(cell):
-						if e != me and not known.has(e.eid) and _in_view(e.eid, center):
+						if e != me and not known.has(e.eid) and _in_view(c, e.eid, center):
 							known[e.eid] = 0
 							e.write_spawn(spawns)
 							n_spawn += 1
 					for eid: int in aoi.left_from(cell):
-						if known.has(eid) and not _in_view(eid, center):
+						if known.has(eid) and not _in_view(c, eid, center):
 							gone.append(eid)
 		if not gone.is_empty():
 			var d := NetProto.writer(NetProto.S_DESPAWNS)
@@ -1318,9 +1362,13 @@ func _send_snapshots() -> void:
 		e.look_dirty = false
 	_look_dirty.clear()
 
-func _in_view(eid: int, center: Vector2i) -> bool:
+func _in_view(viewer: Conn, eid: int, center: Vector2i) -> bool:
 	var e: ServerEntity = _entities.get(eid)
-	return e != null and absi(e.cell.x - center.x) <= 1 and absi(e.cell.y - center.y) <= 1
+	return e != null and absi(e.cell.x - center.x) <= 1 and absi(e.cell.y - center.y) <= 1 and can_see(viewer, e)
+
+## Người xem `viewer` có được thấy thực thể `e` không — đấu trường PK: chỉ người cùng phòng (ArenaServer.can_see); nơi khác luôn thấy.
+func can_see(viewer: Conn, e: ServerEntity) -> bool:
+	return arena == null or arena.can_see(viewer, e)
 
 func online_count() -> int:
 	return _by_character.size()

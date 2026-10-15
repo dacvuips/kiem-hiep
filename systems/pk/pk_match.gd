@@ -201,14 +201,18 @@ static func record_of(profile: PlayerProfile, m: PkRules.Mode) -> Dictionary:
 	return _records().get(profile.display_name, {}).get(str(m), {"win": 0, "lose": 0})
 
 func _record(win: bool) -> void:
+	record_result(mode, win)
+
+## Ghi 1 trận thắng / thua ở chế độ `m` cho nhân vật đang chơi (trận bot PkMatch + trận online ArenaClient).
+static func record_result(m: PkRules.Mode, win: bool) -> void:
 	var profile := GameManager.local_profile
 	if profile == null or OS.has_environment("KIEMHIEP_NO_SAVE"):
 		return
 	var rec := _records()
 	var mine: Dictionary = rec.get(profile.display_name, {})
-	var r: Dictionary = mine.get(str(mode), {"win": 0, "lose": 0})
+	var r: Dictionary = mine.get(str(m), {"win": 0, "lose": 0})
 	r["win" if win else "lose"] = int(r.get("win" if win else "lose", 0)) + 1
-	mine[str(mode)] = r
+	mine[str(m)] = r
 	rec[profile.display_name] = mine
 	var f := FileAccess.open(RECORD_PATH, FileAccess.WRITE)
 	if f:

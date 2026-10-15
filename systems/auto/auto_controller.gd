@@ -6,11 +6,12 @@ class_name AutoController
 ## GroundDrop như nhấp chuột — nên khi chơi online server vẫn kiểm tra mọi thứ y như người thật bấm.
 ##
 ## Mỗi THINK_INTERVAL giây quyết định 1 lần, theo thứ tự ưu tiên:
-##   1. Hồi phục: điều kiện Thổ Địa Phù (máu thấp / độ bền thấp / hành trang đầy) -> phù về thành; máu dưới Mức 1 mà không có
-##      thuốc -> ngồi thiền hồi máu khi không có địch gần.
+##   1. Hồi phục: điều kiện Thổ Địa Phù (máu thấp / độ bền thấp / hành trang đầy) -> phù về thành; máu dưới Mức 1 -> uống
+##      thuốc hồi sinh lực trong túi (Mức 2: nhiều bình liền); hết thuốc -> ngồi thiền hồi máu khi không có địch gần.
 ##   2. Giữ vòng sáng + buff hỗ trợ (ra lại khi trạng thái đã hết).
-##   3. Chọn mục tiêu (lọc người/quái, ngũ hành, môn phái; ưu tiên Boss / thấp máu) rồi đánh, ngoài tầm thì tiếp cận (Truy đuổi).
-##   4. Không có mục tiêu: nhặt đồ trong phạm vi nhặt theo bộ lọc.
+##   3. Vừa hạ mục tiêu / đang đi nhặt: nhặt đồ trong phạm vi nhặt theo bộ lọc.
+##   4. Chọn mục tiêu (lọc người/quái, ngũ hành, môn phái; ưu tiên Boss / thấp máu) rồi đánh; ngoài tầm thì tiếp cận (Truy đuổi)
+##      THEO ĐƯỜNG TÌM ĐƯỢC (vòng qua vật cản, như bấm điểm trên bản đồ) — không có đường tới thì bỏ qua mục tiêu đó.
 ##   5. Rảnh: theo sau đội trưởng / về điểm đánh quanh / sang toạ độ kế tiếp.
 
 const THINK_INTERVAL := 0.15
@@ -19,8 +20,13 @@ const MANUAL_PAUSE := 1.5
 ## Đồ nhặt không được (đầy túi, luật nhặt tổ đội, kẹt đường) bỏ qua chừng này.
 const LOOT_SKIP_MS := 8000
 ## Đuổi 1 mục tiêu quá lâu mà không vào được tầm (kẹt vật cản) -> bỏ qua nó chừng này.
-const CHASE_GIVE_UP := 5.0
+const CHASE_GIVE_UP := 12.0
+## Đang đuổi / đi theo đội trưởng: tìm lại đường mỗi chừng này giây (mục tiêu di chuyển).
+const REPLAN_SEC := 0.5
 const TARGET_SKIP_MS := 6000
+## Đánh mục tiêu mà liên tiếp chừng này lần ra chiêu không làm nó mất máu (trượt, kẹt sau vật cản, đạn không tới...) -> bỏ qua
+## TARGET_SKIP_MS, tìm quái khác.
+const NO_DAMAGE_GIVE_UP := 4
 ## Đứng ở 1 toạ độ (Chạy toạ độ) mà quanh đó hết quái chừng này giây -> sang toạ độ kế.
 const ROUTE_IDLE_TIME := 3.0
 const ARRIVE_DISTANCE := 40.0
@@ -40,6 +46,8 @@ var _chasing := false
 var _chase_time := 0.0
 var _rescore := 0.0
 var _target_skip := {}       ## instance_id -> hết bỏ qua lúc (ms)
+var _no_damage := 0          ## số lần ra chiêu liên tiếp vào mục tiêu hiện tại mà nó không mất máu
+var _last_hp := INF          ## máu mục tiêu lúc ra chiêu lần trước (INF = chưa ra chiêu nào)
 var _loot: GroundDrop = null
 var _loot_skip := {}
 var _route_index := 0
@@ -47,6 +55,8 @@ var _route_idle := 0.0
 var _resting := false
 var _leader: Node2D = null
 var _leader_scan := 0.0
+var _replan := 0.0
+var _potion_ready_ms := 0
 
 func _init(owner_player: Node2D) -> void:
 	player = owner_player
@@ -69,6 +79,7 @@ func tick(delta: float, on: bool) -> void:
 		_chase_time += delta
 	_rescore -= delta
 	_leader_scan -= delta
+	_replan -= delta
 	_think -= delta
 	if _think > 0.0:
 		return
@@ -83,32 +94,29 @@ func tick(delta: float, on: bool) -> void:
 	_update_leader(s)
 	if _leader_far(s):
 		_drop_target()
+		_walk_towards(_leader)
 		return
 	if _keep_buffs(s):
+		return
+	## Nhặt đồ TRƯỚC khi chọn quái mới: vừa hạ xong mục tiêu (hoặc đang đi nhặt) thì nhặt hết đồ hợp thiết lập trong tầm nhặt
+	## rồi mới đánh tiếp — không thì chỗ quái đông Auto luôn có mục tiêu mới và không bao giờ nhặt.
+	if (_loot != null or not _target_alive(target)) and _tick_loot(s):
+		_drop_target()
 		return
 	_update_target(s)
 	if target != null:
 		_attack(s)
 		return
-	if _tick_loot(s):
-		return
 	_idle_move(s, THINK_INTERVAL)
 
-## Hướng chạy mỗi frame (sau điểm bấm / đi theo của Player): theo sau đội trưởng, hoặc tiếp cận mục tiêu đang đuổi.
+## Hướng chạy mỗi frame (sau điểm bấm / đi theo của Player) — auto không còn chạy thẳng (xem _chase / _follow_leader).
 func get_move_vector() -> Vector2:
 	if not running or Time.get_ticks_msec() < _paused_until_ms or _resting:
 		return Vector2.ZERO
 	if player.is_attacking or player.is_casting or player.status_controller.is_stunned:
 		return Vector2.ZERO
-	var s := settings()
-	if _leader_far(s):
-		return (_leader.global_position - player.global_position).normalized()
-	if not _chasing or not _target_alive(target):
-		return Vector2.ZERO
-	var d: Vector2 = target.global_position - player.global_position
-	if _logic_len(d) <= _stop_distance(s):
-		return Vector2.ZERO
-	return d.normalized()
+	## Đuổi mục tiêu / theo đội trưởng đi bằng lộ trình tìm đường (walk_to_feet ở _attack / tick) — không chạy thẳng.
+	return Vector2.ZERO
 
 ## Người chơi tự bấm phím / điểm trên bản đồ: tạm nhường tay.
 func on_manual_input() -> void:
@@ -160,6 +168,8 @@ func _drop_target() -> void:
 	target = null
 	_chasing = false
 	_chase_time = 0.0
+	_no_damage = 0
+	_last_hp = INF
 
 # ------------------------------------------------------------------ 1. hồi phục
 
@@ -176,7 +186,9 @@ func _tick_recovery(s: AutoSettings) -> bool:
 	if reason != "":
 		_use_tdp(s, reason)
 		return true
-	## Chưa có hệ thống bình thuốc: máu dưới Mức 1 thì ngồi thiền (hồi 0,3% máu/10 frame) khi quanh mình không có địch.
+	## Máu dưới Mức 1: uống thuốc (không chiếm lượt — vẫn đánh tiếp); hết thuốc thì ngồi thiền (dưới) khi quanh mình không có địch.
+	if not _resting and s.hp_on and hp_pct < s.hp_lv1:
+		_try_potion(s)
 	if _resting:
 		if not player.is_sitting():
 			_resting = false        ## bị đánh -> đã đứng dậy, đánh trả
@@ -185,7 +197,7 @@ func _tick_recovery(s: AutoSettings) -> bool:
 			player.toggle_sit()
 			_resting = false
 		return true
-	if s.hp_on and hp_pct < s.hp_lv1 and not _try_potion(s) and _find_target(s, true) == null:
+	if s.hp_on and hp_pct < s.hp_lv1 and not _has_potion(GameManager.local_profile) and _find_target(s, true) == null:
 		_drop_target()
 		if not player.is_sitting():
 			player.toggle_sit()
@@ -193,9 +205,60 @@ func _tick_recovery(s: AutoSettings) -> bool:
 		return _resting
 	return false
 
-## Bình thuốc chưa có trong game — chỗ móc khi làm vật phẩm tiêu hao (Mức 1 / Mức 2, số bình, mili giây).
-func _try_potion(_s: AutoSettings) -> bool:
+## Thuốc hồi sinh lực trong túi (như bấm "Dùng" ở Hành trang): máu dưới Mức 1 -> 1 bình mỗi hp_ms1 mili giây; dưới Mức 2 ->
+## hp_count2 bình liền mỗi hp_ms2. true = đang dùng thuốc (vừa uống / đang chờ tới lượt uống tiếp), false = không còn thuốc.
+## Thuốc nội lực (Mức nội lực): game chưa có nội lực tiêu hao (PotionEffect bỏ qua manapotion_v) nên chưa dùng.
+func _try_potion(s: AutoSettings) -> bool:
+	if not s.hp_on:
+		return false
+	var profile := GameManager.local_profile
+	if profile == null:
+		return false
+	var now := Time.get_ticks_msec()
+	if now < _potion_ready_ms:
+		return _has_potion(profile)
+	var hp_pct: float = player.health / maxf(player.max_health, 1.0) * 100.0
+	var urgent := hp_pct < s.hp_lv2
+	var used := 0
+	for i in (maxi(1, s.hp_count2) if urgent else 1):
+		if _drink_one(profile):
+			used += 1
+	if used == 0:
+		return false
+	_potion_ready_ms = now + (s.hp_ms2 if urgent else s.hp_ms1)
+	SaveManager.save_profile(profile)
+	return true
+
+func _has_potion(profile: PlayerProfile) -> bool:
+	for it in profile.inventory:
+		if PotionEffect.heals(it):
+			return true
 	return false
+
+## Uống 1 bình (bình hồi nhiều sinh lực nhất trong túi) — bỏ bình khỏi túi như InventoryPopup._use.
+func _drink_one(profile: PlayerProfile) -> bool:
+	var best := -1
+	var best_total := 0.0
+	for i in profile.inventory.size():
+		var it: ItemInstance = profile.inventory[i]
+		if not PotionEffect.heals(it):
+			continue
+		var total := 0.0
+		for e in it.get_base().get("effects", []):
+			if str(e[0]) == "lifepotion_v":
+				total += float(e[1]) * float(e[2])
+		if best < 0 or total > best_total:
+			best = i
+			best_total = total
+	if best < 0:
+		return false
+	var item: ItemInstance = profile.inventory[best]
+	if item.count > 1:
+		item.count -= 1
+	else:
+		profile.inventory.remove_at(best)
+	PotionEffect.drink(player, item)
+	return true
 
 ## Phù về thành. Chưa có vật phẩm Thổ Địa Phù / bản đồ thành thị: dừng auto tại chỗ + ghi chiến báo (an toàn hơn đứng chịu đòn).
 func _use_tdp(s: AutoSettings, reason: String) -> void:
@@ -283,7 +346,7 @@ func _cast_buff(skill: SkillDefinition) -> bool:
 # ------------------------------------------------------------------ 3. mục tiêu + đánh
 
 func _update_target(s: AutoSettings) -> void:
-	if _target_alive(target) and _accepts(target, s) and _rescore > 0.0:
+	if _target_alive(target) and _accepts(target, s) and _in_zone(target, s) and _rescore > 0.0:
 		if _chasing and _chase_time > CHASE_GIVE_UP:
 			_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
 		else:
@@ -347,9 +410,15 @@ func _accepts(e: Node2D, s: AutoSettings) -> bool:
 			return false
 	return true
 
-## Đánh quanh điểm / Chạy toạ độ: chỉ đánh địch trong vùng quanh điểm đó (không bị dụ chạy xa).
+## Đánh quanh điểm / Chạy toạ độ: chỉ đánh địch trong vùng quanh điểm đó (không bị dụ chạy xa) — kiểm tra cả lúc chọn lẫn suốt lúc
+## đánh/đuổi (quái chạy ra ngoài vùng thì thôi). Ngoại lệ tự vệ: con đang nhắm vào mình và đã ở trong tầm đòn chính thì vẫn đánh trả.
 func _in_zone(e: Node2D, s: AutoSettings) -> bool:
-	var feet: Vector2 = e.global_position + Vector2(0, VltkWorld.FEET_OFFSET)
+	if not _point_in_zone(e.global_position + Vector2(0, VltkWorld.FEET_OFFSET), s):
+		return e.has_method("is_engaging") and e.is_engaging(player) and _logic_dist(e) <= player.get_skill_radius(_attack_skill(s))
+	return true
+
+## Toạ độ chân `feet` có nằm trong vùng đánh (điểm Chạy toạ độ đang tới / điểm Đánh quanh điểm) không; không bật vùng nào = luôn có.
+func _point_in_zone(feet: Vector2, s: AutoSettings) -> bool:
 	if s.route_on and not s.route.is_empty():
 		var p: Vector2 = s.route[_route_index % s.route.size()]
 		return _logic_sq(feet - p) <= float(s.route_radius) * s.route_radius
@@ -361,10 +430,13 @@ func _attack(s: AutoSettings) -> void:
 	var skill := _attack_skill(s)
 	var radius: float = player.get_skill_radius(skill)
 	if _logic_dist(target) <= radius:
+		if _chasing and player.is_moving_to_target():
+			player.stop_walking()
 		_chasing = false
 		_chase_time = 0.0
 		if not _busy() and player.skill_controller.try_cast_loop(skill, player, target):
 			player.play_cast()
+			_check_damage()
 		return
 	if not s.chase:
 		_drop_target()
@@ -372,6 +444,36 @@ func _attack(s: AutoSettings) -> void:
 	if not _chasing:
 		_chasing = true
 		_chase_time = 0.0
+		_replan = 0.0
+	## Tiếp cận theo lộ trình tìm đường (vòng qua vật cản); mục tiêu di chuyển -> tìm lại mỗi REPLAN_SEC. Không có đường tới
+	## (sau tường kín, bên kia sông...) -> bỏ qua mục tiêu, chọn con khác ngay.
+	if not _walk_towards(target):
+		_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
+		_drop_target()
+		_rescore = 0.0
+
+## Đi tới chỗ đứng của `node` theo lộ trình tìm đường của map (như bấm điểm trên bản đồ). false = không có đường.
+func _walk_towards(node: Node2D) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	if _replan > 0.0 and player.is_moving_to_target():
+		return true
+	_replan = REPLAN_SEC
+	return player.walk_to_feet(VltkMath.ground_of(node))
+
+## Mỗi lần ra chiêu: so máu mục tiêu với lần ra chiêu trước (đòn trước đã kịp trúng hay chưa). Không giảm thì đếm 1 lần
+## "không lên dame"; đủ NO_DAMAGE_GIVE_UP lần liên tiếp -> bỏ qua mục tiêu này, tìm con khác. Mục tiêu không có máu để đọc: bỏ qua.
+func _check_damage() -> void:
+	if target == null or not ("health" in target):
+		return
+	var hp := float(target.health)
+	if _last_hp != INF:
+		_no_damage = 0 if hp < _last_hp else _no_damage + 1
+	_last_hp = hp
+	if _no_damage >= NO_DAMAGE_GIVE_UP:
+		_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
+		_drop_target()
+		_rescore = 0.0   ## chọn mục tiêu mới ngay lượt sau
 
 ## Chiêu đánh: ô Tấn công đầu tiên đã hồi xong; chưa ô nào hồi thì ô đầu; không đặt ô nào thì đòn chính (nút lớn).
 func _attack_skill(s: AutoSettings) -> SkillDefinition:
@@ -408,6 +510,8 @@ func _tick_loot(s: AutoSettings) -> bool:
 		var drop := node as GroundDrop
 		if drop == null or int(_loot_skip.get(drop.get_instance_id(), 0)) > now or not _wants(drop, s):
 			continue
+		if not _point_in_zone(drop.global_position, s):
+			continue       ## Đánh quanh điểm / Chạy toạ độ: đồ rơi ngoài vùng không nhặt (không bị kéo ra xa)
 		var d_sq := _logic_sq(drop.global_position - feet)
 		if d_sq <= best_sq:
 			best_sq = d_sq
@@ -422,8 +526,8 @@ func _tick_loot(s: AutoSettings) -> bool:
 		_loot = null
 	return true
 
-## Bộ lọc nhặt: tiền theo "Nhặt tiền vạn"; đồ: "Nhặt tất cả" lấy hết, không thì lấy đồ xanh/hoàng kim (Nhặt trang bị xanh)
-## và đồ khớp 1 dòng lọc thuộc tính (Tuỳ chọn lọc đồ khi nhặt).
+## Bộ lọc nhặt: tiền theo "Nhặt tiền vạn"; đồ: "Nhặt tất cả" lấy hết, không thì đạo cụ (thuốc, khoáng thạch, lệnh bài... — không
+## phải trang bị) theo "Nhặt đạo cụ", đồ xanh/hoàng kim (Nhặt trang bị xanh) và đồ khớp 1 dòng lọc thuộc tính (Tuỳ chọn lọc đồ khi nhặt).
 func _wants(drop: GroundDrop, s: AutoSettings) -> bool:
 	if drop.amount > 0:
 		return s.pick_money
@@ -432,6 +536,8 @@ func _wants(drop: GroundDrop, s: AutoSettings) -> bool:
 		return false
 	if s.pick_all:
 		return true
+	if item.is_misc():
+		return s.pick_props
 	if s.pick_blue and (item.is_gold() or not item.magic.is_empty()):
 		return true
 	return s.pick_filter and matches_filter(item, s.filter_rows)

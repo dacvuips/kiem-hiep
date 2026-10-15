@@ -32,8 +32,10 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	var dealt := {}
 	var final_damage := CombatFormulas.resolve_multi_damage(attacker_stats, defender_stats, defender_hp,
 			parts, attacker_element, mods, dealt)
+	## Trúng nhưng giáp / kháng nuốt hết sát thương: KNpc::CalcDamage gốc trả FALSE, ReceiveDamage vẫn coi là trúng (không hiện
+	## "trượt") — chỉ không mất máu. "Trượt" chỉ khi CheckHitTarget roll trượt (ở trên).
 	if final_damage < 0:
-		return MISSED
+		return 0
 
 	if status:
 		status.apply_vltk_hit(mods, dealt, defender_stats)

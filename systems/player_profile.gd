@@ -24,6 +24,8 @@ var fuyuan: int = 0
 var prestige: int = 0
 ## Điểm tích lũy Tống Kim (PL_BATTLEPOINT gốc): cộng dồn qua mọi trận chiến trường — chỉ battle server cộng (ProfileGuard giữ bản server).
 var songjin_points: int = 0
+## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): mã vật phẩm (misc_items) gán vào từng ô, "" = trống.
+var quick_items: Array = ["", "", "", ""]
 var world_rank: String = ""
 ## id trong SectDefinition. "" = VÔ MÔN PHÁI: nhân vật mới chỉ chọn hệ, đủ NEWBIE_LEVEL mới gia nhập 1 phái của hệ
 ## (SectPrompt, giống VLTK gốc) — trước đó chỉ có đánh thường, không có skill phái.
@@ -138,9 +140,35 @@ const LOOP_SLOT_COUNT := 1
 var loop_skill_ids: Array[String] = []
 ## Trang thanh skill đang chọn (0/1).
 var hotbar_page: int = 0
-## Vị trí các nút skill do người chơi tự sắp xếp: khoá ("main", "s0".."s7", "loop0") -> [dx, dy] = độ dời (pixel HUD) so với vị trí
+## Vị trí các nút skill do người chơi tự sắp xếp: khoá ("main", "s0".."s7", "loop0", nút tiện ích "sit" / "jump" / "horse") -> [dx, dy] = độ dời (pixel HUD) so với vị trí
 ## mặc định trong SkillBarUI.tscn. Thiếu khoá = đúng chỗ mặc định. Dùng chung cho cụm nút trong trận và bảng Kỹ Năng Võ Công.
 var skill_layout: Dictionary = {}
+## Ô trên cụm nút skill: bật / tắt + cỡ (bảng Kỹ năng -> Sắp xếp). Khoá như skill_layout -> {"on": bool, "size": tỉ lệ}.
+## Thiếu khoá = mặc định: DEFAULT_HIDDEN_SLOTS tắt, còn lại bật, cỡ 1.
+var skill_slots: Dictionary = {}
+const DEFAULT_HIDDEN_SLOTS := ["s4", "s5", "s7"]
+const SKILL_SLOT_MIN_SIZE := 0.6
+const SKILL_SLOT_MAX_SIZE := 1.6
+
+func is_skill_slot_on(key: String) -> bool:
+	var v: Variant = skill_slots.get(key)
+	if v is Dictionary and (v as Dictionary).has("on"):
+		return bool(v["on"])
+	return not DEFAULT_HIDDEN_SLOTS.has(key)
+
+func set_skill_slot_on(key: String, on: bool) -> void:
+	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	v["on"] = on
+	skill_slots[key] = v
+
+func get_skill_slot_size(key: String) -> float:
+	var v: Variant = skill_slots.get(key)
+	return clampf(float(v.get("size", 1.0)), SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE) if v is Dictionary else 1.0
+
+func set_skill_slot_size(key: String, size: float) -> void:
+	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	v["size"] = snappedf(clampf(size, SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE), 0.05)
+	skill_slots[key] = v
 
 func get_layout_offset(key: String) -> Vector2:
 	var v: Variant = skill_layout.get(key)
@@ -231,6 +259,8 @@ const MAX_BLACKLIST := 100
 var pk_value: int = 0
 ## Câu rao bán khi mở quầy bày bán.
 var stall_title: String = ""
+## Hàng mình đang treo ở CHỢ GIAO THƯƠNG khi chơi một mình (MarketBook listing dict). Online: chợ nằm ở server, mục này luôn rỗng.
+var market: Array = []
 ## Đồ web Admin tặng, CHƯA sinh thành món thật (web không có bộ sinh đồ): [{kind: "equip", detail, particular, level, series,
 ## magic: [cấp 6 dòng], luck, seed} | {kind: "gold", gold, perfection, seed}]. Game server sinh khi nhân vật vào map
 ## (apply_admin_grants) — seed cố định nên sinh lại vẫn ra đúng món đó. Hết chỗ trong hành trang thì để chờ lần sau.
@@ -823,6 +853,7 @@ func to_dict() -> Dictionary:
 		"fuyuan": fuyuan,
 		"prestige": prestige,
 		"songjin_points": songjin_points,
+		"quick_items": quick_items.duplicate(),
 		"world_rank": world_rank,
 		"sect_id": sect_id,
 		"sect_name": sect_name,
@@ -848,6 +879,7 @@ func to_dict() -> Dictionary:
 		"hotbar_skill_ids": hotbar_skill_ids,
 		"hotbar_page": hotbar_page,
 		"skill_layout": skill_layout,
+		"skill_slots": skill_slots.duplicate(true),
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
 		"skill_settings": skill_settings,
@@ -864,6 +896,7 @@ func to_dict() -> Dictionary:
 		"guild": guild,
 		"guild_join_after": guild_join_after,
 		"stall_title": stall_title,
+		"market": market.duplicate(true),
 		"friends": friends.duplicate(),
 		"blacklist": blacklist.duplicate(),
 		"pk_value": pk_value,
@@ -881,6 +914,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.fuyuan = int(data.get("fuyuan", 0))
 	profile.prestige = int(data.get("prestige", 0))
 	profile.songjin_points = int(data.get("songjin_points", 0))
+	var qi: Variant = data.get("quick_items", [])
+	for i in mini(profile.quick_items.size(), (qi as Array).size() if qi is Array else 0):
+		profile.quick_items[i] = str(qi[i])
 	profile.world_rank = str(data.get("world_rank", ""))
 	profile.sect_id = str(data.get("sect_id", ""))
 	profile.sect_name = str(data.get("sect_name", profile.sect_name))
@@ -934,6 +970,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var saved_layout: Variant = data.get("skill_layout", {})
 	if saved_layout is Dictionary:
 		profile.skill_layout = saved_layout.duplicate(true)
+	var saved_skill_slots: Variant = data.get("skill_slots", {})
+	if saved_skill_slots is Dictionary:
+		profile.skill_slots = saved_skill_slots.duplicate(true)
 	profile.active_aura_id = str(data.get("active_aura_id", ""))
 	profile.storage_extra = clampi(int(data.get("storage_extra", 0)), 0, 5)
 	profile.storage.bag_count = 1 + profile.storage_extra
@@ -946,6 +985,8 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var saved_guild: Variant = data.get("guild", {})
 	profile.guild = saved_guild.duplicate(true) if saved_guild is Dictionary else {}
 	profile.stall_title = str(data.get("stall_title", ""))
+	var saved_market: Variant = data.get("market", [])
+	profile.market = (saved_market as Array).duplicate(true) if saved_market is Array else []
 	profile.guild_join_after = int(data.get("guild_join_after", 0))
 	profile.friends = _name_list(data.get("friends", []), 100)
 	profile.blacklist = _name_list(data.get("blacklist", []), MAX_BLACKLIST)

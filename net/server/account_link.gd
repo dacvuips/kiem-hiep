@@ -27,6 +27,16 @@ func delete_guild(guild_name: String) -> Dictionary:
 	return await _call(HTTPClient.METHOD_DELETE, "/internal/game/guilds?server_id=%d&name=%s" % [server_id, guild_name.uri_encode()], {})
 
 ## grant_ids: quà chờ (Xu -> Nguyên bảo) đã cộng vào `data` — server tài khoản đánh dấu đã nhận cùng lúc lưu.
+## Chợ Giao Thương: mỗi món treo 1 dòng (id do game server sinh), data = listing MarketBook.
+func list_market() -> Dictionary:
+	return await _call(HTTPClient.METHOD_GET, "/internal/game/market?server_id=%d" % server_id, {})
+
+func save_market(id: String, data: Dictionary) -> Dictionary:
+	return await _call(HTTPClient.METHOD_PUT, "/internal/game/market", {"server_id": server_id, "id": id, "data": data})
+
+func delete_market(id: String) -> Dictionary:
+	return await _call(HTTPClient.METHOD_DELETE, "/internal/game/market?server_id=%d&id=%s" % [server_id, id.uri_encode()], {})
+
 func save_character(character_id: int, version: int, data: Dictionary, grant_ids: Array = []) -> Dictionary:
 	return await _call(HTTPClient.METHOD_PUT, "/internal/game/characters/%d" % character_id,
 		{"version": version, "data": data, "grant_ids": grant_ids})
@@ -36,6 +46,12 @@ func report_battle(state: Dictionary) -> void:
 	var r: Dictionary = await _call(HTTPClient.METHOD_POST, "/internal/game/battle", state)
 	if not r.ok:
 		push_warning("Báo trạng thái chiến trường lỗi: %s" % r.get("message", ""))
+
+## Đấu trường PK: báo danh sách phòng + địa chỉ server đấu trường — popup PK đọc qua GET /v1/arena.
+func report_arena(state: Dictionary) -> void:
+	var r: Dictionary = await _call(HTTPClient.METHOD_POST, "/internal/game/arena", state)
+	if not r.ok:
+		push_warning("Báo trạng thái đấu trường lỗi: %s" % r.get("message", ""))
 
 func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()

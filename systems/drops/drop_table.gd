@@ -81,6 +81,42 @@ static func roll_blue_boss(monster_level: int, series: int) -> Array:
 				out.append({"type": "item", "item": item})
 	return out
 
+## ĐỊA NGỤC (map 11x / 12x của Vượt Ải, độ khó `stars` 1-5): như bảng 10x nhưng
+##   - tỉ lệ rơi TRANG BỊ XANH nhân `stars` lần (boss xanh: số lần rơi nhân `stars`);
+##   - cấp đồ: 10x = cấp 8-10 (như bảng 10x), 11x = cấp 9-10, 12x = cấp 10;
+##   - mỗi món có stars/5 cơ hội ĐỦ dòng magic (5 sao = 100% đủ dòng); thuộc tính từng dòng vẫn ngẫu nhiên.
+## Đây là THIẾT KẾ của game này (gốc không có map Địa Ngục).
+static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := false) -> Array:
+	stars = clampi(stars, 1, 5)
+	var t: Array = (TIERS[10] as Array).duplicate()
+	t[2] = clampi(monster_level / 10 - 2, 8, 10)     ## 100 -> 8, 110 -> 9, 120 -> 10
+	var out: Array = []
+	if blue_boss:
+		for i in BOSS_DROPS * stars:
+			if randf() < 0.3:
+				out.append({"type": "money", "amount": randi_range(t[0], t[1]) * stars})
+			elif randf() < 0.6:
+				var item := _roll_blue_item(t, series, _hell_lines(stars, BOSS_LINES[10]))
+				if item != null:
+					out.append({"type": "item", "item": item})
+		return out
+	var sel := randi_range(0, 15)
+	if sel > 6:
+		return out
+	if sel == 2:
+		out.append({"type": "money", "amount": randi_range(t[0], t[1]) * stars})
+	elif sel == 4 and randf() < float(stars) / BLUE_ITEM_ONE_IN:
+		var item := _roll_blue_item(t, series, _hell_lines(stars, [t[5], t[6]]))
+		if item != null:
+			out.append({"type": "item", "item": item})
+	return out
+
+## Số dòng magic của đồ Địa Ngục: stars/5 cơ hội đủ ItemInstance.MAX_MAGIC dòng, còn lại ngẫu nhiên trong `normal` [min, max].
+static func _hell_lines(stars: int, normal: Array) -> int:
+	if randf() < float(stars) / 5.0:
+		return ItemInstance.MAX_MAGIC
+	return randi_range(int(normal[0]), int(normal[1]))
+
 static func _roll_blue_item(t: Array, series: int, lines: int = -1) -> ItemInstance:
 	var level := randi_range(t[2], t[3])
 	if lines < 0:
@@ -88,11 +124,18 @@ static func _roll_blue_item(t: Array, series: int, lines: int = -1) -> ItemInsta
 	var magic_levels := []
 	for i in lines:
 		magic_levels.append(level)
-	## Một số loại cụ thể trong KindItem không có món ở cấp này trong bảng đồ của game -> thử vài lần.
-	for attempt in 12:
+	## Một số loại cụ thể trong KindItem không có món ở cấp này trong bảng đồ của game -> thử vài lần. Đòi ĐỦ dòng (Địa Ngục):
+	## bộ sinh có thể dừng sớm khi không bốc được dòng hợp lệ -> sinh lại tới khi đủ (giữ món nhiều dòng nhất phòng khi không được).
+	var full := lines >= ItemInstance.MAX_MAGIC
+	var best: ItemInstance = null
+	for attempt in (60 if full else 12):
 		var kind: Array = KIND_ITEM[randi_range(0, KIND_ITEM.size() - 1)]
 		var particular := randi_range(kind[1], kind[2])
 		var item := ItemGenerator.generate(kind[0], particular, level, series, magic_levels, t[4])
-		if item != null:
+		if item == null:
+			continue
+		if not full or item.magic.size() >= lines:
 			return item
-	return null
+		if best == null or item.magic.size() > best.magic.size():
+			best = item
+	return best
