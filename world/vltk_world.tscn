@@ -4,4 +4,4 @@
 
 [node name="VltkWorld" type="Node2D"]
 script = ExtResource("1_world")
-map_dir = "res://world/main_map"
+map_dir = "res://world/maps/map_321"

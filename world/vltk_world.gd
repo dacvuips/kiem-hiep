@@ -10,7 +10,7 @@ class_name VltkWorld
 ##
 ## Chỉ có 1 VltkWorld trong cây tại 1 thời điểm (biến tĩnh `current`). Main.load_stage() gọi setup_stage().
 
-@export_dir var map_dir: String = "res://world/main_map"
+@export_dir var map_dir: String = "res://world/maps/map_321"
 
 ## Khoảng từ tâm node (Player/Enemy) xuống chân — Avatar đặt ở y = 30 trong player.tscn.
 const FEET_OFFSET := 30.0
@@ -28,7 +28,10 @@ var map: VltkMap
 ## Ô vuông màn chơi hiện tại (toạ độ pixel map). size = 0 nghĩa là chưa có màn.
 var arena_rect := Rect2()
 var arena_border: ArenaBorder
+## Điểm hồi sinh "Về thành dưỡng sức" (chiến trường: hậu doanh phe mình). INF = giữa ô màn chơi / điểm xuất phát của map.
+var respawn_point := Vector2.INF
 var _nav: AStarGrid2D   ## lưới tìm đường CHỈ trong ô vuông (sao từ lưới vật cản của map)
+var _graph: NavGraph    ## map chính chia khối: tìm đường dài toàn map (tầng thô), null = không có
 
 ## VltkMap của game: bản gốc (world/VltkMap.gd, do tool map xuất — bị ghi đè mỗi lần cập nhật map) cộng thêm 3 việc, đặt ở ĐÂY
 ## để không mất khi cập nhật map:
@@ -61,6 +64,59 @@ class SortedMap extends VltkMap:
 	var _intent_time := 0.0
 	var lookahead_enabled := true         ## tắt để so sánh / máy rất yếu
 
+	## Khối map nạp xong ở luồng phụ: bản gốc đánh dấu phải dựng lại CẢ lưới tìm đường (vài chục ms, chạy nhanh thì liên tục). Khối nằm
+	## trong lưới đã được đọc đồng bộ lúc dựng lưới (_chunk_regions) nên khối đến sau luôn ở ngoài lưới -> không cần dựng lại.
+	func _install_chunk(k: String, regs: Dictionary) -> void:
+		var was_dirty := _nav_dirty
+		super(k, regs)
+		_nav_dirty = was_dirty
+
+	## Dựng lưới tìm đường quanh vùng `c` — như bản gốc nhưng tô cả ĐOẠN ô bị chặn liền nhau (fill_solid_region theo cột) thay vì từng
+	## ô một: ít lệnh gọi hơn nhiều, bớt khựng khi chạy nhanh qua nhiều vùng.
+	func _update_nav(c: Vector2i) -> void:
+		if not chunk_mode:
+			return
+		var half := maxi(1, nav_radius_regions / 2)
+		if not _nav_dirty and absi(c.x - _nav_center.x) <= half and absi(c.y - _nav_center.y) <= half:
+			return
+		_nav_dirty = false
+		_nav_center = c
+		var r := nav_radius_regions
+		grid.region = Rect2i((c.x - r) * 16, (c.y - r) * 32, (2 * r + 1) * 16, (2 * r + 1) * 32)
+		grid.update()
+		for ry in range(c.y - r, c.y + r + 1):
+			for rx in range(c.x - r, c.x + r + 1):
+				var regs := _chunk_regions(chunk_of(rx, ry))
+				var d = regs.get("%d,%d" % [rx, ry])
+				if d == null:                  ## không có vùng: không ai đi vào
+					grid.fill_solid_region(Rect2i(rx * 16, ry * 32, 16, 32), true)
+					continue
+				var runs: Array = (d as Dictionary).get("ob", [])
+				var i := 0
+				var j := 0
+				while j + 1 < runs.size():
+					var n := int(runs[j + 1])
+					if (int(runs[j]) >> 4) != 0:
+						var q := i
+						var end := mini(i + n, 512)
+						while q < end:               ## ô q = (q / 32, q % 32): đoạn liền nhau nằm dọc 1 cột
+							var y := q % 32
+							var length := mini(end - q, 32 - y)
+							grid.fill_solid_region(Rect2i(rx * 16 + q / 32, ry * 32 + y, 1, length), true)
+							q += length
+					i += n
+					j += 2
+		_nav_dirty = false
+
+	## Dời lưới tìm đường gần về đúng vùng của `world_pos` ngay (đã đúng thì thôi) — đường dài tìm tiếp đoạn sau từ đây.
+	func recenter_nav(world_pos: Vector2) -> void:
+		if not chunk_mode:
+			return
+		var c := world_to_region(world_pos - global_position)
+		if c != _nav_center:
+			_nav_dirty = true
+			_update_nav(c)
+
 	## Báo cho map biết người chơi định đi tới `world_pos` (chạm/bấm đích, mini map...) để nạp trước các vùng dọc đường tới đó.
 	func set_intent(world_pos: Vector2) -> void:
 		_intent = world_pos
@@ -92,11 +148,9 @@ class SortedMap extends VltkMap:
 						out["%d,%d" % [v.x, v.y]] = v
 		return out
 
+	## Thông tin vùng lấy qua VltkMap.region_info() (map chia khối không còn danh sách mọi vùng trong map.json).
 	func _index_regions() -> void:
-		if not _region_index.is_empty():
-			return
-		for r in data["regions"]:
-			_region_index[Vector2i(int(r[0]), int(r[1]))] = r
+		pass
 
 	## Nạp ĐỒNG BỘ các vùng quanh `world_pos` ngay lúc vào màn (đang là lúc "tải") để khung đầu tiên không bị đen.
 	func warm_up(world_pos: Vector2, radius: int = 2) -> void:
@@ -110,8 +164,9 @@ class SortedMap extends VltkMap:
 				var key := "%d,%d" % [v.x, v.y]
 				if _done.has(key):
 					continue
-				if _region_index.has(v):
-					_show_region(v.x, v.y, _region_index[v])
+				var inf := region_info(v)
+				if not inf.is_empty():
+					_show_region(v.x, v.y, inf)
 				_done[key] = v
 
 	func _process(delta: float) -> void:
@@ -124,6 +179,7 @@ class SortedMap extends VltkMap:
 		var cam := vp.get_camera_2d()
 		var view := vp.get_visible_rect().size / (cam.zoom if cam else Vector2.ONE)
 		var c := world_to_region(focus.global_position - global_position)
+		stream_tick(c)              ## map chia khối: nạp khối quanh nhân vật ở luồng phụ + lưới tìm đường đi theo nhân vật
 		var rx := ceili(view.x * 0.5 / 512.0) + MARGIN_REGIONS
 		var ry := ceili(view.y * 0.5 / 512.0) + MARGIN_REGIONS
 		## Vận tốc làm mượt (nhảy vị trí > 3000px/giây = dịch chuyển, bỏ qua) + hết hạn / tới nơi thì bỏ ý định.
@@ -158,7 +214,7 @@ class SortedMap extends VltkMap:
 					if _done.has(key) or _pending.has(key):
 						continue
 					var v := Vector2i(x, y)
-					if not _region_index.has(v):
+					if region_info(v).is_empty():
 						_done[key] = v          ## ngoài map / vùng trống
 						continue
 					todo.append([(x - c.x) * (x - c.x) + (y - c.y) * (y - c.y), v])
@@ -166,7 +222,7 @@ class SortedMap extends VltkMap:
 				var av: Vector2i = ahead[key]
 				if _done.has(key) or _pending.has(key):
 					continue
-				if not _region_index.has(av):
+				if region_info(av).is_empty():
 					continue
 				todo.append([1000 + (av.x - c.x) * (av.x - c.x) + (av.y - c.y) * (av.y - c.y), av])
 			todo.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
@@ -180,23 +236,20 @@ class SortedMap extends VltkMap:
 
 	## Gửi yêu cầu nạp nền + mọi ảnh vật thể của vùng sang luồng phụ.
 	func _request(v: Vector2i) -> void:
-		var info: Array = _region_index[v]
+		var info: Array = region_info(v)
 		var paths: Array[String] = []
 		if ground_mode == "tiles" and int(info[2]) == 1:
 			paths.append(map_dir.path_join("tiles/%d_%d.%s" % [v.x, v.y, tile_ext]))
 		if int(info[3]) == 1:
-			var f := FileAccess.open(map_dir.path_join("regions/%d_%d.json" % [v.x, v.y]), FileAccess.READ)
-			if f:
-				var parsed: Variant = JSON.parse_string(f.get_as_text())
-				if parsed is Dictionary:
-					for o in parsed["objects"]:
-						var p := map_dir.path_join(str(o["img"]))
-						if not paths.has(p):
-							paths.append(p)
-					for c in parsed.get("covers", []):         ## nền dạng atlas: cover là sprite rời
-						var cp := map_dir.path_join(str(c[0]))
-						if not paths.has(cp):
-							paths.append(cp)
+			var parsed := region_doc(v.x, v.y)              ## regions/X_Y.json hoặc mục của vùng trong file khối
+			for o in parsed.get("objects", []):
+				var p := map_dir.path_join(str(o["img"]))
+				if not paths.has(p):
+					paths.append(p)
+			for c in parsed.get("covers", []):         ## nền dạng atlas: cover là sprite rời
+				var cp := map_dir.path_join(str(c[0]))
+				if not paths.has(cp):
+					paths.append(cp)
 		var need: Array[String] = []
 		for p in paths:
 			if _tex_cache.has(p):
@@ -275,20 +328,17 @@ class SortedMap extends VltkMap:
 	func _is_real_monster(n: Dictionary) -> bool:
 		return str(n.get("role", "")) == "monster" and not MonsterData.monster(int(n.get("t", -1))).is_empty()
 
+	## Quái thật do override này sinh -> bản gốc bỏ qua chúng.
+	func _spawn_filter(n: Dictionary) -> bool:
+		return not _is_real_monster(n)
+
 	func _spawn_npcs(rx: int, ry: int, made: Array) -> void:
-		var all := npcs
-		var rest: Array = []
-		for n in all:
-			if not _is_real_monster(n):
-				rest.append(n)
-		npcs = rest
 		var before := made.size()
 		super._spawn_npcs(rx, ry, made)      ## NPC, sinh vật nền, quái không có dữ liệu mẫu
-		npcs = all
 		for i in range(before, made.size()):
 			_add_shadow(made[i])
-		for n in all:
-			if int(n["rx"]) == rx and int(n["ry"]) == ry and _is_real_monster(n):
+		for n in region_npcs(rx, ry):
+			if _is_real_monster(n):
 				var m := _spawn_monster(n)
 				if m != null:
 					made.append(m)
@@ -426,10 +476,19 @@ static func find_path(from_feet: Vector2, to_feet: Vector2) -> PackedVector2Arra
 	if w == null or w._nav == null:
 		return PackedVector2Array([to_feet])
 	(w.map as SortedMap).set_intent(to_feet)     ## nạp trước các vùng dọc đường tới đích
+	last_path_continues = false
+	last_route_ahead = PackedVector2Array()
 	var a := w._nav_free_cell(w.map.world_to_cell(from_feet))
-	var b := w._nav_free_cell(w.map.world_to_cell(to_feet))
+	var goal_cell := w.map.world_to_cell(to_feet)
+	## Map chính: đích ngoài lưới gần (hoặc lưới gần không có đường) -> lộ trình thô trên toàn map (NavGraph).
+	if w._graph != null and w.arena_rect.size == Vector2.ZERO and w._graph.is_ready():
+		if not w._nav.is_in_boundsv(goal_cell):
+			return w._find_long_path(from_feet, to_feet, a)
+	var b := w._nav_free_cell(goal_cell)
 	last_path_partial = false
 	var raw := w._nav.get_point_path(a, b)
+	if raw.is_empty() and a != b and w._graph != null and w.arena_rect.size == Vector2.ZERO and w._graph.is_ready():
+		return w._find_long_path(from_feet, to_feet, a)   ## bị chia cắt trong lưới gần: có thể phải vòng ra ngoài
 	if raw.is_empty() and a != b:
 		## Đích nằm ở vùng bị vật cản (sông, tường) chia cắt: đi tới ô GẦN đích nhất mà đi tới được.
 		var near: Vector2i = w._nearest_reachable(a, b)
@@ -448,15 +507,100 @@ static func find_path(from_feet: Vector2, to_feet: Vector2) -> PackedVector2Arra
 	if w._line_clear(from_feet, to_feet) and not last_path_partial and w._nav.is_in_boundsv(w.map.world_to_cell(to_feet)) 			and not w._blocked_at(to_feet):
 		return PackedVector2Array([to_feet])
 	pts[pts.size() - 1] = to_feet if (not last_path_partial and not w._blocked_at(to_feet)) else pts[pts.size() - 1]
+	return w._smooth(pts)
+
+## Bó đường: bỏ các điểm trung gian khi nhìn thẳng tới được (pts[0] = điểm xuất phát, không có trong kết quả).
+func _smooth(all_pts: Array[Vector2]) -> PackedVector2Array:
+	## Bỏ trước các điểm nằm thẳng hàng (đường ô lưới dài hàng trăm điểm, chỉ chỗ RẼ mới cần xét) — bớt hẳn số lần _line_clear.
+	var pts: Array[Vector2] = [all_pts[0]]
+	for k in range(1, all_pts.size() - 1):
+		var d1 := (all_pts[k] - pts[pts.size() - 1]).normalized()
+		var d2 := (all_pts[k + 1] - all_pts[k]).normalized()
+		if d1.dot(d2) < 0.999:
+			pts.append(all_pts[k])
+	if all_pts.size() > 1:
+		pts.append(all_pts[all_pts.size() - 1])
 	var out := PackedVector2Array()
 	var i := 0
 	while i < pts.size() - 1:
 		var j := pts.size() - 1
-		while j > i + 1 and not w._line_clear(pts[i], pts[j]):
+		while j > i + 1 and not _line_clear(pts[i], pts[j]):
 			j -= 1
 		out.append(pts[j])
 		i = j
 	return out
+
+## true = find_path() lần gần nhất chỉ trả ĐOẠN ĐẦU của đường dài (tới mép lưới gần): đi hết đoạn thì gọi lại find_path() tới cùng đích.
+static var last_path_continues := false
+## Phần lộ trình thô còn lại sau đoạn đầu (điểm CHÂN, cuối = đích) — chỉ để vẽ đường chấm trên bản đồ.
+static var last_route_ahead := PackedVector2Array()
+
+const LONG_PATH_MAX_TRIES := 4
+const LONG_PATH_MARGIN_REGIONS := 1   ## chỉ nhắm nút thô cách mép lưới gần >= chừng này vùng (mép lưới có thể chưa đúng)
+
+## Đường dài: A* trên đồ thị toàn map (NavGraph) tìm lộ trình thô — vòng khắp map, không chỉ nhắm thẳng hướng đích — rồi A* ô lưới tới nút
+## thô cuối cùng của phần lộ trình còn nằm liền trong lưới gần. Nhân vật đi hết đoạn này thì tìm tiếp (lưới gần đã dời theo nhân vật).
+func _find_long_path(from_feet: Vector2, to_feet: Vector2, a: Vector2i) -> PackedVector2Array:
+	var goal_cell := map.world_to_cell(to_feet)
+	var goal_near := _nav.is_in_boundsv(goal_cell)
+	var start_node := _graph.node_at(a, _region_reach(a))
+	var goal_node := _graph.node_at(_nav_free_cell(goal_cell) if goal_near else goal_cell,
+			_region_reach(_nav_free_cell(goal_cell)) if goal_near else {})
+	var ids := _graph.route(start_node, goal_node)
+	if ids.size() < 2:
+		return PackedVector2Array()
+	last_path_partial = ids[ids.size() - 1] != goal_node
+	var reg := _nav.region.grow_individual(-LONG_PATH_MARGIN_REGIONS * 16, -LONG_PATH_MARGIN_REGIONS * 32,
+			-LONG_PATH_MARGIN_REGIONS * 16, -LONG_PATH_MARGIN_REGIONS * 32)
+	## Chỉ xét PHẦN ĐẦU LIỀN MẠCH của lộ trình trong lưới gần: lộ trình có thể ra khỏi lưới, vòng xa rồi quay lại — nút ở đoạn quay lại
+	## không tới được nếu chỉ đi trong lưới. Nhắm nút cuối của phần đầu đó (thử lùi vài nút nếu A* ô lưới không tới được).
+	var last_in := 0
+	while last_in + 1 < ids.size() and reg.has_point(_graph.node_cell(ids[last_in + 1])):
+		last_in += 1
+	if last_in == 0:
+		last_in = 1   ## nút kế đã ngoài vùng an toàn (sát mép lưới): vẫn thử đi tới nó
+	var tries := 0
+	for k in range(last_in, 0, -1):
+		var c := _graph.node_cell(ids[k])
+		if not _nav.is_in_boundsv(c) or _nav.is_point_solid(c):
+			continue
+		tries += 1
+		if tries > LONG_PATH_MAX_TRIES:
+			break
+		var at_goal := k == ids.size() - 1 and not last_path_partial and goal_near
+		var target := _nav_free_cell(goal_cell) if at_goal else c
+		var raw := _nav.get_point_path(a, target)
+		if raw.is_empty():
+			continue
+		var pts: Array[Vector2] = [from_feet]
+		for i in range(1, raw.size()):
+			pts.append(raw[i] + map.cell * 0.5)
+		if at_goal and not _blocked_at(to_feet):
+			pts.append(to_feet)
+		if pts.size() < 2:
+			continue
+		last_path_continues = not at_goal
+		for j in range(k + 1, ids.size()):
+			last_route_ahead.append(_graph.node_position(ids[j]))
+		if last_path_continues and not last_path_partial:
+			last_route_ahead.append(to_feet)
+		return _smooth(pts)
+	return PackedVector2Array()
+
+## Các ô (Vector2i) đi tới được từ `c` (loang 4 hướng trên lưới gần) mà vẫn trong vùng 512x512 chứa `c` — để biết `c` thuộc mảng đất nào.
+func _region_reach(c: Vector2i) -> Dictionary:
+	var r0 := Vector2i(floori(float(c.x) / 16.0) * 16, floori(float(c.y) / 32.0) * 32)
+	var box := Rect2i(r0, Vector2i(16, 32))
+	var seen := {c: true}
+	var stack: Array[Vector2i] = [c]
+	while not stack.is_empty():
+		var p: Vector2i = stack.pop_back()
+		for step in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = p + step
+			if box.has_point(n) and not seen.has(n) and _nav.is_in_boundsv(n) and not _nav.is_point_solid(n):
+				seen[n] = true
+				stack.append(n)
+	return seen
 
 const LOS_STEP := 8.0
 const LOS_CLEARANCE := 7.0   ## nhân vật "dày" chừng này pixel mỗi bên khi đi sát tường
@@ -512,11 +656,41 @@ func setup_main_map() -> void:
 	if arena_border != null:
 		arena_border.queue_free()
 		arena_border = null
-	_nav = map.grid   ## tìm đường trên cả map (lưới vật cản gốc)
+	_nav = map.grid   ## tìm đường trên cả map (lưới vật cản gốc; map chia khối: lưới đi theo nhân vật)
+	if _graph == null and map.chunk_mode:
+		_graph = NavGraph.load_for(map_dir, map.cell)   ## đường dài toàn map (dựng ở luồng phụ)
+	## Tìm kiểu "nhảy cóc" (JPS): lưới gần ~225 nghìn ô, nhanh hơn ~3 lần, đường gần như y hệt (đã bó thẳng sau đó).
+	_nav.jumping_enabled = true
+	map.prepare_around(_default_center())   ## map chia khối: nạp khối + lưới tìm đường ở chỗ xuất hiện trước khi tìm ô trống
 	if player != null:
 		player.global_position = _free_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+
+## Giữ nhân vật trong `rect` (toạ độ pixel map, rìa sáng như ô màn chơi) — chiến trường: doanh trại lúc chưa khai chiến.
+## Rect2() = bỏ giới hạn. Không dựng lại lưới tìm đường: chỉ chặn ở rìa (clamp_to_arena).
+func set_confine(rect: Rect2) -> void:
+	if rect == arena_rect:
+		return
+	arena_rect = rect
+	if not rect.has_area():
+		if arena_border != null:
+			arena_border.queue_free()
+			arena_border = null
+		return
+	if arena_border == null:
+		arena_border = ArenaBorder.new()
+		arena_border.name = "ArenaBorder"
+		add_child(arena_border)
+	arena_border.position = rect.get_center()
+	arena_border.setup(rect.size, Color(0.98, 0.62, 0.30))
+
+## Đưa nhân vật về điểm xuất phát (hồi sinh "Về thành dưỡng sức"): giữa ô vuông màn chơi nếu có, không thì điểm xuất phát của map.
+func place_at_start(node: Node2D) -> void:
+	var center := respawn_point if respawn_point != Vector2.INF else (arena_rect.get_center() if arena_rect.has_area() else _default_center())
+	map.prepare_around(center)
+	node.global_position = _free_position_near(center) - Vector2(0, FEET_OFFSET)
+	(map as SortedMap).warm_up(node.global_position)
 
 ## Dựng VltkMap lần đầu: phải có `focus` TRƯỚC khi vào cây, nếu không nạp cả nghìn vùng.
 func _ensure_map(player: Node2D) -> void:
@@ -562,6 +736,8 @@ static func random_edge_spawn() -> Vector2:
 ## Tâm khu chơi của map: tâm vùng có nền gần tâm hình chữ nhật các vùng nhất.
 func _default_center() -> Vector2:
 	var data := map.data
+	if data.has("start"):                   ## map chia khối: vùng xuất hiện do tool map chọn sẵn
+		return (Vector2(float(data["start"][0]), float(data["start"][1])) + Vector2(0.5, 0.5)) * 512.0
 	var rect: Array = data.get("rect", [0, 0, 1, 1])
 	var center := Vector2((float(rect[0]) + float(rect[2]) + 1.0) * 0.5, (float(rect[1]) + float(rect[3]) + 1.0) * 0.5) * 512.0
 	var best := center

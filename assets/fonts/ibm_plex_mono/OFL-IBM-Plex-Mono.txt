@@ -1,0 +1,4 @@
+IBM Plex Mono (Regular 400) — Copyright © 2017 IBM Corp. with Reserved Font Name "Plex".
+Licensed under the SIL Open Font License, Version 1.1 — https://openfontlicense.org
+IBMPlexMono-Regular-vi.ttf = gộp 3 file woff2 (latin, latin-ext, vietnamese) lấy từ bản Võ Lâm Idle công khai (site/fonts, gốc Google Fonts).
+Gộp bằng tools/merge_plex_mono_font.py.
