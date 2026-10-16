@@ -68,8 +68,27 @@ func _ready() -> void:
 	check("ui: chợ dựng được + có thẻ hàng", market != null and market._grid.get_child_count() > 0)
 	var bag_n := p.inventory.size()
 	var listed: ItemInstance = p.inventory[0]
-	var sold := OfflineMarket.handle(p, "sell", {"uid": listed.uid, "price": 50000, "cur": MarketBook.CUR_GOLD})
+	## Nội dung rao: server làm sạch (xuống dòng / ký tự điều khiển -> dấu cách, gộp khoảng trắng, tối đa NOTE_MAX ký tự)
+	check("rao: làm sạch xuống dòng + ký tự điều khiển", MarketBook.clean_note("  Bán
+rẻ	 lắm  ") == "Bán rẻ lắm", MarketBook.clean_note("  Bán
+rẻ	 lắm  "))
+	check("rao: cắt tối đa %d ký tự" % MarketBook.NOTE_MAX, MarketBook.clean_note("x".repeat(500)).length() == MarketBook.NOTE_MAX)
+	var long_note := "Đồ xịn đủ dòng, ai cần liên hệ ngay, giá thương lượng được cho anh em cùng bang — chỉ bán trong tuần này thôi nhé!"
+	var sold := OfflineMarket.handle(p, "sell", {"uid": listed.uid, "price": 50000, "cur": MarketBook.CUR_GOLD, "note": long_note})
 	check("chợ: treo bán -> món rời hành trang, vào Của Tôi", bool(sold.ok) and not p.inventory.has(listed) and p.market.size() == 1)
+	var my_listing: Dictionary = OfflineMarket.book(p).of_seller(OfflineMarket.SELF_SID)[0]
+	check("rao: lưu kèm món treo (đã làm sạch, cắt độ dài)", str(my_listing.get("note", "")) == MarketBook.clean_note(long_note), my_listing.get("note"))
+	var card := market._card(listed, my_listing, true)
+	add_child(card)
+	await frames()
+	var note_line := card.find_child("NoteLine", true, false) as Label
+	check("rao: hàng dưới mỗi thẻ hiện 1 dòng nội dung rao, dài thì …", note_line != null and note_line.text == str(my_listing.note)
+		and note_line.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS and note_line.autowrap_mode == TextServer.AUTOWRAP_OFF)
+	card.queue_free()
+	var nb := MarketWindow._note_box(str(my_listing.note))
+	check("rao: khung chi tiết hiện đầy đủ trong viền nét đứt", nb is DashedBox and nb.find_children("*", "Label", true, false).any(
+		func(lb: Label) -> bool: return lb.text == str(my_listing.note) and lb.autowrap_mode != TextServer.AUTOWRAP_OFF))
+	check("rao: không có nội dung thì không thêm khung", MarketWindow._note_box("  ") == null)
 	var mine := OfflineMarket.handle(p, "mine", {})
 	var back := OfflineMarket.handle(p, "cancel", {"id": str(mine["items"][0]["id"])})
 	check("chợ: huỷ treo -> món về hành trang", bool(back.ok) and p.market.is_empty() and p.inventory.size() == bag_n)
@@ -78,9 +97,47 @@ func _ready() -> void:
 	var pick: Dictionary = offers["items"][0]
 	var bought := OfflineMarket.handle(p, "buy", {"id": str(pick["id"])})
 	check("chợ: mua hàng người chơi giả -> trừ tiền, thêm món", bool(bought.ok) and p.gold == gold_before - int(pick["price"]) and p.inventory.size() == bag_n + 1)
+	check("chợ: danh sách có phân trang (%d món / trang)" % MarketBook.PAGE_SIZE, (offers["items"] as Array).size() <= MarketBook.PAGE_SIZE
+		and int(offers.get("pages", 0)) >= 1 and int(offers.get("total", -1)) >= (offers["items"] as Array).size(), str([offers.get("pages"), offers.get("total")]))
+	## Xem món của người khác -> nút "Tán gẫu" -> khung chat lớn bên trái, kênh Riêng tới người bán
+	market._inspect(pick)
+	await frames()
+	var detail := get_tree().root.find_children("*", "ItemDetailPopup", true, false)
+	var chat_btn: Button = null
+	for pop in detail:
+		for b in pop.find_children("*", "Button", true, false):
+			if (b as Button).text == "Tán gẫu":
+				chat_btn = b
+	check("chợ: xem món người khác có nút Tán gẫu", chat_btn != null)
+	if chat_btn:
+		chat_btn.pressed.emit()
+		await frames()
+		var cp := get_tree().root.find_children("*", "ChatPanel", true, false)
+		check("Tán gẫu: mở khung chat lớn, kênh Riêng tới người bán", cp.size() == 1 and (cp[0] as ChatPanel)._to.visible
+			and (cp[0] as ChatPanel)._to.text == str(pick.get("seller", "")), str(cp.size()))
+		if cp.size() == 1:
+			(cp[0] as ChatPanel)._input.text = "chào bạn"
+			(cp[0] as ChatPanel)._send()   ## offline: chỉ kênh Gần -> báo lỗi, không gửi
+			(cp[0] as ChatPanel)._on_tab(ChatServer.NEAR)
+			(cp[0] as ChatPanel)._input.text = "chào cả nhà"
+			(cp[0] as ChatPanel)._send()
+			check("Tán gẫu: offline gửi kênh Gần vào lịch sử", ChatPanel.history.any(func(m: Dictionary) -> bool: return str(m.text) == "chào cả nhà"))
+			(cp[0] as ChatPanel).queue_free()
+			await frames()
 	market._show_tab(MarketWindow.Tab.TRADE)
 	await frames()
 	check("ui: chợ tab Giao Dịch có người quanh đây", market._near_box.get_child_count() > 0)
+	market.close_requested.emit()
+	await frames()
+	## Đã đăng nhập nhân vật (đang ở Hub, chưa vào map) -> tab Giao Dịch hiện ID của mình
+	var saved_id := SaveManager.online_character_id
+	SaveManager.online_character_id = 4321
+	market = MarketWindow.open(self, p)
+	market._show_tab(MarketWindow.Tab.TRADE)
+	await frames()
+	var id_label := market.find_child("MyId", true, false) as Label
+	check("ui: tab Giao Dịch hiện ID của mình khi đã đăng nhập", id_label != null and id_label.text == "4321")
+	SaveManager.online_character_id = saved_id
 	market.close_requested.emit()
 	await frames()
 
@@ -216,6 +273,10 @@ func _ready() -> void:
 	partner.stall_open = false
 	partner.invite_accept_rate = 1.0
 	partner.haggle = 0.9
+	## Người chơi giả sinh ngẫu nhiên — túi có thể đầy / thiếu tiền -> giao dịch không chốt được ("Hành trang của đối phương không đủ
+	## chỗ"), test chập chờn. Cho túi trống + đủ tiền để test đúng luồng Đồng ý -> Xác nhận.
+	partner.bag = ItemContainer.new(10, 6, 1)
+	partner.gold = 100_000_000
 	var terr := hub.start_trade(partner)
 	check("ui: bắt đầu giao dịch", terr == "", terr)
 	if terr == "":

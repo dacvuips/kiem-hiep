@@ -296,7 +296,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			## Bấm trúng quái / người chơi khác = CHỌN làm mục tiêu đánh (hiện vòng đỏ xoay dưới chân), không chạy tới điểm bấm.
 			var picked := pick_target_at(get_global_mouse_position())
 			if picked != null:
-				set_target(picked)
+				set_target(picked, true)
 				## Bấm vào người chơi khác: hiện menu (Tán gẫu / Hảo hữu / Tổ đội / Theo sau / Tin tức / Cừu sát / Sổ đen).
 				if picked is RemotePlayer:
 					PlayerMenu.open(self, picked as RemotePlayer, get_viewport().get_mouse_position())
@@ -323,6 +323,9 @@ const TARGET_CLICK_HALF_WIDTH := 36.0
 const TARGET_DEFAULT_HEIGHT := 60.0
 const TARGET_LOSE_RADIUS := 1200.0   ## xa hơn mức này (theo chuẩn logic dọc nhân đôi) thì bỏ mục tiêu
 var selected_target: Node2D = null
+## true = mục tiêu do NGƯỜI CHƠI bấm chọn; false = tự chọn theo chiêu vừa đánh trúng (mark_cast_target). Auto chỉ ưu tiên tuyệt đối
+## mục tiêu người chơi bấm — không thì đòn đầu tiên của chính Auto khoá cứng mục tiêu, bỏ qua thiết lập ưu tiên Boss / ít máu.
+var target_by_player := false
 var _target_ring: TargetRing
 
 ## Mục tiêu dưới điểm bấm `world_pos` (toạ độ thế giới); gần nhất tính tới giữa thân. null = bấm vào chỗ trống.
@@ -351,9 +354,12 @@ func _is_valid_target(node: Node2D) -> bool:
 		return false
 	return not (node.has_method("is_dead") and node.call("is_dead"))
 
-func set_target(node: Node2D) -> void:
+func set_target(node: Node2D, by_player := false) -> void:
 	if node == selected_target:
+		if by_player:
+			target_by_player = true
 		return
+	target_by_player = by_player
 	_clear_ring()
 	selected_target = node
 	if node == null:
@@ -373,6 +379,11 @@ func _clear_ring() -> void:
 	if _target_ring != null and is_instance_valid(_target_ring):
 		_target_ring.queue_free()
 	_target_ring = null
+
+## Mục tiêu NGƯỜI CHƠI tự bấm chọn (còn hợp lệ); null nếu không có hoặc chỉ là mục tiêu tự chọn theo chiêu đánh trúng.
+func get_player_chosen_target() -> Node2D:
+	var t := get_selected_target()
+	return t if t != null and target_by_player else null
 
 ## Mục tiêu đang chọn nếu còn hợp lệ (còn sống, chưa quá xa); không thì tự bỏ chọn và trả null.
 func get_selected_target() -> Node2D:

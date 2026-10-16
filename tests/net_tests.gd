@@ -14,6 +14,16 @@ var _pass := 0
 var _fail := 0
 var _bots: Array[BotClient] = []
 
+var _skip := 0
+## Server tài khoản đang bật DEV_TRUST_CLIENT_SAVES (máy dev, nút TEST): lưu HTTP được phép ghi nguyên dữ liệu game gửi -> các ca
+## chống gian lận khi lưu HTTP không áp dụng (server/test.sh đặt biến này theo server/.env).
+var DEV_TRUST_SAVES := OS.get_environment("DEV_TRUST_CLIENT_SAVES").to_lower() in ["true", "1"]
+
+## Ca không áp dụng trong cấu hình hiện tại: in SKIP kèm lý do, không tính đạt / hỏng.
+func skip(name: String, why: String) -> void:
+	_skip += 1
+	print("SKIP ", name, "  (", why, ")")
+
 func check(name: String, cond: bool, detail: Variant = "") -> void:
 	if cond:
 		_pass += 1
@@ -30,7 +40,7 @@ func _ready() -> void:
 	await run()
 	for b in _bots:
 		b.close()
-	print("RESULT %d/%d" % [_pass, _pass + _fail])
+	print("RESULT %d/%d%s" % [_pass, _pass + _fail, " (bỏ qua %d)" % _skip if _skip > 0 else ""])
 	get_tree().quit(1 if _fail > 0 else 0)
 
 ## Chờ tới khi cond() đúng hoặc hết giờ.
@@ -60,21 +70,37 @@ func make_player(tag: String) -> Array:
 	return [token, int(c.get("id", 0))]
 
 func http(method: String, path: String, body: Dictionary, token := "") -> Dictionary:
-	var h := HTTPRequest.new()
-	add_child(h)
-	var headers := ["Content-Type: application/json"]
-	if token != "":
-		headers.append("Authorization: Bearer " + token)
-	if method == "GET":
-		h.request(API + path, headers, HTTPClient.METHOD_GET)
-	else:
-		h.request(API + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
-	var res: Array = await h.request_completed
-	h.queue_free()
-	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
-	return d if d is Dictionary else {}
+	## Server tài khoản giới hạn yêu cầu / phút theo IP (RATE_LIMIT_IP_PER_MIN — giữ nguyên, là lớp bảo vệ): chạy liền nhiều bài
+	## test tạo hàng chục tài khoản bot thì bị 429 -> chờ rồi thử lại (tối đa ~1 phút).
+	for attempt in 30:
+		var h := HTTPRequest.new()
+		add_child(h)
+		var headers := ["Content-Type: application/json"]
+		if token != "":
+			headers.append("Authorization: Bearer " + token)
+		if method == "GET":
+			h.request(API + path, headers, HTTPClient.METHOD_GET)
+		else:
+			h.request(API + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+		var res: Array = await h.request_completed
+		h.queue_free()
+		if int(res[1]) == 429:
+			await get_tree().create_timer(2.0).timeout
+			continue
+		var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+		return d if d is Dictionary else {}
+	return {}
 
 ## B2: quái do server điều khiển.
+## Đánh quái `m` tới chết. Server cắt mỗi đòn theo trần của nhân vật (ProfileGuard.max_hit — nhân vật mới cấp 10: MIN_CAP) và tối đa
+## MAX_DAMAGE_PER_SEC đòn / giây -> quái cấp 100 (~32000 máu theo script cấp gốc) cần ~110 đòn: gửi ~25 đòn / giây, tối đa 12 giây.
+func _kill(b: BotClient, m: int) -> void:
+	for i in 300:
+		if not b.known.has(m) or int(b.known[m].get("hp", 100)) == 0:
+			return
+		b.damage(m, 100000)
+		await get_tree().create_timer(0.04).timeout
+
 func test_monsters(p: BotClient) -> void:
 	## Đi tới gần 1 bãi quái (dịch chuyển dần, đúng tốc độ) để chắc chắn thấy quái.
 	check("thấy quái của server", await wait_until(func() -> bool: return p.nearest_monster() != 0, 3.0) or await _walk_to_monsters(p),
@@ -108,12 +134,7 @@ func test_monsters(p: BotClient) -> void:
 	## Sát thương từ quá xa không tính.
 	var hp_before := int(p.known[m].get("hp", 100))
 	p.move_to(p.feet)
-	## Đánh tới chết (trần mỗi đòn theo cấp: 2000).
-	for i in 60:
-		if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
-			break
-		p.damage(m, 1999)
-		await get_tree().create_timer(0.08).timeout
+	await _kill(p, m)
 	check("quái mất máu theo sát thương", hp_before == 100, hp_before)
 	check("nhận thưởng khi hạ quái (S_KILL)", await wait_until(func() -> bool:
 		return p.kills.any(func(k: Dictionary) -> bool: return int(k.eid) == m), 5.0), p.kills)
@@ -134,11 +155,7 @@ func test_items(p: BotClient, info: Array) -> void:
 			if m == 0:
 				break
 		await _walk(p, (p.known[m].pos as Vector2) + Vector2(30, 0))
-		for i in 80:
-			if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
-				break
-			p.damage(m, 100000)
-			await get_tree().create_timer(0.06).timeout
+		await _kill(p, m)
 		await wait_until(func() -> bool: return not p.drops.is_empty(), 1.5)
 	check("server rớt đồ khi hạ quái (S_DROPS)", not p.drops.is_empty(), p.drops.size())
 	var gold_got := 0
@@ -194,11 +211,7 @@ func test_trade_and_stall() -> void:
 		await _walk_to_monsters(x)
 		m = x.nearest_monster()
 	await _walk(x, (x.known[m].pos as Vector2) + Vector2(30, 0))
-	for i in 80:
-		if not x.known.has(m) or int(x.known[m].get("hp", 100)) == 0:
-			break
-		x.damage(m, 100000)
-		await get_tree().create_timer(0.06).timeout
+	await _kill(x, m)
 	await wait_until(func() -> bool: return x.drops.size() >= 2, 3.0)
 	for id in x.drops.keys():
 		x.pickup(id)
@@ -287,8 +300,11 @@ func test_trade_and_stall() -> void:
 	var uids2 := []
 	for it in ry2.data.get("inventory", []):
 		uids2.append(str(it.uid))
-	check("C2: lưu HTTP ngoài map không tăng được tiền", int(ry2.data.gold) == 5, ry2.data.gold)
-	check("C2: lưu HTTP ngoài map không thêm được đồ lạ", not uids2.has("cafebabecafebabe"), uids2)
+	if DEV_TRUST_SAVES:
+		skip("C2: lưu HTTP ngoài map không tăng được tiền / thêm đồ lạ", "server tài khoản bật DEV_TRUST_CLIENT_SAVES — máy thật phải tắt")
+	else:
+		check("C2: lưu HTTP ngoài map không tăng được tiền", int(ry2.data.gold) == 5, ry2.data.gold)
+		check("C2: lưu HTTP ngoài map không thêm được đồ lạ", not uids2.has("cafebabecafebabe"), uids2)
 
 ## C3: tổ đội thật — lập đội, mời, xin vào, chia kinh nghiệm, luật nhặt đồ, rời / giải tán.
 func test_team() -> void:
@@ -322,11 +338,7 @@ func test_team() -> void:
 	await _walk(r, spot + Vector2(0, -20))
 	var q_exp := q.exp_gained
 	var r_exp := r.exp_gained
-	for i in 80:
-		if not p.known.has(m) or int(p.known[m].get("hp", 100)) == 0:
-			break
-		p.damage(m, 100000)
-		await get_tree().create_timer(0.06).timeout
+	await _kill(p, m)
 	check("C3: đồng đội trong tầm được chia kinh nghiệm", await wait_until(func() -> bool: return q.exp_gained > q_exp and r.exp_gained > r_exp, 3.0),
 		[q.exp_gained, r.exp_gained])
 	## Luật nhặt "đội trưởng nhặt": Q không nhặt được đồ rơi của P.
@@ -477,17 +489,10 @@ func test_relations() -> void:
 	b.view_equip(a.eid)
 	await get_tree().create_timer(0.4).timeout
 	check("Tin tức: xem liên tục bị chặn", b.view_snap.is_empty())
-	## Cừu sát: dưới cấp 10 là Tân thủ (tên trắng) — không cừu sát được
-	check("Tân thủ: nhân vật mới cấp 1 thuộc phe Tân thủ", int(a.known_camp(b.eid)) == Camp.Type.BEGIN, a.known.get(b.eid))
-	a.declare_enmity(b.eid)
-	check("Cừu sát: Tân thủ không cừu sát được", await wait_until(func() -> bool:
-		return a.notices.any(func(n: String) -> bool: return n.contains("Tân thủ")), 3.0) and a.enmity.is_empty(), a.notices)
-	a.say(ChatServer.NEAR, "/testlevel 10")
-	await get_tree().create_timer(1.1).timeout   ## chat chờ giữa 2 lần nói
-	b.say(ChatServer.NEAR, "/testlevel 10")
-	check("Tân thủ: đủ cấp 10 thì đổi phe theo phái, người xung quanh nhận S_CAMP", await wait_until(func() -> bool:
-		return int(a.known_camp(b.eid)) != Camp.Type.BEGIN and int(b.known_camp(a.eid)) != Camp.Type.BEGIN, 3.0),
-		[a.known.get(b.eid), b.known.get(a.eid)])
+	## Quà tân thủ nâng nhân vật mới lên StarterKit.START_LEVEL (= hết Tân thủ, đủ cấp chọn phái) ngay lần vào map đầu: người xung quanh
+	## thấy đúng cấp + phe theo phái (không còn Tân thủ tên trắng), nên cừu sát được ngay.
+	check("Quà tân thủ: nhân vật mới hiện cấp %d, phe theo phái" % StarterKit.START_LEVEL,
+		int(a.known.get(b.eid, {}).get("level", 0)) == StarterKit.START_LEVEL and int(a.known_camp(b.eid)) != Camp.Type.BEGIN, a.known.get(b.eid))
 	a.pvp_hit(b.eid, 10, 20)
 	await get_tree().create_timer(0.4).timeout
 	check("Cừu sát: chưa tuyên bố thì đòn không tới", b.pvp_hits.is_empty())
@@ -739,3 +744,98 @@ func run() -> void:
 	await test_relations()
 	await test_shop()
 	await test_saved_position()
+	await test_hub_market()
+	if OS.get_environment("NET_TEST_RESTART") == "1":   ## LÀM TẮT game server thử — chỉ server/test.sh bật, chạy cuối cùng
+		await test_graceful_restart()
+
+## Kết nối SẢNH (Character Hub, NetProto.HELLO_HUB): không có nhân vật trên map (không ai thấy, không di chuyển được) nhưng Chợ chạy
+## thật: món người này treo, người khác (tài khoản khác) thấy cùng 1 sổ chợ — đồng bộ, không phải hàng giả sinh trên từng máy.
+func _market_reply(b: BotClient, from: int, op: String, timeout := 4.0) -> Dictionary:
+	await wait_until(func() -> bool:
+		for i in range(from, b.market_msgs.size()):
+			if b.market_msgs[i].get("op") == op:
+				return true
+		return false, timeout)
+	for i in range(from, b.market_msgs.size()):
+		if b.market_msgs[i].get("op") == op:
+			return b.market_msgs[i]
+	return {}
+
+func test_hub_market() -> void:
+	var i1 := await make_player("h")
+	var i2 := await make_player("k")
+	var iw := await make_player("w")
+	var w := bot(iw[0], iw[1])
+	var h1 := BotClient.new()
+	h1.start(HOST, PORT, i1[0], i1[1], true)
+	_bots.append(h1)
+	var h2 := BotClient.new()
+	h2.start(HOST, PORT, i2[0], i2[1], true)
+	_bots.append(h2)
+	var ok := await wait_until(func() -> bool: return h1.in_world and h2.in_world and w.in_world and not h1.profile.is_empty(), 8.0)
+	check("Sảnh: vào bằng kết nối sảnh, nhận hồ sơ nhân vật", ok, [h1.error_message, h2.error_message])
+	if not ok:
+		return
+	await get_tree().create_timer(1.0).timeout
+	check("Sảnh: người trên map không thấy người ở sảnh", not w.known.has(h1.eid) and not w.known.has(h2.eid))
+	check("Sảnh: người ở sảnh không thấy ai / quái nào", h1.known.is_empty(), h1.known.size())
+	h1.move_to(h1.feet + Vector2(40, 0))   ## gói di chuyển từ sảnh bị bỏ qua
+	await get_tree().create_timer(0.5).timeout
+	check("Sảnh: gửi di chuyển không làm hiện ra trên map", not w.known.has(h1.eid))
+	## Treo 1 món từ sảnh của tài khoản 1
+	var uid := ""
+	for it in h1.profile.get("inventory", []):
+		if int(it.get("lock", 0)) == 0:
+			uid = str(it.get("uid", ""))
+			break
+	var n1 := h1.market_msgs.size()
+	h1.market("sell", {"uid": uid, "price": 4321, "cur": MarketBook.CUR_GOLD})
+	var sold := await _market_reply(h1, n1, "done")
+	check("Sảnh: treo bán được từ sảnh", bool(sold.get("ok", false)), sold)
+	## Tài khoản 2 (sảnh) xem chợ: thấy đúng món đó của tài khoản 1
+	await get_tree().create_timer(0.3).timeout
+	var n2 := h2.market_msgs.size()
+	h2.market("list", {"filter": {}, "page": 0})
+	var lst := await _market_reply(h2, n2, "list")
+	var mine := (lst.get("items", []) as Array).filter(func(l: Dictionary) -> bool:
+		return str(l.get("seller", "")) == h1.name and int(l.get("price", 0)) == 4321)
+	check("Chợ đồng bộ: tài khoản khác thấy món vừa treo (cùng 1 sổ chợ trên server)", not mine.is_empty(), [h1.name, (lst.get("items", []) as Array).size()])
+	check("Chợ: phân trang %d món / trang" % MarketBook.PAGE_SIZE, int(lst.get("pages", 0)) >= 1 and (lst.get("items", []) as Array).size() <= MarketBook.PAGE_SIZE
+		and int(lst.get("total", -1)) >= (lst.get("items", []) as Array).size(), [lst.get("page"), lst.get("pages"), lst.get("total")])
+	## Dọn: huỷ treo
+	if not mine.is_empty():
+		await get_tree().create_timer(0.3).timeout
+		var n3 := h1.market_msgs.size()
+		h1.market("cancel", {"id": str(mine[0].get("id", ""))})
+		var cancelled := await _market_reply(h1, n3, "done")
+		check("Chợ: huỷ treo từ sảnh, món về hành trang", bool(cancelled.get("ok", false)), cancelled)
+	h1.close()
+	h2.close()
+	w.close()
+
+## Khởi động lại êm (lệnh web Admin; ở đây /testrestart): báo đếm ngược, chặn người mới, LƯU dữ liệu chưa lưu rồi mới mời ra.
+func test_graceful_restart() -> void:
+	var info := await make_player("r")
+	var late_info := await make_player("l")
+	var r := bot(info[0], info[1])
+	if not await wait_until(func() -> bool: return r.in_world, 8.0):
+		check("Khởi động lại: bot vào map", false, r.error_message)
+		return
+	var gold0 := int(r.profile.get("gold", 0))
+	r.say(ChatServer.NEAR, "/testgold 777")   ## thay đổi CHƯA lưu (server lưu định kỳ mỗi 60 giây)
+	await wait_until(func() -> bool: return int(r.profile.get("gold", 0)) == gold0 + 777, 4.0)
+	await get_tree().create_timer(1.1).timeout   ## chat chờ giữa 2 lần nói
+	r.say(ChatServer.NEAR, "/testrestart 4")
+	check("Khởi động lại: người đang chơi nhận thông báo đếm ngược", await wait_until(func() -> bool:
+		return r.notices.any(func(n: String) -> bool: return n.contains("khởi động lại")), 3.0), r.notices.slice(-2))
+	var late := bot(late_info[0], late_info[1])
+	check("Khởi động lại: người mới không vào được trong lúc đếm ngược", await wait_until(func() -> bool:
+		return late.error_code != "" or late.in_world, 5.0) and late.error_code == "maintenance", [late.error_code, late.in_world])
+	check("Khởi động lại: hết giờ thì mời người chơi ra (maintenance)", await wait_until(func() -> bool: return r.error_code == "maintenance", 15.0),
+		r.error_code)
+	var saved := -1
+	var lst := await http("GET", "/v1/characters?server_id=1", {}, info[0])
+	for ch in lst.get("characters", []):
+		if int(ch.id) == int(info[1]):
+			saved = int(ch.data.get("gold", -1))
+	check("Khởi động lại: thay đổi chưa lưu đã được LƯU trước khi tắt", saved == gold0 + 777, [saved, gold0 + 777])

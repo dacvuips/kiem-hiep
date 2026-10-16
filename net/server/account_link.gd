@@ -53,6 +53,17 @@ func report_arena(state: Dictionary) -> void:
 	if not r.ok:
 		push_warning("Báo trạng thái đấu trường lỗi: %s" % r.get("message", ""))
 
+## Phòng train chung Vượt Ải: báo danh sách phòng + địa chỉ field server — màn Vượt Ải đọc qua GET /v1/field (tìm phòng theo ID).
+func report_field(state: Dictionary) -> void:
+	var r: Dictionary = await _call(HTTPClient.METHOD_POST, "/internal/game/field", state)
+	if not r.ok:
+		push_warning("Báo trạng thái phòng train chung lỗi: %s" % r.get("message", ""))
+
+## Nhịp tim vận hành (web Admin › Máy chủ): báo trạng thái tiến trình; trả {ok, settings: {exp_mult, drop_item_mult, drop_money_mult},
+## command: {id, action: "restart", seconds, message} | không có}.
+func heartbeat(state: Dictionary) -> Dictionary:
+	return await _call(HTTPClient.METHOD_POST, "/internal/game/heartbeat", state)
+
 func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()
 	http.timeout = 10.0

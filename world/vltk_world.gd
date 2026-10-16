@@ -362,7 +362,7 @@ class SortedMap extends VltkMap:
 			m.level = int(hell.get("level", m.level))
 			m.hell_stars = clampi(int(hell.get("stars", 1)), 1, MapCatalog.HELL_MAX_STARS)
 		m.ai_enabled = true
-		m.blue_boss = randf() < DropTable.BLUE_BOSS_CHANCE   ## như script Revive gốc: mỗi lần sinh / sinh lại có ~2% thành boss xanh
+		m.blue_boss = randf() < DropTable.BLUE_BOSS_CHANCE   ## mỗi lần sinh / sinh lại có BLUE_BOSS_CHANCE (0,5%) thành boss xanh
 		m.position = Vector2(float(n["px"]), float(n["py"]))
 		m.set_meta("npc", n)
 		m.died.connect(_on_monster_died.bind(n))
@@ -668,7 +668,7 @@ func setup_main_map() -> void:
 	_nav.jumping_enabled = true
 	map.prepare_around(_default_center())   ## map chia khối: nạp khối + lưới tìm đường ở chỗ xuất hiện trước khi tìm ô trống
 	if player != null:
-		player.global_position = _free_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
+		player.global_position = _open_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
 
@@ -694,7 +694,8 @@ func set_confine(rect: Rect2) -> void:
 func place_at_start(node: Node2D) -> void:
 	var center := respawn_point if respawn_point != Vector2.INF else (arena_rect.get_center() if arena_rect.has_area() else _default_center())
 	map.prepare_around(center)
-	node.global_position = _free_position_near(center) - Vector2(0, FEET_OFFSET)
+	var free_area := respawn_point != Vector2.INF or arena_rect.has_area()   ## điểm định sẵn (hậu doanh / ô màn chơi) giữ nguyên
+	node.global_position = (_free_position_near(center) if free_area else _open_position_near(center)) - Vector2(0, FEET_OFFSET)
 	(map as SortedMap).warm_up(node.global_position)
 
 ## Dựng VltkMap lần đầu: phải có `focus` TRƯỚC khi vào cây, nếu không nạp cả nghìn vùng.
@@ -769,6 +770,14 @@ func _free_position_near(point: Vector2) -> Vector2:
 				if _clear_around(c):
 					return map.cell_to_world(c)
 	return point
+
+## Như _free_position_near nhưng chỉ nhận ô thông ra vùng rộng (MapGrid.find_open_cell) — không đặt nhân vật vào "ốc đảo" bị vật cản
+## bao kín giữa map (VD khối đá giữa Đại Lý phủ).
+func _open_position_near(point: Vector2) -> Vector2:
+	var g: AStarGrid2D = map.grid
+	var c := MapGrid.find_open_cell(map.world_to_cell(point), func(cell: Vector2i) -> bool:
+		return g.is_in_boundsv(cell) and not g.is_point_solid(cell))
+	return map.cell_to_world(c) if c != Vector2i(-1, -1) else _free_position_near(point)
 
 func _clear_around(c: Vector2i) -> bool:
 	for dx in range(-2, 3):

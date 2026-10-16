@@ -22,8 +22,6 @@ var mp_lv2 := 2
 var mp_count2 := 2
 var mp_ms2 := 1000
 # ---- Hồi phục: Dùng Thổ Địa Phù (phù về thành) ----
-var tdp_low_hp_on := true
-var tdp_low_hp := 35
 var tdp_low_dura_on := true
 var tdp_low_dura := 5
 var tdp_no_hp_potion := true
@@ -119,7 +117,7 @@ static func pk_default() -> AutoSettings:
 
 ## Các khoá lưu = tên biến (trừ toạ độ cần đổi Vector2 <-> mảng).
 const _KEYS := ["hp_on", "hp_lv1", "hp_ms1", "hp_lv2", "hp_count2", "hp_ms2", "mp_on", "mp_lv1", "mp_ms1", "mp_lv2", "mp_count2",
-	"mp_ms2", "tdp_low_hp_on", "tdp_low_hp", "tdp_low_dura_on", "tdp_low_dura", "tdp_no_hp_potion", "tdp_no_mp_potion",
+	"mp_ms2", "tdp_low_dura_on", "tdp_low_dura", "tdp_no_hp_potion", "tdp_no_mp_potion",
 	"tdp_bag_full", "use_double_exp", "use_skill_speed", "use_luck", "use_pk_clear", "use_tonic",
 	"attack_skills", "support_skills", "aura_skills", "scan_range", "approach", "target_players", "target_monsters",
 	"prefer_boss", "chase", "prefer_low_hp", "element_filter_on", "elements", "sect_filter_on", "sects",

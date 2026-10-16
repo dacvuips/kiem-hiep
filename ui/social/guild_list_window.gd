@@ -35,9 +35,9 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 	var sec := SocialUi.info_box("📜 Bang hội đang tuyển người")
 	if wait > 0:
 		sec[1].add_child(SocialUi.label("Mới rời bang — còn %d giờ nữa mới xin vào bang khác được." % int(ceil(wait / 3600.0)), SocialUi.WARN, 13))
-	if NetClient.is_in_world() and NetWorldSync.current != null:
+	if NetClient.is_in_world() and NetSocial.current != null:
 		## Online: danh sách bang thật từ server (S_GUILD_LIST).
-		var list: Array = NetWorldSync.current.guild_list
+		var list: Array = NetSocial.current.guild_list
 		if list.is_empty():
 			sec[1].add_child(SocialUi.label("Chưa có bang hội nào trên máy chủ (hoặc đang tải).", SocialUi.MUTED, 13))
 		for g in list:

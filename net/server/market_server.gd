@@ -56,7 +56,10 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 	match str(a.get("op", "")):
 		"list":
 			var f: Variant = a.get("filter", {})
-			_reply(c, {"op": "list", "items": book.query(f if f is Dictionary else {}, t), "now": t})
+			var res := book.query(f if f is Dictionary else {}, t, int(a.get("page", 0)))
+			res["op"] = "list"
+			res["now"] = t
+			_reply(c, res)
 		"mine":
 			_settle(c)
 			_send_mine(c, t)
@@ -64,7 +67,7 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 			if c.trade:
 				_done(c, "Đang giao dịch, không treo bán được.")
 				return
-			var r := book.sell(c.profile, sid, str(a.get("uid", "")), int(a.get("price", 0)), int(a.get("cur", 0)), t)
+			var r := book.sell(c.profile, sid, str(a.get("uid", "")), int(a.get("price", 0)), int(a.get("cur", 0)), t, str(a.get("note", "")))
 			if r[0] != "":
 				_done(c, r[0])
 				return

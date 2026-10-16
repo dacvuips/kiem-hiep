@@ -105,6 +105,11 @@ func use_slot(i: int) -> void:
 		if player.has_method("notify"):
 			player.notify("Đã hết %s" % str(ItemDatabase.get_misc(_mid(i)).get("name", "thuốc")))
 		return
+	var blocked := PotionEffect.block_reason(item)
+	if blocked != "":
+		if player.has_method("notify"):
+			player.notify(blocked)
+		return
 	if not PotionEffect.consume(p, player, item):
 		return
 	_last_use = _now()

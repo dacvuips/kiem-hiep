@@ -6,7 +6,7 @@ class_name AutoController
 ## GroundDrop như nhấp chuột — nên khi chơi online server vẫn kiểm tra mọi thứ y như người thật bấm.
 ##
 ## Mỗi THINK_INTERVAL giây quyết định 1 lần, theo thứ tự ưu tiên:
-##   1. Hồi phục: điều kiện Thổ Địa Phù (máu thấp / độ bền thấp / hành trang đầy) -> phù về thành; máu dưới Mức 1 -> uống
+##   1. Hồi phục: điều kiện Thổ Địa Phù (độ bền thấp / hành trang đầy) -> phù về thành; máu dưới Mức 1 -> uống
 ##      thuốc hồi sinh lực trong túi (Mức 2: nhiều bình liền); hết thuốc -> ngồi thiền hồi máu khi không có địch gần.
 ##   2. Giữ vòng sáng + buff hỗ trợ (ra lại khi trạng thái đã hết).
 ##   3. Vừa hạ mục tiêu / đang đi nhặt: nhặt đồ trong phạm vi nhặt theo bộ lọc.
@@ -177,9 +177,7 @@ func _drop_target() -> void:
 func _tick_recovery(s: AutoSettings) -> bool:
 	var hp_pct: float = player.health / maxf(player.max_health, 1.0) * 100.0
 	var reason := ""
-	if s.tdp_low_hp_on and hp_pct < s.tdp_low_hp:
-		reason = "Sinh lực dưới %d%%" % s.tdp_low_hp
-	elif s.tdp_low_dura_on and _lowest_durability_pct() < s.tdp_low_dura:
+	if s.tdp_low_dura_on and _lowest_durability_pct() < s.tdp_low_dura:
 		reason = "Độ bền trang bị thấp"
 	elif s.tdp_bag_full and _bag_full():
 		reason = "Hành trang đầy"
@@ -366,6 +364,7 @@ func _find_target(s: AutoSettings, threat_only: bool) -> Node2D:
 	var best_score := INF
 	var scan_sq := float(s.scan_range) * s.scan_range
 	var main_radius: float = player.get_skill_radius(_attack_skill(s))
+	var chosen: Node2D = player.get_player_chosen_target()
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Node2D
 		if e == null or not _target_alive(e) or not _accepts(e, s):
@@ -386,8 +385,8 @@ func _find_target(s: AutoSettings, threat_only: bool) -> Node2D:
 			score += float(e.get("health")) / maxf(float(e.get("max_health")), 1.0) * 1e12
 		if s.prefer_boss and e.get("blue_boss") == true:
 			score -= 1e15
-		if e == player.get_selected_target():
-			score -= 1e16       ## người chơi tự chọn mục tiêu: đánh nó trước
+		if e == chosen:
+			score -= 1e16       ## người chơi tự bấm chọn mục tiêu: đánh nó trước
 		if score < best_score:
 			best_score = score
 			best = e

@@ -179,6 +179,9 @@ static func gold_index_of_row(row: int) -> int:
 ## ---- Vật phẩm KHÔNG phải trang bị (misc_items.json: thuốc, khoáng thạch, lệnh bài...) ----
 ## Mã "genre_detail_particular" (thuốc thêm "_cấp") — ItemInstance lưu mã này (không lưu chỉ số) để nhập lại dữ liệu không lệch.
 const MISC_PATH := "res://data/items/misc_items.json"
+## Thuốc Tống Kim (tools/import_vltk_songjin_potions.py): nạp chung bảng vật phẩm khác với nguồn "songjin" — giá "points" = điểm tích
+## lũy Tống Kim (PlayerProfile.songjin_points), "money" = lượng; mỗi bình 1 ô; "songjin_only" = chỉ dùng trong chiến trường.
+const SONGJIN_PATH := "res://data/items/songjin_potions.json"
 static var _misc: Dictionary = {}
 
 ## ~2.4MB — chỉ nạp khi thật sự cần (tạo/hiện vật phẩm khác).
@@ -186,6 +189,14 @@ static func get_misc(misc_id: String) -> Dictionary:
 	if _misc.is_empty():
 		for m in _load_json(MISC_PATH):
 			_misc[str(m["id"])] = m
+		for m in _load_json(SONGJIN_PATH):
+			var rec: Dictionary = (m as Dictionary).duplicate(true)
+			rec["source"] = "songjin"
+			rec["intro"] = str(m.get("desc", ""))
+			rec["price"] = int(m.get("money", 0))
+			rec["width"] = 1
+			rec["height"] = 1
+			_misc[str(m["id"])] = rec
 	return _misc.get(misc_id, {})
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.

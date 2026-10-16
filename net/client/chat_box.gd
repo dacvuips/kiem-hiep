@@ -1,8 +1,9 @@
 extends PanelContainer
 class_name ChatBox
-## Khung CHAT online (giữa, sát đáy màn hình): kênh Gần / Thế giới / Tổ đội / Bang hội / Riêng.
-## Tin gửi qua game server (ChatServer kiểm tra cấm chat, tốc độ, độ dài). Bấm "Chat" để thu gọn / mở phần tin (điện thoại) — hàng nhập
-## (kênh mặc định "Gần") luôn hiện. Chơi offline (map luyện công): vẫn có khung, tin kênh Gần chỉ hiện ở máy mình.
+## Khung CHAT online (giữa, sát đáy màn hình): không có ô chọn kênh — tin gửi luôn vào kênh Gần; "Tán gẫu" từ menu người chơi
+## (open_whisper) mới chuyển sang nhắn Riêng cho 1 tin (hiện ô tên người nhận). Tin nhận về vẫn hiện đủ mọi kênh.
+## Tin gửi qua game server (ChatServer kiểm tra cấm chat, tốc độ, độ dài). Vào game khung THU GỌN (ẩn phần tin); bấm "Chat" để
+## mở / thu gọn — hàng nhập (kênh mặc định "Gần") luôn hiện. Chơi offline (map luyện công): vẫn có khung, tin kênh Gần chỉ hiện ở máy mình.
 ## Đang gõ thì phím không điều khiển nhân vật (Player._typing()).
 
 const MAX_LINES := 80
@@ -11,7 +12,7 @@ const FONT_SIZE := 13
 const COLORS := [Color(0.93, 0.93, 0.9), Color(1.0, 0.82, 0.35), Color(0.45, 0.85, 1.0), Color(0.5, 0.95, 0.5), Color(1.0, 0.6, 0.85)]
 
 var _log: RichTextLabel
-var _channel: OptionButton
+var _channel := ChatServer.NEAR
 var _to: LineEdit
 var _input: LineEdit
 var _body: VBoxContainer
@@ -47,7 +48,7 @@ func _init() -> void:
 	root.add_theme_constant_override("separation", 4)
 	add_child(root)
 	var head := HBoxContainer.new()
-	_toggle = SocialUi.small_button("Chat ▾")
+	_toggle = SocialUi.small_button("Chat ▸")
 	_toggle.pressed.connect(_on_toggle)
 	head.add_child(_toggle)
 	_size_btn = SocialUi.small_button("▲")
@@ -58,6 +59,7 @@ func _init() -> void:
 	root.add_child(head)
 	_body = VBoxContainer.new()
 	_body.add_theme_constant_override("separation", 4)
+	_body.visible = false   ## mặc định THU GỌN: chỉ hàng đầu + hàng nhập; bấm "Chat ▸" / ▲ để xem tin
 	root.add_child(_body)
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
@@ -69,12 +71,6 @@ func _init() -> void:
 	_body.add_child(_log)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
-	_channel = OptionButton.new()
-	for i in ChatServer.CHANNEL_NAMES.size():
-		_channel.add_item(ChatServer.CHANNEL_NAMES[i], i)
-	_channel.focus_mode = Control.FOCUS_NONE
-	_channel.item_selected.connect(func(idx: int) -> void: _to.visible = idx == ChatServer.PRIVATE)
-	row.add_child(_channel)
 	_to = SocialUi.line_edit("Tên người nhận")
 	_to.custom_minimum_size = Vector2(110, 0)
 	_to.visible = false
@@ -87,7 +83,6 @@ func _init() -> void:
 	var send := SocialUi.small_button("Gửi")
 	send.pressed.connect(_send)
 	row.add_child(send)
-	_channel.select(ChatServer.NEAR)
 	root.add_child(row)   ## hàng nhập nằm ngoài phần thu gọn -> luôn hiện
 	NetClient.chat_received.connect(_on_chat)
 	NetClient.server_notice.connect(func(text: String) -> void: add_line("[color=#b8b0a0]%s[/color]" % _esc(text)))
@@ -120,7 +115,7 @@ func _on_size() -> void:
 func open_whisper(to_name: String) -> void:
 	_body.visible = true
 	_toggle.text = "Chat ▾"
-	_channel.select(ChatServer.PRIVATE)
+	_channel = ChatServer.PRIVATE
 	_to.visible = true
 	_to.text = to_name
 	_input.grab_focus()
@@ -135,7 +130,7 @@ func _send() -> void:
 	if text.is_empty():
 		_input.release_focus()
 		return
-	var ch := _channel.get_selected_id()
+	var ch := _channel
 	if ch == ChatServer.PRIVATE and _to.text.strip_edges().is_empty():
 		add_line("[color=#e88]Hãy nhập tên người nhận.[/color]")
 		return
@@ -148,6 +143,10 @@ func _send() -> void:
 		add_line("[color=#e88]Kênh %s chỉ dùng khi chơi trên máy chủ.[/color]" % ChatServer.CHANNEL_NAMES[ch])
 	_input.text = ""
 	_input.release_focus()   ## gửi xong trả phím về cho nhân vật
+	if ch == ChatServer.PRIVATE:   ## nhắn riêng xong quay về kênh Gần
+		_channel = ChatServer.NEAR
+		_to.visible = false
+		_to.text = ""
 
 func _on_chat(channel: int, from_eid: int, from_name: String, to_name: String, text: String) -> void:
 	## Sổ đen: bỏ tin nhắn (kênh lẫn nhắn riêng) của người bị chặn — như gốc, chỉ lọc ở máy mình.

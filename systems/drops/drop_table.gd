@@ -35,11 +35,26 @@ const KIND_ITEM := [
 ## Số dòng magic của đồ do BOSS XANH rớt theo cấp bảng 0x..10x: [min, max] (nNumLine trong khối "boss xanh" của droprate<N>x.lua; 1x = 0 dòng).
 const BOSS_LINES := [[1, 2], [0, 0], [2, 3], [2, 3], [2, 3], [2, 4], [2, 4], [2, 5], [2, 5], [3, 6], [3, 6]]
 const BOSS_DROPS := 5                 ## dropnum: boss xanh rớt 5 lần
-const BLUE_BOSS_CHANCE := 0.02        ## script: RANDOM(150) < 2 — chú thích gốc ghi "xác suất 2%" (mỗi lần quái sinh / sinh lại)
+const BLUE_BOSS_CHANCE := 0.005       ## 0,5% mỗi lần quái sinh / sinh lại (gốc: RANDOM(150) < 2, chú thích "xác suất 2%" — giảm theo yêu cầu)
 const BLUE_ITEM_ONE_IN := 30
-## Nhân thêm tỉ lệ rớt TIỀN và ĐỒ (1.0 = đúng server gốc). Đồ xanh gốc rất hiếm (~0,2% mỗi quái) nên đặt >1 khi muốn thử nhanh.
-const MONEY_RATE_MULT := 1.0
-const ITEM_RATE_MULT := 1.0
+## Hệ số (1.0 = đúng server gốc) — game server online đặt theo "Thông số game" ở web Admin (set_rates, qua nhịp tim):
+##   item_rate_mult: tỉ lệ rơi trang bị xanh ×N (gốc 1/30 khi nSel == 4 -> N/30); money_rate_mult: SỐ TIỀN rơi ra ×N (tần suất giữ nguyên).
+static var item_rate_mult := 1.0
+static var money_rate_mult := 1.0
+const ITEM_RATE_MAX := 20.0
+const MONEY_RATE_MAX := 10.0
+
+## Đặt hệ số (kẹp trong khoảng cho phép — server tài khoản đã kiểm, đây kiểm lại phòng dữ liệu lạ).
+static func set_rates(item: float, money: float) -> void:
+	item_rate_mult = clampf(item, 1.0, ITEM_RATE_MAX)
+	money_rate_mult = clampf(money, 1.0, MONEY_RATE_MAX)
+
+static func _money(t: Array, k := 1) -> int:
+	return int(randi_range(t[0], t[1]) * k * money_rate_mult)
+
+## Rơi trang bị xanh với tỉ lệ gốc `base` (VD 1/30) nhân item_rate_mult.
+static func _item_chance(base: float) -> bool:
+	return randf() < minf(1.0, base * item_rate_mult)
 
 static func tier_of(monster_level: int) -> int:
 	return clampi(monster_level / 10, 0, 10)
@@ -52,10 +67,10 @@ static func roll(monster_level: int, series: int) -> Array:
 	if sel > 6:
 		return out
 	var money_hit := (sel == 2) if tier_of(monster_level) >= 7 else (sel < 2)
-	if money_hit or (MONEY_RATE_MULT > 1.0 and randf() < (MONEY_RATE_MULT - 1.0) / MONEY_RATE_MULT):
-		out.append({"type": "money", "amount": randi_range(t[0], t[1])})
-	elif sel == 4 or (ITEM_RATE_MULT > 1.0 and randf() < (ITEM_RATE_MULT - 1.0) / ITEM_RATE_MULT):
-		if randi_range(1, BLUE_ITEM_ONE_IN) == 5 or ITEM_RATE_MULT > 1.0:
+	if money_hit:
+		out.append({"type": "money", "amount": _money(t)})
+	elif sel == 4:
+		if _item_chance(1.0 / BLUE_ITEM_ONE_IN):
 			var item := _roll_blue_item(t, series)
 			if item != null:
 				out.append({"type": "item", "item": item})
@@ -71,7 +86,7 @@ static func roll_blue_boss(monster_level: int, series: int) -> Array:
 		var sel := randi_range(0, 50) if tier >= 6 else randi_range(0, 20)
 		var money := sel > 40 if tier >= 6 else sel < 5
 		if money:
-			out.append({"type": "money", "amount": randi_range(t[0], t[1])})
+			out.append({"type": "money", "amount": _money(t)})
 		elif sel == 8 or sel <= 5 or (tier >= 6 and sel in [9, 10]):
 			continue   ## 8 = mật chí; (6x+) 9 = bí kíp, 10 = chìa khoá nhiệm vụ — không có trong game
 		else:
@@ -94,7 +109,7 @@ static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := 
 	if blue_boss:
 		for i in BOSS_DROPS * stars:
 			if randf() < 0.3:
-				out.append({"type": "money", "amount": randi_range(t[0], t[1]) * stars})
+				out.append({"type": "money", "amount": _money(t, stars)})
 			elif randf() < 0.6:
 				var item := _roll_blue_item(t, series, _hell_lines(stars, BOSS_LINES[10]))
 				if item != null:
@@ -104,8 +119,8 @@ static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := 
 	if sel > 6:
 		return out
 	if sel == 2:
-		out.append({"type": "money", "amount": randi_range(t[0], t[1]) * stars})
-	elif sel == 4 and randf() < float(stars) / BLUE_ITEM_ONE_IN:
+		out.append({"type": "money", "amount": _money(t, stars)})
+	elif sel == 4 and _item_chance(float(stars) / BLUE_ITEM_ONE_IN):
 		var item := _roll_blue_item(t, series, _hell_lines(stars, [t[5], t[6]]))
 		if item != null:
 			out.append({"type": "item", "item": item})

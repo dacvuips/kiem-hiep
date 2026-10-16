@@ -5,7 +5,9 @@ class_name GameSettings
 
 const SETTINGS_PATH := "user://settings.cfg"   ## cùng file với MusicManager.SETTINGS_PATH
 const DEFAULT_ZOOM := 0.8
-const ZOOM_MIN := 0.225
+## Xa nhất = mức mặc định: không cho thu nhỏ thêm (nhìn quá xa lộ cả vùng lớn của map, phải nạp thêm vùng / quái — tốn máy, và lợi thế
+## khi PK). Mức cũ đã lưu xa hơn tự kéo về đây khi đọc cài đặt.
+const ZOOM_MIN := DEFAULT_ZOOM
 const ZOOM_MAX := 1.5
 
 static var _loaded := false

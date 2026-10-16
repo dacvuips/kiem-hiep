@@ -6,3 +6,13 @@
 *.tscn*.tmp
 __pycache__/
 server/.env
+
+# Bản cài game cho APK launcher (tools/build_client_update.py)
+server/client/
+build/
+
+# Dấu phiên bản gói game server (server/dev.sh build ghi)
+/build_info.json
+
+# Thông tin SSH lên VPS (server/deploy/deploy.sh)
+server/deploy/deploy.env

@@ -1,0 +1,35 @@
+; Project RIÊNG của APK launcher (trình tải game) — xem launcher/README.md.
+; Editor của game chính tự bỏ qua thư mục này (có project.godot riêng).
+
+config_version=5
+
+[application]
+
+config/name="Kiem-hiep Launcher"
+config/description="Trình tải và cập nhật game Kiếm Hiệp"
+run/main_scene="res://launcher.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.svg"
+run/max_fps=60
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom_font="res://art/BeVietnamPro-Regular.ttf"
+
+[kiem_hiep]
+
+network/account_url="http://127.0.0.1:8080"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

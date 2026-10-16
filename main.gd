@@ -75,14 +75,17 @@ func _enter_main_map() -> void:
 	time_label.visible = false
 	$Spawner.set_process(false)
 	$PickupSpawner.set_process(false)
-	## Map luyện công (màn "Vượt Ải"): game server hiện chỉ chạy map chính -> map này chơi offline, quái do client sinh.
+	## Map luyện công / Địa Ngục (màn "Vượt Ải"): chưa đăng nhập -> chơi offline, quái do client sinh; đã đăng nhập -> phòng train
+	## chung trên field server (field_map.field).
 	var field := GameManager.field_map
 	## Chiến trường Tống Kim (tab Ải): luôn online, nối tới battle server riêng ({side, server}).
 	var battle: Dictionary = field.get("battle", {})
 	## Đấu trường PK online (popup PK lúc đã đăng nhập): nối tới arena server riêng ({mode, online, server, action}).
 	var pk: Dictionary = field.get("pk", {})
 	var pk_online := bool(pk.get("online", false))
-	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty() or pk_online
+	## Phòng train chung (map luyện công / Địa Ngục lúc đã đăng nhập): nối tới field server ({server, action}) — FieldClient.
+	var room: Dictionary = field.get("field", {})
+	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty() or pk_online or not room.is_empty()
 	VltkWorld.net_monsters = online
 	if VltkWorld.current != null:
 		if not field.is_empty():
@@ -105,7 +108,7 @@ func _enter_main_map() -> void:
 		var sync := NetWorldSync.new()
 		sync.name = "NetWorldSync"
 		sync.player = get_tree().get_first_node_in_group("player")
-		sync.server_override = pk.get("server", {}) if pk_online else battle.get("server", {})
+		sync.server_override = pk.get("server", {}) if pk_online else room.get("server", {}) if not room.is_empty() else battle.get("server", {})
 		add_child(sync)
 	else:
 		ChatBox.attach($UI)   ## offline vẫn có ô chat Gần (online: NetWorldSync tự thêm)
@@ -113,6 +116,8 @@ func _enter_main_map() -> void:
 		add_child(BattleClient.create(str(battle["side"]), int(field["id"])))
 	if pk_online:
 		add_child(ArenaClient.create(pk))
+	if not room.is_empty():
+		add_child(FieldClient.create(room))
 
 func load_stage(stage: StageData) -> void:
 	GameManager.start_stage(stage)
@@ -269,7 +274,7 @@ func _build_side_menu() -> void:
 	menu.alignment = BoxContainer.ALIGNMENT_END
 	$UI.add_child(menu)
 
-## Nút công cụ thử (chỉ bản debug) — xếp thành hàng nhỏ ở góc trên trái.
+## Nút công cụ thử (chỉ bản debug) — xếp thành hàng nhỏ ở góc trên trái; trong phòng train chung thì nằm dưới khung ID phòng.
 var _debug_x := 8.0
 
 func _build_debug_button(text: String, tip: String, on_press: Callable) -> void:
@@ -277,10 +282,11 @@ func _build_debug_button(text: String, tip: String, on_press: Callable) -> void:
 	button.text = text
 	button.tooltip_text = tip
 	button.focus_mode = Control.FOCUS_NONE
+	var top := 4.0 + (FieldClient.HUD_HEIGHT if GameManager.field_map.has("field") else 0.0)
 	button.offset_left = _debug_x
-	button.offset_top = 4
+	button.offset_top = top
 	button.offset_right = _debug_x + 72
-	button.offset_bottom = 34
+	button.offset_bottom = top + 30
 	button.pressed.connect(on_press)
 	$UI.add_child(button)
 	_debug_x += 80.0

@@ -11,6 +11,7 @@ const ICON_GOLD := "res://assets/items/icons/tongqian.png"
 const ICON_JADE := "res://assets/items/icons/obj_item_cardg.png"   ## Kim Nguyên Bảo
 const ELEMENT_NAMES := ["Kim", "Mộc", "Thủy", "Hỏa", "Thổ"]
 const CARD_SIZE := Vector2(380, 66)
+const NOTE_ROW_HEIGHT := 34.0    ## hàng nội dung rao dưới mỗi thẻ món (có chừa lề dưới)
 
 enum Tab { MARKET, MINE, TRADE }
 
@@ -19,6 +20,12 @@ var _profile: PlayerProfile
 var _tab: int = Tab.MARKET
 var _tab_buttons: Array[Button] = []
 var _pages: Array[Control] = []
+## Phân trang Giao Thương (MarketBook.PAGE_SIZE món / trang, server cắt trang): trang đang xem + số trang server báo.
+var _list_page := 0
+var _list_pages := 1
+var _pager_label: Label
+var _prev_btn: Button
+var _next_btn: Button
 var _msg: PanelContainer
 var _money: Label
 ## Giao Thương
@@ -120,7 +127,10 @@ func _on_market(d: Dictionary) -> void:
 	_now = int(d.get("now", _now))
 	match str(d.get("op", "")):
 		"list":
+			_list_page = int(d.get("page", 0))
+			_list_pages = maxi(1, int(d.get("pages", 1)))
 			_fill_market(d.get("items", []))
+			_update_pager(int(d.get("total", (d.get("items", []) as Array).size())))
 		"mine":
 			_mine = d.get("items", [])
 			_fill_mine()
@@ -129,7 +139,7 @@ func _on_market(d: Dictionary) -> void:
 			_refresh_money()
 			if bool(d.get("ok", false)):
 				if _tab == Tab.MARKET:
-					_search()
+					_load_page(_list_page)   ## giữ trang đang xem (món vừa mua biến mất)
 				elif _tab == Tab.MINE:
 					_request("mine")
 					_refresh_bag()
@@ -190,7 +200,25 @@ func _build_market() -> Control:
 	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_grid)
 	page.add_child(scroll)
+	var pager := HBoxContainer.new()
+	pager.alignment = BoxContainer.ALIGNMENT_CENTER
+	pager.add_theme_constant_override("separation", 12)
+	_prev_btn = SocialUi.small_button("« Trước")
+	_prev_btn.pressed.connect(func() -> void: _load_page(_list_page - 1))
+	pager.add_child(_prev_btn)
+	_pager_label = SocialUi.label("", SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	_pager_label.custom_minimum_size.x = 200
+	pager.add_child(_pager_label)
+	_next_btn = SocialUi.small_button("Sau »")
+	_next_btn.pressed.connect(func() -> void: _load_page(_list_page + 1))
+	pager.add_child(_next_btn)
+	page.add_child(pager)
 	return page
+
+func _update_pager(total: int) -> void:
+	_pager_label.text = "Trang %d / %d  ·  %d vật phẩm" % [_list_page + 1, _list_pages, total]
+	_prev_btn.disabled = _list_page <= 0
+	_next_btn.disabled = _list_page >= _list_pages - 1
 
 ## Ô chọn của bộ lọc: mục đầu hiện tên bộ lọc ("Loại", "Hệ"...) khi đang chọn "Toàn bộ".
 func _option(parent: Control, label: String, entries: Array) -> OptionButton:
@@ -218,8 +246,12 @@ func _filter() -> Dictionary:
 		"name": _f_name.text.strip_edges(),
 	}
 
+## Đổi bộ lọc / bấm Tìm: về trang đầu.
 func _search() -> void:
-	_request("list", {"filter": _filter()})
+	_load_page(0)
+
+func _load_page(p: int) -> void:
+	_request("list", {"filter": _filter(), "page": maxi(0, p)})
 
 func _fill_market(list: Array) -> void:
 	for c in _grid.get_children():
@@ -236,18 +268,26 @@ func _fill_market(list: Array) -> void:
 		card.pressed.connect(_inspect.bind(l))
 		_grid.add_child(card)
 
-## Thẻ 1 món: ô ảnh, tên (màu phẩm chất), giá (icon lượng / KNB), mũi tên ›.
+## Thẻ 1 món: hàng trên = ô ảnh + tên (màu phẩm chất) + giá (icon lượng / KNB) + mũi tên ›; hàng dưới (trải ngang cả thẻ) = NỘI DUNG
+## RAO 1 dòng, dài thì "…" (đầy đủ ở khung xem chi tiết). Thẻ nào cũng có hàng rao để các thẻ cao bằng nhau.
 func _card(item: ItemInstance, l: Dictionary, arrow: bool) -> Button:
 	var b := GameUi.button("", GameUi.BUTTON)
-	b.custom_minimum_size = CARD_SIZE
+	b.custom_minimum_size = CARD_SIZE + Vector2(0, NOTE_ROW_HEIGHT)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 6)
+	outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer.offset_left = 8
+	outer.offset_right = -10
+	outer.offset_top = 4
+	outer.offset_bottom = -10   ## chừa lề dưới cho hàng nội dung rao
+	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(outer)
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
-	h.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	h.offset_left = 8
-	h.offset_right = -10
+	h.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(h)
+	outer.add_child(h)
 	h.add_child(_icon_box(item, 52))
 	var v := VBoxContainer.new()
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -264,6 +304,19 @@ func _card(item: ItemInstance, l: Dictionary, arrow: bool) -> Button:
 		a.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		a.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(a)
+	var line := ColorRect.new()
+	line.color = Color(1, 1, 1, 0.08)
+	line.custom_minimum_size.y = 1
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outer.add_child(line)
+	var note := str(l.get("note", ""))
+	var note_l := SocialUi.label(note if note != "" else "Không có nội dung rao", SocialUi.MUTED if note != "" else Color(1, 1, 1, 0.25), 12)
+	note_l.name = "NoteLine"
+	note_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	note_l.clip_text = true
+	note_l.custom_minimum_size.x = 60
+	note_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outer.add_child(note_l)
 	return b
 
 static func _short_name(item: ItemInstance) -> String:
@@ -282,6 +335,7 @@ func _icon_box(item: ItemInstance, size: float) -> Control:
 	icon.custom_minimum_size = Vector2(size - 14, size - 14)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(icon)
+	RarityRing.attach(box, item)   ## hoàng kim: vòng vàng, đồ tím: vòng tím chạy quanh ô
 	return box
 
 func _price_row(price: int, cur: int) -> HBoxContainer:
@@ -313,7 +367,23 @@ func _inspect(l: Dictionary) -> void:
 	var actions := []
 	if not _is_mine(l):
 		actions.append(["Mua", func() -> void: _confirm_buy(l, item)])
-	ItemDetailPopup.open(_host(), head + ItemText.build(item, _profile, -1, -1, false), actions, item)
+		## Hỏi người bán: khung tán gẫu lớn trượt ra bên trái, sẵn kênh Riêng tới người bán.
+		var seller := str(l.get("seller", ""))
+		actions.append(["Tán gẫu", func() -> void: ChatPanel.open(_host(), ChatServer.PRIVATE, seller)])
+	ItemDetailPopup.open(_host(), head + ItemText.build(item, _profile, -1, -1, false), actions, item, _note_box(str(l.get("note", ""))))
+
+## Nội dung rao đầy đủ (khung xem chi tiết): dưới cùng khung, viền nét đứt; không có rao -> null.
+static func _note_box(note: String) -> Control:
+	if note.strip_edges() == "":
+		return null
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 4)
+	v.add_child(SocialUi.label("Nội dung rao", SocialUi.LABEL_BLUE, 13))
+	var text := SocialUi.label(note, SocialUi.TEXT, 14)   ## chữ thường (Label) — không diễn giải BBCode
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size.x = 300
+	v.add_child(text)
+	return DashedBox.create(v)
 
 func _is_mine(l: Dictionary) -> bool:
 	var sid := int(l.get("sid", 0))
@@ -437,6 +507,13 @@ func _on_bag_item(item: ItemInstance) -> void:
 	win.body.add_child(edit)
 	var preview := SocialUi.label("", SocialUi.GOLD, 14, HORIZONTAL_ALIGNMENT_CENTER)
 	win.body.add_child(preview)
+	## Nội dung rao (không bắt buộc): danh sách hiện 1 dòng, khung xem chi tiết hiện đầy đủ.
+	var note := SocialUi.line_edit("Nội dung rao (không bắt buộc)")
+	note.max_length = MarketBook.NOTE_MAX
+	win.body.add_child(note)
+	var note_count := SocialUi.label("0/%d" % MarketBook.NOTE_MAX, SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_RIGHT)
+	win.body.add_child(note_count)
+	note.text_changed.connect(func(t: String) -> void: note_count.text = "%d/%d" % [t.length(), MarketBook.NOTE_MAX])
 	var update := func() -> void:
 		GameUi.set_active(gold_b, cur[0] == MarketBook.CUR_GOLD)
 		GameUi.set_active(jade_b, cur[0] == MarketBook.CUR_JADE)
@@ -459,7 +536,7 @@ func _on_bag_item(item: ItemInstance) -> void:
 	var submit := func() -> void:
 		var price := int(edit.text) if edit.text.strip_edges().is_valid_int() else 0
 		win.close_requested.emit()
-		_request("sell", {"uid": item.uid, "price": price, "cur": cur[0]})
+		_request("sell", {"uid": item.uid, "price": price, "cur": cur[0], "note": MarketBook.clean_note(note.text)})
 	ok.pressed.connect(submit)
 	edit.text_submitted.connect(func(_t: String) -> void: submit.call())
 	cancel.pressed.connect(func() -> void: win.close_requested.emit())
@@ -472,9 +549,7 @@ func _build_trade() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 10)
 	var box := SocialUi.info_box("Giao dịch theo ID")
-	var my_id := SaveManager.online_character_id if NetClient.is_in_world() else 0
-	box[1].add_child(SocialUi.kv("ID của bạn:", str(my_id) if my_id > 0 else "— (chơi một mình: dùng ID người chơi bên dưới)",
-		SocialUi.LABEL_BLUE, SocialUi.GOLD))
+	box[1].add_child(_my_id_row())
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	_id_edit = SocialUi.line_edit("Nhập ID người cần giao dịch")
@@ -501,6 +576,33 @@ func _build_trade() -> Control:
 	near[1].add_child(scroll)
 	page.add_child(near[0])
 	return page
+
+## Khung "ID của bạn": số to + nút Sao chép để đưa cho người khác nhập. ID = mã nhân vật trên máy chủ — có ngay khi đã đăng
+## nhập vào nhân vật (kể cả đang ở Hub, chưa vào map). Chơi một mình thì không có ID.
+func _my_id_row() -> Control:
+	var my_id := SaveManager.online_character_id
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var key := SocialUi.label("ID của bạn:", SocialUi.LABEL_BLUE, 15)
+	key.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(key)
+	if my_id <= 0:
+		var none := SocialUi.label("— chơi một mình chưa có ID (đăng nhập tài khoản để có)", SocialUi.MUTED, 13)
+		none.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(none)
+		return row
+	var id_label := SocialUi.label(str(my_id), SocialUi.GOLD, 24)
+	id_label.name = "MyId"
+	id_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	id_label.tooltip_text = "Đưa số này cho người muốn giao dịch với bạn"
+	row.add_child(id_label)
+	var copy := SocialUi.small_button("Sao chép")
+	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	copy.pressed.connect(func() -> void:
+		DisplayServer.clipboard_set(str(my_id))
+		_say("Đã sao chép ID %d." % my_id, true))
+	row.add_child(copy)
+	return row
 
 func _trade_by_id() -> void:
 	var text := _id_edit.text.strip_edges()

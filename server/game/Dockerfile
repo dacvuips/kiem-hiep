@@ -1,10 +1,13 @@
 # Game server (Godot headless) — chạy gói server/game/game_server.pck (tạo bằng server/build_game_server.sh).
 FROM debian:bookworm-slim
 ARG GODOT_VERSION=4.7.2
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget unzip libfontconfig1 \
- && wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip \
+# TARGETARCH do buildx đặt (amd64 / arm64) — VPS chip ARM dùng bản Godot linux.arm64.
+ARG TARGETARCH=amd64
+RUN arch="$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x86_64)" \
+ && apt-get update && apt-get install -y --no-install-recommends ca-certificates wget unzip libfontconfig1 \
+ && wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.${arch}.zip" -O /tmp/godot.zip \
  && unzip -q /tmp/godot.zip -d /opt \
- && mv /opt/Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot \
+ && mv "/opt/Godot_v${GODOT_VERSION}-stable_linux.${arch}" /usr/local/bin/godot \
  && chmod +x /usr/local/bin/godot \
  && rm /tmp/godot.zip \
  && apt-get purge -y wget unzip && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*

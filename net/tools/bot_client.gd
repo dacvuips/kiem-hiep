@@ -43,10 +43,14 @@ var casts: Array = []             ## [{caster, skill, level, flags, target, aim}
 var closed := false
 var battle_msgs: Array = []       ## gói S_BATTLE nhận được (chiến trường)
 var battle_state: Dictionary = {} ## gói "state" mới nhất
+var field_msgs: Array = []        ## gói S_FIELD nhận được (phòng train chung)
+var market_msgs: Array = []       ## gói S_MARKET nhận được (Chợ Giao Thương)
+var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HELLO_HUB) như Character Hub
 var _token := ""
 var _character_id := 0
 
-func start(host: String, port: int, token: String, character_id: int) -> bool:
+func start(host: String, port: int, token: String, character_id: int, as_hub := false) -> bool:
+	hub = as_hub
 	_token = token
 	_character_id = character_id
 	if peer.create_client(host, port, 2) != OK:
@@ -62,6 +66,15 @@ func _hello() -> void:
 	b.put_u16(NetProto.VERSION)
 	NetProto.put_str(b, _token)
 	b.put_u32(_character_id)
+	b.put_u8(NetProto.HELLO_HUB if hub else NetProto.HELLO_WORLD)
+	_send(b, NetProto.CH_RELIABLE)
+
+## Chợ Giao Thương: op + tham số (như NetClient.send_market). Trả lời vào market_msgs.
+func market(op: String, args := {}) -> void:
+	var a: Dictionary = args.duplicate()
+	a["op"] = op
+	var b := NetProto.writer(NetProto.C_MARKET)
+	NetProto.put_str(b, JSON.stringify(a))
 	_send(b, NetProto.CH_RELIABLE)
 
 func _send(b: StreamPeerBuffer, ch: int) -> void:
@@ -75,6 +88,13 @@ func _send(b: StreamPeerBuffer, ch: int) -> void:
 ## Chiến trường Tống Kim: op = BattleServer.OP_*.
 func battle(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Phòng train chung: op FieldServer.OP_* + tham số.
+func field(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_FIELD)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b, NetProto.CH_RELIABLE)
@@ -438,6 +458,14 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				battle_msgs.append(msg)
 				if msg.get("op") == "state":
 					battle_state = msg
+		NetProto.S_MARKET:
+			var mk: Variant = NetProto.get_json(b)
+			if mk is Dictionary:
+				market_msgs.append(mk)
+		NetProto.S_FIELD:
+			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
+			if fmsg is Dictionary:
+				field_msgs.append(fmsg)
 		NetProto.S_CORRECT:
 			corrections += 1
 			feet = Vector2(b.get_float(), b.get_float())

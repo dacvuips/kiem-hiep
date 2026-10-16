@@ -10,14 +10,17 @@ const BODY_MAX_HEIGHT := 380.0
 var _bbcode: String
 var _actions: Array
 var _item: ItemInstance
+var _extra: Control
 
 ## bbcode: mô tả (ItemText.build(..., with_name = false)); actions: [[chữ nút, Callable], ...] — bấm nút thì gọi
 ## Callable rồi đóng khung; item: món đồ để vẽ phần đầu (tên, ảnh, cấp, loại đồ) — null thì chỉ hiện mô tả.
-static func open(parent: Node, bbcode: String, actions: Array, item: ItemInstance = null) -> ItemDetailPopup:
+## extra: khối thêm ở DƯỚI CÙNG khung, sau phần mô tả (VD nội dung rao của món treo ở Chợ) — null = không có.
+static func open(parent: Node, bbcode: String, actions: Array, item: ItemInstance = null, extra: Control = null) -> ItemDetailPopup:
 	var popup: ItemDetailPopup = load(SCENE_PATH).instantiate()
 	popup._bbcode = bbcode
 	popup._actions = actions
 	popup._item = item
+	popup._extra = extra
 	parent.add_child(popup)
 	return popup
 
@@ -30,6 +33,8 @@ func _ready() -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			queue_free())
 	_fill_header()
+	if _extra != null:
+		$Center/Row/Card/Box.add_child(_extra)
 	(%Body as RichTextLabel).text = _bbcode
 	var template: Button = %ActionTemplate
 	for action in _actions:
@@ -63,5 +68,5 @@ func _fill_header() -> void:
 	else:
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	(%LevelLabel as RichTextLabel).text = "[color=#e8d9a8]Cấp:[/color] [color=#ffffff]%d[/color]" % _item.get_level()
-	var quality := "Hoàng Kim" if _item.is_gold() else ("Đồ xanh" if not _item.magic.is_empty() else "Đồ thường")
+	var quality := ItemText.quality_name_of(_item)
 	(%NoteLabel as Label).text = "%s · %s" % [ItemDatabase.DETAIL_NAMES.get(_item.get_detail(), ""), quality]

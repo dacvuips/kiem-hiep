@@ -84,7 +84,7 @@ func on_trade_request(c, target_eid: int) -> void:
 	if t == null or t == c:
 		gs.notice(c, "Người chơi không còn ở gần.")
 		return
-	if c.entity.pos.distance_to(t.entity.pos) > TRADE_RANGE:
+	if not GameServer.near(c.entity, t.entity, TRADE_RANGE):
 		gs.notice(c, "Đứng gần hơn mới giao dịch được.")
 		return
 	_invite(c, t, true)
@@ -448,7 +448,7 @@ func team_exp(killer, monster_pos: Vector2, base_exp: int, monster_level: int) -
 	var present: Array = []
 	var levels := []
 	for m in t.members:
-		if m.entity and m.entity.pos.distance_to(monster_pos) <= ExpRules.SHARE_DISTANCE:
+		if m.entity and m.entity.room_id == killer.entity.room_id and m.entity.pos.distance_to(monster_pos) <= ExpRules.SHARE_DISTANCE:
 			present.append(m)
 			levels.append(m.profile.level)
 	var shares := ExpRules.team_shares(base_exp, levels)
@@ -605,7 +605,7 @@ func _browse(c, seller_eid: int) -> void:
 	var s = gs.conn_of_eid(seller_eid)
 	var b := NetProto.writer(NetProto.S_STALL_ITEMS)
 	b.put_u32(seller_eid)
-	if s == null or not s.stall_open or c.entity.pos.distance_to(s.entity.pos) > TRADE_RANGE:
+	if s == null or not s.stall_open or not GameServer.near(c.entity, s.entity, TRADE_RANGE):
 		NetProto.put_str(b, "")
 		b.put_u16(0)
 		gs.send(c, b)
@@ -625,7 +625,7 @@ func _buy(c, seller_eid: int, uid: String) -> void:
 	if c.trade or s.trade:
 		gs.notice(c, "Đang giao dịch, không mua được.")
 		return
-	if c.entity.pos.distance_to(s.entity.pos) > TRADE_RANGE:
+	if not GameServer.near(c.entity, s.entity, TRADE_RANGE):
 		gs.notice(c, "Đứng gần quầy hơn mới mua được.")
 		return
 	var item := _find(s.profile.inventory, uid)

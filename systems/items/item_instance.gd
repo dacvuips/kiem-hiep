@@ -44,6 +44,14 @@ const LOCK_LOCKED := -1
 const LOCK_NORMAL := 0
 const LOCK_UNLOCKING := 1
 var lock_state: int = LOCK_NORMAL
+## ---- Đồ tím (Trang bị Huyền Tinh — Compound: Chế đồ tím / Khảm) ----
+## Phẩm chất gốc (GetItemQuality): 0 = trắng/xanh, 2 = đồ tím (có ô khảm). Hoàng kim nhận biết qua gold_index.
+const QUALITY_PURPLE := 2
+var quality: int = 0
+## Số ô khảm CÒN TRỐNG của đồ tím — nằm sau các dòng magic đã khảm (ô k = dòng magic thứ k).
+var sockets: int = 0
+## Khoáng thuộc tính (6_1_200..205): mã thuộc tính (MAGIC_ID) mang theo — tách từ đồ, dùng để khảm.
+var ore_magic: int = 0
 ## Mã riêng của MÓN ĐỒ NÀY (không trùng món nào khác) — online: server dùng để biết món nào thuộc về ai, chống nhân bản đồ.
 var uid: String = ""
 
@@ -73,6 +81,10 @@ func get_icon(small: bool = false) -> Texture2D:
 
 func is_gold() -> bool:
 	return gold_index >= 0
+
+## ĐỒ TÍM: món đã qua "Chế đồ tím" (quality 2) — tên màu tím, ô có vòng sáng tím (RarityRing).
+func is_purple() -> bool:
+	return quality == QUALITY_PURPLE and not is_misc()
 
 ## Bộ hoàng kim (Group gốc) — 0 nếu không thuộc bộ nào. need1: số món để bật mỗi dòng mở rộng;
 ## need2: số món để đủ bộ (bật hết mọi dòng ẩn).
@@ -113,6 +125,8 @@ func get_display_name() -> String:
 func get_quality_color() -> Color:
 	if is_gold():
 		return Color(1.0, 0.82, 0.25)
+	if is_purple():
+		return Color(0.8, 0.5, 1.0)
 	return Color(0.45, 0.7, 1.0) if not magic.is_empty() else Color(0.92, 0.92, 0.9)
 
 ## Yêu cầu: [[tên requireXXX, giá trị], ...] (requirelevel/requirestr/requiredex/requirevit/requireeng/
@@ -125,12 +139,16 @@ func to_dict() -> Dictionary:
 		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability,
 		"seed": gen_seed, "luck": luck, "rx": room_x, "ry": room_y, "rb": room_bag,
 		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price, "uid": _ensure_uid(),
-		"mid": misc_id, "count": count, "ilv": item_level}
+		"mid": misc_id, "count": count, "ilv": item_level, "q": quality, "sk": sockets, "om": ore_magic}
 
 func _ensure_uid() -> String:
 	if uid == "":
 		uid = new_uid()
 	return uid
+
+## Mã riêng của món (sinh nếu chưa có) — Chế tạo chọn nguyên liệu theo mã này.
+func ensure_uid() -> String:
+	return _ensure_uid()
 
 static func from_dict(data: Dictionary) -> ItemInstance:
 	var item := ItemInstance.new()
@@ -143,8 +161,12 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.base_values = data.get("base_values", []).duplicate(true)
 	for line in data.get("magic", []):
 		var v: Array = line.get("value", [0, 0, 0])
-		item.magic.append({"attrib": str(line.get("attrib", "")), "value": [int(v[0]), int(v[1]), int(v[2])],
-			"name": str(line.get("name", "")), "prefix": bool(line.get("prefix", true))})
+		var entry := {"attrib": str(line.get("attrib", "")), "value": [int(v[0]), int(v[1]), int(v[2])],
+			"name": str(line.get("name", "")), "prefix": bool(line.get("prefix", true))}
+		for k in ["mid", "mlv"]:   ## dòng khảm của đồ tím: mã thuộc tính + cấp thuộc tính (Compound)
+			if line.has(k):
+				entry[k] = int(line[k])
+		item.magic.append(entry)
 	for line in data.get("expand_magic", []):
 		var ev: Array = line.get("value", [0, 0, 0])
 		item.expand_magic.append({"attrib": str(line.get("attrib", "")), "value": [int(ev[0]), int(ev[1]), int(ev[2])],
@@ -162,6 +184,9 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.misc_id = str(data.get("mid", ""))
 	item.count = maxi(int(data.get("count", 1)), 1)
 	item.item_level = int(data.get("ilv", 0))
+	item.quality = int(data.get("q", 0))
+	item.sockets = clampi(int(data.get("sk", 0)), 0, MAX_MAGIC)
+	item.ore_magic = int(data.get("om", 0))
 	if item.uid == "":
 		item.uid = new_uid()
 	return item

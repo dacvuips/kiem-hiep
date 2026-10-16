@@ -31,6 +31,17 @@ static func tier_of_level(level: int) -> int:
 	@warning_ignore("integer_division")
 	return clampi(level / 10, 1, TIER_COUNT)
 
+## Mốc Vượt Ải Thường mở sẵn cho nhân vật cấp `level`: mốc cùng cấp (tier_of_level); mốc đó chưa có map thì lấy mốc có map gần nhất
+## (ưu tiên mốc thấp hơn, vd cấp 115 -> 10x).
+static func normal_tier_for_level(level: int) -> int:
+	var t := tier_of_level(level)
+	for d in TIER_COUNT:
+		if t - d >= 1 and not in_tier(t - d).is_empty():
+			return t - d
+		if t + d <= TIER_COUNT and not in_tier(t + d).is_empty():
+			return t + d
+	return t
+
 ## Map thuộc nhóm `tier` (1 = 1x), xếp theo cấp rồi số map.
 static func in_tier(tier: int) -> Array:
 	return all().filter(func(m: Dictionary) -> bool: return tier_of_level(int(m["level"])) == tier)

@@ -1,3 +1,14 @@
+## Backend nằm ở repo RIÊNG — `../kiem-hiep-server`
+
+Server tài khoản (Go), web Admin, web người chơi, `docker-compose.yml`, `.env` máy dev và deploy Docker Swarm / GitHub Actions
+đã tách sang repo **kiem-hiep-server** (`D:\game\lam-game\kiem-hiep-server`). **Mọi sửa backend làm trong repo đó**, không tạo lại
+`server/account`, `server/admin-web`, `server/portal-web`, `server/deploy` hay `server/docker-compose.yml` ở repo này.
+
+Ở lại repo game (vì dùng chung code combat / quái / map): game server Godot `net/`, `server/game/Dockerfile`,
+`server/dev.sh`, `server/test.sh`, `server/run_*_server.sh`, `server/client/`, `.github/workflows/game-server.yml`.
+Sửa giao thức / API giữa game và backend (VD `/internal/*`, `/v1/*`) thì sửa CẢ 2 repo cho khớp.
+Công cụ ghi sang repo backend: `tools/export_admin_catalog.gd` (catalog.json), `tools/export_potion_prices.py`.
+
 ## Agent skills
 
 ### Issue tracker

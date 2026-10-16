@@ -128,24 +128,8 @@ func _ready() -> void:
 var _level_table: Dictionary = {}
 
 func _apply_level_script() -> void:
-	_level_table = MonsterData.level_table(monster_id, int(data.get("series", 0)))
-	if _level_table.is_empty():
-		return
-	data = data.duplicate()   ## không ghi vào bảng quái dùng chung
-	data["level_table"] = _level_table
-	var skills := []
-	for i in range(1, 5):
-		var id := MonsterData.level_value(_level_table, "Skill%d" % i, level)
-		skills.append([maxi(id, 0), maxi(1, MonsterData.level_value(_level_table, "Level%d" % i, level))])
-	data["skills"] = skills
-	data["skill_levels_exact"] = true
-	var ai_mode := MonsterData.level_value(_level_table, "AIMode", level)
-	if ai_mode > 0:
-		data["ai_mode"] = ai_mode
-		var params := []
-		for i in range(1, 10):
-			params.append(maxi(0, MonsterData.level_value(_level_table, "AIParam%d" % i, level)))
-		data["ai_params"] = params
+	data = MonsterData.apply_level_script(data, monster_id, level)   ## cùng hàm với quái game server (ServerMonster)
+	_level_table = data.get("level_table", {})
 
 ## Kháng (%) + sát thương cơ bản của script cấp -> CombatantStats (cùng trường như người chơi): *DamageBase = ngoại công,
 ## *MagicBase = nội công (cộng vào chiêu ngoại / nội công tương ứng ở _make_hit_stats).

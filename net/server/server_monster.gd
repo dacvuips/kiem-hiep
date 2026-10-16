@@ -39,6 +39,16 @@ var _max_radius := -1.0
 var _target_eid := 0
 ## Chiến trường Tống Kim: quái của 1 phe (Nguyên Soái) — chỉ đánh / bị đánh bởi người phe kia. "" = quái thường.
 var battle_side := ""
+## Quái phòng ĐỊA NGỤC (FieldServer): 1-5 sao — máu ×sao ở đây; sát thương ×sao tính ở máy người bị đánh (VltkMonster.hell_stars,
+## game đọc số sao của phòng); rơi đồ theo DropTable.roll_hell. 0 = thường.
+var hell_stars := 0
+## Thông số AI đọc 1 lần từ `data` (_cache_params) — tick chạy cho hàng nghìn quái mỗi giây, tra Dictionary bằng chuỗi mỗi tick rất tốn.
+var _ai_mode := 0
+var _ai_max_time := 10.0
+var _walk_speed := 6.0
+var _vision := 400.0
+var _active := 400.0
+var _ai_p: Array = []
 
 ## Tạo từ 1 mục npcs của map.json. null nếu quái không có dữ liệu mẫu.
 static func from_entry(n: Dictionary, eid_value: int) -> ServerMonster:
@@ -58,8 +68,30 @@ static func from_entry(n: Dictionary, eid_value: int) -> ServerMonster:
 	m.respawn_seconds = maxf(5.0, float(n.get("respawn", 40)))
 	m.pos = Vector2(float(n.px), float(n.py))
 	m._origin_logic = VltkMath.to_logic(m.pos)
+	m.apply_level_script()
 	m.reset()
 	return m
+
+## Script cấp gốc theo hệ + cấp hiện tại (máu / kinh nghiệm / chiêu / AI — giống hệt quái offline VltkMonster). Gọi lại sau khi đổi
+## `level` (phòng Địa Ngục) rồi reset().
+func apply_level_script() -> void:
+	data = MonsterData.apply_level_script(_base_data(), monster_id, level)
+	_max_radius = -1.0
+	_cache_params()
+
+## Dữ liệu mẫu quái (trước script cấp) + hệ của điểm sinh — script cấp tính lại từ đây khi đổi cấp.
+func _base_data() -> Dictionary:
+	var d := MonsterData.monster(monster_id).duplicate()
+	d["series"] = series
+	return d
+
+func _cache_params() -> void:
+	_ai_mode = int(data.get("ai_mode", 0))
+	_ai_max_time = float(maxi(1, int(data.get("ai_max_time", 10))))
+	_walk_speed = float(data.get("walk_speed", 6))
+	_vision = float(data.get("vision", 400))
+	_active = float(data.get("active", 400))
+	_ai_p = data.get("ai_params", [30, 25, 25, 25, 25, 25, 25, 0, 0]) if int(data.get("ai_mode", 1)) == 1 else [30, 25, 25, 25, 25, 25, 25, 0, 0]
 
 ## (Hồi) sinh: đủ máu, về chỗ gốc, 2% thành boss xanh như script Revive gốc.
 func reset() -> void:
@@ -67,7 +99,7 @@ func reset() -> void:
 	var life := MonsterData.stat_at_level(data, "life", level)
 	if life < 0:
 		life = int((20 + level * 6) * float(data.get("life_param", 100)) / 100.0) * 10
-	max_hp = maxf(1.0, float(life))
+	max_hp = maxf(1.0, float(life)) * maxi(1, hell_stars)
 	cur_hp = max_hp
 	pos = VltkMath.to_world(_origin_logic)
 	_cur_active = float(data.get("active", 400))
@@ -98,16 +130,18 @@ func _enter(s: State, action_name: String) -> void:
 	_state_len = float(MonsterData.action_frames(data, action_name))
 	touch()
 
-# ---------------------------------------------------------------- mô phỏng (1 lần / tick server = 1 frame VLTK)
+# ---------------------------------------------------------------- mô phỏng (1 tick server = 1 frame VLTK)
 
-func tick(gs: GameServer) -> void:
-	_game_time += 1.0
+## Chạy `frames` frame VLTK một lượt. GameServer gọi mỗi quái 2 tick 1 lần với frames = 2 (vị trí chỉ gửi đi 2 tick 1 lần nên người
+## chơi thấy y hệt, CPU còn một nửa); thời gian chiêu / AI / hồi chiêu vẫn tính đúng theo frame.
+func tick(gs: GameServer, frames := 1) -> void:
+	_game_time += frames
 	if state == State.DEAD:
 		return
-	_state_frames += 1.0
+	_state_frames += frames
 	match state:
 		State.WALK:
-			_tick_walk(gs)
+			_tick_walk(gs, frames)
 		State.ATTACK:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
@@ -115,15 +149,15 @@ func tick(gs: GameServer) -> void:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
 	if state == State.IDLE or state == State.WALK:
-		_ai_time += 1.0
-		if _ai_time >= float(maxi(1, int(data.get("ai_max_time", 10)))):
+		_ai_time += frames
+		if _ai_time >= _ai_max_time:
 			_ai_time = 0.0
 			_ai_think(gs)
 
-func _tick_walk(gs: GameServer) -> void:
+func _tick_walk(gs: GameServer, frames := 1) -> void:
 	var here := VltkMath.to_logic(pos)
 	var to_dest := _walk_dest - here
-	var step := float(data.get("walk_speed", 6)) * (1.25 if blue_boss else 1.0)
+	var step := _walk_speed * (1.25 if blue_boss else 1.0) * frames
 	if to_dest.length() <= maxf(step, 4.0):
 		_enter(State.IDLE, "stand")
 		return
@@ -132,12 +166,13 @@ func _tick_walk(gs: GameServer) -> void:
 		dir = d
 	var next := VltkMath.to_world(here + to_dest.normalized() * step)
 	## Trượt theo từng trục khi vướng vật cản (như VltkWorld.slide_velocity).
-	if gs.grid.is_blocked(next):
+	var grid: MapGrid = gs.grid_of(self)
+	if grid.is_blocked(next):
 		var only_x := Vector2(next.x, pos.y)
 		var only_y := Vector2(pos.x, next.y)
-		if not gs.grid.is_blocked(only_x):
+		if not grid.is_blocked(only_x):
 			next = only_x
-		elif not gs.grid.is_blocked(only_y):
+		elif not grid.is_blocked(only_y):
 			next = only_y
 		else:
 			_enter(State.IDLE, "stand")
@@ -150,11 +185,6 @@ func _walk_to(dest_logic: Vector2) -> void:
 	_walk_dest = dest_logic
 	if state != State.WALK:
 		_enter(State.WALK, "walk")
-
-func _ai_params() -> Array:
-	if int(data.get("ai_mode", 1)) == 1:
-		return data.get("ai_params", [30, 25, 25, 25, 25, 25, 25, 0, 0])
-	return [30, 25, 25, 25, 25, 25, 25, 0, 0]
 
 func _skill_data(slot: int) -> Dictionary:
 	var sk: Array = data["skills"][slot]
@@ -177,11 +207,11 @@ func _max_skill_radius() -> float:
 	return _max_radius
 
 func _ai_think(gs: GameServer) -> void:
-	if int(data.get("ai_mode", 0)) <= 0:
+	if _ai_mode <= 0:
 		return
-	var p := _ai_params()
+	var p := _ai_p
 	var here := VltkMath.to_logic(pos)
-	var active := float(data.get("active", 400))
+	var active := _active
 	var from_origin := here.distance_to(_origin_logic)
 	if active < from_origin:
 		_cur_active = active * 0.5
@@ -189,7 +219,7 @@ func _ai_think(gs: GameServer) -> void:
 		_walk_to(_origin_logic)
 		return
 	_cur_active = active
-	var enemy := gs.nearest_player(pos, float(data.get("vision", 400)), battle_side)
+	var enemy := gs.nearest_player(pos, _vision, battle_side, cell_base)
 	if enemy == null:
 		_target_eid = 0
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):

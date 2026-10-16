@@ -26,7 +26,6 @@ var _reconnect_in := -1.0
 ## Đang chạy trong map (để SocialDirectory lấy người chơi thật ở gần).
 static var current: NetWorldSync
 ## Danh sách bang trên server (S_GUILD_LIST) cho màn xin vào bang.
-var guild_list: Array = []
 
 static func is_online_mode() -> bool:
 	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0 and not ServerSelectScreen.selected_server.is_empty()
@@ -43,24 +42,11 @@ func _ready() -> void:
 	NetClient.player_cast.connect(_on_player_cast)
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
-	if not NetClient.saved.is_connected(SaveManager.set_online_version):
-		NetClient.saved.connect(SaveManager.set_online_version)
-	NetClient.profile_received.connect(_on_profile)
 	NetClient.drops_received.connect(_on_drops)
 	NetClient.picked.connect(_on_picked)
 	NetClient.drop_gone.connect(_on_drop_gone)
-	NetClient.server_notice.connect(_notify)
-	NetClient.trade_invite.connect(_on_trade_invite)
-	NetClient.trade_state.connect(_on_trade_state)
-	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.stall_items.connect(_on_stall_items)
 	NetClient.stall_sign.connect(_on_stall_sign)
-	NetClient.team_state.connect(_on_team_state)
-	NetClient.team_invite.connect(_on_team_invite)
-	NetClient.guild_received.connect(_on_guild)
-	NetClient.guild_list.connect(_on_guild_list)
-	NetClient.guild_invite.connect(_on_guild_invite)
-	NetClient.friend_invite.connect(_on_friend_invite)
 	NetClient.camp_changed.connect(func(eid: int, new_camp: int, new_nation: int) -> void:
 		var rp := remote_of(eid)
 		if rp:
@@ -68,12 +54,13 @@ func _ready() -> void:
 	NetClient.enmity_state.connect(_on_enmity)
 	NetClient.pvp_hit.connect(_on_pvp_hit)
 	NetClient.view_equip.connect(_on_view_equip)
+	## Hồ sơ / thông báo / lời mời xã hội: phần dùng chung với sảnh Hub (HubSession).
+	var social := NetSocial.create(_notify)
+	social.profile_applied.connect(_on_profile_applied)
+	add_child(social)
 	current = self
 	_add_chat_box()
 	_connect()
-
-func _on_guild_list(list: Array) -> void:
-	guild_list = list
 
 func _on_pvp_hit(attacker_eid: int, hit: Dictionary) -> void:
 	if player and is_instance_valid(player):
@@ -133,12 +120,9 @@ func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
 ## Đã nhận bản nhân vật chuẩn của server trong phiên này (trước đó hồ sơ trong game có thể còn số liệu chưa được server xác nhận).
 var profile_synced := false
 
-func _on_profile(data: Dictionary) -> void:
-	var profile := GameManager.local_profile
-	if profile == null:
-		return
+## NetSocial vừa chép hồ sơ chuẩn của server vào GameManager.local_profile.
+func _on_profile_applied() -> void:
 	profile_synced = true
-	profile.copy_from(PlayerProfile.from_dict(data))
 	if player and is_instance_valid(player):
 		player.refresh_combat_stats()
 
@@ -210,37 +194,6 @@ func nearby_players() -> Array[MockPlayer]:
 		out.append(m)
 	return out
 
-func _hub() -> SocialHub:
-	return SocialHub.of(GameManager.local_profile) if GameManager.local_profile else null
-
-func _on_trade_invite(from_eid: int, from_name: String) -> void:
-	_ask("Giao dịch", "%s muốn giao dịch với bạn." % from_name, func(ok: bool) -> void:
-		NetClient.send_trade_answer(from_eid, ok))
-
-func _on_trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary) -> void:
-	var hub := _hub()
-	if hub == null:
-		return
-	var t := hub.trade as NetTradeSession
-	if t == null or not t.active or t.partner_eid != partner_eid:
-		t = NetTradeSession.new(hub.profile, partner_eid, partner_name)
-		hub.trade = t
-		t.finished.connect(func(ok: bool, msg: String) -> void: hub.notice.emit(msg, ok))
-		t.apply_state(mine, theirs)
-		TradeWindow.open(get_tree().current_scene, hub)
-		return
-	t.apply_state(mine, theirs)
-
-func _on_trade_end(success: bool, message: String) -> void:
-	var hub := _hub()
-	if hub and hub.trade is NetTradeSession:
-		(hub.trade as NetTradeSession).end(success, message)
-
-func _on_guild(data: Dictionary) -> void:
-	var hub := _hub()
-	if hub:
-		hub.guild.apply_net_guild(data)
-
 ## Cừu sát hiện tại của mình: {state, eid, name, launcher} (state = RelationServer.ENMITY_*).
 var enmity: Dictionary = {}
 
@@ -258,14 +211,6 @@ func _apply_enmity(eid: int) -> void:
 		return
 	r.set_pk_enemy(int(enmity.get("eid", 0)) == eid and int(enmity.get("state", 0)) == RelationServer.ENMITY_FIGHT)
 
-func _on_friend_invite(from_eid: int, from_name: String) -> void:
-	var p := GameManager.local_profile
-	if p and p.blacklist.has(from_name):
-		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 0)   ## sổ đen: tự từ chối
-		return
-	_ask("Hảo hữu", "%s xin phép gia nhập bằng hữu." % from_name, func(ok: bool) -> void:
-		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 1 if ok else 0))
-
 ## Chuỗi các bước của menu người chơi cần tới node người chơi khác (theo eid).
 ## Đọc kiểu Variant trước: gán thẳng node đã free vào biến có kiểu sẽ báo lỗi "previously freed instance".
 func remote_of(eid: int) -> RemotePlayer:
@@ -279,24 +224,6 @@ func _monster_of(eid: int) -> VltkMonster:
 ## Khung chat (chỉ có khi online).
 func chat_box() -> ChatBox:
 	return get_parent().get_node_or_null("UI/ChatBox") as ChatBox
-
-func _on_guild_invite(guild_name: String, from_name: String) -> void:
-	_ask("Bang hội", "%s mời bạn vào bang %s." % [from_name, guild_name], func(ok: bool) -> void:
-		NetClient.send_guild(GuildServer.G_ANSWER, {"guild": guild_name, "accept": ok}))
-
-func _on_team_state(st: Dictionary) -> void:
-	var hub := _hub()
-	if hub:
-		hub.team.apply_net_state(st)
-
-func _on_team_invite(captain_eid: int, captain_name: String) -> void:
-	_ask("Tổ đội", "%s mời bạn vào tổ đội." % captain_name, func(ok: bool) -> void:
-		NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0))
-
-## Hỏi Đồng ý / Từ chối.
-## Hộp hỏi lời mời (giao dịch / tổ đội / bang...) — khung chung của cửa sổ xã hội.
-func _ask(title: String, text: String, answer: Callable) -> void:
-	SocialWindow.ask_yes_no(get_tree().current_scene, title, text, answer)
 
 ## Biển quầy của ai đó đổi. Của mình mà "" = server đã dọn quầy (hết hàng, rời chỗ ngồi...) -> tắt quầy trên máy.
 func _on_stall_sign(eid: int, title: String) -> void:
@@ -381,6 +308,8 @@ func _spawn_monster(info: Dictionary) -> void:
 	m.data["series"] = int(info.series)
 	m.level = maxi(1, int(info.level))
 	m.blue_boss = bool(info.blue)
+	## Phòng Địa Ngục (phòng train chung): sát thương quái ×sao tính ở máy mình như bản offline (máu do server giữ).
+	m.hell_stars = int((GameManager.field_map.get("hell", {}) as Dictionary).get("stars", 0))
 	m.ai_enabled = false
 	m.position = info.pos
 	_parent().add_child(m)

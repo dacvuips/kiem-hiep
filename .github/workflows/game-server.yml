@@ -1,0 +1,130 @@
+# Push lên main (đổi code / dữ liệu game server dùng) -> Godot headless xuất game_server.pck -> image kiemhiep-game
+# -> Docker Hub -> VPS (deploy/swarm_up.sh của repo kiem-hiep-server, phải deploy repo đó ít nhất 1 lần trước).
+# Bật lại game server = mọi người đang chơi bị ngắt -> bước deploy dùng environment "production": bật Required reviewers
+# trên GitHub để duyệt tay (chọn lúc vắng người). Cài đặt: xem deploy/README.md của repo kiem-hiep-server.
+name: Game server
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      # Không thuộc gói game server (khớp exclude_filter của preset "Game Server (Linux)") hoặc chỉ của client
+      - "assets/avatar/**"
+      - "assets/monster/**"
+      - "assets/skill_fx/**"
+      - "assets/items/**"
+      - "assets/monster_thumbs/**"
+      - "audio/**"
+      - "launcher/**"
+      - "android/**"
+      - "docs/**"
+      - "tools/**"
+      - "tests/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-game
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Tài khoản Docker Hub: Secret DOCKER_HUB_USERNAME (hoặc Variable cùng tên)
+      IMAGE: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}/kiemhiep-game
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      # Bỏ thư mục ảnh/âm thanh nặng (~1 GB) — game server không dùng; filter blob:none chỉ tải file cần.
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/assets/avatar/
+            !/assets/monster/
+            !/assets/skill_fx/
+            !/assets/items/
+            !/assets/monster_thumbs/
+            !/audio/
+            !/android/
+            !/launcher/
+            !/docs/
+      - id: tag
+        run: echo "tag=$(date -u +%Y%m%d-%H%M)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Cài Godot ${{ env.GODOT_VERSION }}
+        run: |
+          curl -fsSL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+
+      - name: Cache .godot (kết quả import)
+        uses: actions/cache@v4
+        with:
+          path: .godot
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.import') }}
+          restore-keys: godot-import-${{ env.GODOT_VERSION }}-
+
+      - name: Xuất game_server.pck
+        run: |
+          godot --headless --path . --import > import.log 2>&1 || { tail -n 50 import.log; exit 1; }
+          # Dấu phiên bản đóng vào gói: game server in ra lúc khởi động + báo lên web Admin.
+          printf '{"commit": "%s", "dirty": false, "built_at": "%s"}\n' "${GITHUB_SHA::7}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > build_info.json
+          godot --headless --path . --export-pack "Game Server (Linux)" server/game/game_server.pck > export.log 2>&1 \
+            || { tail -n 50 export.log; exit 1; }
+          ls -la server/game/game_server.pck
+
+      - uses: docker/setup-qemu-action@v3
+        if: ${{ vars.VPS_PLATFORM == 'linux/arm64' }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}   # nên là Access Token, không phải mật khẩu đăng nhập
+      - uses: docker/build-push-action@v6
+        with:
+          context: server/game
+          platforms: ${{ vars.VPS_PLATFORM || 'linux/amd64' }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      HUB: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}
+      TAG: ${{ needs.build.outputs.tag }}
+      VPS: ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}
+      PORT: ${{ vars.VPS_PORT || '22' }}
+      DIR: ${{ vars.REMOTE_DIR || '/opt/kiemhiep' }}
+    steps:
+      - name: Khóa SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$SSH_KEY" ] || [ -z "$KNOWN_HOSTS" ]; then echo "Thiếu secret VPS_SSH_KEY / VPS_KNOWN_HOSTS"; exit 1; fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: docker stack deploy (chỉ đổi image game)
+        run: |
+          ssh -p "$PORT" "$VPS" "test -f '$DIR/deploy/swarm_up.sh'" \
+            || { echo "VPS chưa có $DIR/deploy — deploy repo kiem-hiep-server trước"; exit 1; }
+          ssh -p "$PORT" "$VPS" "cd '$DIR' && bash deploy/swarm_up.sh '$HUB' 'game=$TAG'"

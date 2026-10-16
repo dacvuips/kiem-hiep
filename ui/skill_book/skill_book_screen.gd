@@ -38,8 +38,8 @@ const WHEEL_LOOP_SIZE := 44.0
 ## Nút tiện ích trên thanh skill (chỉ sắp xếp vị trí / ẩn / cỡ, không gắn kỹ năng): [khoá bố cục, ảnh thanh công cụ, tâm, cỡ, tên].
 ## Mã ô âm (TOOL_BASE - i) để không lẫn với ô skill (0..7), ô chính (MAIN_SLOT), ô liên tục (>= LOOP_BASE).
 const TOOL_BASE := -50
-const WHEEL_TOOLS := [["sit", "sit", Vector2(-445, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-383, -38), 52.0, "Nhảy"],
-	["horse", "hourse", Vector2(-315, -44), 64.0, "Ngựa"]]
+const WHEEL_TOOLS := [["sit", "sit", Vector2(-445, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-269, -209), 56.0, "Nhảy"],
+	["horse", "horse", Vector2(-315, -44), 64.0, "Ngựa"]]
 var _wheel_page_buttons: Array[Button] = []
 var _wheel_swap: Button
 ## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào PlayerProfile.skill_layout, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
@@ -514,8 +514,9 @@ func _refresh_wheel() -> void:
 			holder.add_theme_stylebox_override("panel", SkillButton.make_round_style(holder.size.x, Color(0.08, 0.08, 0.07)))
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
-			icon.material = null
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			## Nút Nhảy là ô tròn cắt icon như nút skill (SkillBarUI._style_jump_button); Ngồi / Ngựa giữ ảnh tròn gốc.
+			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if str(tool[0]) == "horse" else CanvasItem.TEXTURE_FILTER_NEAREST
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
 			holder.tooltip_text = "%s — bật \"Sắp xếp\" để dời / ẩn / đổi cỡ" % str(tool[4])

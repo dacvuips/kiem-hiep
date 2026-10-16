@@ -130,7 +130,7 @@ func on_view_equip(c, eid: int) -> void:
 	if t == null or t == c:
 		gs.notice(c, "Không thấy người chơi này.")
 		return
-	if (t.entity.pos as Vector2).distance_to(c.entity.pos) > VIEW_RANGE:
+	if not GameServer.near(t.entity, c.entity, VIEW_RANGE):
 		gs.notice(c, "%s không ở gần bạn." % t.entity.name)
 		return
 	var out := NetProto.writer(NetProto.S_VIEW_EQUIP)
@@ -172,7 +172,7 @@ func on_enmity(c, eid: int) -> void:
 func _enmity_error(c, t) -> String:
 	if t == null or t == c:
 		return "Không thể cừu sát người này."
-	if (t.entity.pos as Vector2).distance_to(c.entity.pos) > VIEW_RANGE:
+	if not GameServer.near(t.entity, c.entity, VIEW_RANGE):
 		return "%s không ở gần bạn." % t.entity.name
 	if (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return "Không thể cừu sát lúc này."
@@ -241,7 +241,7 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	var arena_hit: bool = t != null and gs.arena != null and gs.arena.allows_hit(c, t)   ## đấu trường PK: 2 người đấu cùng phòng
 	if not (_fighting(c, t) or battle_hit or arena_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
-	if (t.entity.pos as Vector2).distance_to(c.entity.pos) > GameServer.MAX_HIT_DISTANCE:
+	if not GameServer.near(t.entity, c.entity, GameServer.MAX_HIT_DISTANCE):
 		return
 	var hit := PvpHit.decode(bytes)
 	if hit.is_empty():

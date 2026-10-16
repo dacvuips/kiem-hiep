@@ -35,6 +35,10 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		c.entity.touch()
 		gs.profile_changed(c)
 		return
+	## CHỈ khi GAME_TEST_MODE=1: "/testrestart N" khởi động lại êm sau N giây (như lệnh từ web Admin) — thử lưu dữ liệu khi khởi động lại.
+	if gs.test_mode and text.begins_with("/testrestart "):
+		gs.start_drain(clampi(int(text.get_slice(" ", 1)), 3, 60), "thử nghiệm", c.entity.name)
+		return
 	## CHỈ khi GAME_TEST_MODE=1: "/testgold N" cộng N lượng (tối đa 100 triệu/lần) để thử giao dịch / bày bán.
 	if gs.test_mode and text.begins_with("/testgold "):
 		if c.trade:
@@ -60,7 +64,7 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 	var targets: Array = []
 	match channel:
 		NEAR:
-			for e in gs.aoi.around(c.entity.pos):
+			for e in gs.aoi.around(c.entity.pos, c.entity.cell_base):
 				var to = gs.conn_of_eid(e.eid)
 				if to:
 					targets.append(to)

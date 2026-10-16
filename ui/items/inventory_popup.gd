@@ -56,6 +56,20 @@ func _ready() -> void:
 	%CloseButton.pressed.connect(queue_free)
 	%TitleBar.gui_input.connect(_on_title_input)
 	%SortButton.pressed.connect(_on_sort_pressed)
+	## Hiệu thuốc: bán mọi loại thuốc (PotionShopWindow) — mua xong vẽ lại túi.
+	var shop := GameUi.button("Hiệu thuốc")
+	shop.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	shop.pressed.connect(func() -> void: PotionShopWindow.open(get_tree().current_scene, func() -> void:
+		if is_instance_valid(self):
+			_refresh()))
+	(%SortButton as Control).add_sibling(shop)
+	## Chế tạo: Sát thủ giản, Huyền Tinh, đồ tím (CompoundWindow) — xong vẽ lại túi.
+	var craft := GameUi.button("Chế tạo")
+	craft.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	craft.pressed.connect(func() -> void: CompoundWindow.open(get_tree().current_scene, _profile, func() -> void:
+		if is_instance_valid(self):
+			_refresh()))
+	shop.add_sibling(craft)
 
 	## Lưới ô kiểu VLTK thay cho lưới 6x6 + cột "Túi 1..6" cũ (1 hành trang duy nhất 6 x 10 ô).
 	var group := ButtonGroup.new()
@@ -172,6 +186,10 @@ func _use(index: int) -> void:
 		_show_message("Chỉ dùng được thuốc khi đang ở trên bản đồ.")
 		return
 	var item := _profile.inventory[index]
+	var blocked := PotionEffect.block_reason(item)
+	if blocked != "":
+		_show_message(blocked)
+		return
 	if not PotionEffect.consume(_profile, player, item):
 		return
 	_show_message("Đã dùng %s" % item.get_display_name())

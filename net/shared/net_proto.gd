@@ -21,7 +21,11 @@ const CH_RELIABLE := 0
 const CH_STATE := 1
 
 # game -> server
-const C_HELLO := 1        ## u16 version, str access_token, u32 character_id
+const C_HELLO := 1        ## u16 version, str access_token, u32 character_id, [u8 mode: HELLO_WORLD | HELLO_HUB]
+## Chế độ kết nối (byte cuối C_HELLO, thiếu = vào map): HUB = "sảnh" ở Character Hub — không có nhân vật trên map, không ai thấy,
+## server chỉ nhận gói xã hội / chợ / lưu nhân vật (GameServer.HUB_ALLOWED).
+const HELLO_WORLD := 0
+const HELLO_HUB := 1
 const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags
 const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse
 const C_DAMAGE := 4       ## u32 monster_eid, u32 amount, u8 flags (1 = làm khựng) — sát thương đã tính ở máy người đánh
@@ -47,6 +51,9 @@ const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá tr
 const C_TRADE_REQ_ID := 24 ## u32 character_id — xin giao dịch theo ID nhân vật (Chợ › Giao dịch): không cần đứng gần
 const C_MARKET := 25      ## str json {op: "list" {filter} | "mine" | "sell" {uid, price, cur} | "buy" {id} | "cancel" {id}} — Chợ Giao Thương
 const C_ARENA := 26       ## u8 op (ArenaServer.OP_*) + str json — đấu trường PK (tạo / vào / xem phòng, tự tìm đối thủ, rời)
+const C_FIELD := 27       ## u8 op (FieldServer.OP_*) + str json — phòng train chung Vượt Ải (tạo phòng {map_id, tier, stars} / vào {room, map_id})
+const C_SHOP_BUY := 28    ## str misc_id, u8 count — mua ở Hiệu thuốc (PotionShop): server trừ tiền + thêm thuốc rồi gửi S_PROFILE
+const C_CRAFT := 29       ## str json {op, uids, alt} — Chế tạo (Compound.run trên hồ sơ của server) -> S_NOTICE + S_PROFILE
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
@@ -88,6 +95,7 @@ const S_STALL_SIGN := 37  ## u32 eid, str title ("" = dọn quầy) — biển q
 const S_BATTLE := 38      ## str json {op: "state" | "joined" | "reject" | "result", ...} — chiến trường Tống Kim
 const S_MARKET := 39      ## json nén {op: "list" | "mine" | "done", items: [listing MarketBook], now, slots, ok, msg} — Chợ Giao Thương
 const S_ARENA := 40       ## str json {op: "room" | "state" | "result" | "reject" | "searching" | "no_match", ...} — đấu trường PK
+const S_FIELD := 41       ## str json {op: "room" | "reject", id, map_id, tier, stars, host, members, max} — phòng train chung Vượt Ải
 const S_GUILD := 27       ## str json bang của mình ("" = không có bang) — cờ "local" ở mục của chính mình
 const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master, recruit, accept_level, tendency, activity, recruit_msg}]
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name

@@ -21,6 +21,10 @@ var version := 0
 var cell := Vector2i(1 << 30, 1 << 30)   ## ô AOI đang đứng (AoiGrid quản lý)
 var look_dirty := false          ## ngoại hình vừa đổi -> lượt gửi tới gửi kèm S_LOOK
 var snap_ver := -1               ## `version` đã đưa vào gói vị trí của ô (GameServer._send_snapshots)
+## Phòng train chung (FieldServer) đang ở: 0 = map chính của tiến trình. Mỗi phòng 1 vùng ô AOI riêng (cell_base cộng vào ô) nên
+## thực thể ở phòng khác không bao giờ nằm trong 3x3 ô của nhau — phần gửi vị trí theo AOI không cần biết tới phòng.
+var room_id := 0
+var cell_base := Vector2i.ZERO
 
 func touch() -> void:
 	version += 1

@@ -1,6 +1,7 @@
 extends Node
 ## Kiểm thử CHIẾN TRƯỜNG TỐNG KIM (BattleServer) với bot thật qua ENet. Cần chạy sẵn server tài khoản + battle server, trận rút ngắn:
-##   GAME_BATTLE_SIGNUP=25 GAME_BATTLE_FIGHT=60 GAME_BATTLE_MIN_LEVEL=1 GODOT=... bash server/run_battle_server.sh
+##   GAME_TEST_MODE=1 GAME_BATTLE_SIGNUP=50 GAME_BATTLE_FIGHT=110 GAME_BATTLE_MIN_LEVEL=1 GAME_BATTLE_MARSHAL_LIFE=100000 GODOT=... bash server/run_battle_server.sh
+##   (hoặc đơn giản: bash server/dev.sh test --battle)
 ## rồi: godot --headless --path . res://tests/battle_tests.tscn   (BATTLE_API / GAME_ENET_PORT đổi địa chỉ nếu cần)
 ## Chạy ngay sau khi bật battle server (đang báo danh). In PASS/FAIL, cuối cùng "RESULT x/y".
 
@@ -90,19 +91,26 @@ func make_bot(tag: String) -> Array:
 	return [b, token]
 
 func http(method: String, path: String, body: Dictionary, token := "") -> Dictionary:
-	var h := HTTPRequest.new()
-	add_child(h)
-	var headers := ["Content-Type: application/json"]
-	if token != "":
-		headers.append("Authorization: Bearer " + token)
-	if method == "GET":
-		h.request(API + path, headers, HTTPClient.METHOD_GET)
-	else:
-		h.request(API + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
-	var res: Array = await h.request_completed
-	h.queue_free()
-	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
-	return d if d is Dictionary else {}
+	## Server tài khoản giới hạn yêu cầu / phút theo IP (RATE_LIMIT_IP_PER_MIN — giữ nguyên, là lớp bảo vệ): chạy liền nhiều bài
+	## test tạo hàng chục tài khoản bot thì bị 429 -> chờ rồi thử lại (tối đa ~1 phút).
+	for attempt in 30:
+		var h := HTTPRequest.new()
+		add_child(h)
+		var headers := ["Content-Type: application/json"]
+		if token != "":
+			headers.append("Authorization: Bearer " + token)
+		if method == "GET":
+			h.request(API + path, headers, HTTPClient.METHOD_GET)
+		else:
+			h.request(API + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+		var res: Array = await h.request_completed
+		h.queue_free()
+		if int(res[1]) == 429:
+			await get_tree().create_timer(2.0).timeout
+			continue
+		var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+		return d if d is Dictionary else {}
+	return {}
 
 ## Đi theo đường A* trên lưới vật cản của map (MapGrid, ô 32x16) tới gần `to`, mỗi bước ≈ tốc độ chạy.
 func walk(b: BotClient, to: Vector2, stop_within := 300.0, timeout := 45.0) -> bool:
@@ -315,6 +323,8 @@ func run() -> void:
 	var j_pts := int(res.get("me", {}).get("points", 0))
 	check("thưởng phe thắng: điểm tích lũy = (1200 + điểm trận) x hệ số", int(jr.get("points", -1)) == (BattleServer.WIN_POINTS * mult + j_pts) * wk, jr)
 	check("thưởng phe thắng: +danh vọng và 1 vật phẩm", int(jr.get("repute", 0)) == BattleServer.WIN_REPUTE * mult and str(jr.get("item", "")) != "", jr)
+	## Mỗi bot nhận gói kết quả riêng — chờ cả bên thua (không thì đọc lúc gói của s[0] chưa tới: test chập chờn).
+	await wait_until(func() -> bool: return not last_op(s[0], "result").is_empty(), 5.0)
 	var sr: Dictionary = last_op(s[0], "result").get("reward", {})
 	check("thưởng phe thua: điểm tích lũy = (600 + điểm trận) x hệ số, không có vật phẩm", int(sr.get("points", -1)) == (BattleServer.LOSE_POINTS * mult + BattleServer.KILL_POINTS) * wk and not sr.has("item"), sr)
 	var saved_pts := await wait_until(func() -> bool: return int(s[0].profile.get("songjin_points", 0)) == int(sr.get("total", -2)), 4.0)

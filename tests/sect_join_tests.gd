@@ -99,12 +99,30 @@ func test_server_guard() -> void:
 		c["sect_id"] = moc[1].id
 		m = ProfileGuard.merge(s.to_dict(), c)
 		check("Server: đã có phái -> không đổi", str(m.get("sect_id", "")) == moc[0].id, m.get("sect_id"))
-	## Tạo nhân vật kèm sẵn phái (game cũ / gian lận): về Vô Môn Phái, giữ hệ.
-	var cheat := PlayerProfile.new()
-	cheat.set_sect(moc[0])
-	var fresh := PlayerProfile.from_dict(ProfileGuard.sanitize_new(cheat.to_dict()))
-	check("Server: tạo nhân vật kèm phái -> Vô Môn Phái", not fresh.has_sect() and fresh.get_element() == ElementTypes.ElementType.MOC, fresh.sect_id)
-	check("Server: Vô Môn Phái vẫn có trần sát thương đánh thường", ProfileGuard.max_hit(fresh) >= ProfileGuard.MIN_CAP)
+	## Phái chọn ở Character Hub ngay sau khi tạo (đúng hệ, hợp giới tính): server giữ (ProfileGuard.sanitize_new).
+	var chosen := PlayerProfile.new()
+	chosen.set_sect(moc[0])
+	var kept := PlayerProfile.from_dict(ProfileGuard.sanitize_new(chosen.to_dict()))
+	check("Server: tạo nhân vật kèm phái đúng hệ -> giữ phái", kept.sect_id == moc[0].id and kept.get_element() == ElementTypes.ElementType.MOC, kept.sect_id)
+	## Phái không nhận giới tính của nhân vật (gian lận: nam vào phái chỉ nhận nữ): về Vô Môn Phái, giữ hệ của phái đã khai.
+	var male := PlayerProfile.new()
+	male.gender = PlayerProfile.Gender.MALE
+	var women_only: SectDefinition = null
+	for sd: SectDefinition in SectRegistry.load_all():
+		if not male.gender_fits(sd):
+			women_only = sd
+			break
+	if women_only == null:
+		check("Server: có phái chỉ nhận 1 giới để thử", false)
+	else:
+		male.set_sect(women_only)   ## (set_sect tự đổi sang nữ — kẻ gian gửi thẳng dữ liệu "nam + phái nữ")
+		var cheat := male.to_dict()
+		cheat["gender"] = PlayerProfile.Gender.MALE
+		var fresh := PlayerProfile.from_dict(ProfileGuard.sanitize_new(cheat))
+		check("Server: nam tạo nhân vật kèm phái chỉ nhận nữ -> Vô Môn Phái", not fresh.has_sect() and fresh.get_element() == women_only.element,
+			[women_only.id, fresh.sect_id])
+	var no_sect := PlayerProfile.from_dict(ProfileGuard.sanitize_new(PlayerProfile.new().to_dict()))
+	check("Server: Vô Môn Phái vẫn có trần sát thương đánh thường", not no_sect.has_sect() and ProfileGuard.max_hit(no_sect) >= ProfileGuard.MIN_CAP)
 
 func test_choice_window() -> void:
 	var p := PlayerProfile.new()

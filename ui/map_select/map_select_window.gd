@@ -9,6 +9,9 @@ class_name MapSelectWindow
 ##   - Địa Ngục: map 10x / 11x / 12x (quái cấp 100 / 110 / 120 — MapCatalog.hell_maps), mỗi map chọn 1-5 sao: máu, sát thương,
 ##     tỉ lệ rơi đồ của quái nhân số sao; 5 sao đồ rơi ra luôn đủ dòng magic (DropTable.roll_hell). Giao diện tông đỏ máu.
 ## Vào map: gọi on_play(entry) — Character Hub lo đổi cảnh (đóng cửa sổ trước khi gọi).
+## PHÒNG TRAIN CHUNG (tab Thường / Địa Ngục, lúc đã đăng nhập): vào map = tạo phòng trên field server (FieldServer cấp ID 6 số, hiện
+## ở khung trên màn chơi — FieldClient); hàng "ID phòng" dưới cùng: nhập ID của người khác -> tra phòng (GET /v1/field) -> vào đúng map
+## đó cùng họ. Chưa đăng nhập: chơi một mình như cũ (offline).
 
 const TABS := ["Thường", "Ải", "Địa Ngục"]
 const THUMB_SIZE := Vector2(168, 104)
@@ -21,6 +24,10 @@ var _tier := 1
 var _tab_buttons: Array[Button] = []
 var _tier_buttons: Array[Button] = []
 var _content: HBoxContainer
+var _join_row: Control
+var _join_edit: LineEdit
+var _join_button: Button
+var _join_msg: Label
 
 const BATTLE_POLL := 3.0
 const BATTLE_COOLDOWN := 10.0
@@ -44,7 +51,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	super._init("Vượt Ải", "Chọn bản đồ luyện công theo cấp", 800.0)
 	_profile = profile
 	_on_play = on_play
-	_tier = MapCatalog.tier_of_level(profile.level if profile else 1)
+	_tier = MapCatalog.normal_tier_for_level(profile.level if profile else 1)
 
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 8)
@@ -61,6 +68,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_content.add_theme_constant_override("separation", 10)
 	_content.custom_minimum_size.y = LIST_SIZE.y
 	body.add_child(_content)
+	_build_join_row()
 	_select_tab(0)
 
 func _select_tab(i: int) -> void:
@@ -70,6 +78,7 @@ func _select_tab(i: int) -> void:
 	for c in _content.get_children():
 		c.queue_free()
 	_tier_buttons.clear()
+	_join_row.visible = i != 1   ## phòng train chung: tab Thường + Địa Ngục
 	if i == 0:
 		_build_normal()
 		return
@@ -356,6 +365,11 @@ func _build_normal() -> void:
 	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(list_scroll)
 	_select_tier(_tier)
+	## Danh sách mốc dài hơn khung -> cuộn tới mốc đang chọn (sau khi khung đã xếp chỗ).
+	var active: Button = _tier_buttons[_tier - 1]
+	(func() -> void:
+		if is_instance_valid(tier_scroll) and is_instance_valid(active):
+			tier_scroll.ensure_control_visible(active)).call_deferred()
 
 func _select_tier(t: int) -> void:
 	_tier = t
@@ -403,7 +417,7 @@ func _map_card(m: Dictionary) -> Control:
 	play.disabled = not playable
 	play.tooltip_text = "" if playable else "Bản đồ này chưa được xuất (tools/export_training_maps.py)"
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	play.pressed.connect(_play.bind(m))
+	play.pressed.connect(_enter_field.bind(m))
 	row.add_child(play)
 	return card
 
@@ -574,7 +588,7 @@ func _hell_card(m: Dictionary) -> Control:
 		star_buttons[k].pressed.connect(func() -> void:
 			_hell_stars[id] = k + 1
 			paint.call(k + 1))
-	play.pressed.connect(func() -> void: _play(MapCatalog.hell_entry(m, int(_hell_stars.get(id, 1)))))
+	play.pressed.connect(func() -> void: _enter_field(MapCatalog.hell_entry(m, int(_hell_stars.get(id, 1)))))
 	paint.call(int(_hell_stars.get(id, 1)))
 	return card
 
@@ -597,6 +611,109 @@ func _hell_button(text: String, min_size: Vector2, font_size: int) -> Button:
 	b.add_theme_color_override("font_hover_pressed_color", STAR_ON)
 	b.add_theme_color_override("font_disabled_color", Color(0.4, 0.3, 0.3))
 	return b
+
+# ---------------------------------------------------------------- phòng train chung
+
+## Đã đăng nhập vào nhân vật thì map luyện công / Địa Ngục chạy trên field server (train chung được).
+static func _online() -> bool:
+	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0
+
+func _build_join_row() -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_join_row = row
+	body.add_child(row)
+	row.add_child(SocialUi.label("ID phòng:", SocialUi.LABEL_BLUE, 14))
+	_join_edit = SocialUi.line_edit("6 số ID phòng của bạn bè")
+	_join_edit.max_length = 6
+	_join_edit.custom_minimum_size.x = 300
+	_join_edit.text_submitted.connect(func(_t: String) -> void: _join_by_id())
+	row.add_child(_join_edit)
+	_join_button = SocialUi.stone_button("Vào chơi chung", Vector2(160, 38))
+	_join_button.pressed.connect(_join_by_id)
+	row.add_child(_join_button)
+	_join_msg = SocialUi.label("", SocialUi.MUTED, 12)
+	_join_msg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_join_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.add_child(_join_msg)
+	if not _online():
+		_join_edit.editable = false
+		_join_button.disabled = true
+		_join_msg.text = "Đăng nhập tài khoản để train chung (chơi một mình không có ID phòng)."
+
+## Địa chỉ field server + danh sách phòng; {} nếu field server không chạy.
+func _fetch_field() -> Dictionary:
+	var r: Dictionary = await AccountApi.field(ServerSelectScreen.selected_server_id)
+	if not r.ok or not r.data is Dictionary or not bool(r.data.get("open", false)):
+		return {}
+	return r.data
+
+## Địa chỉ field server: gốc danh sách = tiến trình vắng nhất (tạo phòng mới); 1 phòng = tiến trình đang giữ phòng đó ("addr").
+static func _field_server(st: Dictionary, room := {}) -> Dictionary:
+	if not room.is_empty() and str(room.get("addr", "")) != "":
+		return {"host": str(room["addr"]), "port": int(room.get("port", 7807)), "ws_url": str(room.get("ws_url", "")), "name": "Phòng train chung"}
+	return {"host": str(st.get("host", "127.0.0.1")), "port": int(st.get("port", 7807)), "ws_url": str(st.get("ws_url", "")),
+		"name": "Phòng train chung"}
+
+## Bấm Vào / Khiêu chiến: đã đăng nhập -> tạo phòng train chung; field server không chạy thì hỏi chơi một mình.
+func _enter_field(m: Dictionary) -> void:
+	if not _online():
+		_play(m)
+		return
+	var st := await _fetch_field()
+	if not is_inside_tree():
+		return
+	if st.is_empty():
+		SocialWindow.confirm(self, "Phòng train chung", "Máy chủ phòng train chung chưa mở — vào chơi một mình (không có ID phòng)?",
+				func() -> void: _play(m))
+		return
+	var hell: Dictionary = m.get("hell", {})
+	var e := m.duplicate(true)
+	e["field"] = {"server": _field_server(st), "action": {"op": "create", "map_id": int(m["id"]), "tier": int(hell.get("tier", 0)),
+		"stars": int(hell.get("stars", 0))}}
+	_play(e)
+
+## "Vào chơi chung": tra phòng theo ID -> nạp đúng map (Thường / Địa Ngục + số sao của phòng) -> vào phòng.
+func _join_by_id() -> void:
+	var id := _join_edit.text.strip_edges()
+	if id.length() != 6 or not id.is_valid_int():
+		_join_msg.text = "ID phòng gồm 6 chữ số."
+		return
+	_join_button.disabled = true
+	_join_msg.text = "Đang tìm phòng #%s…" % id
+	var st := await _fetch_field()
+	if not is_inside_tree():
+		return
+	_join_button.disabled = false
+	if st.is_empty():
+		_join_msg.text = "Máy chủ phòng train chung chưa mở."
+		return
+	var room: Dictionary = {}
+	for r in st.get("rooms", []):
+		if r is Dictionary and str(r.get("id", "")) == id:
+			room = r
+	var reason := ""
+	var entry := {} if room.is_empty() else join_entry(room)
+	if room.is_empty():
+		reason = "Không có phòng #%s (phòng đã đóng hoặc sai ID)." % id
+	elif int(room.get("members", 0)) >= int(room.get("max", FieldServer.MAX_MEMBERS)):
+		reason = "Phòng #%s đã đủ người." % id
+	elif entry.is_empty() or not MapCatalog.is_playable(entry):
+		reason = "Máy bạn chưa có bản đồ của phòng #%s." % id
+	if reason != "":
+		_join_msg.text = reason
+		return
+	entry["field"] = {"server": _field_server(st, room), "action": {"op": "join", "room": id, "map_id": int(room["map_id"]),
+		"tier": int(room.get("tier", 0))}}
+	_play(entry)
+
+## Mục map (GameManager.field_map) của 1 phòng trong danh sách /v1/field: map Thường, hoặc map Địa Ngục đúng nhóm + số sao. {} = không có.
+static func join_entry(room: Dictionary) -> Dictionary:
+	var tier := int(room.get("tier", 0))
+	var m := FieldServer.map_entry(int(room.get("map_id", 0)), tier)
+	if m.is_empty():
+		return {}
+	return MapCatalog.hell_entry(m, int(room.get("stars", 1))) if tier != 0 else m.duplicate(true)
 
 func _play(m: Dictionary) -> void:
 	close_requested.emit()

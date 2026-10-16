@@ -16,7 +16,7 @@ class_name PotionEffect
 
 const GAME_FPS := 18.0
 ## Hiệu ứng chỉ là hồi phục theo nhịp / chưa có tác dụng (không phải buff thuộc tính).
-const TICK_ATTRIBS := ["lifepotion_v", "manapotion_v", "stamina_v", "poisondamagereduce_v"]
+const TICK_ATTRIBS := ["lifepotion_v", "manapotion_v", "manareplenish_v", "stamina_v", "poisondamagereduce_v"]
 ## Skill trạng thái của đan loại 6 -> hoàn loại 1 cùng hiệu ứng (chú thích gốc từng món).
 const STATE_SKILL_ITEM := {256: "1_5_0_1", 257: "1_5_0_2", 258: "1_5_0_3", 259: "1_5_0_4", 260: "1_5_0_5",
 	261: "1_6_0_1", 262: "1_6_0_2", 263: "1_6_0_3", 264: "1_6_0_4", 265: "1_6_0_5"}
@@ -96,10 +96,17 @@ static func drink(player: Node, item: ItemInstance) -> bool:
 		status.apply_state("item:" + ",".join(key), buff, seconds, {"icon": ItemDatabase.get_icon(item.get_base()), "name": item.get_display_name()})
 	return true
 
+## Lý do KHÔNG dùng được món này lúc này ("" = dùng được): thuốc Tống Kim (songjin_only) chỉ dùng trong Chiến trường Tống Kim.
+static func block_reason(item: ItemInstance) -> String:
+	if item != null and item.is_misc() and bool(item.get_base().get("songjin_only", false)) \
+			and (GameManager.field_map.get("battle", {}) as Dictionary).is_empty():
+		return "%s chỉ dùng được trong Chiến trường Tống Kim." % item.get_display_name()
+	return ""
+
 ## Uống 1 bình `item` trong túi của `profile`: bớt 1 (hết thì bỏ khỏi túi) + thêm hiệu ứng. Thuốc không chồng (mỗi bình 1 ô) -> online
 ## server nhận việc bỏ món (ProfileGuard chỉ giữ món server biết). Người gọi tự lưu (SaveManager) / vẽ lại.
 static func consume(profile: PlayerProfile, player: Node, item: ItemInstance) -> bool:
-	if profile == null or player == null or not usable(item):
+	if profile == null or player == null or not usable(item) or block_reason(item) != "":
 		return false
 	var index := profile.inventory.find(item)
 	if index < 0:

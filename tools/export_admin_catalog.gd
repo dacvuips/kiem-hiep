@@ -1,10 +1,17 @@
 extends SceneTree
-## Xuất DANH MỤC cho web Admin (server/admin-web/public/catalog.json): đồ thường, đồ hoàng kim, môn phái + skill, tên ô trang bị.
+## Xuất DANH MỤC cho web Admin (<repo backend kiem-hiep-server>/admin-web/public/catalog.json): đồ thường, đồ hoàng kim, môn phái + skill, tên ô trang bị.
 ## Web Admin không có dữ liệu game nên đọc file này để hiện tên món / tên skill và chọn đồ khi thêm vào hành trang.
 ## Chạy lại mỗi khi đổi dữ liệu đồ / skill:
 ##   godot --headless --path . --script tools/export_admin_catalog.gd
 
-const OUT_PATH := "res://server/admin-web/public/catalog.json"
+## Repo backend tách riêng, mặc định cạnh repo game; đổi bằng biến môi trường SERVER_REPO.
+var OUT_PATH := _out_path()
+
+static func _out_path() -> String:
+	var repo := OS.get_environment("SERVER_REPO")
+	if repo.is_empty():
+		repo = ProjectSettings.globalize_path("res://").path_join("../kiem-hiep-server").simplify_path()
+	return repo.path_join("admin-web/public/catalog.json")
 
 func _initialize() -> void:
 	var equip := []

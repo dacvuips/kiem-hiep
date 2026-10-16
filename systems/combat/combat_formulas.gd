@@ -20,8 +20,8 @@ class_name CombatFormulas
 const MAX_PERCENT := 100          ## GameDataDef.h:47 — mẫu số % dùng khắp công thức
 const MAX_RESIST := 95            ## GameDataDef.h:382 — trần % kháng tối đa (không thể kháng 100%)
 const MIN_HIT_PERCENT := 40       ## Cap dưới % trúng đòn — số cứng trong CheckHitTarget gốc (KHÔNG
-                                   ## phải hằng số MIN_HIT_PERCENT=5 của GameDataDef.h, hằng số đó
-                                   ## định nghĩa nhưng KHÔNG được dùng trong hàm gốc — xem mục 11.6)
+								   ## phải hằng số MIN_HIT_PERCENT=5 của GameDataDef.h, hằng số đó
+								   ## định nghĩa nhưng KHÔNG được dùng trong hàm gốc — xem mục 11.6)
 const MAX_HIT_PERCENT := 95       ## GameDataDef.h:386 — trần % trúng đòn
 const DEADLY_STRIKE_MULTIPLIER := 2.0   ## MAX_DEATLY_STRIKE_ENHANCEP=200 / MAX_PERCENT=100
 const FATALLY_STRIKE_MIN_PERCENT := 30  ## GameDataDef.h:66 — Fatally Strike: %HP tối thiểu của mục tiêu

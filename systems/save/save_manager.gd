@@ -153,12 +153,16 @@ func has_profile() -> bool:
 	return FileAccess.file_exists(PROFILE_PATH)
 
 func save_profile(profile: PlayerProfile) -> void:
-	if _saving_disabled() or profile == null:
+	if profile == null:
 		return
+	## Online: lưu lên server cho nhân vật ĐÃ CHỌN trong tiến trình này (set_online_character) — KIEMHIEP_NO_SAVE không chặn (nó chỉ
+	## bảo vệ FILE LƯU TRÊN MÁY; bài test online chọn nhân vật của tài khoản test).
 	if _online():
 		if online_character_id != 0:
 			_pending_profile = profile
 			_online_timer.start(ONLINE_SAVE_DELAY)
+		return
+	if _saving_disabled():
 		return
 	var file := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
 	if file == null:

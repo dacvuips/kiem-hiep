@@ -28,6 +28,7 @@ MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
 NetClient="*res://net/client/net_client.gd"
 PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
+ContentPacks="*res://systems/boot/content_packs.gd"
 
 [display]
 

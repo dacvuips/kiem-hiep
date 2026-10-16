@@ -10,6 +10,7 @@ class_name GameServer
 ##   GAME_MAX_PLAYERS                                       (mặc định 2000)
 ##   GAME_MAP_DIR      thư mục map server chạy             (mặc định DEFAULT_MAP_DIR)
 ##   GAME_BATTLE=1     tiến trình CHIẾN TRƯỜNG TỐNG KIM (BattleServer) — chạy map chiến trường, cổng riêng; xem BattleServer
+##   GAME_FIELD=1      tiến trình PHÒNG TRAIN CHUNG (FieldServer) — map luyện công / Địa Ngục của màn Vượt Ải, mỗi phòng 1 bản map riêng
 ##
 ## Nghe cùng lúc ENet (UDP — PC/mobile) và WebSocket (web). Mỗi kết nối: chờ C_HELLO (access token + mã nhân vật)
 ## -> hỏi server tài khoản -> vào map. Server mô phỏng 18 tick/giây, gửi vị trí 9 lần/giây theo lưới tầm nhìn (AOI).
@@ -19,6 +20,8 @@ class_name GameServer
 
 const DEFAULT_MAP_DIR := "res://world/maps/map_321"   ## map chính đã bỏ: server chạy map Trường Bạch Sơn Nam 1 (Vượt Ải)
 const HELLO_TIMEOUT := 10.0
+## Quái mô phỏng mỗi chừng này tick (= NetProto.SNAPSHOT_EVERY: vị trí chỉ gửi đi theo nhịp này nên bước nhỏ hơn không ai thấy).
+const MONSTER_TICK_EVERY := 2
 ## Tốc độ tối đa chấp nhận (px/giây): lao chiêu ~390, nhảy 216 — để dư cho trễ mạng.
 const MAX_SPEED := 440.0
 ## Ngân sách quãng đường tích tối đa (giây) — bù gói đến dồn do mạng giật, không cho tích lâu để dịch chuyển xa.
@@ -36,6 +39,10 @@ const DROP_OWNER_SECONDS := 30.0
 const PICKUP_REACH := 200.0
 
 enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
+## Gói được phép từ kết nối SẢNH — mọi gói "trong map" khác (di chuyển, ra chiêu, sát thương, nhặt / vứt đồ, PK, cừu sát, xem trang bị
+## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
+const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
+	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING]
 
 class Conn:
 	var key := ""
@@ -78,6 +85,9 @@ class Conn:
 	var trade = null                    ## SocialServer.Trade đang tham gia
 	var team = null                     ## SocialServer.Team đang ở
 	var trade_open := false
+	## Kết nối SẢNH (Character Hub, NetProto.HELLO_HUB): nhân vật không đứng trên map (không vào lưới tầm nhìn, room_id -1 = không
+	## "gần" ai), chỉ được gửi các gói trong HUB_ALLOWED — dùng cho Chợ, giao dịch theo ID, chat, tổ đội, bang, bạn bè từ Hub.
+	var hub := false
 	var stall_open := false
 	var stall_title := ""
 	## C_PROFILE đến dồn (quá MAX_PROFILE_PER_SEC): giữ bản mới nhất, xử lý ở tick sau thay vì bỏ.
@@ -130,6 +140,8 @@ var relation: RelationServer
 var battle: BattleServer
 ## Đấu trường PK (GAME_ARENA=1, map 397): phòng 1 chọi 1 + người xem — ArenaServer.
 var arena: ArenaServer
+## Phòng train chung (GAME_FIELD=1): mỗi phòng 1 bản map luyện công / Địa Ngục + quái riêng, vào bằng ID 6 số — FieldServer.
+var field: FieldServer
 var map_dir := DEFAULT_MAP_DIR
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
@@ -144,15 +156,40 @@ var _m_snap_us := 0
 var _m_tick_max_us := 0
 var _m_bytes := 0
 var _m_packets := 0
+var _m_awake := 0
+## Bán kính (ô AOI) vùng quái "thức" quanh mỗi người chơi — GAME_AWAKE_RADIUS, mặc định 1 (= vùng nhìn thấy 3x3).
+var awake_radius := 1                  ## tổng số quái được mô phỏng (thức) qua các tick trong kỳ đo
 var _m_at := 0.0
 var _last_status_poll := 0.0
 ## Chế độ kiểm thử (GAME_TEST_MODE=1): mỗi quái chết luôn rớt thêm 1 túi tiền để bài test chắc chắn có đồ rơi. TẮT khi chạy thật.
 var test_mode := false
 ## CHỈ KHI PHÁT TRIỂN (GAME_DEV_TRUST_CLIENT=1): nhận nguyên hồ sơ game gửi (cấp / đồ / tiền từ nút TEST) — xem ProfileGuard.merge.
 var dev_trust_client := false
+## Dấu phiên bản gói (res://build_info.json do server/dev.sh ghi lúc build): {commit, dirty, built_at} — {} khi chạy thẳng từ mã nguồn.
+var build_info: Dictionary = {}
+## ---- Vận hành từ web Admin (nhịp tim tới server tài khoản — xem _heartbeat)
+const HEARTBEAT_SECONDS := 5.0
+## Hệ số kinh nghiệm hạ quái (Thông số game ở web Admin, kẹp 1..EXP_MULT_MAX). Hệ số rơi đồ / tiền nằm ở DropTable.set_rates.
+var exp_mult := 1.0
+const EXP_MULT_MAX := 10.0
+var _hb_at := 0.0
+var _hb_busy := false
+var _started_unix := 0
+var _last_tick_avg := 0.0
+var _last_tick_max := 0.0
+var _last_kbs := 0.0
+var _ack_command := 0             ## mã lệnh admin gần nhất đã nhận (báo lại để server tài khoản xoá lệnh)
+## Đang KHỞI ĐỘNG LẠI ÊM: không nhận người mới, đếm ngược báo người chơi, hết giờ thì lưu mọi nhân vật rồi thoát (Docker tự bật lại).
+var draining := false
+var _drain_until := 0.0
+var _drain_message := ""
+var _drain_next_notice := 0.0
+var _shutting_down := false
 
 func _ready() -> void:
 	Engine.max_fps = 120
+	build_info = load_build_info()
+	_started_unix = int(Time.get_unix_time_from_system())
 	map_dir = _env("GAME_MAP_DIR", DEFAULT_MAP_DIR)
 	grid = MapGrid.load_from(map_dir)
 	if grid == null:
@@ -174,7 +211,10 @@ func _ready() -> void:
 		push_error("Thiếu GAME_SERVICE_KEY — game server không xác thực được người chơi")
 		get_tree().quit(1)
 		return
-	_spawn_monsters()
+	if _env("GAME_FIELD", "0") == "1":
+		field = FieldServer.new(self)   ## map của tiến trình chỉ là "sảnh" chờ vào phòng: không sinh quái
+	else:
+		_spawn_monsters()
 	social = SocialServer.new(self)
 	chat = ChatServer.new(self)
 	guild = GuildServer.new(self)
@@ -187,10 +227,11 @@ func _ready() -> void:
 	if _env("GAME_ARENA", "0") == "1":
 		arena = ArenaServer.new(self)
 	guild.load_all()
-	if battle == null and arena == null:
+	if battle == null and arena == null and field == null:
 		market = MarketServer.new(self)
 		market.load_all()
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
+	awake_radius = clampi(int(_env("GAME_AWAKE_RADIUS", "1")), 1, 3)
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
 	var ws_port := int(_env("GAME_WS_PORT", "7778"))
 	if _enet.create_server(enet_port, mini(max_players, 4095), 2) != OK:
@@ -204,7 +245,7 @@ func _ready() -> void:
 	for p: MultiplayerPeer in [_enet, _ws]:
 		p.peer_connected.connect(_on_peer_connected.bind(p))
 		p.peer_disconnected.connect(_on_peer_disconnected.bind(p))
-	print("Game server: map %dx%d ô, %d quái, ENet :%d, WebSocket :%d, máy chủ %d, tài khoản %s" % [
+	print("Game server %s: map %dx%d ô, %d quái, ENet :%d, WebSocket :%d, máy chủ %d, tài khoản %s" % [build_label(),
 		grid.cols, grid.rows, _monsters.size(), enet_port, ws_port, account.server_id, account.base_url])
 
 ## Quái theo bãi trong map.json (role "monster" có dữ liệu mẫu) — luôn tồn tại trên server, không phụ thuộc người chơi.
@@ -220,8 +261,24 @@ func _spawn_monsters() -> void:
 		_entities[m.eid] = m
 		aoi.update(m)
 
+static func load_build_info() -> Dictionary:
+	var path := "res://build_info.json"
+	if not FileAccess.file_exists(path):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	return parsed if parsed is Dictionary else {}
+
+## "bản a1b2c3d (có sửa) 2026-10-15T10:00:00Z" / "chạy từ mã nguồn".
+func build_label() -> String:
+	if build_info.is_empty():
+		return "(chạy từ mã nguồn)"
+	return "bản %s%s %s" % [build_info.get("commit", "?"), " (có sửa)" if build_info.get("dirty", false) else "", build_info.get("built_at", "")]
+
+## Biến môi trường k; không có thì đọc file ở k_FILE (Docker Swarm secrets, /run/secrets/...).
 func _env(k: String, def: String) -> String:
 	var v := OS.get_environment(k)
+	if v == "" and OS.get_environment(k + "_FILE") != "":
+		v = FileAccess.get_file_as_string(OS.get_environment(k + "_FILE")).strip_edges()
 	return v if v != "" else def
 
 # ---------------------------------------------------------------- vòng lặp
@@ -254,6 +311,8 @@ func _process(delta: float) -> void:
 			battle.tick(step)
 		if arena:
 			arena.tick(step)
+		if field:
+			field.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -273,19 +332,27 @@ func _process(delta: float) -> void:
 		_m_tick_max_us = maxi(_m_tick_max_us, dt_us)
 	if _now - _m_at >= METRICS_SECONDS:
 		_print_metrics()
+	if _now - _hb_at >= HEARTBEAT_SECONDS:
+		_hb_at = _now
+		_heartbeat()
+	if draining:
+		_tick_drain()
 
 func _print_metrics() -> void:
 	var span := maxf(0.001, _now - _m_at)
 	var online := _by_character.size()
 	if online > 0 or _m_ticks > 0:
-		var awake := 0
+		var alive := 0
 		for m in _monsters:
 			if not m.hidden and not m.is_dead():
-				awake += 1
-		print("[đo] online %d | tick tb %.2f ms, max %.2f ms (ngân sách %.1f ms) (quái %.2f, gửi vị trí %.2f) | gửi %.1f KB/s (%.2f KB/s/người), %d gói/s | quái sống %d" % [
+				alive += 1
+		print("[đo] online %d | tick tb %.2f ms, max %.2f ms (ngân sách %.1f ms) (quái %.2f, gửi vị trí %.2f) | gửi %.1f KB/s (%.2f KB/s/người), %d gói/s | quái sống %d, thức %d" % [
 			online, _m_tick_us / 1000.0 / maxi(1, _m_ticks), _m_tick_max_us / 1000.0, 1000.0 / NetProto.TICK_RATE,
 			_m_sim_us / 1000.0 / maxi(1, _m_ticks), _m_snap_us / 1000.0 / maxi(1, _m_ticks),
-			_m_bytes / 1024.0 / span, _m_bytes / 1024.0 / span / maxi(1, online), int(_m_packets / span), awake])
+			_m_bytes / 1024.0 / span, _m_bytes / 1024.0 / span / maxi(1, online), int(_m_packets / span), alive, _m_awake / maxi(1, _m_ticks)])
+	_last_tick_avg = _m_tick_us / 1000.0 / maxi(1, _m_ticks)
+	_last_tick_max = _m_tick_max_us / 1000.0
+	_last_kbs = _m_bytes / 1024.0 / span
 	_m_at = _now
 	_m_ticks = 0
 	_m_tick_us = 0
@@ -294,18 +361,20 @@ func _print_metrics() -> void:
 	_m_snap_us = 0
 	_m_bytes = 0
 	_m_packets = 0
+	_m_awake = 0
 
 func _simulate(_dt: float) -> void:
 	for c: Conn in _conns.values():
 		if c.state == ConnState.WAIT_HELLO and _now - c.since > HELLO_TIMEOUT:
 			_kick(c, "timeout", "Hết thời gian chờ vào game")
-	## Quái chỉ "thức" ở ô có người chơi trong vòng 2 ô (rộng hơn tầm nhìn 1 ô để quái kịp đi tới) — vùng vắng không tốn CPU.
+	## Quái chỉ "thức" trong 3x3 ô quanh người chơi = đúng vùng người đó NHÌN THẤY. Quái xa hơn 1 ô (>= 1024 px) không ai thấy và cũng
+	## không phát hiện được ai (tầm nhìn quái ~400) — cho ngủ để khỏi tốn CPU / băng thông đi tuần vô ích.
 	var awake := {}
 	for c: Conn in _conns.values():
-		if c.entity != null and c.state == ConnState.IN_WORLD:
-			var cell := aoi.cell_of(c.entity.pos)
-			for dx in range(-2, 3):
-				for dy in range(-2, 3):
+		if c.entity != null and c.state == ConnState.IN_WORLD and not c.hub:
+			var cell := c.entity.cell
+			for dx in range(-awake_radius, awake_radius + 1):
+				for dy in range(-awake_radius, awake_radius + 1):
 					awake[cell + Vector2i(dx, dy)] = true
 	for m in _monsters:
 		if m.hidden:
@@ -320,26 +389,31 @@ func _simulate(_dt: float) -> void:
 				aoi.remove(m)
 				_entities.erase(m.eid)
 			continue
-		if awake.has(m.cell):
-			m.tick(self)
+		## Mỗi quái chạy 2 tick 1 lần (bước đôi) — chia 2 nhóm chẵn / lẻ theo eid để mỗi tick gánh 1 nửa.
+		if awake.has(m.cell) and (m.eid + _tick) % MONSTER_TICK_EVERY == 0:
+			_m_awake += 1
+			m.tick(self, MONSTER_TICK_EVERY)
 
 ## Người chơi còn sống gần nhất trong tầm nhìn (đơn vị logic) của quái.
-## exclude_side (chiến trường): quái của phe này -> chỉ nhắm người đã vào phe KIA.
-func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "") -> ServerEntity:
+## exclude_side (chiến trường): quái của phe này -> chỉ nhắm người đã vào phe KIA. base = vùng ô AOI của phòng quái đang ở.
+func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "", base := Vector2i.ZERO) -> ServerEntity:
 	var here := VltkMath.to_logic(feet)
 	var best: ServerEntity = null
 	var best_d := vision_logic
-	for e in aoi.around(feet):
-		if e.kind != NetProto.KIND_PLAYER or (e.flags & NetProto.FLAG_DEAD) != 0:
-			continue
-		if exclude_side != "" and battle:
-			var side := battle.side_of(_players_by_eid.get(e.eid))
-			if side == "" or side == exclude_side:
-				continue
-		var d := here.distance_to(VltkMath.to_logic(e.pos))
-		if d <= best_d:
-			best_d = d
-			best = e
+	var center := aoi.cell_of(feet, base)
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			for e: ServerEntity in aoi.player_bucket(center + Vector2i(dx, dy)).values():
+				if (e.flags & NetProto.FLAG_DEAD) != 0:
+					continue
+				if exclude_side != "" and battle:
+					var side := battle.side_of(_players_by_eid.get(e.eid))
+					if side == "" or side == exclude_side:
+						continue
+				var d := here.distance_to(VltkMath.to_logic(e.pos))
+				if d <= best_d:
+					best_d = d
+					best = e
 	return best
 
 ## Quái bắt đầu ra chiêu: báo cho mọi người đang thấy quái (máy người bị nhắm chạy đòn thật).
@@ -381,6 +455,8 @@ func _drop(c: Conn) -> void:
 			battle.on_leave(c)
 		if arena:
 			arena.on_leave(c)
+		if field:
+			field.on_leave(c)
 	_conns.erase(c.key)
 	if c.entity and c.character_id != 0:
 		c.dirty = true   ## vị trí lúc thoát luôn phải lưu
@@ -417,6 +493,8 @@ func _kick(c: Conn, code: String, message: String) -> void:
 	if c.entity and c.state == ConnState.IN_WORLD:
 		social.on_leave(c)   ## huỷ giao dịch, rời đội trước khi mất thực thể
 		relation.on_leave(c)
+		if field:
+			field.on_leave(c)   ## chủ phòng bị đá -> đóng phòng
 	c.state = ConnState.CLOSING
 	if c.entity:
 		aoi.remove(c.entity)
@@ -445,6 +523,8 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		return
 	var b := NetProto.reader(pkt)
 	var type := b.get_u8()
+	if c.hub and not HUB_ALLOWED.has(type):
+		return
 	match type:
 		NetProto.C_HELLO:
 			if c.state == ConnState.WAIT_HELLO:
@@ -520,12 +600,31 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_REVIVE:
 			if c.state == ConnState.IN_WORLD:
 				_on_revive(c)
+		NetProto.C_SHOP_BUY:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				var mid := NetProto.get_str(b, 32)
+				var r := PotionShop.buy(c.profile, mid, b.get_u8() if b.get_available_bytes() >= 1 else 1)
+				if r["ok"]:
+					profile_changed(c)
+				notice(c, str(r["message"]))
+		NetProto.C_CRAFT:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				var a = JSON.parse_string(NetProto.get_str(b, 2048))
+				if a is Dictionary:
+					var r := Compound.run(c.profile, int(a.get("op", -1)), _str_list(a.get("uids", []), 6),
+						_str_list(a.get("alt", []), Compound.MAX_ALT))
+					if r["ok"]:
+						profile_changed(c)
+					notice(c, str(r["message"]))
 		NetProto.C_BATTLE:
 			if battle and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				battle.on_battle(c, b)
 		NetProto.C_ARENA:
 			if arena and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				arena.on_arena(c, b)
+		NetProto.C_FIELD:
+			if field and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				field.on_field(c, b)
 		NetProto.C_PING:
 			if b.get_available_bytes() >= 4:
 				var r := NetProto.writer(NetProto.S_PONG)
@@ -537,11 +636,19 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	var version := b.get_u16()
 	var token := NetProto.get_str(b, 2048)
 	var character_id := b.get_u32() if b.get_available_bytes() >= 4 else 0
+	var mode := b.get_u8() if b.get_available_bytes() >= 1 else NetProto.HELLO_WORLD
+	if mode == NetProto.HELLO_HUB and (battle or arena or field):
+		_kick(c, "bad_mode", "Máy chủ này không nhận kết nối từ sảnh")
+		return
+	c.hub = mode == NetProto.HELLO_HUB
 	if version != NetProto.VERSION:
 		_kick(c, "version", "Phiên bản game đã cũ, hãy cập nhật")
 		return
 	if _by_character.size() >= max_players:
 		_kick(c, "full", "Máy chủ đã đầy, vui lòng thử lại sau")
+		return
+	if draining:
+		_kick(c, "maintenance", "Máy chủ đang khởi động lại, vui lòng vào lại sau ít phút")
 		return
 	c.state = ConnState.AUTH
 	## Nhân vật vừa thoát và đang lưu lần cuối: chờ lưu xong rồi mới nạp (không thì nạp bản cũ, lần lưu sau bị lệch version).
@@ -604,21 +711,26 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	_next_eid += 1
 	e.kind = NetProto.KIND_PLAYER
 	e.name = str(ch.get("name", "?"))
-	e.level = int(ch.get("level", 1))
+	e.level = c.profile.level   ## (cột level của bảng nhân vật có thể cũ: quà tân thủ vừa nâng cấp ở trên, chưa lưu)
 	e.camp = c.profile.get_current_camp()
 	e.nation = Nation.Type.NONE   ## phe Tống / Kim chỉ có trong trận (refresh_camp)
 	e.look = look_from_profile(data)
 	e.flags = NetProto.FLAG_RIDING if int(e.look.horse) >= 0 else 0
 	if battle:   ## chiến trường: chưa có phe thì đứng tạm ở điểm xuất phát (vị trí đã lưu là vị trí ngoài thế giới)
-		e.pos = grid.free_near(grid.default_center())
+		e.pos = grid.open_spawn_near(grid.default_center())
 	elif arena:   ## đấu trường PK: chưa vào phòng thì đứng ở chỗ người xem (không ai thấy cho tới khi vào phòng)
 		e.pos = arena.entry_pos()
+	elif field:   ## phòng train chung: đứng ở sảnh (không thấy ai) tới khi tạo / vào phòng (C_FIELD)
+		e.pos = field.entry_pos()
 	else:
 		e.pos = take_over.entity.pos if take_over and take_over.entity else saved_pos(data)
 	c.entity = e
-	_entities[e.eid] = e
 	_players_by_eid[e.eid] = c
-	aoi.update(e)
+	if c.hub:
+		e.room_id = -1   ## sảnh: không vào lưới tầm nhìn, không "gần" ai (GameServer.near so room_id)
+	else:
+		_entities[e.eid] = e
+		aoi.update(e)
 	c.state = ConnState.IN_WORLD
 	c.move_budget = c.max_speed * MOVE_BUDGET_CAP
 	c.last_move_at = _now
@@ -640,16 +752,19 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		_save(c)
 	if battle:
 		battle.on_join_world(c)
-	print("Vào map: %s (%s) eid %d — online %d" % [e.name, c.username, e.eid, _by_character.size()])
+	print("%s: %s (%s) eid %d — online %d" % ["Vào sảnh" if c.hub else "Vào map", e.name, c.username, e.eid, _by_character.size()])
 
-## Chỗ đứng lúc thoát (khoá "pos" do _save ghi). Chưa có / ra ngoài map -> điểm xuất phát; rơi vào vật cản (map đổi) -> ô trống gần đó.
+## Chỗ đứng lúc thoát (khoá "pos" do _save ghi). Chưa có / ra ngoài map / kẹt trong vùng kín -> điểm xuất phát thông thoáng;
+## rơi vào vật cản (map đổi) -> ô trống gần đó.
 func saved_pos(data: Dictionary) -> Vector2:
 	var v = data.get("pos")
 	if v is Array and v.size() == 2:
 		var p := Vector2(float(v[0]), float(v[1]))
 		if grid.in_bounds(p):
-			return p if not grid.is_blocked(p) else grid.free_near(p)
-	return grid.free_near(grid.default_center())
+			var at := p if not grid.is_blocked(p) else grid.free_near(p)
+			if grid.is_open_area(at):
+				return at   ## (kẹt trong vùng kín giữa vật cản — VD khối đá giữa map — thì về chỗ thông thoáng)
+	return grid.open_spawn_near(grid.default_center())
 
 ## Ngoại hình từ dữ liệu nhân vật (PlayerProfile.to_dict) — cùng cách Player.refresh_appearance().
 static func look_from_profile(data: Dictionary) -> Dictionary:
@@ -666,6 +781,7 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 	var z := b.get_u8()
 	var flags := (b.get_u8() & NetProto.CLIENT_FLAGS) | (c.entity.flags & ~NetProto.CLIENT_FLAGS)
 	var e := c.entity
+	var grid := grid_of(e)
 	c.move_budget = minf(c.move_budget + (_now - c.last_move_at) * c.max_speed, c.max_speed * MOVE_BUDGET_CAP)
 	c.last_move_at = _now
 	var dist := e.pos.distance_to(p)
@@ -717,7 +833,9 @@ func _on_revive(c: Conn) -> void:
 		return
 	if arena and arena.on_revive(c):     ## đấu trường PK: đứng lại chỗ của mình trong phòng
 		return
-	e.pos = grid.free_near(grid.default_center())
+	if field and field.on_revive(c):     ## phòng train chung: về điểm xuất phát của map phòng
+		return
+	e.pos = grid.open_spawn_near(grid.default_center())
 	e.touch()
 	aoi.update(e)
 	c.move_budget = c.max_speed * MOVE_BUDGET_CAP
@@ -773,7 +891,7 @@ func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m := _entities.get(m_eid) as ServerMonster
 	if m == null or m.is_dead() or (c.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
-	if m.pos.distance_to(c.entity.pos) > MAX_HIT_DISTANCE:
+	if not near(m, c.entity, MAX_HIT_DISTANCE):   ## (khác phòng train chung = không đánh được dù cùng toạ độ)
 		return
 	if m.battle_side != "" and (battle == null or not battle.can_hit_monster(c, m)):
 		return   ## Nguyên Soái: chỉ người phe kia đánh được
@@ -814,18 +932,22 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		if not team_got.has(c):
 			_grant_exp(c, m, share)
 	## Rớt đồ: server tung xúc xắc theo bảng gốc, đồ thuộc người hạ đòn cuối (DROP_OWNER_SECONDS giây đầu).
-	var rolls := DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
+	var rolls: Array
+	if m.hell_stars > 0:   ## quái phòng Địa Ngục
+		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
+	else:
+		rolls = DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
 	var placed: Array = []
 	for i in rolls.size():
 		var off := Vector2(randf_range(-22, 22), randf_range(-8, 8)) * (1.0 if rolls.size() > 1 else 0.4)
 		var d: Dictionary = rolls[i]
 		placed.append(_add_drop(m.pos + off, m.last_hitter, int(d.get("amount", 0)) if str(d.type) == "money" else 0,
-			(d.item as ItemInstance).to_dict() if str(d.type) == "item" else {}))
+			(d.item as ItemInstance).to_dict() if str(d.type) == "item" else {}, m))
 	var killer: Conn = _players_by_eid.get(m.last_hitter)
 	if test_mode and killer and killer.entity:   ## kiểm thử: luôn có 1 túi tiền + 1 món đồ ngay dưới chân người hạ quái
-		placed.append(_add_drop(killer.entity.pos, m.last_hitter, 7, {}))
-		placed.append(_add_drop(killer.entity.pos, m.last_hitter, 0, ItemGenerator.random_equipment(maxi(1, m.level)).to_dict()))
-	_broadcast_drops(m.pos, placed)
+		placed.append(_add_drop(killer.entity.pos, m.last_hitter, 7, {}, m))
+		placed.append(_add_drop(killer.entity.pos, m.last_hitter, 0, ItemGenerator.random_equipment(maxi(1, m.level)).to_dict(), m))
+	_broadcast_drops(m.pos, placed, m.cell_base)
 
 ## Kinh nghiệm do server cộng vào bản nhân vật của server rồi báo game (S_PROGRESS).
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
@@ -836,6 +958,7 @@ func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 func _give_exp(c: Conn, got: int) -> void:
 	if got <= 0 or c.profile == null:
 		return
+	got = int(got * exp_mult)
 	var before := c.profile.level
 	c.profile.add_exp(got)
 	c.data["level"] = c.profile.level
@@ -931,15 +1054,16 @@ func notice(c: Conn, text: String) -> void:
 
 # ---------------------------------------------------------------- đồ rơi
 
-func _add_drop(pos: Vector2, owner_eid: int, amount: int, item: Dictionary) -> int:
+## `where` = thực thể ở chỗ rơi (quái / người vứt) — đồ thuộc phòng train chung của nó.
+func _add_drop(pos: Vector2, owner_eid: int, amount: int, item: Dictionary, where: ServerEntity) -> int:
 	var id := _next_drop
 	_next_drop += 1
 	_drops[id] = {"pos": pos, "owner": owner_eid, "free_at": _now + DROP_OWNER_SECONDS, "until": _now + DROP_LIFETIME,
-		"amount": amount, "item": item}
+		"amount": amount, "item": item, "room": where.room_id, "base": where.cell_base}
 	return id
 
-## Báo đồ rơi cho mọi người đang ở gần (3x3 ô AOI quanh chỗ rơi).
-func _broadcast_drops(at: Vector2, ids: Array) -> void:
+## Báo đồ rơi cho mọi người đang ở gần (3x3 ô AOI quanh chỗ rơi, trong vùng ô `base` của phòng).
+func _broadcast_drops(at: Vector2, ids: Array, base := Vector2i.ZERO) -> void:
 	if ids.is_empty():
 		return
 	var b := NetProto.writer(NetProto.S_DROPS)
@@ -956,7 +1080,7 @@ func _broadcast_drops(at: Vector2, ids: Array) -> void:
 		else:
 			b.put_u8(1)
 			NetProto.put_str(b, JSON.stringify(d.item))
-	for e in aoi.around(at):
+	for e in aoi.around(at, base):
 		var c: Conn = _players_by_eid.get(e.eid)
 		if c:
 			_send(c, b)
@@ -968,7 +1092,7 @@ func _drop_gone(id: int) -> void:
 		return
 	var b := NetProto.writer(NetProto.S_DROP_GONE)
 	b.put_u32(id)
-	for e in aoi.around(d.pos):
+	for e in aoi.around(d.pos, d.get("base", Vector2i.ZERO)):
 		var c: Conn = _players_by_eid.get(e.eid)
 		if c:
 			_send(c, b)
@@ -980,7 +1104,7 @@ func _prune_drops() -> void:
 
 func _on_pickup(c: Conn, id: int) -> void:
 	var d: Dictionary = _drops.get(id, {})
-	if d.is_empty():
+	if d.is_empty() or int(d.get("room", 0)) != c.entity.room_id:
 		return
 	if c.entity.pos.distance_to(d.pos) > PICKUP_REACH:
 		notice(c, "Đứng gần hơn mới nhặt được")
@@ -1031,8 +1155,8 @@ func _on_discard(c: Conn, uid: String) -> void:
 			c.dirty = true
 			it.room_x = -1
 			it.room_y = -1
-			var id := _add_drop(c.entity.pos + Vector2(randf_range(-14, 14), 6), 0, 0, it.to_dict())
-			_broadcast_drops(c.entity.pos, [id])
+			var id := _add_drop(c.entity.pos + Vector2(randf_range(-14, 14), 6), 0, 0, it.to_dict(), c.entity)
+			_broadcast_drops(c.entity.pos, [id], c.entity.cell_base)
 			return
 
 ## Phe (màu tên) / phe Tống-Kim đổi: báo người đang thấy + chính mình. Phe chỉ nằm trong gói xuất hiện nên phải báo riêng.
@@ -1221,7 +1345,7 @@ func _save(c: Conn) -> void:
 		return
 	c.saving = true
 	c.dirty = false
-	if c.entity and battle == null and arena == null:   ## vị trí do server giữ (game không được tự ghi "pos"); chiến trường giữ vị trí ngoài thế giới
+	if c.entity and not c.hub and battle == null and arena == null and field == null:   ## vị trí do server giữ (sảnh: không đổi chỗ đứng) (game không được tự ghi "pos"); chiến trường giữ vị trí ngoài thế giới
 		c.data["pos"] = [snappedf(c.entity.pos.x, 0.1), snappedf(c.entity.pos.y, 0.1)]
 	c.last_save = _now
 	var char_id := c.character_id
@@ -1266,6 +1390,103 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 			e.look_dirty = true
 			_look_dirty.append(e)
 
+# ---------------------------------------------------------------- vận hành (web Admin › Máy chủ)
+
+func process_kind() -> String:
+	if battle:
+		return "battle"
+	if arena:
+		return "arena"
+	if field:
+		return "field"
+	return "world"
+
+## Gửi trạng thái tiến trình; câu trả lời mang thông số game + lệnh admin (khởi động lại êm). Không chồng 2 lần gửi.
+func _heartbeat() -> void:
+	if _hb_busy or account == null:
+		return
+	_hb_busy = true
+	var rooms := field.rooms.size() if field else (arena.rooms.size() if arena else 0)
+	var state := {"server_id": account.server_id, "kind": process_kind(), "index": field.index if field else 0,
+		"host": _env("GAME_PUBLIC_HOST", "127.0.0.1"), "port": int(_env("GAME_ENET_PORT", "7777")), "build": build_info,
+		"online": _by_character.size(), "rooms": rooms, "monsters": _monsters.size(), "tick_avg_ms": snappedf(_last_tick_avg, 0.01),
+		"tick_max_ms": snappedf(_last_tick_max, 0.01), "send_kbs": snappedf(_last_kbs, 0.1),
+		"uptime_sec": int(Time.get_unix_time_from_system()) - _started_unix, "draining": draining,
+		"drain_left": maxi(0, ceili(_drain_until - _now)) if draining else 0, "ack_command": _ack_command}
+	var r: Dictionary = await account.heartbeat(state)
+	_hb_busy = false
+	if not r.ok:
+		return
+	var st: Variant = r.get("settings")
+	if st is Dictionary:
+		_apply_settings(st)
+	var cmd: Variant = r.get("command")
+	if cmd is Dictionary and int(cmd.get("id", 0)) > _ack_command:
+		_ack_command = int(cmd.get("id", 0))
+		if str(cmd.get("action", "")) == "restart":
+			start_drain(clampi(int(cmd.get("seconds", 60)), 10, 1800), str(cmd.get("message", "")).left(200), str(cmd.get("by", "")))
+
+## Thông số game từ web Admin — kẹp lại trong khoảng cho phép dù server tài khoản đã kiểm.
+func _apply_settings(st: Dictionary) -> void:
+	var e := clampf(float(st.get("exp_mult", 1.0)), 1.0, EXP_MULT_MAX)
+	if not is_equal_approx(e, exp_mult):
+		print("Thông số game: kinh nghiệm x%.2f" % e)
+	exp_mult = e
+	var item := float(st.get("drop_item_mult", 1.0))
+	var money := float(st.get("drop_money_mult", 1.0))
+	if not is_equal_approx(clampf(item, 1.0, DropTable.ITEM_RATE_MAX), DropTable.item_rate_mult) \
+			or not is_equal_approx(clampf(money, 1.0, DropTable.MONEY_RATE_MAX), DropTable.money_rate_mult):
+		print("Thông số game: rơi trang bị x%.2f, tiền x%.2f" % [clampf(item, 1.0, DropTable.ITEM_RATE_MAX), clampf(money, 1.0, DropTable.MONEY_RATE_MAX)])
+	DropTable.set_rates(item, money)
+
+## Bắt đầu khởi động lại êm: còn `seconds` giây (báo người chơi), không nhận người mới.
+func start_drain(seconds: int, message: String, by := "") -> void:
+	if draining:
+		return
+	draining = true
+	_drain_until = _now + seconds
+	_drain_message = message
+	_drain_next_notice = 0.0
+	print("KHỞI ĐỘNG LẠI ÊM sau %d giây (lệnh của %s): %s" % [seconds, by, message])
+
+func _tick_drain() -> void:
+	if _shutting_down:
+		return
+	var left := _drain_until - _now
+	if left <= 0.0:
+		_shutdown()
+		return
+	if _now >= _drain_next_notice:
+		var text := "[Hệ thống] Máy chủ sẽ khởi động lại sau %d giây%s — hãy tìm chỗ an toàn, dữ liệu được lưu tự động." % [ceili(left),
+			(": " + _drain_message) if _drain_message != "" else ""]
+		for c: Conn in _conns.values():
+			if c.state == ConnState.IN_WORLD:
+				notice(c, text)
+		## Báo dày dần: mỗi phút -> mỗi 10 giây (dưới 1 phút) -> mỗi giây (10 giây cuối).
+		_drain_next_notice = _now + (60.0 if left > 75.0 else (10.0 if left > 12.0 else 1.0))
+
+## Hết giờ: lưu MỌI nhân vật (chờ tối đa 20 giây), mời mọi người ra, rồi thoát (Docker restart: unless-stopped bật lại tiến trình).
+func _shutdown() -> void:
+	_shutting_down = true
+	print("Khởi động lại: lưu %d nhân vật..." % _by_character.size())
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD and c.character_id != 0 and c.profile != null:
+			c.dirty = true
+			_save(c)
+	var waited := 0.0
+	while not _saving_chars.is_empty() and waited < 20.0:
+		await get_tree().create_timer(0.2).timeout
+		waited += 0.2
+	if not _saving_chars.is_empty():
+		push_warning("Khởi động lại: %d nhân vật lưu chưa xong sau 20 giây" % _saving_chars.size())
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD:
+			c.dirty = false   ## vừa lưu — _drop không lưu lại lần nữa
+			_kick(c, "maintenance", "Máy chủ đang khởi động lại, vui lòng vào lại sau ít phút")
+	await get_tree().create_timer(1.0).timeout
+	print("Khởi động lại: thoát tiến trình")
+	get_tree().quit(0)
+
 # ---------------------------------------------------------------- gửi trạng thái theo AOI
 
 ## Mỗi ô AOI mã hoá 1 lần các thực thể đổi trạng thái từ lượt trước; người xem đứng yên trong ô chỉ ghép 9 khối đó
@@ -1287,7 +1508,7 @@ func _send_snapshots() -> void:
 		e.write_state(buf)
 		blob_n[e.cell] += 1
 	for c: Conn in _conns.values():
-		if c.state != ConnState.IN_WORLD or c.entity == null:
+		if c.state != ConnState.IN_WORLD or c.entity == null or c.hub:
 			continue
 		var me := c.entity
 		var known := c.known
@@ -1366,9 +1587,34 @@ func _in_view(viewer: Conn, eid: int, center: Vector2i) -> bool:
 	var e: ServerEntity = _entities.get(eid)
 	return e != null and absi(e.cell.x - center.x) <= 1 and absi(e.cell.y - center.y) <= 1 and can_see(viewer, e)
 
-## Người xem `viewer` có được thấy thực thể `e` không — đấu trường PK: chỉ người cùng phòng (ArenaServer.can_see); nơi khác luôn thấy.
+## Người xem `viewer` có được thấy thực thể `e` không — đấu trường PK: chỉ người cùng phòng (ArenaServer.can_see); phòng train chung:
+## chỉ thực thể cùng phòng (sảnh không thấy ai); nơi khác luôn thấy.
 func can_see(viewer: Conn, e: ServerEntity) -> bool:
+	if field:
+		return viewer.entity.room_id != 0 and viewer.entity.room_id == e.room_id
 	return arena == null or arena.can_see(viewer, e)
+
+## Bản đồ vật cản nơi thực thể đứng: map phòng train chung của nó, không thì map của tiến trình.
+func grid_of(e: ServerEntity) -> MapGrid:
+	return field.grid_of_room(e.room_id) if field and e.room_id != 0 else grid
+
+## 2 thực thể cùng chỗ (cùng phòng train chung) và cách nhau không quá `dist` px — dùng cho mọi kiểm tra "đứng gần".
+static func near(a: ServerEntity, b: ServerEntity, dist: float) -> bool:
+	return a.room_id == b.room_id and a.pos.distance_to(b.pos) <= dist
+
+## Bỏ mọi đồ rơi của phòng `room_id` (phòng đóng — người trong phòng đã bị mời ra nên không cần báo).
+func clear_room_drops(room_id: int) -> void:
+	for id in _drops.keys():
+		if int(_drops[id].get("room", 0)) == room_id:
+			_drops.erase(id)
 
 func online_count() -> int:
 	return _by_character.size()
+
+## Mảng chữ từ JSON của game (tối đa `limit` phần tử, mỗi phần tử tối đa 32 ký tự) — chống gói lạ.
+static func _str_list(v: Variant, limit: int) -> Array:
+	var out := []
+	if v is Array:
+		for x in (v as Array).slice(0, limit):
+			out.append(str(x).left(32))
+	return out

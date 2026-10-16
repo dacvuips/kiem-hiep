@@ -16,9 +16,9 @@ enum Quality { NORMAL, MAGIC, GOLD, POTION, PURPLE, KILLER, FERRY, MONEY }
 const MONEY_AMOUNTS := [10000, 100000, 1000000, 10000000, 100000000]
 const MONEY_MAX := 2000000000  ## int32 gốc — không cho tiền vượt quá
 ## Vật liệu ép đồ tím: Huyền Tinh, Nguyên khoáng hiện 1/2/3 (Huyền Thiết, Mật Ngân, Chu Sa) + Nguyên thạch ẩn 1/2/3 có hệ
-## (Khổng Tước, Phù Dung, Chung Nhũ), Thủy tinh Lam/Tử/Lục, Phúc Duyên Lộ tiểu/trung/đại.
+## (Khổng Tước, Phù Dung, Chung Nhũ), Thủy tinh Lam/Tử/Lục, Phúc Duyên Lộ tiểu/trung/đại, Thần bí khoáng thạch (vật phẩm phụ Chế tạo).
 const PURPLE_ITEMS := ["6_1_147", "6_1_149", "6_1_150", "6_1_151", "6_1_152", "6_1_153", "6_1_154",
-	"4_238_1", "4_239_1", "4_240_1", "6_1_122", "6_1_123", "6_1_124"]
+	"4_238_1", "4_239_1", "4_240_1", "6_1_122", "6_1_123", "6_1_124", "6_1_398"]
 ## Sát Thủ lệnh (phần thưởng giết Boss sát thủ, 5 lệnh cùng cấp đổi 1 giản) + Sát thủ giản (gọi Boss),
 ## Sát Thủ Giản lễ hộp (mở ra 2 giản), Sát Thủ Bí Bảo, Lệnh Bài Sát Thủ + Huyết Lệ Chi Thư (nhiệm vụ Nhiếp Thí Trần),
 ## Ngọc Long Lệnh Bài (sát thủ), Lệnh bài Bắc Đẩu - Boss sát thủ.

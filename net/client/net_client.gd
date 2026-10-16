@@ -42,6 +42,8 @@ signal chat_received(channel: int, from_eid: int, from_name: String, to_name: St
 signal battle_message(msg: Dictionary)
 ## Đấu trường PK: tin S_ARENA {op: room | state | result | reject | searching | no_match} (ArenaClient).
 signal arena_message(msg: Dictionary)
+## Phòng train chung Vượt Ải: tin S_FIELD {op: room | reject, ...} (FieldClient).
+signal field_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -60,13 +62,20 @@ var _ping_timer := 0.0
 var _connect_deadline := 0.0
 
 ## Kết nối tới máy chủ (dict lấy từ /v1/servers: host, port, ws_url).
-func connect_to(server: Dictionary, access_token: String, character_id: int) -> void:
+## hub = true: kết nối SẢNH từ Character Hub (HubSession) — không có nhân vật trên map; dùng Chợ / giao dịch theo ID / chat / tổ đội / bang.
+var is_hub := false
+
+func connect_to(server: Dictionary, access_token: String, character_id: int, hub := false) -> void:
 	disconnect_from_server()
+	is_hub = hub
 	_last_error = ["", ""]
 	var err := OK
-	if OS.has_feature("web"):
+	var ws_url := str(server.get("ws_url", ""))
+	# WebSocket: bản web (bắt buộc), và máy chủ thật đặt sau proxy 1 cổng (ws_url dạng wss://<tên miền>/ws/...).
+	# Máy dev (ws_url dạng ws://127.0.0.1:...) vẫn dùng ENet/UDP nhanh hơn.
+	if OS.has_feature("web") or ws_url.begins_with("wss://"):
 		var ws := WebSocketMultiplayerPeer.new()
-		err = ws.create_client(str(server.get("ws_url", "")))
+		err = ws.create_client(ws_url)
 		_peer = ws
 	else:
 		var enet := ENetMultiplayerPeer.new()
@@ -80,7 +89,7 @@ func connect_to(server: Dictionary, access_token: String, character_id: int) -> 
 	_peer.peer_connected.connect(func(_id: int) -> void:
 		if _peer is ENetMultiplayerPeer:
 			NetProto.tune_enet_peer((_peer as ENetMultiplayerPeer).get_peer(1))
-		_send_hello(access_token, character_id))
+		_send_hello(access_token, character_id, hub))
 	var this_peer := _peer
 	_peer.peer_disconnected.connect(func(_id: int) -> void:
 		# Tín hiệu này phát ra giữa _peer.poll(): đóng/giải phóng peer ngay tại đây làm Godot sập (signal 11),
@@ -119,11 +128,12 @@ func _send(b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
 		else MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED
 	_peer.put_packet(b.data_array)
 
-func _send_hello(token: String, character_id: int) -> void:
+func _send_hello(token: String, character_id: int, hub := false) -> void:
 	var b := NetProto.writer(NetProto.C_HELLO)
 	b.put_u16(NetProto.VERSION)
 	NetProto.put_str(b, token)
 	b.put_u32(character_id)
+	b.put_u8(NetProto.HELLO_HUB if hub else NetProto.HELLO_WORLD)
 	_send(b)
 
 ## Gửi vị trí chân + hiển thị của nhân vật mình.
@@ -239,6 +249,23 @@ func send_guild(op: int, args := {}) -> void:
 	_send(b)
 
 ## Chiến trường Tống Kim: op = BattleServer.OP_* (JOIN {side}).
+## Hiệu thuốc: mua `count` bình `misc_id` (server trả S_NOTICE + S_PROFILE).
+func send_shop_buy(misc_id: String, count: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_SHOP_BUY)
+	NetProto.put_str(b, misc_id)
+	b.put_u8(clampi(count, 1, PotionShop.MAX_COUNT))
+	_send(b)
+
+## Chế tạo (Compound): server làm trên hồ sơ của nó rồi gửi S_NOTICE (kết quả) + S_PROFILE.
+func send_craft(op: int, uids: Array, alt: Array) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_CRAFT)
+	NetProto.put_str(b, JSON.stringify({"op": op, "uids": uids, "alt": alt}))
+	_send(b)
+
 func send_battle(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:
 		return
@@ -252,6 +279,15 @@ func send_arena(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:
 		return
 	var b := NetProto.writer(NetProto.C_ARENA)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b)
+
+## Phòng train chung Vượt Ải: op FieldServer.OP_* + tham số json.
+func send_field(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_FIELD)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
@@ -514,6 +550,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var amsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if amsg is Dictionary:
 				arena_message.emit(amsg)
+		NetProto.S_FIELD:
+			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
+			if fmsg is Dictionary:
+				field_message.emit(fmsg)
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list.emit(parsed if parsed is Array else [])

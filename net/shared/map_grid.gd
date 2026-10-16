@@ -151,6 +151,69 @@ func free_near(point: Vector2, max_radius := 80) -> Vector2:
 					return cell_to_world(c)
 	return point
 
+## Chỗ xuất hiện "thông thoáng" gần `point`: ô trống (cả 5x5 ô quanh đều trống) mà từ đó đi được ra một vùng rộng — tránh đặt nhân vật
+## vào "ốc đảo" bị vật cản bao kín (VD khối đá giữa map Đại Lý phủ: ô trống gần tâm nhất chỉ thông ra ~1.500 ô).
+func open_spawn_near(point: Vector2) -> Vector2:
+	var c := MapGrid.find_open_cell(world_to_cell(point), func(cell: Vector2i) -> bool: return (_value(cell) >> 4) == 0)
+	return cell_to_world(c) if c != Vector2i(-1, -1) else free_near(point)
+
+## Đứng ở `point` có đi ra được vùng rộng không (false = kẹt trong "ốc đảo" bị vật cản bao kín).
+func is_open_area(point: Vector2) -> bool:
+	var c := world_to_cell(point)
+	var is_free := func(cell: Vector2i) -> bool: return (_value(cell) >> 4) == 0
+	return is_free.call(c) and MapGrid._flood(c, is_free, {}) >= OPEN_AREA_CELLS
+
+## Số ô đi được tối thiểu để coi là vùng thông thoáng (loang tới đủ chừng này thì dừng — chi phí giới hạn).
+const OPEN_AREA_CELLS := 6000
+const OPEN_MAX_POCKETS := 40
+
+## Dùng chung server (MapGrid) và game (VltkMap): duyệt xoắn ốc quanh `start`, mỗi ô trống 5x5 chưa thuộc vùng đã loang thì loang (4 hướng)
+## đếm số ô đi tới được; vùng đầu tiên đủ OPEN_AREA_CELLS thì nhận, không có thì lấy vùng rộng nhất đã thử. (-1, -1) nếu không có ô nào.
+static func find_open_cell(start: Vector2i, is_free: Callable, max_radius := 120) -> Vector2i:
+	var visited := {}
+	var best := Vector2i(-1, -1)
+	var best_n := -1
+	var pockets := 0
+	for radius in max_radius:
+		for dx in range(-radius, radius + 1):
+			for dy in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dy)) != radius:
+					continue
+				var c := start + Vector2i(dx, dy)
+				if visited.has(c) or not _clear5(c, is_free):
+					continue
+				var n := _flood(c, is_free, visited)
+				if n >= OPEN_AREA_CELLS:
+					return c
+				if n > best_n:
+					best_n = n
+					best = c
+				pockets += 1
+				if pockets >= OPEN_MAX_POCKETS:
+					return best
+	return best
+
+static func _clear5(c: Vector2i, is_free: Callable) -> bool:
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			if not is_free.call(c + Vector2i(dx, dy)):
+				return false
+	return true
+
+static func _flood(start: Vector2i, is_free: Callable, visited: Dictionary) -> int:
+	var queue: Array[Vector2i] = [start]
+	visited[start] = true
+	var n := 0
+	while not queue.is_empty() and n < OPEN_AREA_CELLS:
+		var cur: Vector2i = queue.pop_back()
+		n += 1
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var nb := cur + d
+			if not visited.has(nb) and is_free.call(nb):
+				visited[nb] = true
+				queue.append(nb)
+	return n
+
 func _clear_around(c: Vector2i) -> bool:
 	for dx in range(-2, 3):
 		for dy in range(-2, 3):

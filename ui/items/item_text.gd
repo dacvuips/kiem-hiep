@@ -13,6 +13,7 @@ class_name ItemText
 
 const C_WHITE := "ffffff"
 const C_NAME_MAGIC := "6464ff"
+const C_NAME_PURPLE := "cc80ff"   ## đồ tím (ItemInstance.is_purple)
 const C_GOLD := "ffff00"
 const C_MAGIC := "6365ff"
 const C_MAGIC_HIDDEN := "6464ff"
@@ -49,6 +50,8 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 	out.append("%s %s" % [_c(C_WHITE, "Thuộc tính ngũ hành:"),
 		_c(ELEMENT_COLORS.get(item.series, C_WHITE), ElementTypes.ELEMENT_NAME.get(item.series, ""))])
 	var intro: String = "Trang bị Hoàng Kim" if gold and str(base.get("intro", "")) == "" else str(base.get("intro", ""))
+	if item.is_purple():
+		intro = "Trang bị Huyền Tinh (đồ tím)"
 	if intro != "":
 		out.append(_c(C_WHITE, intro))
 	out.append("")
@@ -87,6 +90,9 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 				color = C_GOLD_INACTIVE if gold else C_INACTIVE
 				all_active = false
 		out.append(_c(color, text))
+	## Đồ tím: các ô khảm còn trống (Compound — Khảm đồ tím, khoáng thuộc tính đúng thứ tự ô).
+	for k in item.sockets:
+		out.append(_c(C_INACTIVE, "◇ Ô khảm %d — còn trống" % (item.magic.size() + k + 1)))
 	if gold and not item.expand_magic.is_empty():
 		out.append("")
 		var worn := profile.equipment if profile and active >= 0 else {}
@@ -103,10 +109,11 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 		_append_gold_set(out, item, profile)
 	return "[center]%s[/center]" % "\n".join(out)
 
-## Món có HỆ (Sát Thủ lệnh/giản, Nguyên thạch...) — script gốc (killer_token/killer_sword.lua GetDesc) ghi "Thuộc tính ngũ hành".
-const MISC_WITH_SERIES := ["6_1_150", "6_1_152", "6_1_154", "6_1_399", "6_1_400"]
-## Món có CẤP riêng: Huyền Tinh (xuanjing_kuangshi.lua: "Phẩm chất thuộc tính: <cấp>") và lệnh bài Sát thủ.
-const MISC_WITH_LEVEL := ["6_1_147", "6_1_399", "6_1_400"]
+## Món có HỆ (Sát Thủ lệnh/giản, Nguyên thạch, khoáng thuộc tính ẩn...) — script gốc (killer_token/killer_sword.lua GetDesc) ghi
+## "Thuộc tính ngũ hành".
+const MISC_WITH_SERIES := ["6_1_150", "6_1_152", "6_1_154", "6_1_399", "6_1_400", "6_1_201", "6_1_203", "6_1_205"]
+## Món có CẤP riêng: Huyền Tinh (xuanjing_kuangshi.lua: "Phẩm chất thuộc tính: <cấp>"), khoáng thuộc tính và lệnh bài Sát thủ.
+const MISC_WITH_LEVEL := ["6_1_147", "6_1_399", "6_1_400", "6_1_200", "6_1_201", "6_1_202", "6_1_203", "6_1_204", "6_1_205"]
 
 ## Thuốc / khoáng thạch / lệnh bài: tên [Cấp], hệ, lời mô tả gốc, tác dụng thuốc (mỗi nửa giây × số frame / 18), số lượng.
 static func _build_misc(item: ItemInstance, with_name: bool) -> String:
@@ -122,6 +129,8 @@ static func _build_misc(item: ItemInstance, with_name: bool) -> String:
 	var intro := _misc_intro(str(base.get("intro", "")))
 	if intro != "":
 		out.append(intro)
+	if item.ore_magic > 0:   ## khoáng thuộc tính: thuộc tính sẽ khảm vào đồ tím
+		out.append(_c(C_MAGIC, "Thuộc tính: %s" % Compound.ore_magic_name(item.ore_magic)))
 	var effects: Array = base.get("effects", [])
 	if not effects.is_empty():
 		out.append("")
@@ -154,9 +163,21 @@ static func _misc_intro(intro: String) -> String:
 		out += "[/color]"
 	return _c(C_WHITE, out.strip_edges())
 
-## Màu tên theo phẩm chất: hoàng kim vàng, có dòng magic (đồ xanh) lam, đồ thường trắng.
+## Màu tên theo phẩm chất: hoàng kim vàng, đủ 6 dòng magic (đồ tím) tím, có dòng magic (đồ xanh) lam, đồ thường trắng.
 static func name_color_of(item: ItemInstance) -> String:
-	return C_GOLD if item.is_gold() else (C_NAME_MAGIC if not item.magic.is_empty() else C_WHITE)
+	if item.is_gold():
+		return C_GOLD
+	if item.is_purple():
+		return C_NAME_PURPLE
+	return C_NAME_MAGIC if not item.magic.is_empty() else C_WHITE
+
+## Tên phẩm chất: "Hoàng Kim" / "Đồ tím" / "Đồ xanh" / "Đồ thường".
+static func quality_name_of(item: ItemInstance) -> String:
+	if item.is_gold():
+		return "Hoàng Kim"
+	if item.is_purple():
+		return "Đồ tím"
+	return "Đồ xanh" if not item.magic.is_empty() else "Đồ thường"
 
 static func _c(hex: String, text: String) -> String:
 	return "[color=#%s]%s[/color]" % [hex, text]

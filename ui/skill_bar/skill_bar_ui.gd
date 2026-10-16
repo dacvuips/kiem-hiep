@@ -137,8 +137,8 @@ func _ready() -> void:
 	_jump_button.pressed.connect(_on_jump_pressed)
 	_horse_button.pressed.connect(_on_horse_pressed)
 	_sit_button.pressed.connect(_on_sit_pressed)
-	_style_round_button(_jump_button, "jump", 0, 0)   ## icon nhảy gốc (MiTom_Pak_SPR ID_C950DFE5.spr, 1 khung)
-	_style_round_button(_horse_button, "hourse", 0, 1)
+	_style_slot_button(_jump_button, "jump", true, 3.0)   ## icon nhảy gốc (MiTom_Pak_SPR ID_C950DFE5.spr, 1 khung, ảnh vuông)
+	_style_slot_button(_horse_button, "horse", false, 9.0)   ## icon đầu ngựa trắng nền trong suốt
 	_style_round_button(_sit_button, "sit", 0, 2)
 	for p in _page_buttons.size():
 		_page_buttons[p].pressed.connect(_set_page.bind(p))
@@ -457,6 +457,35 @@ func _on_sub_pressed(index: int) -> void:
 	if _player.skill_controller.try_cast_skill(_page_start() + index, _player, target):
 		_player.play_cast()
 
+
+## Nút tiện ích kiểu ô TRÒN viền trắng như nút skill (SkillButton): Nhảy, Ngựa. Icon = khung đầu của assets/ui/toolbar/<sheet>.png,
+## cách viền `inset`; `mask` = cắt icon vuông thành tròn (cùng shader với icon skill). Nút bật/tắt (Ngựa: đang cưỡi) lúc bật giữ
+## nền tối như ô skill, chỉ đổi viền sang vàng. Vị trí / cỡ mặc định đặt trong SkillBarUI.tscn.
+func _style_slot_button(button: Button, sheet_name: String, mask: bool, inset: float) -> void:
+	var diameter := button.custom_minimum_size.x if button.custom_minimum_size.x > 0.0 else button.size.x
+	SkillButton.apply_round_style(button, diameter)
+	if button.toggle_mode:
+		var on := SkillButton.make_round_style(diameter, SkillButton.SLOT_BG, Color(1.0, 0.82, 0.30), 3)
+		button.add_theme_stylebox_override("pressed", on)
+		button.add_theme_stylebox_override("hover_pressed", on)
+	var frames := SideMenu._frames(sheet_name)
+	if frames.is_empty():
+		return   ## thiếu ảnh -> giữ chữ trong scene
+	button.text = ""
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.texture = frames[0]
+	if mask:
+		icon.material = SkillButton.make_circle_mask_material()
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in [SIDE_LEFT, SIDE_TOP]:
+		icon.set_offset(side, inset)
+	for side in [SIDE_RIGHT, SIDE_BOTTOM]:
+		icon.set_offset(side, -inset)
+	button.add_child(icon)
 
 ## Nút tròn kiểu VLTK: ảnh gốc trong assets/ui/toolbar (tools: spr_to_png từ Spr/Ui3/UiToolsControlBar), các frame ghép ngang —
 ## `normal_frame` lúc thường, `active_frame` lúc rê chuột/đang bật. Bỏ chữ; vị trí / cỡ nút đặt trong SkillBarUI.tscn.

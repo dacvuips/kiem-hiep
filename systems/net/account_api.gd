@@ -159,6 +159,11 @@ func battle(server_id: int) -> Dictionary:
 func arena(server_id: int) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_GET, "/v1/arena?server_id=%d" % server_id)
 
+## Phòng train chung Vượt Ải: địa chỉ field server + danh sách phòng ({open, host, port, ws_url, rooms: [{id, map_id, tier, stars,
+## host, members, max}]}) — tạo phòng / tìm phòng theo ID trước khi kết nối.
+func field(server_id: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/field?server_id=%d" % server_id)
+
 ## Tạo nhân vật ở ô `slot`. profile_data = PlayerProfile.to_dict(). Server kiểm tra tên (2–16 ký tự, không trùng trong máy chủ).
 func create_character(server_id: int, slot: int, character_name: String, profile_data: Dictionary) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_POST, "/v1/characters",

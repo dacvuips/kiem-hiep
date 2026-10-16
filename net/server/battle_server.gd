@@ -71,7 +71,8 @@ var map_name := "Chiến Trường Tống Kim"
 var signup_seconds := 600.0
 var fight_seconds := 3600.0
 var min_level := 40
-## CHỈ KIỂM THỬ (GAME_BATTLE_MARSHAL_LIFE): đặt sinh lực Nguyên Soái (0 = theo dữ liệu gốc: 1 / 2 / 4 triệu theo bậc cấp).
+## CHỈ KIỂM THỬ (GAME_BATTLE_MARSHAL_LIFE, chỉ nhận khi GAME_TEST_MODE=1 — máy thật đặt nhầm cũng không làm Nguyên Soái yếu đi): đặt
+## sinh lực Nguyên Soái. 0 = theo script cấp gốc soldier6 + npcs.txt server: cấp <= 75 / <= 95 / > 95 = 15 / 30 / 6 triệu (cấp 95: 30 triệu).
 var marshal_life := 0.0
 var public_host := "127.0.0.1"
 var public_port := 7777
@@ -103,7 +104,7 @@ func _init(server: GameServer, map_dir: String) -> void:
 	signup_seconds = float(gs._env("GAME_BATTLE_SIGNUP", "600"))
 	fight_seconds = float(gs._env("GAME_BATTLE_FIGHT", "3600"))
 	min_level = int(gs._env("GAME_BATTLE_MIN_LEVEL", "40"))
-	marshal_life = float(gs._env("GAME_BATTLE_MARSHAL_LIFE", "0"))
+	marshal_life = float(gs._env("GAME_BATTLE_MARSHAL_LIFE", "0")) if gs.test_mode else 0.0
 	public_host = gs._env("GAME_PUBLIC_HOST", "127.0.0.1")
 	public_port = int(gs._env("GAME_ENET_PORT", "7777"))
 	public_ws = gs._env("GAME_PUBLIC_WS", "ws://%s:%s" % [public_host, gs._env("GAME_WS_PORT", "7778")])

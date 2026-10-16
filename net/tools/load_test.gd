@@ -4,7 +4,11 @@ extends Node
 ## Đo ở phía server: dòng "[đo] ..." trong log game server (thời gian tick, KB/s gửi đi).
 ##
 ## Chạy (account server + game server đã bật; nên đặt RATE_LIMIT_IP_PER_MIN cao ở server/.env khi tạo nhiều bot):
-##   godot --headless --path . res://net/tools/load_test.tscn -- --bots=200 --seconds=60
+##   godot --headless --path . res://net/tools/load_test.tscn -- --bots=200 --seconds=60 [--port=7777]
+## Phòng train chung (field server, cổng 7807): --field — cứ FIELD_ROOM bot 1 phòng (bot đầu tạo phòng map FIELD_MAP, các bot sau
+## vào bằng ID), mỗi bot đi lang thang trong map phòng mình.
+## Tài khoản bot DÙNG LẠI giữa các lần chạy (lt_<số>: đăng nhập trước, chưa có mới đăng ký) — không đẻ thêm tài khoản rác; bị giới hạn
+## tốc độ (HTTP 429) thì chờ rồi thử lại.
 
 const API := "http://127.0.0.1:8080"
 const SPREAD := 2500.0             ## px quanh điểm xuất phát
@@ -16,6 +20,10 @@ var _home := Vector2.ZERO
 var _n := 100
 var _seconds := 60.0
 var _done := 0
+var _port := 7777
+var _field := false
+const FIELD_ROOM := 8
+const FIELD_MAP := 121             ## Long Môn Trấn (1x, nhiều quái nhất danh mục)
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
@@ -23,8 +31,14 @@ func _ready() -> void:
 			_n = int(arg.get_slice("=", 1))
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.get_slice("=", 1))
-	print("Load test: %d bot, %d giây" % [_n, _seconds])
-	var tag := "%d" % (Time.get_unix_time_from_system() as int % 100000)
+		elif arg.begins_with("--port="):
+			_port = int(arg.get_slice("=", 1))
+		elif arg == "--field":
+			_field = true
+			if _port == 7777:
+				_port = 7807
+	print("Load test: %d bot, %d giây, cổng %d%s" % [_n, _seconds, _port, " (phòng train chung)" if _field else ""])
+	var tag := ""
 	## Tạo tài khoản song song (tối đa 20 yêu cầu cùng lúc).
 	var started := 0
 	while _done < _n:
@@ -43,6 +57,8 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	_home = inside[0].feet
+	if _field:
+		await _enter_rooms(inside)
 	await _run()
 	get_tree().quit()
 
@@ -51,34 +67,65 @@ func _spawn(tag: String, i: int) -> void:
 	var info: Array = await _make(tag, i)
 	if int(info[1]) > 0:
 		var b := BotClient.new()
-		b.start("127.0.0.1", 7777, info[0], info[1])
+		b.start("127.0.0.1", _port, info[0], info[1])
 		bots.append(b)
 		_goals.append(Vector2.INF)
 	_done += 1
 
 func _make(tag: String, i: int) -> Array:
 	var user := "lt%s_%d" % [tag, i]
-	var r := await _http(HTTPClient.METHOD_POST, "/v1/auth/register", {"username": user, "email": user + "@load.test", "password": "matkhau1"})
+	var r := await _http(HTTPClient.METHOD_POST, "/v1/auth/login", {"username": user, "password": "matkhau1"})
+	if str(r.get("access_token", "")) == "":
+		r = await _http(HTTPClient.METHOD_POST, "/v1/auth/register", {"username": user, "email": user + "@load.test", "password": "matkhau1"})
 	var token := str(r.get("access_token", ""))
 	if token == "":
 		return ["", 0]
+	var list := await _http(HTTPClient.METHOD_GET, "/v1/characters?server_id=1", {}, token)
+	for ch in list.get("characters", []):
+		return [token, int(ch.get("id", 0))]
 	var p := PlayerProfile.new()
 	var sects := SectRegistry.get_by_element(i % 5 as ElementTypes.ElementType)
 	p.set_sect(sects[0])
-	var c := await _http(HTTPClient.METHOD_POST, "/v1/characters", {"server_id": 1, "slot": 0, "name": "Bot %s %d" % [tag, i], "data": p.to_dict()}, token)
+	var c := await _http(HTTPClient.METHOD_POST, "/v1/characters", {"server_id": 1, "slot": 0, "name": "Bot LT %d" % i, "data": p.to_dict()}, token)
 	return [token, int(c.get("id", 0))]
 
 func _http(method: int, path: String, body: Dictionary, token := "") -> Dictionary:
-	var h := HTTPRequest.new()
-	add_child(h)
-	var headers := ["Content-Type: application/json"]
-	if token != "":
-		headers.append("Authorization: Bearer " + token)
-	h.request(API + path, headers, method, JSON.stringify(body))
-	var res: Array = await h.request_completed
-	h.queue_free()
-	var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
-	return d if d is Dictionary else {}
+	for attempt in 30:
+		var h := HTTPRequest.new()
+		add_child(h)
+		var headers := ["Content-Type: application/json"]
+		if token != "":
+			headers.append("Authorization: Bearer " + token)
+		h.request(API + path, headers, method, "" if method == HTTPClient.METHOD_GET else JSON.stringify(body))
+		var res: Array = await h.request_completed
+		h.queue_free()
+		if int(res[1]) == 429:   ## giới hạn tốc độ theo IP: chờ rồi thử lại
+			await get_tree().create_timer(2.0).timeout
+			continue
+		var d: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+		return d if d is Dictionary else {}
+	return {}
+
+## --field: bot đầu mỗi nhóm FIELD_ROOM tạo phòng, các bot sau vào bằng ID; điểm lang thang = chỗ xuất phát trong map phòng.
+func _enter_rooms(inside: Array) -> void:
+	var rooms := 0
+	for g in range(0, inside.size(), FIELD_ROOM):
+		var host: BotClient = inside[g]
+		var n := host.field_msgs.size()
+		host.field(FieldServer.OP_CREATE, {"map_id": FIELD_MAP, "tier": 0})
+		var t := 0.0
+		while host.field_msgs.size() == n and t < 5.0:
+			await get_tree().process_frame
+			t += get_process_delta_time()
+		var id := str(host.field_msgs.back().get("id", "")) if host.field_msgs.size() > n else ""
+		if id == "":
+			continue
+		rooms += 1
+		for k in range(g + 1, mini(g + FIELD_ROOM, inside.size())):
+			(inside[k] as BotClient).field(FieldServer.OP_JOIN, {"room": id, "map_id": FIELD_MAP, "tier": 0})
+	await get_tree().create_timer(1.5).timeout
+	_home = inside[0].feet
+	print("Phòng train chung: %d phòng, mỗi phòng tối đa %d bot" % [rooms, FIELD_ROOM])
 
 func _errors() -> String:
 	var counts := {}

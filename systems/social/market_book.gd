@@ -12,11 +12,13 @@ class_name MarketBook
 const MAX_SLOTS := 10
 const LISTING_SECONDS := 7 * 86400
 const TAX_PERCENT := 0
-const PAGE_SIZE := 60
+const PAGE_SIZE := 50                   ## số món mỗi trang danh sách Giao Thương
 const CUR_GOLD := 0
 const CUR_JADE := 1
 const MAX_PRICE := [2_000_000_000, 10_000_000]   ## theo cur
 
+## "Nội dung rao" người bán ghi kèm món (không bắt buộc): tối đa NOTE_MAX ký tự, 1 dòng (clean_note — server làm sạch, không tin game).
+const NOTE_MAX := 100
 const STATE_ON := "on"
 const STATE_SOLD := "sold"
 
@@ -69,14 +71,17 @@ static func is_live(l: Dictionary, now: int) -> bool:
 # ------------------------------------------------------------------ bộ lọc
 
 ## filter: {cat: mã CATEGORIES, series: -1 | hệ, level: 0 | cấp, attrib: "" | tên thuộc tính (attrib_options), cur: -1 | CUR_*, name: chữ}
-func query(filter: Dictionary, now: int, limit := PAGE_SIZE) -> Array:
+## 1 trang (PAGE_SIZE món, mới treo trước) các món khớp bộ lọc: {items, page, pages, total}. `page` ngoài khoảng -> kẹp về trang có thật.
+func query(filter: Dictionary, now: int, page := 0) -> Dictionary:
 	var out := []
 	for id in listings:
 		var l: Dictionary = listings[id]
 		if is_live(l, now) and matches(item_of(id), l, filter):
 			out.append(l)
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["at"]) > int(b["at"]))
-	return out.slice(0, limit)
+	var pages := maxi(1, ceili(out.size() / float(PAGE_SIZE)))
+	page = clampi(page, 0, pages - 1)
+	return {"items": out.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), "page": page, "pages": pages, "total": out.size()}
 
 static func matches(item: ItemInstance, l: Dictionary, f: Dictionary) -> bool:
 	if item == null:
@@ -175,7 +180,18 @@ static func remaining_text(until: int, now: int) -> String:
 # ------------------------------------------------------------------ thao tác (trên hồ sơ của người thao tác)
 
 ## Treo bán món `uid` trong hành trang của `p`. Trả về [lỗi, listing] — lỗi "" thì món đã rời hành trang, listing đã vào sổ.
-func sell(p: PlayerProfile, sid: int, uid: String, price: int, cur: int, now: int) -> Array:
+## Nội dung rao an toàn: bỏ ký tự điều khiển (xuống dòng / tab -> dấu cách), gộp khoảng trắng, cắt NOTE_MAX ký tự. Hiển thị bằng chữ
+## thường (Label), không qua BBCode — không chèn được định dạng / liên kết.
+static func clean_note(raw: String) -> String:
+	var out := ""
+	for i in raw.length():
+		var ch := raw.unicode_at(i)
+		out += " " if ch < 32 or ch == 127 else raw[i]
+	while out.contains("  "):
+		out = out.replace("  ", " ")
+	return out.strip_edges().left(NOTE_MAX)
+
+func sell(p: PlayerProfile, sid: int, uid: String, price: int, cur: int, now: int, note := "") -> Array:
 	var blocked := SecurityLock.check(p, SecurityLock.A_OPEN_STALL)
 	if blocked != "":
 		return [blocked, {}]
@@ -202,6 +218,9 @@ func sell(p: PlayerProfile, sid: int, uid: String, price: int, cur: int, now: in
 	item.room_y = -1
 	var l := {"id": new_id(now), "sid": sid, "seller": p.display_name, "item": item.to_dict(), "price": price, "cur": cur,
 		"at": now, "until": now + LISTING_SECONDS, "state": STATE_ON}
+	var clean := clean_note(note)
+	if clean != "":
+		l["note"] = clean
 	put(l)
 	return ["", l]
 

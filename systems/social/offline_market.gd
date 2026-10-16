@@ -24,20 +24,33 @@ static func book(p: PlayerProfile) -> MarketBook:
 				_book.put((l as Dictionary).duplicate(true))
 	return _book
 
+## Câu rao mẫu của người bán giả (chơi một mình).
+const SAMPLE_NOTES := [
+	"Hàng chuẩn, bán nhanh để lấy tiền mua ngựa.",
+	"Giá mềm cho anh em tân thủ, ai cần thì mua liền tay.",
+	"Đồ đánh boss rơi ra, còn mới tinh, không bớt nữa nhé.",
+	"Cần gấp lượng để gia nhập bang — giá đã rẻ nhất chợ rồi!",
+	"Ai mua nhiều món của mình thì nhắn riêng, sẽ bớt thêm.",
+	"Bán thanh lý hành trang đầy, chỉ treo trong vài ngày.",
+]
+
 ## op: "list" {filter} | "mine" | "sell" {uid, price, cur} | "buy" {id} | "cancel" {id} -> Dictionary như S_MARKET.
 static func handle(p: PlayerProfile, op: String, args: Dictionary) -> Dictionary:
 	var b := book(p)
 	var t := now()
 	match op:
 		"list":
-			return {"op": "list", "items": b.query(args.get("filter", {}), t), "now": t}
+			var res := b.query(args.get("filter", {}), t, int(args.get("page", 0)))
+			res["op"] = "list"
+			res["now"] = t
+			return res
 		"mine":
 			var got := b.claim_sold(p, SELF_SID)
 			if got[0] > 0 or got[1] > 0:
 				_store(p)
 			return {"op": "mine", "items": b.of_seller(SELF_SID), "now": t, "slots": MarketBook.MAX_SLOTS}
 		"sell":
-			var r := b.sell(p, SELF_SID, str(args.get("uid", "")), int(args.get("price", 0)), int(args.get("cur", 0)), t)
+			var r := b.sell(p, SELF_SID, str(args.get("uid", "")), int(args.get("price", 0)), int(args.get("cur", 0)), t, str(args.get("note", "")))
 			if r[0] == "":
 				_store(p)
 			return _done(r[0], "Đã treo bán %s." % _name(r[1]))
@@ -117,5 +130,8 @@ static func _fill_mock(p: PlayerProfile) -> void:
 			var price := maxi(1, int(fair * rng.randf_range(0.8, 1.6) / 30000.0)) if cur == MarketBook.CUR_JADE \
 				else maxi(100, int(snappedf(fair * rng.randf_range(0.8, 1.6), 1000)))
 			var at := t - rng.randi_range(60, MarketBook.LISTING_SECONDS - 3600)
-			_book.put({"id": MarketBook.new_id(at), "sid": m.id, "seller": m.name, "item": item.to_dict(), "price": price,
-				"cur": cur, "at": at, "until": at + MarketBook.LISTING_SECONDS, "state": MarketBook.STATE_ON})
+			var l := {"id": MarketBook.new_id(at), "sid": m.id, "seller": m.name, "item": item.to_dict(), "price": price,
+				"cur": cur, "at": at, "until": at + MarketBook.LISTING_SECONDS, "state": MarketBook.STATE_ON}
+			if rng.randf() < 0.5:   ## người bán giả cũng rao như người thật (khoảng nửa số món)
+				l["note"] = SAMPLE_NOTES[rng.randi() % SAMPLE_NOTES.size()]
+			_book.put(l)

@@ -85,6 +85,8 @@ func _ready() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 	_ask_sect_if_needed.call_deferred()
+	## Online: kết nối "sảnh" tới game server — Chợ / giao dịch theo ID / chat / tổ đội / bang chạy thật ngay từ Hub.
+	HubSession.attach(self)
 
 ## Nhân vật mới tạo (cấp 10 nhờ StarterKit, chưa có phái): BẮT BUỘC chọn phái ngay ở Hub. Online chỉ khi nhân vật chưa vào map lần
 ## nào (server_seen 0 — game server nhận phái này lúc vào map lần đầu, ProfileGuard.sanitize_new); nhân vật đã vào map thì chọn trong
