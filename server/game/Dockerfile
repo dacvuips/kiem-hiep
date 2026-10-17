@@ -1,5 +1,5 @@
 # Game server (Godot headless) — chạy gói server/game/game_server.pck (tạo bằng server/build_game_server.sh).
-FROM debian:bookworm-slim
+FROM mirror.gcr.io/library/debian:bookworm-slim
 ARG GODOT_VERSION=4.7.2
 # TARGETARCH do buildx đặt (amd64 / arm64) — VPS chip ARM dùng bản Godot linux.arm64.
 ARG TARGETARCH=amd64
