@@ -125,6 +125,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
       - name: docker stack deploy (chỉ đổi image game)
         run: |
-          ssh -p "$PORT" "$VPS" "test -f '$DIR/deploy/swarm_up.sh'" \
+          SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -p $PORT"
+          ssh $SSH_OPTS "$VPS" "test -f '$DIR/deploy/swarm_up.sh'" \
             || { echo "VPS chưa có $DIR/deploy — deploy repo kiem-hiep-server trước"; exit 1; }
-          ssh -p "$PORT" "$VPS" "cd '$DIR' && bash deploy/swarm_up.sh '$HUB' 'game=$TAG'"
+          ssh $SSH_OPTS "$VPS" "cd '$DIR' && bash deploy/swarm_up.sh '$HUB' 'game=$TAG'"
