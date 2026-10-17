@@ -355,8 +355,9 @@ func _boot(installed: Dictionary) -> void:
 			return
 		f.store_string(core + "\n" + dir + "\n")
 		f.close()
-		if OS.create_instance(PackedStringArray()) < 0:
-			_restart_via_java()
+		# Trên Android, OS.create_instance thường trả về PID giả lập mà không khởi động lại activity.
+		# Ưu tiên gọi thẳng restartApp() qua Java.
+		_restart_via_java()
 		return
 	# Máy tính (chạy thử launcher): mở tiến trình game mới rồi đóng launcher.
 	var args := PackedStringArray(["--main-pack", core, "++", "--kh-content=" + dir])

@@ -108,18 +108,19 @@ public class GodotApp extends GodotActivity {
 
 	@Override
 	public List<String> getCommandLine() {
-		if (commandLine == null) {
-			commandLine = new ArrayList<>(super.getCommandLine());
-			addGameBootArgs(commandLine);
-		}
-		return commandLine;
+		List<String> args = new ArrayList<>(super.getCommandLine());
+		addGameBootArgs(args);
+		return args;
 	}
 
 	/** Gọi từ launcher.gd (JavaClassWrapper) nếu OS.create_instance không khởi động lại được. */
 	public static void restartApp() {
 		GodotApp app = sInstance;
 		if (app != null) {
-			app.runOnUiThread(() -> app.onNewGodotInstanceRequested(new String[0]));
+			app.runOnUiThread(() -> {
+				app.commandLine = null;
+				app.onNewGodotInstanceRequested(new String[0]);
+			});
 		}
 	}
 
