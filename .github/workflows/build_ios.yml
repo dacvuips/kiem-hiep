@@ -39,6 +39,17 @@ jobs:
             !/tools/
             !/docs/
 
+      - name: Cấu hình phiên bản Xcode 16 (iOS 18 SDK)
+        run: |
+          echo "Danh sách Xcode có trên runner:"
+          ls -d /Applications/Xcode* || true
+          XCODE_16=$(find /Applications -maxdepth 1 -name "Xcode_16*.app" 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$XCODE_16" ]; then
+            echo "Kích hoạt $XCODE_16..."
+            sudo xcode-select -s "$XCODE_16/Contents/Developer"
+          fi
+          xcodebuild -version
+
       - name: Cài đặt Godot ${{ env.GODOT_VERSION }}
         run: |
           echo "Tải Godot Engine..."
