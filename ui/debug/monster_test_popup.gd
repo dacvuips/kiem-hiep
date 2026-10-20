@@ -17,6 +17,11 @@ const ACTIONS := [["Đứng", "stand"], ["Đi", "walk"], ["Chạy", "run"], ["Đ
 
 var _grid_page: VBoxContainer
 var _detail_page: VBoxContainer
+var _tab_container: HBoxContainer
+var _tab_all_btn: Button
+var _tab_gold_btn: Button
+var _tab_small_btn: Button
+var _current_tab: int = 0 ## 0: All, 1: Gold Boss, 2: Small Gold & Killer
 var _search: LineEdit
 var _grid: GridContainer
 var _count_label: Label
@@ -61,7 +66,7 @@ func _build() -> void:
 	var title_row := HBoxContainer.new()
 	root.add_child(title_row)
 	var title := Label.new()
-	title.text = "Quái VLTK — thử nghiệm"
+	title.text = "Quái & Boss VLTK — thử nghiệm"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 20)
 	title.add_theme_color_override("font_color", Color(1, 0.88, 0.55))
@@ -82,6 +87,19 @@ func _build_grid_page(root: VBoxContainer) -> void:
 	_grid_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_grid_page.add_theme_constant_override("separation", 6)
 	root.add_child(_grid_page)
+
+	# Tab bar chuyển danh mục: Tất cả quái | Boss Hoàng Kim | Tiểu Hoàng Kim & Sát Thủ
+	_tab_container = HBoxContainer.new()
+	_tab_container.add_theme_constant_override("separation", 8)
+	_grid_page.add_child(_tab_container)
+
+	_tab_all_btn = _make_tab_button("Tất cả quái", 0)
+	_tab_gold_btn = _make_tab_button("★ Boss Hoàng Kim", 1)
+	_tab_small_btn = _make_tab_button("Tiểu Hoàng Kim & Sát Thủ", 2)
+	_tab_container.add_child(_tab_all_btn)
+	_tab_container.add_child(_tab_gold_btn)
+	_tab_container.add_child(_tab_small_btn)
+	_update_tab_styles()
 
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
@@ -105,17 +123,61 @@ func _build_grid_page(root: VBoxContainer) -> void:
 	_grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(_grid)
 
+func _make_tab_button(tab_text: String, tab_id: int) -> Button:
+	var btn := Button.new()
+	btn.text = tab_text
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.pressed.connect(_switch_tab.bind(tab_id))
+	return btn
+
+func _switch_tab(tab_id: int) -> void:
+	if _current_tab == tab_id:
+		return
+	_current_tab = tab_id
+	_update_tab_styles()
+	_refresh_grid(_search.text if _search else "")
+
+func _update_tab_styles() -> void:
+	var tabs := [_tab_all_btn, _tab_gold_btn, _tab_small_btn]
+	for i in range(tabs.size()):
+		var b := tabs[i] as Button
+		if b == null:
+			continue
+		if i == _current_tab:
+			b.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+		else:
+			b.remove_theme_color_override("font_color")
+
 func _refresh_grid(filter: String) -> void:
 	for child in _grid.get_children():
 		child.queue_free()
 	_shown.clear()
 	_queue_index = 0
 	var needle := filter.strip_edges().to_lower()
+
 	for m in MonsterData.all():
-		var hay := ("%d %s %s" % [m["id"], m["name"], m["res"]]).to_lower()
+		var id := int(m["id"])
+		var raw: Dictionary = MonsterData.monster(id)
+		var b_type := str(raw.get("boss_type", ""))
+
+		# Lọc theo Tab đang chọn
+		if _current_tab == 1:
+			# Tab Boss Hoàng Kim
+			if b_type != "gold":
+				continue
+		elif _current_tab == 2:
+			# Tab Tiểu Hoàng Kim & Sát Thủ
+			if b_type != "small_gold" and b_type != "killer":
+				continue
+
+		var sect := str(raw.get("sect", ""))
+		var title := str(raw.get("title", ""))
+		var hay := ("%d %s %s %s %s" % [m["id"], m["name"], m["res"], sect, title]).to_lower()
 		if needle == "" or hay.contains(needle):
 			_shown.append(m)
-	_count_label.text = "%d / %d quái" % [_shown.size(), MonsterData.all().size()]
+
+	var tab_names := ["quái", "Boss Hoàng Kim", "Tiểu Hoàng Kim & Sát Thủ"]
+	_count_label.text = "%d %s" % [_shown.size(), tab_names[_current_tab]]
 	if not MonsterData.has_data():
 		_count_label.text = "Chưa có dữ liệu quái — chạy tools/import_vltk_monsters.py"
 
@@ -130,16 +192,45 @@ func _process(delta: float) -> void:
 		_tick_preview(delta)
 
 func _make_cell(m: Dictionary) -> Button:
+	var id := int(m["id"])
+	var raw := MonsterData.monster(id)
+	var b_type := str(raw.get("boss_type", ""))
+	var is_gold := b_type == "gold"
+	var is_small_gold := b_type == "small_gold"
+
 	var cell := Button.new()
 	cell.custom_minimum_size = CELL_SIZE
 	cell.focus_mode = Control.FOCUS_NONE
-	cell.tooltip_text = "#%d %s · %s" % [m["id"], m["name"], m["res"]]
-	cell.pressed.connect(_open_detail.bind(int(m["id"])))
+
+	var tooltip := "#%d %s · %s" % [m["id"], m["name"], m["res"]]
+	if str(raw.get("sect", "")) != "":
+		tooltip += " · Môn phái: %s" % raw["sect"]
+	if str(raw.get("title", "")) != "":
+		tooltip += " (%s)" % raw["title"]
+	cell.tooltip_text = tooltip
+	cell.pressed.connect(_open_detail.bind(id))
+
+	if is_gold:
+		var gold_style := StyleBoxFlat.new()
+		gold_style.bg_color = Color(0.18, 0.14, 0.05, 0.8)
+		gold_style.border_color = Color(0.98, 0.82, 0.25, 0.9)
+		gold_style.set_border_width_all(2)
+		gold_style.set_corner_radius_all(6)
+		cell.add_theme_stylebox_override("normal", gold_style)
+	elif is_small_gold:
+		var small_style := StyleBoxFlat.new()
+		small_style.bg_color = Color(0.1, 0.14, 0.18, 0.8)
+		small_style.border_color = Color(0.35, 0.75, 0.95, 0.9)
+		small_style.set_border_width_all(2)
+		small_style.set_corner_radius_all(6)
+		cell.add_theme_stylebox_override("normal", small_style)
+
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 4)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_theme_constant_override("separation", 2)
 	cell.add_child(box)
+
 	var icon := TextureRect.new()
 	icon.custom_minimum_size = Vector2(THUMB_SIZE, THUMB_SIZE)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -148,9 +239,14 @@ func _make_cell(m: Dictionary) -> Button:
 	icon.texture = MonsterData.thumb(str(m["res"]))
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(icon)
+
 	var label := Label.new()
 	label.text = "%d · %s" % [m["id"], m["name"]]
 	label.add_theme_font_size_override("font_size", 11)
+	if is_gold:
+		label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
+	elif is_small_gold:
+		label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.clip_text = true
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -294,7 +390,25 @@ func _show_info(m: Dictionary) -> void:
 			var s := VltkSkillData.skill(int(sk[0]), int(sk[1]))
 			var name_text: String = str(s.get("name", "")) if not s.is_empty() else "chưa có dữ liệu"
 			skills.append("%d) #%d %s (tầm %s)" % [slot + 1, int(sk[0]), name_text, str(s.get("attack_radius", "?"))])
-	_info.text = "Bộ hình %s · hệ %s\nTốc độ đi %d · chạy %d · tầm nhìn %d · vùng hoạt động %d · AI loại %d\nKỹ năng:\n  %s" % [
+	
+	var boss_header := ""
+	var b_type := str(m.get("boss_type", ""))
+	if b_type == "gold":
+		boss_header = "★ [ĐẠI BOSS HOÀNG KIM]"
+	elif b_type == "small_gold":
+		boss_header = "◆ [TIỂU HOÀNG KIM]"
+	elif b_type == "killer":
+		boss_header = "⚔ [BOSS SÁT THỦ]"
+	
+	if str(m.get("sect", "")) != "":
+		boss_header += " · Phái: %s" % m["sect"]
+	if str(m.get("title", "")) != "":
+		boss_header += " · Danh hiệu: %s" % m["title"]
+	if boss_header != "":
+		boss_header += "\n"
+
+	_info.text = "%sBộ hình %s · hệ %s\nTốc độ đi %d · chạy %d · tầm nhìn %d · vùng hoạt động %d · AI loại %d\nKỹ năng:\n  %s" % [
+			boss_header,
 			m["res"], ElementTypes.element_to_string(clampi(int(m["series"]), 0, 4) as ElementTypes.ElementType),
 			int(m["walk_speed"]), int(m["run_speed"]), int(m["vision"]), int(m["active"]), int(m["ai_mode"]),
 			"\n  ".join(skills) if not skills.is_empty() else "(không có)"]

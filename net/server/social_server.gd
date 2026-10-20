@@ -87,7 +87,11 @@ func on_trade_request(c, target_eid: int) -> void:
 	if not GameServer.near(c.entity, t.entity, TRADE_RANGE):
 		gs.notice(c, "Đứng gần hơn mới giao dịch được.")
 		return
-	_invite(c, t, true)
+	var in_guild_room := false
+	if gs.field:
+		var r: Dictionary = gs.field.rooms.get(gs.field.room_of.get(c.character_id, ""), {})
+		in_guild_room = r.get("guild", "") != ""
+	_invite(c, t, not in_guild_room)
 
 ## Xin giao dịch theo ID nhân vật (Chợ › Giao dịch): bất kể đứng đâu trên máy chủ, đối phương không cần "mở giao dịch" —
 ## họ nhận hộp hỏi đồng ý như lời mời thường; đồng ý thì on_trade_answer mở giao dịch.

@@ -70,8 +70,11 @@ func _on_disconnected(code: String, message: String) -> void:
 	_reconnect_in = RECONNECT_SECONDS
 
 func _on_profile_applied() -> void:
-	if hub_scene and hub_scene.has_method("refresh"):
-		hub_scene.refresh()
+	if hub_scene:
+		if hub_scene.has_method("refresh"):
+			hub_scene.refresh()
+		if hub_scene.has_method("_refresh_inventory_view"):
+			hub_scene.call("_refresh_inventory_view")
 
 func _toast(text: String) -> void:
 	if hub_scene and hub_scene.has_method("_show_toast"):

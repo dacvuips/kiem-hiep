@@ -98,22 +98,30 @@ Sau bước này, bất kỳ người chơi nào mở app trên điện thoại 
 
 ## 4. Hướng Dẫn Build File APK Cho Android
 
-Chỉ cần build APK launcher một lần (hoặc khi đổi phiên bản Godot):
+Chỉ cần build APK launcher một lần (hoặc khi cập nhật phiên bản Godot):
 
-1. **Cấu hình địa chỉ Server thật**:
-   Đảm bảo file `launcher/project.godot` có cấu hình:
-   ```ini
-   [kiem_hiep]
-   network/account_url="https://kiem-hiep-api.viettheo.site"
+1. **Cơ chế hoạt động**:
+   - APK được xuất trực tiếp từ thư mục gốc (`kiem-hiep/`) thông qua preset **"Android Launcher"**.
+   - Cấu hình loại trừ (`exclude_filter`) các thư mục tài nguyên nặng (`assets/avatar/*`, `assets/monster/*`, `assets/skill_fx/*`, `world/maps/*`, `audio/*`, `assets/items/*`).
+   - Màn hình khởi động đầu tiên là `res://launcher.tscn`.
+   - Khi mở app trên điện thoại, Launcher sẽ kết nối tới máy chủ VPS CDN (`https://kiem-hiep-api.viettheo.site`), tải các gói `.pck` còn thiếu (~1.2 GB) về thư mục `user://content/` (hỗ trợ HTTP Range và mã hóa SHA-256).
+   - Sau khi tải/xác thực xong, Launcher gọi trực tiếp `ProjectSettings.load_resource_pack(pck_path, replace)` để nạp toàn bộ dữ liệu vào `res://` và chuyển cảnh sang màn hình đăng nhập (`res://ui/login/Login.tscn`). Không cần khởi động lại tiến trình OS hay dùng `--main-pack` (tránh lỗi `Unable to setup the Godot engine! Aborting...` trên Android).
+
+2. **Lệnh xuất file APK bằng CLI**:
+   ```powershell
+   & "C:\Users\Hieu Tran\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe" --headless --export-debug "Android Launcher" build/kiem-hiep-launcher.apk
    ```
-2. **Xuất file APK trong Godot**:
-   - Mở Godot Editor, chọn project tại thư mục `launcher/`.
+
+3. **Xuất bằng giao diện Godot Editor**:
+   - Mở Godot Editor tại project gốc `kiem-hiep/`.
    - Vào menu **Project** → **Export...**
    - Chọn preset **Android Launcher**.
-   - Bấm **Export Project** và lưu file `kiem-hiep-launcher.apk`.
-3. **Cài đặt**:
-   - Chép file APK vào điện thoại và cài đặt.
-   - Khi mở app, màn hình Launcher sẽ tự động tải các gói `.pck` từ VPS về bộ nhớ máy (`user://content/`) và khởi động vào game.
+   - Bấm **Export Project** và lưu file vào `build/kiem-hiep-launcher.apk`.
+
+4. **Cài đặt & Trải nghiệm**:
+   - Chép file `build/kiem-hiep-launcher.apk` vào điện thoại và cài đặt đè.
+   - Do cùng package `com.kiemhiep.game`, toàn bộ 1.2 GB tài nguyên bạn đã tải về trước đó vẫn được giữ nguyên trong `user://content/`.
+   - Mở app lên: Launcher kiểm tra nhanh các gói, nạp vào engine và chuyển ngay sang màn hình Đăng nhập mà không bị văng.
 
 ---
 

@@ -95,6 +95,9 @@ func _build_character(parent: VBoxContainer) -> void:
 			_profile.lead_level = mini(_profile.lead_level + 5, 100)
 			_commit("Cấp lãnh đạo %d." % _profile.lead_level)],
 	])
+	_row(box, [
+		["Gia nhập / Đổi phái", func() -> void: _choose_sect()],
+	])
 
 func _levels(count: int) -> void:
 	for i in count:
@@ -107,6 +110,30 @@ func _items(count: int) -> void:
 		if _profile.add_item(ItemGenerator.random_equipment(_profile.level)):
 			added += 1
 	_commit("Đã nhận %d món đồ (Hành trang %d/%d)." % [added, _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY])
+
+func _choose_sect() -> void:
+	if _profile == null:
+		return
+	if _profile.needs_sect():
+		var win := SectChoiceWindow.open(get_parent(), _profile)
+		win.chosen.connect(func(sect: SectDefinition) -> void:
+			_commit("Đã gia nhập môn phái: %s." % sect.sect_name))
+		return
+	var popup := PopupMenu.new()
+	var sects := SectRegistry.load_all()
+	for i in sects.size():
+		var s := sects[i]
+		var elem_str: String = ElementTypes.ELEMENT_NAME.get(s.element, "")
+		popup.add_item("%s (%s)" % [s.sect_name, elem_str], i)
+	popup.id_pressed.connect(func(id: int) -> void:
+		if id >= 0 and id < sects.size():
+			_profile.set_sect(sects[id])
+			_commit("Đã đổi môn phái sang: %s." % sects[id].sect_name)
+		popup.queue_free()
+	)
+	popup.popup_hide.connect(func() -> void: popup.queue_free())
+	add_child(popup)
+	popup.popup_centered(Vector2i(200, 300))
 
 # ---------------------------------------------------------------- chỉ số cộng thêm
 

@@ -30,6 +30,8 @@ var transfer_handler: Callable
 var interactive := true
 ## Túi đang hiển thị (0 = Túi 1).
 var bag: int = 0
+## Số lượng món đang đặt trong các ô chế tạo (uid -> int) để ẩn khỏi túi hoặc giảm số hiển thị.
+var slotted_counts: Dictionary = {}
 var _hover := Rect2i()
 var _hover_ok: bool = false
 var _show_hover: bool = false
@@ -43,14 +45,19 @@ func setup(p: Object, ctx_profile: PlayerProfile = null) -> void:
 ## Dựng lại toàn bộ khối vật phẩm theo PlayerProfile.inventory.
 func rebuild() -> void:
 	for child in get_children():
+		remove_child(child)
 		child.queue_free()
 	if profile == null:
 		return
 	custom_minimum_size = Vector2(profile.ROOM_WIDTH, profile.get_room_height(bag)) * cell
 	var ctx := Equipment.get_requirement_context(context_profile) if context_profile != null else {}
 	for item in profile.inventory:
+		var slotted: int = int(slotted_counts.get(item.uid, 0))
+		if slotted >= item.count:
+			continue
 		if item.room_bag == bag:
-			add_child(_make_widget(item, ctx))
+			var rem_count: int = item.count - slotted
+			add_child(_make_widget(item, ctx, rem_count))
 	_overlay = Control.new()
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -58,7 +65,7 @@ func rebuild() -> void:
 	add_child(_overlay)
 	queue_redraw()
 
-func _make_widget(item: ItemInstance, ctx: Dictionary) -> ItemSlotButton:
+func _make_widget(item: ItemInstance, ctx: Dictionary, rem_count: int = -1) -> ItemSlotButton:
 	var cells := item.get_size()
 	var b := ItemSlotButton.new()
 	b.icon_max_scale = 2.0
@@ -69,10 +76,19 @@ func _make_widget(item: ItemInstance, ctx: Dictionary) -> ItemSlotButton:
 	b.clip_text = true
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.add_theme_font_size_override("font_size", 10)
+	var base_border: Color = Color(0.1, 0.35, 0.22)
+	var hover_border: Color = Color(0.85, 0.7, 0.35)
+	if item.is_gold():
+		base_border = Color(1.0, 0.78, 0.0, 0.40)
+		hover_border = Color(1.0, 0.88, 0.45, 0.90)
+	elif item.is_purple():
+		base_border = Color(0.85, 0.28, 1.0, 0.40)
+		hover_border = Color(0.90, 0.45, 1.0, 0.90)
+
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = ITEM_BG.lightened(0.08) if state == "hover" else ITEM_BG
-		style.border_color = Color(0.85, 0.7, 0.35) if state == "hover" else Color(0.1, 0.35, 0.22)
+		style.border_color = hover_border if state == "hover" else base_border
 		style.set_border_width_all(1)
 		style.set_content_margin_all(2)
 		b.add_theme_stylebox_override(state, style)
@@ -84,6 +100,8 @@ func _make_widget(item: ItemInstance, ctx: Dictionary) -> ItemSlotButton:
 			(b.get_theme_stylebox(state) as StyleBoxFlat).border_color = edge
 			(b.get_theme_stylebox(state) as StyleBoxFlat).set_border_width_all(2)
 	b.show_item(item, ItemText.build(item, context_profile), "", Equipment.can_use(item, context_profile, ctx) if context_profile != null else true)
+	if rem_count > 0:
+		b.set_count(rem_count)
 	b.pressed.connect(func() -> void: item_pressed.emit(item))
 	if interactive:
 		b.set_drag_forwarding(_drag_data.bind(item, b), _can_drop_forward.bind(b), _drop_forward.bind(b))
@@ -150,7 +168,10 @@ func _target_cell(at_position: Vector2, data: Dictionary) -> Vector2i:
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	if not interactive or not (data is Dictionary and data.get("type") == DRAG_TYPE) or profile == null:
 		return false
-	var from_other: bool = data.get("source") != null and data.get("source") != profile
+	var source: Variant = data.get("source")
+	if source in ["craft_slot", "craft_alt"]:
+		return true
+	var from_other: bool = source != null and source != profile
 	if from_other and not transfer_handler.is_valid():
 		return false
 	var item: ItemInstance = data["item"]
@@ -165,10 +186,22 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	_show_hover = false
 	var item: ItemInstance = data["item"]
+	var source: Variant = data.get("source")
+	if source in ["craft_slot", "craft_alt"]:
+		var cwin = data.get("compound_win")
+		if cwin != null and is_instance_valid(cwin):
+			if source == "craft_slot":
+				cwin.remove_slot_item(int(data.get("from_slot", -1)))
+			else:
+				cwin.remove_alt_item(int(data.get("from_alt", -1)))
+		changed.emit()
+		if _overlay != null:
+			_overlay.queue_redraw()
+		return
 	var at_cell := _target_cell(at_position, data)
-	var from_other: bool = data.get("source") != null and data.get("source") != profile
+	var from_other: bool = source != null and source != profile
 	if from_other:
-		if transfer_handler.call(item, data["source"], profile, at_cell.x, at_cell.y, bag):
+		if transfer_handler.call(item, source, profile, at_cell.x, at_cell.y, bag):
 			changed.emit()
 	elif profile.move_item(item, at_cell.x, at_cell.y, bag):
 		changed.emit()

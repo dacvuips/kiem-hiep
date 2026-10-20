@@ -2,9 +2,9 @@ extends Button
 class_name ItemSlotButton
 ## Ô chứa 1 món đồ (ô trang bị, ô hành trang...) — dùng chung:
 ##   - Rê chuột: tooltip mô tả CÓ MÀU (RichTextLabel, BBCode từ ItemText) thay tooltip chữ trơn mặc định.
-##   - Đồ hoàng kim / đồ tím: viền vàng / tím + 1 vệt sáng chạy dọc 4 cạnh ô (RarityRing.draw_ring, giống VLTK).
+##   - Đồ hoàng kim / đồ tím: đúng 2 line đối diện nhau chạy quanh 4 cạnh (RarityRing.draw_ring, chuẩn VLTK).
 
-const GOLD := Color(1.0, 0.85, 0.2)
+const GOLD := Color(1.0, 0.78, 0.0)
 
 ## BBCode mô tả món (rỗng = không có tooltip màu, dùng tooltip_text thường).
 var item_bbcode: String = ""
@@ -13,7 +13,6 @@ var is_gold: bool = false:
 		is_gold = value
 		set_process(value)
 		queue_redraw()
-var _phase: float = 0.0
 var _ring_color := RarityRing.GOLD
 ## true = dùng ảnh đã thu nhỏ sẵn (ô hành trang 48px). Ảnh luôn vẽ ĐÚNG KÍCH THƯỚC GỐC, căn đúng điểm ảnh, không phóng
 ## to — chỉ thu nhỏ khi lớn hơn ô (có mipmap) -> nét như game gốc.
@@ -28,8 +27,8 @@ func _ready() -> void:
 	set_process(is_gold)
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
-## Nền đỏ sẫm khi nhân vật CHƯA ĐỦ yêu cầu để dùng món (giống ô đồ VLTK).
-const UNUSABLE_BG := Color(0.42, 0.04, 0.04, 0.85)
+## Nền đỏ khi nhân vật CHƯA ĐỦ yêu cầu để dùng món (giống ô đồ VLTK).
+const UNUSABLE_BG := Color(0.26, 0.06, 0.05, 0.95)
 ## Nền phủ sau ảnh khi ô CÓ đồ (alpha 0 = không phủ). Ô trang bị trong bảng Nhân vật dùng để che hình mờ vẽ sẵn
 ## trong ảnh khung (bóng mũ/áo/nhẫn...) khi đã mặc đồ.
 var filled_backdrop: Color = Color(0, 0, 0, 0)
@@ -59,6 +58,10 @@ func show_item(item: ItemInstance, bbcode: String, empty_tooltip: String = "", u
 		is_gold = false
 		_count = 1
 		queue_redraw()
+
+func set_count(c: int) -> void:
+	_count = c
+	queue_redraw()
 
 var _unusable: bool = false
 
@@ -101,13 +104,13 @@ func _make_custom_tooltip(_for_text: String) -> Object:
 	panel.add_child(label)
 	return panel
 
-func _process(delta: float) -> void:
-	_phase = fmod(_phase + delta * RarityRing.RUN_SPEED, 1.0)
+func _process(_delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
 	if _unusable:
 		draw_rect(Rect2(Vector2.ZERO, size).grow(-1.0), UNUSABLE_BG)
+		draw_rect(Rect2(Vector2.ZERO, size).grow(-1.0), Color(0.50, 0.12, 0.10, 0.75), false, 1.0)
 	if _item_icon:
 		_draw_item_icon()
 	if _count > 1:
@@ -118,7 +121,7 @@ func _draw() -> void:
 		draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
 	if not is_gold:
 		return
-	RarityRing.draw_ring(self, Rect2(Vector2(1, 1), size - Vector2(2, 2)), _phase, _ring_color)
+	RarityRing.draw_ring(self, Rect2(Vector2(1, 1), size - Vector2(2, 2)), RarityRing.get_global_phase(), _ring_color)
 
 ## Ảnh ở giữa ô: giữ kích thước gốc (không phóng to), chỉ thu nhỏ khi vượt lòng ô; toạ độ làm tròn để mỗi điểm ảnh
 ## rơi đúng 1 điểm màn hình.

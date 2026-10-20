@@ -1,0 +1,289 @@
+[gd_scene format=3 uid="uid://b7v8k3m2p9q1x"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
+[ext_resource type="Texture2D" path="res://ui/login/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" path="res://ui/login/btn_blank.png" id="be"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Script" path="res://ui/policy/policy_screen.gd" id="policy_script"]
+[ext_resource type="Texture2D" path="res://ui/login/icon_check.png" id="chk"]
+[ext_resource type="Texture2D" path="res://ui/login/icon_uncheck.png" id="unchk"]
+
+[sub_resource type="StyleBoxFlat" id="dialog_bg"]
+bg_color = Color(0.04, 0.11, 0.13, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.78, 0.45, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 22
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="inner_border"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.75, 0.62, 0.35, 0.5)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="title_banner"]
+bg_color = Color(0.08, 0.2, 0.23, 0.65)
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.45, 0.5)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+
+[sub_resource type="LabelSettings" id="title_setting"]
+font = ExtResource("font")
+font_size = 22
+font_color = Color(0.98, 0.88, 0.55, 1)
+outline_size = 6
+outline_color = Color(0.04, 0.12, 0.14, 1)
+shadow_size = 4
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="content_card_bg"]
+bg_color = Color(0.02, 0.06, 0.07, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.38, 0.4, 0.5)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="back_btn"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.16, 0.18, 0.75)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.45, 0.6)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="back_btn_hover"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(0.14, 0.26, 0.3, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.86, 0.52, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="LabelSettings" id="msg"]
+font = ExtResource("font")
+font_size = 18
+font_color = Color(1, 0.92, 0.65, 1)
+outline_size = 5
+outline_color = Color(0.1, 0.05, 0.02, 1)
+
+[node name="PolicyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("policy_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Stage" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+script = ExtResource("sf")
+design_size = Vector2(1280, 720)
+
+[node name="DialogFrame" type="Panel" parent="Stage"]
+layout_mode = 0
+offset_left = 270.0
+offset_top = 44.0
+offset_right = 1010.0
+offset_bottom = 666.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("dialog_bg")
+
+[node name="InnerBorder" type="Panel" parent="Stage/DialogFrame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("inner_border")
+
+[node name="TitleBar" type="Panel" parent="Stage/DialogFrame"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 54.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("title_banner")
+
+[node name="Title" type="Label" parent="Stage"]
+layout_mode = 0
+offset_left = 270.0
+offset_top = 50.0
+offset_right = 1010.0
+offset_bottom = 98.0
+text = "ĐIỀU KHOẢN & CHÍNH SÁCH DỊCH VỤ"
+label_settings = SubResource("title_setting")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContentCard" type="Panel" parent="Stage"]
+layout_mode = 0
+offset_left = 295.0
+offset_top = 110.0
+offset_right = 985.0
+offset_bottom = 496.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("content_card_bg")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Stage/ContentCard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="PolicyContent" type="RichTextLabel" parent="Stage/ContentCard/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/normal_font = ExtResource("font")
+theme_override_font_sizes/normal_font_size = 14
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="AgreeCheck" type="CheckBox" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 310.0
+offset_top = 508.0
+offset_right = 970.0
+offset_bottom = 544.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.92, 0.84, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.88, 0.45, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 14
+theme_override_icons/checked = ExtResource("chk")
+theme_override_icons/unchecked = ExtResource("unchk")
+text = " Tôi đã đọc, hiểu rõ và đồng ý với tất cả Điều Khoản & Chính Sách"
+
+[node name="Message" type="Label" parent="Stage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 295.0
+offset_top = 546.0
+offset_right = 985.0
+offset_bottom = 572.0
+theme_override_colors/font_color = Color(1, 0.85, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 360.0
+offset_top = 578.0
+offset_right = 500.0
+offset_bottom = 626.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.8, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("back_btn")
+theme_override_styles/hover = SubResource("back_btn_hover")
+theme_override_styles/pressed = SubResource("back_btn_hover")
+text = "Từ Chối"
+
+[node name="EnterButton" type="TextureButton" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 535.0
+offset_top = 572.0
+offset_right = 815.0
+offset_bottom = 632.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("be")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="EnterLabel" type="Label" parent="Stage/EnterButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Đồng Ý & Tiếp Tục"
+label_settings = SubResource("msg")
+horizontal_alignment = 1
+vertical_alignment = 1

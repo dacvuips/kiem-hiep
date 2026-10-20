@@ -11,6 +11,7 @@ signal profile_applied
 static var current: NetSocial
 ## Danh sách bang (S_GUILD_LIST) — GuildListWindow đọc.
 var guild_list: Array = []
+signal guild_list_updated(list: Array)
 ## Hiện 1 dòng thông báo cho người chơi.
 var notify: Callable = func(_text: String) -> void: pass
 
@@ -33,7 +34,9 @@ func _ready() -> void:
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_invite.connect(_on_team_invite)
 	NetClient.guild_received.connect(_on_guild)
-	NetClient.guild_list.connect(func(list: Array) -> void: guild_list = list)
+	NetClient.guild_list.connect(func(list: Array) -> void:
+		guild_list = list
+		guild_list_updated.emit(list))
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
 

@@ -31,7 +31,17 @@ func _go(scene: String) -> void:
 	set_process_input(false)
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)
-	t.tween_callback(get_tree().change_scene_to_file.bind(scene))
+	t.tween_callback(func() -> void:
+		var err := get_tree().change_scene_to_file(scene)
+		if err != OK:
+			push_error("Lỗi chuyển cảnh sang %s: mã lỗi %d" % [scene, err])
+			set_process_input(true)
+			modulate.a = 1.0
+			if has_node("%Message"):
+				var msg = get_node("%Message")
+				if msg is Label:
+					_toast(msg, "Lỗi chuyển cảnh (mã %d)" % err, 4.0)
+	)
 
 func _bind_hover(b: BaseButton) -> void:
 	b.mouse_entered.connect(_hover.bind(b, true))

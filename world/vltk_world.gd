@@ -671,6 +671,60 @@ func setup_main_map() -> void:
 		player.global_position = _open_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+	_spawn_boss_if_requested(player)
+
+## Thả Boss Hoàng Kim / Tiểu Hoàng Kim khi khiêu chiến từ tab Boss
+func _spawn_boss_if_requested(player: Node2D) -> void:
+	var boss_data: Dictionary = GameManager.field_map.get("boss", {})
+	if boss_data.is_empty():
+		return
+
+	var base_center := player.global_position if player != null else _default_center()
+	var spawn_pos := _open_position_near(base_center + Vector2(280.0, 180.0))
+	if spawn_pos == Vector2.ZERO:
+		spawn_pos = base_center + Vector2(250.0, 120.0)
+
+	var m := VltkMonster.new()
+	m.monster_id = int(boss_data.get("id", 740))
+	m.data = MonsterData.monster(m.monster_id).duplicate()
+	if not boss_data.get("name", "").is_empty():
+		m.data["name"] = str(boss_data["name"])
+	if not boss_data.get("res", "").is_empty():
+		m.data["res"] = str(boss_data["res"])
+	m.data["series"] = clampi(int(boss_data.get("series", m.data.get("series", 0))), 0, 4)
+	m.level = maxi(1, int(boss_data.get("level", 95)))
+	m.ai_enabled = true
+
+	var b_type := str(boss_data.get("type", m.data.get("boss_type", "gold")))
+	if b_type == "small_gold":
+		m.gold_boss = false
+		m.small_gold_boss = true
+	elif b_type == "killer":
+		m.gold_boss = false
+		m.killer_boss = true
+	else:
+		m.gold_boss = true
+
+	m.position = spawn_pos
+
+	if map != null and map.objects_root != null:
+		map.objects_root.add_child(m)
+	else:
+		add_child(m)
+
+	var tag := "[color=#ffd700][Thập Đại Boss Hoàng Kim][/color]"
+	if m.small_gold_boss:
+		tag = "[color=#ffff00][Tiểu Hoàng Kim][/color]"
+	elif m.killer_boss:
+		tag = "[color=#ff9900][Sát Thủ Đầu Lĩnh][/color]"
+	elif b_type == "challenge":
+		tag = "[color=#ff5555][Tuyệt Đỉnh Trấn Ải][/color]"
+
+	ChatBox.push_system("%s [b][color=#ffff80]%s[/color][/b] đã giáng thế tại [b]%s[/b]!" % [
+		tag,
+		m.data.get("name", "Boss"),
+		str(GameManager.field_map.get("name", "Bản đồ"))
+	])
 
 ## Giữ nhân vật trong `rect` (toạ độ pixel map, rìa sáng như ô màn chơi) — chiến trường: doanh trại lúc chưa khai chiến.
 ## Rect2() = bỏ giới hạn. Không dựng lại lưới tìm đường: chỉ chặn ở rìa (clamp_to_arena).
@@ -741,7 +795,19 @@ static func random_edge_spawn() -> Vector2:
 
 ## Tâm khu chơi của map: tâm vùng có nền gần tâm hình chữ nhật các vùng nhất.
 func _default_center() -> Vector2:
+	if GameManager.field_map.has("arena_center"):
+		var ac = GameManager.field_map["arena_center"]
+		if ac is Vector2:
+			return ac
+		if ac is Array and (ac as Array).size() >= 2:
+			return Vector2(float(ac[0]), float(ac[1]))
 	var data := map.data
+	if data.has("arena_center"):
+		var ac = data["arena_center"]
+		if ac is Vector2:
+			return ac
+		if ac is Array and (ac as Array).size() >= 2:
+			return Vector2(float(ac[0]), float(ac[1]))
 	if data.has("start"):                   ## map chia khối: vùng xuất hiện do tool map chọn sẵn
 		return (Vector2(float(data["start"][0]), float(data["start"][1])) + Vector2(0.5, 0.5)) * 512.0
 	var rect: Array = data.get("rect", [0, 0, 1, 1])
@@ -788,24 +854,28 @@ func _clear_around(c: Vector2i) -> bool:
 	return true
 
 ## Chân đứng tại `feet` có bị chặn không: ô vật cản của map HOẶC ngoài ô vuông màn chơi (khi đã có ô).
-func _blocked_at(feet: Vector2) -> bool:
-	if map.is_blocked(feet):
+## jumping = true: cho phép vượt qua ô cản thấp (sông suối / hào nước: kind 3/4).
+func _blocked_at(feet: Vector2, jumping: bool = false) -> bool:
+	if jumping and map.has_method("is_jumpable"):
+		if not map.is_jumpable(feet):
+			return true
+	elif map.is_blocked(feet):
 		return true
 	return arena_rect.size != Vector2.ZERO and not arena_rect.has_point(feet)
 
 ## Giảm vận tốc để thực thể có chân tại `feet` không bước vào ô vật cản của map và không ra khỏi ô vuông màn chơi
 ## (trượt dọc tường theo từng trục). Đang đứng sẵn trong chỗ bị chặn (vd quái sinh ra trong nhà) thì không giữ lại.
-static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float) -> Vector2:
+static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumping: bool = false) -> Vector2:
 	var w := current
 	if w == null or w.map == null or w.map.grid == null or velocity == Vector2.ZERO:
 		return velocity
-	if w._blocked_at(feet):
+	if w._blocked_at(feet, jumping):
 		return velocity
 	var step := velocity * delta
-	if not w._blocked_at(feet + step):
+	if not w._blocked_at(feet + step, jumping):
 		return velocity
-	if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0)):
+	if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping):
 		return Vector2(velocity.x, 0.0)
-	if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y)):
+	if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping):
 		return Vector2(0.0, velocity.y)
 	return Vector2.ZERO

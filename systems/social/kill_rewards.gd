@@ -14,11 +14,15 @@ static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int)
 	var got := team.local_exp_for_kill(base_exp, monster_level)
 	if got <= 0:
 		return 0
+	var loop := Engine.get_main_loop()
+	var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+	if player != null and "combat_stats" in player and player.combat_stats != null:
+		if player.combat_stats.exp_enhance_p > 0:
+			got = int(round(got * (1.0 + float(player.combat_stats.exp_enhance_p) / 100.0)))
 	var before := profile.level
 	profile.add_exp(got)
 	if profile.level != before:
-		var loop := Engine.get_main_loop()
-		var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+		SaveManager.save_profile(profile)
 		if player != null and player.has_method("refresh_combat_stats"):
 			player.refresh_combat_stats()
 	return got

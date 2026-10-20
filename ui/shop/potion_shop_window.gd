@@ -79,7 +79,7 @@ func _open_buy(mid: String) -> void:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture = ItemDatabase.get_icon(rec)
 	head.add_child(icon)
-	var intro := SocialUi.label(str(rec.get("intro", "")), SocialUi.TEXT, 13)
+	var intro := SocialUi.label(ItemText.plain(ItemText.clean_vltk_tags(str(rec.get("intro", "")))), SocialUi.TEXT, 13)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	intro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(intro)

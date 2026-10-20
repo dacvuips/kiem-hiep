@@ -30,6 +30,12 @@ var level: int = 1
 ## BOSS XANH (script server Revive: ~2% mỗi lần quái sinh): tên xanh dương, kháng 75% mọi loại, sát thương x3 (cấp 50+, thấp hơn thì x2),
 ## nhanh hơn, rớt 5 lần (DropTable.roll_blue_boss). Đặt TRƯỚC khi add_child.
 var blue_boss: bool = false
+## BOSS HOÀNG KIM (10 Đại Boss Hoàng Kim môn phái): tên vàng óng, hào quang, chỉ số cực cao, rơi bảo vật & trang bị hoàng kim.
+var gold_boss: bool = false
+## TIỂU HOÀNG KIM (Diệu Như, Liễu Thanh Thanh, Trương Tông Chính): bảo vật, bí kíp, thủy tinh.
+var small_gold_boss: bool = false
+## BOSS SÁT THỦ (Nhiếp Thí Trần truy nã): thưởng trang bị danh dự.
+var killer_boss: bool = false
 ## Độ khó ĐỊA NGỤC (1-5 sao, 0 = map thường): máu, sát thương và tỉ lệ rơi đồ nhân số sao (DropTable.roll_hell). Đặt TRƯỚC khi add_child.
 var hell_stars: int = 0
 ## false = quái đứng yên (tắt AI) — để xem hình hoặc để người chơi tập đánh.
@@ -109,10 +115,23 @@ func _ready() -> void:
 	_health_bar = HealthBarScene.instantiate()
 	add_child(_health_bar)
 	_health_bar.position = Vector2(0, -_sprite.get_height() - 10.0)   ## thanh máu cao 40px, gốc ở GIỮA -> đặt x = 0 cho căn giữa quái
+	if not gold_boss and data.get("is_boss", false):
+		var bt := str(data.get("boss_type", ""))
+		if bt == "gold":
+			gold_boss = true
+		elif bt == "small_gold":
+			small_gold_boss = true
+		elif bt == "killer":
+			killer_boss = true
+
 	var plate := NamePlate.new()
 	add_child(plate)
-	plate.setup(str(data.get("name", "")).strip_edges(), clampi(int(data.get("series", 0)), 0, 4) as ElementTypes.ElementType, blue_boss)
+	plate.setup(str(data.get("name", "")).strip_edges(), clampi(int(data.get("series", 0)), 0, 4) as ElementTypes.ElementType, blue_boss, gold_boss or small_gold_boss)
 	plate.place_above(_health_bar)
+	if gold_boss:
+		_sprite.scale = Vector2(1.25, 1.25)
+	elif small_gold_boss:
+		_sprite.scale = Vector2(1.15, 1.15)
 
 	_origin_logic = VltkMath.to_logic(global_position)
 	_cur_active = float(data.get("active", 400))
@@ -194,7 +213,12 @@ func _apply_vltk_stats(stats: CombatantStats) -> void:
 	if def >= 0:
 		stats.defense = def
 	_apply_level_combat(stats)
-	if blue_boss:
+	if gold_boss:
+		stats.max_hp = maxi(stats.max_hp, 1800000)
+		for type in [CombatFormulas.DamageType.PHYSICS, CombatFormulas.DamageType.COLD, CombatFormulas.DamageType.FIRE, CombatFormulas.DamageType.LIGHT, CombatFormulas.DamageType.POISON]:
+			stats.resist_percent[type] = maxi(int(stats.resist_percent.get(type, 0)), 85)
+			stats.resist_percent_cap[type] = maxi(int(stats.resist_percent_cap.get(type, 0)), 85)
+	elif blue_boss:
 		for type in [CombatFormulas.DamageType.PHYSICS, CombatFormulas.DamageType.COLD, CombatFormulas.DamageType.FIRE, CombatFormulas.DamageType.LIGHT, CombatFormulas.DamageType.POISON]:
 			stats.resist_percent[type] = 75
 			stats.resist_percent_cap[type] = maxi(int(stats.resist_percent_cap.get(type, 0)), 75)
@@ -300,8 +324,8 @@ func _walk_to(dest_logic: Vector2) -> void:
 
 ## Tham số AI: AI loại 1 dùng đúng AIParam1-9 của quái; loại khác (khác cách đọc tham số) dùng giá trị chung hợp lý.
 func _ai_params() -> Array:
-	if int(data.get("ai_mode", 1)) == 1:
-		return data.get("ai_params", [30, 25, 25, 25, 25, 25, 25, 0, 0])
+	if data.has("ai_params") and not (data["ai_params"] as Array).is_empty():
+		return data["ai_params"]
 	return [30, 25, 25, 25, 25, 25, 25, 0, 0]
 
 func _skill_data(slot: int) -> Dictionary:
@@ -360,11 +384,19 @@ func _ai_think() -> void:
 		_walk_to(VltkMath.logic_of(enemy))  # tiến lại gần
 		return
 	## Trong tầm: chọn 1 trong 4 skill theo xác suất AIParam2-5.
-	var roll := randi() % 100
+	var total_weight := 0
+	for i in 4:
+		if int(data["skills"][i][0]) > 0:
+			total_weight += maxi(0, int(p[i + 1]))
+	if total_weight <= 0:
+		total_weight = 100
+	var roll := randi() % total_weight
 	var slot := -1
 	var acc := 0
 	for i in 4:
-		acc += int(p[i + 1])
+		if int(data["skills"][i][0]) <= 0:
+			continue
+		acc += maxi(0, int(p[i + 1]))
 		if roll < acc:
 			slot = i
 			break
@@ -429,7 +461,8 @@ func _fire_skill() -> void:
 	var skill_level := int(sk[1])
 	var s := VltkSkillData.skill(skill_id, skill_level)
 	## Quái có thể vừa di chuyển lúc ra chiêu: nhắm vị trí người chơi LÚC BẮN.
-	if not s.is_empty() and int(s.get("style", 0)) == VltkSkillCaster.STYLE_MISSILES:
+	var is_melee := int(s.get("melee", 1)) == 1
+	if not s.is_empty() and not is_melee and int(s.get("style", 0)) == VltkSkillCaster.STYLE_MISSILES:
 		var ctx := VltkCastContext.new()
 		ctx.launcher = self
 		ctx.world = get_parent()
@@ -440,7 +473,7 @@ func _fire_skill() -> void:
 		return
 	if visual_only:
 		return
-	## Skill cận chiến kiểu 1/2/3 chưa có bộ máy riêng: đánh thẳng nếu người chơi còn trong tầm.
+	## Skill cận chiến (melee = 1) hoặc kiểu 1/2/3: đánh thẳng nếu người chơi còn trong tầm.
 	var radius := float(s.get("attack_radius", DEFAULT_ATTACK_RADIUS)) if not s.is_empty() else DEFAULT_ATTACK_RADIUS
 	if VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(target)) <= radius * 1.2:
 		## Đòn cận chiến = sát thương cơ bản theo cấp + sát thương cộng thêm của chính skill (thú/quái cơ bản có
@@ -629,10 +662,24 @@ func die() -> void:
 func grant_rewards(with_drops := true) -> void:
 	if with_drops and net_eid == 0:   ## online: đồ rơi do server tung (S_DROPS)
 		var drops: Array
-		if hell_stars > 0:
+		var luck := 0
+		var loop := Engine.get_main_loop()
+		var player_node: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+		if player_node != null and "combat_stats" in player_node and player_node.combat_stats != null:
+			luck = player_node.combat_stats.lucky_v
+		if gold_boss:
+			drops = DropTable.roll_gold_boss(level, int(_build.element))
+			ChatBox.push_system("[color=#ffd700][Võ Lâm Minh Chủ][/color] Hào kiệt đã kích sát thành công [Hoàng Kim] %s!" % str(data.get("name", "Boss")))
+		elif small_gold_boss:
+			drops = DropTable.roll_small_gold_boss(level, int(_build.element))
+			ChatBox.push_system("[color=#ffff00][Tiểu Hoàng Kim][/color] Hào kiệt đã kích sát thành công [Tiểu Hoàng Kim] %s!" % str(data.get("name", "Boss")))
+		elif killer_boss:
+			drops = DropTable.roll_killer_boss(level, int(_build.element))
+			ChatBox.push_system("[color=#ff9900][Nhiếp Thí Trần][/color] Hào kiệt đã hoàn thành tiêu diệt [Sát Thủ] %s!" % str(data.get("name", "Boss")))
+		elif hell_stars > 0:
 			drops = DropTable.roll_hell(level, int(_build.element), hell_stars, blue_boss)
 		else:
-			drops = DropTable.roll_blue_boss(level, int(_build.element)) if blue_boss else DropTable.roll(level, int(_build.element))
+			drops = DropTable.roll_blue_boss(level, int(_build.element), luck) if blue_boss else DropTable.roll(level, int(_build.element), luck)
 		if not drops.is_empty():
 			GroundDrop.spawn_drops(get_parent(), position, drops)
 	if net_eid != 0:

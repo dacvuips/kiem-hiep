@@ -236,7 +236,7 @@
   },
   "test_period": {
    "min_member": 16,
-   "seconds": 259200
+   "seconds": 1209600
   },
   "money_to_exp": {
    "TimeLong": 750,

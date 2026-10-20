@@ -1,5 +1,7 @@
 extends CanvasLayer
 class_name StageSelectScreen
+
+const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Màn "Chọn Ải" — liệt kê TOÀN BỘ StageData (Character Hub Screen truyền vào, xem
 ## CharacterHubScreen.stages), cho người chơi chọn map cụ thể để vào trận thay vì chỉ chơi tuần
 ## tự map tiếp theo. Map chưa mở khóa (vượt quá profile.stages_cleared) hiện mờ, không bấm được.
@@ -70,12 +72,13 @@ func _ready() -> void:
 	vbox.add_child(title)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(420, min(_stages.size() * 96, 480))
+	scroll.custom_minimum_size = Vector2(520, min(_stages.size() * 105, 520))
 	vbox.add_child(scroll)
+	TouchScrollHelperScript.attach(scroll, vbox)
 
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
-	list.custom_minimum_size.x = 400
+	list.custom_minimum_size.x = 500
 	scroll.add_child(list)
 
 	for i in _stages.size():
@@ -92,7 +95,7 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	var is_completed := index < _profile.stages_cleared
 
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(0, 80)
+	button.custom_minimum_size = Vector2(0, 92)
 	button.disabled = not is_unlocked
 	button.focus_mode = Control.FOCUS_NONE
 	if is_unlocked:
@@ -103,7 +106,7 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	style.border_color = BORDER_UNLOCKED if is_unlocked else BORDER_LOCKED
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
-	style.set_content_margin_all(10)
+	style.set_content_margin_all(8)
 	button.add_theme_stylebox_override("normal", style)
 	button.add_theme_stylebox_override("disabled", style)
 	if is_unlocked:
@@ -117,8 +120,28 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	hbox.add_theme_constant_override("separation", 12)
 	button.add_child(hbox)
 
+	# Khung ảnh thu nhỏ xem trước của bàn chơi (Stage Thumbnail)
+	var thumb_box := PanelContainer.new()
+	thumb_box.custom_minimum_size = Vector2(104, 68)
+	thumb_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var t_style := StyleBoxFlat.new()
+	t_style.bg_color = Color(0.04, 0.05, 0.06, 0.95)
+	t_style.border_color = BORDER_UNLOCKED if is_unlocked else BORDER_LOCKED
+	t_style.set_border_width_all(1)
+	t_style.set_corner_radius_all(4)
+	thumb_box.add_theme_stylebox_override("panel", t_style)
+
+	var thumb := TextureRect.new()
+	thumb.custom_minimum_size = Vector2(100, 64)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	thumb.texture = stage.get_preview_texture() if stage.has_method("get_preview_texture") else null
+	thumb_box.add_child(thumb)
+	hbox.add_child(thumb_box)
+
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_child(info)
 
 	var name_label := Label.new()
@@ -151,9 +174,13 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	return button
 
 func _on_stage_pressed(stage: StageData) -> void:
+	var cb := _on_stage_chosen
 	queue_free()
-	_on_stage_chosen.call(stage)
+	if cb.is_valid():
+		cb.call(stage)
 
 func _on_close_pressed() -> void:
-	_on_closed.call()
+	var cb := _on_closed
 	queue_free()
+	if cb.is_valid():
+		cb.call()

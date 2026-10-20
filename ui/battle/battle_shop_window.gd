@@ -39,7 +39,7 @@ static func _effect_text(rec: Dictionary) -> String:
 		if str(e[0]) == "lifepotion_v":
 			var ticks := int(e[2]) / PotionEffect.UPDATE_FRAMES
 			return "Hồi %d sinh lực trong %.1f giây" % [int(e[1]) * ticks, float(e[2]) / PotionEffect.GAME_FPS]
-	return str(rec.get("intro", ""))
+	return ItemText.plain(ItemText.clean_vltk_tags(str(rec.get("intro", ""))))
 
 func _process(_d: float) -> void:
 	var p := GameManager.local_profile

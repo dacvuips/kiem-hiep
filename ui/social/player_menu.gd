@@ -75,7 +75,7 @@ func _items() -> Array:
 	if _target.stall_title != "":
 		items.append(["Xem quầy", _target.open_stall])
 	items.append(["Tán gẫu", _chat])
-	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0:
+	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false):
 		items.append(["Giao dịch", _trade])
 	items.append(["Theo sau", func() -> void:
 		if is_instance_valid(_player) and is_instance_valid(_target) and _player.has_method("start_follow"):

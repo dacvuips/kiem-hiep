@@ -57,7 +57,7 @@ const NAME_GIVEN := ["Vô Kỵ", "Thiên Phong", "Hạo Nhiên", "Tuyết Nhi", 
 @onready var _create_button: TextureButton = %CreateButton
 @onready var _enter_button: TextureButton = %EnterButton
 @onready var _message: Label = %Message
-@onready var _back_button: Button = %BackButton
+@onready var _back_button: BaseButton = %BackButton
 @onready var _side_buttons: Array[TextureButton] = [%AccountButton, %SettingsButton, %SupportButton, %NoticeButton]
 
 var _meta: Dictionary = {}
@@ -84,12 +84,16 @@ func _ready() -> void:
 	_female_portrait.pressed.connect(_on_gender_pressed.bind(PlayerProfile.Gender.FEMALE))
 	for b: TextureButton in [_create_button, _enter_button] + _side_buttons:
 		b.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
+	for b: BaseButton in [_create_button, _enter_button, _back_button]:
+		_style_pill_button(b)
 	_dice_button.pressed.connect(_on_dice_pressed)
+	_dice_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_create_button.pressed.connect(_on_create_pressed)
 	_enter_button.pressed.connect(_on_enter_pressed)
 	_back_button.pressed.connect(_on_back_pressed)
 	_back_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
-	_name_input.text_submitted.connect(func(_t: String) -> void: _on_create_pressed())
+	_name_input.text_submitted.connect(func(_t: String) -> void: _on_enter_pressed())
+
 	for b in _side_buttons:
 		if b.name == "AccountButton":
 			b.pressed.connect(func() -> void: AccountDialog.open(self))
@@ -109,6 +113,27 @@ func _ready() -> void:
 
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+
+func _style_pill_button(b: BaseButton) -> void:
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var lbl: Label = b.get_node_or_null("Label")
+	b.mouse_entered.connect(func() -> void:
+		b.modulate = Color(1.18, 1.18, 1.05)
+		if lbl:
+			lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 0.88))
+	)
+	b.mouse_exited.connect(func() -> void:
+		b.modulate = Color(1.0, 1.0, 1.0)
+		if lbl:
+			lbl.remove_theme_color_override("font_color")
+	)
+	b.button_down.connect(func() -> void:
+		b.modulate = Color(0.85, 0.85, 0.8)
+	)
+	b.button_up.connect(func() -> void:
+		b.modulate = Color(1.18, 1.18, 1.05) if b.is_hovered() else Color(1.0, 1.0, 1.0)
+	)
 
 # ---------------------------------------------------------------- Hệ Ngũ Hành
 
@@ -199,21 +224,32 @@ func _on_dice_pressed() -> void:
 	_name_input.text = "%s %s" % [NAME_FAMILY.pick_random(), NAME_GIVEN.pick_random()]
 
 func _on_create_pressed() -> void:
-	_play_ui(VltkSound.UI_POPUP)
+	_submit_character(false)
+
+func _on_enter_pressed() -> void:
+	_submit_character(true)
+
+func _submit_character(enter_game_directly: bool) -> void:
+	if _create_button.disabled or _enter_button.disabled:
+		return
 	var player_name := _name_input.text.strip_edges()
 	if player_name.length() < NAME_MIN_LENGTH:
+		_play_ui(VltkSound.UI_POPUP)
 		_show_message("Tên cần ít nhất %d ký tự" % NAME_MIN_LENGTH)
 		_name_input.grab_focus()
 		return
 	var sects := SectRegistry.get_by_element(_element)
 	if sects.is_empty():
+		_play_ui(VltkSound.UI_POPUP)
 		_show_message("Hệ này chưa có môn phái")
 		return
-	if AccountApi.is_logged_in():
-		_create_online(player_name)
-		return
 
-	## Đã có nhân vật thì chỉ đổi tên/giới tính/hệ, giữ nguyên tiến trình (đổi hệ thì bỏ phái cũ, về Vô Môn Phái).
+	if AccountApi.is_logged_in():
+		await _create_online(player_name, enter_game_directly)
+	else:
+		_create_offline(player_name, enter_game_directly)
+
+func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 	var is_new := GameManager.local_profile == null
 	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
 	profile.display_name = player_name
@@ -229,10 +265,21 @@ func _on_create_pressed() -> void:
 	SaveManager.save_profile(profile)
 	_show_message("Đã tạo nhân vật %s — %s" % [player_name, profile.sect_name])
 
-## Tạo nhân vật trên server (tài khoản + máy chủ đang chọn, ô target_slot) rồi vào game luôn.
-func _create_online(player_name: String) -> void:
-	if _create_button.disabled:
+	if enter_game_directly:
+		_enter_hub()
+	else:
+		_transition_to_roster()
+
+## Tạo nhân vật trên server (tài khoản + máy chủ đang chọn, ô target_slot)
+func _create_online(player_name: String, enter_game_directly: bool) -> void:
+	## Nếu nhân vật đã tạo thành công trong phiên này và tên không đổi -> vào game luôn
+	if SaveManager.online_character_id > 0 and GameManager.local_profile != null and GameManager.local_profile.display_name == player_name:
+		if enter_game_directly:
+			_enter_hub()
+		else:
+			_transition_to_roster()
 		return
+
 	var profile := PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _gender
@@ -240,8 +287,8 @@ func _create_online(player_name: String) -> void:
 	var need_gender := PlayerProfile.required_gender(int(_element))
 	if need_gender >= 0:
 		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
-	## Quà tân thủ để Hub hiện ngay cấp 10 + đồ; bản thật do game server phát lại lúc vào map lần đầu (ProfileGuard.sanitize_new).
 	StarterKit.apply(profile)
+
 	_create_button.disabled = true
 	_enter_button.disabled = true
 	_show_message("Đang tạo nhân vật…")
@@ -258,26 +305,32 @@ func _create_online(player_name: String) -> void:
 	GameManager.local_profile = PlayerProfile.from_dict(c["data"])
 	SaveManager.set_online_character(int(c["id"]), int(c["version"]))
 	_show_message("Đã tạo nhân vật %s — %s" % [c["name"], profile.sect_name])
-	_on_enter_pressed()
 
-func _on_enter_pressed() -> void:
+	if enter_game_directly:
+		_enter_hub()
+	else:
+		_transition_to_roster()
+
+func _enter_hub() -> void:
 	_play_ui(VltkSound.UI_ENTER)
-	if GameManager.local_profile == null:
-		_show_message("Hãy tạo nhân vật trước")
-		return
 	_enter_button.disabled = true
+	_create_button.disabled = true
+	_back_button.disabled = true
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
 
-## Quay lại màn danh sách nhân vật (không lưu gì thêm; nhân vật đã bấm "Tạo" thì đã được lưu).
-func _on_back_pressed() -> void:
+func _transition_to_roster() -> void:
 	_play_ui(VltkSound.UI_SELECT)
 	_back_button.disabled = true
 	_enter_button.disabled = true
+	_create_button.disabled = true
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tween.tween_callback(get_tree().change_scene_to_file.bind(ROSTER_SCENE_PATH))
+
+func _on_back_pressed() -> void:
+	_transition_to_roster()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _back_button.disabled:   # phím Esc cũng quay lại

@@ -408,6 +408,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -443,6 +444,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -539,6 +541,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -574,6 +577,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -670,6 +674,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -705,6 +710,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -801,6 +807,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -836,6 +843,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -932,6 +940,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -967,6 +976,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -1063,6 +1073,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -1098,6 +1109,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -1194,6 +1206,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -1229,6 +1242,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "dragonboat_boss1",
   "life_param": 100,
   "life_replenish": [
@@ -2897,6 +2911,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -2932,6 +2947,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -3814,6 +3830,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -3849,6 +3866,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -3857,7 +3875,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 1",
+  "name": "Nguyệt Ảnh",
   "res": "boss006",
   "resist_max": [
    80,
@@ -3868,7 +3886,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     339,
@@ -3926,6 +3944,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -3945,6 +3964,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -3980,6 +4000,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -3988,7 +4009,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 2",
+  "name": "Huyền Âm",
   "res": "boss009",
   "resist_max": [
    80,
@@ -3999,7 +4020,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 4,
   "skills": [
    [
     339,
@@ -4057,6 +4078,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4076,6 +4098,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4111,6 +4134,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4119,7 +4143,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 3",
+  "name": "Bát Hoang",
   "res": "boss011",
   "resist_max": [
    80,
@@ -4188,6 +4212,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4207,6 +4232,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4242,6 +4268,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4250,7 +4277,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 4",
+  "name": "Lục Long",
   "res": "boss013",
   "resist_max": [
    80,
@@ -4261,7 +4288,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 3,
   "skills": [
    [
     339,
@@ -4319,6 +4346,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4338,6 +4366,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4373,6 +4402,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4381,7 +4411,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 5",
+  "name": "Cuồng Phong",
   "res": "boss017",
   "resist_max": [
    80,
@@ -4392,7 +4422,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 4,
   "skills": [
    [
     339,
@@ -4450,6 +4480,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4469,6 +4500,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4504,6 +4536,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4512,7 +4545,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 6",
+  "name": "Tinh Hỏa",
   "res": "boss022",
   "resist_max": [
    80,
@@ -4523,7 +4556,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 3,
   "skills": [
    [
     339,
@@ -4581,6 +4614,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4600,6 +4634,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4635,6 +4670,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4643,7 +4679,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 7",
+  "name": "Càn Khôn",
   "res": "boss019",
   "resist_max": [
    80,
@@ -4654,7 +4690,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 1,
   "skills": [
    [
     339,
@@ -4712,6 +4748,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4731,6 +4768,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4766,6 +4804,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4774,7 +4813,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nam 8",
+  "name": "Vi Đà",
   "res": "boss020",
   "resist_max": [
    80,
@@ -4843,6 +4882,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4862,6 +4902,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -4897,6 +4938,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -4905,7 +4947,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nữ 1",
+  "name": "Băng Tước",
   "res": "boss023",
   "resist_max": [
    80,
@@ -4916,7 +4958,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     339,
@@ -4974,6 +5016,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -4993,6 +5036,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -5028,6 +5072,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -5036,7 +5081,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nữ 2",
+  "name": "Tật Hỏa",
   "res": "boss014",
   "resist_max": [
    80,
@@ -5047,7 +5092,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 3,
   "skills": [
    [
     339,
@@ -5105,6 +5150,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -5124,6 +5170,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -5159,6 +5206,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -5167,7 +5215,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nữ 3",
+  "name": "U Hồn",
   "res": "boss008",
   "resist_max": [
    80,
@@ -5178,7 +5226,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 4,
   "skills": [
    [
     339,
@@ -5236,6 +5284,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -5255,6 +5304,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -5290,6 +5340,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "highchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -5298,7 +5349,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) tiểu Boss nữ 4",
+  "name": "Nhiếp Hồn",
   "res": "boss007",
   "resist_max": [
    80,
@@ -5309,7 +5360,7 @@
   ],
   "revive_frame": 1,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     339,
@@ -5367,6 +5418,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thủ Ải Thần Tướng",
   "vision": 700,
   "walk_speed": 12
  },
@@ -5386,6 +5438,7 @@
    50
   ],
   "attack_speed": 8,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 8,
   "damage_base": {
@@ -5421,6 +5474,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "dragonboat_boss2",
   "life_param": 100,
   "life_replenish": [
@@ -5429,7 +5483,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "(cao cấp) đại Boss",
+  "name": "Độc Cô Cầu Kiếm",
   "res": "boss015",
   "resist_max": [
    80,
@@ -5498,6 +5552,7 @@
    ]
   },
   "stature": 100,
+  "title": "Trấn Ải Tuyệt Đỉnh Ma Tôn",
   "vision": 700,
   "walk_speed": 12
  },
@@ -5517,6 +5572,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -5552,6 +5608,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -5648,6 +5705,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -5683,6 +5741,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -5779,6 +5838,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -5814,6 +5874,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -5910,6 +5971,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -5945,6 +6007,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -6041,6 +6104,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -6076,6 +6140,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -6172,6 +6237,7 @@
    0
   ],
   "attack_speed": 27,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 27,
   "damage_base": {
@@ -6207,6 +6273,7 @@
    "walk": 7
   },
   "hit_recover": 10,
+  "is_boss": true,
   "level_script": "partner_task",
   "life_param": 100,
   "life_replenish": [
@@ -6303,6 +6370,7 @@
    0
   ],
   "attack_speed": 27,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 27,
   "damage_base": {
@@ -6338,6 +6406,7 @@
    "walk": 7
   },
   "hit_recover": 10,
+  "is_boss": true,
   "level_script": "partner_task",
   "life_param": 100,
   "life_replenish": [
@@ -6434,6 +6503,7 @@
    0
   ],
   "attack_speed": 27,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 27,
   "damage_base": {
@@ -6469,6 +6539,7 @@
    "walk": 7
   },
   "hit_recover": 10,
+  "is_boss": true,
   "level_script": "partner_task",
   "life_param": 100,
   "life_replenish": [
@@ -6958,6 +7029,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -6993,6 +7065,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7089,6 +7162,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7124,6 +7198,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7220,6 +7295,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7255,6 +7331,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7351,6 +7428,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7386,6 +7464,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7482,6 +7561,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7517,6 +7597,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7613,6 +7694,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7648,6 +7730,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7744,6 +7827,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7779,6 +7863,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -7875,6 +7960,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -7910,6 +7996,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -8006,6 +8093,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -8041,6 +8129,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -8137,6 +8226,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -8172,6 +8262,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -8661,6 +8752,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -8696,6 +8788,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -8792,6 +8885,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -8827,6 +8921,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -9316,6 +9411,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -9351,6 +9447,7 @@
    "walk": 14
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -9447,6 +9544,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -9482,6 +9580,7 @@
    "walk": 14
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -9578,6 +9677,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -9613,6 +9713,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "partner_task",
   "life_param": 100,
   "life_replenish": [
@@ -9709,6 +9810,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -9744,6 +9846,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "partner_task",
   "life_param": 100,
   "life_replenish": [
@@ -9840,6 +9943,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -9875,6 +9979,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -9971,6 +10076,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10006,6 +10112,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10102,6 +10209,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -10137,6 +10245,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10233,6 +10342,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10268,6 +10378,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10364,6 +10475,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10399,6 +10511,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10495,6 +10608,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10530,6 +10644,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10626,6 +10741,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10661,6 +10777,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10757,6 +10874,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10792,6 +10910,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -10888,6 +11007,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -10923,6 +11043,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11019,6 +11140,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11054,6 +11176,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11150,6 +11273,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11185,6 +11309,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11281,6 +11406,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11316,6 +11442,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11412,6 +11539,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -11447,6 +11575,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11543,6 +11672,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11578,6 +11708,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11674,6 +11805,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11709,6 +11841,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11805,6 +11938,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11840,6 +11974,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -11936,6 +12071,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -11971,6 +12107,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -12067,6 +12204,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -12102,6 +12240,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -12198,6 +12337,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -12233,6 +12373,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -12329,6 +12470,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -12364,6 +12506,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -13115,6 +13258,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -13150,6 +13294,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -13901,6 +14046,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -13936,6 +14082,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "newnpc",
   "life_param": 100,
   "life_replenish": [
@@ -14032,6 +14179,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -14067,6 +14215,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "newnpc",
   "life_param": 100,
   "life_replenish": [
@@ -14163,6 +14312,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -14198,6 +14348,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "newnpc",
   "life_param": 100,
   "life_replenish": [
@@ -14294,6 +14445,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -14329,6 +14481,7 @@
    "walk": 7
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "qianbaoku",
   "life_param": 100,
   "life_replenish": [
@@ -14425,6 +14578,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -14460,6 +14614,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -14556,6 +14711,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -14591,6 +14747,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -14687,6 +14844,7 @@
    0
   ],
   "attack_speed": 10,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 10,
   "damage_base": {
@@ -14722,6 +14880,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "chinesebeast",
   "life_param": 100,
   "life_replenish": [
@@ -14818,6 +14977,7 @@
    0
   ],
   "attack_speed": 10,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 10,
   "damage_base": {
@@ -14853,6 +15013,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "chinesebeast",
   "life_param": 100,
   "life_replenish": [
@@ -14949,6 +15110,7 @@
    0
   ],
   "attack_speed": 10,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 10,
   "damage_base": {
@@ -14984,6 +15146,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "chinesebeast",
   "life_param": 100,
   "life_replenish": [
@@ -15211,6 +15374,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -15246,6 +15410,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15254,7 +15419,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_tw",
+  "name": "Cổ Bách (Thiên Vương)",
   "res": "boss046",
   "resist_max": [
    95,
@@ -15265,6 +15430,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 15,
+  "sect": "Thiên Vương",
   "series": 0,
   "skills": [
    [
@@ -15323,6 +15489,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thương Pháp Vô Song",
   "vision": 1800,
   "walk_speed": 15
  },
@@ -15342,6 +15509,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -15377,6 +15545,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15385,7 +15554,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_sl",
+  "name": "Huyền Giác Thiền Sư (Thiếu Lâm)",
   "res": "boss047",
   "resist_max": [
    95,
@@ -15396,6 +15565,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 15,
+  "sect": "Thiếu Lâm",
   "series": 0,
   "skills": [
    [
@@ -15454,6 +15624,7 @@
    ]
   },
   "stature": 115,
+  "title": "Kim Cương Bất Hoại",
   "vision": 1800,
   "walk_speed": 15
  },
@@ -15473,6 +15644,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -15508,6 +15680,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15516,7 +15689,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_tm",
+  "name": "Đường Bất Nhiễm (Đường Môn)",
   "res": "boss048",
   "resist_max": [
    95,
@@ -15527,7 +15700,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Đường Môn",
+  "series": 1,
   "skills": [
    [
     302,
@@ -15585,6 +15759,7 @@
    ]
   },
   "stature": 115,
+  "title": "Truy Hồn Đoạt Phách",
   "vision": 1800,
   "walk_speed": 6
  },
@@ -15604,6 +15779,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -15639,6 +15815,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15647,7 +15824,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_wu",
+  "name": "Lam Y Y (Ngũ Độc)",
   "res": "boss049",
   "resist_max": [
    95,
@@ -15658,7 +15835,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Ngũ Độc",
+  "series": 1,
   "skills": [
    [
     353,
@@ -15716,6 +15894,7 @@
    ]
   },
   "stature": 115,
+  "title": "Vạn Cổ Đoạt Mệnh",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -15735,6 +15914,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -15770,6 +15950,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15778,7 +15959,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_em",
+  "name": "Thanh Hiểu Sư Thái (Nga Mi)",
   "res": "boss050",
   "resist_max": [
    95,
@@ -15789,7 +15970,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Nga Mi",
+  "series": 2,
   "skills": [
    [
     328,
@@ -15847,6 +16029,7 @@
    ]
   },
   "stature": 100,
+  "title": "Băng Tâm Kiếm Thần",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -15866,6 +16049,7 @@
    1
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -15901,6 +16085,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -15909,7 +16094,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_cy",
+  "name": "Chung Linh Tú (Thúy Yên)",
   "res": "boss051",
   "resist_max": [
    95,
@@ -15920,7 +16105,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Thúy Yên",
+  "series": 2,
   "skills": [
    [
     336,
@@ -15978,6 +16164,7 @@
    ]
   },
   "stature": 100,
+  "title": "Băng Phong Tuyết Vũ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -15997,6 +16184,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -16032,6 +16220,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -16040,7 +16229,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_gb",
+  "name": "Hà Nhân Ngã (Cái Bang)",
   "res": "boss052",
   "resist_max": [
    95,
@@ -16051,7 +16240,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Cái Bang",
+  "series": 3,
   "skills": [
    [
     357,
@@ -16109,6 +16299,7 @@
    ]
   },
   "stature": 100,
+  "title": "Hàng Long Phục Hổ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -16259,6 +16450,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -16294,6 +16486,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -16302,7 +16495,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_tr",
+  "name": "Đoan Mộc Duệ (Thiên Nhẫn)",
   "res": "boss053",
   "resist_max": [
    95,
@@ -16313,7 +16506,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Thiên Nhẫn",
+  "series": 3,
   "skills": [
    [
     361,
@@ -16371,6 +16565,7 @@
    ]
   },
   "stature": 115,
+  "title": "Ma Diễm Liệt Hỏa",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -16390,6 +16585,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -16425,6 +16621,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -16433,7 +16630,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_wd",
+  "name": "Đạo Thanh Chân Nhân (Võ Đang)",
   "res": "boss054",
   "resist_max": [
    95,
@@ -16444,7 +16641,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Võ Đang",
+  "series": 4,
   "skills": [
    [
     368,
@@ -16502,6 +16700,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thái Cực Kiếm Tôn",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -16521,6 +16720,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -16556,6 +16756,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -16564,7 +16765,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_kl",
+  "name": "Tuyền Cơ Tử (Côn Lôn)",
   "res": "boss055",
   "resist_max": [
    95,
@@ -16575,7 +16776,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Côn Lôn",
+  "series": 4,
   "skills": [
    [
     372,
@@ -16633,6 +16835,7 @@
    ]
   },
   "stature": 100,
+  "title": "Côn Lôn Kiếm Tôn",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -16915,6 +17118,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -16950,6 +17154,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -16958,7 +17163,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_sdcy",
+  "name": "Chung Linh Tú (Thúy Yên Đao)",
   "res": "boss058",
   "resist_max": [
    95,
@@ -16969,7 +17174,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Thúy Yên",
+  "series": 2,
   "skills": [
    [
     302,
@@ -17046,6 +17252,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17081,6 +17288,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17089,7 +17297,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_fzem",
+  "name": "Thanh Hiểu Sư Thái (Phụ Trợ)",
   "res": "boss059",
   "resist_max": [
    95,
@@ -17100,7 +17308,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Nga Mi",
+  "series": 2,
   "skills": [
    [
     302,
@@ -17177,6 +17386,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17212,6 +17422,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17220,7 +17431,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_ggb",
+  "name": "Hà Nhân Ngã (Bổng Pháp)",
   "res": "boss060",
   "resist_max": [
    95,
@@ -17231,7 +17442,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Cái Bang",
+  "series": 3,
   "skills": [
    [
     302,
@@ -17308,6 +17520,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17343,6 +17556,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17351,7 +17565,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_jkl",
+  "name": "Tuyền Cơ Tử (Kiếm Pháp)",
   "res": "boss061",
   "resist_max": [
    95,
@@ -17362,7 +17576,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Côn Lôn",
+  "series": 4,
   "skills": [
    [
     302,
@@ -17439,6 +17654,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17474,6 +17690,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17482,7 +17699,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_qsl",
+  "name": "Huyền Giác Thiền Sư (Quyền Pháp)",
   "res": "boss062",
   "resist_max": [
    95,
@@ -17493,6 +17710,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
+  "sect": "Thiếu Lâm",
   "series": 0,
   "skills": [
    [
@@ -17570,6 +17788,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17605,6 +17824,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17613,7 +17833,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_fdt",
+  "name": "Đường Bất Nhiễm (Phi Đao)",
   "res": "boss063",
   "resist_max": [
    95,
@@ -17624,7 +17844,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Đường Môn",
+  "series": 1,
   "skills": [
    [
     302,
@@ -17701,6 +17922,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17736,6 +17958,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17744,7 +17967,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_fzwd",
+  "name": "Đạo Thanh Chân Nhân (Kiếm Pháp)",
   "res": "boss064",
   "resist_max": [
    95,
@@ -17755,7 +17978,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Võ Đang",
+  "series": 4,
   "skills": [
    [
     302,
@@ -17832,6 +18056,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17867,6 +18092,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -17875,7 +18101,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_dyw",
+  "name": "Cổ Bách (Chùy Pháp)",
   "res": "boss065",
   "resist_max": [
    95,
@@ -17886,6 +18112,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
+  "sect": "Thiên Vương",
   "series": 0,
   "skills": [
    [
@@ -17963,6 +18190,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -17998,6 +18226,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -18006,7 +18235,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_fztm",
+  "name": "Gia Luật Tị Ly (Đao Pháp)",
   "res": "boss066",
   "resist_max": [
    95,
@@ -18017,7 +18246,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Thiên Nhẫn",
+  "series": 3,
   "skills": [
    [
     302,
@@ -18094,6 +18324,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -18129,6 +18360,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -18137,7 +18369,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "newboss_qwd",
+  "name": "Đạo Thanh Chân Nhân (Khí Tông)",
   "res": "boss067",
   "resist_max": [
    95,
@@ -18148,7 +18380,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Võ Đang",
+  "series": 4,
   "skills": [
    [
     302,
@@ -18225,6 +18458,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "defense_param": 100,
@@ -18238,6 +18472,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -18291,6 +18526,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "defense_param": 100,
@@ -18304,6 +18540,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -18619,6 +18856,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -18654,6 +18892,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -18750,6 +18989,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -18785,6 +19025,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -18881,6 +19122,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -18916,6 +19158,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19012,6 +19255,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19047,6 +19291,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19143,6 +19388,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19178,6 +19424,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19274,6 +19521,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19309,6 +19557,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19405,6 +19654,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -19440,6 +19690,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19536,6 +19787,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19571,6 +19823,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19667,6 +19920,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19702,6 +19956,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -19798,6 +20053,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -19833,6 +20089,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -20453,6 +20710,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -20488,6 +20746,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -20846,6 +21105,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -20881,6 +21141,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -20977,6 +21238,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -21012,6 +21274,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22025,6 +22288,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -22060,6 +22324,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22156,6 +22421,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -22191,6 +22457,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22418,6 +22685,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -22453,6 +22721,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22549,6 +22818,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -22584,6 +22854,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22680,6 +22951,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -22715,6 +22987,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -22811,6 +23084,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -22846,6 +23120,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -23073,6 +23348,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -23108,6 +23384,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -23204,6 +23481,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -23239,6 +23517,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -24776,6 +25055,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -24811,6 +25091,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -24907,6 +25188,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -24942,6 +25224,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25038,6 +25321,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -25073,6 +25357,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25300,6 +25585,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -25335,6 +25621,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25431,6 +25718,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -25466,6 +25754,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25562,6 +25851,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -25597,6 +25887,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25693,6 +25984,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -25728,6 +26020,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -25955,6 +26248,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -25990,6 +26284,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -26086,6 +26381,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -26121,6 +26417,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -26610,6 +26907,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -26645,6 +26943,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_mogaoku",
   "life_param": 100,
   "life_replenish": [
@@ -26741,6 +27040,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -26776,6 +27076,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -26872,6 +27173,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -26907,6 +27209,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_mogaoku",
   "life_param": 100,
   "life_replenish": [
@@ -27003,6 +27306,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -27038,6 +27342,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -27789,6 +28094,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -27824,6 +28130,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -29099,6 +29406,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -29134,6 +29442,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -29230,6 +29539,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -29265,6 +29575,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -29361,6 +29672,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -29396,6 +29708,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -29623,6 +29936,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -29658,6 +29972,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -29754,6 +30069,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -29789,6 +30105,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30016,6 +30333,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -30051,6 +30369,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30147,6 +30466,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -30182,6 +30502,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30278,6 +30599,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -30313,6 +30635,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30409,6 +30732,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -30444,6 +30768,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30540,6 +30865,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -30575,6 +30901,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30671,6 +30998,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -30706,6 +31034,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30802,6 +31131,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -30837,6 +31167,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -30933,6 +31264,7 @@
    50
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -30968,6 +31300,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "soldier5",
   "life_param": 100,
   "life_replenish": [
@@ -31326,6 +31659,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -31361,6 +31695,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -31457,6 +31792,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -31492,6 +31828,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -31588,6 +31925,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -31623,6 +31961,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -32311,6 +32650,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -32346,6 +32686,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -32442,6 +32783,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -32477,6 +32819,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -32573,6 +32916,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -32608,6 +32952,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -32704,6 +33049,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -32739,6 +33085,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -33228,6 +33575,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -33263,6 +33611,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_fenglingdunan",
   "life_param": 100,
   "life_replenish": [
@@ -34145,6 +34494,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -34180,6 +34530,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -34276,6 +34627,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -34311,6 +34663,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -34407,6 +34760,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -34442,6 +34796,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -35717,6 +36072,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -35752,6 +36108,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -35848,6 +36205,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -35883,6 +36241,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -35891,7 +36250,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "èặãẫẹỔ(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Vương Tá (Tống Kim Đại Tướng)",
   "res": "boss037",
   "resist_max": [
    95,
@@ -35902,7 +36261,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 1,
+  "series": 0,
   "skills": [
    [
     339,
@@ -35960,6 +36319,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 6
  },
@@ -35979,6 +36339,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36014,6 +36375,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36022,7 +36384,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "̀ìểăểă(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Đường Phi Yến (Tống Kim Phó Tướng)",
   "res": "boss007",
   "resist_max": [
    95,
@@ -36091,6 +36453,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36110,6 +36473,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36145,6 +36509,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36153,7 +36518,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ầồắứấƯèô(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Bạch Doanh Doanh (Tống Kim Đại Tướng)",
   "res": "boss004",
   "resist_max": [
    95,
@@ -36164,7 +36529,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 2,
+  "series": 1,
   "skills": [
    [
     380,
@@ -36222,6 +36587,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36241,6 +36607,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36276,6 +36643,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36284,7 +36652,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ệểẦộéó(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Thanh Tuyệt Sư Thái (Tống Kim Đại Tướng)",
   "res": "boss005",
   "resist_max": [
    95,
@@ -36353,6 +36721,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36503,6 +36872,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36538,6 +36908,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36546,7 +36917,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Ẳẻẩậẻề(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Chung Linh Tú (Tống Kim Phó Tướng)",
   "res": "boss013",
   "resist_max": [
    95,
@@ -36557,7 +36928,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 3,
+  "series": 2,
   "skills": [
    [
     357,
@@ -36615,6 +36986,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36634,6 +37006,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36669,6 +37042,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36677,7 +37051,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ảậẤắợÊ(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Hà Nhân Ngã (Tống Kim Đại Tướng)",
   "res": "boss015",
   "resist_max": [
    95,
@@ -36746,6 +37120,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36765,6 +37140,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36800,6 +37176,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36808,7 +37185,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ầồẦôìể(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Đoan Mộc Duệ (Tống Kim Đại Tướng)",
   "res": "boss040",
   "resist_max": [
    95,
@@ -36819,7 +37196,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 4,
+  "series": 3,
   "skills": [
    [
     372,
@@ -36877,6 +37254,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -36896,6 +37274,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -36931,6 +37310,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -36939,7 +37319,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "àẮầồếổẩậ(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Thanh Liên Tử (Tống Kim Phó Tướng)",
   "res": "boss001",
   "resist_max": [
    95,
@@ -37008,6 +37388,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -37027,6 +37408,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "songjin",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -37062,6 +37444,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -37070,7 +37453,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ậẻắỵ̃úẵôắỹ(ậẻẵỖếẵ́ĂBOSS)",
+  "name": "Đạo Thanh Chân Nhân (Tống Kim Đại Tướng)",
   "res": "enemy004",
   "resist_max": [
    95,
@@ -37081,7 +37464,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "series": 4,
   "skills": [
    [
     365,
@@ -37139,6 +37522,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tống Kim Chiến Trường Boss",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -37158,6 +37542,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -37193,6 +37578,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -37289,6 +37675,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -37324,6 +37711,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_changge_range",
   "life_param": 100,
   "life_replenish": [
@@ -37420,6 +37808,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -37455,6 +37844,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_changge_melee",
   "life_param": 100,
   "life_replenish": [
@@ -37551,6 +37941,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -37586,6 +37977,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_changge_melee",
   "life_param": 100,
   "life_replenish": [
@@ -37813,6 +38205,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -37848,6 +38241,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -37944,6 +38338,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -37979,6 +38374,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38075,6 +38471,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38110,6 +38507,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38206,6 +38604,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38241,6 +38640,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38337,6 +38737,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38372,6 +38773,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38468,6 +38870,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -38503,6 +38906,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38599,6 +39003,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38634,6 +39039,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38730,6 +39136,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38765,6 +39172,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38861,6 +39269,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -38896,6 +39305,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -38992,6 +39402,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -39027,6 +39438,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -40171,6 +40583,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -40206,6 +40619,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -40302,6 +40716,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -40337,6 +40752,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -40433,6 +40849,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -40468,6 +40885,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -40564,6 +40982,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -40599,6 +41018,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -40695,6 +41115,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -40730,6 +41151,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -44232,6 +44654,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 2,
   "cast_speed": 9,
   "damage_base": {
@@ -44267,6 +44690,7 @@
    "walk": 7
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -46983,6 +47407,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "defense_param": 100,
@@ -46996,6 +47421,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -49538,6 +49964,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -49573,6 +50000,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -52027,6 +52455,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -52062,6 +52491,7 @@
    "walk": 5
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -52813,6 +53243,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -52848,6 +53279,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54123,6 +54555,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -54158,6 +54591,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54166,7 +54600,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Cổ Bách",
+  "name": "Vượt Ải - Cổ Bách",
   "res": "boss046",
   "resist_max": [
    95,
@@ -54177,6 +54611,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 15,
+  "sect": "Thiên Vương",
   "series": 0,
   "skills": [
    [
@@ -54254,6 +54689,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -54289,6 +54725,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54297,7 +54734,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Huyền Giác Đại Sư",
+  "name": "Vượt Ải - Huyền Giác Đại Sư",
   "res": "boss047",
   "resist_max": [
    95,
@@ -54308,6 +54745,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 15,
+  "sect": "Thiếu Lâm",
   "series": 0,
   "skills": [
    [
@@ -54385,6 +54823,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -54420,6 +54859,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54428,7 +54868,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Đường Bất Nhiễm",
+  "name": "Vượt Ải - Đường Bất Nhiễm",
   "res": "boss048",
   "resist_max": [
    95,
@@ -54439,7 +54879,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Đường Môn",
+  "series": 1,
   "skills": [
    [
     302,
@@ -54516,6 +54957,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -54551,6 +54993,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54559,7 +55002,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Lam Y Y",
+  "name": "Vượt Ải - Lam Y Y",
   "res": "boss049",
   "resist_max": [
    95,
@@ -54570,7 +55013,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Ngũ Độc",
+  "series": 1,
   "skills": [
    [
     353,
@@ -54647,6 +55091,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -54682,6 +55127,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54690,7 +55136,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải _Thanh Hiểu Sư Thái",
+  "name": "Vượt Ải - Thanh Hiểu Sư Thái",
   "res": "boss050",
   "resist_max": [
    95,
@@ -54701,7 +55147,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Nga Mi",
+  "series": 2,
   "skills": [
    [
     328,
@@ -54778,6 +55225,7 @@
    1
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -54813,6 +55261,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -54821,7 +55270,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Chung Linh Tú",
+  "name": "Vượt Ải - Chung Linh Tú",
   "res": "boss051",
   "resist_max": [
    95,
@@ -54832,7 +55281,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Thúy Yên",
+  "series": 2,
   "skills": [
    [
     336,
@@ -55040,6 +55490,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55075,6 +55526,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -55083,7 +55535,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Hà Nhân Ngả",
+  "name": "Vượt Ải - Hà Nhân Ngã",
   "res": "boss052",
   "resist_max": [
    95,
@@ -55094,7 +55546,8 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Cái Bang",
+  "series": 3,
   "skills": [
    [
     357,
@@ -55171,6 +55624,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55206,6 +55660,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -55214,7 +55669,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải _Đoan Mộc Duệ",
+  "name": "Vượt Ải - Đoan Mộc Duệ",
   "res": "boss053",
   "resist_max": [
    95,
@@ -55225,7 +55680,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Thiên Nhẫn",
+  "series": 3,
   "skills": [
    [
     361,
@@ -55302,6 +55758,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55337,6 +55794,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -55345,7 +55803,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải_Đạo Thanh Chân Nhân",
+  "name": "Vượt Ải - Đạo Thanh Chân Nhân",
   "res": "boss054",
   "resist_max": [
    95,
@@ -55356,7 +55814,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Võ Đang",
+  "series": 4,
   "skills": [
    [
     368,
@@ -55433,6 +55892,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "challenge",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55468,6 +55928,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -55476,7 +55937,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vượt ải _Toàn Cơ Tử",
+  "name": "Vượt Ải - Tuyền Cơ Tử",
   "res": "boss055",
   "resist_max": [
    95,
@@ -55487,7 +55948,8 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "sect": "Côn Lôn",
+  "series": 4,
   "skills": [
    [
     372,
@@ -55696,6 +56158,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55731,6 +56194,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -55827,6 +56291,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -55862,6 +56327,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -56089,6 +56555,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -56124,6 +56591,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -56220,6 +56688,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -56255,6 +56724,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -56875,6 +57345,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -56910,6 +57381,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -57661,6 +58133,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -57696,6 +58169,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "qianbaoku",
   "life_param": 100,
   "life_replenish": [
@@ -59888,6 +60362,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -59923,6 +60398,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -60019,6 +60495,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -60054,6 +60531,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -60150,6 +60628,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -60185,6 +60664,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -60281,6 +60761,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -60316,6 +60797,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -60412,6 +60894,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -60447,6 +60930,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -61984,6 +62468,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -62019,6 +62504,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -62115,6 +62601,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -62150,6 +62637,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -62377,6 +62865,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -62412,6 +62901,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -62508,6 +62998,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -62543,6 +63034,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -62639,6 +63131,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -62674,6 +63167,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -62770,6 +63264,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -62805,6 +63300,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63032,6 +63528,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63067,6 +63564,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63163,6 +63661,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63198,6 +63697,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63425,6 +63925,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63460,6 +63961,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63556,6 +64058,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "defense_param": 100,
@@ -63569,6 +64072,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -63622,6 +64126,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63657,6 +64162,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63753,6 +64259,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63788,6 +64295,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -63884,6 +64392,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "defense_param": 100,
@@ -63897,10 +64406,11 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Bang Chủ ác Lang Bang",
+  "name": "Bang Chủ Ác Lang Bang",
   "res": "boss010",
   "resist_max": [
    95,
@@ -63931,6 +64441,7 @@
    ]
   ],
   "stature": 120,
+  "title": "Ác Lang Bang Đầu Mục",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -63950,6 +64461,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -63985,6 +64497,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64081,6 +64594,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -64116,6 +64630,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64343,6 +64858,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -64378,6 +64894,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64474,6 +64991,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -64509,6 +65027,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64605,6 +65124,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -64640,6 +65160,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64736,6 +65257,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -64771,6 +65293,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -64998,6 +65521,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -65033,6 +65557,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -65129,6 +65654,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -65164,6 +65690,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "bairenleitai",
   "life_param": 100,
   "life_replenish": [
@@ -66177,6 +66704,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -66212,6 +66740,7 @@
    "walk": 13
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_xiaoxiao",
   "life_param": 100,
   "life_replenish": [
@@ -66308,6 +66837,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -66343,6 +66873,7 @@
    "walk": 13
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "npc_xiaoxiao",
   "life_param": 100,
   "life_replenish": [
@@ -66701,6 +67232,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -66736,6 +67268,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -66744,7 +67277,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Đường Bất Nhiễm",
+  "name": "Đường Bất Nhiễm (Đường Môn)",
   "res": "boss019",
   "resist_max": [
    85,
@@ -66755,6 +67288,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Đường Môn",
   "series": 1,
   "skills": [
    [
@@ -66813,6 +67347,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tuyệt Đỉnh Ám Khí",
   "vision": 800,
   "walk_speed": 12
  },
@@ -66832,6 +67367,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -66867,6 +67403,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -66875,7 +67412,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Gia Luật Tị Ly",
+  "name": "Gia Luật Tị Ly (Thiên Nhẫn)",
   "res": "boss011",
   "resist_max": [
    85,
@@ -66886,6 +67423,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Thiên Nhẫn",
   "series": 3,
   "skills": [
    [
@@ -66944,6 +67482,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thiên Nhẫn Giáo Chủ",
   "vision": 800,
   "walk_speed": 12
  },
@@ -66963,6 +67502,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -66998,6 +67538,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -67094,6 +67635,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -67129,6 +67671,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -67137,7 +67680,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Mạnh Thương Lương",
+  "name": "Mạnh Thương Lương (Cái Bang)",
   "res": "boss012",
   "resist_max": [
    85,
@@ -67148,6 +67691,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Cái Bang",
   "series": 3,
   "skills": [
    [
@@ -67206,6 +67750,7 @@
    ]
   },
   "stature": 100,
+  "title": "Hàng Long Chưởng",
   "vision": 800,
   "walk_speed": 12
  },
@@ -67487,6 +68032,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -67522,6 +68068,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -67530,7 +68077,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhạc Hoa lão nhân",
+  "name": "Tiêu Nhan",
   "res": "enemy080",
   "resist_max": [
    85,
@@ -67541,7 +68088,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 18,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     368,
@@ -67599,6 +68146,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tuyệt Sắc Nữ Hiệp",
   "vision": 800,
   "walk_speed": 18
  },
@@ -67880,6 +68428,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -67915,6 +68464,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -67923,7 +68473,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Tuyền Cơ Tử",
+  "name": "Tuyền Cơ Tử (Côn Lôn)",
   "res": "boss017",
   "resist_max": [
    85,
@@ -67934,6 +68484,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Côn Lôn",
   "series": 4,
   "skills": [
    [
@@ -67992,6 +68543,7 @@
    ]
   },
   "stature": 100,
+  "title": "Côn Lôn Tông Sư",
   "vision": 800,
   "walk_speed": 12
  },
@@ -68011,6 +68563,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -68046,6 +68599,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -68054,7 +68608,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ễẨáốàẲệữÊăẵìảẻềằÊâ",
+  "name": "Nguyệt Ca Đảo Chủ (Giai đoạn 1)",
   "res": "boss093",
   "resist_max": [
    95,
@@ -68065,7 +68619,7 @@
   ],
   "revive_frame": 0,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     336,
@@ -68123,6 +68677,7 @@
    ]
   },
   "stature": 160,
+  "title": "Nguyệt Ca Đảo Chủ",
   "vision": 700,
   "walk_speed": 12
  },
@@ -68142,6 +68697,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -68177,6 +68733,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -68185,7 +68742,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ễẨáốàẲệữÊăẵìảẻảỵÊâ",
+  "name": "Nguyệt Ca Đảo Chủ (Giai đoạn 2)",
   "res": "boss093",
   "resist_max": [
    95,
@@ -68196,7 +68753,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     1045,
@@ -68254,6 +68811,7 @@
    ]
   },
   "stature": 160,
+  "title": "Nguyệt Ca Đảo Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -68273,6 +68831,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -68308,6 +68867,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -68316,7 +68876,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ễẨáốàẲệữÊăẵìảẻẩýÊâ",
+  "name": "Nguyệt Ca Đảo Chủ (Giai đoạn 3)",
   "res": "boss093",
   "resist_max": [
    95,
@@ -68327,7 +68887,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     947,
@@ -68385,6 +68945,7 @@
    ]
   },
   "stature": 160,
+  "title": "Nguyệt Ca Đảo Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -68928,6 +69489,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -68963,6 +69525,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69059,6 +69622,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69094,6 +69658,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69190,6 +69755,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69225,6 +69791,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69321,6 +69888,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69356,6 +69924,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69452,6 +70021,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69487,6 +70057,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69583,6 +70154,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69618,6 +70190,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -69714,6 +70287,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -69749,6 +70323,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -71810,6 +72385,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -71845,6 +72421,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -72072,6 +72649,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -72107,6 +72685,7 @@
    "walk": 8
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -72858,6 +73437,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -72893,6 +73473,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -72989,6 +73570,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -73024,6 +73606,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -73120,6 +73703,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -73155,6 +73739,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -73174,7 +73759,7 @@
   ],
   "revive_frame": 0,
   "run_speed": 0,
-  "series": 0,
+  "series": 1,
   "skills": [
    [
     1,
@@ -73232,6 +73817,7 @@
    ]
   },
   "stature": 170,
+  "title": "Thần Thụ Nghìn Năm",
   "vision": 0,
   "walk_speed": 0
  },
@@ -74954,6 +75540,7 @@
    0
   ],
   "attack_speed": 10,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 10,
   "damage_base": {
@@ -74989,6 +75576,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75085,6 +75673,7 @@
    0
   ],
   "attack_speed": 6,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 6,
   "damage_base": {
@@ -75120,6 +75709,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75216,6 +75806,7 @@
    0
   ],
   "attack_speed": 6,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 6,
   "damage_base": {
@@ -75251,6 +75842,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75347,6 +75939,7 @@
    0
   ],
   "attack_speed": 4,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 4,
   "damage_base": {
@@ -75382,6 +75975,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75478,6 +76072,7 @@
    0
   ],
   "attack_speed": 4,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 4,
   "damage_base": {
@@ -75513,6 +76108,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75871,6 +76467,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -75906,6 +76503,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -75914,7 +76512,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Vân Kiếm Thất",
+  "name": "Vô Kiếm Thất",
   "res": "boss088",
   "resist_max": [
    95,
@@ -75925,7 +76523,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 18,
-  "series": 3,
+  "series": 0,
   "skills": [
    [
     1132,
@@ -75983,6 +76581,7 @@
    ]
   },
   "stature": 100,
+  "title": "Kiếm Ma Đệ Nhất Kiếm",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -76002,6 +76601,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -76037,6 +76637,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -76056,7 +76657,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 18,
-  "series": 3,
+  "series": 1,
   "skills": [
    [
     1132,
@@ -76114,6 +76715,7 @@
    ]
   },
   "stature": 100,
+  "title": "Kiếm Ma Đệ Nhị Kiếm",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -76133,6 +76735,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -76168,6 +76771,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -76187,7 +76791,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 18,
-  "series": 3,
+  "series": 2,
   "skills": [
    [
     1132,
@@ -76245,6 +76849,7 @@
    ]
   },
   "stature": 100,
+  "title": "Kiếm Ma Đệ Tam Kiếm",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -76264,6 +76869,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -76299,6 +76905,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -76376,6 +76983,7 @@
    ]
   },
   "stature": 100,
+  "title": "Kiếm Ma Đệ Tứ Kiếm",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -76395,6 +77003,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -76430,6 +77039,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -76526,6 +77136,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -76561,6 +77172,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -77183,6 +77795,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 1,
   "cast_speed": 0,
   "damage_base": {
@@ -77218,6 +77831,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -77576,6 +78190,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 1,
   "cast_speed": 0,
   "damage_base": {
@@ -77611,6 +78226,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -77707,6 +78323,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 1,
   "cast_speed": 0,
   "damage_base": {
@@ -77742,6 +78359,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -77838,6 +78456,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 1,
   "cast_speed": 0,
   "damage_base": {
@@ -77873,6 +78492,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -79017,6 +79637,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -79052,6 +79673,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -79148,6 +79770,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -79183,6 +79806,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -83602,6 +84226,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -83637,6 +84262,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -83645,7 +84271,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ẫỄẦệ̉ọẫớBOSS",
+  "name": "Thiếu Lâm Biến Thân Boss",
   "res": "boss102",
   "resist_max": [
    60,
@@ -83656,6 +84282,7 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
+  "sect": "Thiếu Lâm",
   "series": 0,
   "skills": [
    [
@@ -83714,6 +84341,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -83733,6 +84361,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -83768,6 +84397,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -83776,7 +84406,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "èỡỂừ̉ọẫớBOSS",
+  "name": "Thiên Vương Biến Thân Boss",
   "res": "boss103",
   "resist_max": [
    60,
@@ -83787,6 +84417,7 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
+  "sect": "Thiên Vương",
   "series": 0,
   "skills": [
    [
@@ -83845,6 +84476,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -83864,6 +84496,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -83899,6 +84532,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -83907,7 +84541,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ẻồảắ̉ọẫớBOSS",
+  "name": "Ngũ Độc Biến Thân Boss",
   "res": "boss106",
   "resist_max": [
    60,
@@ -83918,7 +84552,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Ngũ Độc",
+  "series": 1,
   "skills": [
    [
     53,
@@ -83976,6 +84611,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -83995,6 +84631,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84030,6 +84667,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84038,7 +84676,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "èặẪỀ̉ọẫớBOSS",
+  "name": "Đường Môn Biến Thân Boss",
   "res": "boss107",
   "resist_max": [
    60,
@@ -84049,7 +84687,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Đường Môn",
+  "series": 1,
   "skills": [
    [
     53,
@@ -84107,6 +84746,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84126,6 +84766,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84161,6 +84802,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84169,7 +84811,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ảởẪẳ̉ọẫớBOSS",
+  "name": "Nga Mi Biến Thân Boss",
   "res": "boss109",
   "resist_max": [
    60,
@@ -84180,7 +84822,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Nga Mi",
+  "series": 2,
   "skills": [
    [
     53,
@@ -84238,6 +84881,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84257,6 +84901,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84292,6 +84937,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84300,7 +84946,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "̣ọẹè̉ọẫớBOSS",
+  "name": "Thúy Yên Biến Thân Boss",
   "res": "boss110",
   "resist_max": [
    60,
@@ -84311,7 +84957,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Thúy Yên",
+  "series": 2,
   "skills": [
    [
     53,
@@ -84369,6 +85016,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84388,6 +85036,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84423,6 +85072,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84431,7 +85081,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "èỡẩè̉ọẫớBOSS",
+  "name": "Thiên Nhẫn Biến Thân Boss",
   "res": "boss112",
   "resist_max": [
    60,
@@ -84442,7 +85092,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Thiên Nhẫn",
+  "series": 3,
   "skills": [
    [
     53,
@@ -84500,6 +85151,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84519,6 +85171,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84554,6 +85207,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84562,7 +85216,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ỉỒù̉ọẫớBOSS",
+  "name": "Cái Bang Biến Thân Boss",
   "res": "boss113",
   "resist_max": [
    60,
@@ -84573,7 +85227,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Cái Bang",
+  "series": 3,
   "skills": [
    [
     53,
@@ -84631,6 +85286,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84650,6 +85306,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84685,6 +85342,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84693,7 +85351,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ẻọà̉̉ọẫớBOSS",
+  "name": "Võ Đang Biến Thân Boss",
   "res": "boss116",
   "resist_max": [
    60,
@@ -84704,7 +85362,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Võ Đang",
+  "series": 4,
   "skills": [
    [
     53,
@@ -84762,6 +85421,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -84781,6 +85441,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "transform",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -84816,6 +85477,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "animal",
   "life_param": 100,
   "life_replenish": [
@@ -84824,7 +85486,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "ẮƠẨỉ̉ọẫớBOSS",
+  "name": "Côn Lôn Biến Thân Boss",
   "res": "boss118",
   "resist_max": [
    60,
@@ -84835,7 +85497,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 7,
-  "series": 0,
+  "sect": "Côn Lôn",
+  "series": 4,
   "skills": [
    [
     53,
@@ -84893,6 +85556,7 @@
    ]
   },
   "stature": 130,
+  "title": "Biến Thân Tông Sư",
   "vision": 400,
   "walk_speed": 7
  },
@@ -86615,6 +87279,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -86650,6 +87315,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -86746,6 +87412,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -86781,6 +87448,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -86858,6 +87526,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thi Tiên Kiếm Hiệp",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -91986,6 +92655,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92021,6 +92691,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92117,6 +92788,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92152,6 +92824,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92248,6 +92921,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92283,6 +92957,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92379,6 +93054,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92414,6 +93090,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92641,6 +93318,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92676,6 +93354,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92772,6 +93451,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92807,6 +93487,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -92903,6 +93584,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -92938,6 +93620,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -93034,6 +93717,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -93069,6 +93753,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -93165,6 +93850,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -93200,6 +93886,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -93296,6 +93983,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -93331,6 +94019,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -93427,6 +94116,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -93462,6 +94152,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -93558,6 +94249,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -93593,6 +94285,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -93689,6 +94382,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -93724,6 +94418,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -93820,6 +94515,7 @@
    0
   ],
   "attack_speed": 10,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 10,
   "damage_base": {
@@ -93855,6 +94551,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -93951,6 +94648,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -93986,6 +94684,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94082,6 +94781,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94117,6 +94817,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94213,6 +94914,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94248,6 +94950,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94344,6 +95047,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94379,6 +95083,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94475,6 +95180,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94510,6 +95216,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94606,6 +95313,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94641,6 +95349,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94737,6 +95446,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94772,6 +95482,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94868,6 +95579,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -94903,6 +95615,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -94999,6 +95712,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95034,6 +95748,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95130,6 +95845,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95165,6 +95881,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95261,6 +95978,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "defense_param": 100,
@@ -95274,6 +95992,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -95327,6 +96046,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95362,6 +96082,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95458,6 +96179,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95493,6 +96215,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95589,6 +96312,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95624,6 +96348,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95720,6 +96445,7 @@
    20
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -95755,6 +96481,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -95851,6 +96578,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -95886,6 +96614,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -95982,6 +96711,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96017,6 +96747,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96113,6 +96844,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96148,6 +96880,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96244,6 +96977,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96279,6 +97013,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96375,6 +97110,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96410,6 +97146,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96506,6 +97243,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96541,6 +97279,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96637,6 +97376,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96672,6 +97412,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96768,6 +97509,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96803,6 +97545,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -96899,6 +97642,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -96934,6 +97678,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -97161,6 +97906,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -97196,6 +97942,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -97423,6 +98170,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -97458,6 +98206,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -97554,6 +98303,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -97589,6 +98339,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -97685,6 +98436,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -97720,6 +98472,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -97947,6 +98700,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -97982,6 +98736,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -98078,6 +98833,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -98113,6 +98869,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -98209,6 +98966,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -98244,6 +99002,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -98340,6 +99099,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -98375,6 +99135,7 @@
    "walk": 13
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -98471,6 +99232,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -98506,6 +99268,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -98602,6 +99365,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -98637,6 +99401,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -98733,6 +99498,7 @@
    50
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -98768,6 +99534,7 @@
    "walk": 24
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -98864,6 +99631,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -98899,6 +99667,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -98995,6 +99764,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "defense_param": 100,
@@ -99008,6 +99778,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "life_param": 100,
   "max_damage_param": 100,
   "min_damage_param": 100,
@@ -99061,6 +99832,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -99096,6 +99868,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -99192,6 +99965,7 @@
    0
   ],
   "attack_speed": 0,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 0,
   "damage_base": {
@@ -99227,6 +100001,7 @@
    "walk": 0
   },
   "hit_recover": 0,
+  "is_boss": true,
   "level_script": "",
   "life_param": 100,
   "life_replenish": [
@@ -99323,6 +100098,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "small_gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -99358,6 +100134,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -99377,6 +100154,7 @@
   ],
   "revive_frame": 810,
   "run_speed": 6,
+  "sect": "Côn Lôn",
   "series": 4,
   "skills": [
    [
@@ -99435,6 +100213,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tiểu Hoàng Kim Côn Lôn",
   "vision": 800,
   "walk_speed": 6
  },
@@ -99585,6 +100364,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "small_gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -99620,6 +100400,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -99639,6 +100420,7 @@
   ],
   "revive_frame": 810,
   "run_speed": 6,
+  "sect": "Nga Mi",
   "series": 2,
   "skills": [
    [
@@ -99697,6 +100479,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tiểu Hoàng Kim Nga Mi",
   "vision": 800,
   "walk_speed": 6
  },
@@ -100895,6 +101678,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "small_gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -100930,6 +101714,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -100949,7 +101734,8 @@
   ],
   "revive_frame": 810,
   "run_speed": 6,
-  "series": 0,
+  "sect": "Thúy Yên",
+  "series": 1,
   "skills": [
    [
     302,
@@ -101007,6 +101793,7 @@
    ]
   },
   "stature": 100,
+  "title": "Tiểu Hoàng Kim Thúy Yên",
   "vision": 800,
   "walk_speed": 6
  },
@@ -103122,6 +103909,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -103157,6 +103945,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -103253,6 +104042,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -103288,6 +104078,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -103384,6 +104175,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -103419,6 +104211,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -103515,6 +104308,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -103550,6 +104344,7 @@
    "walk": 24
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -103908,6 +104703,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -103943,6 +104739,7 @@
    "walk": 24
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104170,6 +104967,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -104205,6 +105003,7 @@
    "walk": 24
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104301,6 +105100,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -104336,6 +105136,7 @@
    "walk": 24
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104432,6 +105233,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -104467,6 +105269,7 @@
    "walk": 10
   },
   "hit_recover": 80,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104563,6 +105366,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -104598,6 +105402,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104825,6 +105630,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -104860,6 +105666,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -104956,6 +105763,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -104991,6 +105799,7 @@
    "walk": 8
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -105873,6 +106682,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -105908,6 +106718,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -105916,7 +106727,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "daoqingzhenren",
+  "name": "Đạo Thanh Chân Nhân",
   "res": "boss001",
   "resist_max": [
    95,
@@ -105927,6 +106738,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Võ Đang",
   "series": 4,
   "skills": [
    [
@@ -105985,6 +106797,7 @@
    ]
   },
   "stature": 100,
+  "title": "Võ Đang Chưởng Môn",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106004,6 +106817,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106039,6 +106853,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106047,7 +106862,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "yelvbili",
+  "name": "Gia Luật Tị Ly",
   "res": "boss011",
   "resist_max": [
    95,
@@ -106058,6 +106873,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Thiên Nhẫn",
   "series": 3,
   "skills": [
    [
@@ -106116,6 +106932,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thiên Nhẫn Giáo Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106135,6 +106952,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106170,6 +106988,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106178,7 +106997,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "wanyanxueyi",
+  "name": "Hoàn Nhan Tuyết Y",
   "res": "boss014",
   "resist_max": [
    95,
@@ -106189,6 +107008,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Thiên Nhẫn",
   "series": 3,
   "skills": [
    [
@@ -106247,6 +107067,7 @@
    ]
   },
   "stature": 100,
+  "title": "Kim Quốc Công Chúa",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106266,6 +107087,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106301,6 +107123,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106309,7 +107132,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "duanmurui",
+  "name": "Đoan Mộc Duệ",
   "res": "boss015",
   "resist_max": [
    95,
@@ -106320,6 +107143,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Thiên Nhẫn",
   "series": 3,
   "skills": [
    [
@@ -106378,6 +107202,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thiên Nhẫn Tả Sứ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106397,6 +107222,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106432,6 +107258,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106440,7 +107267,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "gubo",
+  "name": "Cổ Bách",
   "res": "boss018",
   "resist_max": [
    95,
@@ -106451,6 +107278,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 18,
+  "sect": "Thiên Vương",
   "series": 0,
   "skills": [
    [
@@ -106509,6 +107337,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thiên Vương Bang Chủ",
   "vision": 1800,
   "walk_speed": 18
  },
@@ -106528,6 +107357,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106563,6 +107393,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106571,7 +107402,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "zhonglingxiu",
+  "name": "Chung Linh Tú",
   "res": "boss005",
   "resist_max": [
    95,
@@ -106582,6 +107413,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Thúy Yên",
   "series": 2,
   "skills": [
    [
@@ -106640,6 +107472,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thúy Yên Môn Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106659,6 +107492,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106694,6 +107528,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106702,7 +107537,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "helianpiao",
+  "name": "Hà Linh Phiêu",
   "res": "boss002",
   "resist_max": [
    95,
@@ -106713,6 +107548,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Nga Mi",
   "series": 2,
   "skills": [
    [
@@ -106771,6 +107607,7 @@
    ]
   },
   "stature": 100,
+  "title": "Nga Mi Cao Thủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -106790,6 +107627,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106825,6 +107663,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -106921,6 +107760,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -106956,6 +107796,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107052,6 +107893,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107087,6 +107929,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107183,6 +108026,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107218,6 +108062,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107314,6 +108159,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107349,6 +108195,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107445,6 +108292,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107480,6 +108328,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107576,6 +108425,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -107611,6 +108461,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107707,6 +108558,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107742,6 +108594,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107750,7 +108603,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "lanyiyi",
+  "name": "Lam Y Y",
   "res": "boss008",
   "resist_max": [
    95,
@@ -107761,6 +108614,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Ngũ Độc",
   "series": 1,
   "skills": [
    [
@@ -107819,6 +108673,7 @@
    ]
   },
   "stature": 100,
+  "title": "Ngũ Độc Giáo Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -107838,6 +108693,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -107873,6 +108729,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -107881,7 +108738,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "mengcanglang",
+  "name": "Mạnh Thương Lương",
   "res": "boss012",
   "resist_max": [
    95,
@@ -107892,6 +108749,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Cái Bang",
   "series": 3,
   "skills": [
    [
@@ -107950,6 +108808,7 @@
    ]
   },
   "stature": 100,
+  "title": "Cái Bang Bang Chủ",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -107969,6 +108828,7 @@
    0
   ],
   "attack_speed": 16,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 16,
   "damage_base": {
@@ -108004,6 +108864,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -110458,6 +111319,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -110493,6 +111355,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -115174,6 +116037,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -115209,6 +116073,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -115436,6 +116301,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -115471,6 +116337,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -115567,6 +116434,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -115602,6 +116470,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -115698,6 +116567,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -115733,6 +116603,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -115829,6 +116700,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -115864,6 +116736,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -115960,6 +116833,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -115995,6 +116869,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -116091,6 +116966,7 @@
    50
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -116126,6 +117002,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -117272,6 +118149,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -117307,6 +118185,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -117403,6 +118282,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -117438,6 +118318,7 @@
    "walk": 10
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -117534,6 +118415,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -117569,6 +118451,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -117665,6 +118548,7 @@
    50
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -117700,6 +118584,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -119368,6 +120253,7 @@
    50
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -119403,6 +120289,7 @@
    "walk": 11
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "task_goldennpc",
   "life_param": 100,
   "life_replenish": [
@@ -122774,6 +123661,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "world",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -122809,6 +123697,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -122817,7 +123706,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Boss Thủy tặc đầu lĩnh",
+  "name": "Thủy Tặc Đại Lĩnh",
   "res": "enemy205",
   "resist_max": [
    95,
@@ -122886,6 +123775,7 @@
    ]
   },
   "stature": 100,
+  "title": "Đầu Lĩnh Thủy Tặc Phong Lăng Độ",
   "vision": 800,
   "walk_speed": 6
  },
@@ -123953,6 +124843,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -123988,6 +124879,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124084,6 +124976,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124119,6 +125012,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124127,7 +125021,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "xuanjuedashi",
+  "name": "Huyền Giác Đại Sư",
   "res": "boss003",
   "resist_max": [
    95,
@@ -124138,6 +125032,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 15,
+  "sect": "Thiếu Lâm",
   "series": 0,
   "skills": [
    [
@@ -124196,6 +125091,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thiếu Lâm Phương Trượng",
   "vision": 1800,
   "walk_speed": 15
  },
@@ -124215,6 +125111,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -124250,6 +125147,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124258,7 +125156,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "tangburan",
+  "name": "Đường Bất Nhiễm",
   "res": "boss019",
   "resist_max": [
    95,
@@ -124269,6 +125167,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 6,
+  "sect": "Đường Môn",
   "series": 1,
   "skills": [
    [
@@ -124327,6 +125226,7 @@
    ]
   },
   "stature": 100,
+  "title": "Đường Môn Trưởng Lão",
   "vision": 1800,
   "walk_speed": 6
  },
@@ -124346,6 +125246,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124381,6 +125282,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124389,7 +125291,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "baiyingying",
+  "name": "Bạch Doanh Doanh",
   "res": "boss007",
   "resist_max": [
    95,
@@ -124400,6 +125302,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Đường Môn",
   "series": 1,
   "skills": [
    [
@@ -124458,6 +125361,7 @@
    ]
   },
   "stature": 100,
+  "title": "Đường Môn Tuyệt Sắc",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -124477,6 +125381,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124512,6 +125417,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124520,7 +125426,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "qingxiaoshitai",
+  "name": "Thanh Tiếu Sư Thái",
   "res": "boss004",
   "resist_max": [
    95,
@@ -124531,6 +125437,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Nga Mi",
   "series": 2,
   "skills": [
    [
@@ -124589,6 +125496,7 @@
    ]
   },
   "stature": 100,
+  "title": "Nga Mi Chưởng Môn",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -124608,6 +125516,7 @@
    1
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124643,6 +125552,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124651,7 +125561,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "yanxiaoqian",
+  "name": "Yên Hiểu Trái",
   "res": "boss023",
   "resist_max": [
    95,
@@ -124662,6 +125572,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Thúy Yên",
   "series": 2,
   "skills": [
    [
@@ -124720,6 +125631,7 @@
    ]
   },
   "stature": 100,
+  "title": "Thúy Yên Hộ Pháp",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -124739,6 +125651,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124774,6 +125687,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124782,7 +125696,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "herenwo",
+  "name": "Hà Nhân Ngã",
   "res": "boss013",
   "resist_max": [
    95,
@@ -124793,6 +125707,7 @@
   ],
   "revive_frame": 1440,
   "run_speed": 12,
+  "sect": "Cái Bang",
   "series": 3,
   "skills": [
    [
@@ -124851,6 +125766,7 @@
    ]
   },
   "stature": 100,
+  "title": "Cái Bang Trưởng Lão",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -124870,6 +125786,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -124905,6 +125822,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -124913,7 +125831,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "shansinan",
+  "name": "Sơn Tư Nam",
   "res": "boss022",
   "resist_max": [
    95,
@@ -124924,6 +125842,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Côn Lôn",
   "series": 4,
   "skills": [
    [
@@ -124982,6 +125901,7 @@
    ]
   },
   "stature": 100,
+  "title": "Côn Lôn Kiếm Thần",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -125001,6 +125921,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "gold",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125036,6 +125957,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125044,7 +125966,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "xuanjizi",
+  "name": "Tuyền Cơ Tử",
   "res": "boss017",
   "resist_max": [
    95,
@@ -125055,6 +125977,7 @@
   ],
   "revive_frame": 1080,
   "run_speed": 12,
+  "sect": "Côn Lôn",
   "series": 4,
   "skills": [
    [
@@ -125113,6 +126036,7 @@
    ]
   },
   "stature": 100,
+  "title": "Côn Lôn Chưởng Môn",
   "vision": 1800,
   "walk_speed": 12
  },
@@ -125132,6 +126056,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125167,6 +126092,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125263,6 +126189,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125298,6 +126225,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125394,6 +126322,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125429,6 +126358,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125525,6 +126455,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -125560,6 +126491,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125656,6 +126588,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125691,6 +126624,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125787,6 +126721,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125822,6 +126757,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -125918,6 +126854,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -125953,6 +126890,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -126049,6 +126987,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -126084,6 +127023,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -126180,6 +127120,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -126215,6 +127156,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -126311,6 +127253,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -126346,6 +127289,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -126442,6 +127386,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -126477,6 +127422,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -132861,6 +133807,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -132896,6 +133843,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -132904,7 +133852,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 807",
+  "name": "Tăng Chi Oán",
   "res": "enemy048",
   "resist_max": [
    85,
@@ -132915,7 +133863,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 1,
   "skills": [
    [
     53,
@@ -132973,6 +133921,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Lão Hổ Động",
   "vision": 1400,
   "walk_speed": 12
  },
@@ -132992,6 +133941,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133027,6 +133977,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133035,7 +133986,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 808",
+  "name": "Vệ Biên Thành",
   "res": "enemy082",
   "resist_max": [
    85,
@@ -133104,6 +134055,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Lão Hổ Động",
   "vision": 1400,
   "walk_speed": 12
  },
@@ -133123,6 +134075,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133158,6 +134111,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133166,7 +134120,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 809",
+  "name": "Cổ Thủ Đăng",
   "res": "enemy050",
   "resist_max": [
    85,
@@ -133177,7 +134131,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 3,
   "skills": [
    [
     53,
@@ -133235,6 +134189,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Sa Mạc Địa Biểu",
   "vision": 1400,
   "walk_speed": 12
  },
@@ -133254,6 +134209,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133289,6 +134245,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133297,7 +134254,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 901",
+  "name": "Gia Cát Kinh Hồng",
   "res": "enemy107",
   "resist_max": [
    85,
@@ -133308,7 +134265,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 4,
   "skills": [
    [
     53,
@@ -133366,6 +134323,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Sa Mạc Địa Biểu",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -133385,6 +134343,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133420,6 +134379,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133428,7 +134388,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 902",
+  "name": "Trang Minh Trung",
   "res": "enemy081",
   "resist_max": [
    85,
@@ -133439,7 +134399,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     53,
@@ -133497,6 +134457,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Hoàng Hà Nguyên Đầu",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -133516,6 +134477,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133551,6 +134513,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133559,7 +134522,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 903",
+  "name": "Liễu Tứ Gia",
   "res": "enemy109",
   "resist_max": [
    85,
@@ -133570,7 +134533,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 1,
   "skills": [
    [
     53,
@@ -133628,6 +134591,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Vũ Di Sơn",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -133647,6 +134611,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133682,6 +134647,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133690,7 +134656,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 904",
+  "name": "Vũ Nhất Thể",
   "res": "enemy126",
   "resist_max": [
    85,
@@ -133759,6 +134725,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Lưu Tiên Động",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -133778,6 +134745,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133813,6 +134781,7 @@
    "walk": 12
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133821,7 +134790,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 905",
+  "name": "Diệp Ức Anh",
   "res": "enemy089",
   "resist_max": [
    85,
@@ -133832,7 +134801,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 2,
   "skills": [
    [
     53,
@@ -133890,6 +134859,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Dược Vương Cốc",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -133909,6 +134879,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -133944,6 +134915,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -133952,7 +134924,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 906",
+  "name": "Lạc Nhĩ Kim",
   "res": "enemy070",
   "resist_max": [
    85,
@@ -134021,6 +134993,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Dược Vương Cốc",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -134040,6 +135013,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "killer",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -134075,6 +135049,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -134083,7 +135058,7 @@
   ],
   "max_damage_param": 100,
   "min_damage_param": 100,
-  "name": "Nhiệm vụ sát thủ cấp 907",
+  "name": "Cổ Vô Thường",
   "res": "enemy048",
   "resist_max": [
    85,
@@ -134094,7 +135069,7 @@
   ],
   "revive_frame": 16200,
   "run_speed": 12,
-  "series": 0,
+  "series": 3,
   "skills": [
    [
     53,
@@ -134152,6 +135127,7 @@
    ]
   },
   "stature": 100,
+  "title": "Sát Thủ Hoàng Hà Nguyên Đầu",
   "vision": 1500,
   "walk_speed": 12
  },
@@ -137577,6 +138553,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -137612,6 +138589,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -137708,6 +138686,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -137743,6 +138722,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -137839,6 +138819,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -137874,6 +138855,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -137970,6 +138952,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -138005,6 +138988,7 @@
    "walk": 10
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -138101,6 +139085,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -138136,6 +139121,7 @@
    "walk": 12
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -138232,6 +139218,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -138267,6 +139254,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -138363,6 +139351,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -138398,6 +139387,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -138494,6 +139484,7 @@
    0
   ],
   "attack_speed": 15,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 15,
   "damage_base": {
@@ -138529,6 +139520,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "task_killboss",
   "life_param": 100,
   "life_replenish": [
@@ -147140,6 +148132,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -147175,6 +148168,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -147271,6 +148265,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -147306,6 +148301,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -147402,6 +148398,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -147437,6 +148434,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -147533,6 +148531,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -147568,6 +148567,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "dragonboat_boss1",
   "life_param": 100,
   "life_replenish": [
@@ -149498,6 +150498,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -149533,6 +150534,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -149629,6 +150631,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -149664,6 +150667,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -149760,6 +150764,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -149795,6 +150800,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -149891,6 +150897,7 @@
    0
   ],
   "attack_speed": 9,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 9,
   "damage_base": {
@@ -149926,6 +150933,7 @@
    "walk": 0
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "dragonboat_boss2",
   "life_param": 100,
   "life_replenish": [
@@ -150415,6 +151423,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -150450,6 +151459,7 @@
    "walk": 9
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "partner_task_boss",
   "life_param": 100,
   "life_replenish": [
@@ -151070,6 +152080,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -151105,6 +152116,7 @@
    "walk": 9
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -151201,6 +152213,7 @@
    10
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -151236,6 +152249,7 @@
    "walk": 9
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "standard",
   "life_param": 100,
   "life_replenish": [
@@ -152904,6 +153918,7 @@
    0
   ],
   "attack_speed": 18,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 18,
   "damage_base": {
@@ -152939,6 +153954,7 @@
    "walk": 12
   },
   "hit_recover": 50,
+  "is_boss": true,
   "level_script": "makeboss",
   "life_param": 100,
   "life_replenish": [
@@ -153821,6 +154837,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -153856,6 +154873,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -153952,6 +154970,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -153987,6 +155006,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -154083,6 +155103,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -154118,6 +155139,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -154214,6 +155236,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -154249,6 +155272,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -154345,6 +155369,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -154380,6 +155405,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [
@@ -154476,6 +155502,7 @@
    0
   ],
   "attack_speed": 12,
+  "boss_type": "general",
   "camp": 5,
   "cast_speed": 12,
   "damage_base": {
@@ -154511,6 +155538,7 @@
    "walk": 11
   },
   "hit_recover": 100,
+  "is_boss": true,
   "level_script": "lowchallenge_boss",
   "life_param": 100,
   "life_replenish": [

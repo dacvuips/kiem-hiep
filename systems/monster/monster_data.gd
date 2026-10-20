@@ -56,6 +56,32 @@ static func monster(id: int) -> Dictionary:
 	_ensure()
 	return _monsters.get(str(id), {})
 
+## Kiểm tra quái id có phải là Boss không.
+static func is_boss(id: int) -> bool:
+	return bool(monster(id).get("is_boss", false))
+
+## Lấy phân loại Boss: "gold", "small_gold", "killer", "challenge", "songjin", "world", "general"
+static func boss_type(id: int) -> String:
+	return str(monster(id).get("boss_type", ""))
+
+## Danh sách tất cả Boss trong dữ liệu [{id, name, res, boss_type, sect, title}]
+static func all_bosses() -> Array:
+	_ensure()
+	var out: Array = []
+	for item in _list:
+		var m: Dictionary = monster(item["id"])
+		if m.get("is_boss", false):
+			out.append({
+				"id": item["id"],
+				"name": m.get("name", item["name"]),
+				"res": item["res"],
+				"boss_type": m.get("boss_type", "general"),
+				"sect": m.get("sect", ""),
+				"title": m.get("title", ""),
+				"series": int(m.get("series", 0))
+			})
+	return out
+
 ## ---- Script cấp gốc (npclevelscript, xuất bởi tools/import_vltk_npc_levels.py -> npc_levels.json) ----
 ## Mỗi quái: hệ 0-4 -> trường (Skill1..4, Level1..4, kháng, sát thương cơ bản, AIParam, Life/AttackRating/Defense/MinDamage/
 ## MaxDamage/Exp) -> giá trị cấp 1..levels. Engine gốc gọi script này mỗi lần sinh quái với hệ + cấp của điểm sinh.
@@ -77,29 +103,107 @@ static func level_table(id: int, series: int) -> Dictionary:
 		out[field] = _level_pool[int(per[field])]
 	return out
 
+const MELEE_SERIES_SKILLS: Array[int] = [419, 420, 421, 422, 423]   # Kim (0), Mộc (1), Thủy (2), Hỏa (3), Thổ (4)
+const RANGED_SERIES_SKILLS: Array[int] = [424, 425, 426, 427, 428] # Kim (0), Mộc (1), Thủy (2), Hỏa (3), Thổ (4)
+
 ## Áp SCRIPT CẤP GỐC lên dữ liệu quái `data` (mẫu quái `id`, hệ = data.series) ở cấp `level`: gắn level_table (máu / kinh nghiệm /
 ## chính xác / phòng thủ / sát thương theo đúng script — stat_at_level đọc), chiêu Skill1-4 + cấp chiêu, tham số AI. Trả bản sao mới
 ## (không ghi vào bảng quái dùng chung); quái không có script -> trả nguyên `data`. DÙNG CHUNG cho quái offline (VltkMonster) và quái
 ## game server (ServerMonster) — 2 bên phải ra cùng chỉ số.
 static func apply_level_script(data: Dictionary, id: int, level: int) -> Dictionary:
-	var table := level_table(id, int(data.get("series", 0)))
-	if table.is_empty():
-		return data
+	var series := clampi(int(data.get("series", 0)), 0, 4)
+	var table := level_table(id, series)
 	var d := data.duplicate()
-	d["level_table"] = table
-	var skills := []
-	for i in range(1, 5):
-		var sid := level_value(table, "Skill%d" % i, level)
-		skills.append([maxi(sid, 0), maxi(1, level_value(table, "Level%d" % i, level))])
-	d["skills"] = skills
-	d["skill_levels_exact"] = true
-	var ai_mode := level_value(table, "AIMode", level)
-	if ai_mode > 0:
-		d["ai_mode"] = ai_mode
-		var params := []
-		for i in range(1, 10):
-			params.append(maxi(0, level_value(table, "AIParam%d" % i, level)))
-		d["ai_params"] = params
+	if not table.is_empty():
+		d["level_table"] = table
+
+	var is_boss_monster := bool(data.get("is_boss", false)) or is_boss(id) or str(data.get("boss_type", "")) != "" or "Boss" in str(data.get("name", ""))
+
+	# Kiểm tra xem quái có phải quái tầm xa hay cận chiến
+	var base_skills: Array = data.get("skills", [])
+	var is_ranged_monster := false
+	var has_unique_animal_skill := false
+
+	for sk in base_skills:
+		if sk is Array and sk.size() > 0:
+			var sid := int(sk[0])
+			if sid in [153, 424, 425, 426, 427, 428, 196, 201]:
+				is_ranged_monster = true
+			elif sid in [197, 198, 200]:
+				has_unique_animal_skill = true
+			elif sid > 0:
+				var s_info := VltkSkillData.skill(sid, 1)
+				if not s_info.is_empty():
+					var is_melee := int(s_info.get("melee", 1)) == 1
+					var radius := float(s_info.get("attack_radius", 0))
+					if not is_melee and radius > 150.0:
+						is_ranged_monster = true
+
+	# Nếu không phải Boss: gán chiêu thức chuẩn ngũ hành (Kim, Mộc, Thủy, Hỏa, Thổ) theo đúng hệ của quái
+	if not is_boss_monster:
+		var slv := clampi(maxi(1, level / 3), 1, 30)
+		if not table.is_empty():
+			var t_lv := level_value(table, "Level4" if is_ranged_monster else "Level2", level)
+			if t_lv > 0:
+				slv = t_lv
+
+		if is_ranged_monster:
+			# Quái đánh xa (như Ngân Nha, Cung Thủ...): dùng chiêu ngũ hành tầm xa theo đúng hệ (Series)
+			# Hệ Kim (0): 424, Hệ Mộc (1): 425, Hệ Thủy (2): 426, Hệ Hỏa (3): 427, Hệ Thổ (4): 428
+			var ranged_skill: int = RANGED_SERIES_SKILLS[series]
+			d["skills"] = [
+				[ranged_skill, slv],
+				[ranged_skill, slv],
+				[ranged_skill, slv],
+				[ranged_skill, slv]
+			]
+			d["skill_levels_exact"] = true
+			d["ai_mode"] = 1
+			d["ai_params"] = [50, 25, 25, 25, 25, 25, 25, 0, 0]
+		elif has_unique_animal_skill:
+			# Động vật có chiêu riêng (Hồ ly, Cóc...)
+			var skills := []
+			for sk in base_skills:
+				var sid := int(sk[0])
+				skills.append([sid, slv])
+			d["skills"] = skills
+			d["skill_levels_exact"] = true
+		else:
+			# Quái cận chiến thường: dùng chiêu ngũ hành cận chiến theo đúng hệ
+			# Hệ Kim (0): 419, Hệ Mộc (1): 420, Hệ Thủy (2): 421, Hệ Hỏa (3): 422, Hệ Thổ (4): 423
+			var melee_skill: int = MELEE_SERIES_SKILLS[series]
+			d["skills"] = [
+				[melee_skill, slv],
+				[melee_skill, slv],
+				[melee_skill, slv],
+				[melee_skill, slv]
+			]
+			d["skill_levels_exact"] = true
+	else:
+		# Boss giữ nguyên chiêu thức võ công môn phái đặc trưng
+		var skills := []
+		for i in range(mini(4, base_skills.size())):
+			var sk: Array = base_skills[i]
+			var sid := int(sk[0])
+			var slv := int(sk[1]) if sk.size() > 1 else 1
+			if not table.is_empty():
+				var t_lv := level_value(table, "Level%d" % (i + 1), level)
+				if t_lv > 0:
+					slv = t_lv
+			skills.append([sid, slv])
+		d["skills"] = skills
+		if not table.is_empty() and level_value(table, "Level1", level) > 0:
+			d["skill_levels_exact"] = true
+
+	# Chỉ lấy AI mode/params từ table nếu quái chưa có AI riêng trong monsters.json
+	if int(d.get("ai_mode", 0)) <= 0 and not table.is_empty():
+		var ai_mode := level_value(table, "AIMode", level)
+		if ai_mode > 0:
+			d["ai_mode"] = ai_mode
+			var params := []
+			for i in range(1, 10):
+				params.append(maxi(0, level_value(table, "AIParam%d" % i, level)))
+			d["ai_params"] = params
 	return d
 
 ## Giá trị trường `field` ở cấp `level` trong bảng level_table (cấp ngoài khoảng -> cấp gần nhất); -1 nếu không có.

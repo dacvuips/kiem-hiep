@@ -34,6 +34,64 @@ const NEED_SLOTS := {
 	6: "Ngọc bội và Hộ uyển", 7: "Dây chuyền và Y phục", 8: "Nhẫn phải (trên) và Giày", 9: "Nhẫn phải (trên) và Giày",
 }
 
+const COLOR_NAME_MAP := {
+	"yellow": "ffff00",
+	"blue": "6464ff",
+	"green": "5ae63c",
+	"greeen": "5ae63c",
+	"red": "ff0000",
+	"orange": "ff9600",
+	"white": "ffffff",
+	"gold": "ffff00",
+	"water": "5aaaff",
+	"metal": "ffe65a",
+	"wood": "5ae63c",
+	"fire": "ff5032",
+	"earth": "e6963c",
+}
+
+## Chuyển các thẻ định dạng cũ của VLTK (<color=...>, <color>, </color>, <bclr...>, <enter>) sang BBCode của Godot.
+## Đồng thời loại bỏ triệt để các thẻ thừa/lỗi cú pháp để không bao giờ lộ mã thẻ thô lên giao diện UI.
+static func clean_vltk_tags(text: String, default_hex: String = "") -> String:
+	if text.is_empty():
+		return ""
+	var re_enter := RegEx.create_from_string("(?i)<enter>")
+	var s := re_enter.sub(text, "\n", true)
+
+	var re_bclr := RegEx.create_from_string("(?i)</?bclr(?:=[^>]+)?>")
+	s = re_bclr.sub(s, "", true)
+
+	s = s.replace("[lb]", "\u0001").replace("[rb]", "\u0002")
+	s = s.replace("[", "[lb]").replace("]", "[rb]")
+	s = s.replace("\u0001", "[lb]").replace("\u0002", "[rb]")
+
+	var re_color := RegEx.create_from_string("(?i)<(?:/color|color\\s*=\\s*([a-zA-Z]+)|color)>")
+	var out := ""
+	var open := false
+	var pos := 0
+	for m in re_color.search_all(s):
+		out += s.substr(pos, m.get_start() - pos)
+		var cname := m.get_string(1).to_lower().strip_edges()
+		if open:
+			out += "[/color]"
+			open = false
+		if cname != "":
+			var hex: String = str(COLOR_NAME_MAP.get(cname, cname))
+			if hex.begins_with("#"):
+				out += "[color=%s]" % hex
+			else:
+				out += "[color=#%s]" % hex
+			open = true
+		pos = m.get_end()
+	out += s.substr(pos)
+	if open:
+		out += "[/color]"
+
+	out = out.strip_edges()
+	if default_hex != "" and out != "":
+		return _c(default_hex, out)
+	return out
+
 ## `active` = số dòng ẩn đang bật (Equipment.get_active_counts) — -1 nếu CHƯA MẶC (dòng ẩn xám).
 ## `part` = ô đang mặc (Equipment.Part) — để chọn đúng gợi ý kích hoạt của nhẫn 1/nhẫn 2.
 ## `with_name` = false: bỏ dòng tên (khung chi tiết ItemDetailPopup tự vẽ tên + cấp ở phần đầu).
@@ -53,7 +111,7 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 	if item.is_purple():
 		intro = "Trang bị Huyền Tinh (đồ tím)"
 	if intro != "":
-		out.append(_c(C_WHITE, intro))
+		out.append(clean_vltk_tags(intro, C_WHITE))
 	out.append("")
 
 	for entry in item.base_values:
@@ -144,24 +202,7 @@ static func _build_misc(item: ItemInstance, with_name: bool) -> String:
 
 ## Lời mô tả gốc có thẻ <color=yellow>...<color> và <enter> — đổi sang BBCode.
 static func _misc_intro(intro: String) -> String:
-	var out := ""
-	var open := false
-	var rest := intro.replace("<enter>", "\n").replace("[", "[lb]")
-	var re := RegEx.create_from_string("<color(=[a-zA-Z]+)?>")
-	var pos := 0
-	for m in re.search_all(rest):
-		out += rest.substr(pos, m.get_start() - pos)
-		if open:
-			out += "[/color]"
-			open = false
-		if m.get_string(1) != "":
-			out += "[color=%s]" % m.get_string(1).substr(1)
-			open = true
-		pos = m.get_end()
-	out += rest.substr(pos)
-	if open:
-		out += "[/color]"
-	return _c(C_WHITE, out.strip_edges())
+	return clean_vltk_tags(intro, C_WHITE)
 
 ## Màu tên theo phẩm chất: hoàng kim vàng, đủ 6 dòng magic (đồ tím) tím, có dòng magic (đồ xanh) lam, đồ thường trắng.
 static func name_color_of(item: ItemInstance) -> String:
@@ -261,10 +302,12 @@ static func format_attrib(attrib_name: String, values: Array) -> String:
 			continue
 		out += ch
 		i += 1
-	return out
+	return clean_vltk_tags(out)
 
-## Bỏ thẻ BBCode — cho chỗ chỉ hiện chữ trơn.
+## Bỏ thẻ BBCode và các mã thẻ VLTK cũ — cho chỗ chỉ hiện chữ trơn.
 static func plain(bbcode: String) -> String:
 	var text := bbcode.replace("[lb]", "\u0001").replace("[rb]", "\u0002")
 	var re := RegEx.create_from_string("\\[/?[^\\]]+\\]")
-	return re.sub(text, "", true).replace("\u0001", "[").replace("\u0002", "]")
+	text = re.sub(text, "", true).replace("\u0001", "[").replace("\u0002", "]")
+	var re_tag := RegEx.create_from_string("(?i)<(?:/?[a-z_]+(?:=[^>]+)?|/?)>")
+	return re_tag.sub(text, "", true).strip_edges()

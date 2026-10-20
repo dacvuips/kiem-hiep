@@ -1,995 +1,1168 @@
 {
- "source": "script/startgame (AddNpcNew) — tools/export_training_maps.py",
- "maps": [
-  {
-   "id": 2,
-   "name": "Hoa Sơn",
-   "kind": "Field",
-   "level": 20,
-   "monster_count": 693,
-   "monsters": [
+  "source": "script/startgame (AddNpcNew) — tools/export_training_maps.py",
+  "maps": [
     {
-     "t": 11,
-     "name": "Heo rừng",
-     "level": 20,
-     "count": 347
+      "id": 2,
+      "name": "Hoa Sơn",
+      "kind": "Field",
+      "level": 20,
+      "monster_count": 693,
+      "monsters": [
+        {
+          "t": 11,
+          "name": "Heo rừng",
+          "level": 20,
+          "count": 347
+        },
+        {
+          "t": 12,
+          "name": "Nhím",
+          "level": 20,
+          "count": 346
+        }
+      ],
+      "dir": "res://world/maps/map_2"
     },
     {
-     "t": 12,
-     "name": "Nhím",
-     "level": 20,
-     "count": 346
+      "id": 9,
+      "name": "Trường Gian Nguyên Đầu",
+      "kind": "Cave",
+      "level": 70,
+      "monster_count": 358,
+      "monsters": [
+        {
+          "t": 412,
+          "name": "ác Ni",
+          "level": 70,
+          "count": 358
+        }
+      ],
+      "dir": "res://world/maps/map_9"
+    },
+    {
+      "id": 11,
+      "name": "Thành Đô",
+      "kind": "City",
+      "level": 20,
+      "monster_count": 682,
+      "monsters": [
+        {
+          "t": 11,
+          "name": "Heo rừng",
+          "level": 20,
+          "count": 171
+        },
+        {
+          "t": 33,
+          "name": "Hoán hùng",
+          "level": 20,
+          "count": 171
+        },
+        {
+          "t": 34,
+          "name": "Linh Miêu",
+          "level": 20,
+          "count": 170
+        },
+        {
+          "t": 12,
+          "name": "Nhím",
+          "level": 20,
+          "count": 170
+        }
+      ],
+      "dir": "res://world/maps/map_11"
+    },
+    {
+      "id": 20,
+      "name": "Giang Tân Thôn",
+      "kind": "Country",
+      "level": 10,
+      "monster_count": 633,
+      "monsters": [
+        {
+          "t": 31,
+          "name": "Kim Miêu",
+          "level": 10,
+          "count": 204
+        },
+        {
+          "t": 42,
+          "name": "Hươu đốm",
+          "level": 10,
+          "count": 204
+        },
+        {
+          "t": 43,
+          "name": "Heo trắng",
+          "level": 10,
+          "count": 203
+        },
+        {
+          "t": 414,
+          "name": "Mộc nhân",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 415,
+          "name": "Bao cát",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 413,
+          "name": "Cọc gỗ",
+          "level": 1,
+          "count": 6
+        }
+      ],
+      "dir": "res://world/maps/map_20"
+    },
+    {
+      "id": 21,
+      "name": "Thanh Thành sơn",
+      "kind": "Field",
+      "level": 30,
+      "monster_count": 812,
+      "monsters": [
+        {
+          "t": 24,
+          "name": "Kim Điêu",
+          "level": 30,
+          "count": 271
+        },
+        {
+          "t": 25,
+          "name": "Thương ưng",
+          "level": 30,
+          "count": 271
+        },
+        {
+          "t": 26,
+          "name": "Kền Kền",
+          "level": 30,
+          "count": 270
+        }
+      ],
+      "dir": "res://world/maps/map_21",
+      "arena_center": [
+        75472.0,
+        64264.0
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Tây Phục Ngưu Sơn",
+      "kind": "Field",
+      "level": 50,
+      "monster_count": 447,
+      "monsters": [
+        {
+          "t": 7,
+          "name": "Sói xanh",
+          "level": 50,
+          "count": 149
+        },
+        {
+          "t": 8,
+          "name": "Sói tuyết",
+          "level": 50,
+          "count": 149
+        },
+        {
+          "t": 10,
+          "name": "Hỏa Hồ",
+          "level": 50,
+          "count": 149
+        }
+      ],
+      "dir": "res://world/maps/map_41"
+    },
+    {
+      "id": 53,
+      "name": "Ba Lăng Huyện",
+      "kind": "Country",
+      "level": 10,
+      "monster_count": 827,
+      "monsters": [
+        {
+          "t": 31,
+          "name": "Kim Miêu",
+          "level": 10,
+          "count": 269
+        },
+        {
+          "t": 42,
+          "name": "Hươu đốm",
+          "level": 10,
+          "count": 268
+        },
+        {
+          "t": 43,
+          "name": "Heo trắng",
+          "level": 10,
+          "count": 268
+        },
+        {
+          "t": 414,
+          "name": "Mộc nhân",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 415,
+          "name": "Bao cát",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 413,
+          "name": "Cọc gỗ",
+          "level": 1,
+          "count": 6
+        }
+      ],
+      "dir": "res://world/maps/map_53"
+    },
+    {
+      "id": 54,
+      "name": "Nam Nhạc Trấn",
+      "kind": "Country",
+      "level": 10,
+      "monster_count": 146,
+      "monsters": [
+        {
+          "t": 31,
+          "name": "Kim Miêu",
+          "level": 10,
+          "count": 49
+        },
+        {
+          "t": 42,
+          "name": "Hươu đốm",
+          "level": 10,
+          "count": 49
+        },
+        {
+          "t": 43,
+          "name": "Heo trắng",
+          "level": 10,
+          "count": 48
+        }
+      ],
+      "dir": "res://world/maps/map_54"
+    },
+    {
+      "id": 56,
+      "name": "Hành Sơn",
+      "kind": "Field",
+      "level": 70,
+      "monster_count": 181,
+      "monsters": [
+        {
+          "t": 24,
+          "name": "Kim Điêu",
+          "level": 70,
+          "count": 61
+        },
+        {
+          "t": 552,
+          "name": "Thứu thần",
+          "level": 70,
+          "count": 60
+        },
+        {
+          "t": 26,
+          "name": "Kền Kền",
+          "level": 70,
+          "count": 60
+        }
+      ],
+      "dir": "res://world/maps/map_56"
+    },
+    {
+      "id": 70,
+      "name": "Vũ Lăng Sơn",
+      "kind": "Field",
+      "level": 30,
+      "monster_count": 428,
+      "monsters": [
+        {
+          "t": 10,
+          "name": "Hỏa Hồ",
+          "level": 30,
+          "count": 143
+        },
+        {
+          "t": 25,
+          "name": "Thương ưng",
+          "level": 30,
+          "count": 143
+        },
+        {
+          "t": 26,
+          "name": "Kền Kền",
+          "level": 30,
+          "count": 142
+        }
+      ],
+      "dir": "res://world/maps/map_70"
+    },
+    {
+      "id": 75,
+      "name": "Xi Vưu Động",
+      "kind": "Cave",
+      "level": 100,
+      "monster_count": 216,
+      "monsters": [
+        {
+          "t": 155,
+          "name": "Hắc Cân",
+          "level": 100,
+          "count": 108
+        },
+        {
+          "t": 156,
+          "name": "ảnh Côn",
+          "level": 100,
+          "count": 108
+        }
+      ],
+      "dir": "res://world/maps/map_75"
+    },
+    {
+      "id": 90,
+      "name": "Đông Phục Ngưu Sơn",
+      "kind": "Field",
+      "level": 40,
+      "monster_count": 635,
+      "monsters": [
+        {
+          "t": 7,
+          "name": "Sói xanh",
+          "level": 40,
+          "count": 212
+        },
+        {
+          "t": 8,
+          "name": "Sói tuyết",
+          "level": 40,
+          "count": 212
+        },
+        {
+          "t": 10,
+          "name": "Hỏa Hồ",
+          "level": 40,
+          "count": 211
+        }
+      ],
+      "dir": "res://world/maps/map_90"
+    },
+    {
+      "id": 92,
+      "name": "Thục Cương Sơn",
+      "kind": "Field",
+      "level": 40,
+      "monster_count": 611,
+      "monsters": [
+        {
+          "t": 17,
+          "name": "Trâu rừng",
+          "level": 40,
+          "count": 204
+        },
+        {
+          "t": 36,
+          "name": "Khỉ xám",
+          "level": 40,
+          "count": 204
+        },
+        {
+          "t": 37,
+          "name": "Hắc Diệp Hầu",
+          "level": 40,
+          "count": 203
+        }
+      ],
+      "dir": "res://world/maps/map_92"
+    },
+    {
+      "id": 93,
+      "name": "Tiến Cúc Động",
+      "kind": "Cave",
+      "level": 100,
+      "monster_count": 135,
+      "monsters": [
+        {
+          "t": 838,
+          "name": "Đoạt Mệnh Liêm",
+          "level": 100,
+          "count": 45
+        },
+        {
+          "t": 147,
+          "name": "Đao khách",
+          "level": 100,
+          "count": 45
+        },
+        {
+          "t": 148,
+          "name": "Báo đốm",
+          "level": 100,
+          "count": 45
+        }
+      ],
+      "dir": "res://world/maps/map_93"
+    },
+    {
+      "id": 121,
+      "name": "Long Môn Trấn",
+      "kind": "Country",
+      "level": 10,
+      "monster_count": 1242,
+      "monsters": [
+        {
+          "t": 31,
+          "name": "Kim Miêu",
+          "level": 10,
+          "count": 407
+        },
+        {
+          "t": 42,
+          "name": "Hươu đốm",
+          "level": 10,
+          "count": 407
+        },
+        {
+          "t": 43,
+          "name": "Heo trắng",
+          "level": 10,
+          "count": 406
+        },
+        {
+          "t": 414,
+          "name": "Mộc nhân",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 415,
+          "name": "Bao cát",
+          "level": 1,
+          "count": 8
+        },
+        {
+          "t": 413,
+          "name": "Cọc gỗ",
+          "level": 1,
+          "count": 6
+        }
+      ],
+      "dir": "res://world/maps/map_121"
+    },
+    {
+      "id": 122,
+      "name": "Hoàng Hà Nguyên Đầu",
+      "kind": "Field",
+      "level": 50,
+      "monster_count": 202,
+      "monsters": [
+        {
+          "t": 2,
+          "name": "Bạch Hổ",
+          "level": 50,
+          "count": 68
+        },
+        {
+          "t": 4,
+          "name": "Báo trắng",
+          "level": 50,
+          "count": 67
+        },
+        {
+          "t": 26,
+          "name": "Kền Kền",
+          "level": 50,
+          "count": 67
+        }
+      ],
+      "dir": "res://world/maps/map_122"
+    },
+    {
+      "id": 123,
+      "name": "Lão Hổ Động",
+      "kind": "",
+      "level": 80,
+      "monster_count": 128,
+      "monsters": [
+        {
+          "t": 140,
+          "name": "Khoái Thối",
+          "level": 80,
+          "count": 43
+        },
+        {
+          "t": 149,
+          "name": "Trường Thương",
+          "level": 80,
+          "count": 43
+        },
+        {
+          "t": 150,
+          "name": "Thanh Mi",
+          "level": 80,
+          "count": 42
+        }
+      ],
+      "dir": "res://world/maps/map_123"
+    },
+    {
+      "id": 124,
+      "name": "Hiên Viên Động",
+      "kind": "",
+      "level": 100,
+      "monster_count": 70,
+      "monsters": [
+        {
+          "t": 13,
+          "name": "Đại Tượng",
+          "level": 100,
+          "count": 35
+        },
+        {
+          "t": 14,
+          "name": "Voi Hoàng hà",
+          "level": 100,
+          "count": 35
+        }
+      ],
+      "dir": "res://world/maps/map_124"
+    },
+    {
+      "id": 125,
+      "name": "Lưu Tiên Động Tầng 1",
+      "kind": "",
+      "level": 60,
+      "monster_count": 99,
+      "monsters": [
+        {
+          "t": 146,
+          "name": "Đoạt Mệnh Liêm",
+          "level": 60,
+          "count": 33
+        },
+        {
+          "t": 161,
+          "name": "Thiết Trảo",
+          "level": 60,
+          "count": 33
+        },
+        {
+          "t": 162,
+          "name": "Đoản Kích",
+          "level": 60,
+          "count": 33
+        }
+      ],
+      "dir": "res://world/maps/map_125"
+    },
+    {
+      "id": 140,
+      "name": "Dược Vương Cốc",
+      "kind": "Cave",
+      "level": 30,
+      "monster_count": 313,
+      "monsters": [
+        {
+          "t": 34,
+          "name": "Linh Miêu",
+          "level": 30,
+          "count": 105
+        },
+        {
+          "t": 38,
+          "name": "Kim Tơ Hầu",
+          "level": 30,
+          "count": 104
+        },
+        {
+          "t": 42,
+          "name": "Hươu đốm",
+          "level": 30,
+          "count": 104
+        }
+      ],
+      "dir": "res://world/maps/map_140"
+    },
+    {
+      "id": 162,
+      "name": "Đại Lý phủ",
+      "kind": "City",
+      "level": 20,
+      "monster_count": 637,
+      "monsters": [
+        {
+          "t": 11,
+          "name": "Heo rừng",
+          "level": 20,
+          "count": 160
+        },
+        {
+          "t": 33,
+          "name": "Hoán hùng",
+          "level": 20,
+          "count": 159
+        },
+        {
+          "t": 34,
+          "name": "Linh Miêu",
+          "level": 20,
+          "count": 159
+        },
+        {
+          "t": 12,
+          "name": "Nhím",
+          "level": 20,
+          "count": 159
+        }
+      ],
+      "dir": "res://world/maps/map_162"
+    },
+    {
+      "id": 163,
+      "name": "ác Bá Địa Đạo",
+      "kind": "",
+      "level": 60,
+      "monster_count": 120,
+      "monsters": [
+        {
+          "t": 176,
+          "name": "Quái nhân",
+          "level": 60,
+          "count": 40
+        },
+        {
+          "t": 1206,
+          "name": "ác bá",
+          "level": 60,
+          "count": 40
+        },
+        {
+          "t": 1207,
+          "name": "Bát Bì",
+          "level": 60,
+          "count": 40
+        }
+      ],
+      "dir": "res://world/maps/map_163"
+    },
+    {
+      "id": 176,
+      "name": "Lâm An",
+      "kind": "Capital",
+      "level": 20,
+      "monster_count": 1000,
+      "monsters": [
+        {
+          "t": 11,
+          "name": "Heo rừng",
+          "level": 20,
+          "count": 250
+        },
+        {
+          "t": 33,
+          "name": "Hoán hùng",
+          "level": 20,
+          "count": 250
+        },
+        {
+          "t": 34,
+          "name": "Linh Miêu",
+          "level": 20,
+          "count": 250
+        },
+        {
+          "t": 12,
+          "name": "Nhím",
+          "level": 20,
+          "count": 250
+        }
+      ],
+      "dir": "res://world/maps/map_176"
+    },
+    {
+      "id": 224,
+      "name": "Sa Mạc Địa Biểu",
+      "kind": "Cave",
+      "level": 90,
+      "monster_count": 710,
+      "monsters": [
+        {
+          "t": 556,
+          "name": "Xích Luyện Xà",
+          "level": 90,
+          "count": 237
+        },
+        {
+          "t": 557,
+          "name": "Kên đất",
+          "level": 90,
+          "count": 237
+        },
+        {
+          "t": 558,
+          "name": "Bọ cạp",
+          "level": 90,
+          "count": 236
+        }
+      ],
+      "dir": "res://world/maps/map_224"
+    },
+    {
+      "id": 225,
+      "name": "Sa Mạc 1",
+      "kind": "",
+      "level": 100,
+      "monster_count": 410,
+      "monsters": [
+        {
+          "t": 561,
+          "name": "Lưu Vân",
+          "level": 100,
+          "count": 137
+        },
+        {
+          "t": 560,
+          "name": "Lưu Quang",
+          "level": 100,
+          "count": 137
+        },
+        {
+          "t": 917,
+          "name": "Lưu Phong",
+          "level": 100,
+          "count": 136
+        }
+      ],
+      "dir": "res://world/maps/map_225"
+    },
+    {
+      "id": 226,
+      "name": "Sa Mạc 2",
+      "kind": "",
+      "level": 100,
+      "monster_count": 390,
+      "monsters": [
+        {
+          "t": 561,
+          "name": "Lưu Vân",
+          "level": 100,
+          "count": 130
+        },
+        {
+          "t": 560,
+          "name": "Lưu Quang",
+          "level": 100,
+          "count": 130
+        },
+        {
+          "t": 917,
+          "name": "Lưu Phong",
+          "level": 100,
+          "count": 130
+        }
+      ],
+      "dir": "res://world/maps/map_226"
+    },
+    {
+      "id": 227,
+      "name": "Sa Mạc 3",
+      "kind": "",
+      "level": 100,
+      "monster_count": 680,
+      "monsters": [
+        {
+          "t": 534,
+          "name": "Tật Vũ",
+          "level": 100,
+          "count": 136
+        },
+        {
+          "t": 535,
+          "name": "Tật Phong",
+          "level": 100,
+          "count": 136
+        },
+        {
+          "t": 536,
+          "name": "Tật Vũ",
+          "level": 100,
+          "count": 136
+        },
+        {
+          "t": 537,
+          "name": "Tật Viêm",
+          "level": 100,
+          "count": 136
+        },
+        {
+          "t": 538,
+          "name": "Tật Điện",
+          "level": 100,
+          "count": 136
+        }
+      ],
+      "dir": "res://world/maps/map_227"
+    },
+    {
+      "id": 319,
+      "name": "Lâm Du Quan",
+      "kind": "Field",
+      "level": 80,
+      "monster_count": 685,
+      "monsters": [
+        {
+          "t": 588,
+          "name": "Bôn Lôi",
+          "level": 80,
+          "count": 343
+        },
+        {
+          "t": 589,
+          "name": "Ngân Nha",
+          "level": 80,
+          "count": 342
+        }
+      ],
+      "dir": "res://world/maps/map_319"
+    },
+    {
+      "id": 320,
+      "name": "Chân Núi Trường Bạch",
+      "kind": "Field",
+      "level": 90,
+      "monster_count": 792,
+      "monsters": [
+        {
+          "t": 590,
+          "name": "Đông Bắc hổ",
+          "level": 90,
+          "count": 198
+        },
+        {
+          "t": 591,
+          "name": "Độc Bộ",
+          "level": 90,
+          "count": 198
+        },
+        {
+          "t": 592,
+          "name": "Xích Chưởng",
+          "level": 90,
+          "count": 198
+        },
+        {
+          "t": 593,
+          "name": "Tuyết ảnh",
+          "level": 90,
+          "count": 198
+        }
+      ],
+      "dir": "res://world/maps/map_320"
+    },
+    {
+      "id": 321,
+      "name": "Trường Bạch Sơn Nam 1",
+      "kind": "",
+      "level": 100,
+      "monster_count": 1583,
+      "monsters": [
+        {
+          "t": 598,
+          "name": "Sương Đao",
+          "level": 100,
+          "count": 396
+        },
+        {
+          "t": 599,
+          "name": "Lãnh Cung",
+          "level": 100,
+          "count": 396
+        },
+        {
+          "t": 600,
+          "name": "Giáng Chùy",
+          "level": 100,
+          "count": 396
+        },
+        {
+          "t": 601,
+          "name": "Sãn Vũ",
+          "level": 100,
+          "count": 395
+        }
+      ],
+      "dir": "res://world/maps/map_321"
+    },
+    {
+      "id": 322,
+      "name": "Trường Bạch Sơn Bắc 1",
+      "kind": "",
+      "level": 100,
+      "monster_count": 1471,
+      "monsters": [
+        {
+          "t": 594,
+          "name": "Đao Trảm",
+          "level": 100,
+          "count": 368
+        },
+        {
+          "t": 595,
+          "name": "Lạc Quang",
+          "level": 100,
+          "count": 368
+        },
+        {
+          "t": 596,
+          "name": "Hàn Thương",
+          "level": 100,
+          "count": 368
+        },
+        {
+          "t": 597,
+          "name": "Đoạt Phách",
+          "level": 100,
+          "count": 367
+        }
+      ],
+      "dir": "res://world/maps/map_322"
+    },
+    {
+      "id": 336,
+      "name": "Phong Lăng Độ",
+      "kind": "Cave",
+      "level": 100,
+      "monster_count": 968,
+      "monsters": [
+        {
+          "t": 707,
+          "name": "Thần Tý",
+          "level": 100,
+          "count": 484
+        },
+        {
+          "t": 708,
+          "name": "Lãnh Thương",
+          "level": 100,
+          "count": 484
+        }
+      ],
+      "dir": "res://world/maps/map_336"
+    },
+    {
+      "id": 340,
+      "name": "Mạc Cao Quật (1)",
+      "kind": "Cave",
+      "level": 100,
+      "monster_count": 1710,
+      "monsters": [
+        {
+          "t": 703,
+          "name": "Phi Sa",
+          "level": 100,
+          "count": 428
+        },
+        {
+          "t": 704,
+          "name": "Tẩu Thạch",
+          "level": 100,
+          "count": 428
+        },
+        {
+          "t": 705,
+          "name": "Sa Đạo",
+          "level": 100,
+          "count": 427
+        },
+        {
+          "t": 706,
+          "name": "Mạc Tặc",
+          "level": 100,
+          "count": 427
+        }
+      ],
+      "dir": "res://world/maps/map_340"
+    },
+    {
+      "id": 337,
+      "name": "Thuyền Phong Lăng Độ",
+      "kind": "Cave",
+      "level": 95,
+      "monster_count": 0,
+      "monsters": [],
+      "dir": "res://world/maps/map_337"
+    },
+    {
+      "id": 225,
+      "name": "Sa Mạc Sơn Động 1 (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 450,
+      "monsters": [
+        {
+          "t": 583,
+          "name": "Lam Y Y",
+          "level": 110,
+          "count": 450
+        }
+      ],
+      "dir": "res://world/maps/map_225"
+    },
+    {
+      "id": 226,
+      "name": "Sa Mạc Sơn Động 2 (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 450,
+      "monsters": [
+        {
+          "t": 745,
+          "name": "Hà Nhân Ngã",
+          "level": 110,
+          "count": 450
+        }
+      ],
+      "dir": "res://world/maps/map_226"
+    },
+    {
+      "id": 227,
+      "name": "Sa Mạc Sơn Động 3 (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 450,
+      "monsters": [
+        {
+          "t": 563,
+          "name": "Gia Luật Tị Ly",
+          "level": 110,
+          "count": 450
+        }
+      ],
+      "dir": "res://world/maps/map_227"
+    },
+    {
+      "id": 75,
+      "name": "Xi Vưu Động (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 400,
+      "monsters": [
+        {
+          "t": 582,
+          "name": "Lam Y Y",
+          "level": 110,
+          "count": 400
+        }
+      ],
+      "dir": "res://world/maps/map_75"
+    },
+    {
+      "id": 93,
+      "name": "Tiến Cúc Động (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 400,
+      "monsters": [
+        {
+          "t": 567,
+          "name": "Chung Linh Tú",
+          "level": 110,
+          "count": 400
+        }
+      ],
+      "dir": "res://world/maps/map_93"
+    },
+    {
+      "id": 124,
+      "name": "Hiên Viên Động (11x)",
+      "kind": "Cave",
+      "level": 110,
+      "monster_count": 400,
+      "monsters": [
+        {
+          "t": 565,
+          "name": "Đoan Mộc Duệ",
+          "level": 110,
+          "count": 400
+        }
+      ],
+      "dir": "res://world/maps/map_124"
+    },
+    {
+      "id": 321,
+      "name": "Trường Bạch Sơn Nam (12x)",
+      "kind": "Field",
+      "level": 120,
+      "monster_count": 500,
+      "monsters": [
+        {
+          "t": 562,
+          "name": "Đạo Thanh Chân Nhân",
+          "level": 120,
+          "count": 500
+        }
+      ],
+      "dir": "res://world/maps/map_321"
+    },
+    {
+      "id": 322,
+      "name": "Trường Bạch Sơn Bắc (12x)",
+      "kind": "Field",
+      "level": 120,
+      "monster_count": 500,
+      "monsters": [
+        {
+          "t": 568,
+          "name": "Hà Linh Phiêu",
+          "level": 120,
+          "count": 500
+        }
+      ],
+      "dir": "res://world/maps/map_322"
+    },
+    {
+      "id": 336,
+      "name": "Phong Lăng Độ (12x)",
+      "kind": "Field",
+      "level": 120,
+      "monster_count": 450,
+      "monsters": [
+        {
+          "t": 744,
+          "name": "Thủy Tặc Đầu Lĩnh",
+          "level": 120,
+          "count": 450
+        }
+      ],
+      "dir": "res://world/maps/map_336"
+    },
+    {
+      "id": 340,
+      "name": "Mạc Cao Quật (12x)",
+      "kind": "Cave",
+      "level": 120,
+      "monster_count": 500,
+      "monsters": [
+        {
+          "t": 564,
+          "name": "Hoàn Nhan Tuyết Y",
+          "level": 120,
+          "count": 500
+        }
+      ],
+      "dir": "res://world/maps/map_340"
     }
-   ],
-   "dir": "res://world/maps/map_2"
-  },
-  {
-   "id": 9,
-   "name": "Trường Gian Nguyên Đầu",
-   "kind": "Cave",
-   "level": 70,
-   "monster_count": 358,
-   "monsters": [
-    {
-     "t": 412,
-     "name": "ác Ni",
-     "level": 70,
-     "count": 358
-    }
-   ],
-   "dir": "res://world/maps/map_9"
-  },
-  {
-   "id": 11,
-   "name": "Thành Đô",
-   "kind": "City",
-   "level": 20,
-   "monster_count": 682,
-   "monsters": [
-    {
-     "t": 11,
-     "name": "Heo rừng",
-     "level": 20,
-     "count": 171
-    },
-    {
-     "t": 33,
-     "name": "Hoán hùng",
-     "level": 20,
-     "count": 171
-    },
-    {
-     "t": 34,
-     "name": "Linh Miêu",
-     "level": 20,
-     "count": 170
-    },
-    {
-     "t": 12,
-     "name": "Nhím",
-     "level": 20,
-     "count": 170
-    }
-   ],
-   "dir": "res://world/maps/map_11"
-  },
-  {
-   "id": 20,
-   "name": "Giang Tân Thôn",
-   "kind": "Country",
-   "level": 10,
-   "monster_count": 633,
-   "monsters": [
-    {
-     "t": 31,
-     "name": "Kim Miêu",
-     "level": 10,
-     "count": 204
-    },
-    {
-     "t": 42,
-     "name": "Hươu đốm",
-     "level": 10,
-     "count": 204
-    },
-    {
-     "t": 43,
-     "name": "Heo trắng",
-     "level": 10,
-     "count": 203
-    },
-    {
-     "t": 414,
-     "name": "Mộc nhân",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 415,
-     "name": "Bao cát",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 413,
-     "name": "Cọc gỗ",
-     "level": 1,
-     "count": 6
-    }
-   ],
-   "dir": "res://world/maps/map_20"
-  },
-  {
-   "id": 21,
-   "name": "Thanh Thành sơn",
-   "kind": "Field",
-   "level": 30,
-   "monster_count": 812,
-   "monsters": [
-    {
-     "t": 24,
-     "name": "Kim Điêu",
-     "level": 30,
-     "count": 271
-    },
-    {
-     "t": 25,
-     "name": "Thương ưng",
-     "level": 30,
-     "count": 271
-    },
-    {
-     "t": 26,
-     "name": "Kền Kền",
-     "level": 30,
-     "count": 270
-    }
-   ],
-   "dir": "res://world/maps/map_21"
-  },
-  {
-   "id": 41,
-   "name": "Tây Phục Ngưu Sơn",
-   "kind": "Field",
-   "level": 50,
-   "monster_count": 447,
-   "monsters": [
-    {
-     "t": 7,
-     "name": "Sói xanh",
-     "level": 50,
-     "count": 149
-    },
-    {
-     "t": 8,
-     "name": "Sói tuyết",
-     "level": 50,
-     "count": 149
-    },
-    {
-     "t": 10,
-     "name": "Hỏa Hồ",
-     "level": 50,
-     "count": 149
-    }
-   ],
-   "dir": "res://world/maps/map_41"
-  },
-  {
-   "id": 53,
-   "name": "Ba Lăng Huyện",
-   "kind": "Country",
-   "level": 10,
-   "monster_count": 827,
-   "monsters": [
-    {
-     "t": 31,
-     "name": "Kim Miêu",
-     "level": 10,
-     "count": 269
-    },
-    {
-     "t": 42,
-     "name": "Hươu đốm",
-     "level": 10,
-     "count": 268
-    },
-    {
-     "t": 43,
-     "name": "Heo trắng",
-     "level": 10,
-     "count": 268
-    },
-    {
-     "t": 414,
-     "name": "Mộc nhân",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 415,
-     "name": "Bao cát",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 413,
-     "name": "Cọc gỗ",
-     "level": 1,
-     "count": 6
-    }
-   ],
-   "dir": "res://world/maps/map_53"
-  },
-  {
-   "id": 54,
-   "name": "Nam Nhạc Trấn",
-   "kind": "Country",
-   "level": 10,
-   "monster_count": 146,
-   "monsters": [
-    {
-     "t": 31,
-     "name": "Kim Miêu",
-     "level": 10,
-     "count": 49
-    },
-    {
-     "t": 42,
-     "name": "Hươu đốm",
-     "level": 10,
-     "count": 49
-    },
-    {
-     "t": 43,
-     "name": "Heo trắng",
-     "level": 10,
-     "count": 48
-    }
-   ],
-   "dir": "res://world/maps/map_54"
-  },
-  {
-   "id": 56,
-   "name": "Hành Sơn",
-   "kind": "Field",
-   "level": 70,
-   "monster_count": 181,
-   "monsters": [
-    {
-     "t": 24,
-     "name": "Kim Điêu",
-     "level": 70,
-     "count": 61
-    },
-    {
-     "t": 552,
-     "name": "Thứu thần",
-     "level": 70,
-     "count": 60
-    },
-    {
-     "t": 26,
-     "name": "Kền Kền",
-     "level": 70,
-     "count": 60
-    }
-   ],
-   "dir": "res://world/maps/map_56"
-  },
-  {
-   "id": 70,
-   "name": "Vũ Lăng Sơn",
-   "kind": "Field",
-   "level": 30,
-   "monster_count": 428,
-   "monsters": [
-    {
-     "t": 10,
-     "name": "Hỏa Hồ",
-     "level": 30,
-     "count": 143
-    },
-    {
-     "t": 25,
-     "name": "Thương ưng",
-     "level": 30,
-     "count": 143
-    },
-    {
-     "t": 26,
-     "name": "Kền Kền",
-     "level": 30,
-     "count": 142
-    }
-   ],
-   "dir": "res://world/maps/map_70"
-  },
-  {
-   "id": 75,
-   "name": "Xi Vưu Động",
-   "kind": "Cave",
-   "level": 100,
-   "monster_count": 216,
-   "monsters": [
-    {
-     "t": 155,
-     "name": "Hắc Cân",
-     "level": 100,
-     "count": 108
-    },
-    {
-     "t": 156,
-     "name": "ảnh Côn",
-     "level": 100,
-     "count": 108
-    }
-   ],
-   "dir": "res://world/maps/map_75"
-  },
-  {
-   "id": 90,
-   "name": "Đông Phục Ngưu Sơn",
-   "kind": "Field",
-   "level": 40,
-   "monster_count": 635,
-   "monsters": [
-    {
-     "t": 7,
-     "name": "Sói xanh",
-     "level": 40,
-     "count": 212
-    },
-    {
-     "t": 8,
-     "name": "Sói tuyết",
-     "level": 40,
-     "count": 212
-    },
-    {
-     "t": 10,
-     "name": "Hỏa Hồ",
-     "level": 40,
-     "count": 211
-    }
-   ],
-   "dir": "res://world/maps/map_90"
-  },
-  {
-   "id": 92,
-   "name": "Thục Cương Sơn",
-   "kind": "Field",
-   "level": 40,
-   "monster_count": 611,
-   "monsters": [
-    {
-     "t": 17,
-     "name": "Trâu rừng",
-     "level": 40,
-     "count": 204
-    },
-    {
-     "t": 36,
-     "name": "Khỉ xám",
-     "level": 40,
-     "count": 204
-    },
-    {
-     "t": 37,
-     "name": "Hắc Diệp Hầu",
-     "level": 40,
-     "count": 203
-    }
-   ],
-   "dir": "res://world/maps/map_92"
-  },
-  {
-   "id": 93,
-   "name": "Tiến Cúc Động",
-   "kind": "Cave",
-   "level": 100,
-   "monster_count": 135,
-   "monsters": [
-    {
-     "t": 838,
-     "name": "Đoạt Mệnh Liêm",
-     "level": 100,
-     "count": 45
-    },
-    {
-     "t": 147,
-     "name": "Đao khách",
-     "level": 100,
-     "count": 45
-    },
-    {
-     "t": 148,
-     "name": "Báo đốm",
-     "level": 100,
-     "count": 45
-    }
-   ],
-   "dir": "res://world/maps/map_93"
-  },
-  {
-   "id": 121,
-   "name": "Long Môn Trấn",
-   "kind": "Country",
-   "level": 10,
-   "monster_count": 1242,
-   "monsters": [
-    {
-     "t": 31,
-     "name": "Kim Miêu",
-     "level": 10,
-     "count": 407
-    },
-    {
-     "t": 42,
-     "name": "Hươu đốm",
-     "level": 10,
-     "count": 407
-    },
-    {
-     "t": 43,
-     "name": "Heo trắng",
-     "level": 10,
-     "count": 406
-    },
-    {
-     "t": 414,
-     "name": "Mộc nhân",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 415,
-     "name": "Bao cát",
-     "level": 1,
-     "count": 8
-    },
-    {
-     "t": 413,
-     "name": "Cọc gỗ",
-     "level": 1,
-     "count": 6
-    }
-   ],
-   "dir": "res://world/maps/map_121"
-  },
-  {
-   "id": 122,
-   "name": "Hoàng Hà Nguyên Đầu",
-   "kind": "Field",
-   "level": 50,
-   "monster_count": 202,
-   "monsters": [
-    {
-     "t": 2,
-     "name": "Bạch Hổ",
-     "level": 50,
-     "count": 68
-    },
-    {
-     "t": 4,
-     "name": "Báo trắng",
-     "level": 50,
-     "count": 67
-    },
-    {
-     "t": 26,
-     "name": "Kền Kền",
-     "level": 50,
-     "count": 67
-    }
-   ],
-   "dir": "res://world/maps/map_122"
-  },
-  {
-   "id": 123,
-   "name": "Lão Hổ Động",
-   "kind": "",
-   "level": 80,
-   "monster_count": 128,
-   "monsters": [
-    {
-     "t": 140,
-     "name": "Khoái Thối",
-     "level": 80,
-     "count": 43
-    },
-    {
-     "t": 149,
-     "name": "Trường Thương",
-     "level": 80,
-     "count": 43
-    },
-    {
-     "t": 150,
-     "name": "Thanh Mi",
-     "level": 80,
-     "count": 42
-    }
-   ],
-   "dir": "res://world/maps/map_123"
-  },
-  {
-   "id": 124,
-   "name": "Hiên Viên Động",
-   "kind": "",
-   "level": 100,
-   "monster_count": 70,
-   "monsters": [
-    {
-     "t": 13,
-     "name": "Đại Tượng",
-     "level": 100,
-     "count": 35
-    },
-    {
-     "t": 14,
-     "name": "Voi Hoàng hà",
-     "level": 100,
-     "count": 35
-    }
-   ],
-   "dir": "res://world/maps/map_124"
-  },
-  {
-   "id": 125,
-   "name": "Lưu Tiên Động Tầng 1",
-   "kind": "",
-   "level": 60,
-   "monster_count": 99,
-   "monsters": [
-    {
-     "t": 146,
-     "name": "Đoạt Mệnh Liêm",
-     "level": 60,
-     "count": 33
-    },
-    {
-     "t": 161,
-     "name": "Thiết Trảo",
-     "level": 60,
-     "count": 33
-    },
-    {
-     "t": 162,
-     "name": "Đoản Kích",
-     "level": 60,
-     "count": 33
-    }
-   ],
-   "dir": "res://world/maps/map_125"
-  },
-  {
-   "id": 140,
-   "name": "Dược Vương Cốc",
-   "kind": "Cave",
-   "level": 30,
-   "monster_count": 313,
-   "monsters": [
-    {
-     "t": 34,
-     "name": "Linh Miêu",
-     "level": 30,
-     "count": 105
-    },
-    {
-     "t": 38,
-     "name": "Kim Tơ Hầu",
-     "level": 30,
-     "count": 104
-    },
-    {
-     "t": 42,
-     "name": "Hươu đốm",
-     "level": 30,
-     "count": 104
-    }
-   ],
-   "dir": "res://world/maps/map_140"
-  },
-  {
-   "id": 162,
-   "name": "Đại Lý phủ",
-   "kind": "City",
-   "level": 20,
-   "monster_count": 637,
-   "monsters": [
-    {
-     "t": 11,
-     "name": "Heo rừng",
-     "level": 20,
-     "count": 160
-    },
-    {
-     "t": 33,
-     "name": "Hoán hùng",
-     "level": 20,
-     "count": 159
-    },
-    {
-     "t": 34,
-     "name": "Linh Miêu",
-     "level": 20,
-     "count": 159
-    },
-    {
-     "t": 12,
-     "name": "Nhím",
-     "level": 20,
-     "count": 159
-    }
-   ],
-   "dir": "res://world/maps/map_162"
-  },
-  {
-   "id": 163,
-   "name": "ác Bá Địa Đạo",
-   "kind": "",
-   "level": 60,
-   "monster_count": 120,
-   "monsters": [
-    {
-     "t": 176,
-     "name": "Quái nhân",
-     "level": 60,
-     "count": 40
-    },
-    {
-     "t": 1206,
-     "name": "ác bá",
-     "level": 60,
-     "count": 40
-    },
-    {
-     "t": 1207,
-     "name": "Bát Bì",
-     "level": 60,
-     "count": 40
-    }
-   ],
-   "dir": "res://world/maps/map_163"
-  },
-  {
-   "id": 176,
-   "name": "Lâm An",
-   "kind": "Capital",
-   "level": 20,
-   "monster_count": 1000,
-   "monsters": [
-    {
-     "t": 11,
-     "name": "Heo rừng",
-     "level": 20,
-     "count": 250
-    },
-    {
-     "t": 33,
-     "name": "Hoán hùng",
-     "level": 20,
-     "count": 250
-    },
-    {
-     "t": 34,
-     "name": "Linh Miêu",
-     "level": 20,
-     "count": 250
-    },
-    {
-     "t": 12,
-     "name": "Nhím",
-     "level": 20,
-     "count": 250
-    }
-   ],
-   "dir": "res://world/maps/map_176"
-  },
-  {
-   "id": 224,
-   "name": "Sa Mạc Địa Biểu",
-   "kind": "Cave",
-   "level": 90,
-   "monster_count": 710,
-   "monsters": [
-    {
-     "t": 556,
-     "name": "Xích Luyện Xà",
-     "level": 90,
-     "count": 237
-    },
-    {
-     "t": 557,
-     "name": "Kên đất",
-     "level": 90,
-     "count": 237
-    },
-    {
-     "t": 558,
-     "name": "Bọ cạp",
-     "level": 90,
-     "count": 236
-    }
-   ],
-   "dir": "res://world/maps/map_224"
-  },
-  {
-   "id": 225,
-   "name": "Sa Mạc 1",
-   "kind": "",
-   "level": 100,
-   "monster_count": 410,
-   "monsters": [
-    {
-     "t": 561,
-     "name": "Lưu Vân",
-     "level": 100,
-     "count": 137
-    },
-    {
-     "t": 560,
-     "name": "Lưu Quang",
-     "level": 100,
-     "count": 137
-    },
-    {
-     "t": 917,
-     "name": "Lưu Phong",
-     "level": 100,
-     "count": 136
-    }
-   ],
-   "dir": "res://world/maps/map_225"
-  },
-  {
-   "id": 226,
-   "name": "Sa Mạc 2",
-   "kind": "",
-   "level": 100,
-   "monster_count": 390,
-   "monsters": [
-    {
-     "t": 561,
-     "name": "Lưu Vân",
-     "level": 100,
-     "count": 130
-    },
-    {
-     "t": 560,
-     "name": "Lưu Quang",
-     "level": 100,
-     "count": 130
-    },
-    {
-     "t": 917,
-     "name": "Lưu Phong",
-     "level": 100,
-     "count": 130
-    }
-   ],
-   "dir": "res://world/maps/map_226"
-  },
-  {
-   "id": 227,
-   "name": "Sa Mạc 3",
-   "kind": "",
-   "level": 100,
-   "monster_count": 680,
-   "monsters": [
-    {
-     "t": 534,
-     "name": "Tật Vũ",
-     "level": 100,
-     "count": 136
-    },
-    {
-     "t": 535,
-     "name": "Tật Phong",
-     "level": 100,
-     "count": 136
-    },
-    {
-     "t": 536,
-     "name": "Tật Vũ",
-     "level": 100,
-     "count": 136
-    },
-    {
-     "t": 537,
-     "name": "Tật Viêm",
-     "level": 100,
-     "count": 136
-    },
-    {
-     "t": 538,
-     "name": "Tật Điện",
-     "level": 100,
-     "count": 136
-    }
-   ],
-   "dir": "res://world/maps/map_227"
-  },
-  {
-   "id": 319,
-   "name": "Lâm Du Quan",
-   "kind": "Field",
-   "level": 80,
-   "monster_count": 685,
-   "monsters": [
-    {
-     "t": 588,
-     "name": "Bôn Lôi",
-     "level": 80,
-     "count": 343
-    },
-    {
-     "t": 589,
-     "name": "Ngân Nha",
-     "level": 80,
-     "count": 342
-    }
-   ],
-   "dir": "res://world/maps/map_319"
-  },
-  {
-   "id": 320,
-   "name": "Chân Núi Trường Bạch",
-   "kind": "Field",
-   "level": 90,
-   "monster_count": 792,
-   "monsters": [
-    {
-     "t": 590,
-     "name": "Đông Bắc hổ",
-     "level": 90,
-     "count": 198
-    },
-    {
-     "t": 591,
-     "name": "Độc Bộ",
-     "level": 90,
-     "count": 198
-    },
-    {
-     "t": 592,
-     "name": "Xích Chưởng",
-     "level": 90,
-     "count": 198
-    },
-    {
-     "t": 593,
-     "name": "Tuyết ảnh",
-     "level": 90,
-     "count": 198
-    }
-   ],
-   "dir": "res://world/maps/map_320"
-  },
-  {
-   "id": 321,
-   "name": "Trường Bạch Sơn Nam 1",
-   "kind": "",
-   "level": 100,
-   "monster_count": 1583,
-   "monsters": [
-    {
-     "t": 598,
-     "name": "Sương Đao",
-     "level": 100,
-     "count": 396
-    },
-    {
-     "t": 599,
-     "name": "Lãnh Cung",
-     "level": 100,
-     "count": 396
-    },
-    {
-     "t": 600,
-     "name": "Giáng Chùy",
-     "level": 100,
-     "count": 396
-    },
-    {
-     "t": 601,
-     "name": "Sãn Vũ",
-     "level": 100,
-     "count": 395
-    }
-   ],
-   "dir": "res://world/maps/map_321"
-  },
-  {
-   "id": 322,
-   "name": "Trường Bạch Sơn Bắc 1",
-   "kind": "",
-   "level": 100,
-   "monster_count": 1471,
-   "monsters": [
-    {
-     "t": 594,
-     "name": "Đao Trảm",
-     "level": 100,
-     "count": 368
-    },
-    {
-     "t": 595,
-     "name": "Lạc Quang",
-     "level": 100,
-     "count": 368
-    },
-    {
-     "t": 596,
-     "name": "Hàn Thương",
-     "level": 100,
-     "count": 368
-    },
-    {
-     "t": 597,
-     "name": "Đoạt Phách",
-     "level": 100,
-     "count": 367
-    }
-   ],
-   "dir": "res://world/maps/map_322"
-  },
-  {
-   "id": 336,
-   "name": "Phong Lăng Độ",
-   "kind": "Cave",
-   "level": 100,
-   "monster_count": 968,
-   "monsters": [
-    {
-     "t": 707,
-     "name": "Thần Tý",
-     "level": 100,
-     "count": 484
-    },
-    {
-     "t": 708,
-     "name": "Lãnh Thương",
-     "level": 100,
-     "count": 484
-    }
-   ],
-   "dir": "res://world/maps/map_336"
-  },
-  {
-   "id": 340,
-   "name": "Mạc Cao Quật (1)",
-   "kind": "Cave",
-   "level": 100,
-   "monster_count": 1710,
-   "monsters": [
-    {
-     "t": 703,
-     "name": "Phi Sa",
-     "level": 100,
-     "count": 428
-    },
-    {
-     "t": 704,
-     "name": "Tẩu Thạch",
-     "level": 100,
-     "count": 428
-    },
-    {
-     "t": 705,
-     "name": "Sa Đạo",
-     "level": 100,
-     "count": 427
-    },
-    {
-     "t": 706,
-     "name": "Mạc Tặc",
-     "level": 100,
-     "count": 427
-    }
-   ],
-   "dir": "res://world/maps/map_340"
-  }
- ]
+  ]
 }

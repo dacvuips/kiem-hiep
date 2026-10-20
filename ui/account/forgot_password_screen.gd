@@ -10,14 +10,14 @@ const RESEND_COOLDOWN := 60
 @onready var _step_reset: Control = %StepReset
 @onready var _user: LineEdit = %UserInput
 @onready var _email: LineEdit = %EmailInput
-@onready var _send: TextureButton = %SendButton
+@onready var _send: Button = %SendButton
 @onready var _have_code: Button = %HaveCodeButton
 @onready var _desc: Label = %Desc
 @onready var _code: LineEdit = %CodeInput
 @onready var _password: LineEdit = %NewPasswordInput
 @onready var _password2: LineEdit = %NewPasswordConfirmInput
 @onready var _eye: Button = %EyeButton
-@onready var _reset: TextureButton = %ResetButton
+@onready var _reset: Button = %ResetButton
 @onready var _resend: Button = %ResendButton
 @onready var _back: Button = %BackButton
 @onready var _message: Label = %Message
@@ -28,7 +28,8 @@ var _cooldown_timer: Timer
 func _ready() -> void:
 	_setup_screen()
 	_bind_eye(_eye, [_password, _password2])
-	for b: TextureButton in [_send, _reset]:
+	for b: Button in [_send, _reset, _resend, _have_code, _back]:
+		b.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 		_bind_hover(b)
 	_send.pressed.connect(_on_send_pressed)
 	_reset.pressed.connect(_on_reset_pressed)
@@ -46,15 +47,17 @@ func _ready() -> void:
 	_cooldown_timer.timeout.connect(_tick_cooldown)
 	add_child(_cooldown_timer)
 	_user.text = AccountScreen.next_login_username
-	(_email if _user.text != "" else _user).grab_focus()
+	if not OS.has_feature("mobile"):
+		(_email if _user.text != "" else _user).grab_focus()
 
 func _show_step(reset: bool) -> void:
 	_step_request.visible = not reset
 	_step_reset.visible = reset
-	if reset:
-		_code.grab_focus()
-	else:
-		_user.grab_focus()
+	if not OS.has_feature("mobile"):
+		if reset:
+			_code.grab_focus()
+		else:
+			_user.grab_focus()
 
 # ---------------------------------------------------------------- bước 1
 

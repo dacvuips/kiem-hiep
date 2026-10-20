@@ -1,5 +1,7 @@
 extends CanvasLayer
 class_name ItemDetailPopup
+
+const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Khung xem chi tiết 1 món đồ kiểu VLTK mobile: tên (màu theo phẩm chất) trên cùng, ô ảnh vật phẩm + Cấp / loại đồ, phần mô tả thuộc tính (cuộn được nếu dài), cột nút hành động lớn bên phải (VD Trang bị, Vứt bỏ, Tháo).
 ## Bấm ra ngoài để tắt. Bố cục nằm trong ItemDetailPopup.tscn, khung/nút lấy từ GameUi (chỉ tên món giữ màu theo phẩm chất).
 
@@ -50,6 +52,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var body: RichTextLabel = %Body
 	(%BodyScroll as ScrollContainer).custom_minimum_size.y = minf(body.get_content_height() + 4.0, BODY_MAX_HEIGHT)
+	TouchScrollHelperScript.attach(%BodyScroll as ScrollContainer, $Center/Row/Card as Control)
 
 func _fill_header() -> void:
 	var name_label: Label = %NameLabel

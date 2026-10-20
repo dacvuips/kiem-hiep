@@ -435,8 +435,8 @@ func test_guild() -> void:
 	var gt := GuildService.new(t)
 	gt.create("Thử Thách", Camp.Type.EVIL)
 	var created := int(gt.data()["created_at"])
-	check("bang: còn trong thử thách 3 ngày", gt.trial_seconds_left(created + 1000) == 259200 - 1000)
-	check("bang: hết 3 ngày mà dưới 16 người thì giải tán", gt.check_trial(created + 259200) and not gt.in_guild())
+	check("bang: còn trong thử thách 2 tuần", gt.trial_seconds_left(created + 1000) == 1209600 - 1000)
+	check("bang: hết 2 tuần mà dưới 16 người thì giải tán", gt.check_trial(created + 1209600) and not gt.in_guild())
 	## Lưu / nạp
 	var s2 := rich_profile()
 	var g2 := GuildService.new(s2)

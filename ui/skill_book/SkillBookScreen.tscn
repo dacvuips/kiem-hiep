@@ -79,7 +79,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 10
 
 [node name="Left" type="VBoxContainer" parent="Center/Frame/Root/Body"]
-custom_minimum_size = Vector2(430, 0)
+custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
 theme_override_constants/separation = 0
 
@@ -220,7 +220,7 @@ theme_type_variation = &"GameButton"
 text = "Nâng cấp (TEST)"
 
 [node name="Right" type="PanelContainer" parent="Center/Frame/Root/Body"]
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 theme_type_variation = &"GameInnerPanel"
 
@@ -283,6 +283,6 @@ autowrap_mode = 3
 
 [node name="Wheel" type="Control" parent="Center/Frame/Root/Body/Right/RightBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(276, 310)
+custom_minimum_size = Vector2(320, 310)
 layout_mode = 2
 size_flags_vertical = 3

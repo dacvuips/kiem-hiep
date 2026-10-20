@@ -4,6 +4,9 @@ class_name StageData
 ## Tên hiển thị, VD "Màn 1 - Thanh Phong Thôn"
 @export var stage_name: String = ""
 
+## Ảnh thu nhỏ xem trước của bàn chơi (nếu null, tự động lấy từ minimap của vltk_map_id)
+@export var preview_texture: Texture2D
+
 ## true = map cho nhân vật tự di chuyển -> hiện joystick kéo góc dưới-trái (MoveJoystick). Tắt với
 ## map không cần đi lại (VD đứng yên đánh boss) để joystick không chiếm chỗ màn hình.
 @export var show_move_joystick: bool = true
@@ -34,3 +37,17 @@ class_name StageData
 @export_group("Âm thanh / khác")
 ## Map VLTK gốc (STT trong maplist.ini) dùng để lấy NHẠC NỀN của màn này (MusicSet.txt). 0 = dùng nhạc mặc định.
 @export var vltk_map_id: int = 0
+
+## Lấy ảnh xem trước của bàn: nếu có preview_texture thì dùng; nếu không thì lấy minimap của map_id.
+func get_preview_texture() -> Texture2D:
+	if preview_texture != null:
+		return preview_texture
+	var mid := vltk_map_id if vltk_map_id > 0 else 20
+	var path := "res://world/maps/map_%d/minimap.jpg" % mid
+	if ResourceLoader.exists(path):
+		return load(path)
+	if FileAccess.file_exists(path):
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null:
+			return ImageTexture.create_from_image(img)
+	return null

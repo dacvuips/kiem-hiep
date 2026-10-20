@@ -33,10 +33,14 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 from PIL import Image
 
@@ -93,7 +97,7 @@ def _extract_vng(paks):
     got = 0
     for sc in sorted(scripts):
         try:
-            data = paks.vng.read(sc)
+            data = paks.read(sc)
         except UnicodeEncodeError:
             continue
         if data is not None:
@@ -163,7 +167,10 @@ def to_int(text, default=0):
 def read_table(path):
     """[(cột -> chuỗi UTF-8 (tên tiếng Việt TCVN), cột -> chuỗi GBK (đường dẫn file))]."""
     raw_lines = path.read_bytes().split(b"\n")
-    viet = subprocess.run(["iconv", "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(path)],
+    iconv_bin = "iconv"
+    if shutil.which("iconv") is None and os.path.isfile(r"C:\Program Files\Git\usr\bin\iconv.exe"):
+        iconv_bin = r"C:\Program Files\Git\usr\bin\iconv.exe"
+    viet = subprocess.run([iconv_bin, "-f", "TCVN5712-1", "-t", "UTF-8", "-c", str(path)],
                           capture_output=True, check=True).stdout.decode("utf-8", "replace").split("\n")
     header = raw_lines[0].rstrip(b"\r").decode("latin1").split("\t")
     rows = []
@@ -484,6 +491,21 @@ def main():
         ## Skill 1-4 của mọi quái (data/monsters/monsters.json do tools/import_vltk_monsters.py xuất).
         mon = json.loads((ROOT / "data/monsters/monsters.json").read_text(encoding="utf-8"))
         roots += sorted({sk for m in mon.values() for sk, _lv in m["skills"] if sk > 0})
+        nl_path = ROOT / "data/monsters/npc_levels.json"
+        if nl_path.exists():
+            nl = json.loads(nl_path.read_text(encoding="utf-8"))
+            pool = nl.get("pool", [])
+            npcs = nl.get("npcs", {})
+            nl_skills = set()
+            for s_dict in npcs.values():
+                for fields in s_dict.values():
+                    for sk_key in ("Skill1", "Skill2", "Skill3", "Skill4"):
+                        idx = fields.get(sk_key)
+                        if idx is not None and idx < len(pool):
+                            for sid in pool[idx]:
+                                if sid > 0:
+                                    nl_skills.add(sid)
+            roots += sorted(nl_skills)
     todo, seen, parent_of = list(roots), set(), {}
     while todo:
         sid = todo.pop()

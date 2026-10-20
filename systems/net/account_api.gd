@@ -49,6 +49,21 @@ func is_logged_in() -> bool:
 func username() -> String:
 	return str(account.get("username", ""))
 
+## Kiểm tra tài khoản có quyền GM (được server xác nhận hoặc chỉ định qua GM_ACCOUNTS / cú pháp (GM))
+func is_gm() -> bool:
+	if is_logged_in():
+		if bool(account.get("is_gm", false)):
+			return true
+		var u := username().to_lower()
+		if "(gm)" in u or "[gm]" in u:
+			return true
+		if GameManager.local_profile != null:
+			var dname := GameManager.local_profile.display_name.to_lower()
+			if "(gm)" in dname or "[gm]" in dname:
+				return true
+		return false
+	return OS.is_debug_build()
+
 # ---------------------------------------------------------------- tài khoản
 
 func login(user: String, password: String, remember: bool) -> Dictionary:

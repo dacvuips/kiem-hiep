@@ -59,6 +59,7 @@ func _confirm() -> void:
 	var added := _profile.add_potential_points(_stat as PlayerProfile.BaseStat, int(amount.value))
 	if added > 0:
 		SaveManager.save_profile(_profile)
+		SaveManager.flush_online()
 	if _on_done.is_valid():
 		_on_done.call(added)
 	queue_free()

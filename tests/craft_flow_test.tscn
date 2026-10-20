@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/craft_flow_test.gd" id="s"]
+
+[node name="CraftFlowTest" type="Node"]
+script = ExtResource("s")

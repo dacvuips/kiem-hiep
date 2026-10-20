@@ -13,7 +13,7 @@ extends Control
 ## Tăng khi sửa launcher/GodotApp.java theo cách bản game mới phụ thuộc vào (manifest.min_launcher).
 const LAUNCHER_VERSION := 1
 const SETTING_URL := "kiem_hiep/network/account_url"
-const DEFAULT_URL := "http://127.0.0.1:8080"
+const DEFAULT_URL := "https://kiem-hiep-api.viettheo.site"
 const CONTENT_DIR := "user://content"
 const INSTALLED_PATH := "user://content/installed.json"
 ## GodotApp.java đọc lúc mở app: dòng 1 = đường dẫn core.pck, dòng 2 = thư mục gói. Đọc xong xoá (dùng 1 lần),
@@ -46,6 +46,9 @@ var _speed_b0 := 0
 var _speed := 0.0
 
 func _ready() -> void:
+	#if OS.has_feature("editor"):
+		#get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
+		#return
 	_base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
 	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
 		if arg.begins_with("--account-url="):
@@ -337,46 +340,30 @@ func _parse_url(url: String) -> Dictionary:
 		return {}
 	return {"tls": tls, "host": host, "port": port, "path": path}
 
-# --- Vào game ---
-
 func _boot(installed: Dictionary) -> void:
 	_say("Đang vào game...")
 	_bar.visible = false
 	_detail.text = ""
-	var core := ProjectSettings.globalize_path(CONTENT_DIR.path_join(str(installed["packs"][0]["file"])))
-	var dir := ProjectSettings.globalize_path(CONTENT_DIR)
-	await get_tree().process_frame
-	if OS.has_feature("android"):
-		# Activity chính của Android bỏ qua tham số dòng lệnh gửi kèm (chống app khác chèn tham số),
-		# nên đường dẫn gói đi qua file đánh dấu; GodotApp.java đọc nó khi app khởi động lại.
-		var f := FileAccess.open(BOOT_MARKER, FileAccess.WRITE)
-		if f == null:
-			_fail("Không ghi được dữ liệu vào máy (bộ nhớ đầy?).")
+	var packs: Array = installed.get("packs", [])
+	# Nạp toàn bộ các gói tài nguyên đã tải về vào virtual filesystem res://
+	for i in range(packs.size()):
+		var p: Dictionary = packs[i]
+		var file_name: String = str(p.get("file", ""))
+		var pck_path := CONTENT_DIR.path_join(file_name)
+		if FileAccess.file_exists(pck_path):
+			var replace := (i == 0)
+			var ok := ProjectSettings.load_resource_pack(pck_path, replace)
+			print("Launcher: Nạp gói %s (replace=%s) -> %s" % [file_name, replace, ok])
+		else:
+			_fail("Thiếu gói dữ liệu: " + file_name)
 			return
-		f.store_string(core + "\n" + dir + "\n")
-		f.close()
-		# Trên Android, OS.create_instance thường trả về PID giả lập mà không khởi động lại activity.
-		# Ưu tiên gọi thẳng restartApp() qua Java.
-		_restart_via_java()
-		return
-	# Máy tính (chạy thử launcher): mở tiến trình game mới rồi đóng launcher.
-	var args := PackedStringArray(["--main-pack", core, "++", "--kh-content=" + dir])
-	args.append_array(OS.get_cmdline_user_args())
-	var pid := OS.create_instance(args)
-	if pid < 0:
-		_fail("Không mở được game.")
-		return
-	print("Launcher: đã mở game (pid %d)" % pid)
-	get_tree().quit()
+
+	await get_tree().process_frame
+	print("Launcher: Chuyển cảnh sang màn hình đăng nhập...")
+	get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
 
 func _restart_via_java() -> void:
-	if Engine.has_singleton("JavaClassWrapper"):
-		var app: Variant = Engine.get_singleton("JavaClassWrapper").wrap("com.godot.game.GodotApp")
-		if app != null:
-			app.restartApp()
-			return
-	_say("Đã tải xong. Hãy mở lại game.")
-	_set_button("Thoát", func() -> void: get_tree().quit())
+	pass
 
 # --- Tiện ích file ---
 
@@ -424,24 +411,25 @@ func _write_json_atomic(path: String, data: Dictionary) -> bool:
 
 func _build_ui() -> void:
 	var bg := TextureRect.new()
-	bg.texture = load("res://art/bg.jpg")
+	var bg_res := "res://art/bg.jpg" if ResourceLoader.exists("res://art/bg.jpg") else "res://launcher/art/bg.jpg"
+	if ResourceLoader.exists(bg_res):
+		bg.texture = load(bg_res)
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0, 0.35)
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(shade)
 
 	var logo := TextureRect.new()
-	logo.texture = load("res://art/logo.png")
+	var logo_res := "res://art/logo.png" if ResourceLoader.exists("res://art/logo.png") else "res://launcher/art/logo.png"
+	if ResourceLoader.exists(logo_res):
+		logo.texture = load(logo_res)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.anchor_left = 0.3
-	logo.anchor_right = 0.7
-	logo.anchor_top = 0.08
-	logo.anchor_bottom = 0.5
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	logo.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	logo.offset_left = 24
+	logo.offset_top = 20
+	logo.offset_right = 284
+	logo.offset_bottom = 158
 	add_child(logo)
 
 	var box := VBoxContainer.new()
@@ -498,6 +486,9 @@ func _label(font_size: int) -> Label:
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	l.add_theme_constant_override("outline_size", 6)
+	var font_res := "res://art/BeVietnamPro-Regular.ttf" if ResourceLoader.exists("res://art/BeVietnamPro-Regular.ttf") else "res://launcher/art/BeVietnamPro-Regular.ttf"
+	if ResourceLoader.exists(font_res):
+		l.add_theme_font_override("font", load(font_res))
 	return l
 
 func _say(text: String) -> void:

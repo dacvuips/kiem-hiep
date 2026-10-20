@@ -18,6 +18,7 @@ class_name FieldServer
 
 const OP_CREATE := 1      ## {map_id, tier (0 = Thường, 10-12 = Địa Ngục), stars}
 const OP_JOIN := 2        ## {room, map_id, tier}
+const OP_GUILD := 3       ## {guild, map_id}
 
 const MAX_MEMBERS := 8
 const REPORT_EVERY := 2.0
@@ -70,9 +71,13 @@ func on_field(c, b: StreamPeerBuffer) -> void:
 			_create(c, int(args.get("map_id", 0)), int(args.get("tier", 0)), int(args.get("stars", 1)))
 		OP_JOIN:
 			_join(c, str(args.get("room", "")).strip_edges(), int(args.get("map_id", 0)), int(args.get("tier", 0)))
+		OP_GUILD:
+			_guild_enter(c, str(args.get("guild", "")).strip_edges(), int(args.get("map_id", 921)))
 
 ## Map được phép: tab Thường = mọi map trong danh mục luyện công; Địa Ngục = map của nhóm đó (MapCatalog.HELL_MAPS). {} = không hợp lệ.
 static func map_entry(map_id: int, tier: int) -> Dictionary:
+	if map_id in [921, 922, 923, 924]:
+		return {"id": map_id, "name": "Tổng Đà Bang Hội", "dir": "res://world/maps/map_%d" % map_id, "level": 1}
 	var maps: Array = MapCatalog.hell_maps(tier) if tier != 0 else MapCatalog.all()
 	for m in maps:
 		if int(m["id"]) == map_id:
@@ -96,9 +101,16 @@ func _create(c, map_id: int, tier: int, stars: int) -> void:
 	if slot == _next_slot:
 		_next_slot += 1
 	var hell := tier != 0
+	var spawn_center: Vector2 = grid.default_center()
+	if m.has("arena_center"):
+		var ac = m["arena_center"]
+		if ac is Vector2:
+			spawn_center = ac
+		elif ac is Array and (ac as Array).size() >= 2:
+			spawn_center = Vector2(float(ac[0]), float(ac[1]))
 	var r := {"id": id, "rid": int(id), "map_id": map_id, "name": str(m["name"]), "tier": tier,
 		"stars": clampi(stars, 1, MapCatalog.HELL_MAX_STARS) if hell else 0, "level": int(m["level"]), "dir": str(m["dir"]),
-		"grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS), "spawn": grid.open_spawn_near(grid.default_center()),
+		"grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS), "spawn": grid.open_spawn_near(spawn_center),
 		"host": c.character_id, "host_name": c.entity.name, "members": [], "monsters": []}
 	rooms[id] = r
 	_rooms_by_rid[r.rid] = r
@@ -117,6 +129,42 @@ func _join(c, id: String, map_id: int, tier: int) -> void:
 	if (r.members as Array).size() >= MAX_MEMBERS:
 		_reject(c, "Phòng #%s đã đủ %d người." % [id, MAX_MEMBERS])
 		return
+	_enter(c, r)
+
+## Vào hoặc mở Tổng Đà Bang Hội (mọi thành viên cùng bang vào chung 1 phòng).
+func _guild_enter(c, guild_name: String, map_id: int) -> void:
+	if guild_name == "":
+		_reject(c, "Bạn chưa có bang hội.")
+		return
+	if map_id <= 0:
+		map_id = 921
+	for r in rooms.values():
+		if str(r.get("guild", "")) == guild_name:
+			_enter(c, r)
+			return
+	var m := map_entry(map_id, 0)
+	if m.is_empty() or not MapCatalog.is_playable(m):
+		_reject(c, "Bản đồ Tổng Đà chưa sẵn sàng trên máy chủ.")
+		return
+	var grid: MapGrid = _grids.get(map_id)
+	if grid == null:
+		grid = MapGrid.load_from(str(m["dir"]))
+		if grid == null:
+			_reject(c, "Máy chủ chưa có bản đồ này.")
+			return
+		_grids[map_id] = grid
+	var id := _new_id()
+	var slot: int = _free_slots.pop_back() if not _free_slots.is_empty() else _next_slot
+	if slot == _next_slot:
+		_next_slot += 1
+	var spawn_center: Vector2 = grid.default_center()
+	var r := {"id": id, "rid": int(id), "map_id": map_id, "name": "Tổng Đà Bang Hội - %s" % guild_name, "tier": 0,
+		"stars": 0, "level": 1, "dir": str(m["dir"]), "grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS),
+		"spawn": grid.open_spawn_near(spawn_center), "host": c.character_id, "host_name": c.entity.name,
+		"members": [], "monsters": [], "guild": guild_name, "max": 100}
+	rooms[id] = r
+	_rooms_by_rid[r.rid] = r
+	print("Mở Tổng Đà Bang Hội #%s: %s — %s khởi tạo" % [id, guild_name, r.host_name])
 	_enter(c, r)
 
 ## ID 6 số chưa có phòng nào dùng; chữ số đầu = index + 1 (không trùng phòng của tiến trình field khác).
@@ -169,6 +217,12 @@ func on_leave(c) -> void:
 	if c.entity:
 		c.entity.room_id = 0
 		c.entity.cell_base = Vector2i.ZERO
+	if r.get("guild", "") != "":
+		if (r.members as Array).is_empty():
+			_close(r, "")
+		else:
+			_broadcast(r)
+		return
 	if int(r.host) == c.character_id:
 		_close(r, "Chủ phòng %s đã rời — phòng #%s đóng." % [r.host_name, id])
 	else:
@@ -213,7 +267,7 @@ func _room_msg(r: Dictionary, op: String) -> Dictionary:
 		if m and m.entity:
 			names.append(m.entity.name)
 	return {"op": op, "id": r.id, "map_id": r.map_id, "name": r.name, "tier": r.tier, "stars": r.stars, "host": r.host_name,
-		"members": names, "max": MAX_MEMBERS}
+		"members": names, "max": int(r.get("max", MAX_MEMBERS)), "guild": str(r.get("guild", ""))}
 
 ## Danh sách người trong phòng đổi: báo mọi người trong phòng.
 func _broadcast(r: Dictionary) -> void:

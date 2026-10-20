@@ -19,6 +19,11 @@ const OP_WATCH := 3       ## {room, password} — vào xem
 const OP_MATCH := 4       ## {mode} — tự tìm đối thủ
 const OP_LEAVE := 5
 const OP_STATE := 6
+const OP_REJECT_OPPONENT := 7
+const OP_SWITCH_TEAM := 8
+const OP_READY := 9
+const OP_START := 10
+const OP_KICK_MEMBER := 11
 
 const WAITING := "waiting"
 const PREPARE := "prepare"
@@ -56,6 +61,8 @@ func _init(server) -> void:
 ## Tâm vùng trống liền lớn nhất quanh điểm xuất phát (đấu trường gốc là lưới ô đấu có rào; điểm xuất phát có thể nằm trên rào) —
 ## cùng cách PkMatch (bản offline) chọn sân.
 static func _arena_center(grid: MapGrid) -> Vector2:
+	if PkRules.ARENA_CENTER != Vector2.ZERO:
+		return PkRules.ARENA_CENTER
 	var around := grid.default_center()
 	var seen := {}
 	var best: Array[Vector2i] = []
@@ -107,7 +114,15 @@ func allows_hit(a, b) -> bool:
 	if id == "" or id != room_of.get(b.character_id, "") or a == b:
 		return false
 	var r: Dictionary = rooms.get(id, {})
-	return r.get("state", "") == FIGHT and r["fighters"].has(a.character_id) and r["fighters"].has(b.character_id)
+	if r.get("state", "") != FIGHT:
+		return false
+	var team_a: Array = r.get("team_a", [])
+	var team_b: Array = r.get("team_b", [])
+	var a_in_a := team_a.has(a.character_id)
+	var b_in_a := team_a.has(b.character_id)
+	var a_in_b := team_b.has(a.character_id)
+	var b_in_b := team_b.has(b.character_id)
+	return (a_in_a and b_in_b) or (a_in_b and b_in_a)
 
 ## Tầm nhìn đổi (vào / rời phòng): bắt người đó + mọi người cùng phòng quét lại thực thể quanh mình ở lượt gửi tới.
 func _refresh_view(id: String) -> void:
@@ -126,9 +141,9 @@ func on_arena(c, b: StreamPeerBuffer) -> void:
 	var args: Dictionary = parsed if parsed is Dictionary else {}
 	match op:
 		OP_CREATE:
-			_create(c, int(args.get("mode", PkRules.Mode.LIEN_DAU)), str(args.get("password", "")).left(16))
+			_create(c, int(args.get("mode", PkRules.Mode.LIEN_DAU)), str(args.get("password", "")).left(16), int(args.get("team_size", 1)))
 		OP_JOIN:
-			_join(c, str(args.get("room", "")), str(args.get("password", "")), false)
+			_join(c, str(args.get("room", "")), str(args.get("password", "")), false, str(args.get("team", "")))
 		OP_WATCH:
 			_join(c, str(args.get("room", "")), str(args.get("password", "")), true)
 		OP_MATCH:
@@ -138,6 +153,16 @@ func on_arena(c, b: StreamPeerBuffer) -> void:
 			gs.kick(c, "arena_end", "Đã rời đấu trường")
 		OP_STATE:
 			_send_state(c)
+		OP_REJECT_OPPONENT:
+			_reject_opponent(c)
+		OP_SWITCH_TEAM:
+			_switch_team(c, str(args.get("team", "")))
+		OP_READY:
+			_set_ready(c, bool(args.get("ready", true)))
+		OP_START:
+			_start_match(c)
+		OP_KICK_MEMBER:
+			_kick_member(c, int(args.get("target_cid", 0)))
 
 func _mode_ok(c, mode: int) -> bool:
 	if not PkRules.MODE_NAMES.has(mode):
@@ -149,19 +174,20 @@ func _mode_ok(c, mode: int) -> bool:
 		return false
 	return true
 
-func _create(c, mode: int, password: String) -> void:
+func _create(c, mode: int, password: String, team_size: int = 1) -> void:
 	if room_of.has(c.character_id) or not _mode_ok(c, mode):
 		return
 	var sect := SectRegistry.get_by_id(c.profile.sect_id)
 	var id := ""
 	while id == "" or rooms.has(id):
 		id = "%06d" % randi_range(100000, 999999)
-	rooms[id] = {"id": id, "mode": mode, "password": password, "host": c.profile.display_name, "level": c.profile.level,
-		"sect_id": c.profile.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái", "fighters": [c.character_id],
-		"spectators": [], "state": WAITING, "left": 0.0, "winner": ""}
+	var s_size: int = clampi(team_size, 1, 8) if mode == PkRules.Mode.THACH_DAU else 1
+	rooms[id] = {"id": id, "mode": mode, "team_size": s_size, "password": password, "host": c.profile.display_name, "level": c.profile.level,
+		"sect_id": c.profile.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái", "team_a": [c.character_id], "team_b": [],
+		"fighters": [c.character_id], "ready": {c.character_id: true}, "spectators": [], "state": WAITING, "left": 0.0, "winner": ""}
 	_enter_room(c, id, false)
 
-func _join(c, id: String, password: String, watch: bool) -> void:
+func _join(c, id: String, password: String, watch: bool, target_team := "") -> void:
 	if room_of.has(c.character_id):
 		return
 	var r: Dictionary = rooms.get(id, {})
@@ -172,7 +198,10 @@ func _join(c, id: String, password: String, watch: bool) -> void:
 		_reject(c, "Sai mật khẩu phòng #%s." % id)
 		return
 	if not watch:
-		if r["state"] != WAITING or r["fighters"].size() >= 2:
+		var team_size: int = int(r.get("team_size", 1))
+		var team_a: Array = r.get("team_a", [])
+		var team_b: Array = r.get("team_b", [])
+		if r["state"] != WAITING or (team_a.size() >= team_size and team_b.size() >= team_size):
 			_reject(c, "Phòng #%s đã đủ người đấu — có thể vào xem." % id)
 			return
 		if not _mode_ok(c, int(r["mode"])):
@@ -181,6 +210,18 @@ func _join(c, id: String, password: String, watch: bool) -> void:
 			_reject(c, "Chênh lệch quá %d cấp%s với chủ phòng." % [PkRules.MATCH_LEVEL_DIFF,
 					" hoặc khác môn phái" if int(r["mode"]) == PkRules.Mode.DAI_HOI else ""])
 			return
+		if target_team == "b" and team_b.size() < team_size:
+			team_b.append(c.character_id)
+		elif target_team == "a" and team_a.size() < team_size:
+			team_a.append(c.character_id)
+		elif team_b.size() < team_size:
+			team_b.append(c.character_id)
+		elif team_a.size() < team_size:
+			team_a.append(c.character_id)
+		r["team_a"] = team_a
+		r["team_b"] = team_b
+		r["fighters"] = team_a + team_b
+		(r["ready"] as Dictionary)[c.character_id] = false
 	_enter_room(c, id, watch)
 
 func _match(c, mode: int) -> void:
@@ -216,17 +257,126 @@ func _enter_room(c, id: String, watch: bool) -> void:
 		gs.teleport(c, spectator_pos)
 	elif not r["fighters"].has(c.character_id):
 		r["fighters"].append(c.character_id)
-	if not watch:
-		gs.teleport(c, slots[r["fighters"].find(c.character_id)])
 	_refresh_view(id)
 	_send(c, {"op": "room", "role": "spectator" if watch else "fighter"})
-	if r["fighters"].size() == 2 and r["state"] == WAITING:
-		r["state"] = PREPARE
-		r["left"] = PkRules.PREPARE_SEC
-		for i in 2:
-			var f = gs._by_character.get(r["fighters"][i])
-			if f:
-				gs.teleport(f, slots[i])
+	if int(r.get("mode", 0)) != PkRules.Mode.THACH_DAU and r["fighters"].size() == 2 and r["state"] == WAITING:
+		_start_prepare(id)
+	_broadcast_state(id)
+
+func _start_prepare(id: String) -> void:
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty():
+		return
+	r["state"] = PREPARE
+	r["left"] = PkRules.PREPARE_SEC
+	var team_size: int = int(r.get("team_size", 1))
+	var spawn_slots := PkRules.get_spawn_slots(center, team_size)
+	var slots_a: Array = spawn_slots["team_a"]
+	var slots_b: Array = spawn_slots["team_b"]
+	var team_a: Array = r.get("team_a", [])
+	var team_b: Array = r.get("team_b", [])
+	for i in team_a.size():
+		var f = gs._by_character.get(team_a[i])
+		if f:
+			gs.teleport(f, gs.grid.free_near(slots_a[mini(i, slots_a.size() - 1)]))
+	for i in team_b.size():
+		var f = gs._by_character.get(team_b[i])
+		if f:
+			gs.teleport(f, gs.grid.free_near(slots_b[mini(i, slots_b.size() - 1)]))
+
+func _switch_team(c, target_team: String) -> void:
+	var id: String = room_of.get(c.character_id, "")
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty() or r["state"] != WAITING:
+		return
+	var team_size: int = int(r.get("team_size", 1))
+	var team_a: Array = r.get("team_a", [])
+	var team_b: Array = r.get("team_b", [])
+	if target_team == "a" and team_a.size() < team_size:
+		team_b.erase(c.character_id)
+		if not team_a.has(c.character_id):
+			team_a.append(c.character_id)
+	elif target_team == "b" and team_b.size() < team_size:
+		team_a.erase(c.character_id)
+		if not team_b.has(c.character_id):
+			team_b.append(c.character_id)
+	r["team_a"] = team_a
+	r["team_b"] = team_b
+	r["fighters"] = team_a + team_b
+	_broadcast_state(id)
+
+func _set_ready(c, is_ready: bool) -> void:
+	var id: String = room_of.get(c.character_id, "")
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty() or r["state"] != WAITING:
+		return
+	(r["ready"] as Dictionary)[c.character_id] = is_ready
+	_broadcast_state(id)
+
+func _start_match(c) -> void:
+	var id: String = room_of.get(c.character_id, "")
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty() or r["state"] != WAITING:
+		return
+	var team_a: Array = r.get("team_a", [])
+	var team_b: Array = r.get("team_b", [])
+	if team_a.is_empty() or team_a[0] != c.character_id:
+		_reject(c, "Chỉ chủ phòng mới có thể bắt đầu trận đấu.")
+		return
+	if team_b.is_empty():
+		_reject(c, "Chưa có đối thủ tham gia.")
+		return
+	_start_prepare(id)
+	_broadcast_state(id)
+
+func _kick_member(c, target_cid: int) -> void:
+	var id: String = room_of.get(c.character_id, "")
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty() or r["state"] != WAITING:
+		return
+	var team_a: Array = r.get("team_a", [])
+	if team_a.is_empty() or team_a[0] != c.character_id:
+		_reject(c, "Chỉ chủ phòng mới có quyền đá thành viên.")
+		return
+	if target_cid == c.character_id:
+		return
+	var target = gs._by_character.get(target_cid)
+	if target:
+		_leave_room(target, false)
+		gs.kick(target, "arena_end", "Bạn đã bị chủ phòng đá khỏi phòng.")
+
+func _reject_opponent(c) -> void:
+	var id: String = room_of.get(c.character_id, "")
+	if id == "":
+		return
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty():
+		return
+	if not PkRules.can_kick(int(r["mode"])):
+		_reject(c, "Chế độ này không thể đá đối thủ ra.")
+		return
+	var team_a: Array = r.get("team_a", [])
+	if team_a.is_empty() or team_a[0] != c.character_id:
+		_reject(c, "Chỉ chủ phòng mới có quyền từ chối đối thủ.")
+		return
+	if r["state"] not in [WAITING, PREPARE]:
+		_reject(c, "Trận đấu đã diễn ra, không thể từ chối.")
+		return
+	var team_b: Array = r.get("team_b", [])
+	if team_b.is_empty():
+		return
+	for cid in team_b:
+		var opponent = gs._by_character.get(cid)
+		room_of.erase(cid)
+		if opponent:
+			_refresh_one(opponent)
+			gs.kick(opponent, "arena_end", "Chủ phòng đã từ chối khiêu chiến.")
+	r["team_b"] = []
+	r["fighters"] = team_a.duplicate()
+	r["state"] = WAITING
+	r["left"] = 0.0
+	_refresh_view(id)
+	_send(c, {"op": "rejected_opponent", "msg": "Đã từ chối đối thủ. Phòng tiếp tục chờ người thách đấu khác."})
 	_broadcast_state(id)
 
 func _leave_room(c, by_player: bool) -> void:
@@ -240,13 +390,24 @@ func _leave_room(c, by_player: bool) -> void:
 	if r.is_empty():
 		return
 	r["spectators"].erase(c.character_id)
-	if r["fighters"].has(c.character_id):
+	(r.get("ready", {}) as Dictionary).erase(c.character_id)
+	var team_a: Array = r.get("team_a", [])
+	var team_b: Array = r.get("team_b", [])
+	var in_a := team_a.has(c.character_id)
+	var in_b := team_b.has(c.character_id)
+	if in_a:
+		team_a.erase(c.character_id)
+	if in_b:
+		team_b.erase(c.character_id)
+	r["fighters"].erase(c.character_id)
+	if in_a or in_b:
 		if r["state"] in [PREPARE, FIGHT] and by_player:
-			_finish(id, _other_fighter(r, c.character_id), "%s đã bỏ trận." % c.profile.display_name)
-		r["fighters"].erase(c.character_id)
-		if r["state"] == WAITING and r["fighters"].is_empty():
-			_close(id)
-			return
+			var opp_team := "b" if in_a else "a"
+			_finish_team(id, opp_team, "%s đã bỏ trận." % c.profile.display_name)
+		if r["state"] == WAITING:
+			if team_a.is_empty():
+				_close(id)
+				return
 	_refresh_view(id)
 	_broadcast_state(id)
 
@@ -257,7 +418,14 @@ func on_died(c) -> void:
 	var id: String = room_of.get(c.character_id, "")
 	var r: Dictionary = rooms.get(id, {})
 	if not r.is_empty() and r["state"] == FIGHT and r["fighters"].has(c.character_id):
-		_finish(id, _other_fighter(r, c.character_id), "%s đã trọng thương." % c.profile.display_name)
+		var team_a: Array = r.get("team_a", [])
+		var team_b: Array = r.get("team_b", [])
+		var alive_a := _alive_team_count(team_a)
+		var alive_b := _alive_team_count(team_b)
+		if alive_a == 0:
+			_finish_team(id, "b", "Phe Chủ phòng đã bị quét sạch!")
+		elif alive_b == 0:
+			_finish_team(id, "a", "Phe Thách đấu đã bị quét sạch!")
 
 ## Chết trong đấu trường: không về điểm xuất phát map — đứng lại chỗ của mình trong phòng (trận đã có kết quả).
 func on_revive(c) -> bool:
@@ -266,15 +434,37 @@ func on_revive(c) -> bool:
 	if r.is_empty():
 		gs.teleport(c, spectator_pos)
 		return true
-	var i: int = r["fighters"].find(c.character_id)
-	gs.teleport(c, slots[i] if i >= 0 else spectator_pos)
+	var team_size: int = int(r.get("team_size", 1))
+	var spawn_slots := PkRules.get_spawn_slots(center, team_size)
+	var slots_a: Array = spawn_slots["team_a"]
+	var slots_b: Array = spawn_slots["team_b"]
+	var idx_a: int = (r.get("team_a", []) as Array).find(c.character_id)
+	var idx_b: int = (r.get("team_b", []) as Array).find(c.character_id)
+	if idx_a >= 0:
+		gs.teleport(c, gs.grid.free_near(slots_a[mini(idx_a, slots_a.size() - 1)]))
+	elif idx_b >= 0:
+		gs.teleport(c, gs.grid.free_near(slots_b[mini(idx_b, slots_b.size() - 1)]))
+	else:
+		gs.teleport(c, spectator_pos)
 	return true
 
-static func _other_fighter(r: Dictionary, cid: int) -> int:
-	for f in r["fighters"]:
-		if f != cid:
-			return f
-	return 0
+func _alive_team_count(team_cids: Array) -> int:
+	var c := 0
+	for cid in team_cids:
+		var m = gs._by_character.get(cid)
+		if m and m.entity and (m.entity.flags & NetProto.FLAG_DEAD) == 0 and m.entity.hp > 0:
+			c += 1
+	return c
+
+func _team_hp_ratio(team_cids: Array) -> float:
+	var total_hp := 0.0
+	var total_max := 0.0
+	for cid in team_cids:
+		var m = gs._by_character.get(cid)
+		if m and m.entity:
+			total_hp += float(m.entity.hp)
+			total_max += maxf(float(m.entity.max_hp), 1.0)
+	return total_hp / maxf(total_max, 1.0)
 
 # ---------------------------------------------------------------- nhịp
 
@@ -300,11 +490,20 @@ func tick(delta: float) -> void:
 				r["left"] = PkRules.FIGHT_SEC
 				_broadcast_state(id)
 			FIGHT:
-				var a = gs._by_character.get(r["fighters"][0]) if r["fighters"].size() > 0 else null
-				var b = gs._by_character.get(r["fighters"][1]) if r["fighters"].size() > 1 else null
-				var hp_a: int = a.entity.hp if a and a.entity else 0
-				var hp_b: int = b.entity.hp if b and b.entity else 0
-				_finish(id, a.character_id if hp_a >= hp_b and a else (b.character_id if b else 0), "Hết giờ — bên còn nhiều sinh lực hơn thắng.")
+				var team_a: Array = r.get("team_a", [])
+				var team_b: Array = r.get("team_b", [])
+				var alive_a := _alive_team_count(team_a)
+				var alive_b := _alive_team_count(team_b)
+				if alive_a != alive_b:
+					var win_team := "a" if alive_a > alive_b else "b"
+					_finish_team(id, win_team, "Hết giờ — phe %s còn nhiều người sống sót hơn (%d vs %d)." % [
+						"Chủ phòng" if win_team == "a" else "Thách đấu", maxi(alive_a, alive_b), mini(alive_a, alive_b)
+					])
+				else:
+					var hp_a := _team_hp_ratio(team_a)
+					var hp_b := _team_hp_ratio(team_b)
+					var win_team := "a" if hp_a >= hp_b else "b"
+					_finish_team(id, win_team, "Hết giờ — phe %s còn nhiều sinh lực hơn." % ("Chủ phòng" if win_team == "a" else "Thách đấu"))
 			ENDED:
 				for cid in r["fighters"] + r["spectators"]:
 					var m = gs._by_character.get(cid)
@@ -322,20 +521,35 @@ func tick(delta: float) -> void:
 		_report_in = REPORT_EVERY
 		_report()
 
-func _finish(id: String, winner_cid: int, why: String) -> void:
+func _finish_team(id: String, win_team: String, why: String) -> void:
 	var r: Dictionary = rooms.get(id, {})
 	if r.is_empty() or r["state"] == ENDED:
 		return
 	r["state"] = ENDED
 	r["left"] = END_SEC
-	var winner = gs._by_character.get(winner_cid)
-	r["winner"] = winner.profile.display_name if winner else ""
+	var win_name := "Phe Chủ phòng" if win_team == "a" else "Phe Thách đấu"
+	r["winner"] = win_name
+	var m_mode := int(r["mode"]) as PkRules.Mode
+	var has_pts := PkRules.has_rank_points(m_mode)
+	var win_cids: Array = r.get("team_a" if win_team == "a" else "team_b", [])
 	for cid in r["fighters"] + r["spectators"]:
 		var m = gs._by_character.get(cid)
 		if m:
-			_send(m, {"op": "result", "win": cid == winner_cid, "fighter": r["fighters"].has(cid), "winner": r["winner"],
-				"why": why, "mode": int(r["mode"])})
+			var is_win: bool = win_cids.has(cid)
+			var delta := 0
+			if has_pts and r["fighters"].has(cid) and m.profile:
+				delta = PkRules.WIN_POINTS if is_win else -PkRules.LOSE_POINTS
+				m.profile.pk_points = maxi(0, m.profile.pk_points + delta)
+			_send(m, {"op": "result", "win": is_win, "fighter": r["fighters"].has(cid), "winner": win_name,
+				"why": why, "mode": m_mode, "points_delta": delta, "pk_points": m.profile.pk_points if m.profile else 0})
 	_broadcast_state(id)
+
+func _finish(id: String, winner_cid: int, why: String) -> void:
+	var r: Dictionary = rooms.get(id, {})
+	if r.is_empty():
+		return
+	var win_team := "a" if (r.get("team_a", []) as Array).has(winner_cid) else "b"
+	_finish_team(id, win_team, why)
 
 func _close(id: String) -> void:
 	rooms.erase(id)
@@ -343,23 +557,48 @@ func _close(id: String) -> void:
 # ---------------------------------------------------------------- gửi tin
 
 func _public_room(r: Dictionary) -> Dictionary:
-	var names := []
-	for cid in r["fighters"]:
+	var team_a_info := []
+	var team_b_info := []
+	for cid in r.get("team_a", []):
 		var m = gs._by_character.get(cid)
-		names.append(m.profile.display_name if m else "?")
-	return {"id": r["id"], "mode": int(r["mode"]), "host": r["host"], "level": int(r["level"]), "sect_name": r["sect_name"],
-		"locked": str(r["password"]) != "", "state": r["state"], "fighters": names, "spectators": r["spectators"].size(),
-		"left": ceili(maxf(float(r["left"]), 0.0)), "winner": r["winner"]}
+		if m and m.profile:
+			var sect := SectRegistry.get_by_id(m.profile.sect_id)
+			team_a_info.append({"cid": cid, "name": m.profile.display_name, "level": m.profile.level, "sect_id": m.profile.sect_id,
+				"sect_name": sect.sect_name if sect else "Vô môn phái", "ready": bool((r.get("ready", {}) as Dictionary).get(cid, false)),
+				"is_host": cid == (r.get("team_a", [0]) as Array)[0]})
+	for cid in r.get("team_b", []):
+		var m = gs._by_character.get(cid)
+		if m and m.profile:
+			var sect := SectRegistry.get_by_id(m.profile.sect_id)
+			team_b_info.append({"cid": cid, "name": m.profile.display_name, "level": m.profile.level, "sect_id": m.profile.sect_id,
+				"sect_name": sect.sect_name if sect else "Vô môn phái", "ready": bool((r.get("ready", {}) as Dictionary).get(cid, false)),
+				"is_host": false})
+	var names := []
+	for inf in team_a_info: names.append(inf["name"])
+	for inf in team_b_info: names.append(inf["name"])
+	return {"id": r["id"], "mode": int(r["mode"]), "team_size": int(r.get("team_size", 1)), "host": r["host"],
+		"level": int(r["level"]), "sect_name": r["sect_name"], "locked": str(r["password"]) != "", "state": r["state"],
+		"fighters": names, "team_a": team_a_info, "team_b": team_b_info,
+		"spectators": r["spectators"].size(), "left": ceili(maxf(float(r["left"]), 0.0)), "winner": r.get("winner", "")}
 
 func _state_for(c, r: Dictionary) -> Dictionary:
-	var eids := []
-	for cid in r["fighters"]:
-		var m = gs._by_character.get(cid)
-		eids.append(m.entity.eid if m and m.entity else 0)
 	var st := _public_room(r)
 	st["op"] = "state"
-	st["fighter_eids"] = eids
-	st["role"] = "fighter" if r["fighters"].has(c.character_id) else "spectator"
+	var eids_a := []
+	for cid in r.get("team_a", []):
+		var m = gs._by_character.get(cid)
+		if m and m.entity: eids_a.append(m.entity.eid)
+	var eids_b := []
+	for cid in r.get("team_b", []):
+		var m = gs._by_character.get(cid)
+		if m and m.entity: eids_b.append(m.entity.eid)
+	st["team_a_eids"] = eids_a
+	st["team_b_eids"] = eids_b
+	st["fighter_eids"] = eids_a + eids_b
+	var in_a := (r.get("team_a", []) as Array).has(c.character_id)
+	var in_b := (r.get("team_b", []) as Array).has(c.character_id)
+	st["role"] = "fighter" if (in_a or in_b) else "spectator"
+	st["my_team"] = "a" if in_a else ("b" if in_b else "")
 	return st
 
 func _send_state(c) -> void:

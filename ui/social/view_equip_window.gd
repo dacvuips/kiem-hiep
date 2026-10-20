@@ -121,7 +121,12 @@ func _apply_look() -> void:
 	if _avatar == null or _snap.is_empty():
 		return
 	var gender := "female" if bool(_snap["female"]) else "male"
-	_avatar.set_gender(gender)
 	var equipment: Dictionary = _snap["equipment"]
 	var look := Equipment.get_appearance(equipment, gender, equipment.has(Equipment.Part.HORSE))
+	var final_gender: String = str(look.get("gender", gender))
+	_avatar.set_gender(final_gender)
 	_avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
+	if look.has("modulate"):
+		_avatar.modulate = look["modulate"]
+	else:
+		_avatar.modulate = Color.WHITE

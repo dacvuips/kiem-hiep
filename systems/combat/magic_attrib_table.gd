@@ -142,6 +142,10 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.five_elements_enhance += v.x
 		"five_elements_resist_v":
 			s.five_elements_resist += v.x
+		"expenhance_p":
+			s.exp_enhance_p += v.x
+		"lucky_v":
+			s.lucky_v += v.x
 		_:
 			return false
 	return true
@@ -152,10 +156,10 @@ static func _add_element(pool: Dictionary, damage_type: int, value: int) -> void
 
 ## Thuộc tính GỐC có nhưng bảng CHƯA áp (game chưa có hệ thống tương ứng) — ghi lại để khỏi tưởng
 ## là bị sót: nội lực/thể lực (game không dùng mana), khiên nội lực, hồi phục khi bị đánh, vật phẩm,
-## kinh nghiệm, ẩn thân, đổi phe, tự động thi triển skill khác (auto*skill), cộng cấp skill...
+## ẩn thân, đổi phe, tự động thi triển skill khác (auto*skill), cộng cấp skill...
 const UNSUPPORTED := ["mana_v", "manareplenish_v", "stamina_v", "staminamax_v", "staminamax_p",
 	"staminareplenish_v", "stealmana_p", "stealmanaenhance_p", "stealstamina_p", "manashield_p",
 	"staticmagicshield_p", "dynamicmagicshield_v", "fasthitrecover_v", "fasthitrecover_yan_v",
-	"lifepotion_v", "manapotion_v", "expenhance_p", "lucky_v", "hide", "changecamp_b", "allskill_v",
+	"lifepotion_v", "manapotion_v", "hide", "changecamp_b", "allskill_v",
 	"autoattackskill", "autodeathskill", "autoreplyskill", "autorescueskill", "ignoreskill_p",
 	"returnskill_p", "fatallystrikeenhance_p", "fatallystrikeres_p", "burntimereduce_p", "visionradius_p"]

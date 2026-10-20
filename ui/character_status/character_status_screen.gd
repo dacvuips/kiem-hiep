@@ -254,9 +254,14 @@ func _turn_portrait() -> void:
 
 func _refresh_portrait() -> void:
 	var avatar: CharacterAvatar = %PortraitAvatar
-	avatar.set_gender("female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male")
-	var look := Equipment.get_appearance(_profile.equipment, avatar.gender, _profile.riding)
+	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
+	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding)
+	avatar.set_gender(str(look.get("gender", gender_str)))
 	avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
+	if look.has("modulate"):
+		avatar.modulate = look["modulate"]
+	else:
+		avatar.modulate = Color.WHITE
 
 # ---------------------------------------------------------------- trang bị
 

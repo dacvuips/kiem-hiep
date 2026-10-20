@@ -11,6 +11,9 @@ class_name PotionEffect
 ##     loại = làm mới thời gian (không cộng dồn).
 ##   - Đan / hoàn loại 6 (magicscript: Viêm Đế…, thưởng Tống Kim) chỉ ghi skill trạng thái gốc (256-265); chú thích gốc trùng với hoàn
 ##     loại 1 tương ứng ("Nội 5 phút, sinh lực tăng tối đa 500"...) -> dùng hiệu ứng của món đó trong STATE_SKILL_SECONDS giây.
+##   - Tiên Thảo Lộ (1h, 8h, hoàn) & May Mắn (Thiên Sơn Bảo Lộ 1h, Bánh chưng may mắn 30m): nhân đôi EXP / +may mắn, gắn hình
+##     trạng thái StateSpecialId 67 (lucky.spr) trên đầu nhân vật.
+##   - Phúc Duyên Lộ (Tiểu 10, Trung 20, Đại 50): cộng trực tiếp điểm Phúc Duyên vào PlayerProfile.fuyuan.
 ##   - Nội lực (manapotion_v), thể lực (stamina_v), giảm độc (poisondamagereduce_v): game chưa có nội lực tiêu hao / thể lực chạy /
 ##     giảm sát thương độc -> uống được (mất bình) nhưng chưa có tác dụng.
 
@@ -22,6 +25,19 @@ const STATE_SKILL_ITEM := {256: "1_5_0_1", 257: "1_5_0_2", 258: "1_5_0_3", 259: 
 	261: "1_6_0_1", 262: "1_6_0_2", 263: "1_6_0_3", 264: "1_6_0_4", 265: "1_6_0_5"}
 const STATE_SKILL_SECONDS := 300.0
 const UPDATE_FRAMES := 10
+
+## Cấu hình các bình đặc biệt (Tiên Thảo Lộ, Thiên Sơn Bảo Lộ, Phúc Duyên Lộ)
+const SPECIAL_ITEM_EFFECTS := {
+	"6_1_71": {"effects": [["expenhance_p", 100, 64800]], "state_id": 67},           ## Tiên Thảo Lộ (1h, exp x2, skill 440)
+	"6_1_1181": {"effects": [["expenhance_p", 100, 518400]], "state_id": 67},        ## Tiên Thảo Lộ đặc biệt (8h, exp x2)
+	"6_1_1765": {"effects": [["expenhance_p", 100, 518400]], "state_id": 67},        ## Tiên Thảo Lộ đặc biệt (8h, exp x2)
+	"6_1_113": {"effects": [["expenhance_p", 50, 64800]], "state_id": 67},           ## Tiên Thảo hoàn (1h, exp +50%)
+	"6_1_72": {"effects": [["lucky_v", 10, 64800]], "state_id": 67},                 ## Thiên Sơn Bảo Lộ (1h, may mắn +10, skill 441)
+	"6_0_70": {"effects": [["lucky_v", 30, 32400]], "state_id": 67},                 ## Bánh chưng May mắn (30m, may mắn +30, skill 410)
+	"6_1_122": {"fuyuan": 10},                                                        ## Phúc Duyên Lộ (Tiểu)
+	"6_1_123": {"fuyuan": 20},                                                        ## Phúc Duyên Lộ (Trung)
+	"6_1_124": {"fuyuan": 50},                                                        ## Phúc Duyên Lộ (Đại)
+}
 
 var _value := 0.0       ## sinh lực mỗi nhịp
 var _frames := 0        ## frame còn lại
@@ -36,10 +52,26 @@ static func of(player: Node) -> PotionEffect:
 		player.add_child(e)
 	return e
 
+## Lượng điểm Phúc Duyên món này cộng trực tiếp (0 = không phải Phúc Duyên Lộ).
+static func get_fuyuan_amount(item: ItemInstance) -> int:
+	if item == null or not item.is_misc():
+		return 0
+	if SPECIAL_ITEM_EFFECTS.has(item.misc_id) and SPECIAL_ITEM_EFFECTS[item.misc_id].has("fuyuan"):
+		return int(SPECIAL_ITEM_EFFECTS[item.misc_id]["fuyuan"])
+	for e in item.get_base().get("effects", []):
+		if str(e[0]) == "fuyuan_v":
+			return int(e[1])
+	return 0
+
+static func is_fuyuan_potion(item: ItemInstance) -> bool:
+	return get_fuyuan_amount(item) > 0
+
 ## Các hiệu ứng [thuộc tính, giá trị, số frame] của 1 món dùng được; [] nếu món không dùng được.
 static func effects_of(item: ItemInstance) -> Array:
 	if item == null or not item.is_misc():
 		return []
+	if SPECIAL_ITEM_EFFECTS.has(item.misc_id) and SPECIAL_ITEM_EFFECTS[item.misc_id].has("effects"):
+		return SPECIAL_ITEM_EFFECTS[item.misc_id]["effects"]
 	var base := item.get_base()
 	var effects: Array = base.get("effects", [])
 	if not effects.is_empty():
@@ -60,10 +92,13 @@ static func _known(attrib: String) -> bool:
 		_known_cache[attrib] = MagicAttribTable.apply(CombatantStats.new(), attrib, Vector3i(1, 0, 0))
 	return bool(_known_cache[attrib])
 
-## Món dùng được (thuốc hồi phục, thuốc buff, đan) -> đặt vào ô thuốc nhanh / nút "Dùng".
+## Món dùng được (thuốc hồi phục, thuốc buff, đan, phúc duyên) -> đặt vào ô thuốc nhanh / nút "Dùng".
 static func usable(item: ItemInstance) -> bool:
+	if is_fuyuan_potion(item):
+		return true
 	for e in effects_of(item):
-		if TICK_ATTRIBS.has(str(e[0])) or _known(str(e[0])):
+		var attr := str(e[0])
+		if TICK_ATTRIBS.has(attr) or _known(attr):
 			return true
 	return false
 
@@ -93,29 +128,66 @@ static func drink(player: Node, item: ItemInstance) -> bool:
 	if not buff.is_empty() and status != null:
 		var key := buff.keys()
 		key.sort()
-		status.apply_state("item:" + ",".join(key), buff, seconds, {"icon": ItemDatabase.get_icon(item.get_base()), "name": item.get_display_name()})
+		var state_id := 0
+		if SPECIAL_ITEM_EFFECTS.has(item.misc_id):
+			state_id = int(SPECIAL_ITEM_EFFECTS[item.misc_id].get("state_id", 0))
+		status.apply_state("item:" + ",".join(key), buff, seconds, {
+			"icon": ItemDatabase.get_icon(item.get_base()),
+			"name": item.get_display_name(),
+			"state_id": state_id
+		})
 	return true
 
-## Lý do KHÔNG dùng được món này lúc này ("" = dùng được): thuốc Tống Kim (songjin_only) chỉ dùng trong Chiến trường Tống Kim.
+## Lý do KHÔNG dùng được món này lúc này ("" = dùng được):
+##   - Thuốc Tống Kim (songjin_only) chỉ dùng trong Chiến trường Tống Kim.
+##   - Đang có Tiên Thảo Lộ (nhân đôi EXP) không uống chồng để tránh lãng phí.
 static func block_reason(item: ItemInstance) -> String:
-	if item != null and item.is_misc() and bool(item.get_base().get("songjin_only", false)) \
+	if item == null or not item.is_misc():
+		return ""
+	if bool(item.get_base().get("songjin_only", false)) \
 			and (GameManager.field_map.get("battle", {}) as Dictionary).is_empty():
 		return "%s chỉ dùng được trong Chiến trường Tống Kim." % item.get_display_name()
+	var loop := Engine.get_main_loop()
+	var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+	if player != null:
+		var status: StatusEffectController = player.get_node_or_null("StatusEffectController")
+		if status != null:
+			for e in effects_of(item):
+				if str(e[0]) == "expenhance_p" and status.has_state("item:expenhance_p"):
+					return "Các hạ đang còn thời gian nhân đôi kinh nghiệm."
 	return ""
 
 ## Uống 1 bình `item` trong túi của `profile`: bớt 1 (hết thì bỏ khỏi túi) + thêm hiệu ứng. Thuốc không chồng (mỗi bình 1 ô) -> online
 ## server nhận việc bỏ món (ProfileGuard chỉ giữ món server biết). Người gọi tự lưu (SaveManager) / vẽ lại.
 static func consume(profile: PlayerProfile, player: Node, item: ItemInstance) -> bool:
-	if profile == null or player == null or not usable(item) or block_reason(item) != "":
+	if profile == null or not usable(item):
+		return false
+	var blocked := block_reason(item)
+	if blocked != "":
 		return false
 	var index := profile.inventory.find(item)
 	if index < 0:
+		return false
+	var fy := get_fuyuan_amount(item)
+	if fy > 0:
+		if item.count > 1:
+			item.count -= 1
+		else:
+			profile.inventory.remove_at(index)
+		profile.fuyuan += fy
+		ChatBox.push_system("[color=#ffff00][Phúc Duyên][/color] Nhận được %d điểm Phúc Duyên (Hiện có: %d điểm)." % [fy, profile.fuyuan])
+		if player != null and player.has_method("notify"):
+			player.notify("+%d Phúc Duyên" % fy)
+		return true
+	if player == null:
+		return false
+	if not drink(player, item):
 		return false
 	if item.count > 1:
 		item.count -= 1
 	else:
 		profile.inventory.remove_at(index)
-	return drink(player, item)
+	return true
 
 ## Bình đầu tiên mã `misc_id` trong túi (null nếu hết).
 static func first_in_inventory(profile: PlayerProfile, misc_id: String) -> ItemInstance:

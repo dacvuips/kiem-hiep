@@ -191,6 +191,7 @@ func _run(c, action: Callable, after: Callable = Callable()) -> void:
 		c.profile.guild = guilds[name]
 		_save(name)
 		_broadcast(name)
+		broadcast_list()
 
 static func _mark_local(g: Dictionary, member_name: String) -> void:
 	for m in g.get("members", []):
@@ -218,6 +219,7 @@ func _create(c, title: String, camp: int) -> void:
 	_save(str(g.name))
 	gs.profile_changed(c)   ## trừ tiền lập bang, đổi phe
 	send_guild(c)
+	broadcast_list()
 
 ## create_blockers chỉ cần biết có đang trong tổ đội không.
 static func _team_stub() -> TeamService:
@@ -345,6 +347,7 @@ func _answer(c, guild_name: String, accept: bool) -> void:
 	_enroll(guild_name, c)
 	_save(guild_name)
 	_broadcast(guild_name)
+	broadcast_list()
 
 func _leave(c) -> void:
 	var g := guild_of_name(c.entity.name)
@@ -371,6 +374,7 @@ func _leave(c) -> void:
 	send_guild(c)
 	_save(name)
 	_broadcast(name)
+	broadcast_list()
 
 func _rename(c, new_name: String) -> void:
 	new_name = new_name.strip_edges()
@@ -384,7 +388,8 @@ func _rename(c, new_name: String) -> void:
 	_run(c, func(svc: GuildService) -> String: return svc.rename(new_name), func(_n: String) -> void:
 		guilds.erase(old)
 		guilds[str(g.name)] = g
-		_save(str(g.name), old))
+		_save(str(g.name), old)
+		broadcast_list())
 
 func _disband(name: String, msg: String) -> void:
 	var g: Dictionary = guilds.get(name, {})
@@ -398,6 +403,7 @@ func _disband(name: String, msg: String) -> void:
 			gs.profile_changed(who)
 			send_guild(who)
 			gs.notice(who, msg)
+	broadcast_list()
 
 # ---------------------------------------------------------------- gửi / lưu
 
@@ -440,3 +446,7 @@ func _send_list(c) -> void:
 	var b := NetProto.writer(NetProto.S_GUILD_LIST)
 	NetProto.put_str(b, JSON.stringify(list))
 	gs.send(c, b)
+
+func broadcast_list() -> void:
+	for c in gs.in_world_conns():
+		_send_list(c)

@@ -47,9 +47,9 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	var tabs := HBoxContainer.new()
 	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	tabs.add_theme_constant_override("separation", 8)
-	for m in [PkRules.Mode.DAI_HOI, PkRules.Mode.LIEN_DAU]:
+	for m in [PkRules.Mode.DAI_HOI, PkRules.Mode.LIEN_DAU, PkRules.Mode.THACH_DAU]:
 		var b := GameUi.button(PkRules.MODE_NAMES[m])
-		b.custom_minimum_size = Vector2(170, 36)
+		b.custom_minimum_size = Vector2(150, 36)
 		b.pressed.connect(_select_mode.bind(m))
 		tabs.add_child(b)
 		_tab_buttons.append(b)
@@ -122,9 +122,17 @@ func _show_lobby() -> void:
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_content.add_child(intro)
 	var rec := PkMatch.record_of(_profile, _mode)
-	_content.add_child(SocialUi.label("Điều kiện: cấp từ %d%s   ·   Thành tích: thắng %d · thua %d" % [int(PkRules.MIN_LEVEL[_mode]),
-			" · cùng môn phái" if _mode == PkRules.Mode.DAI_HOI else "", int(rec.get("win", 0)), int(rec.get("lose", 0))],
-			SocialUi.LABEL_BLUE, 14, HORIZONTAL_ALIGNMENT_CENTER))
+	if PkRules.has_rank_points(_mode):
+		var pts: int = _profile.pk_points if _profile else int(rec.get("points", 0))
+		_content.add_child(SocialUi.label("Điều kiện: cấp từ %d%s   ·   Điểm BXH: %d   ·   Thắng %d · Thua %d (+10 thắng, -2 thua)" % [
+				int(PkRules.MIN_LEVEL[_mode]),
+				" · cùng môn phái" if _mode == PkRules.Mode.DAI_HOI else "",
+				pts, int(rec.get("win", 0)), int(rec.get("lose", 0))],
+				SocialUi.LABEL_BLUE, 14, HORIZONTAL_ALIGNMENT_CENTER))
+	else:
+		_content.add_child(SocialUi.label("Tự do tỷ thí võ nghệ   ·   Thành tích: thắng %d · thua %d (Không tính điểm xếp hạng)" % [
+				int(rec.get("win", 0)), int(rec.get("lose", 0))],
+				SocialUi.LABEL_GREEN, 14, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var search_row := HBoxContainer.new()
 	search_row.add_theme_constant_override("separation", 8)
@@ -199,17 +207,28 @@ func _room_row(r: Dictionary, waiting: bool) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	var lock := "🔒 " if _locked(r) else ""
-	var text := "%s#%s  %s\nCấp %d · %s" % [lock, r["id"], r["host"], int(r["level"]), r["sect_name"]]
+	var format := ""
+	if int(r.get("mode", 0)) == PkRules.Mode.THACH_DAU:
+		var s := int(r.get("team_size", 1))
+		format = "[%s] " % PkRules.format_name(s)
+	var text := "%s%s#%s  %s\nCấp %d · %s" % [lock, format, r["id"], r["host"], int(r["level"]), r["sect_name"]]
 	if not waiting and r.has("fighters"):   ## phòng của arena server
 		var f: Array = r["fighters"]
-		text = "%s#%s · %d người xem\n%s vs %s" % [lock, r["id"], int(r.get("spectators", 0)), f[0] if f.size() > 0 else "?",
+		text = "%s%s#%s · %d người xem\n%s vs %s" % [lock, format, r["id"], int(r.get("spectators", 0)), f[0] if f.size() > 0 else "?",
 				f[1] if f.size() > 1 else "?"]
 	elif not waiting:
-		text = "#%s\n%s vs %s" % [r["id"], r["host"], r["guest"]]
+		text = "%s#%s\n%s vs %s" % [format, r["id"], r.get("host", "?"), r.get("guest", "?")]
 	var l := SocialUi.label(text, SocialUi.TEXT, 13)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = 120
+	l.mouse_filter = Control.MOUSE_FILTER_PASS
+	l.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			if waiting:
+				_join_room(r)
+			else:
+				_watch_room(r))
 	row.add_child(l)
 	var b := SocialUi.small_button("Vào" if waiting else "Xem")
 	b.pressed.connect(_join_room.bind(r) if waiting else _watch_room.bind(r))
@@ -261,6 +280,9 @@ func _flash(text: String) -> void:
 # ---------------------------------------------------------------- tạo phòng
 
 func _ask_create_room() -> void:
+	if _mode == PkRules.Mode.THACH_DAU:
+		_show_thach_dau_create_dialog()
+		return
 	SocialWindow.ask_yes_no(self, "Tạo phòng", "Đặt mật khẩu cho phòng?\n(Phòng có mật khẩu chỉ người biết mật khẩu mới vào được.)",
 		func(yes: bool) -> void:
 			if yes:
@@ -269,43 +291,256 @@ func _ask_create_room() -> void:
 					if pw == "":
 						_flash("Chưa nhập mật khẩu — chưa tạo phòng.")
 						return
-					_create_room(pw), "", true)
+					_create_room(pw, 1), "", true)
 			else:
-				_create_room(""),
+				_create_room("", 1),
 		"Có", "Không")
 
-## Online: vào arena server mở phòng; offline: phòng cục bộ (PkLobby).
-func _create_room(password: String) -> void:
+func _show_thach_dau_create_dialog() -> void:
+	var dlg := SocialWindow.new("Tạo Phòng Thách Đấu", "Chọn thể thức so tài võ nghệ", 480.0)
+	var selected_team_size := [1]
+	
+	dlg.body.add_child(SocialUi.label("Chọn thể thức thi đấu:", SocialUi.TITLE, 14))
+	
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	dlg.body.add_child(grid)
+	
+	var format_buttons: Array[Button] = []
+	for s in PkRules.TEAM_FORMATS:
+		var btn := GameUi.button(PkRules.format_name(s))
+		btn.custom_minimum_size = Vector2(100, 36)
+		btn.pressed.connect(func() -> void:
+			selected_team_size[0] = s
+			for b in format_buttons:
+				GameUi.set_active(b, b == btn)
+		)
+		grid.add_child(btn)
+		format_buttons.append(btn)
+	GameUi.set_active(format_buttons[0], true)
+	
+	dlg.body.add_child(SocialUi.label("Mật khẩu phòng (để trống nếu không khóa):", SocialUi.TEXT, 13))
+	var pw_input := SocialUi.line_edit("Nhập mật khẩu (1-16 ký tự)")
+	pw_input.secret = true
+	dlg.body.add_child(pw_input)
+	
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	dlg.body.add_child(btn_row)
+	
+	var btn_confirm := SocialUi.stone_button("Tạo phòng", Vector2(160, 40))
+	btn_confirm.pressed.connect(func() -> void:
+		var pw := pw_input.text.strip_edges().left(16)
+		dlg.queue_free()
+		_create_room(pw, selected_team_size[0])
+	)
+	btn_row.add_child(btn_confirm)
+	
+	var btn_cancel := SocialUi.stone_button("Hủy", Vector2(160, 40))
+	btn_cancel.pressed.connect(func() -> void:
+		dlg.queue_free()
+	)
+	btn_row.add_child(btn_cancel)
+	
+	SocialWindow.present(self, dlg, &"thach_dau_create")
+
+## Online: vào arena server mở phòng; offline / Thách đấu: phòng chờ cục bộ (PkLobby).
+func _create_room(password: String, team_size: int = 1) -> void:
+	if _mode == PkRules.Mode.THACH_DAU:
+		_show_room(PkLobby.create(_profile, _mode, password, team_size))
+		return
 	if _online():
-		_enter_online({"op": "create", "password": password})
+		_enter_online({"op": "create", "password": password, "team_size": team_size})
 	else:
-		_show_room(PkLobby.create(_profile, _mode, password))
+		_show_room(PkLobby.create(_profile, _mode, password, team_size))
 
 func _show_room(room: Dictionary) -> void:
 	_view = View.ROOM
 	_room = room
 	_search_time = 0.0
 	_clear()
-	_content.add_child(SocialUi.label("Phòng #%s" % room["id"], SocialUi.TITLE, 22, HORIZONTAL_ALIGNMENT_CENTER))
+	var team_size: int = PkRules.team_size_for(room)
+	var format_tag := (" [%s]" % PkRules.format_name(team_size)) if _mode == PkRules.Mode.THACH_DAU else ""
+	_content.add_child(SocialUi.label("Phòng #%s%s" % [room["id"], format_tag], SocialUi.TITLE, 22, HORIZONTAL_ALIGNMENT_CENTER))
 	_content.add_child(SocialUi.label("%s · Chủ phòng: %s (cấp %d, %s)" % [PkRules.MODE_NAMES[_mode], room["host"], int(room["level"]),
 			room["sect_name"]], SocialUi.TEXT, 14, HORIZONTAL_ALIGNMENT_CENTER))
 	_content.add_child(SocialUi.label("Mật khẩu: %s" % ("có" if str(room["password"]) != "" else "không"), SocialUi.LABEL_BLUE, 14,
 			HORIZONTAL_ALIGNMENT_CENTER))
-	var hint := SocialUi.label("Gửi ID phòng cho bạn bè để họ tìm và vào đấu. Đang chờ đối thủ…", SocialUi.MUTED, 13,
-			HORIZONTAL_ALIGNMENT_CENTER)
+
+	var is_host := (str(room.get("host", "")) == (_profile.display_name if _profile else ""))
+
+	# 2 Cột danh sách 2 phe
+	var teams_row := HBoxContainer.new()
+	teams_row.add_theme_constant_override("separation", 16)
+	_content.add_child(teams_row)
+
+	var team_a: Array = room.get("team_a", [])
+	var team_b: Array = room.get("team_b", [])
+
+	_make_team_panel(teams_row, "Phe Chủ phòng (Xanh)", team_a, team_size, "a", is_host)
+	_make_team_panel(teams_row, "Phe Thách đấu (Đỏ)", team_b, team_size, "b", is_host)
+
+	var hint := SocialUi.label("Chia sẻ ID phòng cho đồng đội / đối thủ để vào phòng." if _mode == PkRules.Mode.THACH_DAU else "Đang chờ đối thủ…",
+			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_content.add_child(hint)
-	_timer_label = SocialUi.label("", SocialUi.GOLD, 18, HORIZONTAL_ALIGNMENT_CENTER)
+
+	_timer_label = SocialUi.label("", SocialUi.GOLD, 16, HORIZONTAL_ALIGNMENT_CENTER)
 	_content.add_child(_timer_label)
+
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
 	_content.add_child(row)
-	var cancel := SocialUi.stone_button("Huỷ phòng", Vector2(180, 44))
-	cancel.pressed.connect(func() -> void:
-		PkLobby.close(str(_room["id"]))
-		_room = {}
-		_show_lobby())
-	row.add_child(cancel)
+
+	if is_host:
+		var btn_start := SocialUi.stone_button("Bắt đầu trận", Vector2(160, 42))
+		btn_start.pressed.connect(_start_room_match)
+		row.add_child(btn_start)
+
+		if not _online() or _mode == PkRules.Mode.THACH_DAU:
+			var btn_bot := SocialUi.stone_button("Thêm Bot", Vector2(140, 42))
+			btn_bot.pressed.connect(_add_bot_to_room)
+			row.add_child(btn_bot)
+
+		var cancel := SocialUi.stone_button("Huỷ phòng", Vector2(140, 42))
+		cancel.pressed.connect(func() -> void:
+			PkLobby.close(str(_room["id"]))
+			_room = {}
+			_show_lobby())
+		row.add_child(cancel)
+	else:
+		var btn_ready := SocialUi.stone_button("Sẵn sàng", Vector2(160, 42))
+		btn_ready.pressed.connect(_toggle_ready_in_room)
+		row.add_child(btn_ready)
+
+		var leave := SocialUi.stone_button("Rời phòng", Vector2(160, 42))
+		leave.pressed.connect(func() -> void:
+			if _profile:
+				PkLobby.leave_room(str(_room["id"]), _profile.display_name)
+			_room = {}
+			_show_lobby())
+		row.add_child(leave)
+
+func _make_team_panel(parent: Control, header: String, members: Array, team_size: int, team_code: String, is_host: bool) -> void:
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(col)
+
+	var head_label := SocialUi.label("%s (%d/%d)" % [header, members.size(), team_size],
+			SocialUi.LABEL_BLUE if team_code == "a" else SocialUi.GOLD, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	col.add_child(head_label)
+
+	var frame := GameUi.panel(GameUi.PANEL)
+	col.add_child(frame)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(280, 150)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	frame.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	scroll.add_child(list)
+
+	for i in team_size:
+		var slot_row := HBoxContainer.new()
+		slot_row.add_theme_constant_override("separation", 6)
+		list.add_child(slot_row)
+
+		if i < members.size():
+			var m: Dictionary = members[i]
+			var star := "★ " if bool(m.get("is_host", false)) else ""
+			var ready_text := " [Sẵn sàng]" if bool(m.get("ready", false)) else " [Chờ]"
+			var text := "%s%s (Cấp %d · %s)%s" % [star, m.get("name", "?"), int(m.get("level", 1)), m.get("sect_name", ""), ready_text]
+			var l := SocialUi.label(text, SocialUi.TEXT, 12)
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.clip_text = true
+			slot_row.add_child(l)
+
+			# Nút đá người (chủ phòng thấy trên các thành viên khác)
+			if is_host and str(m.get("name", "")) != (_profile.display_name if _profile else ""):
+				var kick_b := SocialUi.small_button("Đá")
+				kick_b.pressed.connect(func() -> void:
+					_kick_member_from_room(str(m.get("name", "")), int(m.get("cid", 0)))
+				)
+				slot_row.add_child(kick_b)
+		else:
+			var empty_l := SocialUi.label("(Slot %d trống)" % (i + 1), SocialUi.MUTED, 12)
+			empty_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			slot_row.add_child(empty_l)
+
+			var join_b := SocialUi.small_button("Vào slot")
+			join_b.pressed.connect(func() -> void:
+				_switch_team_slot(team_code)
+			)
+			slot_row.add_child(join_b)
+
+func _switch_team_slot(target_team: String) -> void:
+	if _online():
+		NetClient.send_arena(ArenaServer.OP_SWITCH_TEAM, {"team": target_team})
+		return
+	if _profile and not _room.is_empty():
+		PkLobby.join_team(str(_room["id"]), _profile, target_team)
+		_show_room(PkLobby.find(str(_room["id"])))
+
+func _kick_member_from_room(target_name: String, target_cid: int = 0) -> void:
+	if _online():
+		NetClient.send_arena(ArenaServer.OP_KICK_MEMBER, {"target_cid": target_cid})
+		return
+	if not _room.is_empty():
+		PkLobby.kick_member(str(_room["id"]), target_name)
+		_show_room(PkLobby.find(str(_room["id"])))
+
+func _toggle_ready_in_room() -> void:
+	if _online():
+		NetClient.send_arena(ArenaServer.OP_READY, {"ready": true})
+		return
+	if _profile and not _room.is_empty():
+		PkLobby.toggle_ready(str(_room["id"]), _profile.display_name)
+		_show_room(PkLobby.find(str(_room["id"])))
+
+func _add_bot_to_room() -> void:
+	if not _room.is_empty():
+		var team_b: Array = _room.get("team_b", [])
+		var team_a: Array = _room.get("team_a", [])
+		var team_size: int = int(_room.get("team_size", 1))
+		var target_team := "b" if team_b.size() < team_size else ("a" if team_a.size() < team_size else "")
+		if target_team != "":
+			PkLobby.add_bot(str(_room["id"]), target_team, _profile.level if _profile else 90)
+			_show_room(PkLobby.find(str(_room["id"])))
+
+func _start_room_match() -> void:
+	if _online() and _mode != PkRules.Mode.THACH_DAU:
+		_enter_online({"op": "start", "room": str(_room["id"])})
+		return
+	var team_size: int = PkRules.team_size_for(_room)
+	var team_a: Array = _room.get("team_a", []).duplicate(true)
+	var team_b: Array = _room.get("team_b", []).duplicate(true)
+	# Tự động điền bot vào các slot còn trống nếu chưa đủ
+	while team_a.size() < team_size:
+		var bot := PkBotProfile.create(_profile.level if _profile else 90)
+		var sect := SectRegistry.get_by_id(bot.sect_id)
+		team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+			"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+	while team_b.size() < team_size:
+		var bot := PkBotProfile.create(_profile.level if _profile else 90)
+		var sect := SectRegistry.get_by_id(bot.sect_id)
+		team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+			"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+	var opponent_profile: Dictionary = team_b[0].get("bot_data", {}) if not team_b.is_empty() and team_b[0].has("bot_data") else {}
+	var entry := PkRules.arena_entry({
+		"mode": _mode,
+		"team_size": team_size,
+		"team_a": team_a,
+		"team_b": team_b,
+		"opponent": opponent_profile
+	})
+	_enter(entry)
 
 # ---------------------------------------------------------------- tự tìm đối thủ
 

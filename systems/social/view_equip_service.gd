@@ -64,7 +64,8 @@ static func snapshot_from_wire(d: Dictionary) -> Dictionary:
 static func snapshot_of_profile(p: PlayerProfile) -> Dictionary:
 	var copies := {}
 	for part in p.equipment:
-		copies[part] = (p.equipment[part] as ItemInstance).to_dict()
+		if p.equipment[part] != null:
+			copies[part] = (p.equipment[part] as ItemInstance).to_dict()
 	return {
 		"name": p.display_name, "level": p.level, "sect_name": p.sect_name, "sect_id": p.sect_id,
 		"series": int(p.get_element()), "camp": p.get_current_camp(), "female": p.gender == PlayerProfile.Gender.FEMALE,

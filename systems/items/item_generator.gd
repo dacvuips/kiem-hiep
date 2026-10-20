@@ -46,7 +46,8 @@ static func _gen_magic(detail: int, series: int, magic_levels: Array, luck: int,
 			if int(rec["level"]) > magic_level:
 				continue
 			var drop: Array = rec["drop"]
-			if detail >= drop.size() or int(drop[detail]) <= decide:
+			var drop_idx: int = detail if detail < drop.size() else (ItemDatabase.Detail.PENDANT if detail == ItemDatabase.Detail.MASK else ItemDatabase.Detail.ARMOR)
+			if int(drop[drop_idx]) <= decide:
 				continue
 			candidates.append(rec)
 		if candidates.is_empty():
@@ -115,13 +116,23 @@ static func generate_misc(misc_id: String, level: int = 0, series: int = 0, amou
 ## Đồ ngẫu nhiên cho nút TEST / rơi đồ thử: loại + loại cụ thể ngẫu nhiên, cấp đồ theo cấp nhân vật
 ## (cấp 10 nhân vật = đồ cấp 1, tối đa cấp 10), ngũ hành ngẫu nhiên, 0-6 dòng magic cùng cấp đồ.
 static func random_equipment(character_level: int, luck: int = 0) -> ItemInstance:
-	var details := ItemDatabase.Detail.values()
-	var detail: int = details[randi_range(0, details.size() - 1)]
-	var particulars := ItemDatabase.get_particulars(detail)
-	if particulars.is_empty():
+	var valid_details := []
+	for d in ItemDatabase.Detail.values():
+		if not ItemDatabase.get_particulars(d).is_empty():
+			valid_details.append(d)
+	if valid_details.is_empty():
 		return null
+	var detail: int = valid_details[randi_range(0, valid_details.size() - 1)]
+	var particulars := ItemDatabase.get_particulars(detail)
 	var particular: int = particulars[randi_range(0, particulars.size() - 1)]
-	var level := clampi(ceili(character_level / 10.0), 1, 10)
+	var available_levels := ItemDatabase.get_levels(detail, particular)
+	if available_levels.is_empty():
+		return null
+	var wanted_level := clampi(ceili(character_level / 10.0), 1, 10)
+	var level: int = available_levels[0]
+	for lv in available_levels:
+		if lv <= wanted_level:
+			level = lv
 	var magic_levels := []
 	for i in randi_range(0, ItemInstance.MAX_MAGIC):
 		magic_levels.append(level)

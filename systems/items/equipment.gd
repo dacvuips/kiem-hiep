@@ -5,11 +5,11 @@ class_name Equipment
 ## qua CombatantBuild — không cộng chỉ số ở nơi nào khác.
 
 ## Ô trang bị (ITEM_PART gốc) — 10 ô chính + ngựa.
-enum Part { HEAD, BODY, BELT, WEAPON, FOOT, CUFF, AMULET, RING1, RING2, PENDANT, HORSE }
+enum Part { HEAD, BODY, BELT, WEAPON, FOOT, CUFF, AMULET, RING1, RING2, PENDANT, HORSE, MASK, MANTLE }
 const PART_NAMES := {
 	Part.HEAD: "Mũ", Part.BODY: "Áo", Part.BELT: "Thắt lưng", Part.WEAPON: "Vũ khí", Part.FOOT: "Giày",
 	Part.CUFF: "Bao tay", Part.AMULET: "Dây chuyền", Part.RING1: "Nhẫn 1", Part.RING2: "Nhẫn 2",
-	Part.PENDANT: "Ngọc bội", Part.HORSE: "Ngựa",
+	Part.PENDANT: "Ngọc bội", Part.HORSE: "Ngựa", Part.MASK: "Mặt nạ", Part.MANTLE: "Phi phong",
 }
 
 ## Ô đeo theo loại đồ (nhẫn có 2 ô).
@@ -20,6 +20,8 @@ const DETAIL_TO_PARTS := {
 	ItemDatabase.Detail.BELT: [Part.BELT], ItemDatabase.Detail.HELM: [Part.HEAD],
 	ItemDatabase.Detail.CUFF: [Part.CUFF], ItemDatabase.Detail.PENDANT: [Part.PENDANT],
 	ItemDatabase.Detail.HORSE: [Part.HORSE],
+	ItemDatabase.Detail.MASK: [Part.MASK],
+	ItemDatabase.Detail.MANTLE: [Part.MANTLE],
 }
 
 ## Số dòng ẩn tối đa (MAX_ITEM_MAGICATTRIB / 2 gốc, trừ đi dòng chẵn — thực tế 3 dòng ẩn).
@@ -32,6 +34,7 @@ const ACTIVATED_BY := {
 	Part.FOOT: [Part.WEAPON, Part.HEAD], Part.CUFF: [Part.FOOT, Part.RING1],
 	Part.AMULET: [Part.BELT, Part.RING2], Part.RING1: [Part.WEAPON, Part.HEAD],
 	Part.RING2: [Part.CUFF, Part.PENDANT], Part.PENDANT: [Part.FOOT, Part.RING1],
+	Part.HORSE: [], Part.MASK: [], Part.MANTLE: [],
 }
 
 ## g_nAccrueSeries gốc (KMath.cpp): Kim sinh Thủy, Mộc sinh Hỏa, Thủy sinh Mộc, Hỏa sinh Thổ, Thổ sinh Kim.
@@ -59,6 +62,8 @@ static func get_active_counts(equipped: Dictionary, character_series: int) -> Di
 	var set_counts := get_set_counts(equipped)
 	for part in equipped:
 		var item: ItemInstance = equipped[part]
+		if item == null:
+			continue
 		if part >= Part.HORSE:
 			counts[part] = MAX_ACTIVE
 			continue
@@ -79,10 +84,12 @@ static func get_set_counts(equipped: Dictionary) -> Dictionary:
 	var counts := {}
 	for part in equipped:
 		var item: ItemInstance = equipped[part]
+		if item == null:
+			continue
 		var group := item.get_set_group()
 		if group <= 0:
 			continue
-		if part == Part.RING1 and equipped.has(Part.RING2) and (equipped[Part.RING2] as ItemInstance).get_set_group() == group:
+		if part == Part.RING1 and equipped.has(Part.RING2) and (equipped[Part.RING2] as ItemInstance) != null and (equipped[Part.RING2] as ItemInstance).get_set_group() == group:
 			continue
 		counts[group] = counts.get(group, 0) + 1
 	return counts
@@ -118,6 +125,8 @@ static func get_attrib_sources(equipped: Dictionary, character_series: int) -> A
 	var counts := get_active_counts(equipped, character_series)
 	for part in equipped:
 		var item: ItemInstance = equipped[part]
+		if item == null:
+			continue
 		var source := {}
 		for entry in item.base_values:
 			if entry[0] in NON_STAT_ATTRIBS:
@@ -177,7 +186,7 @@ static func get_requirement_context(profile: PlayerProfile, exclude_part: int = 
 static func context_from_stats(profile: PlayerProfile, stats: CombatantStats) -> Dictionary:
 	return {"level": profile.level, "str": stats.strength, "dex": stats.dexterity, "vit": stats.vitality,
 		"eng": stats.energy, "series": int(profile.get_element()), "sex": int(profile.gender),
-		"sect": profile.sect_id}
+		"sect": profile.sect_id, "translife": profile.get("translife") if "translife" in profile else 0}
 
 ## 1 yêu cầu ([tên requireXXX, giá trị]) đã đạt chưa — EnoughAttrib gốc. `ctx` = get_requirement_context.
 static func is_requirement_met(req: Array, ctx: Dictionary) -> bool:
@@ -192,6 +201,8 @@ static func is_requirement_met(req: Array, ctx: Dictionary) -> bool:
 		"requiresex": return ctx["sex"] == value
 		"requiremenpai":
 			return value >= 0 and value < MENPAI_ORDER.size() and ctx["sect"] == MENPAI_ORDER[value]
+		"require_translife":
+			return ctx.get("translife", 0) >= value
 	return true
 
 ## Các yêu cầu CHƯA đạt (rỗng = mặc được) — mỗi phần tử là câu yêu cầu (đúng chữ MagicDesc) để hiện.
@@ -225,10 +236,54 @@ static func can_use(item: ItemInstance, profile: PlayerProfile, ctx: Dictionary 
 ## đầu/tóc, áo đổi vai/thân/tay, vũ khí đổi 2 lớp vũ khí + bộ động tác, ngựa (-1 = đi bộ) thêm 3 lớp ngựa + bộ
 ## động tác cưỡi. Ô trống -> hình mặc định. Đồ hoàng kim dùng hình riêng (GoldEquipRes) nếu đã có trong đợt hình,
 ## không thì theo loại/cấp của chính nó. Online chỉ cần gửi 4 số này.
+## Hỗ trợ MẶT NẠ (Part.MASK): Dịch dung biến đổi giới tính, phong thái (Liễu Thanh Thanh -> mỹ nhân áo lụa tím,
+## Đạo Thanh Chân Nhân -> đạo sĩ lam bào, Chiến Thần -> thiết khôi xích giáp, Hoàng Kim -> ánh hào quang kim sắc).
 static func get_appearance(equipped: Dictionary, gender: String = "male", riding: bool = true) -> Dictionary:
-	var data := AvatarData.get_for(gender)
-	var result := {"helm": data.default_res("helm"), "armor": data.default_res("armor"),
-			"weapon": data.default_res("weapon"), "horse": data.default_res("horse")}
+	var mask_item: ItemInstance = equipped.get(Part.MASK)
+	var is_masked: bool = (mask_item != null)
+	var disguise_title := ""
+	var mask_gender := gender
+	var mask_modulate := Color.WHITE
+	var mask_particular := -1
+
+	if is_masked:
+		var m_base := mask_item.get_base()
+		mask_particular = int(m_base.get("particular", 0))
+		match mask_particular:
+			1: # Mặt Nạ - Liễu Thanh Thanh
+				mask_gender = "female"
+				disguise_title = "Liễu Thanh Thanh"
+				mask_modulate = Color(1.08, 0.88, 1.08, 1.0)
+			2: # Mặt Nạ - Đạo Thanh Chân Nhân
+				mask_gender = "male"
+				disguise_title = "Đạo Thanh Chân Nhân"
+				mask_modulate = Color(0.92, 0.98, 1.15, 1.0)
+			3: # Mặt Nạ Chiến Thần
+				disguise_title = "Chiến Thần"
+				mask_modulate = Color(1.25, 0.82, 0.78, 1.0)
+			4: # Mặt Nạ Hoàng Kim
+				disguise_title = "Hoàng Kim Chí Tôn"
+				mask_modulate = Color(1.35, 1.25, 0.72, 1.0)
+			0, _:
+				disguise_title = "Vô Danh Hiệp Khách"
+				mask_modulate = Color(0.88, 0.90, 0.98, 1.0)
+
+	var target_gender := mask_gender if is_masked else gender
+	var data := AvatarData.get_for(target_gender)
+	var result := {
+		"helm": data.default_res("helm"),
+		"armor": data.default_res("armor"),
+		"weapon": data.default_res("weapon"),
+		"horse": data.default_res("horse"),
+		"gender": target_gender,
+		"is_masked": is_masked,
+		"disguise_title": disguise_title,
+		"modulate": mask_modulate,
+		"mask_particular": mask_particular,
+		"mask_name": mask_item.get_display_name() if mask_item else "",
+		"mask_icon": mask_item.get_icon() if mask_item else null,
+	}
+
 	for part in [Part.HEAD, Part.BODY, Part.WEAPON, Part.HORSE]:
 		var item: ItemInstance = equipped.get(part)
 		if item == null:
@@ -255,6 +310,20 @@ static func get_appearance(equipped: Dictionary, gender: String = "male", riding
 				result["weapon"] = data.res_for_item("range", particular, level)
 			ItemDatabase.Detail.HORSE:
 				result["horse"] = data.res_for_item("horse", particular, level)
+
+	# Nếu có mặt nạ dịch dung đặc thù, định hình ngoại hình đại diện theo nhân vật dịch dung:
+	if is_masked:
+		match mask_particular:
+			1: # Liễu Thanh Thanh -> mỹ nhân áo lụa
+				result["helm"] = data.res_for_item("helm", 1, 10)
+				result["armor"] = data.res_for_item("armor", 1, 10)
+			2: # Đạo Thanh Chân Nhân -> đạo bào uy nghiêm
+				result["helm"] = data.res_for_item("helm", 0, 8)
+				result["armor"] = data.res_for_item("armor", 0, 8)
+			3: # Chiến Thần -> thiết khôi chiến giáp
+				result["helm"] = data.res_for_item("helm", 2, 10)
+				result["armor"] = data.res_for_item("armor", 2, 10)
+
 	if not riding:
 		result["horse"] = -1  ## xuống ngựa: đi bộ, bộ động tác thường
 	return result

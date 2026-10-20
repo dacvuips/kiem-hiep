@@ -20,9 +20,9 @@ class_name Compound
 ## (tools/export_compound_data.py). Bỏ giới hạn tổng giá trị mỗi ngày toàn máy chủ của gốc.
 ## Dùng chung offline (máy mình) và game server (gói C_CRAFT -> run() trên hồ sơ của server) — luật giống hệt nhau.
 
-enum Op { KILLER, REFINE, UPGRADE, DISTILL, FORGE, ENCHASE }
-const OP_NAMES := ["Sát thủ giản", "Luyện Huyền Tinh", "Nâng cấp khoáng", "Tách khoáng", "Chế đồ tím", "Khảm đồ tím"]
-const COST := [0, 1000, 5000, 5000, 10000, 10000]
+enum Op { KILLER, REFINE, UPGRADE, DISTILL, FORGE, ENCHASE, DOPHO }
+const OP_NAMES := ["Sát thủ giản", "Luyện Huyền Tinh", "Nâng cấp khoáng", "Tách khoáng", "Chế đồ tím", "Khảm đồ tím", "Hoàng kim đồ phổ"]
+const COST := [0, 1000, 5000, 5000, 10000, 10000, 100000]
 ## Số vật phẩm phụ tối đa (ô vật phẩm phụ gốc 55×111 = 2 cột × 4 ô).
 const MAX_ALT := 8
 
@@ -86,10 +86,14 @@ static func slots_of(op: int) -> Array:
 		Op.ENCHASE:
 			return [{"label": "Đồ tím", "kind": "equip_purple"}, {"label": "Huyền Tinh", "kind": "xuanjing"},
 				{"label": "Khoáng thuộc tính", "kind": "prop_ore"}]
+		Op.DOPHO:
+			return [{"label": "Đồ phổ", "kind": "blueprint"}, {"label": "Khoáng thạch 1", "kind": "prop_ore"},
+				{"label": "Khoáng thạch 2", "kind": "prop_ore"}, {"label": "Sách kỹ năng", "kind": "skill_book"},
+				{"label": "Khoáng thạch 3", "kind": "prop_ore"}, {"label": "Khoáng thạch 4", "kind": "prop_ore"}]
 	return []
 
 static func uses_alt(op: int) -> bool:
-	return op == Op.DISTILL or op == Op.ENCHASE
+	return op == Op.DISTILL or op == Op.ENCHASE or op == Op.DOPHO
 
 ## Món đặt được vào ô loại `kind` (chưa xét luật giữa các ô).
 static func fits(item: ItemInstance, kind: String) -> bool:
@@ -108,7 +112,7 @@ static func fits(item: ItemInstance, kind: String) -> bool:
 		"stone":
 			return item.misc_id == XUANJING or item.misc_id in PROP_ORES
 		"equip_normal":
-			return normal and item.get_detail() >= 0 and item.get_detail() <= 9
+			return normal and item.magic.size() > 0 and item.get_detail() >= 0 and item.get_detail() <= 9
 		"equip_forge":
 			return normal and item.get_detail() >= 0 and item.get_detail() <= 8 and not item.get_detail() in JEWELRY
 		"equip_purple":
@@ -119,8 +123,12 @@ static func fits(item: ItemInstance, kind: String) -> bool:
 			return item.misc_id in RAW_ORES
 		"prop_ore":
 			return item.misc_id in PROP_ORES
+		"blueprint":
+			return item.is_misc() and ("đồ phổ" in item.get_display_name().to_lower() or item.misc_id.begins_with("6_1_2") or item.misc_id == "4_412_1")
+		"skill_book":
+			return item.is_misc() and ("bí kíp" in item.get_display_name().to_lower() or "thư tịch" in item.get_display_name().to_lower() or item.misc_id.begins_with("6_1_45"))
 		"alt":
-			return data().get("alt", {}).has(item.misc_id)
+			return item.misc_id == XUANJING or data().get("alt", {}).has(item.misc_id)
 	return false
 
 # ---------------------------------------------------------------- giá trị (itemvalue/*.lua)
@@ -369,6 +377,8 @@ static func plan(profile: PlayerProfile, op: int, items: Array, alts: Array = []
 			_plan_forge(r, items)
 		Op.ENCHASE:
 			_plan_enchase(r, items, alt_sum)
+		Op.DOPHO:
+			_plan_dopho(r, items, alts)
 	if r["error"] == "" and profile and profile.gold < int(r["cost"]):
 		r["error"] = ERR_TEXT["money"]
 	r["ok"] = r["error"] == ""
@@ -520,6 +530,36 @@ static func _plan_enchase(r: Dictionary, items: Array, alt_sum: float) -> void:
 	r["fail"] = maxf(0.0, 1.0 - total)
 	r["fail_note"] = "thất bại vẫn giữ đồ tím"
 
+static func _plan_dopho(r: Dictionary, items: Array, alts: Array) -> void:
+	var bp: ItemInstance = items[0]
+	var bp_name := bp.get_display_name()
+	var clean_name := bp_name.replace("Đồ phổ Hoàng Kim - ", "").replace("Đồ phổ - ", "").replace(" đồ phổ", "").strip_edges()
+	var gold_idx := ItemDatabase.find_gold_by_name(clean_name)
+	if gold_idx < 0:
+		gold_idx = 0
+	var gold_record := ItemDatabase.get_gold(gold_idx)
+	var gold_name := str(gold_record.get("name", clean_name))
+
+	var alt_sum := 0.0
+	for a in alts:
+		if (a as ItemInstance).misc_id == XUANJING:
+			alt_sum += ore_value(a.get_level())
+		else:
+			alt_sum += alt_value(a)
+
+	var base_prob := 0.35
+	var bonus := clampf(alt_sum / 250000.0, 0.0, 0.65)
+	var p := clampf(base_prob + bonus, 0.2, 1.0)
+
+	r["outcomes"].append({
+		"text": "Hoàng Kim - %s" % gold_name,
+		"prob": p,
+		"make": {"gold_index": gold_idx, "perfection": 8 + randi() % 3}
+	})
+	r["fail"] = maxf(0.0, 1.0 - p)
+	r["fail_note"] = "thất bại giữ Đồ phổ, mất nguyên liệu khác"
+	r["note"] = "Kết hợp Đồ phổ chế tạo thành trang bị Hoàng Kim môn phái."
+
 # ---------------------------------------------------------------- thực hiện
 
 ## Chế tạo trên `profile` với ô theo uid (`uids` theo thứ tự ô; 1 uid được dùng nhiều lần nếu là chồng đủ số lượng) + vật phẩm phụ.
@@ -563,6 +603,13 @@ static func run(profile: PlayerProfile, op: int, uids: Array, alt_uids: Array = 
 				for a in alts:
 					_take(profile, a, 1)
 				return {"ok": true, "success": false, "message": "Khảm thất bại — đồ tím vẫn còn, mất Huyền Tinh và khoáng thạch."}
+		Op.DOPHO:
+			if chosen < 0:
+				for i in range(1, items.size()):
+					_take(profile, items[i], 1)
+				for a in alts:
+					_take(profile, a, 1)
+				return {"ok": true, "success": false, "message": "Ghép Đồ phổ thất bại — Đồ phổ vẫn còn, mất các nguyên liệu phụ."}
 	if chosen < 0:
 		for it in items:
 			_take(profile, it, 1)
@@ -586,6 +633,13 @@ static func run(profile: PlayerProfile, op: int, uids: Array, alt_uids: Array = 
 
 static func _make_result(op: int, items: Array, make: Dictionary, rng: RandomNumberGenerator) -> ItemInstance:
 	match op:
+		Op.DOPHO:
+			var gold_idx := int(make.get("gold_index", 0))
+			var perf := int(make.get("perfection", 10))
+			var it := ItemGenerator.generate_gold(gold_idx, perf, rng.randi())
+			if it:
+				it.ensure_uid()
+				return it
 		Op.FORGE:
 			var src: ItemInstance = items[0]
 			var it := ItemInstance.from_dict(src.to_dict())

@@ -237,11 +237,19 @@ func _ai_think(gs: GameServer) -> void:
 			return
 		_walk_to(there)
 		return
-	var roll := randi() % 100
+	var total_weight := 0
+	for i in 4:
+		if int(data["skills"][i][0]) > 0:
+			total_weight += maxi(0, int(p[i + 1]))
+	if total_weight <= 0:
+		total_weight = 100
+	var roll := randi() % total_weight
 	var slot := -1
 	var acc := 0
 	for i in 4:
-		acc += int(p[i + 1])
+		if int(data["skills"][i][0]) <= 0:
+			continue
+		acc += maxi(0, int(p[i + 1]))
 		if roll < acc:
 			slot = i
 			break

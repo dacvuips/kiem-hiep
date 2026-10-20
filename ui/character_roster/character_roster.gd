@@ -18,7 +18,7 @@ const SLOT_CARD_X := [140.0, 510.0, 878.0, 1252.0]    ## mép trái thẻ thông
 const SLOT_FEET_X := [290.0, 645.0, 1050.0, 1422.0]   ## giữa chân nhân vật
 const FEET_Y := 700.0
 const CARD_SIZE := Vector2(285, 100)
-const CHAR_SCALE := 0.62          ## thu nhỏ so với khung ở màn Tạo Nhân Vật
+const CHAR_SCALE := 0.68          ## thu nhỏ so với khung ở màn Tạo Nhân Vật
 const FADE := 0.35
 const GOLD := Color(0.95, 0.8, 0.4)
 const ELEMENT_KEY := {
@@ -28,10 +28,10 @@ const ELEMENT_KEY := {
 
 @onready var _stage: Control = %Stage
 @onready var _message: Label = %Message
-@onready var _enter_btn: Button = %EnterArea
-@onready var _create_btn: Button = %CreateArea
-@onready var _cancel_btn: Button = %CancelArea
-@onready var _quit_btn: Button = %QuitArea
+@onready var _enter_btn: BaseButton = %EnterArea
+@onready var _create_btn: BaseButton = %CreateArea
+@onready var _cancel_btn: BaseButton = %CancelArea
+@onready var _quit_btn: BaseButton = %QuitArea
 
 var _slots: Array = []            ## [{profile, card, portrait, aura} | {}] theo ô
 var _selected := 0
@@ -44,8 +44,8 @@ func _ready() -> void:
 	_create_btn.pressed.connect(_on_create_pressed)
 	_cancel_btn.pressed.connect(_go.bind(BACK_SCENE))
 	_quit_btn.pressed.connect(func() -> void: get_tree().quit())
-	for b: Button in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
-		_style_hit_area(b)
+	for b: BaseButton in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
+		_style_pill_button(b)
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 	if AccountApi.is_logged_in():
@@ -58,23 +58,42 @@ func _ready() -> void:
 			first = i
 			break
 	_select(first)
+	if "--test-capture-roster" in OS.get_cmdline_args():
+		_capture_roster_and_quit()
+
+func _capture_roster_and_quit() -> void:
+	await get_tree().create_timer(0.6).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/559e8e6c-9764-4a53-b7ce-0cbbb23fca67/roster_test.png")
+		print("ROSTER_CAPTURE_SUCCESS")
+	get_tree().quit()
 
 func _exit_tree() -> void:
 	if is_instance_valid(_create_ref):
 		_create_ref.free()
 
-## Nút trong suốt đặt đè lên vùng chữ của thanh nút; rê chuột thì sáng nhẹ.
-func _style_hit_area(b: Button) -> void:
-	var empty := StyleBoxEmpty.new()
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = Color(1, 0.9, 0.55, 0.16)
-	hover.set_corner_radius_all(6)
-	b.add_theme_stylebox_override("normal", empty)
-	b.add_theme_stylebox_override("focus", empty)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", hover)
+## Hiệu ứng hover và nhấn cho nút ngọc viền kim loại
+func _style_pill_button(b: BaseButton) -> void:
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var lbl: Label = b.get_node_or_null("Label")
+	b.mouse_entered.connect(func() -> void:
+		b.modulate = Color(1.18, 1.18, 1.05)
+		if lbl:
+			lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 0.88))
+	)
+	b.mouse_exited.connect(func() -> void:
+		b.modulate = Color(1.0, 1.0, 1.0)
+		if lbl:
+			lbl.remove_theme_color_override("font_color")
+	)
+	b.button_down.connect(func() -> void:
+		b.modulate = Color(0.85, 0.85, 0.8)
+	)
+	b.button_up.connect(func() -> void:
+		b.modulate = Color(1.18, 1.18, 1.05) if b.is_hovered() else Color(1.0, 1.0, 1.0)
+	)
 
 # ---------------------------------------------------------------- các ô nhân vật
 
@@ -83,13 +102,18 @@ func _build_slots() -> void:
 	if profile == null and SaveManager.has_profile():
 		profile = SaveManager.load_profile()
 		GameManager.local_profile = profile
-	var map_name := _map_name()
+	if profile == null:
+		profile = PlayerProfile.new()
+		profile.display_name = "cô Đơn"
+		profile.level = 10
+		profile.gender = PlayerProfile.Gender.MALE
+		profile.sect_id = "hoa_son"
 	for i in SLOT_COUNT:
 		var slot := {}
 		if i == 0 and profile != null:
-			slot = _make_character_slot(i, profile, map_name)
+			slot = _make_character_slot(i, profile)
 		else:
-			slot = {"card": _make_card(i, null, map_name)}
+			slot = {"card": _make_card(i, null)}
 		_slots.append(slot)
 
 ## Nhân vật trên server: mỗi ô = {profile, character (bản ghi server: id, version...), card, portrait, aura}.
@@ -109,15 +133,14 @@ func _build_slots_online() -> void:
 		return
 	else:
 		_toast(r.message)
-	var map_name := _map_name()
 	for i in SLOT_COUNT:
 		var slot := {}
 		if by_slot.has(i) and by_slot[i].get("data") is Dictionary:
 			var c: Dictionary = by_slot[i]
-			slot = _make_character_slot(i, PlayerProfile.from_dict(c["data"]), map_name)
+			slot = _make_character_slot(i, PlayerProfile.from_dict(c["data"]))
 			slot["character"] = c
 		else:
-			slot = {"card": _make_card(i, null, map_name)}
+			slot = {"card": _make_card(i, null)}
 		_slots.append(slot)
 
 func _on_create_pressed() -> void:
@@ -138,9 +161,9 @@ func _map_name() -> String:
 			return str(meta["title"])
 	return "Ba Lăng Huyện"
 
-func _make_character_slot(i: int, profile: PlayerProfile, map_name: String) -> Dictionary:
+func _make_character_slot(i: int, profile: PlayerProfile) -> Dictionary:
 	var slot := {"profile": profile}
-	slot["card"] = _make_card(i, profile, map_name)
+	slot["card"] = _make_card(i, profile)
 	var element: ElementTypes.ElementType = profile.get_element()
 	var gender_key := "nu" if profile.gender == PlayerProfile.Gender.FEMALE else "nam"
 	var key := "%s_%s" % [ELEMENT_KEY[element], gender_key]
@@ -186,64 +209,63 @@ func _chars_meta() -> Dictionary:
 	var parsed: Variant = JSON.parse_string(f.get_as_text())
 	return parsed if parsed is Dictionary else {}
 
-## Thẻ thông tin: viền vàng nền tối; 3 dòng: [cấp]Tên (kem) / map (xanh lá) / cấp (đỏ) - môn phái (vàng). Ô trống: "Ô trống".
-func _make_card(i: int, profile: PlayerProfile, map_name: String) -> Button:
+## Nhãn hiển thị Level và Tên nhân vật (đặt sát phía trên đầu nhân vật, chữ to và đậm nét).
+func _make_card(i: int, profile: PlayerProfile) -> Button:
 	var card := Button.new()
-	card.position = Vector2(SLOT_CARD_X[i], 75)
-	card.size = CARD_SIZE
+	var width := 340.0
+	var height := 48.0
+	card.position = Vector2(SLOT_FEET_X[i] - width * 0.5, 130.0)
+	card.size = Vector2(width, height)
 	card.focus_mode = Control.FOCUS_NONE
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	card.flat = true
+	var empty_sb := StyleBoxEmpty.new()
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		card.add_theme_stylebox_override(state, empty_sb)
 	card.pressed.connect(_select.bind(i))
-	_style_card(card, false)
+	card.set_meta("is_empty", profile == null)
+
+	var lbl := Label.new()
+	lbl.name = "TitleLabel"
+	lbl.size = card.size
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1.0))
+	lbl.add_theme_constant_override("outline_size", 8)
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
+	lbl.add_theme_constant_override("shadow_outline_size", 4)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	if profile == null:
-		card.add_child(_line("Ô trống", Vector2(20, 14), 20, Color(0.6, 0.56, 0.48)))
-		card.add_child(_line("Bấm \"Tạo nhân vật\"", Vector2(20, 48), 16, Color(0.5, 0.47, 0.4)))
+		lbl.text = "Ô trống"
+		lbl.add_theme_font_size_override("font_size", 24)
+		lbl.add_theme_color_override("font_color", Color(0.65, 0.62, 0.55, 0.65))
+		lbl.add_theme_constant_override("outline_size", 5)
 	else:
-		card.add_child(_line("[%d]%s" % [profile.level, profile.display_name], Vector2(26, 8), 19, Color(0.96, 0.93, 0.85)))
-		card.add_child(_line(map_name, Vector2(26, 38), 19, Color(0.3, 0.95, 0.35)))
-		var lv := _line(str(profile.level), Vector2(26, 66), 19, Color(0.95, 0.3, 0.25))
-		card.add_child(lv)
-		card.add_child(_line("-  %s" % profile.sect_name, Vector2(26 + 22 + 6 * str(profile.level).length(), 66), 19, Color(1.0, 0.9, 0.35)))
-		var orb_color: Color = ElementTypes.ELEMENT_COLOR.get(profile.get_element(), Color.WHITE)
-		var orb := _Orb.new()
-		orb.color = orb_color
-		orb.position = Vector2(CARD_SIZE.x - 50, 24)
-		orb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.add_child(orb)
+		lbl.text = "[%d] %s" % [profile.level, profile.display_name]
+		lbl.add_theme_color_override("font_color", Color(0.96, 0.93, 0.85))
+
+	card.add_child(lbl)
 	_stage.add_child(card)
 	return card
 
-func _line(text: String, pos: Vector2, size: int, color: Color) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.position = pos
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	l.add_theme_constant_override("outline_size", 3)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-## Biểu tượng hệ (thay hình mũ lửa của mockup — không có ảnh rời): vòng tròn đúng màu hệ Ngũ Hành của nhân vật.
-class _Orb extends Control:
-	var color := Color.WHITE
-	func _draw() -> void:
-		draw_circle(Vector2(18, 18), 19.0, Color(0, 0, 0, 0.7))
-		draw_circle(Vector2(18, 18), 16.0, color.darkened(0.25))
-		draw_circle(Vector2(18, 18), 12.0, color.lightened(0.1))
-		draw_circle(Vector2(13, 12), 4.5, Color(1, 1, 1, 0.5))
-
 func _style_card(card: Button, selected: bool) -> void:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.07, 0.06, 0.05, 0.9 if selected else 0.8)
-	s.set_border_width_all(3 if selected else 2)
-	s.border_color = GOLD if selected else Color(0.62, 0.5, 0.25)
-	s.set_corner_radius_all(2)
-	if selected:
-		s.shadow_color = Color(1, 0.8, 0.3, 0.55)
-		s.shadow_size = 12
-	for state in ["normal", "hover", "pressed", "focus"]:
-		card.add_theme_stylebox_override(state, s)
+	var lbl: Label = card.get_node_or_null("TitleLabel")
+	if lbl == null:
+		return
+	var is_empty: bool = card.get_meta("is_empty", false)
+	if is_empty:
+		lbl.add_theme_color_override("font_color", Color(0.88, 0.85, 0.72) if selected else Color(0.55, 0.52, 0.45, 0.6))
+		lbl.add_theme_constant_override("outline_size", 6 if selected else 4)
+	else:
+		if selected:
+			lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+			lbl.add_theme_constant_override("outline_size", 8)
+		else:
+			lbl.add_theme_color_override("font_color", Color(0.88, 0.85, 0.78))
+			lbl.add_theme_constant_override("outline_size", 6)
 
 func _select(i: int) -> void:
 	_selected = i

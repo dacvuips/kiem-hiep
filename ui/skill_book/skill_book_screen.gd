@@ -20,8 +20,8 @@ const COLOR_WARNING := GameUi.LABEL_RED
 const COLOR_LINKED_SKILL := Color(0.45, 0.85, 0.4)
 const COLOR_NOT_LEARNED := Color(0.75, 0.75, 0.7)
 
-const SLOT_SIZE := Vector2(76, 96)
-const ICON_SIZE := 62.0
+const SLOT_SIZE := Vector2(64, 82)
+const ICON_SIZE := 48.0
 ## Cột phải xếp Y HỆT cụm nút skill trong trận (SkillBarUI.tscn): tâm tính từ góc dưới-phải + đường kính, thu nhỏ
 ## WHEEL_SCALE cho vừa %Wheel. Sửa vị trí trong SkillBarUI.tscn thì cập nhật bảng này cho khớp.
 const WHEEL_SCALE := 0.56   ## vừa cả hàng nút tiện ích (Ngồi / Nhảy / Ngựa) ở đáy trái
@@ -154,7 +154,7 @@ func _build_grid() -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.position = Vector2(0, ICON_SIZE + 8)
 		label.size = Vector2(SLOT_SIZE.x, 20)
-		label.add_theme_font_size_override("font_size", 14)
+		label.add_theme_font_size_override("font_size", 12)
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
 		label.add_theme_constant_override("outline_size", 3)
 		b.add_child(label)
@@ -168,7 +168,7 @@ func _refresh() -> void:
 		var b: Button = _slots[skill.id]
 		var lv := _profile.get_skill_level(skill.id)
 		var label: Label = b.get_node("LevelLabel")
-		label.text = str(lv) if lv > 0 else "Chưa học"
+		label.text = str(lv) if lv > 0 else "Chưa"
 		label.add_theme_color_override("font_color", COLOR_STAT if lv > 0 else COLOR_NOT_LEARNED)
 		## Khung ảnh ô skill: đang chọn = viền vàng GameUi, đã học = viền xanh lục, chưa học = viền xám.
 		var selected := _selected != null and _selected.id == skill.id
@@ -265,6 +265,7 @@ func _on_learn_pressed() -> void:
 
 func _after_skill_changed() -> void:
 	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
 	_select(_selected)
 
 func _add_line(box: VBoxContainer, text: String, color: Color, font_size: int = 15) -> void:

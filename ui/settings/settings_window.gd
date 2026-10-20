@@ -1,9 +1,10 @@
 extends SocialWindow
 class_name SettingsWindow
-## Khung "Cài đặt" (nút Cài đặt trên màn chơi) — cài đặt của MÁY, đổi là lưu ngay vào user://settings.cfg:
+## Khung "Cài đặt" (nút Cài đặt trên màn chơi và CharacterHub) — cài đặt của MÁY, đổi là lưu ngay vào user://settings.cfg:
 ##   - Nhạc nền bật/tắt (MusicManager.enabled).
 ##   - Lăn chuột để zoom camera bật/tắt + thanh trượt mức zoom (GameSettings; áp ngay lên camera nhân vật).
 ##   - Mở từ màn chơi (on_exit hợp lệ): thêm nút "Thoát về Character Hub".
+##   - Mở từ CharacterHub (is_hub): thêm nút "Trở Về Chọn Server" và "Thoát Game".
 
 const ZOOM_STEP := 0.025
 
@@ -11,9 +12,13 @@ var _player: Node
 var _music: CheckButton
 var _zoom_slider: HSlider
 var _zoom_value: Label
+var _is_hub: bool = false
+var _sys_container: Control
+var on_server_select: Callable
+var on_quit_game: Callable
 
 static func open(host: Node, on_exit: Callable = Callable()) -> SettingsWindow:
-	var win := SettingsWindow.new()
+	var win := SettingsWindow.new(false)
 	if on_exit.is_valid():
 		var exit := SocialUi.stone_button("Thoát về Character Hub")
 		exit.pressed.connect(func() -> void:
@@ -23,8 +28,9 @@ static func open(host: Node, on_exit: Callable = Callable()) -> SettingsWindow:
 		win.body.add_child(exit)
 	return SocialWindow.present(host, win, &"settings") as SettingsWindow
 
-func _init() -> void:
-	super._init("Cài đặt", "", 380.0)
+func _init(is_hub: bool = false) -> void:
+	super._init("Cài Đặt", "", 480.0)
+	_is_hub = is_hub
 
 	body.add_child(SocialUi.label("Âm thanh", SocialUi.SUBTITLE))
 	_music = _check("Nhạc nền", MusicManager.enabled)
@@ -53,7 +59,6 @@ func _init() -> void:
 	_zoom_slider.value = GameSettings.camera_zoom()
 	_show_zoom(_zoom_slider.value)
 	_zoom_slider.value_changed.connect(_on_zoom_changed)
-
 	var buttons := add_button_row()
 	var reset := SocialUi.stone_button("Zoom mặc định")
 	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -63,6 +68,54 @@ func _init() -> void:
 	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func() -> void: close_requested.emit())
 	buttons.add_child(close)
+
+	if _is_hub:
+		_build_hub_system_section()
+
+func _build_hub_system_section() -> void:
+	if _sys_container != null:
+		return
+	body.add_child(SocialUi.divider())
+	body.add_child(SocialUi.label("Hệ thống", SocialUi.SUBTITLE))
+	var sys_buttons := add_button_row()
+	_sys_container = sys_buttons
+
+	var server_btn := SocialUi.stone_button("Trở Về Chọn Server")
+	server_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	server_btn.pressed.connect(_on_server_select_clicked)
+	sys_buttons.add_child(server_btn)
+
+	var quit_btn := SocialUi.stone_button("Thoát Game")
+	quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	quit_btn.pressed.connect(_on_quit_game_clicked)
+	sys_buttons.add_child(quit_btn)
+
+func setup_hub_actions(p_on_server: Callable = Callable(), p_on_quit: Callable = Callable()) -> void:
+	on_server_select = p_on_server
+	on_quit_game = p_on_quit
+	_build_hub_system_section()
+
+func _on_server_select_clicked() -> void:
+	if on_server_select.is_valid():
+		on_server_select.call()
+		return
+	SocialWindow.confirm(self, "Chọn Máy Chủ", "Lưu dữ liệu và trở về màn hình chọn máy chủ?", func() -> void:
+		if GameManager.local_profile != null:
+			SaveManager.save_profile(GameManager.local_profile)
+			await SaveManager.flush_online()
+		get_tree().change_scene_to_file("res://ui/server_select/ServerSelect.tscn")
+	)
+
+func _on_quit_game_clicked() -> void:
+	if on_quit_game.is_valid():
+		on_quit_game.call()
+		return
+	SocialWindow.confirm(self, "Thoát Game", "Lưu dữ liệu và thoát khỏi trò chơi?", func() -> void:
+		if GameManager.local_profile != null:
+			SaveManager.save_profile(GameManager.local_profile)
+			await SaveManager.flush_online()
+		get_tree().quit()
+	)
 
 func _ready() -> void:
 	super._ready()

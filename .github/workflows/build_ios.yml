@@ -1,0 +1,99 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Kiểu build (debug hoặc release)"
+        required: true
+        default: "debug"
+        type: choice
+        options:
+          - debug
+          - release
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/assets/avatar/
+            !/assets/monster/
+            !/assets/skill_fx/
+            !/assets/items/
+            !/assets/monster_thumbs/
+            !/audio/
+            !/android/
+            !/tools/
+            !/docs/
+
+      - name: Cài đặt Godot ${{ env.GODOT_VERSION }}
+        run: |
+          echo "Tải Godot Engine..."
+          curl -fsSL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo mv /tmp/godot/Godot.app /Applications/Godot.app
+          sudo ln -s /Applications/Godot.app/Contents/MacOS/Godot /usr/local/bin/godot
+          godot --version
+
+      - name: Cài đặt Export Templates
+        run: |
+          echo "Tải Export Templates..."
+          curl -fsSL -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable/"
+          ls -la "$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable/"
+
+      - name: Khởi tạo thư mục và Import assets
+        run: |
+          mkdir -p build/ios
+          godot --headless --path . --import || true
+
+      - name: Xuất dự án Xcode từ Godot
+        run: |
+          godot --headless --path . --export-debug "iOS" build/ios/KiemHiep.xcodeproj
+          ls -la build/ios/
+
+      - name: Biên dịch Xcode Project (xcodebuild)
+        run: |
+          xcodebuild -project build/ios/KiemHiep.xcodeproj \
+            -scheme KiemHiep \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Đóng gói file .ipa
+        run: |
+          mkdir -p Payload
+          # Tìm thư mục .app vừa build xong
+          APP_PATH=$(find build/ios -name "*.app" -type d | head -n 1)
+          echo "Tìm thấy App tại: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
+          zip -r -q kiem-hiep-ios.ipa Payload
+          ls -lh kiem-hiep-ios.ipa
+
+      - name: Tải file .ipa lên Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiem-hiep-ios
+          path: kiem-hiep-ios.ipa
+          retention-days: 14

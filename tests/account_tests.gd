@@ -70,6 +70,7 @@ func test_session_lock() -> void:
 		DirAccess.remove_absolute(lock)
 
 func test_profile_guard() -> void:
+	var profile_guard = load("res://net/server/profile_guard.gd")
 	var server := PlayerProfile.new()
 	server.set_sect(SectRegistry.get_by_element(ElementTypes.ElementType.MOC)[0])
 	server.level = 10
@@ -79,22 +80,22 @@ func test_profile_guard() -> void:
 	var cheat := sd.duplicate(true)
 	cheat["level"] = 90
 	cheat["strength"] = int(cheat["strength"]) + 500
-	var m := ProfileGuard.merge(sd, cheat)
+	var m := profile_guard.merge(sd, cheat)
 	check("ProfileGuard: không đổi được cấp", int(m.level) == 10)
 	check("ProfileGuard: cộng lố điểm tiềm năng bị trả về", int(m.strength) == int(sd.strength))
 	var legit := sd.duplicate(true)
 	legit["strength"] = int(legit["strength"]) + 5
 	legit["potential_points"] = int(legit["potential_points"]) - 5
 	legit["hotbar_page"] = 1
-	m = ProfileGuard.merge(sd, legit)
+	m = profile_guard.merge(sd, legit)
 	check("ProfileGuard: cộng điểm đúng luật được nhận", int(m.strength) == int(sd.strength) + 5 and int(m.hotbar_page) == 1)
 	## Đã bỏ phe Tống / Kim cố định: bản lưu gửi lên còn khoá "nation" thì bị xoá
 	var n1 := sd.duplicate(true)
 	n1["nation"] = Nation.Type.SONG
-	check("ProfileGuard: bỏ khoá phe Tống / Kim cũ", not ProfileGuard.merge(sd, n1).has("nation"))
-	var hit := ProfileGuard.max_hit(server)
-	check("ProfileGuard: trần sát thương hợp lý", hit >= ProfileGuard.MIN_CAP and hit < 100000.0, hit)
-	check("ProfileGuard: kinh nghiệm hạ quái", ProfileGuard.exp_for_kill(10, MonsterData.monster(1), 10, 100) >= 0)
+	check("ProfileGuard: bỏ khoá phe Tống / Kim cũ", not profile_guard.merge(sd, n1).has("nation"))
+	var hit := profile_guard.max_hit(server)
+	check("ProfileGuard: trần sát thương hợp lý", hit >= profile_guard.MIN_CAP and hit < 100000.0, hit)
+	check("ProfileGuard: kinh nghiệm hạ quái", profile_guard.exp_for_kill(10, MonsterData.monster(1), 10, 100) >= 0)
 	## Đồ + tiền (C1)
 	var owner := PlayerProfile.new()
 	owner.set_sect(SectRegistry.get_by_element(ElementTypes.ElementType.MOC)[0])
@@ -108,7 +109,7 @@ func test_profile_guard() -> void:
 	(c1.inventory as Array)[0]["magic"] = [{"attrib": "damage_v", "value": [9999, 0, 0], "name": "x", "prefix": true}]
 	(c1.inventory as Array)[0]["rx"] = 5
 	c1["gold"] = 50000
-	var g := ProfileGuard.merge(od, c1)
+	var g := profile_guard.merge(od, c1)
 	check("ProfileGuard: bỏ món tự chế + bản nhân bản", (g.inventory as Array).size() == 1)
 	check("ProfileGuard: chỉ số món đồ giữ bản server", (g.inventory as Array)[0].magic == (od.inventory as Array)[0].magic)
 	check("ProfileGuard: vị trí món do chủ đổi được", int((g.inventory as Array)[0].rx) == 5)
@@ -116,29 +117,29 @@ func test_profile_guard() -> void:
 	var c2 := od.duplicate(true)
 	c2["gold"] = 400
 	c2["storage_gold"] = 600
-	check("ProfileGuard: chuyển tiền vào rương được", int(ProfileGuard.merge(od, c2).storage_gold) == 600)
+	check("ProfileGuard: chuyển tiền vào rương được", int(profile_guard.merge(od, c2).storage_gold) == 600)
 	## C5: rương, khoá bảo vệ, khoá món đồ
 	var rich := owner.to_dict()
 	rich["gold"] = 600000
 	var c3 := rich.duplicate(true)
 	c3["storage_extra"] = 1
-	check("ProfileGuard: mở rương không trả tiền bị chặn", int(ProfileGuard.merge(rich, c3).storage_extra) == 0)
+	check("ProfileGuard: mở rương không trả tiền bị chặn", int(profile_guard.merge(rich, c3).storage_extra) == 0)
 	c3["gold"] = 100000
-	check("ProfileGuard: mở rương có trả tiền được nhận", int(ProfileGuard.merge(rich, c3).storage_extra) == 1)
+	check("ProfileGuard: mở rương có trả tiền được nhận", int(profile_guard.merge(rich, c3).storage_extra) == 1)
 	var locked := rich.duplicate(true)
 	locked["security_hash"] = "x".repeat(64)
 	locked["security_locked"] = true
 	var c4 := locked.duplicate(true)
 	c4["security_locked"] = false
-	check("ProfileGuard: không tự mở khoá bảo vệ được", bool(ProfileGuard.merge(locked, c4).security_locked))
+	check("ProfileGuard: không tự mở khoá bảo vệ được", bool(profile_guard.merge(locked, c4).security_locked))
 	var srv_item := rich.duplicate(true)
 	(srv_item.inventory as Array)[0]["lock"] = ItemInstance.LOCK_LOCKED
 	var c5 := srv_item.duplicate(true)
 	(c5.inventory as Array)[0]["lock"] = ItemInstance.LOCK_NORMAL
-	check("ProfileGuard: không bỏ khoá món đồ ngay được", int((ProfileGuard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_LOCKED)
+	check("ProfileGuard: không bỏ khoá món đồ ngay được", int((profile_guard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_LOCKED)
 	(c5.inventory as Array)[0]["lock"] = ItemInstance.LOCK_UNLOCKING
 	(c5.inventory as Array)[0]["unlock_at"] = SecurityLock.now() + SecurityLock.ITEM_UNLOCK_SECONDS
-	check("ProfileGuard: xin mở khoá (chờ 3 ngày) được nhận", int((ProfileGuard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_UNLOCKING)
+	check("ProfileGuard: xin mở khoá (chờ 3 ngày) được nhận", int((profile_guard.merge(srv_item, c5).inventory as Array)[0].lock) == ItemInstance.LOCK_UNLOCKING)
 	check("ItemInstance có uid riêng", sword.uid.length() == 16 and ItemGenerator.random_equipment(10).uid != sword.uid)
 
 func test_scenes_load() -> void:

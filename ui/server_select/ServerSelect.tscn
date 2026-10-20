@@ -1,32 +1,173 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://df7w0r63k2qsb"]
 
-[ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
-[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
-[ext_resource type="Texture2D" path="res://ui/server_select/bg.jpg" id="bg"]
-[ext_resource type="Texture2D" path="res://ui/login/logo.png" id="logo"]
-[ext_resource type="Texture2D" path="res://ui/server_select/frame.png" id="frame"]
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
+[ext_resource type="Texture2D" uid="uid://c8cxoo7sq4gm4" path="res://ui/login/bg.jpg" id="bg"]
 [ext_resource type="Texture2D" path="res://ui/server_select/btn_enter.png" id="be"]
-[ext_resource type="Texture2D" path="res://ui/character_hub/btn_back.png" id="bk"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
 
-[sub_resource type="LabelSettings" id="title"]
-font_size = 38
-font_color = Color(0.96, 0.88, 0.7, 1)
-outline_size = 8
-outline_color = Color(0.08, 0.03, 0.01, 1)
+[sub_resource type="StyleBoxFlat" id="dialog_bg"]
+bg_color = Color(0.04, 0.11, 0.13, 0.6)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.78, 0.45, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 20
+shadow_offset = Vector2(0, 6)
 
-[sub_resource type="StyleBoxEmpty" id="empty"]
+[sub_resource type="StyleBoxFlat" id="inner_border"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.75, 0.62, 0.35, 0.5)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
-[sub_resource type="LabelSettings" id="acc"]
-font_size = 19
-font_color = Color(0.92, 0.84, 0.66, 1)
-outline_size = 5
-outline_color = Color(0.06, 0.02, 0.01, 1)
+[sub_resource type="StyleBoxFlat" id="title_banner"]
+bg_color = Color(0.08, 0.2, 0.23, 0.55)
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.45, 0.5)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+
+[sub_resource type="LabelSettings" id="title_setting"]
+font = ExtResource("font")
+font_size = 24
+font_color = Color(0.98, 0.88, 0.55, 1)
+outline_size = 6
+outline_color = Color(0.04, 0.12, 0.14, 1)
+shadow_size = 4
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="server_card_bg"]
+bg_color = Color(0.02, 0.07, 0.08, 0.4)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.38, 0.4, 0.4)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="LabelSettings" id="acc_setting"]
+font = ExtResource("font")
+font_size = 15
+font_color = Color(0.98, 0.88, 0.55, 1)
+outline_size = 4
+outline_color = Color(0.05, 0.02, 0.01, 1)
+
+[sub_resource type="LabelSettings" id="legend_setting"]
+font = ExtResource("font")
+font_size = 14
+font_color = Color(0.85, 0.9, 0.88, 1)
+outline_size = 3
+outline_color = Color(0.05, 0.05, 0.05, 1)
+
+[sub_resource type="StyleBoxFlat" id="dot_green"]
+bg_color = Color(0.18, 0.95, 0.38, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.6, 1, 0.7, 0.8)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0.18, 0.95, 0.38, 0.5)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="dot_yellow"]
+bg_color = Color(0.98, 0.82, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.92, 0.5, 0.8)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0.98, 0.82, 0.15, 0.5)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="dot_red"]
+bg_color = Color(0.95, 0.22, 0.22, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.6, 0.6, 0.8)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0.95, 0.22, 0.22, 0.5)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="dot_gray"]
+bg_color = Color(0.65, 0.68, 0.72, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.88, 0.92, 0.8)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="back_btn"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.16, 0.18, 0.75)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.45, 0.6)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="back_btn_hover"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(0.12, 0.25, 0.28, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.86, 0.52, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [sub_resource type="LabelSettings" id="msg"]
-font_size = 22
-font_color = Color(1, 0.9, 0.62, 1)
-outline_size = 8
-outline_color = Color(0.1, 0.04, 0.02, 1)
+font = ExtResource("font")
+font_size = 20
+font_color = Color(1, 0.92, 0.65, 1)
+outline_size = 6
+outline_color = Color(0.1, 0.05, 0.02, 1)
 
 [node name="ServerSelect" type="Control"]
 layout_mode = 3
@@ -50,121 +191,213 @@ expand_mode = 1
 stretch_mode = 6
 
 [node name="Stage" type="Control" parent="."]
-layout_mode = 3
 anchors_preset = 0
-offset_right = 1672.0
-offset_bottom = 941.0
+offset_right = 1280.0
+offset_bottom = 720.0
 mouse_filter = 2
 script = ExtResource("sf")
+design_size = Vector2(1280, 720)
 
-[node name="Logo" type="TextureRect" parent="Stage"]
+[node name="DialogFrame" type="Panel" parent="Stage"]
 layout_mode = 0
-offset_left = 548
-offset_top = -85
-offset_right = 1198
-offset_bottom = 322
+offset_left = 300.0
+offset_top = 70.0
+offset_right = 980.0
+offset_bottom = 576.0
 mouse_filter = 2
-texture = ExtResource("logo")
-expand_mode = 1
+theme_override_styles/panel = SubResource("dialog_bg")
 
-[node name="Frame" type="TextureRect" parent="Stage"]
-layout_mode = 0
-offset_left = 400
-offset_top = 212
-offset_right = 1275
-offset_bottom = 819
+[node name="InnerBorder" type="Panel" parent="Stage/DialogFrame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("frame")
-expand_mode = 1
+theme_override_styles/panel = SubResource("inner_border")
+
+[node name="TitleBar" type="Panel" parent="Stage/DialogFrame"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = 54.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("title_banner")
 
 [node name="Title" type="Label" parent="Stage"]
 layout_mode = 0
-offset_left = 635
-offset_top = 262
-offset_right = 1035
-offset_bottom = 316
-mouse_filter = 2
-label_settings = SubResource("title")
+offset_left = 300.0
+offset_top = 78.0
+offset_right = 980.0
+offset_bottom = 122.0
+text = "Chọn Server"
+label_settings = SubResource("title_setting")
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "Chọn máy chủ"
+
+[node name="ServerCardBg" type="Panel" parent="Stage"]
+layout_mode = 0
+offset_left = 484.0
+offset_top = 138.0
+offset_right = 956.0
+offset_bottom = 436.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("server_card_bg")
 
 [node name="Filters" type="VBoxContainer" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 470
-offset_top = 360
-offset_right = 618
-offset_bottom = 680
-theme_override_constants/separation = 5
+offset_left = 324.0
+offset_top = 142.0
+offset_right = 468.0
+offset_bottom = 436.0
+theme_override_constants/separation = 12
 
-[node name="Rows" type="VBoxContainer" parent="Stage"]
-unique_name_in_owner = true
+[node name="ScrollRows" type="ScrollContainer" parent="Stage"]
 layout_mode = 0
-offset_left = 648
-offset_top = 390
-offset_right = 1198
-offset_bottom = 720
-theme_override_constants/separation = 2
+offset_left = 492.0
+offset_top = 144.0
+offset_right = 948.0
+offset_bottom = 430.0
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="VBoxContainer" parent="Stage/ScrollRows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Legend" type="HBoxContainer" parent="Stage"]
+layout_mode = 0
+offset_left = 484.0
+offset_top = 444.0
+offset_right = 956.0
+offset_bottom = 470.0
+alignment = 1
+theme_override_constants/separation = 26
+
+[node name="LegGreen" type="HBoxContainer" parent="Stage/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Dot" type="Panel" parent="Stage/Legend/LegGreen"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("dot_green")
+
+[node name="Lbl" type="Label" parent="Stage/Legend/LegGreen"]
+layout_mode = 2
+text = "Mượt"
+label_settings = SubResource("legend_setting")
+
+[node name="LegYellow" type="HBoxContainer" parent="Stage/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Dot" type="Panel" parent="Stage/Legend/LegYellow"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("dot_yellow")
+
+[node name="Lbl" type="Label" parent="Stage/Legend/LegYellow"]
+layout_mode = 2
+text = "Đông"
+label_settings = SubResource("legend_setting")
+
+[node name="LegRed" type="HBoxContainer" parent="Stage/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Dot" type="Panel" parent="Stage/Legend/LegRed"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("dot_red")
+
+[node name="Lbl" type="Label" parent="Stage/Legend/LegRed"]
+layout_mode = 2
+text = "Đầy"
+label_settings = SubResource("legend_setting")
+
+[node name="LegGray" type="HBoxContainer" parent="Stage/Legend"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Dot" type="Panel" parent="Stage/Legend/LegGray"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("dot_gray")
+
+[node name="Lbl" type="Label" parent="Stage/Legend/LegGray"]
+layout_mode = 2
+text = "Bảo trì"
+label_settings = SubResource("legend_setting")
 
 [node name="EnterButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 615
-offset_top = 718
-offset_right = 1055
-offset_bottom = 834
+offset_left = 505.0
+offset_top = 484.0
+offset_right = 775.0
+offset_bottom = 544.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("be")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Message" type="Label" parent="Stage"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 436
-offset_top = 850
-offset_right = 1236
-offset_bottom = 890
-mouse_filter = 2
-modulate = Color(1, 1, 1, 0)
-label_settings = SubResource("msg")
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="AccountLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1250
-offset_top = 18
-offset_right = 1650
-offset_bottom = 50
-mouse_filter = 2
-label_settings = SubResource("acc")
+offset_left = 850.0
+offset_top = 18.0
+offset_right = 1256.0
+offset_bottom = 50.0
+text = "Tài khoản: "
+label_settings = SubResource("acc_setting")
 horizontal_alignment = 2
 vertical_alignment = 1
-text = "Tài khoản:"
 
-[node name="BackButton" type="TextureButton" parent="Stage"]
+[node name="BackButton" type="Button" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 24
-offset_top = 790
-offset_right = 264
-offset_bottom = 950
+offset_left = 24.0
+offset_top = 660.0
+offset_right = 156.0
+offset_bottom = 696.0
+focus_mode = 0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("bk")
-ignore_texture_size = true
-stretch_mode = 5
+theme_override_colors/font_color = Color(0.96, 0.88, 0.65, 1)
+theme_override_colors/font_hover_color = Color(1, 0.96, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("back_btn")
+theme_override_styles/hover = SubResource("back_btn_hover")
+theme_override_styles/pressed = SubResource("back_btn_hover")
+theme_override_styles/focus = SubResource("back_btn_hover")
+text = "Đổi tài khoản"
 
-[node name="Text" type="Label" parent="Stage/BackButton"]
+[node name="Message" type="Label" parent="Stage"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0)
 layout_mode = 0
-offset_left = 76
-offset_top = 50
-offset_right = 222
-offset_bottom = 110
-mouse_filter = 2
-label_settings = SubResource("acc")
-text = "Quay lại"
+offset_left = 340.0
+offset_top = 594.0
+offset_right = 940.0
+offset_bottom = 628.0
+label_settings = SubResource("msg")
 horizontal_alignment = 1
 vertical_alignment = 1

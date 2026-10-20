@@ -38,6 +38,8 @@ var _level_label: Label
 var _rank_label: Label
 var _bars: Dictionary = {}     ## tên -> {bar: BarCell, text: Label}
 var _last_text: Dictionary = {}
+var _disguise_tag: PanelContainer
+var _disguise_tag_label: Label
 
 func setup(player: Node) -> void:
 	_player = player
@@ -69,6 +71,37 @@ func _ready() -> void:
 	for key in _bars:
 		var rect: Rect2 = BAR_RECTS[key]
 		_bars[key]["text"] = _make_label(Rect2(rect.position.x, TEXT_Y, rect.size.x, 12), Color.WHITE)
+
+	_disguise_tag = PanelContainer.new()
+	_disguise_tag.name = "DisguiseTag"
+	_disguise_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_disguise_tag.position = Vector2(size_px.x + 8.0, 4.0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.06, 0.05, 0.92)
+	sb.border_width_left = 1
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.border_color = Color(0.85, 0.72, 0.25, 0.9)
+	sb.corner_radius_top_left = 4
+	sb.corner_radius_top_right = 4
+	sb.corner_radius_bottom_right = 4
+	sb.corner_radius_bottom_left = 4
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
+	_disguise_tag.add_theme_stylebox_override("panel", sb)
+
+	_disguise_tag_label = Label.new()
+	_disguise_tag_label.add_theme_font_override("font", _bold_font())
+	_disguise_tag_label.add_theme_font_size_override("font_size", 11)
+	_disguise_tag_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.4))
+	_disguise_tag_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_disguise_tag_label.add_theme_constant_override("outline_size", 3)
+	_disguise_tag.add_child(_disguise_tag_label)
+	_disguise_tag.visible = false
+	add_child(_disguise_tag)
 
 func _make_label(rect: Rect2, color: Color) -> Label:
 	var label := Label.new()
@@ -131,6 +164,16 @@ func _refresh() -> void:
 	if profile != null and profile.get_exp_to_next_level() > 0:
 		exp_ratio = clampf(float(profile.current_exp) / float(profile.get_exp_to_next_level()), 0.0, 1.0)
 	_set_bar("exp", exp_ratio * 100.0, 100.0, "%s%%" % ("%.2f" % (exp_ratio * 100.0)).replace(".", ","))
+
+	if _disguise_tag and profile:
+		var mask_item: ItemInstance = profile.equipment.get(Equipment.Part.MASK)
+		if mask_item:
+			_disguise_tag.visible = true
+			var d_title: String = mask_item.get_display_name()
+			if _disguise_tag_label.text != "🎭 " + d_title:
+				_disguise_tag_label.text = "🎭 " + d_title
+		else:
+			_disguise_tag.visible = false
 
 func _set_number(label: Label, value: String) -> void:
 	if label.text != value:

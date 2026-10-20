@@ -1,5 +1,10 @@
-; Project RIÊNG của APK launcher (trình tải game) — xem launcher/README.md.
-; Editor của game chính tự bỏ qua thư mục này (có project.godot riêng).
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -9,8 +14,8 @@ config/name="Kiem-hiep Launcher"
 config/description="Trình tải và cập nhật game Kiếm Hiệp"
 run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
-config/icon="res://icon.svg"
 run/max_fps=60
+config/icon="res://icon.svg"
 
 [display]
 
@@ -27,7 +32,7 @@ theme/custom_font="res://art/BeVietnamPro-Regular.ttf"
 
 [kiem_hiep]
 
-network/account_url="http://127.0.0.1:8080"
+network/account_url="https://kiem-hiep-api.viettheo.site"
 
 [rendering]
 

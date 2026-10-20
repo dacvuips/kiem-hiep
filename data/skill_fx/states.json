@@ -499,6 +499,16 @@
   "loop": true,
   "type": "Head"
  },
+ "67": {
+  "anim": "lucky_06a6",
+  "back_end": 0,
+  "back_start": 0,
+  "dirs": 1,
+  "frames": 15,
+  "interval": 50,
+  "loop": true,
+  "type": "Head"
+ },
  "7": {
   "anim": "fx_710ec859",
   "back_end": 15,

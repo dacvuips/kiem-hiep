@@ -60,7 +60,7 @@ static func tier_of(monster_level: int) -> int:
 	return clampi(monster_level / 10, 0, 10)
 
 ## Kết quả: mảng [{"type": "money", "amount": int} | {"type": "item", "item": ItemInstance}]. Rỗng = không rớt gì.
-static func roll(monster_level: int, series: int) -> Array:
+static func roll(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 	var t: Array = TIERS[tier_of(monster_level)]
 	var out: Array = []
 	var sel := randi_range(0, 15)
@@ -70,15 +70,16 @@ static func roll(monster_level: int, series: int) -> Array:
 	if money_hit:
 		out.append({"type": "money", "amount": _money(t)})
 	elif sel == 4:
-		if _item_chance(1.0 / BLUE_ITEM_ONE_IN):
-			var item := _roll_blue_item(t, series)
+		var blue_chance := (1.0 + float(extra_luck) * 0.05) / BLUE_ITEM_ONE_IN
+		if _item_chance(blue_chance):
+			var item := _roll_blue_item(t, series, -1, extra_luck)
 			if item != null:
 				out.append({"type": "item", "item": item})
 	return out
 
 ## Boss xanh rớt 5 lần (dropnum): mỗi lần nSel = ngẫu_nhiên(0..20) (cấp 6x+: 0..50) — nSel < 5 (6x+: > 40) rớt TIỀN; nSel > 5 rớt
 ## 1 TRANG BỊ XANH nhiều dòng magic; nSel == 8 là mật chí (6x+: thêm 9 bí kíp, 10 chìa khoá nhiệm vụ) — không có trong game -> bỏ qua.
-static func roll_blue_boss(monster_level: int, series: int) -> Array:
+static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 	var tier := tier_of(monster_level)
 	var t: Array = TIERS[tier]
 	var out: Array = []
@@ -91,9 +92,92 @@ static func roll_blue_boss(monster_level: int, series: int) -> Array:
 			continue   ## 8 = mật chí; (6x+) 9 = bí kíp, 10 = chìa khoá nhiệm vụ — không có trong game
 		else:
 			var lines: Array = BOSS_LINES[tier]
-			var item := _roll_blue_item(t, series, randi_range(lines[0], lines[1]))
+			var item := _roll_blue_item(t, series, randi_range(lines[0], lines[1]), extra_luck)
 			if item != null:
 				out.append({"type": "item", "item": item})
+	return out
+
+## BOSS HOÀNG KIM (Thập Đại Boss): rơi cực nhiều bảo vật:
+##   - 4-6 đống tiền lớn (20.000 - 50.000 lượng);
+##   - 4-6 trang bị xanh/tím cấp 9-10 max 6 dòng magic;
+##   - 2-3 Huyền Tinh Khoáng Thạch (6_1_147);
+##   - 35% cơ hội rơi Trang Bị Hoàng Kim Môn Phái (ItemGenerator.generate_gold).
+static func roll_gold_boss(monster_level: int, series: int) -> Array:
+	var out: Array = []
+	var tier := 10
+	var t: Array = (TIERS[tier] as Array).duplicate()
+	t[2] = 9
+	t[3] = 10
+
+	for i in randi_range(4, 6):
+		out.append({"type": "money", "amount": int(randi_range(20000, 50000) * money_rate_mult)})
+
+	for i in randi_range(4, 6):
+		var item := _roll_blue_item(t, series, ItemInstance.MAX_MAGIC)
+		if item != null:
+			out.append({"type": "item", "item": item})
+
+	for i in randi_range(2, 3):
+		var ht := ItemGenerator.generate_misc("6_1_147", randi_range(5, 8), 0, randi_range(1, 2))
+		if ht != null:
+			out.append({"type": "item", "item": ht})
+
+	if randf() < 0.35:
+		var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(7, 10))
+		if gold_item != null:
+			out.append({"type": "item", "item": gold_item})
+
+	return out
+
+## TIỂU HOÀNG KIM (Diệu Như, Liễu Thanh Thanh, Trương Tông Chính - drop_tieuhk.lua gốc):
+##   - 2-4 đống tiền (10.000 - 25.000 lượng);
+##   - 6-10 trang bị xanh cấp 9-10 (4-6 dòng magic);
+##   - 1-2 Huyền Tinh / Thủy Tinh / Tinh Hồng Bảo Thạch;
+##   - 15% cơ hội rơi Bí kíp / Mật tịch hoặc Đồ Hoàng Kim.
+static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
+	var out: Array = []
+	var tier := 10
+	var t: Array = (TIERS[tier] as Array).duplicate()
+	t[2] = 9
+	t[3] = 10
+
+	for i in randi_range(2, 4):
+		out.append({"type": "money", "amount": int(randi_range(10000, 25000) * money_rate_mult)})
+
+	for i in randi_range(6, 10):
+		var item := _roll_blue_item(t, series, randi_range(4, 6))
+		if item != null:
+			out.append({"type": "item", "item": item})
+
+	for i in randi_range(1, 2):
+		var ht := ItemGenerator.generate_misc("6_1_147", randi_range(4, 6), 0, randi_range(1, 2))
+		if ht != null:
+			out.append({"type": "item", "item": ht})
+
+	if randf() < 0.15:
+		var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(6, 9))
+		if gold_item != null:
+			out.append({"type": "item", "item": gold_item})
+
+	return out
+
+## BOSS SÁT THỦ (Nhiếp Thí Trần - dropsatthu.lua gốc):
+##   - 2-3 đống tiền (5.000 - 15.000 lượng);
+##   - 4-8 trang bị xanh cấp 6-8 (4-6 dòng magic);
+##   - Thưởng danh vọng và điểm kinh nghiệm sát thủ.
+static func roll_killer_boss(monster_level: int, series: int) -> Array:
+	var out: Array = []
+	var tier := clampi(monster_level / 10, 6, 9)
+	var t: Array = (TIERS[tier] as Array).duplicate()
+
+	for i in randi_range(2, 3):
+		out.append({"type": "money", "amount": int(randi_range(5000, 15000) * money_rate_mult)})
+
+	for i in randi_range(4, 8):
+		var item := _roll_blue_item(t, series, randi_range(4, 6))
+		if item != null:
+			out.append({"type": "item", "item": item})
+
 	return out
 
 ## ĐỊA NGỤC (map 11x / 12x của Vượt Ải, độ khó `stars` 1-5): như bảng 10x nhưng
@@ -132,7 +216,7 @@ static func _hell_lines(stars: int, normal: Array) -> int:
 		return ItemInstance.MAX_MAGIC
 	return randi_range(int(normal[0]), int(normal[1]))
 
-static func _roll_blue_item(t: Array, series: int, lines: int = -1) -> ItemInstance:
+static func _roll_blue_item(t: Array, series: int, lines: int = -1, extra_luck: int = 0) -> ItemInstance:
 	var level := randi_range(t[2], t[3])
 	if lines < 0:
 		lines = randi_range(t[5], t[6])
@@ -146,7 +230,7 @@ static func _roll_blue_item(t: Array, series: int, lines: int = -1) -> ItemInsta
 	for attempt in (60 if full else 12):
 		var kind: Array = KIND_ITEM[randi_range(0, KIND_ITEM.size() - 1)]
 		var particular := randi_range(kind[1], kind[2])
-		var item := ItemGenerator.generate(kind[0], particular, level, series, magic_levels, t[4])
+		var item := ItemGenerator.generate(kind[0], particular, level, series, magic_levels, t[4] + extra_luck)
 		if item == null:
 			continue
 		if not full or item.magic.size() >= lines:

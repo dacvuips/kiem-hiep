@@ -48,6 +48,7 @@ func _ready() -> void:
 	box.add_child(go_home)
 
 ## Mọi map: về Character Hub. Riêng Chiến trường Tống Kim: sống lại ở hậu doanh phe mình (server kéo về điểm hồi sinh).
+## GM: lưu và giữ nguyên dữ liệu (không rollback). Người thường: load lại từ bản đã lưu trước khi vào màn (không lưu bản chết).
 func _go_home() -> void:
 	get_tree().paused = false
 	var player := get_tree().get_first_node_in_group("player")
@@ -56,4 +57,13 @@ func _go_home() -> void:
 		player.revive_at_start()
 		queue_free()
 		return
+	if GameManager.local_profile != null:
+		if AccountApi.is_gm():
+			## GM: lưu toàn bộ tiến trình (cấp, đồ, kỹ năng từ TEST đều được giữ lại)
+			SaveManager.save_profile(GameManager.local_profile)
+			await SaveManager.flush_online()
+		else:
+			## Người thường: KHÔNG lưu bản chết — khôi phục hồ sơ về trạng thái trước trận
+			SaveManager.restore_profile_from_save()
+			await SaveManager.flush_online()
 	get_tree().change_scene_to_file(HUB_SCENE_PATH)

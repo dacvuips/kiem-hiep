@@ -36,15 +36,22 @@ func _ready() -> void:
 func _send_action() -> void:
 	var action: Dictionary = field.get("action", {})
 	var args := {"map_id": int(action.get("map_id", 0)), "tier": int(action.get("tier", 0)), "stars": int(action.get("stars", 0)),
-		"room": str(action.get("room", ""))}
-	NetClient.send_field(FieldServer.OP_JOIN if str(action.get("op", "")) == "join" else FieldServer.OP_CREATE, args)
+		"room": str(action.get("room", "")), "guild": str(action.get("guild", ""))}
+	var op_type: int = FieldServer.OP_CREATE
+	if str(action.get("op", "")) == "join":
+		op_type = FieldServer.OP_JOIN
+	elif str(action.get("op", "")) == "guild":
+		op_type = FieldServer.OP_GUILD
+	NetClient.send_field(op_type, args)
 
 func _on_message(msg: Dictionary) -> void:
 	match str(msg.get("op", "")):
 		"room":
 			room_id = str(msg.get("id", ""))
 			_show(msg)
-			if str(field.get("action", {}).get("op", "")) == "join":
+			if str(msg.get("guild", "")) != "":
+				_say("Chào mừng đến Tổng Đà Bang Hội - %s!" % msg.get("guild"))
+			elif str(field.get("action", {}).get("op", "")) == "join":
 				_say("Đã vào phòng #%s của %s." % [room_id, msg.get("host", "?")])
 			else:
 				_say("Phòng #%s — đưa ID này cho bạn bè để vào train chung." % room_id)
@@ -54,6 +61,14 @@ func _on_message(msg: Dictionary) -> void:
 			_leave(str(msg.get("msg", "Không vào được phòng.")))
 
 func _show(s: Dictionary) -> void:
+	var guild: String = str(s.get("guild", ""))
+	if guild != "":
+		_title.text = "Tổng Đà: %s" % guild
+		var members: Array = s.get("members", [])
+		_info.text = "%s  ·  %d thành viên đang ở Tổng Đà" % [guild, members.size()]
+		_info.tooltip_text = ", ".join(members)
+		_copy.visible = false
+		return
 	_title.text = "Phòng #%s" % s.get("id", room_id)
 	var stars := int(s.get("stars", 0))
 	var where := str(s.get("name", ""))

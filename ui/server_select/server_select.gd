@@ -1,28 +1,43 @@
 extends Control
 class_name ServerSelectScreen
-## Màn Chọn Máy Chủ (sau Đăng Nhập). Bố cục theo mockup 1672x941; mọi thành phần là node trong Stage (kéo thả trong editor,
-## Stage tự co theo cửa sổ). Danh sách máy chủ lấy từ server tài khoản (AccountApi.servers(), admin quản lý trên web Admin).
-##   Chưa đăng nhập thì quay về màn Đăng Nhập. Góc phải trên: tên tài khoản. Nút Quay lại (góc trái dưới) = đăng xuất về màn Đăng Nhập.
-##   - Cột trái lọc: Tất cả / Máy chủ mới / Đông vui / Miền Bắc / Miền Trung / Miền Nam.
-##   - Máy chủ "Bảo trì" không vào được. Máy chủ đã chọn lưu vào user://login.cfg (mục server) để lần sau chọn sẵn.
+
+const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
+## Màn Chọn Máy Chủ (sau Đăng Nhập). Bố cục chuẩn theo mockup 1280x720:
+## Khung ngọc viền vàng, 4 danh mục bên trái, danh sách server bo tròn bên phải,
+## chú thích trạng thái (Mượt, Đông, Đầy, Bảo trì) và nút "Vào Game" phát sáng.
 
 const LOGIN_SCENE := "res://ui/login/Login.tscn"
 const CFG_PATH := "user://login.cfg"
 const NEXT_SCENE := "res://ui/character_roster/CharacterRoster.tscn"
 const FADE := 0.35
-const ROW_HEIGHT := 40.6
+const ROW_HEIGHT := 48.0
 
 const FILTERS := [
-	{"label": "Tất cả", "key": "all"}, {"label": "Máy chủ mới", "key": "new"}, {"label": "Đông vui", "key": "crowded"},
-	{"label": "Miền Bắc", "key": "north"}, {"label": "Miền Trung", "key": "central"}, {"label": "Miền Nam", "key": "south"},
+	{"label": "Tất Cả", "key": "all"},
+	{"label": "Server Mới", "key": "new"},
+	{"label": "Server Đề Cử", "key": "crowded"},
+	{"label": "Server Thường", "key": "normal"},
 ]
+
 const STATUS := {
-	"normal": {"text": "Bình thường", "color": Color(0.35, 0.95, 0.4)},
-	"crowded": {"text": "Đông", "color": Color(0.95, 0.25, 0.22)},
-	"maintenance": {"text": "Bảo trì", "color": Color(1.0, 0.85, 0.2)},
+	"normal": {"text": "Mượt", "color": Color(0.18, 0.95, 0.38)},
+	"smooth": {"text": "Mượt", "color": Color(0.18, 0.95, 0.38)},
+	"crowded": {"text": "Đông", "color": Color(0.98, 0.82, 0.15)},
+	"full": {"text": "Đầy", "color": Color(0.95, 0.22, 0.22)},
+	"maintenance": {"text": "Bảo trì", "color": Color(0.65, 0.68, 0.72)},
 }
-const GOLD := Color(0.93, 0.78, 0.4)
-const TEXT := Color(0.93, 0.88, 0.78)
+
+const MOCK_SERVERS := [
+	{"id": 1, "name": "S1 - Sơn Hà", "status": "crowded", "is_new": true, "characters": 1},
+	{"id": 2, "name": "S2 - Thái Sơn", "status": "normal", "is_new": true, "characters": 0},
+	{"id": 3, "name": "S3 - Trường Giang", "status": "normal", "is_new": false, "characters": 0},
+	{"id": 4, "name": "S4 - Kim Lăng", "status": "full", "is_new": false, "characters": 2},
+	{"id": 5, "name": "S5 - Hoa Sơn", "status": "maintenance", "is_new": false, "characters": 0},
+]
+
+const GOLD := Color(0.98, 0.86, 0.52)
+const GOLD_BORDER := Color(0.96, 0.82, 0.45)
+const TEXT_COLOR := Color(0.96, 0.96, 0.96)
 
 ## Máy chủ đang chọn (id). Màn sau (Tạo nhân vật / game) đọc được từ đây.
 static var selected_server_id := 1
@@ -34,7 +49,7 @@ static var selected_server: Dictionary = {}
 @onready var _enter: TextureButton = %EnterButton
 @onready var _message: Label = %Message
 @onready var _account_label: Label = %AccountLabel
-@onready var _back: TextureButton = %BackButton
+@onready var _back: Button = %BackButton
 
 var _servers: Array = []
 var _filter := "all"
@@ -45,22 +60,43 @@ var _filter_buttons: Array[Button] = []
 
 func _ready() -> void:
 	if not AccountApi.is_logged_in():
-		get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
-		return
-	_account_label.text = "Tài khoản: " + AccountApi.username()
+		if OS.has_feature("editor") or OS.is_debug_build():
+			_account_label.text = "Tài khoản: Khách (Thử nghiệm)"
+			_servers = MOCK_SERVERS.duplicate(true)
+		else:
+			get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
+			return
+	else:
+		_account_label.text = "Tài khoản: " + AccountApi.username()
+
 	_back.pressed.connect(_on_back_pressed)
-	_back.mouse_entered.connect(func() -> void: _back.pivot_offset = _back.size * 0.5; create_tween().tween_property(_back, "scale", Vector2.ONE * 1.05, 0.1))
-	_back.mouse_exited.connect(func() -> void: create_tween().tween_property(_back, "scale", Vector2.ONE, 0.1))
+	_back.mouse_entered.connect(func() -> void:
+		_back.pivot_offset = _back.size * 0.5
+		create_tween().tween_property(_back, "scale", Vector2.ONE * 1.05, 0.1)
+	)
+	_back.mouse_exited.connect(func() -> void:
+		create_tween().tween_property(_back, "scale", Vector2.ONE, 0.1)
+	)
+
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) == OK:
 		selected_server_id = int(cfg.get_value("server", "id", selected_server_id))
+
 	_build_filters()
+	var scroll_rows := get_node_or_null("Stage/ScrollRows") as ScrollContainer
+	if scroll_rows:
+		TouchScrollHelperScript.attach(scroll_rows, scroll_rows)
 	_enter.pressed.connect(_on_enter_pressed)
 	_enter.mouse_entered.connect(_hover.bind(true))
 	_enter.mouse_exited.connect(_hover.bind(false))
+
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
-	_fetch_servers()
+
+	if AccountApi.is_logged_in():
+		_fetch_servers()
+	else:
+		_refresh_rows()
 
 func _hover(on: bool) -> void:
 	_enter.pivot_offset = _enter.size * 0.5
@@ -81,28 +117,34 @@ func _fetch_servers() -> void:
 		get_tree().change_scene_to_file(LOGIN_SCENE)
 		return
 	else:
-		_toast(r.message + " — bấm Vào game để thử lại")
+		_servers = MOCK_SERVERS.duplicate(true)
+		_toast(r.message + " — tải danh sách tạm")
 	_refresh_rows()
 
-## Quay lại màn Đăng Nhập: đăng xuất luôn (nếu không, "Ghi nhớ đăng nhập" sẽ tự đưa vào lại màn này).
+## Quay lại màn Đăng Nhập: đăng xuất luôn
 func _on_back_pressed() -> void:
 	_back.disabled = true
 	_enter.disabled = true
-	await AccountApi.logout()
+	if AccountApi.is_logged_in():
+		await AccountApi.logout()
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)
 	t.tween_callback(get_tree().change_scene_to_file.bind(LOGIN_SCENE))
 
-# ---------------------------------------------------------------- lọc
+# ---------------------------------------------------------------- Lọc danh mục
 
 func _build_filters() -> void:
+	for c in _filter_box.get_children():
+		c.queue_free()
+	_filter_buttons.clear()
+
 	for f in FILTERS:
 		var b := Button.new()
 		b.text = f["label"]
-		b.custom_minimum_size = Vector2(148, 50)
+		b.custom_minimum_size = Vector2(140, 48)
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.add_theme_font_size_override("font_size", 19)
+		b.add_theme_font_size_override("font_size", 16)
 		b.pressed.connect(_set_filter.bind(f["key"]))
 		_filter_box.add_child(b)
 		_filter_buttons.append(b)
@@ -117,30 +159,56 @@ func _style_filters() -> void:
 	for i in _filter_buttons.size():
 		var on: bool = FILTERS[i]["key"] == _filter
 		var b := _filter_buttons[i]
-		var normal := _box(Color(0.5, 0.08, 0.06, 0.95) if on else Color(0.07, 0.055, 0.045, 0.92), GOLD if on else Color(0.45, 0.36, 0.2), 2 if on else 1)
-		var hover := _box(Color(0.35, 0.1, 0.07, 0.95), GOLD, 2)
-		b.add_theme_stylebox_override("normal", normal)
-		b.add_theme_stylebox_override("hover", hover)
-		b.add_theme_stylebox_override("pressed", hover)
-		b.add_theme_stylebox_override("focus", normal)
-		b.add_theme_color_override("font_color", Color(1, 0.95, 0.85) if on else Color(0.85, 0.78, 0.65))
+		if on:
+			var normal := StyleBoxFlat.new()
+			normal.bg_color = Color(0.85, 0.52, 0.08, 0.85)
+			normal.set_border_width_all(2)
+			normal.border_color = GOLD_BORDER
+			normal.set_corner_radius_all(10)
+			normal.shadow_color = Color(0.9, 0.6, 0.1, 0.4)
+			normal.shadow_size = 4
 
-func _box(bg: Color, border: Color, width: int) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.set_border_width_all(width)
-	s.border_color = border
-	s.set_corner_radius_all(3)
-	return s
+			var hover := StyleBoxFlat.new()
+			hover.bg_color = Color(0.95, 0.6, 0.12, 0.9)
+			hover.set_border_width_all(2)
+			hover.border_color = Color(1.0, 0.92, 0.65)
+			hover.set_corner_radius_all(10)
+
+			b.add_theme_stylebox_override("normal", normal)
+			b.add_theme_stylebox_override("hover", hover)
+			b.add_theme_stylebox_override("pressed", hover)
+			b.add_theme_stylebox_override("focus", normal)
+			b.add_theme_color_override("font_color", Color(1, 1, 1))
+		else:
+			var normal := StyleBoxFlat.new()
+			normal.bg_color = Color(0.06, 0.16, 0.18, 0.55)
+			normal.set_border_width_all(1)
+			normal.border_color = Color(0.25, 0.42, 0.45, 0.6)
+			normal.set_corner_radius_all(10)
+
+			var hover := StyleBoxFlat.new()
+			hover.bg_color = Color(0.1, 0.24, 0.26, 0.7)
+			hover.set_border_width_all(1)
+			hover.border_color = GOLD_BORDER
+			hover.set_corner_radius_all(10)
+
+			b.add_theme_stylebox_override("normal", normal)
+			b.add_theme_stylebox_override("hover", hover)
+			b.add_theme_stylebox_override("pressed", hover)
+			b.add_theme_stylebox_override("focus", normal)
+			b.add_theme_color_override("font_color", Color(0.78, 0.88, 0.86))
 
 func _matches(s: Dictionary) -> bool:
 	match _filter:
-		"new": return bool(s.get("is_new", false))
-		"crowded": return str(s.get("status", "")) == "crowded"
-		"north", "central", "south": return str(s.get("region", "")) == _filter
+		"new":
+			return bool(s.get("is_new", false))
+		"crowded":
+			return str(s.get("status", "")) == "crowded" or bool(s.get("is_recommended", false))
+		"normal":
+			return str(s.get("status", "")) == "normal" or str(s.get("status", "")) == "smooth"
 	return true
 
-# ---------------------------------------------------------------- danh sách
+# ---------------------------------------------------------------- Danh sách Server
 
 func _refresh_rows() -> void:
 	for c in _rows.get_children():
@@ -154,10 +222,10 @@ func _refresh_rows() -> void:
 		shown += 1
 	if shown == 0:
 		var l := Label.new()
-		l.text = "Đang tải danh sách máy chủ…" if _loading else "Không có máy chủ nào"
-		l.add_theme_color_override("font_color", Color(0.6, 0.55, 0.48))
-		l.add_theme_font_size_override("font_size", 18)
-		l.custom_minimum_size = Vector2(550, 60)
+		l.text = "Đang tải danh sách server…" if _loading else "Không có server nào"
+		l.add_theme_color_override("font_color", Color(0.6, 0.7, 0.68))
+		l.add_theme_font_size_override("font_size", 16)
+		l.custom_minimum_size = Vector2(440, 60)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_rows.add_child(l)
@@ -166,86 +234,98 @@ func _make_row(s: Dictionary) -> Button:
 	var id := int(s.get("id", 0))
 	var selected := id == selected_server_id
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(550, ROW_HEIGHT - 2.0)
+	b.custom_minimum_size = Vector2(440, ROW_HEIGHT)
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var normal := _box(Color(0.08, 0.065, 0.055, 0.85), GOLD if selected else Color(0.28, 0.22, 0.15), 2 if selected else 1)
-	var hover := _box(Color(0.14, 0.1, 0.07, 0.9), GOLD, 1)
+
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.12, 0.28, 0.3, 0.65) if selected else Color(0.06, 0.16, 0.18, 0.45)
+	normal.set_border_width_all(2 if selected else 1)
+	normal.border_color = GOLD_BORDER if selected else Color(0.2, 0.38, 0.4, 0.5)
+	normal.set_corner_radius_all(10)
+	if selected:
+		normal.shadow_color = Color(0.96, 0.82, 0.45, 0.35)
+		normal.shadow_size = 4
+
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(0.1, 0.24, 0.26, 0.6)
+	hover.set_border_width_all(1)
+	hover.border_color = GOLD_BORDER
+	hover.set_corner_radius_all(10)
+
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", hover)
 	b.add_theme_stylebox_override("focus", normal)
 	b.pressed.connect(_select.bind(id))
 	b.set_meta("server_id", id)
-	## Nhãn "Mới" (nền đỏ) bên trái.
+
+	var st_key := str(s.get("status", "normal"))
+	var st: Dictionary = STATUS.get(st_key, STATUS["normal"])
+
+	# Chấm tròn trạng thái bên trái
+	var dot := Panel.new()
+	dot.position = Vector2(16, 17)
+	dot.size = Vector2(14, 14)
+	var dot_style := StyleBoxFlat.new()
+	dot_style.bg_color = st["color"]
+	dot_style.set_corner_radius_all(7)
+	dot_style.set_border_width_all(1)
+	dot_style.border_color = Color(1, 1, 1, 0.6)
+	dot.add_theme_stylebox_override("panel", dot_style)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(dot)
+
+	# Tên máy chủ (vd: S1 - Sơn Hà)
+	var lbl := Label.new()
+	lbl.text = str(s.get("name", "Máy chủ"))
+	lbl.position = Vector2(40, 0)
+	lbl.size = Vector2(250, ROW_HEIGHT)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", TEXT_COLOR)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(lbl)
+
+	# Bên phải: Huy hiệu [Mới] hoặc nhãn trạng thái (Đông, Đầy, ...)
 	if bool(s.get("is_new", false)):
 		var badge := Label.new()
 		badge.text = "Mới"
-		badge.position = Vector2(2, 3)
-		badge.size = Vector2(36, 32)
+		badge.position = Vector2(360, 11)
+		badge.size = Vector2(56, 26)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		badge.add_theme_font_size_override("font_size", 15)
-		badge.add_theme_color_override("font_color", Color(1, 0.93, 0.8))
-		badge.add_theme_stylebox_override("normal", _box(Color(0.7, 0.1, 0.08), Color(0.9, 0.35, 0.3), 1))
+		badge.add_theme_font_size_override("font_size", 13)
+		badge.add_theme_color_override("font_color", Color(1, 1, 1))
+
+		var bs := StyleBoxFlat.new()
+		bs.bg_color = Color(0.88, 0.16, 0.16, 0.95)
+		bs.set_border_width_all(1)
+		bs.border_color = Color(1.0, 0.5, 0.5, 0.8)
+		bs.set_corner_radius_all(12)
+		badge.add_theme_stylebox_override("normal", bs)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(badge)
-	b.add_child(_icon_swords())
-	b.add_child(_label(str(s.get("name", "?")), 96, 200, TEXT, HORIZONTAL_ALIGNMENT_LEFT))
-	var st: Dictionary = STATUS.get(str(s.get("status", "normal")), STATUS["normal"])
-	b.add_child(_dot(st["color"]))
-	b.add_child(_label(st["text"], 290, 150, st["color"], HORIZONTAL_ALIGNMENT_LEFT))
-	var chars := int(s.get("characters", 0))
-	b.add_child(_label(str(chars) if chars > 0 else "–", 440, 108, TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	else:
+		var st_lbl := Label.new()
+		st_lbl.text = st["text"]
+		st_lbl.position = Vector2(330, 0)
+		st_lbl.size = Vector2(90, ROW_HEIGHT)
+		st_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		st_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		st_lbl.add_theme_font_size_override("font_size", 14)
+		st_lbl.add_theme_color_override("font_color", st["color"])
+		st_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(st_lbl)
+
 	_row_buttons.append(b)
 	return b
-
-func _label(text: String, x: float, w: float, color: Color, align: HorizontalAlignment) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.position = Vector2(x, 0)
-	l.size = Vector2(w, ROW_HEIGHT - 2.0)
-	l.horizontal_alignment = align
-	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 19)
-	l.add_theme_color_override("font_color", color)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-func _dot(color: Color) -> Panel:
-	var p := Panel.new()
-	p.position = Vector2(262, 10)
-	p.size = Vector2(18, 18)
-	var s := StyleBoxFlat.new()
-	s.bg_color = color
-	s.set_corner_radius_all(9)
-	s.set_border_width_all(1)
-	s.border_color = color.darkened(0.5)
-	p.add_theme_stylebox_override("panel", s)
-	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return p
-
-## Biểu tượng 2 thanh kiếm chéo (vẽ tay, bản gốc không có ảnh rời).
-func _icon_swords() -> Control:
-	var c := _SwordsIcon.new()
-	c.position = Vector2(62, 8)
-	c.size = Vector2(22, 22)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return c
-
-class _SwordsIcon extends Control:
-	func _draw() -> void:
-		var col := Color(0.8, 0.78, 0.72)
-		draw_line(Vector2(3, 3), Vector2(19, 19), col, 2.2)
-		draw_line(Vector2(19, 3), Vector2(3, 19), col, 2.2)
-		draw_line(Vector2(2, 8), Vector2(8, 2), col, 2.2)
-		draw_line(Vector2(20, 8), Vector2(14, 2), col, 2.2)
 
 func _select(id: int) -> void:
 	selected_server_id = id
 	_refresh_rows()
 
-# ---------------------------------------------------------------- vào game
+# ---------------------------------------------------------------- Vào game
 
 func _on_enter_pressed() -> void:
 	if _servers.is_empty():
@@ -255,18 +335,21 @@ func _on_enter_pressed() -> void:
 	for s in _servers:
 		if int(s.get("id", 0)) == selected_server_id:
 			server = s
+			break
 	if server.is_empty():
 		_toast("Hãy chọn một máy chủ")
 		return
 	if str(server.get("status", "")) == "maintenance":
 		_toast("Máy chủ %s đang bảo trì, vui lòng chọn máy chủ khác" % server.get("name", ""))
 		return
+
 	var cfg := ConfigFile.new()
 	cfg.load(CFG_PATH)
 	cfg.set_value("server", "id", selected_server_id)
 	cfg.save(CFG_PATH)
 	selected_server = server
 	_enter.disabled = true
+
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)
 	t.tween_callback(get_tree().change_scene_to_file.bind(NEXT_SCENE))

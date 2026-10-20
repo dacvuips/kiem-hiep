@@ -30,6 +30,7 @@ func _ready() -> void:
 	test_join_rules()
 	test_server_guard()
 	await test_choice_window()
+	test_equipment_sect_requirement()
 	print("RESULT %d/%d" % [_pass, _pass + _fail])
 	get_tree().quit(1 if _fail > 0 else 0)
 
@@ -156,3 +157,23 @@ func test_choice_window() -> void:
 	check("Đồng ý -> vào phái", press(self, "Đồng ý"))
 	await frames()
 	check("Đã vào phái đã chọn", p.sect_id == sects[0].id and got.size() == 1, p.sect_id)
+
+func test_equipment_sect_requirement() -> void:
+	var p := PlayerProfile.new()
+	p.choose_element(ElementTypes.ElementType.MOC)
+	p.level = 150
+	p.strength = 300
+	p.dexterity = 300
+	var idx := ItemDatabase.find_gold_by_name("Xích Lân Thương Lan Tụ Tiễn")
+	check("Tìm thấy vị trí Xích Lân Thương Lan Tụ Tiễn trong DB", idx >= 0, idx)
+	if idx >= 0:
+		var item := ItemGenerator.generate_gold(idx)
+		check("Tạo thành công trang bị Tụ Tiễn Đường Môn", item != null)
+		if item != null:
+			check("Vô Môn Phái không mặc được đồ Đường Môn", not Equipment.can_use(item, p))
+			var unmet := Equipment.get_unmet_requirements(item, p)
+			check("Yêu cầu môn phái báo chưa đạt", unmet.any(func(s: String) -> bool: return "Đường Môn" in s), unmet)
+
+			var duong_mon := SectRegistry.get_by_id("duong_mon")
+			p.set_sect(duong_mon)
+			check("Đường Môn mặc được đồ Đường Môn", Equipment.can_use(item, p), Equipment.get_unmet_requirements(item, p))

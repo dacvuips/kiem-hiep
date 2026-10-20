@@ -21,12 +21,23 @@ var _lines := 0
 var _size_btn: Button
 var _step := 0
 
+static var current: ChatBox = null
+
 static func create() -> ChatBox:
 	return ChatBox.new()
+
+## Gửi thông báo hệ thống vào khung chat
+static func push_system(bbcode: String) -> void:
+	if current != null and is_instance_valid(current):
+		current.add_line(bbcode)
+		current._body.visible = true
+		current._toggle.text = "Chat ▾"
+		current._shrink_to_fit.call_deferred()
 
 ## Đặt khung chat vào giữa đáy màn chơi (node "UI" của Main).
 static func attach(ui: Node) -> ChatBox:
 	var box := ChatBox.create()
+	current = box
 	box.name = "ChatBox"
 	box.anchor_left = 0.5
 	box.anchor_right = 0.5
@@ -41,7 +52,13 @@ static func attach(ui: Node) -> ChatBox:
 	ui.add_child(box)
 	return box
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
+		if current == self:
+			current = null
+
 func _init() -> void:
+	current = self
 	add_theme_stylebox_override("panel", SocialUi.box(Color(0.04, 0.035, 0.03, 0.62), Color(0.55, 0.45, 0.25, 0.7), 6, 1, 6))
 	custom_minimum_size = Vector2(400, 0)
 	var root := VBoxContainer.new()

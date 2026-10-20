@@ -1061,5 +1061,21 @@ func is_blocked(world_pos: Vector2) -> bool:
 	return grid.is_in_boundsv(c) and grid.is_point_solid(c)
 
 
+## Ô nhảy qua được (sông suối / hào nước / tường thấp: kind 3/4 hoặc không bị chặn).
+func is_jumpable(world_pos: Vector2) -> bool:
+	var c := world_to_cell(world_pos)
+	if chunk_mode:
+		var rx := floori(c.x / 16.0)
+		var ry := floori(c.y / 32.0)
+		var ob = _obs.get("%d,%d" % [rx, ry])
+		if ob == null:
+			return false
+		if (ob as PackedByteArray).is_empty():
+			return true
+		var val: int = (ob as PackedByteArray)[(c.x - rx * 16) * 32 + (c.y - ry * 32)]
+		return (val >> 4) == 0 or (val & 0x0f) in [3, 4]
+	return grid.is_in_boundsv(c) and not grid.is_point_solid(c)
+
+
 func trap_at(world_pos: Vector2) -> int:
 	return int(traps.get(world_to_cell(world_pos), 0))

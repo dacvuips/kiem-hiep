@@ -32,6 +32,22 @@ func _exit_tree() -> void:
 	MusicManager.stop()
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_args():
+		if arg == "--test-arena":
+			var p := PlayerProfile.new()
+			p.display_name = "DaiHiep"
+			p.level = 95
+			p.sect_id = "cai_bang"
+			GameManager.local_profile = p
+			var bot := PkBotProfile.create(95, "cai_bang")
+			GameManager.field_map = PkRules.arena_entry({"mode": PkRules.Mode.DAI_HOI, "opponent": bot.to_dict()})
+			GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+			_test_arena_and_quit.call_deferred()
+			break
+		elif arg == "--test-badge":
+			_test_badge_and_quit.call_deferred()
+			break
+
 	var free_roam := GameManager.game_mode == GameManager.GameMode.MAIN_MAP
 	var stage: StageData = GameManager.current_stage if GameManager.current_stage else stage_for_testing
 	if free_roam:
@@ -58,6 +74,8 @@ func _ready() -> void:
 
 	_build_side_menu()
 	$UI.add_child(QuickItemBar.new())   ## 4 ô thuốc nhanh ngay trên cụm nút skill
+
+	$UI.add_child(AgeRatingBadge.new())
 	add_child(SocialTicker.new())   ## nhịp nền xã hội: khách mua hàng bày bán, người xin vào đội/bang
 	_sect_prompt = SectPrompt.new()   ## Vô Môn Phái đủ cấp 10 thì hỏi gia nhập môn phái
 	add_child(_sect_prompt)
@@ -96,6 +114,11 @@ func _enter_main_map() -> void:
 		var challenge := TimeChallenge.new()
 		challenge.name = "TimeChallenge"
 		add_child(challenge)
+	## Ải Thuyền Phong Lăng Độ (tab "Ải" của màn Vượt Ải): map 336, diệt Thủy tặc & Boss Yên Hiểu Trái.
+	elif field.get("phong_lang_do", false):
+		var pld := PhongLangDoChallenge.new()
+		pld.name = "PhongLangDoChallenge"
+		add_child(pld)
 	## Trận PK với bot (nút PK ở Character Hub, offline / không tìm được người): đấu trường map 397.
 	if field.has("pk") and not pk_online:
 		var match_node := PkMatch.new()
@@ -118,6 +141,47 @@ func _enter_main_map() -> void:
 		add_child(ArenaClient.create(pk))
 	if not room.is_empty():
 		add_child(FieldClient.create(room))
+	elif field.get("guild_map", false) and not online:
+		_spawn_offline_guild_members.call_deferred()
+
+func _spawn_offline_guild_members() -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var base_pos: Vector2 = player.global_position if player != null else Vector2.ZERO
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var hub := SocialHub.of(profile)
+	var members: Array = hub.guild.members()
+	var offsets: Array[Vector2] = [
+		Vector2(120, -60), Vector2(-130, -50), Vector2(100, 80),
+		Vector2(-110, 90), Vector2(180, 20), Vector2(-190, 30),
+		Vector2(60, 140), Vector2(-70, 150)
+	]
+	var i := 0
+	for m in members:
+		if bool(m.get("local", false)):
+			continue
+		var rp := RemotePlayer.new()
+		var p_pos: Vector2 = base_pos + (offsets[i % offsets.size()] if i < offsets.size() else Vector2(randf_range(-200, 200), randf_range(-150, 150)))
+		var info := {
+			"eid": int(m.get("mock_id", 1000 + i)),
+			"name": str(m.get("name", "Thành Viên")),
+			"level": int(m.get("level", 50)),
+			"camp": int(profile.camp),
+			"look": {"gender": 0, "helm": 0, "armor": 1, "weapon": 1, "horse": 0},
+			"pos": p_pos,
+			"flags": NetProto.FLAG_TRADE_OPEN,
+			"dir": randi() % 8,
+			"action": 0,
+			"z": 0,
+			"hp": 100
+		}
+		var parent := VltkWorld.entity_parent() if VltkWorld.current != null else self
+		parent.add_child(rp)
+		rp.setup(info)
+		i += 1
+		if i >= 8:
+			break
 
 func load_stage(stage: StageData) -> void:
 	GameManager.start_stage(stage)
@@ -151,6 +215,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			print("arena_center = ", text, "  (đã chép vào clipboard)")
 	elif event.keycode == KEY_F9:
 		PlayerStats.level_up()
+		if GameManager.local_profile != null:
+			GameManager.local_profile.level_up()
+			SaveManager.save_profile(GameManager.local_profile)
+			SaveManager.flush_online()
+			print("F9: Lên cấp nhân vật -> Cấp %d" % GameManager.local_profile.level)
 	elif event.keycode == KEY_F5:
 		var player := get_tree().get_first_node_in_group("player")
 		if player:
@@ -275,7 +344,7 @@ func _build_side_menu() -> void:
 	$UI.add_child(menu)
 
 ## Nút công cụ thử (chỉ bản debug) — xếp thành hàng nhỏ ở góc trên trái; trong phòng train chung thì nằm dưới khung ID phòng.
-var _debug_x := 8.0
+var _debug_x := 70.0
 
 func _build_debug_button(text: String, tip: String, on_press: Callable) -> void:
 	var button := Button.new()
@@ -333,7 +402,10 @@ func _on_exit_button_pressed() -> void:
 	_exit_confirm.add_child(vbox)
 
 	var message := Label.new()
-	message.text = "Bạn có chắc muốn thoát trận?\nTiến độ trận đấu hiện tại sẽ không được lưu."
+	if AccountApi.is_gm():
+		message.text = "Bạn có chắc muốn thoát trận?\n(GM) Toàn bộ tiến trình sẽ được lưu lại."
+	else:
+		message.text = "Bạn có chắc muốn thoát trận?\nTiến trình trận sẽ không được lưu — nhân vật trở về trạng thái trước khi vào."
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message.add_theme_color_override("font_color", Color(0.9, 0.88, 0.8))
 	vbox.add_child(message)
@@ -355,9 +427,45 @@ func _on_exit_button_pressed() -> void:
 
 func _on_exit_confirmed() -> void:
 	get_tree().paused = false
+	if GameManager.local_profile != null:
+		if AccountApi.is_gm():
+			## GM: lưu toàn bộ tiến trình khi thoát trận
+			SaveManager.save_profile(GameManager.local_profile)
+		else:
+			## Người thường: KHÔNG lưu bản thoát giữa trận — khôi phục về trạng thái trước trận
+			SaveManager.restore_profile_from_save()
+		await SaveManager.flush_online()
 	get_tree().change_scene_to_file(HUB_SCENE_PATH)
 
 func _on_exit_cancelled(overlay: CanvasLayer) -> void:
 	overlay.queue_free()
 	_exit_confirm = null
 	get_tree().paused = false
+
+func _test_badge_and_quit() -> void:
+	await get_tree().create_timer(1.2).timeout
+	var badge = $UI.get_node_or_null("AgeRatingBadge")
+	print("TEST_BADGE_NODE: ", badge)
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/27fde8f4-05c5-4d1f-b02c-10dfdae0fe5e/gameplay_18plus_live.png")
+		print("BADGE_SCREENSHOT_SAVED")
+	get_tree().quit(0)
+
+func _test_arena_and_quit() -> void:
+	await get_tree().create_timer(1.2).timeout
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var bot: Node2D = find_child("PkBot", true, false) as Node2D
+	print("TEST_ARENA_CHECK:")
+	if player:
+		print("Player global_position = ", player.global_position, " | Dist to ARENA_CENTER = ", player.global_position.distance_to(PkRules.ARENA_CENTER))
+	if bot:
+		print("Bot global_position = ", bot.global_position, " | Dist to ARENA_CENTER = ", bot.global_position.distance_to(PkRules.ARENA_CENTER))
+	if player and bot:
+		print("Distance between Player and Bot = ", player.global_position.distance_to(bot.global_position))
+	await get_tree().create_timer(0.4).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/d6888eb9-bf62-47ed-a3a2-f742759dfa21/arena_in_action.png")
+		print("ARENA_SCREENSHOT_SAVED")
+	get_tree().quit()

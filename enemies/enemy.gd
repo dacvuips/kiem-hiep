@@ -38,6 +38,11 @@ var _atk_time: float = -1.0      ## < 0 = không đang đánh
 var _atk_len: float = 1.0        ## giây
 var _atk_hit: bool = false
 var _atk_cooldown: float = 0.0
+## Kỹ năng đánh xa / bắn đạn của quái VLTK (nếu có trong dữ liệu quái).
+var _active_skill_id: int = 0
+var _active_skill_level: int = 1
+var _attack_radius: float = ATTACK_RANGE
+var _attack_action: String = "attack1"
 
 @onready var health_bar := $HealthBar
 @onready var sprite: AnimatedSprite2D = $Sprite2D
@@ -90,16 +95,43 @@ func refresh_combat_stats() -> void:
 ## theo cấp (MonsterData.stat_at_level) thay cho số suy từ 4 chỉ số. Cấp = cấp của tier + level_add của map.
 func _apply_vltk_stats() -> void:
 	_vltk_damage = Vector2i(-1, -1)
-	if _vltk_data.is_empty() or not _vltk_data.has("stats"):
+	_active_skill_id = 0
+	_active_skill_level = 1
+	_attack_radius = ATTACK_RANGE
+	_attack_action = "attack1"
+	if _vltk_data.is_empty():
 		return
 	var level := _build.level
+	if _vltk_id >= 0:
+		if _build != null:
+			_vltk_data["series"] = int(_build.element)
+		_vltk_data = MonsterData.apply_level_script(_vltk_data, _vltk_id, level)
+	if not _vltk_data.has("stats"):
+		return
 	combat_stats.max_hp = maxi(1, MonsterData.stat_at_level(_vltk_data, "life", level))
 	combat_stats.defense = MonsterData.stat_at_level(_vltk_data, "defense", level)
 	combat_stats.attack_rating = MonsterData.stat_at_level(_vltk_data, "attack_rating", level)
 	for sk in _vltk_data.get("skills", []):
-		if int(sk[0]) > 0:
-			_vltk_damage = MonsterData.melee_damage(_vltk_data, level, int(sk[0]), int(sk[1]))
-			break
+		var sid := int(sk[0])
+		var slv := int(sk[1])
+		if sid <= 0:
+			continue
+		var eff_lv := slv if _vltk_data.get("skill_levels_exact", false) else clampi(slv + level / 5, 1, 30)
+		if _vltk_damage.x < 0:
+			_vltk_damage = MonsterData.melee_damage(_vltk_data, level, sid, eff_lv)
+		var s := VltkSkillData.skill(sid, eff_lv)
+		if not s.is_empty():
+			var rad := float(s.get("attack_radius", ATTACK_RANGE))
+			var is_missile := int(s.get("style", 0)) == VltkSkillCaster.STYLE_MISSILES
+			var is_melee := int(s.get("melee", 1)) == 1
+			if is_missile and not is_melee and rad > ATTACK_RANGE and rad > _attack_radius:
+				_active_skill_id = sid
+				_active_skill_level = eff_lv
+				_attack_radius = rad
+				match int(s.get("char_anim", 9)):
+					10: _attack_action = "attack2"
+					11, 14: _attack_action = "magic"
+					_: _attack_action = "attack1"
 
 func heal(amount: float) -> void:
 	health = minf(max_health, health + amount)
@@ -176,8 +208,14 @@ func _physics_process(delta: float) -> void:
 		if _atk_time >= 0.0:
 			_tick_vltk_attack(delta)
 			return
-		if _atk_cooldown <= 0.0 and to_player.length() <= ATTACK_RANGE:
+		if _atk_cooldown <= 0.0 and to_player.length() <= _attack_radius:
 			_begin_vltk_attack(to_player)
+			return
+		## Quái đánh tầm xa giữ cự ly bắn thay vì luôn lao sát vào người chơi
+		if _active_skill_id > 0 and _attack_radius > ATTACK_RANGE and to_player.length() <= _attack_radius * 0.8:
+			velocity = Vector2.ZERO
+			move_and_slide()
+			_update_vltk_pose(Vector2.ZERO, delta)
 			return
 	var direction := (target.global_position - global_position).normalized()
 	var speed_bonus := 1.0 + (combat_stats.move_speed_p / 100.0 if combat_stats else 0.0)
@@ -192,13 +230,13 @@ func _physics_process(delta: float) -> void:
 func _begin_vltk_attack(to_player: Vector2) -> void:
 	_atk_time = 0.0
 	_atk_hit = false
-	_play_vltk_sound("attack1")
-	_atk_len = float(MonsterData.action_frames(_vltk_data, "attack1")) / VltkMath.FPS
+	_play_vltk_sound(_attack_action)
+	_atk_len = float(MonsterData.action_frames(_vltk_data, _attack_action)) / VltkMath.FPS
 	var d := VltkMath.dir_between(Vector2.ZERO, VltkMath.to_logic(to_player))
 	if d >= 0:
 		_vltk_dir64 = d
 	velocity = Vector2.ZERO
-	_vltk_sprite.set_pose("attack1", _vltk_dir64, 0.0)
+	_vltk_sprite.set_pose(_attack_action, _vltk_dir64, 0.0)
 
 func _tick_vltk_attack(delta: float) -> void:
 	_atk_time += delta
@@ -206,12 +244,84 @@ func _tick_vltk_attack(delta: float) -> void:
 	move_and_slide()
 	if not _atk_hit and _atk_time >= _atk_len * ATTACK_FIRE_PERCENT:
 		_atk_hit = true
-		if is_instance_valid(target) and global_position.distance_to(target.global_position) <= ATTACK_RANGE * 1.4:
+		if _active_skill_id > 0:
+			var s := VltkSkillData.skill(_active_skill_id, _active_skill_level)
+			if not s.is_empty() and int(s.get("style", 0)) == VltkSkillCaster.STYLE_MISSILES and is_instance_valid(target):
+				var ctx := VltkCastContext.new()
+				ctx.launcher = self
+				ctx.world = get_parent()
+				ctx.stats = _make_hit_stats(_active_skill_id, _active_skill_level)
+				ctx.attacker_stats = combat_stats
+				ctx.target_group = &"player"
+				VltkSkillCaster.cast(ctx, _active_skill_id, _active_skill_level, VltkMath.logic_of(target), target)
+			elif is_instance_valid(target) and global_position.distance_to(target.global_position) <= _attack_radius * 1.4:
+				_deal_contact_damage(target)
+		elif is_instance_valid(target) and global_position.distance_to(target.global_position) <= _attack_radius * 1.4:
 			_deal_contact_damage(target)
-	_vltk_sprite.set_pose("attack1", _vltk_dir64, clampf(_atk_time / _atk_len, 0.0, 1.0))
+	_vltk_sprite.set_pose(_attack_action, _vltk_dir64, clampf(_atk_time / _atk_len, 0.0, 1.0))
 	if _atk_time >= _atk_len:
 		_atk_time = -1.0
 		_atk_cooldown = _atk_len * 0.5
+
+func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
+	var stats := ResolvedSkillStats.new()
+	var lv := skill_level
+	var base_dmg := contact_damage
+	if _vltk_damage.x >= 0:
+		base_dmg = float((_vltk_damage.x + _vltk_damage.y) / 2)
+	var skill_info := VltkSkillData.skill(skill_id, skill_level)
+	var series := int(skill_info.get("series", -1))
+	stats.element = (series if series >= 0 and series <= 4 else int(_build.element)) as ElementTypes.ElementType
+	stats.main_damage_type = CombatFormulas.DamageType.PHYSICS
+
+	var elements := {}
+	var cold := VltkSkillData.hit_attrib(skill_id, "colddamage_v", lv)
+	var fire := VltkSkillData.hit_attrib(skill_id, "firedamage_v", lv)
+	var light := VltkSkillData.hit_attrib(skill_id, "lightingdamage_v", lv)
+	var poison := VltkSkillData.hit_attrib(skill_id, "poisondamage_v", lv)
+	if not cold.is_empty():
+		elements[CombatFormulas.DamageType.COLD] = Vector2i(int(cold[0]), int(cold[2] if cold.size() > 2 else cold[0]))
+		stats.freeze_frames = int(cold[1])
+	if not fire.is_empty():
+		elements[CombatFormulas.DamageType.FIRE] = Vector2i(int(fire[0]), int(fire[2] if fire.size() > 2 else fire[0]))
+	if not light.is_empty():
+		elements[CombatFormulas.DamageType.LIGHT] = Vector2i(int(light[0]), int(light[2] if light.size() > 2 else light[0]))
+	if not poison.is_empty():
+		var poison_damage := int(poison[0])
+		elements[CombatFormulas.DamageType.POISON] = Vector2i(poison_damage, poison_damage)
+		stats.poison_time_frames = int(poison[1])
+		stats.poison_interval_frames = maxi(1, int(poison[2]))
+	var stun := VltkSkillData.hit_attrib(skill_id, "stun_p", lv)
+	if not stun.is_empty():
+		stats.stun_chance_p = int(stun[0])
+		stats.stun_frames = int(stun[1])
+	var deadly := VltkSkillData.hit_attrib(skill_id, "deadlystrike_p", lv)
+	if not deadly.is_empty():
+		stats.crit_chance = clampf(float(deadly[0]) / 100.0, 0.0, 1.0)
+	var series_p := VltkSkillData.hit_attrib(skill_id, "seriesdamage_p", lv)
+	if not series_p.is_empty():
+		stats.five_elements_damage_p = int(series_p[0])
+
+	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
+	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
+	if not enhance.is_empty():
+		stats.damage = base_dmg * (100.0 + float(enhance[0])) / 100.0
+	elif not flat.is_empty():
+		stats.damage = (float(flat[0]) + float(flat[2] if flat.size() > 2 else flat[0])) * 0.5 + base_dmg * 0.5
+	elif elements.is_empty():
+		stats.damage = base_dmg
+	else:
+		stats.damage = 0.0
+
+	var physical := int(skill_info.get("physical", 1)) == 1
+	var extra: Dictionary = combat_stats.outer_element_damage if physical else combat_stats.inner_element_damage
+	for t in extra:
+		elements[t] = elements.get(t, Vector2i.ZERO) + extra[t]
+	if stats.damage > 0.0 or elements.is_empty():
+		stats.damage_min = maxf(1.0, stats.damage * 0.8)
+		stats.damage_max = maxf(stats.damage_min, stats.damage * 1.2)
+	stats.extra_damage_ranges = elements
+	return stats
 
 func take_damage(amount: float) -> void:
 	health -= amount

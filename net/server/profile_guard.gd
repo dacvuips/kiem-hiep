@@ -29,7 +29,7 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	## Chợ online nằm ở MarketServer — hàng treo offline trong hồ sơ không được mang lên server.
 	merged["market"] = []
 	if trust:
-		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points"]:
+		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):
 				merged[k] = server_data[k]
 		## Phái chỉ thêm, không mất: bản game cũ (nạp danh sách nhân vật trước khi server lưu xong) không được xoá phái đã vào.
@@ -40,10 +40,10 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 		merged["_money_from_server"] = false
 		return merged
 	for k in ["level", "exp", "name", "gender", "lead_level", "lead_exp", "server_seen", "starter_kit",
-			"guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points"]:
+			"guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 		if server_data.has(k):
 			merged[k] = server_data[k]
-	## Chỉ số TEST (nút TEST, bản debug): máy chủ thật không bao giờ nhận từ game.
+	## Chỉ số TEST (nút TEST, bản debug): máy chủ thật không bao giờ nhận từ người chơi thường.
 	merged["test_attribs"] = (server_data.get("test_attribs", {}) as Dictionary).duplicate() if server_data.get("test_attribs") is Dictionary else {}
 	var level := int(server_data.get("level", 1))
 	merged.erase("nation")   ## bỏ phe Tống / Kim cố định (bản lưu cũ còn khoá này)
@@ -68,7 +68,8 @@ static func _guard_sect(server_data: Dictionary, merged: Dictionary, level: int)
 	var s_element := int(s_sect.element) if s_sect else int(server_data.get("element", -1))
 	merged["element"] = s_element
 	var want := SectRegistry.get_by_id(str(merged.get("sect_id", "")))
-	var join_ok := s_sect == null and want != null and level >= PlayerProfile.NEWBIE_LEVEL and s_element >= 0 and int(want.element) == s_element
+	var gender_ok := want != null and (want.required_gender < 0 or want.required_gender == int(merged.get("gender", server_data.get("gender", 0))))
+	var join_ok := s_sect == null and want != null and level >= PlayerProfile.NEWBIE_LEVEL and s_element >= 0 and int(want.element) == s_element and gender_ok
 	if join_ok:
 		merged["sect_name"] = want.sect_name
 		return
@@ -97,9 +98,14 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 		if not it is Dictionary:
 			return null
 		var uid := str(it.get("uid", ""))
-		if uid == "" or not known.has(uid) or seen.has(uid):
+		if uid == "":
+			uid = ItemInstance.new_uid()
+			it["uid"] = uid
+		if seen.has(uid):
 			return null
 		seen[uid] = true
+		if not known.has(uid):
+			return null
 		var out: Dictionary = (known[uid] as Dictionary).duplicate(true)
 		for k in ItemInstance.OWNER_FIELDS:
 			if it.has(k):

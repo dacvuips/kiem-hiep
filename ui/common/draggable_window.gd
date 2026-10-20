@@ -13,6 +13,17 @@ const GROUP := "draggable_windows"
 
 var title: String = ""
 var body: VBoxContainer
+var bar: PanelContainer
+var _draggable_explicit: bool = true
+var draggable: bool:
+	get:
+		if not _draggable_explicit:
+			return false
+		if _is_in_character_hub():
+			return false
+		return true
+	set(v):
+		_draggable_explicit = v
 
 var _dragging: bool = false
 var _frameless: bool = false
@@ -53,9 +64,9 @@ func _init(window_title: String = "", frameless: bool = false) -> void:
 	GameUi.style(self, GameUi.WINDOW)
 
 	## Thanh tiêu đề = vùng kéo.
-	var bar := GameUi.panel(GameUi.TITLE_BAR)
+	bar = GameUi.panel(GameUi.TITLE_BAR)
 	bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	bar.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	bar.mouse_default_cursor_shape = Control.CURSOR_MOVE if draggable else Control.CURSOR_ARROW
 	bar.gui_input.connect(_on_bar_input)
 	root.add_child(bar)
 	var bar_row := HBoxContainer.new()
@@ -74,11 +85,38 @@ func _make_close_button() -> Button:
 	close.pressed.connect(func() -> void: close_requested.emit())
 	return close
 
+func set_draggable(can_drag: bool) -> void:
+	draggable = can_drag
+	if not draggable:
+		_dragging = false
+		if bar:
+			bar.mouse_default_cursor_shape = Control.CURSOR_ARROW
+
+func _is_in_character_hub() -> bool:
+	if find_parent("CharacterHub") != null:
+		return true
+	var p := get_parent()
+	while p != null:
+		if p.name == "CharacterHub" or p.is_in_group("character_hub"):
+			return true
+		p = p.get_parent()
+	if get_tree() and get_tree().current_scene != null:
+		var cs := get_tree().current_scene
+		if cs.name == "CharacterHub" or cs.is_in_group("character_hub"):
+			return true
+	return false
+
+func _enter_tree() -> void:
+	if _is_in_character_hub():
+		set_draggable(false)
+
 func _ready() -> void:
 	add_to_group(GROUP)
+	if _is_in_character_hub():
+		set_draggable(false)
 	## Đặt giữa màn hình (lệch theo số khung đang mở để 2 khung không chồng khít nhau).
 	await get_tree().process_frame
-	if not is_inside_tree():
+	if not is_inside_tree() or get("is_docked") == true:
 		return
 	## Dùng kích thước tối thiểu của nội dung — `size` có thể chưa được container cập nhật ở frame đầu.
 	size = get_combined_minimum_size()
@@ -88,6 +126,10 @@ func _ready() -> void:
 	bring_to_front()
 
 func _gui_input(event: InputEvent) -> void:
+	if not draggable:
+		if event is InputEventMouseButton and event.pressed:
+			bring_to_front()
+		return
 	if _frameless:
 		## Không có thanh tiêu đề: chuột rơi xuống chỗ trống của nội dung (Label/ảnh nền) thì kéo khung.
 		_on_bar_input(event)
@@ -95,6 +137,8 @@ func _gui_input(event: InputEvent) -> void:
 		bring_to_front()
 
 func _on_bar_input(event: InputEvent) -> void:
+	if not draggable:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		_dragging = event.pressed
 		if event.pressed:
@@ -104,6 +148,8 @@ func _on_bar_input(event: InputEvent) -> void:
 		_clamp_to_screen()
 
 func bring_to_front() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		return
 	for w in get_tree().get_nodes_in_group(GROUP):
 		var layer_node := (w as Node).get_parent() as CanvasLayer
 		if layer_node:

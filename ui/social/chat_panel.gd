@@ -1,30 +1,45 @@
 extends CanvasLayer
 class_name ChatPanel
-## KHUNG TÁN GẪU LỚN trượt ra từ mép TRÁI màn hình (mở từ nút "Tán gẫu" ở Chợ Giao Thương — xem món hàng, và các nơi khác cần chat
-## đầy đủ): tab kênh (Tất cả / Gần / Thế giới / Tổ đội / Bang hội / Riêng), lịch sử tin, ô người nhận (kênh Riêng), ô nhập + Gửi.
-## Tin gửi qua game server như khung chat nhỏ (ChatBox — cùng luật ChatServer: cấm chat, tốc độ, độ dài; server gửi lại cả tin của mình).
-## Lịch sử tin dùng chung (static, tối đa MAX_HISTORY) — NetSocial bắt đầu ghi từ lúc nối server nên mở khung lúc nào cũng thấy tin gần đây.
-## Offline: chỉ kênh Gần, tin chỉ hiện ở máy mình.
+## KHUNG TÁN GẪU LỚN trượt ra từ mép TRÁI màn hình (dài từ lề dưới cho tới lề trên):
+## Các kênh: Thế giới, Bang hội, Mật (bỏ kênh Gần).
+## Giao diện phong cách VLTK theo ảnh tham khảo: Tab kênh dạng pill, thanh thông báo ghim,
+## dòng chat phân màu theo kênh, ô gửi & người nhận kênh Mật.
 
-const WIDTH := 440.0
+const WIDTH := 860.0
 const SLIDE_SECONDS := 0.22
 const MAX_HISTORY := 200
-const FONT_SIZE := 14
-const ALL := -1
-const COLORS := [Color(0.93, 0.93, 0.9), Color(1.0, 0.82, 0.35), Color(0.45, 0.85, 1.0), Color(0.5, 0.95, 0.5), Color(1.0, 0.6, 0.85)]
+const FONT_SIZE := 15
 
-## Lịch sử: [{channel, from, to, text}] — mới nhất ở cuối.
+const CHANNELS: Array[int] = [ChatServer.WORLD, ChatServer.GUILD, ChatServer.PRIVATE]
+const CHANNEL_NAMES_MAP := {
+	ChatServer.WORLD: "Thế giới",
+	ChatServer.GUILD: "Bang hội",
+	ChatServer.PRIVATE: "Mật",
+	ChatServer.NEAR: "Gần",
+}
+const CHANNEL_COLORS := {
+	ChatServer.WORLD: Color(1.0, 0.82, 0.35),   # Gold / Vàng hoàng kim
+	ChatServer.GUILD: Color(0.48, 0.95, 0.52),   # Green / Xanh ngọc bang hội
+	ChatServer.PRIVATE: Color(1.0, 0.58, 0.88), # Pink / Hồng tím tin mật
+	ChatServer.NEAR: Color(0.9, 0.9, 0.9),
+}
+
+## Lịch sử: [{channel, from, to, text, time}] — mới nhất ở cuối.
 static var history: Array = []
 static var _listening := false
 static var _open_panel: ChatPanel = null
 
+var _dim: ColorRect
 var _panel: PanelContainer
 var _log: RichTextLabel
 var _input: LineEdit
 var _to: LineEdit
-var _tabs: Array[Button] = []
-var _view := ALL                   ## tab đang xem (ALL = mọi kênh)
-var _send_channel := ChatServer.NEAR
+var _to_row: HBoxContainer
+var _tabs: Dictionary = {}         # channel_int -> Button
+var _current_channel: int = ChatServer.WORLD
+var _style_tab_active: StyleBoxFlat
+var _style_tab_normal: StyleBoxFlat
+var _style_tab_hover: StyleBoxFlat
 
 ## Bắt đầu ghi lịch sử tin từ server (gọi 1 lần khi có kết nối — NetSocial._ready). Gọi lại không sao.
 static func ensure_listening() -> void:
@@ -37,15 +52,17 @@ static func ensure_listening() -> void:
 static func _push(channel: int, from_name: String, to_name: String, text: String) -> void:
 	var p := GameManager.local_profile
 	if p and p.blacklist.has(from_name) and from_name != p.display_name:
-		return   ## sổ đen: chỉ lọc ở máy mình (như ChatBox)
-	history.append({"channel": channel, "from": from_name, "to": to_name, "text": text})
+		return   ## sổ đen: chỉ lọc ở máy mình
+	var t := Time.get_time_dict_from_system()
+	var time_str := "%02d:%02d" % [t.hour, t.minute]
+	history.append({"channel": channel, "from": from_name, "to": to_name, "text": text, "time": time_str})
 	if history.size() > MAX_HISTORY:
 		history = history.slice(history.size() - MAX_HISTORY)
 	if _open_panel != null and is_instance_valid(_open_panel):
 		_open_panel._render()
 
-## Mở khung (1 khung / lúc; đang mở thì chỉ đổi kênh). channel = kênh gửi mặc định; to = người nhận khi kênh Riêng.
-static func open(host: Node, channel := ChatServer.NEAR, to := "") -> ChatPanel:
+## Mở khung (1 khung / lúc; đang mở thì chỉ đổi kênh).
+static func open(host: Node, channel := ChatServer.WORLD, to := "") -> ChatPanel:
 	ensure_listening()
 	var panel: ChatPanel = _open_panel if _open_panel != null and is_instance_valid(_open_panel) else null
 	if panel == null:
@@ -54,79 +71,257 @@ static func open(host: Node, channel := ChatServer.NEAR, to := "") -> ChatPanel:
 	panel.set_channel(channel, to)
 	return panel
 
+## Bật / tắt khung chat (gọi từ nút chat icon kế bên nút TEST)
+static func toggle(host: Node, channel := ChatServer.WORLD, to := "") -> void:
+	if _open_panel != null and is_instance_valid(_open_panel):
+		_open_panel.close()
+	else:
+		open(host, channel, to)
+
 func _ready() -> void:
 	layer = 60
 	_open_panel = self
-	var dim := ColorRect.new()   ## bấm ra ngoài khung = đóng
-	dim.color = Color(0, 0, 0, 0.25)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.gui_input.connect(func(e: InputEvent) -> void:
+
+	# Nền tối mờ click ra ngoài để đóng
+	_dim = ColorRect.new()
+	_dim.color = Color(0, 0, 0, 0.35)
+	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close())
-	add_child(dim)
+	add_child(_dim)
+
+	# Panel trượt dài toàn màn hình từ lề dưới đến lề trên
 	_panel = PanelContainer.new()
-	_panel.add_theme_stylebox_override("panel", GameUi.box(Color(0.05, 0.045, 0.035, 0.96), Color(0.6, 0.5, 0.28, 0.9), 0, 1, 12))
+	var panel_sb := StyleBoxFlat.new()
+	panel_sb.bg_color = Color(0.06, 0.07, 0.08, 0.97)
+	panel_sb.border_width_right = 2
+	panel_sb.border_color = Color(0.72, 0.58, 0.28, 0.9)
+	panel_sb.shadow_color = Color(0, 0, 0, 0.6)
+	panel_sb.shadow_size = 14
+	panel_sb.content_margin_left = 14.0
+	panel_sb.content_margin_right = 14.0
+	panel_sb.content_margin_top = 12.0
+	panel_sb.content_margin_bottom = 12.0
+	_panel.add_theme_stylebox_override("panel", panel_sb)
+
 	_panel.anchor_top = 0.0
 	_panel.anchor_bottom = 1.0
+	_panel.offset_top = 0.0
+	_panel.offset_bottom = 0.0
 	_panel.offset_left = -WIDTH
 	_panel.offset_right = 0.0
 	add_child(_panel)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
-	_panel.add_child(box)
 
-	var head := HBoxContainer.new()
-	var title := GameUi.label("Tán gẫu", GameUi.GOLD, 20)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(title)
-	var x := SocialUi.small_button("✕")
-	x.tooltip_text = "Đóng"
-	x.pressed.connect(close)
-	head.add_child(x)
-	box.add_child(head)
+	var main_vbox := VBoxContainer.new()
+	main_vbox.add_theme_constant_override("separation", 8)
+	_panel.add_child(main_vbox)
 
-	var tabs := HFlowContainer.new()
-	tabs.add_theme_constant_override("h_separation", 4)
-	tabs.add_theme_constant_override("v_separation", 4)
-	box.add_child(tabs)
-	var names := ["Tất cả"] + Array(ChatServer.CHANNEL_NAMES)
-	for i in names.size():
-		var b := GameUi.button(str(names[i]), GameUi.TAB)
-		b.custom_minimum_size = Vector2(0, 32)
-		b.pressed.connect(_on_tab.bind(i - 1))
-		tabs.add_child(b)
-		_tabs.append(b)
+	# --- 1. HEADER: Tabs kênh VLTK (Thế giới, Bang hội, Mật) + Nút Đóng ---
+	_setup_tab_styles()
+	var head_bar := HBoxContainer.new()
+	head_bar.add_theme_constant_override("separation", 6)
+	main_vbox.add_child(head_bar)
 
+	var tabs_container := HBoxContainer.new()
+	tabs_container.add_theme_constant_override("separation", 6)
+	tabs_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head_bar.add_child(tabs_container)
+
+	for ch in CHANNELS:
+		var tab_name: String = CHANNEL_NAMES_MAP.get(ch, "Kênh")
+		var b := Button.new()
+		b.text = tab_name
+		b.focus_mode = Control.FOCUS_NONE
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.custom_minimum_size = Vector2(110, 34)
+		b.add_theme_font_size_override("font_size", 14)
+		b.pressed.connect(func() -> void: _on_tab(ch))
+		tabs_container.add_child(b)
+		_tabs[ch] = b
+
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	close_btn.custom_minimum_size = Vector2(32, 32)
+	close_btn.tooltip_text = "Đóng tán gẫu"
+	var close_sb := _make_pill_style(Color(0.18, 0.08, 0.08, 0.9), Color(0.65, 0.25, 0.25, 0.8), 8)
+	close_btn.add_theme_stylebox_override("normal", close_sb)
+	close_btn.add_theme_color_override("font_color", Color(1.0, 0.75, 0.75))
+	close_btn.pressed.connect(close)
+	head_bar.add_child(close_btn)
+
+	# --- 2. THANH GHIM / THÔNG BÁO QUẢN TRỊ (như ảnh mẫu) ---
+	var notice_box := PanelContainer.new()
+	var notice_sb := StyleBoxFlat.new()
+	notice_sb.bg_color = Color(0.12, 0.11, 0.09, 0.85)
+	notice_sb.border_width_left = 1
+	notice_sb.border_width_top = 1
+	notice_sb.border_width_right = 1
+	notice_sb.border_width_bottom = 1
+	notice_sb.border_color = Color(0.55, 0.45, 0.22, 0.7)
+	notice_sb.corner_radius_top_left = 6
+	notice_sb.corner_radius_top_right = 6
+	notice_sb.corner_radius_bottom_right = 6
+	notice_sb.corner_radius_bottom_left = 6
+	notice_sb.content_margin_left = 8.0
+	notice_sb.content_margin_right = 8.0
+	notice_sb.content_margin_top = 5.0
+	notice_sb.content_margin_bottom = 5.0
+	notice_box.add_theme_stylebox_override("panel", notice_sb)
+	main_vbox.add_child(notice_box)
+
+	var notice_lbl := RichTextLabel.new()
+	notice_lbl.bbcode_enabled = true
+	notice_lbl.fit_content = true
+	notice_lbl.scroll_active = false
+	notice_lbl.text = "[color=#FFD54F]📌 Quản trị:[/color] [color=#DDD4C0]Chào mừng hiệp khách! Tán gẫu văn minh, hảo hữu bốn phương tụ hội.[/color]"
+	notice_lbl.add_theme_font_size_override("normal_font_size", 12)
+	notice_box.add_child(notice_lbl)
+
+	# --- 3. KHUNG HIỂN THỊ TIN NHẮN (RichTextLabel) ---
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log.add_theme_font_size_override("normal_font_size", FONT_SIZE)
-	_log.add_theme_stylebox_override("normal", GameUi.box(Color(0, 0, 0, 0.35), Color(0.3, 0.26, 0.18, 0.8), 6, 1, 8))
-	box.add_child(_log)
+	var log_sb := StyleBoxFlat.new()
+	log_sb.bg_color = Color(0.03, 0.04, 0.05, 0.75)
+	log_sb.border_width_left = 1
+	log_sb.border_width_top = 1
+	log_sb.border_width_right = 1
+	log_sb.border_width_bottom = 1
+	log_sb.border_color = Color(0.28, 0.32, 0.32, 0.6)
+	log_sb.corner_radius_top_left = 6
+	log_sb.corner_radius_top_right = 6
+	log_sb.corner_radius_bottom_right = 6
+	log_sb.corner_radius_bottom_left = 6
+	log_sb.content_margin_left = 10.0
+	log_sb.content_margin_right = 10.0
+	log_sb.content_margin_top = 8.0
+	log_sb.content_margin_bottom = 8.0
+	_log.add_theme_stylebox_override("normal", log_sb)
+	main_vbox.add_child(_log)
 
-	_to = SocialUi.line_edit("Tên người nhận")
+	# --- 4. HÀNG NGƯỜI NHẬN (chỉ hiện khi kênh Mật) ---
+	_to_row = HBoxContainer.new()
+	_to_row.add_theme_constant_override("separation", 6)
+	main_vbox.add_child(_to_row)
+
+	var to_lbl := Label.new()
+	to_lbl.text = "Gửi đến:"
+	to_lbl.add_theme_color_override("font_color", Color(1.0, 0.75, 0.9))
+	to_lbl.add_theme_font_size_override("font_size", 13)
+	_to_row.add_child(to_lbl)
+
+	_to = LineEdit.new()
+	_to.placeholder_text = "Nhập tên nhân vật nhận..."
 	_to.max_length = 32
-	box.add_child(_to)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	box.add_child(row)
-	_input = SocialUi.line_edit("Nhập tin nhắn…")
+	_to.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_line_edit(_to)
+	_to_row.add_child(_to)
+	_to_row.visible = false
+
+	# --- 5. HÀNG NHẬP TIN NHẮN (Emoji + LineEdit + Nút Gửi) ---
+	var input_row := HBoxContainer.new()
+	input_row.add_theme_constant_override("separation", 6)
+	main_vbox.add_child(input_row)
+
+	var emoji_btn := Button.new()
+	emoji_btn.text = "😊"
+	emoji_btn.tooltip_text = "Biểu cảm nhanh"
+	emoji_btn.focus_mode = Control.FOCUS_NONE
+	emoji_btn.custom_minimum_size = Vector2(38, 38)
+	var emo_sb := _make_pill_style(Color(0.12, 0.16, 0.18, 0.9), Color(0.72, 0.58, 0.28, 0.8), 6)
+	emoji_btn.add_theme_stylebox_override("normal", emo_sb)
+	emoji_btn.pressed.connect(_on_emoji_pressed)
+	input_row.add_child(emoji_btn)
+
+	_input = LineEdit.new()
+	_input.placeholder_text = "Nhập nội dung tán gẫu... (Enter để gửi)"
 	_input.max_length = ChatServer.MAX_LEN
 	_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_input.custom_minimum_size = Vector2(0, 38)
+	_style_line_edit(_input)
 	_input.text_submitted.connect(func(_t: String) -> void: _send())
-	row.add_child(_input)
-	var send := SocialUi.stone_button("Gửi", Vector2(80, 38))
-	send.pressed.connect(_send)
-	row.add_child(send)
-	var hint := GameUi.label("" if NetClient.is_in_world() else "Chơi một mình: chỉ kênh Gần, tin chỉ hiện trên máy bạn.", SocialUi.MUTED, 12)
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.visible = hint.text != ""
-	box.add_child(hint)
+	input_row.add_child(_input)
 
-	create_tween().tween_property(_panel, "offset_left", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	create_tween().tween_property(_panel, "offset_right", WIDTH, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_render()
+	var send_btn := Button.new()
+	send_btn.text = "Gửi"
+	send_btn.focus_mode = Control.FOCUS_NONE
+	send_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	send_btn.custom_minimum_size = Vector2(72, 38)
+	var send_sb := _make_pill_style(Color(0.85, 0.65, 0.2, 1.0), Color(1.0, 0.88, 0.5, 1.0), 6)
+	var send_hover_sb := _make_pill_style(Color(0.95, 0.75, 0.25, 1.0), Color(1.0, 0.95, 0.7, 1.0), 6)
+	send_btn.add_theme_stylebox_override("normal", send_sb)
+	send_btn.add_theme_stylebox_override("hover", send_hover_sb)
+	send_btn.add_theme_stylebox_override("pressed", send_hover_sb)
+	send_btn.add_theme_color_override("font_color", Color(0.12, 0.1, 0.05))
+	send_btn.add_theme_font_size_override("font_size", 14)
+	send_btn.pressed.connect(_send)
+	input_row.add_child(send_btn)
+
+	# Khởi tạo tin mẫu phong phú nếu chưa có lịch sử
+	if history.is_empty():
+		_push(ChatServer.WORLD, "Lệnh Hồ Xung", "", "Hôm nay ai cùng ta tỉ thí kiếm pháp tại Hoa Sơn?")
+		_push(ChatServer.WORLD, "Tiểu Long Nữ", "", "Cổ Mộ phái chiêu mộ đệ tử, hoan nghênh chư vị đồng đạo.")
+		_push(ChatServer.GUILD, "Bang Chủ", "", "Tối nay 20h anh em tập hợp đánh Boss bang nhé!")
+
+	# Hiệu ứng trượt ra mượt mà từ mép trái màn hình
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_panel, "offset_left", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_panel, "offset_right", WIDTH, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	_on_tab(_current_channel)
+
+func _setup_tab_styles() -> void:
+	# Active: Pill màu vàng hoàng kim với chữ đen đậm
+	_style_tab_active = _make_pill_style(Color(0.92, 0.72, 0.25, 1.0), Color(1.0, 0.88, 0.55, 1.0), 14)
+	# Normal: Pill nền tối viền xám tro
+	_style_tab_normal = _make_pill_style(Color(0.12, 0.15, 0.17, 0.9), Color(0.35, 0.42, 0.42, 0.7), 14)
+	# Hover: Pill sáng nhẹ
+	_style_tab_hover = _make_pill_style(Color(0.18, 0.24, 0.27, 0.95), Color(0.65, 0.72, 0.72, 0.9), 14)
+
+func _make_pill_style(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.border_width_left = 1
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.corner_radius_top_left = radius
+	sb.corner_radius_top_right = radius
+	sb.corner_radius_bottom_right = radius
+	sb.corner_radius_bottom_left = radius
+	sb.content_margin_left = 10.0
+	sb.content_margin_right = 10.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	return sb
+
+func _style_line_edit(le: LineEdit) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.1, 0.11, 0.95)
+	sb.border_color = Color(0.35, 0.4, 0.4, 0.8)
+	sb.border_width_left = 1
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.corner_radius_top_left = 6
+	sb.corner_radius_top_right = 6
+	sb.corner_radius_bottom_right = 6
+	sb.corner_radius_bottom_left = 6
+	sb.content_margin_left = 8.0
+	sb.content_margin_right = 8.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	le.add_theme_stylebox_override("normal", sb)
+
+	var sb_focus := sb.duplicate() as StyleBoxFlat
+	sb_focus.border_color = Color(0.9, 0.75, 0.35, 1.0)
+	le.add_theme_stylebox_override("focus", sb_focus)
 
 func _exit_tree() -> void:
 	if _open_panel == self:
@@ -137,69 +332,115 @@ func _unhandled_key_input(e: InputEvent) -> void:
 		close()
 		get_viewport().set_input_as_handled()
 
-## Chọn kênh gửi (+ người nhận khi kênh Riêng) và chuyển sang tab kênh đó.
+## Chọn kênh gửi (+ người nhận khi kênh Mật/Riêng) và chuyển sang tab kênh đó.
 func set_channel(channel: int, to := "") -> void:
-	_send_channel = clampi(channel, 0, ChatServer.CHANNEL_NAMES.size() - 1)
+	_current_channel = channel
 	if not is_node_ready():
 		await ready
-	if _send_channel == ChatServer.PRIVATE and to != "":
+	if _to != null and to != "":
 		_to.text = to
-	_on_tab(_send_channel)
-	_input.grab_focus.call_deferred()
+	_on_tab(channel)
+	if _input != null:
+		_input.grab_focus.call_deferred()
 
-## Tab ALL = xem mọi kênh (gửi bằng kênh đang chọn trước đó); tab kênh = xem + gửi kênh đó.
-func _on_tab(view: int) -> void:
-	_view = view
-	if view != ALL:
-		_send_channel = view
-	for i in _tabs.size():
-		GameUi.set_active(_tabs[i], i - 1 == view)
-	_to.visible = _send_channel == ChatServer.PRIVATE
-	_input.placeholder_text = "Nhập tin nhắn (%s)…" % ChatServer.CHANNEL_NAMES[_send_channel]
+## Chuyển tab kênh chat
+func _on_tab(channel: int) -> void:
+	_current_channel = channel
+	for ch_key in _tabs:
+		var btn: Button = _tabs[ch_key]
+		var is_active: bool = (int(ch_key) == channel)
+		if is_active:
+			btn.add_theme_stylebox_override("normal", _style_tab_active)
+			btn.add_theme_stylebox_override("hover", _style_tab_active)
+			btn.add_theme_stylebox_override("pressed", _style_tab_active)
+			btn.add_theme_color_override("font_color", Color(0.12, 0.1, 0.05))
+		else:
+			btn.add_theme_stylebox_override("normal", _style_tab_normal)
+			btn.add_theme_stylebox_override("hover", _style_tab_hover)
+			btn.add_theme_stylebox_override("pressed", _style_tab_hover)
+			btn.add_theme_color_override("font_color", Color(0.82, 0.84, 0.8))
+
+	if _to_row != null:
+		_to_row.visible = (channel == ChatServer.PRIVATE)
+
+	var ch_name: String = CHANNEL_NAMES_MAP.get(channel, "kênh")
+	if _input != null:
+		_input.placeholder_text = "Tán gẫu %s... (Enter để gửi)" % ch_name
+
 	_render()
 
+## Vẽ danh sách tin nhắn theo kênh đang chọn
 func _render() -> void:
 	if _log == null:
 		return
 	var lines: PackedStringArray = []
 	for m in history:
-		var ch := int(m.channel)
-		if _view != ALL and ch != _view:
+		var ch := int(m.get("channel", ChatServer.WORLD))
+		# Lọc theo kênh hiện tại
+		if ch != _current_channel and _current_channel != ChatServer.NEAR:
+			# Ngoại lệ: kênh Mật chỉ hiện tin Mật, Bang chỉ hiện Bang, Thế giới chỉ hiện Thế giới
 			continue
-		var color: Color = COLORS[clampi(ch, 0, COLORS.size() - 1)]
-		var who := _esc(str(m.from))
+
+		var color: Color = CHANNEL_COLORS.get(ch, Color.WHITE)
+		var ch_label: String = CHANNEL_NAMES_MAP.get(ch, "Kênh")
+		var time_str: String = str(m.get("time", "12:00"))
+		var who := _esc(str(m.get("from", "Đại Hiệp")))
+
+		var header_part := ""
 		if ch == ChatServer.PRIVATE:
-			who = "%s → %s" % [who, _esc(str(m.to))]
-		lines.append("[color=#%s][%s] %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[ch], who, _esc(str(m.text))])
-	_log.text = "\n".join(lines) if not lines.is_empty() else "[color=#888]Chưa có tin nhắn.[/color]"
+			var to_str := _esc(str(m.get("to", "")))
+			header_part = "[color=#%s][%s][/color] [color=#F48FB1]%s → %s:[/color]" % [color.to_html(false), ch_label, who, to_str]
+		else:
+			header_part = "[color=#%s][%s][/color] [color=#FFE082]%s:[/color]" % [color.to_html(false), ch_label, who]
+
+		lines.append("[color=#757D84]%s[/color] %s [color=#ECEFF1]%s[/color]" % [time_str, header_part, _esc(str(m.get("text", "")))])
+
+	if lines.is_empty():
+		var ch_name: String = CHANNEL_NAMES_MAP.get(_current_channel, "này")
+		_log.text = "\n[center][color=#606870]— Chưa có tin nhắn trong kênh %s —[/color][/center]" % ch_name
+	else:
+		_log.text = "\n".join(lines)
 
 func _send() -> void:
+	if _input == null:
+		return
 	var text := _input.text.strip_edges()
 	if text.is_empty():
 		return
-	var ch := _send_channel
-	var to := _to.text.strip_edges()
+	var ch := _current_channel
+	var to := _to.text.strip_edges() if _to != null else ""
 	if ch == ChatServer.PRIVATE and to.is_empty():
-		_note("Hãy nhập tên người nhận.")
+		_note("Hãy nhập tên người nhận trong kênh Mật.")
 		return
+
 	if NetClient.is_in_world():
-		NetClient.send_chat(ch, to, text)   ## server gửi lại (cả tin của mình) -> vào lịch sử qua ensure_listening
-	elif ch == ChatServer.NEAR:
-		var p := GameManager.local_profile
-		_push(ch, p.display_name if p else "Bạn", "", text)
+		NetClient.send_chat(ch, to, text)
 	else:
-		_note("Kênh %s chỉ dùng khi chơi trên máy chủ." % ChatServer.CHANNEL_NAMES[ch])
-		return
+		# Chơi offline / Hub: thêm vào lịch sử để kiểm tra giao diện và lưu trữ
+		var p := GameManager.local_profile
+		_push(ch, p.display_name if p else "Đại Hiệp", to, text)
+
 	_input.text = ""
 
 func _note(text: String) -> void:
-	_log.append_text("\n[color=#e88]%s[/color]" % _esc(text))
+	if _log != null:
+		_log.append_text("\n[color=#FF7043]⚠ %s[/color]" % _esc(text))
+
+func _on_emoji_pressed() -> void:
+	if _input == null:
+		return
+	var emojis := ["(^-^)", "(≧◡≦)", "(>_<)", "[Võ Lâm]", "[PK]", "[Hảo Hữu]"]
+	var pick: String = emojis[randi() % emojis.size()]
+	_input.text += (" " if not _input.text.is_empty() and not _input.text.ends_with(" ") else "") + pick
+	_input.grab_focus()
+	_input.caret_column = _input.text.length()
 
 func close() -> void:
-	var t := create_tween()
+	var t := create_tween().set_parallel(true)
 	t.tween_property(_panel, "offset_left", -WIDTH, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	t.parallel().tween_property(_panel, "offset_right", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	t.tween_callback(queue_free)
+	t.tween_property(_panel, "offset_right", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	t.tween_property(_dim, "color:a", 0.0, SLIDE_SECONDS)
+	t.chain().tween_callback(queue_free)
 
 static func _esc(s: String) -> String:
 	return s.replace("[", "[lb]")

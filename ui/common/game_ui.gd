@@ -93,7 +93,7 @@ static func box(bg: Color, border: Color, radius := RADIUS_PANEL, border_w := 1,
 	return s
 
 static func window_style() -> StyleBoxFlat:
-	return box(BG, BORDER, RADIUS_WINDOW, 1, PAD_WINDOW)
+	return WuxiaStyle.create_panel_box()
 
 # ================================================================ Theme
 static var _theme: Theme
@@ -207,7 +207,7 @@ static func _build_theme() -> Theme:
 	var t := Theme.new()
 	## Khung
 	_panel(t, WINDOW, window_style())
-	_panel(t, TITLE_BAR, box(Color(0.09, 0.09, 0.08), BORDER, 4, 0, 6))
+	_panel(t, TITLE_BAR, WuxiaStyle.create_header_bar())
 	_panel(t, PANEL, box(BG_INNER, BORDER, RADIUS_PANEL, 1, 12))
 	_panel(t, SECTION, box(SECTION_BG, SECTION_BG, 4, 0, 10))
 	_panel(t, INFO, box(INFO_BG, INFO_BORDER, 8, 1, 12))

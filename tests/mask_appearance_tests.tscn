@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://mask_app_test_001"]
+
+[ext_resource type="Script" path="res://tests/mask_appearance_tests.gd" id="1_test"]
+
+[node name="MaskAppearanceTests" type="Node"]
+script = ExtResource("1_test")

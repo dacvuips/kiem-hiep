@@ -25,12 +25,12 @@ const HP_BAR_HEIGHT := 4.0          ## thanh quái cao 6px; thanh trên đầu n
 
 ## NHẢY — công thức KNpc::NewJump/DoJump/ServerJump gốc (frame = 1/18 giây): bay thẳng theo hướng với 12 đơn vị/frame,
 ## độ cao h = (v0*t - g*t²/2)/8, g = 10, v0 = g*(số frame-1)/2 (đỉnh ở giữa quãng). Tối đa 40 frame (m_CurrentJumpFrame).
-## Nút nhảy không chọn điểm đến nên dùng quãng mặc định JUMP_DEFAULT_FRAMES theo hướng đang quay.
+## Chuẩn VLTK: quãng tối đa 40 frame = 480 pixel. Có điểm đến (click chuột) thì nhảy tới điểm đó (tối đa 480px).
 const VLTK_FPS := 18.0
 const JUMP_SPEED := 12.0 * VLTK_FPS
 const JUMP_GRAVITY := 10.0
 const JUMP_MAX_FRAMES := 40
-const JUMP_DEFAULT_FRAMES := 20
+const JUMP_DEFAULT_FRAMES := 40
 ## Đổi ngựa phải chờ (MAX_SWITCH_HORSE_FIGHT_NONE = 36 frame gốc).
 const HORSE_SWITCH_COOLDOWN := 36.0 / VLTK_FPS
 ## Đi theo (KPlayerAI m_bFollowPeople): cách mục tiêu quá bán kính này mới chạy tới.
@@ -94,6 +94,7 @@ var _jump_time: float = 0.0     ## giây đã bay
 var _jump_frames: int = 0       ## tổng frame của cú nhảy này
 var _jump_dir: Vector2 = Vector2.DOWN
 var _air_height: float = 0.0    ## độ cao hiện tại (pixel)
+var _last_safe_pos: Vector2 = Vector2.ZERO  ## điểm an toàn cuối trên mặt đất (nSuccessStep gốc)
 var _is_sitting: bool = false
 var _sit_time: float = 0.0
 var _horse_ready_at_ms: int = 0
@@ -219,18 +220,41 @@ func refresh_combat_stats() -> void:
 ## Mới có bộ hình nam — nhân vật nữ tạm dùng hình nam cho tới khi nhập bộ nữ.
 func refresh_appearance() -> void:
 	var profile := GameManager.local_profile
-	if profile == null or avatar == null:
+	if profile == null:
 		return
 	var gender_key := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	avatar.voice_gender = gender_key
-	avatar.set_gender(gender_key)  ## bộ hình nữ (nếu đã nhập) — chưa có thì giữ hình nam
-	var look := Equipment.get_appearance(profile.equipment, avatar.gender, profile.riding)
-	if look["helm"] != avatar.helm_res or look["armor"] != avatar.armor_res or look["weapon"] != avatar.weapon_res \
-			or look["horse"] != avatar.horse_res:
-		avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
-	## Cưỡi ngựa thì đầu cao hơn ~24px -> dời tên lên theo.
-	if _name_label:
-		_apply_name_y()
+	var look := Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
+	var final_gender: String = str(look.get("gender", gender_key))
+	if avatar != null:
+		avatar.voice_gender = final_gender
+		avatar.set_gender(final_gender)
+		if look["helm"] != avatar.helm_res or look["armor"] != avatar.armor_res or look["weapon"] != avatar.weapon_res \
+				or look["horse"] != avatar.horse_res:
+			avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
+		if look.has("modulate"):
+			avatar.modulate = look["modulate"]
+		else:
+			avatar.modulate = Color.WHITE
+
+	_update_name_label_disguise(look)
+
+func _update_name_label_disguise(look: Dictionary) -> void:
+	var profile := GameManager.local_profile
+	if _name_label == null or profile == null:
+		return
+	if look.get("is_masked", false):
+		var d_title: String = str(look.get("disguise_title", "Dịch Dung"))
+		_name_label.text = "🎭 [%s]\n%s" % [d_title, profile.display_name]
+		_name_label.size = Vector2(200, 32)
+		_name_label.position.x = -100
+		var m_color: Color = look.get("modulate", Color(1.0, 0.85, 0.4))
+		_name_label.add_theme_color_override("font_color", m_color)
+	else:
+		_name_label.text = profile.display_name
+		_name_label.size = Vector2(160, 18)
+		_name_label.position.x = -80
+		_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
+	_apply_name_y()
 
 ## Thanh máu trên đầu, dưới tên — chạy theo signal health_changed (cùng nguồn với HUD góc trái).
 func _build_head_health_bar() -> void:
@@ -254,10 +278,11 @@ func _on_health_changed_head_bar(current: float, maximum: float) -> void:
 func _apply_name_y() -> void:
 	if _name_label == null:
 		return
-	var raise := RIDE_HEAD_RAISE if avatar.is_riding() and not _is_jumping else 0.0
-	_name_label.position.y = NAME_LABEL_Y - raise - (_air_height if _is_jumping else 0.0)
+	var raise := RIDE_HEAD_RAISE if avatar != null and avatar.is_riding() and not _is_jumping else 0.0
+	var label_h := _name_label.size.y
+	_name_label.position.y = NAME_LABEL_Y - (label_h - NAME_LABEL_HEIGHT) - raise - (_air_height if _is_jumping else 0.0)
 	if _head_hp_bar != null:
-		_head_hp_bar.position = Vector2(0.0, _name_label.position.y + NAME_LABEL_HEIGHT + HP_BAR_TOP_OFFSET)
+		_head_hp_bar.position = Vector2(0.0, _name_label.position.y + label_h + HP_BAR_TOP_OFFSET)
 
 # ------------------------------------------------------------ bấm để chạy tới
 
@@ -620,7 +645,7 @@ func _physics_process(delta: float) -> void:
 			var remaining := (_move_target - global_position).length()
 			if velocity.length() * delta > remaining:
 				velocity = velocity.normalized() * (remaining / delta)
-	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta)
+	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, _is_jumping)
 	move_and_slide()
 	if _is_jumping and get_slide_collision_count() > 0:
 		_end_jump()  ## đụng vật cản: hạ xuống tại chỗ (gốc cắt quãng nhảy trước vật cản)
@@ -1093,8 +1118,8 @@ func _jump_height() -> float:
 	var v0 := JUMP_GRAVITY * (_jump_frames - 1) / 2.0
 	return maxf((v0 * t - JUMP_GRAVITY * t * t / 2.0) / 8.0, 0.0)
 
-## Nhảy theo hướng đang chạy/đang quay. false = đang bận (đánh, ra chiêu, choáng, đang nhảy).
-func start_jump(frames: int = JUMP_DEFAULT_FRAMES) -> bool:
+## Nhảy theo hướng đang chạy/đang quay hoặc hướng điểm đến (chuẩn VLTK gốc: tối đa 40 frame = 480 pixel).
+func start_jump(frames: int = JUMP_DEFAULT_FRAMES, target_pos: Vector2 = Vector2.INF) -> bool:
 	if _is_jumping or is_attacking or is_casting or status_controller.is_stunned:
 		return false
 	## Trên ngựa không nhảy được.
@@ -1103,11 +1128,35 @@ func start_jump(frames: int = JUMP_DEFAULT_FRAMES) -> bool:
 		return false
 	_is_sitting = false
 	var dir := _key_vector("move_left", "move_right", "move_up", "move_down")
-	_jump_dir = (dir if dir != Vector2.ZERO else last_direction).normalized()
+	if target_pos != Vector2.INF:
+		var diff := target_pos - global_position
+		if diff.length() > 20.0:
+			_jump_dir = diff.normalized()
+			var want_dist := minf(diff.length(), float(JUMP_MAX_FRAMES * 12))
+			_jump_frames = clampi(int(round(want_dist / 12.0)), 2, JUMP_MAX_FRAMES)
+		else:
+			_jump_dir = last_direction.normalized()
+			_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)
+	elif dir != Vector2.ZERO:
+		_jump_dir = dir.normalized()
+		_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)
+	elif _has_move_target:
+		var diff := _move_target - global_position
+		if diff.length() > 20.0:
+			_jump_dir = diff.normalized()
+			var want_dist := minf(diff.length(), float(JUMP_MAX_FRAMES * 12))
+			_jump_frames = clampi(int(round(want_dist / 12.0)), 2, JUMP_MAX_FRAMES)
+		else:
+			_jump_dir = last_direction.normalized()
+			_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)
+	else:
+		_jump_dir = last_direction.normalized()
+		_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)
+
 	last_direction = _jump_dir
-	_jump_frames = clampi(frames, 2, JUMP_MAX_FRAMES)
 	_jump_time = 0.0
 	_air_height = 0.0
+	_last_safe_pos = global_position
 	_is_jumping = true
 	_clear_move_target()
 	stop_follow()
@@ -1118,6 +1167,10 @@ func start_jump(frames: int = JUMP_DEFAULT_FRAMES) -> bool:
 
 func _tick_jump(delta: float) -> void:
 	_jump_time += delta
+	var feet := global_position + Vector2(0, VltkWorld.FEET_OFFSET)
+	var w := VltkWorld.current
+	if w == null or not w._blocked_at(feet, false):
+		_last_safe_pos = global_position
 	if _jump_time * VLTK_FPS >= _jump_frames:
 		_end_jump()
 		return
@@ -1129,6 +1182,10 @@ func _end_jump() -> void:
 	_is_jumping = false
 	_air_height = 0.0
 	avatar.set_height(0.0)
+	var feet := global_position + Vector2(0, VltkWorld.FEET_OFFSET)
+	var w := VltkWorld.current
+	if w != null and w._blocked_at(feet, false) and _last_safe_pos != Vector2.ZERO:
+		global_position = _last_safe_pos  ## lỡ rớt vào nước/vật cản: lùi về điểm an toàn cuối (nSuccessStep gốc)
 	if not is_attacking and not is_casting:
 		avatar.play("stand")
 	_apply_name_y()

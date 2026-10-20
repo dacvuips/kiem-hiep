@@ -101,7 +101,7 @@ def main():
                 "item": str(main_s["RequireItem"]).strip(),
             },
             "leave": {"money": int_of(main_s["LeavMn"]), "repute": int_of(main_s["LeaveRp"]), "seconds": int_of(main_s["LeaveTm"])},
-            "test_period": {"min_member": int_of(vng["TongTest"]["MinMember"]), "seconds": int_of(vng["TongTest"]["TimeLong"])},
+            "test_period": {"min_member": int_of(vng["TongTest"]["MinMember"]), "seconds": 1209600},
             "money_to_exp": {k: int_of(v) for k, v in m2e.items()},
             "level_exp": {str(k): v for k, v in sorted(level_exp.items())},
             "levels": tong_levels,

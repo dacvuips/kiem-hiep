@@ -24,6 +24,8 @@ var fuyuan: int = 0
 var prestige: int = 0
 ## Điểm tích lũy Tống Kim (PL_BATTLEPOINT gốc): cộng dồn qua mọi trận chiến trường — chỉ battle server cộng (ProfileGuard giữ bản server).
 var songjin_points: int = 0
+## Điểm xếp hạng Đấu Trường Võ Lâm (PK): thắng +10, thua -2 ở Đại hội võ lâm & Võ lâm Liên đấu.
+var pk_points: int = 0
 ## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): mã vật phẩm (misc_items) gán vào từng ô, "" = trống.
 var quick_items: Array = ["", "", "", ""]
 var world_rank: String = ""
@@ -226,7 +228,7 @@ var riding: bool = true
 ## HÀNH TRANG kiểu VLTK: lưới ROOM_WIDTH × ROOM_HEIGHT ô, mỗi món chiếm số ô rộng × cao riêng (ItemInstance.get_size) tại
 ## (room_x, room_y). Hết chỗ trống đủ lớn = túi đầy. 16 × 20 theo bản VLTK mở rộng trong ảnh mẫu của người dùng
 ## (source gốc GameDataDef.h: EQUIPMENT_ROOM_WIDTH/HEIGHT = 6 × 10) — đổi 2 hằng số này là đổi cỡ lưới, mọi thứ tự co theo.
-const ROOM_WIDTH := 16
+const ROOM_WIDTH := 10
 const ROOM_HEIGHT := 20
 ## Số túi (Túi 1..BAG_COUNT trên cột bên phải) và số túi ĐÃ MỞ — túi chưa mở bị khoá, mở thêm bằng cách tăng OPEN_BAGS.
 const BAG_COUNT := 6
@@ -494,7 +496,8 @@ func _stamina_for_level() -> int:
 func _equipment_to_dict() -> Dictionary:
 	var out := {}
 	for part in equipment:
-		out[str(part)] = (equipment[part] as ItemInstance).to_dict()
+		if equipment[part] != null:
+			out[str(part)] = (equipment[part] as ItemInstance).to_dict()
 	return out
 
 func get_skill_level(skill_id: String) -> int:
@@ -853,6 +856,7 @@ func to_dict() -> Dictionary:
 		"fuyuan": fuyuan,
 		"prestige": prestige,
 		"songjin_points": songjin_points,
+		"pk_points": pk_points,
 		"quick_items": quick_items.duplicate(),
 		"world_rank": world_rank,
 		"sect_id": sect_id,
@@ -914,6 +918,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.fuyuan = int(data.get("fuyuan", 0))
 	profile.prestige = int(data.get("prestige", 0))
 	profile.songjin_points = int(data.get("songjin_points", 0))
+	profile.pk_points = maxi(0, int(data.get("pk_points", 0)))
 	var qi: Variant = data.get("quick_items", [])
 	for i in mini(profile.quick_items.size(), (qi as Array).size() if qi is Array else 0):
 		profile.quick_items[i] = str(qi[i])

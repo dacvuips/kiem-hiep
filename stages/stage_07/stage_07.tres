@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="StageData" format=3]
+
+[ext_resource type="Script" path="res://stages/enemy_spawn_entry.gd" id="1_spawn_entry"]
+[ext_resource type="Script" path="res://stages/stage_data.gd" id="2_g1oi3"]
+[ext_resource type="Resource" path="res://enemies/data/tier_normal.tres" id="2_oxu41"]
+[ext_resource type="Resource" path="res://enemies/data/tier_elite.tres" id="3_p6yj7"]
+
+[sub_resource type="Resource" id="SpawnEntry_normal"]
+script = ExtResource("1_spawn_entry")
+tier = ExtResource("2_oxu41")
+weight_change_per_second = -0.05
+
+[sub_resource type="Resource" id="SpawnEntry_elite"]
+script = ExtResource("1_spawn_entry")
+tier = ExtResource("3_p6yj7")
+unlock_time = 45.0
+spawn_weight = 1.0
+weight_change_per_second = 0.12
+
+[resource]
+script = ExtResource("2_g1oi3")
+stage_name = "Màn 7 - Hành Sơn Tuyệt Bích"
+vltk_map_id = 56
+enemy_tiers = Array[ExtResource("1_spawn_entry")]([SubResource("SpawnEntry_normal"), SubResource("SpawnEntry_elite")])
+metadata/_custom_type_script = "uid://b71mckxmnthbu"

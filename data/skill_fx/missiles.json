@@ -7765,6 +7765,55 @@
   "zacc": 0,
   "zspeed": 0
  },
+ "199": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_b64b4368",
+    "dirs": 16,
+    "frames": 128,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_5e076d16",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 1
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "Ấắấụéễễả́ènpc",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 31,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
  "2": {
   "anims": [
    null,
@@ -7891,6 +7940,55 @@
   "move_kind": 1,
   "multi_show": 0,
   "name": "NPC đánh xa (thủy)",
+  "param1": 0,
+  "param2": 0,
+  "param3": 0,
+  "range_dmg": 0,
+  "speed": 31,
+  "sub_loop": 0,
+  "sub_start": 0,
+  "sub_stop": 0,
+  "zacc": 0,
+  "zspeed": 0
+ },
+ "201": {
+  "anims": [
+   null,
+   {
+    "anim": "fx_132fb4e6",
+    "dirs": 16,
+    "frames": 48,
+    "interval": 1
+   },
+   null,
+   {
+    "anim": "fx_19684db0",
+    "dirs": 1,
+    "frames": 6,
+    "interval": 2
+   }
+  ],
+  "anims_b": [
+   null,
+   null,
+   null,
+   null
+  ],
+  "auto_explode": 0,
+  "col_follow": 1,
+  "col_friend": 0,
+  "col_vanish": 1,
+  "collide_range": 1,
+  "dmg_interval": 0,
+  "dmg_range": 1,
+  "follow_kind": 0,
+  "height": 10,
+  "life": 16,
+  "loop": 1,
+  "miss_rate": 0,
+  "move_kind": 1,
+  "multi_show": 0,
+  "name": "ằỖấụéễễả́ènpc",
   "param1": 0,
   "param2": 0,
   "param3": 0,

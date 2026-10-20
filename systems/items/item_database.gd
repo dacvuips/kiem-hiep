@@ -9,11 +9,12 @@ const GOLD_PATH := "res://data/items/gold_equipment.json"
 const DESC_PATH := "res://data/items/magic_desc.json"
 
 ## EQUIPDETAILTYPE gốc — đồng thời là chỉ số cột tỷ lệ rơi (nType) trong magicattrib.txt.
-enum Detail { MELEE, RANGE, ARMOR, RING, AMULET, BOOT, BELT, HELM, CUFF, PENDANT, HORSE }
+enum Detail { MELEE, RANGE, ARMOR, RING, AMULET, BOOT, BELT, HELM, CUFF, PENDANT, HORSE, MASK, MANTLE }
 const DETAIL_NAMES := {
 	Detail.MELEE: "Vũ khí", Detail.RANGE: "Ám khí", Detail.ARMOR: "Áo", Detail.RING: "Nhẫn",
 	Detail.AMULET: "Dây chuyền", Detail.BOOT: "Giày", Detail.BELT: "Thắt lưng", Detail.HELM: "Mũ",
-	Detail.CUFF: "Bao tay", Detail.PENDANT: "Ngọc bội", Detail.HORSE: "Ngựa",
+	Detail.CUFF: "Bao tay", Detail.PENDANT: "Ngọc bội", Detail.HORSE: "Ngựa", Detail.MASK: "Mặt nạ",
+	Detail.MANTLE: "Phi phong",
 }
 ## Tên loại cụ thể của vũ khí (ParticularType gốc) — loại khác dùng tên món cấp thấp nhất làm nhãn.
 const WEAPON_PARTICULAR_NAMES := {
@@ -53,6 +54,18 @@ static func _ensure_gold_loaded() -> void:
 		var group := int(_gold[i]["group"])
 		if group > 0:
 			(_gold_groups.get_or_add(group, []) as Array).append(i)
+
+static func find_gold_by_name(gold_name: String) -> int:
+	_ensure_gold_loaded()
+	var clean := gold_name.strip_edges().to_lower()
+	for i in _gold.size():
+		if str(_gold[i].get("name", "")).to_lower() == clean:
+			return i
+	for i in _gold.size():
+		var n := str(_gold[i].get("name", "")).to_lower()
+		if clean in n or n in clean:
+			return i
+	return -1
 
 static var _skill_names: Dictionary = {}
 static var _remap: Dictionary = {}
@@ -121,12 +134,14 @@ static var _icons: Dictionary = {}
 
 static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
 	var image: String = base.get("image", "")
-	if image == "":
-		return null
 	## Vật phẩm khác (misc_items.json) có sẵn tên ảnh "icon" (tên ảnh gốc chữ Hán / trùng tên đã đổi sang ASCII).
 	var key: String = base.get("icon", "")
-	if key == "":
+	if key == "" and image != "":
 		key = image.replace("\\", "/").get_file().get_basename().to_lower()
+	if key == "avatar_player" or (key == "" and int(base.get("detail", -1)) == Detail.MASK):
+		key = "tongmask"
+	if key == "":
+		return null
 	var path := (ICON_SMALL_DIR if small else ICON_DIR) + key + ".png"
 	if not _icons.has(path):
 		_icons[path] = load(path) if ResourceLoader.exists(path) else null

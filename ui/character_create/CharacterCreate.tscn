@@ -17,6 +17,21 @@
 [ext_resource type="Script" uid="uid://bke6d8oo1dc3e" path="res://ui/character_create/animated_portrait.gd" id="p"]
 [ext_resource type="Script" uid="uid://dkhi5m5vbgq60" path="res://ui/character_create/character_create.gd" id="s"]
 [ext_resource type="Script" uid="uid://2cpihwqs2dtr" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
+
+[sub_resource type="LabelSettings" id="btn_lbl"]
+font = ExtResource("font")
+font_size = 26
+font_color = Color(0.98, 0.90, 0.72, 1)
+outline_size = 7
+outline_color = Color(0.04, 0.08, 0.08, 1)
+
+[sub_resource type="LabelSettings" id="btn_lbl_back"]
+font = ExtResource("font")
+font_size = 21
+font_color = Color(0.98, 0.90, 0.72, 1)
+outline_size = 6
+outline_color = Color(0.04, 0.08, 0.08, 1)
 
 [sub_resource type="LabelSettings" id="soon"]
 font_size = 30
@@ -24,9 +39,7 @@ font_color = Color(0.95, 0.85, 0.6, 0.85)
 outline_size = 8
 outline_color = Color(0.1, 0.04, 0.02, 1)
 
-[sub_resource type="StyleBoxFlat" id="field"]
-content_margin_left = 4.0
-bg_color = Color(0.165, 0.145, 0.125, 1)
+[sub_resource type="StyleBoxEmpty" id="field"]
 
 [sub_resource type="StyleBoxFlat" id="back_n"]
 bg_color = Color(0.1, 0.06, 0.04, 0.82)
@@ -129,14 +142,14 @@ offsets = Dictionary[String, Vector2]({
 "thuy_nam": Vector2(121, 19)
 })
 scales = Dictionary[String, float]({
-"hoa_nam": 0.76,
-"kim_nam": 1.05,
-"moc_nam": 0.8400000000000001,
-"tho_nam": 0.8400000000000001,
-"thuy_nam": 0.97
+"hoa_nam": 0.9,
+"kim_nam": 1.24,
+"moc_nam": 0.99,
+"tho_nam": 0.99,
+"thuy_nam": 1.14
 })
 preview_character = "thuy_nam"
-preview_scale = 0.97
+preview_scale = 1.14
 preview_offset = Vector2(121, 19)
 
 [node name="FemalePortrait" type="Control" parent="Stage" unique_id=1176330758]
@@ -151,11 +164,14 @@ offsets = Dictionary[String, Vector2]({
 "tho_nu": Vector2(-10, -3)
 })
 scales = Dictionary[String, float]({
-"kim_nu": 1.2,
-"tho_nu": 1.15
+"hoa_nu": 1.18,
+"kim_nu": 1.42,
+"moc_nu": 1.18,
+"tho_nu": 1.36,
+"thuy_nu": 1.18
 })
 preview_character = "kim_nu"
-preview_scale = 1.2
+preview_scale = 1.42
 
 [node name="AccountButton" type="TextureButton" parent="Stage" unique_id=1790239987]
 unique_name_in_owner = true
@@ -292,21 +308,33 @@ vertical_alignment = 1
 [node name="CreateButton" type="TextureButton" parent="Stage" unique_id=40721039]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 252.0
-offset_top = 858.0
-offset_right = 612.0
-offset_bottom = 918.0
+offset_left = 212.0
+offset_top = 852.0
+offset_right = 582.0
+offset_bottom = 920.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("bc")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="Label" type="Label" parent="Stage/CreateButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "TẠO NHÂN VẬT"
+label_settings = SubResource("btn_lbl")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="NameBox" type="TextureRect" parent="Stage" unique_id=1839257611]
 layout_mode = 0
-offset_left = 621.0
-offset_top = 859.0
-offset_right = 1051.0
-offset_bottom = 917.0
+offset_left = 596.0
+offset_top = 852.0
+offset_right = 1076.0
+offset_bottom = 920.0
 mouse_filter = 2
 texture = ExtResource("ni")
 expand_mode = 1
@@ -314,27 +342,28 @@ expand_mode = 1
 [node name="NameInput" type="LineEdit" parent="Stage/NameBox" unique_id=79246718]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 82.0
-offset_top = 14.0
-offset_right = 327.0
-offset_bottom = 44.0
-theme_override_colors/font_color = Color(0.95, 0.88, 0.72, 1)
-theme_override_colors/font_placeholder_color = Color(0.62, 0.6, 0.58, 1)
-theme_override_colors/caret_color = Color(0.95, 0.88, 0.72, 1)
-theme_override_font_sizes/font_size = 18
+offset_left = 46.0
+offset_top = 10.0
+offset_right = 370.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(0.98, 0.90, 0.72, 1)
+theme_override_colors/font_placeholder_color = Color(0.7, 0.65, 0.58, 0.6)
+theme_override_colors/caret_color = Color(0.98, 0.90, 0.72, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("field")
 theme_override_styles/focus = SubResource("field")
-placeholder_text = "Tên nhân vật"
+placeholder_text = "Nhập tên nhân vật"
 max_length = 16
 caret_blink = true
 
 [node name="DiceButton" type="Button" parent="Stage/NameBox" unique_id=1386181941]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 333.0
-offset_top = 16.0
-offset_right = 367.0
-offset_bottom = 46.0
+offset_left = 378.0
+offset_top = 11.0
+offset_right = 432.0
+offset_bottom = 57.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
@@ -342,31 +371,50 @@ flat = true
 [node name="EnterButton" type="TextureButton" parent="Stage" unique_id=1321899307]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1058.1805
-offset_top = 857.3556
-offset_right = 1361.0956
-offset_bottom = 918.7722
+offset_left = 1090.0
+offset_top = 852.0
+offset_right = 1460.0
+offset_bottom = 920.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("be")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="BackButton" type="Button" parent="Stage" unique_id=1432210809]
+[node name="Label" type="Label" parent="Stage/EnterButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "VÀO GAME"
+label_settings = SubResource("btn_lbl")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackButton" type="TextureButton" parent="Stage" unique_id=1432210809]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 26.0
 offset_top = 26.0
-offset_right = 226.0
-offset_bottom = 86.0
-focus_mode = 0
+offset_right = 266.0
+offset_bottom = 84.0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 0.85, 1)
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("back_n")
-theme_override_styles/pressed = SubResource("back_h")
-theme_override_styles/hover = SubResource("back_h")
-text = "‹  Quay lại"
+texture_normal = ExtResource("bc")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Stage/BackButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "‹ QUAY LẠI"
+label_settings = SubResource("btn_lbl_back")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Message" type="Label" parent="Stage" unique_id=1733472458]
 unique_name_in_owner = true

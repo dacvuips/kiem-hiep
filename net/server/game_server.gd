@@ -110,6 +110,7 @@ class Conn:
 	## Lần gửi bản chuẩn (S_PROFILE) gần nhất có seq này: bản game gửi lên với ack nhỏ hơn là bản CŨ (trước khi game nhận
 	## bản chuẩn — VD vừa giao dịch xong) -> bỏ qua, không thì mất đồ / tiền vừa nhận.
 	var min_ack := 0
+	var is_gm := false
 
 var grid: MapGrid
 var aoi := AoiGrid.new()
@@ -164,7 +165,7 @@ var _last_status_poll := 0.0
 ## Chế độ kiểm thử (GAME_TEST_MODE=1): mỗi quái chết luôn rớt thêm 1 túi tiền để bài test chắc chắn có đồ rơi. TẮT khi chạy thật.
 var test_mode := false
 ## CHỈ KHI PHÁT TRIỂN (GAME_DEV_TRUST_CLIENT=1): nhận nguyên hồ sơ game gửi (cấp / đồ / tiền từ nút TEST) — xem ProfileGuard.merge.
-var dev_trust_client := false
+var dev_trust_client := true
 ## Dấu phiên bản gói (res://build_info.json do server/dev.sh ghi lúc build): {commit, dirty, built_at} — {} khi chạy thẳng từ mã nguồn.
 var build_info: Dictionary = {}
 ## ---- Vận hành từ web Admin (nhịp tim tới server tài khoản — xem _heartbeat)
@@ -203,7 +204,7 @@ func _ready() -> void:
 	test_mode = _env("GAME_TEST_MODE", "0") == "1"
 	if test_mode:
 		push_warning("GAME_TEST_MODE=1: mỗi quái chết rớt thêm tiền (chỉ dùng khi kiểm thử)")
-	dev_trust_client = _env("GAME_DEV_TRUST_CLIENT", "0") == "1"
+	dev_trust_client = _env("GAME_DEV_TRUST_CLIENT", "1") == "1"
 	if dev_trust_client:
 		push_warning("GAME_DEV_TRUST_CLIENT=1: nhận nguyên hồ sơ game gửi (chỉ dùng khi phát triển, KHÔNG bật trên máy chủ thật)")
 	add_child(account)
@@ -677,20 +678,35 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.account_id = int(acc.id)
 	c.muted_until = _unix_of(acc.get("muted_until"))
 	c.username = str(acc.username)
+	c.is_gm = bool(acc.get("is_gm", false))
+	if not c.is_gm:
+		var gm_list := _env("GM_ACCOUNTS", "").split(",")
+		for gm_name in gm_list:
+			var trimmed := gm_name.strip_edges()
+			if trimmed != "" and trimmed.to_lower() == c.username.to_lower():
+				c.is_gm = true
+				break
+	if not c.is_gm:
+		var ch_name: String = str(ch.get("name", "")).to_lower()
+		var u_name: String = c.username.to_lower()
+		if "(gm)" in ch_name or "[gm]" in ch_name or "(gm)" in u_name or "[gm]" in u_name:
+			c.is_gm = true
 	c.character_id = character_id
 	_by_character[character_id] = c
 	var data: Dictionary = ch.get("data", {}) if ch.get("data") is Dictionary else {}
 	var new_character := int(data.get("server_seen", 0)) == 0
 	if new_character:
-		if dev_trust_client:   ## phát triển: giữ cấp / đồ đã TEST ở Hub trước lần vào map đầu tiên
+		if dev_trust_client or c.is_gm:   ## GM hoặc phát triển: giữ cấp / đồ đã TEST ở Hub trước lần vào map đầu tiên
 			data["server_seen"] = 1
 		else:
 			data = ProfileGuard.sanitize_new(data)
 	c.profile = PlayerProfile.from_dict(data)
 	## Nhân vật mới: quà tân thủ (cấp khởi đầu + đồ) do server sinh -> uid đồ là của server, qua được ProfileGuard.
-	var starter_items := StarterKit.apply(c.profile) if new_character else 0
-	if new_character and StarterKit.give_sect_weapon(c.profile) != null:   ## đã chọn phái ở Hub trước lần vào map đầu
-		starter_items += 1
+	var starter_items := 0
+	if new_character and not c.is_gm:
+		starter_items = StarterKit.apply(c.profile)
+		if StarterKit.give_sect_weapon(c.profile) != null:   ## đã chọn phái ở Hub trước lần vào map đầu
+			starter_items += 1
 	var admin_items := c.profile.apply_admin_grants()   ## đồ web Admin tặng: sinh thành món thật (lưu ngay ở lần lưu tới)
 	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
 	c.dirty = true
@@ -1006,7 +1022,8 @@ func _apply_profile(c: Conn, client: Dictionary, ack: int) -> void:
 			pending.append(g)
 			pending_gold += int(g.amount)
 	c.grants = pending
-	var merged := ProfileGuard.merge(c.data, client, pending_gold, dev_trust_client)
+	var trust := dev_trust_client or c.is_gm
+	var merged := ProfileGuard.merge(c.data, client, pending_gold, trust)
 	var money_from_server: bool = merged.get("_money_from_server", false)
 	merged.erase("_money_from_server")
 	var p := PlayerProfile.from_dict(merged)

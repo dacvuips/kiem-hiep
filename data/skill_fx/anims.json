@@ -4019,6 +4019,21 @@
    67
   ]
  },
+ "lucky_06a6": {
+  "additive": false,
+  "cols": 15,
+  "dirs": 1,
+  "frames": 15,
+  "interval": 50,
+  "offset": [
+   -16,
+   -111
+  ],
+  "size": [
+   32,
+   30
+  ]
+ },
  "lvguagnhuan_23a4": {
   "additive": false,
   "cols": 15,

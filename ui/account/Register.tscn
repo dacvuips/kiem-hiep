@@ -1,118 +1,122 @@
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://ui/account/register_screen.gd" id="s"]
-[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
-[ext_resource type="Texture2D" path="res://ui/login/bg.jpg" id="bg"]
-[ext_resource type="Texture2D" path="res://ui/login/logo.png" id="logo"]
-[ext_resource type="Texture2D" path="res://ui/login/frame.png" id="frame"]
-[ext_resource type="Texture2D" path="res://ui/login/btn_create.png" id="bc"]
-[ext_resource type="Texture2D" path="res://ui/login/icon_user.png" id="u"]
+[gd_scene format=3 uid="uid://df7w0r63k2qla"]
 
 [ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="input_font"]
+[ext_resource type="Texture2D" uid="uid://c8cxoo7sq4gm4" path="res://ui/login/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" uid="uid://bmuabkcor68f" path="res://ui/login/icon_eye.png" id="eye"]
+[ext_resource type="Texture2D" uid="uid://d20sruog271c1" path="res://ui/login/form_shadow.png" id="shadow"]
+[ext_resource type="Texture2D" uid="uid://du2n10s2x3023" path="res://ui/login/icon_lock.png" id="lock"]
+[ext_resource type="Texture2D" uid="uid://mseupjdlo6l6" path="res://ui/login/logo.png" id="logo"]
+[ext_resource type="Script" path="res://ui/account/register_screen.gd" id="s"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Texture2D" uid="uid://l6016uy5d8vx" path="res://ui/login/icon_user.png" id="u"]
 
-[sub_resource type="StyleBoxFlat" id="field"]
-content_margin_left = 20.0
-content_margin_right = 20.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
+[sub_resource type="StyleBoxFlat" id="pill_input"]
+content_margin_left = 56.0
+content_margin_top = 2.0
+content_margin_right = 46.0
+content_margin_bottom = 2.0
+bg_color = Color(0.1, 0.2, 0.24, 0.7)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.62, 0.48, 0.25, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.85, 0.72, 0.45, 0.75)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
-[sub_resource type="StyleBoxFlat" id="field_focus"]
-content_margin_left = 20.0
-content_margin_right = 20.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
+[sub_resource type="StyleBoxFlat" id="pill_input_focus"]
+content_margin_left = 56.0
+content_margin_top = 2.0
+content_margin_right = 46.0
+content_margin_bottom = 2.0
+bg_color = Color(0.12, 0.24, 0.28, 0.85)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.38, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="field_icon"]
-content_margin_left = 68.0
-content_margin_right = 20.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.62, 0.48, 0.25, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="field_icon_focus"]
-content_margin_left = 68.0
-content_margin_right = 20.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.38, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="field_pw"]
-content_margin_left = 20.0
-content_margin_right = 70.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.62, 0.48, 0.25, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="field_pw_focus"]
-content_margin_left = 20.0
-content_margin_right = 70.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.38, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.98, 0.86, 0.52, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.95, 0.82, 0.45, 0.3)
+shadow_size = 6
 
 [sub_resource type="StyleBoxEmpty" id="empty"]
 
-[sub_resource type="LabelSettings" id="title"]
-font_size = 34
-font_color = Color(0.98, 0.86, 0.55, 1)
-outline_size = 8
-outline_color = Color(0.12, 0.04, 0.01, 1)
+[sub_resource type="LabelSettings" id="title_setting"]
+font_size = 20
+font_color = Color(0.98, 0.88, 0.55, 1)
+outline_size = 6
+outline_color = Color(0.08, 0.04, 0.02, 1)
 
-[sub_resource type="LabelSettings" id="hint"]
-font_size = 16
-font_color = Color(0.86, 0.76, 0.56, 1)
+[sub_resource type="LabelSettings" id="hint_setting"]
+font_size = 13
+font_color = Color(0.86, 0.84, 0.78, 1)
 outline_size = 4
 outline_color = Color(0.05, 0.02, 0.01, 1)
 
+[sub_resource type="StyleBoxFlat" id="btn_register_normal"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.85, 0.48, 0.08, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.88, 0.54, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.85, 0.42, 0.06, 0.55)
+shadow_size = 10
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="btn_register_hover"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.96, 0.56, 0.12, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.96, 0.75, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(1, 0.6, 0.1, 0.7)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="btn_register_pressed"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.72, 0.35, 0.05, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.78, 0.45, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.6, 0.25, 0.02, 0.5)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
 [sub_resource type="LabelSettings" id="msg"]
-font_size = 22
-font_color = Color(1, 0.9, 0.62, 1)
-outline_size = 8
-outline_color = Color(0.1, 0.04, 0.02, 1)
+font_size = 20
+font_color = Color(1, 0.92, 0.65, 1)
+outline_size = 6
+outline_color = Color(0.1, 0.05, 0.02, 1)
 
 [node name="Register" type="Control"]
 layout_mode = 3
@@ -137,198 +141,248 @@ stretch_mode = 6
 
 [node name="Stage" type="Control" parent="."]
 anchors_preset = 0
-offset_right = 1672.0
-offset_bottom = 941.0
+offset_right = 1280.0
+offset_bottom = 720.0
 mouse_filter = 2
 script = ExtResource("sf")
+design_size = Vector2(1280, 720)
+
+[node name="FormShadow" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 540.0
+offset_top = 40.0
+offset_right = 1140.0
+offset_bottom = 690.0
+mouse_filter = 2
+texture = ExtResource("shadow")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Logo" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 726.0
-offset_top = -4.0
-offset_right = 946.0
-offset_bottom = 134.0
+offset_left = 730.0
+offset_top = 66.0
+offset_right = 950.0
+offset_bottom = 176.0
 mouse_filter = 2
 texture = ExtResource("logo")
 expand_mode = 1
-
-[node name="Frame" type="TextureRect" parent="Stage"]
-layout_mode = 0
-offset_left = 492.0
-offset_top = 140.0
-offset_right = 1182.0
-offset_bottom = 890.0
-mouse_filter = 2
-texture = ExtResource("frame")
-expand_mode = 1
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="Stage"]
 layout_mode = 0
-offset_left = 610.0
-offset_top = 262.0
-offset_right = 1062.0
-offset_bottom = 310.0
-text = "Tạo tài khoản"
-label_settings = SubResource("title")
+offset_left = 682.0
+offset_top = 184.0
+offset_right = 998.0
+offset_bottom = 214.0
+text = "ĐĂNG KÝ TÀI KHOẢN"
+label_settings = SubResource("title_setting")
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="UserInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 349.0
-offset_right = 1043.0
-offset_bottom = 397.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 224.0
+offset_right = 998.0
+offset_bottom = 268.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("field_icon")
-theme_override_styles/focus = SubResource("field_icon_focus")
-placeholder_text = "Tên tài khoản (3–20 ký tự)"
-max_length = 20
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
+placeholder_text = "Tên tài khoản (viết liền, 3-24 ký tự)"
+max_length = 24
 caret_blink = true
 
 [node name="UserIcon" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 640.0
-offset_top = 355.0
-offset_right = 676.0
-offset_bottom = 391.0
+offset_left = 698.0
+offset_top = 235.0
+offset_right = 720.0
+offset_bottom = 257.0
 mouse_filter = 2
 texture = ExtResource("u")
 expand_mode = 1
+stretch_mode = 5
 
 [node name="EmailInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 407.0
-offset_right = 1043.0
-offset_bottom = 455.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 276.0
+offset_right = 998.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("field")
-theme_override_styles/focus = SubResource("field_focus")
-placeholder_text = "Email"
-max_length = 254
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
+placeholder_text = "Email để lấy lại mật khẩu"
+max_length = 64
 caret_blink = true
-virtual_keyboard_type = 5
+
+[node name="EmailIcon" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 698.0
+offset_top = 287.0
+offset_right = 720.0
+offset_bottom = 309.0
+mouse_filter = 2
+texture = ExtResource("u")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PasswordInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 465.0
-offset_right = 1043.0
-offset_bottom = 513.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 328.0
+offset_right = 998.0
+offset_bottom = 372.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("field_pw")
-theme_override_styles/focus = SubResource("field_pw_focus")
-placeholder_text = "Mật khẩu (6–64 ký tự)"
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
+placeholder_text = "Mật khẩu (ít nhất 6 ký tự)"
 max_length = 64
-caret_blink = true
 secret = true
-virtual_keyboard_type = 6
+caret_blink = true
 
-[node name="EyeButton" type="Button" parent="Stage"]
-unique_name_in_owner = true
+[node name="LockIcon1" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 975.0
-offset_top = 469.0
-offset_right = 1038.0
-offset_bottom = 509.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("empty")
-theme_override_styles/pressed = SubResource("empty")
-theme_override_styles/hover = SubResource("empty")
-theme_override_styles/focus = SubResource("empty")
-text = "Hiện"
+offset_left = 698.0
+offset_top = 339.0
+offset_right = 720.0
+offset_bottom = 361.0
+mouse_filter = 2
+texture = ExtResource("lock")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PasswordConfirmInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 523.0
-offset_right = 1043.0
-offset_bottom = 571.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 380.0
+offset_right = 998.0
+offset_bottom = 424.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("field")
-theme_override_styles/focus = SubResource("field_focus")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
 placeholder_text = "Nhập lại mật khẩu"
 max_length = 64
-caret_blink = true
 secret = true
-virtual_keyboard_type = 6
+caret_blink = true
 
-[node name="Hint" type="Label" parent="Stage"]
+[node name="LockIcon2" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 630.0
-offset_top = 577.0
-offset_right = 1043.0
-offset_bottom = 627.0
-text = "Hãy nhập đúng email — đây là cách duy nhất để lấy lại mật khẩu khi quên."
-label_settings = SubResource("hint")
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="CreateButton" type="TextureButton" parent="Stage"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 631.0
-offset_top = 633.0
-offset_right = 1041.0
-offset_bottom = 721.0
-mouse_default_cursor_shape = 2
-texture_normal = ExtResource("bc")
-ignore_texture_size = true
+offset_left = 698.0
+offset_top = 391.0
+offset_right = 720.0
+offset_bottom = 413.0
+mouse_filter = 2
+texture = ExtResource("lock")
+expand_mode = 1
 stretch_mode = 5
 
-[node name="BackButton" type="Button" parent="Stage"]
+[node name="EyeButton" type="Button" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 680.0
-offset_top = 727.0
-offset_right = 992.0
-offset_bottom = 765.0
+offset_left = 956.0
+offset_top = 388.0
+offset_right = 988.0
+offset_bottom = 416.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.95, 0.8, 0.45, 1)
-theme_override_colors/font_hover_color = Color(1, 0.93, 0.7, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0, 0, 0, 0)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 0)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 0)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 0)
 theme_override_styles/normal = SubResource("empty")
 theme_override_styles/pressed = SubResource("empty")
 theme_override_styles/hover = SubResource("empty")
 theme_override_styles/focus = SubResource("empty")
-text = "Đã có tài khoản? Đăng nhập"
+icon = ExtResource("eye")
+flat = true
+expand_icon = true
+
+[node name="Hint" type="Label" parent="Stage"]
+layout_mode = 0
+offset_left = 660.0
+offset_top = 432.0
+offset_right = 1020.0
+offset_bottom = 466.0
+text = "Hãy nhập đúng email để lấy lại mật khẩu khi quên."
+label_settings = SubResource("hint_setting")
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="CreateButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 682.0
+offset_top = 476.0
+offset_right = 998.0
+offset_bottom = 530.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.08, 0.02, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("btn_register_normal")
+theme_override_styles/hover = SubResource("btn_register_hover")
+theme_override_styles/pressed = SubResource("btn_register_pressed")
+theme_override_styles/focus = SubResource("btn_register_hover")
+text = "Đăng Ký"
+
+[node name="BackButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 710.0
+offset_top = 548.0
+offset_right = 970.0
+offset_bottom = 580.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.96, 0.88, 0.65, 1)
+theme_override_colors/font_hover_color = Color(1, 0.96, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("empty")
+theme_override_styles/pressed = SubResource("empty")
+theme_override_styles/hover = SubResource("empty")
+theme_override_styles/focus = SubResource("empty")
+text = "Đã có tài khoản? Đăng nhập ngay"
 flat = true
 
 [node name="Message" type="Label" parent="Stage"]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
-offset_left = 436.0
-offset_top = 892.0
-offset_right = 1236.0
-offset_bottom = 936.0
-mouse_filter = 2
+offset_left = 590.0
+offset_top = 592.0
+offset_right = 1090.0
+offset_bottom = 628.0
 label_settings = SubResource("msg")
 horizontal_alignment = 1
 vertical_alignment = 1

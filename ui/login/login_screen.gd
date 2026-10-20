@@ -10,6 +10,7 @@ class_name LoginScreen
 ## Apple / Facebook / Khách tạm ẩn.
 
 const CFG_PATH := "user://login.cfg"
+const PolicyDialog = preload("res://ui/policy/policy_dialog.gd")
 
 @onready var _user: LineEdit = %UserInput
 @onready var _password: LineEdit = %PasswordInput
@@ -17,8 +18,11 @@ const CFG_PATH := "user://login.cfg"
 @onready var _remember: CheckBox = %RememberCheck
 @onready var _forgot: Button = %ForgotButton
 @onready var _login: TextureButton = %LoginButton
-@onready var _create: TextureButton = %CreateAccountButton
+@onready var _create: BaseButton = %CreateAccountButton
+@onready var _register_link: BaseButton = get_node_or_null("%RegisterLink")
 @onready var _google: TextureButton = %GoogleButton
+@onready var _facebook: TextureButton = get_node_or_null("%FacebookButton")
+@onready var _apple: TextureButton = get_node_or_null("%AppleButton")
 @onready var _message: Label = %Message
 
 func _ready() -> void:
@@ -31,9 +35,19 @@ func _ready() -> void:
 		AccountScreen.next_login_username = _user.text.strip_edges().to_lower()
 		_go(FORGOT_SCENE))
 	_create.pressed.connect(_go.bind(REGISTER_SCENE))
+	if _register_link:
+		_register_link.pressed.connect(_go.bind(REGISTER_SCENE))
 	_google.pressed.connect(_on_google_pressed)
-	for b: TextureButton in [_login, _create, _google]:
-		_bind_hover(b)
+	if _facebook:
+		_facebook.pressed.connect(func() -> void:
+			_toast(_message, "Đăng nhập Facebook đang phát triển"))
+	if _apple:
+		_apple.pressed.connect(func() -> void:
+			_toast(_message, "Đăng nhập Apple đang phát triển"))
+	for b: BaseButton in [_login, _create, _register_link, _forgot, _google, _facebook, _apple]:
+		if b:
+			b.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+			_bind_hover(b)
 
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) == OK:
@@ -45,13 +59,39 @@ func _ready() -> void:
 	if AccountScreen.next_login_message != "":
 		_toast(_message, AccountScreen.next_login_message, 4.0)
 		AccountScreen.next_login_message = ""
-	(_password if _user.text != "" else _user).grab_focus()
+	if not OS.has_feature("mobile"):
+		(_password if _user.text != "" else _user).grab_focus()
+
+	for arg in OS.get_cmdline_args():
+		if arg == "--test-login-policy":
+			_test_capture_policy.call_deferred()
+			break
+
+	# Hiển thị bảng điều khoản dịch vụ nếu chưa chấp nhận
+	if not PolicyDialog.is_accepted():
+		var dlg := PolicyDialog.show_if_needed(self)
+		if dlg:
+			dlg.accepted_done.connect(func() -> void:
+				if AccountApi.has_saved_session():
+					_resume()
+				elif not OS.has_feature("mobile"):
+					(_password if _user.text != "" else _user).grab_focus()
+			)
+			return
 
 	if AccountApi.is_logged_in():
 		## Quay lại màn này khi đang đăng nhập (VD bấm "Đổi tài khoản") = đăng xuất phiên cũ.
 		AccountApi.logout()
 	elif AccountApi.has_saved_session():
 		_resume()
+
+func _test_capture_policy() -> void:
+	await get_tree().create_timer(0.5).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/d6888eb9-bf62-47ed-a3a2-f742759dfa21/login_with_policy.png")
+		print("LOGIN_WITH_POLICY_SUCCESS")
+	get_tree().quit()
 
 ## Tự đăng nhập lại bằng phiên đã ghi nhớ.
 func _resume() -> void:

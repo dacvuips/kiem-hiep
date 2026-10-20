@@ -98,10 +98,15 @@ func _ready() -> void:
 
 func _apply_look() -> void:
 	var gender := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	avatar.voice_gender = gender
-	avatar.set_gender(gender)
-	var look := Equipment.get_appearance(profile.equipment, avatar.gender, false)
+	var look := Equipment.get_appearance(profile.equipment, gender, false)
+	var final_gender: String = str(look.get("gender", gender))
+	avatar.voice_gender = final_gender
+	avatar.set_gender(final_gender)
 	avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
+	if look.has("modulate"):
+		avatar.modulate = look["modulate"]
+	else:
+		avatar.modulate = Color.WHITE
 	avatar.play("stand")
 
 func _build_name_plate() -> void:

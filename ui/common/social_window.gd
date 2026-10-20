@@ -1,24 +1,160 @@
 extends DraggableWindow
 class_name SocialWindow
+
+const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Cửa sổ xã hội theo ảnh mẫu: khung tối bo góc viền mảnh, tiêu đề vàng + phụ đề xám ở giữa, nút ✕ góc phải, kéo được bằng chỗ trống.
 ## Nội dung đặt vào `body` (VBoxContainer). Đóng: phát `close_requested` (người gọi tự queue_free khung / CanvasLayer cha).
 
 var subtitle_label: Label
+var header_panel: Panel
+var title_label: Label
+var is_docked: bool = false
+var is_full_width: bool = false
+var docked_width: float = 0.0
 
 func _init(window_title: String = "", sub: String = "", min_width := 420.0) -> void:
 	super._init(window_title, true)             ## frameless: không vẽ thanh tiêu đề mặc định, ta tự vẽ
 	custom_minimum_size.x = min_width
-	remove_theme_stylebox_override("panel")   ## bỏ khung rỗng của chế độ frameless → dùng khung chuẩn GameUi.WINDOW
-	GameUi.style(self, GameUi.WINDOW)
-	close_button.offset_left = -40
-	close_button.offset_top = 6
-	close_button.offset_right = -8
-	close_button.offset_bottom = 36
-	body.add_child(SocialUi.title(window_title))
+	add_theme_stylebox_override("panel", WuxiaStyle.create_panel_box())
+
+	var root: VBoxContainer = get_child(0) as VBoxContainer
+	if root:
+		root.add_theme_constant_override("separation", 0)
+		header_panel = Panel.new()
+		header_panel.custom_minimum_size.y = 32
+		header_panel.add_theme_stylebox_override("panel", WuxiaStyle.create_header_bar())
+		header_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		header_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
+		header_panel.gui_input.connect(_on_header_input)
+		root.add_child(header_panel)
+		root.move_child(header_panel, 0)
+
+		var h_box := HBoxContainer.new()
+		h_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		h_box.offset_left = 12
+		h_box.offset_right = -8
+		header_panel.add_child(h_box)
+
+		title_label = Label.new()
+		title_label.text = window_title
+		title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		title_label.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
+		title_label.add_theme_font_size_override("font_size", 15)
+		h_box.add_child(title_label)
+
+		var btn_x := Button.new()
+		btn_x.text = "✕"
+		btn_x.flat = true
+		btn_x.focus_mode = Control.FOCUS_NONE
+		btn_x.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn_x.add_theme_color_override("font_color", Color(0.85, 0.8, 0.7))
+		btn_x.add_theme_color_override("font_hover_color", Color(0.95, 0.3, 0.25))
+		btn_x.add_theme_font_size_override("font_size", 16)
+		btn_x.pressed.connect(func() -> void: close_requested.emit())
+		h_box.add_child(btn_x)
+		close_button = btn_x
+
+		if get_child_count() > 1:
+			var overlay: Control = get_child(1) as Control
+			if overlay:
+				overlay.visible = false
+
+		root.remove_child(body)
+		var body_margin := MarginContainer.new()
+		body_margin.name = "BodyMargin"
+		body_margin.add_theme_constant_override("margin_left", 4)
+		body_margin.add_theme_constant_override("margin_top", 4)
+		body_margin.add_theme_constant_override("margin_right", 4)
+		body_margin.add_theme_constant_override("margin_bottom", 4)
+		body_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body_margin.add_child(body)
+		root.add_child(body_margin)
+
+	body.add_theme_constant_override("separation", 6)
 	subtitle_label = SocialUi.subtitle(sub)
 	subtitle_label.visible = sub != ""
 	body.add_child(subtitle_label)
-	body.add_child(SocialUi.divider())
+
+var docked_pos: Vector2 = Vector2(18, 68)
+
+func set_draggable(can_drag: bool) -> void:
+	super.set_draggable(can_drag)
+	if header_panel:
+		header_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE if draggable else Control.CURSOR_ARROW
+
+func setup_touch_scroll() -> void:
+	var scrolls: Array[ScrollContainer] = []
+	_collect_scrolls(self, scrolls)
+	if scrolls.size() == 1:
+		TouchScrollHelperScript.attach(scrolls[0], body)
+	else:
+		for s in scrolls:
+			var parent_control := s.get_parent() as Control
+			TouchScrollHelperScript.attach(s, parent_control if parent_control != null else s)
+
+func _collect_scrolls(node: Node, out: Array[ScrollContainer]) -> void:
+	if node is ScrollContainer:
+		out.append(node)
+	for c in node.get_children():
+		if not (c is DraggableWindow and c != self):
+			_collect_scrolls(c, out)
+
+func _enter_tree() -> void:
+	if is_docked or _is_in_character_hub():
+		set_draggable(false)
+
+func _ready() -> void:
+	if is_docked or _is_in_character_hub():
+		set_draggable(false)
+	setup_touch_scroll.call_deferred()
+	if is_docked:
+		var target_width: float = 1000.0 if is_full_width else (docked_width if docked_width > 0.0 else 500.0)
+		position = docked_pos
+		size = Vector2(target_width, 585)
+		custom_minimum_size = Vector2(target_width, 585)
+		clip_contents = true
+		if close_button:
+			close_button.visible = false
+		set_deferred("size", Vector2(target_width, 585))
+		set_deferred("position", docked_pos)
+		return
+	super._ready()
+
+func set_docked(docked: bool, full_width: bool = false, custom_width: float = 0.0, custom_pos: Vector2 = Vector2(-1, -1)) -> void:
+	is_docked = docked
+	set_draggable(not is_docked)
+	is_full_width = full_width
+	docked_width = custom_width
+	if custom_pos != Vector2(-1, -1):
+		docked_pos = custom_pos
+	else:
+		docked_pos = Vector2(18, 68)
+	if is_docked:
+		var target_width: float = 1000.0 if is_full_width else (docked_width if docked_width > 0.0 else 500.0)
+		custom_minimum_size = Vector2(target_width, 585)
+		size = Vector2(target_width, 585)
+		position = docked_pos
+		clip_contents = true
+		if header_panel:
+			header_panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
+		if close_button:
+			close_button.visible = false
+		set_deferred("size", Vector2(target_width, 585))
+		set_deferred("position", docked_pos)
+
+func _on_header_input(event: InputEvent) -> void:
+	if is_docked:
+		return
+	_on_bar_input(event)
+
+func set_title(text: String) -> void:
+	title = text
+	if title_label:
+		title_label.text = text
 
 func set_subtitle(text: String) -> void:
 	subtitle_label.text = text
@@ -36,6 +172,8 @@ func add_button_row() -> HBoxContainer:
 var kind: StringName = &""
 
 static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
+	if host != null and (host.name == "CharacterHub" or host.is_in_group("character_hub") or host.find_parent("CharacterHub") != null or (host.get_tree() and host.get_tree().current_scene != null and host.get_tree().current_scene.name == "CharacterHub")):
+		win.set_draggable(false)
 	if window_kind != &"":
 		for w in host.get_tree().get_nodes_in_group("social_windows"):
 			if w is SocialWindow and w.kind == window_kind and is_instance_valid(w):

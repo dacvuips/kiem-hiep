@@ -73,9 +73,12 @@ func _on_view_equip(snap: Dictionary) -> void:
 func _exit_tree() -> void:
 	if current == self:
 		current = null
-	## Gửi bản cuối cho game server (server lưu khi mình rời), rồi đánh dấu version phải hỏi lại.
+	## GM online: gửi bản cuối để server lưu lại đầy đủ (cấp/đồ test).
+	## Người thường online: KHÔNG gửi — để server rollback về bản trước trận (server tự giữ bản đúng, không lưu bản chết/thoát giữa chừng).
 	if NetClient.is_in_world() and GameManager.local_profile:
-		NetClient.send_profile(GameManager.local_profile.to_dict())
+		if AccountApi.is_gm():
+			NetClient.send_profile(GameManager.local_profile.to_dict())
+		## else: không gửi — server giữ bản lưu gần nhất (không bị ghi đè bởi bản giữa trận)
 	NetClient.disconnect_from_server()
 	SaveManager.mark_version_unknown()
 

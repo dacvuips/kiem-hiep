@@ -10,6 +10,9 @@ server/.env
 # Bản cài game cho APK launcher (tools/build_client_update.py)
 server/client/
 build/
+*.apk
+*.pck
+*.ipa
 
 # Dấu phiên bản gói game server (server/dev.sh build ghi)
 /build_info.json

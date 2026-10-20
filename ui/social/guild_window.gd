@@ -1,5 +1,8 @@
 extends SocialWindow
 class_name GuildWindow
+
+signal enter_map_requested(entry: Dictionary)
+
 ## BANG HỘI — bố cục như màn "Bang hội" của VLTK gốc: thanh 5 tab [Tin tức] [Chiêu Mộ] [Sử dụng chức năng] [Phân phối chức năng] [Nhật ký],
 ## thanh dưới [Tạo mới] [Xem tin Bang khác] [Đóng] và dòng "Bạn đã Online …". Chưa có bang thì hiện bảng các bang đang tuyển + điều kiện lập bang.
 ## Luật: GuildService + GuildRules (KPlayerTong gốc).
@@ -22,6 +25,7 @@ var _tab_bar: HBoxContainer
 var _content: VBoxContainer
 var _msg: PanelContainer
 var _create_btn: Button
+var _tongda_btn: Button
 var _online_label: Label
 var _opened_ms := 0
 
@@ -41,7 +45,9 @@ func _init(hub: SocialHub = null) -> void:
 	body.add_child(_tab_bar)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(840, clampi(DisplayServer.window_get_size().y - 300, 320, 520))
+	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content = VBoxContainer.new()
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_theme_constant_override("separation", 8)
@@ -50,17 +56,19 @@ func _init(hub: SocialHub = null) -> void:
 	_msg = SocialUi.banner("", true)
 	_msg.visible = false
 	body.add_child(_msg)
-	## Thanh dưới: Tạo mới | Xem tin Bang khác | Đóng
+	## Thanh dưới: Tạo mới | Vào Tổng Đà | Xem tin Bang khác | Đóng
 	var buttons := add_button_row()
 	_create_btn = SocialUi.stone_button("Tạo mới")
+	_tongda_btn = SocialUi.stone_button("Vào Tổng Đà")
 	var others := SocialUi.stone_button("Xem tin Bang khác")
 	var close := SocialUi.stone_button("Đóng")
-	for b in [_create_btn, others, close]:
+	for b in [_create_btn, _tongda_btn, others, close]:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		buttons.add_child(b)
 	_online_label = SocialUi.label("", SocialUi.LABEL_GREEN, 12, HORIZONTAL_ALIGNMENT_RIGHT)
 	body.add_child(_online_label)
 	_create_btn.pressed.connect(_open_create_dialog)
+	_tongda_btn.pressed.connect(_on_enter_tong_da)
 	others.pressed.connect(func() -> void: GuildListWindow.open(_host(), _hub))
 	close.pressed.connect(func() -> void: close_requested.emit())
 	_guild.changed.connect(_rebuild)
@@ -97,6 +105,8 @@ func _rebuild() -> void:
 	for c in _tab_bar.get_children():
 		c.queue_free()
 	_create_btn.disabled = _guild.in_guild()
+	if _tongda_btn != null:
+		_tongda_btn.disabled = not _guild.in_guild()
 	if not _guild.in_guild():
 		set_subtitle("Chưa gia nhập bang hội nào")
 		GuildListWindow.fill(_content, _hub, _host(), true)
@@ -193,27 +203,26 @@ func _member_table(select_cb: Callable = Callable()) -> VBoxContainer:
 				_selected_member = str(sel.get_metadata(0))
 				select_cb.call(_selected_member))
 	box.add_child(tree)
-	## Hiển thị trên mạng + Truy tìm
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 6)
+	var search_row := HBoxContainer.new()
+	search_row.add_theme_constant_override("separation", 6)
 	var online := CheckBox.new()
-	online.text = "Hiển thị trên mạng"
+	online.text = "Trực tuyến"
 	online.button_pressed = _online_only
 	online.add_theme_color_override("font_color", SocialUi.TEXT)
 	online.toggled.connect(func(v: bool) -> void:
 		_online_only = v
 		_page = 0
 		_rebuild())
-	top.add_child(online)
-	var search := SocialUi.line_edit("tên thành viên")
+	search_row.add_child(online)
+	var search := SocialUi.line_edit("Tên thành viên")
 	search.text = _search
 	search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(search)
+	search_row.add_child(search)
 	var find := SocialUi.small_button("Truy tìm")
 	find.pressed.connect(func() -> void: _on_find(search.text))
 	search.text_submitted.connect(func(t: String) -> void: _on_find(t))
-	top.add_child(find)
-	box.add_child(top)
+	search_row.add_child(find)
+	box.add_child(search_row)
 	## Phân trang: Trước | Kế | Chuyển đến N
 	var pager := HBoxContainer.new()
 	pager.add_theme_constant_override("separation", 6)
@@ -280,11 +289,22 @@ func _build_news() -> void:
 	news[1].add_child(SocialUi.kv("Cấp bang:", "%d   (kinh nghiệm %d / %d)" % [int(g["level"]), int(g["exp"]), SocialRules.tong_exp_for_level(int(g["level"]) + 1)], SocialUi.LABEL_BLUE))
 	news[1].add_child(SocialUi.kv("Quỹ bang:", "%s lượng" % InventoryPopup.format_money(int(g["fund"])), SocialUi.LABEL_BLUE, SocialUi.GOLD))
 	news[1].add_child(SocialUi.kv("Khuynh hướng:", str(g.get("tendency", "—")), SocialUi.LABEL_BLUE))
+	var enter_td_btn := SocialUi.stone_button("🏰 Tiến Vào Tổng Đà Bang Hội", Vector2(0, 36))
+	enter_td_btn.pressed.connect(_on_enter_tong_da)
+	news[1].add_child(enter_td_btn)
 	left.add_child(news[0])
 	var left_trial := _guild.trial_seconds_left()
 	if left_trial > 0:
 		var min_m := int(SocialRules.tong()["test_period"]["min_member"])
-		left.add_child(SocialUi.banner("Thử thách: còn %dh%02dp — cần đủ %d thành viên (hiện %d) kẻo bang giải tán." % [left_trial / 3600, (left_trial % 3600) / 60, min_m, _guild.members().size()], false))
+		var time_str := ""
+		if left_trial >= 86400:
+			var days := left_trial / 86400
+			var hours := (left_trial % 86400) / 3600
+			var mins := (left_trial % 3600) / 60
+			time_str = "%d ngày %dh%02dp" % [days, hours, mins]
+		else:
+			time_str = "%dh%02dp" % [left_trial / 3600, (left_trial % 3600) / 60]
+		left.add_child(SocialUi.banner("Thử thách: còn %s — cần đủ %d thành viên (hiện %d) kẻo bang giải tán." % [time_str, min_m, _guild.members().size()], false))
 	var help := SocialUi.info_box("Giúp đỡ")
 	for line in ["Bang chủ/Trưởng lão chiêu mộ người ở tab Chiêu Mộ.", "Bang chủ phân quyền ở tab Phân phối chức năng.", "Quyên góp quỹ ở tab Sử dụng chức năng: quỹ ≥ 1.000.000 mỗi 750 giây đổi ra kinh nghiệm bang.", "Công cáo, sự kiện và lịch sử ở tab Nhật ký."]:
 		var l := SocialUi.label("•  " + line, SocialUi.SUBTITLE, 12)
@@ -333,13 +353,19 @@ func _build_recruit() -> void:
 	rej_row.add_child(rej)
 	rej_row.add_child(SocialUi.label("cấp xin nhập bang", SocialUi.TEXT, 13))
 	left[1].add_child(rej_row)
+	var is_recruiting := bool(g.get("recruit", false))
 	var recruit_on := CheckBox.new()
-	recruit_on.text = "Đang tuyển người"
-	recruit_on.button_pressed = bool(g.get("recruit", false))
+	recruit_on.text = "🚩 Cắm cờ chiêu mộ (Đang đăng tuyển người online)" if is_recruiting else "⚐ Chưa cắm cờ (Bấm để bật tuyển người online)"
+	recruit_on.button_pressed = is_recruiting
 	recruit_on.disabled = not can
-	recruit_on.add_theme_color_override("font_color", SocialUi.TEXT)
-	recruit_on.toggled.connect(func(v: bool) -> void: _guild.set_recruit(v))
+	recruit_on.add_theme_color_override("font_color", SocialUi.GOLD if is_recruiting else SocialUi.TEXT)
+	recruit_on.toggled.connect(func(v: bool) -> void:
+		_guild.set_recruit(v)
+		_rebuild())
 	left[1].add_child(recruit_on)
+	var flag_tip := SocialUi.label("• Khi cắm cờ: Bang sẽ hiển thị lá cờ 🚩 trên Danh Sách Bang Hội toàn server và cho phép nhân sĩ xin vào.\n• Khi tắt cờ: Bang không có cờ và nhân sĩ khác không thể xin gia nhập.", SocialUi.SUBTITLE, 12)
+	flag_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left[1].add_child(flag_tip)
 	var publish := SocialUi.stone_button("Bảo lưu và công bố tin")
 	publish.disabled = not can
 	publish.pressed.connect(func() -> void:
@@ -389,6 +415,14 @@ func _option_row(label_text: String, options: Array, current: String, enabled: b
 # ------------------------------------------------------------------ tab Sử dụng chức năng
 func _build_use() -> void:
 	var g: Dictionary = _guild.data()
+	var td := SocialUi.info_box("🏰 Tổng Đà Bang Hội")
+	td[1].add_child(SocialUi.kv("Căn cứ:", "Tổng Đà Bang Hội - " + _guild.guild_name(), SocialUi.LABEL_RED, SocialUi.GOLD))
+	td[1].add_child(SocialUi.label("Nơi hội ngộ các huynh đệ bang hội, cùng đàm đạo, xem trang bị và tự do giao dịch.", SocialUi.SUBTITLE, 12))
+	var go_td := SocialUi.stone_button("Tiến Vào Tổng Đà", Vector2(0, 34))
+	go_td.pressed.connect(_on_enter_tong_da)
+	td[1].add_child(go_td)
+	_content.add_child(td[0])
+
 	var fund := SocialUi.info_box("💰 Quyên góp quỹ bang")
 	fund[1].add_child(SocialUi.kv("Quỹ hiện có:", "%s lượng" % InventoryPopup.format_money(int(g["fund"])), SocialUi.LABEL_BLUE, SocialUi.GOLD))
 	var drow := HBoxContainer.new()
@@ -621,3 +655,33 @@ func _open_create_dialog() -> void:
 	win.set_meta("name_edit", name_edit)
 	win.set_meta("camp_pick", camp_pick)
 	win.set_meta("ok", ok)
+
+func _on_enter_tong_da() -> void:
+	if not _guild.in_guild():
+		return
+	var gname := _guild.guild_name()
+	var entry: Dictionary = {
+		"id": 921,
+		"name": "Tổng Đà Bang Hội - %s" % gname,
+		"dir": "res://world/maps/map_921",
+		"guild_map": true,
+		"guild_name": gname,
+	}
+	if NetWorldSync.is_online_mode():
+		var r: Dictionary = await AccountApi.field(ServerSelectScreen.selected_server_id)
+		if is_inside_tree() and r.ok and r.data is Dictionary and bool(r.data.get("open", false)):
+			var st: Dictionary = r.data
+			entry["field"] = {
+				"server": {"host": str(st.get("host", "127.0.0.1")), "port": int(st.get("port", 7807)), "ws_url": str(st.get("ws_url", "")), "name": "Tổng Đà Bang Hội"},
+				"action": {"op": "guild", "guild": gname, "map_id": 921}
+			}
+	close_requested.emit()
+	enter_map_requested.emit(entry)
+	var h := _host()
+	if h != null and h.has_method("_enter_field_map"):
+		h._enter_field_map(entry)
+	elif is_inside_tree():
+		GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+		GameManager.field_map = entry
+		GameManager.current_stage = null
+		get_tree().change_scene_to_file("res://main.tscn")

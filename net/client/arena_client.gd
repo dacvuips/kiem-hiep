@@ -18,12 +18,14 @@ var mode: PkRules.Mode = PkRules.Mode.LIEN_DAU
 var role := ""
 var _state := ""
 var _opponent_eid := 0
+var _enemy_eids: Array = []
 var _searching := -1.0
 var _done := false
 var _title: Label
 var _clock: Label
 var _info: Label
 var _leave_button: Button
+var _reject_button: Button
 
 static func create(pk_entry: Dictionary) -> ArenaClient:
 	var a := ArenaClient.new()
@@ -46,7 +48,13 @@ func _ready() -> void:
 
 func _send_action() -> void:
 	var action: Dictionary = pk.get("action", {})
-	var args := {"mode": mode, "room": str(action.get("room", "")), "password": str(action.get("password", ""))}
+	var args := {
+		"mode": mode,
+		"room": str(action.get("room", "")),
+		"password": str(action.get("password", "")),
+		"team_size": int(action.get("team_size", 1)),
+		"team": str(action.get("team", ""))
+	}
 	match str(action.get("op", "match")):
 		"create":
 			NetClient.send_arena(ArenaServer.OP_CREATE, args)
@@ -69,8 +77,15 @@ func _on_message(msg: Dictionary) -> void:
 			_on_state(msg)
 		"result":
 			_on_result(msg)
+		"rejected_opponent":
+			_say(str(msg.get("msg", "Đã từ chối đối thủ.")))
 		"reject":
-			_leave(str(msg.get("msg", "Không vào được đấu trường.")))
+			var reason := str(msg.get("msg", "Không vào được đấu trường."))
+			if mode == PkRules.Mode.THACH_DAU:
+				_say("%s — chuyển sang đấu tập với Bot cùng cấp." % reason)
+				_play_bot()
+			else:
+				_leave(reason)
 		"no_match":
 			_play_bot()
 
@@ -79,20 +94,44 @@ func _on_state(s: Dictionary) -> void:
 	_state = str(s.get("state", ""))
 	var fighters: Array = s.get("fighters", [])
 	var eids: Array = s.get("fighter_eids", [])
+	var team_size: int = int(s.get("team_size", 1))
+	var my_team: String = str(s.get("my_team", ""))
+	var team_a_eids: Array = s.get("team_a_eids", [])
+	var team_b_eids: Array = s.get("team_b_eids", [])
 	if _done:
 		return   ## đã có kết quả: giữ dòng THẮNG / THUA, không ghi đè bằng trạng thái phòng
-	_title.text = "%s · Phòng #%s%s" % [PkRules.MODE_NAMES.get(int(s.get("mode", mode)), ""), s.get("id", "?"),
+	var format_str := (" [%s]" % PkRules.format_name(team_size)) if int(s.get("mode", mode)) == PkRules.Mode.THACH_DAU else ""
+	_title.text = "%s%s · Phòng #%s%s" % [PkRules.MODE_NAMES.get(int(s.get("mode", mode)), ""), format_str, s.get("id", "?"),
 			" (xem)" if role == "spectator" else ""]
 	var left := int(s.get("left", 0))
 	_clock.text = STATE_NAMES.get(_state, _state) + ("" if _state == "waiting" else " · %02d:%02d" % [left / 60, left % 60])
-	_info.text = "%s   vs   %s   ·   Người xem %d" % [fighters[0] if fighters.size() > 0 else "?",
-			fighters[1] if fighters.size() > 1 else "(đang chờ)", int(s.get("spectators", 0))]
+	if team_size > 1:
+		var count_a: int = (s.get("team_a", []) as Array).size()
+		var count_b: int = (s.get("team_b", []) as Array).size()
+		_info.text = "Phe 1: %d/%d người   vs   Phe 2: %d/%d người   ·   Khán giả %d" % [
+			count_a, team_size, count_b, team_size, int(s.get("spectators", 0))
+		]
+	else:
+		_info.text = "%s   vs   %s   ·   Người xem %d" % [fighters[0] if fighters.size() > 0 else "?",
+				fighters[1] if fighters.size() > 1 else "(đang chờ)", int(s.get("spectators", 0))]
+	_enemy_eids.clear()
 	_opponent_eid = 0
 	if role == "fighter":
-		for e in eids:
-			if int(e) != 0 and int(e) != NetClient.my_eid:
-				_opponent_eid = int(e)
+		if my_team == "a":
+			_enemy_eids = team_b_eids
+		elif my_team == "b":
+			_enemy_eids = team_a_eids
+		else:
+			for e in eids:
+				if int(e) != 0 and int(e) != NetClient.my_eid:
+					_enemy_eids.append(int(e))
+		if not _enemy_eids.is_empty():
+			_opponent_eid = int(_enemy_eids[0])
 	_set_enemies(_state == "fight" and role == "fighter")
+	if _reject_button:
+		var my_name := GameManager.local_profile.display_name if GameManager.local_profile else ""
+		var is_host: bool = fighters.size() > 0 and str(fighters[0]) == my_name
+		_reject_button.visible = is_host and fighters.size() >= 2 and _state in ["waiting", "prepare"] and not _done
 
 ## Chỉ đối thủ của mình là địch (chiêu trúng -> gửi server như cừu sát); người xem / người phòng khác không bao giờ.
 func _set_enemies(on: bool) -> void:
@@ -101,15 +140,27 @@ func _set_enemies(on: bool) -> void:
 		return
 	for r: RemotePlayer in sync.remotes():
 		if is_instance_valid(r):
-			r.set_pk_enemy(on and r.eid == _opponent_eid)
+			r.set_pk_enemy(on and _enemy_eids.has(r.eid))
+
+func _on_reject_pressed() -> void:
+	if _reject_button:
+		_reject_button.visible = false
+	NetClient.send_arena(ArenaServer.OP_REJECT_OPPONENT)
+	_say("Đang từ chối đối thủ…")
 
 func _on_result(r: Dictionary) -> void:
 	_done = true
 	_set_enemies(false)
+	if _reject_button:
+		_reject_button.visible = false
 	var fighter := bool(r.get("fighter", false))
 	if fighter:
 		var win := bool(r.get("win", false))
-		_title.text = "THẮNG" if win else "THUA"
+		var delta := int(r.get("points_delta", 0))
+		var pts_text := ""
+		if delta != 0:
+			pts_text = " (+%d điểm)" % delta if delta > 0 else " (%d điểm)" % delta
+		_title.text = ("THẮNG" if win else "THUA") + pts_text
 		_title.add_theme_color_override("font_color", GameUi.GOLD if win else Color(1.0, 0.4, 0.4))
 		PkMatch.record_result(int(r.get("mode", mode)) as PkRules.Mode, win)
 	else:
@@ -179,6 +230,12 @@ func _build_hud() -> void:
 	_leave_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_leave_button.pressed.connect(_on_leave_pressed)
 	box.add_child(_leave_button)
+	if PkRules.can_kick(mode):
+		_reject_button = GameUi.button("Từ chối đối thủ")
+		_reject_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_reject_button.visible = false
+		_reject_button.pressed.connect(_on_reject_pressed)
+		box.add_child(_reject_button)
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var l := Label.new()

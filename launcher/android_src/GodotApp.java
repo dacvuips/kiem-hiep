@@ -113,13 +113,13 @@ public class GodotApp extends GodotActivity {
 		return args;
 	}
 
-	/** Gọi từ launcher.gd (JavaClassWrapper) nếu OS.create_instance không khởi động lại được. */
+	/** Gọi từ launcher.gd (JavaClassWrapper) để khởi động lại app vào game. */
 	public static void restartApp() {
 		GodotApp app = sInstance;
 		if (app != null) {
 			app.runOnUiThread(() -> {
-				app.commandLine = null;
-				app.onNewGodotInstanceRequested(new String[0]);
+				Log.i(TAG, "restartApp: Khởi động lại process vào game qua ProcessPhoenix...");
+				org.godotengine.godot.utils.ProcessPhoenix.triggerRebirth(app);
 			});
 		}
 	}
@@ -137,28 +137,40 @@ public class GodotApp extends GodotActivity {
 		} catch (IOException e) {
 			Log.e(TAG, "Không đọc được " + marker, e);
 			return;
-		} finally {
-			if (!marker.delete()) {
-				Log.w(TAG, "Không xoá được " + marker);
-			}
 		}
-		if (lines.size() < 2) {
+		if (lines.isEmpty()) {
+			marker.delete();
 			return;
 		}
 		String pck = lines.get(0);
-		String dir = lines.get(1);
-		// Chỉ nhận gói nằm trong bộ nhớ riêng của app.
-		String root = getFilesDir().getAbsolutePath() + File.separator;
-		if (!pck.startsWith(root) || !dir.startsWith(root) || pck.contains("..") || dir.contains("..")
-				|| !new File(pck).isFile()) {
-			Log.w(TAG, "Bỏ qua file đánh dấu không hợp lệ: " + pck);
+		String dir = lines.size() > 1 ? lines.get(1) : new File(getFilesDir(), "content").getAbsolutePath();
+
+		File pckFile = new File(pck);
+		if (!pckFile.isFile()) {
+			// Thử tìm trong files/content/<pck>
+			pckFile = new File(new File(getFilesDir(), "content"), pckFile.getName());
+		}
+		File dirFile = new File(dir);
+		if (!dirFile.isDirectory()) {
+			dirFile = new File(getFilesDir(), "content");
+		}
+
+		if (!pckFile.isFile()) {
+			Log.e(TAG, "File gói game không tồn tại: " + pckFile.getAbsolutePath());
+			marker.delete();
 			return;
 		}
-		Log.i(TAG, "Khởi động game từ " + pck);
-		args.add("--main-pack");
-		args.add(pck);
+
+		// Xoá marker khi đã nạp thành công vào commandline args
+		if (!marker.delete()) {
+			Log.w(TAG, "Không xoá được " + marker);
+		}
+
+		Log.i(TAG, "Khởi động game từ " + pckFile.getAbsolutePath());
+		args.add(0, pckFile.getAbsolutePath());
+		args.add(0, "--main-pack");
 		args.add("++");
-		args.add("--kh-content=" + dir);
+		args.add("--kh-content=" + dirFile.getAbsolutePath());
 	}
 
 	@Override

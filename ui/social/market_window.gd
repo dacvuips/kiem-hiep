@@ -10,7 +10,7 @@ class_name MarketWindow
 const ICON_GOLD := "res://assets/items/icons/tongqian.png"
 const ICON_JADE := "res://assets/items/icons/obj_item_cardg.png"   ## Kim Nguyên Bảo
 const ELEMENT_NAMES := ["Kim", "Mộc", "Thủy", "Hỏa", "Thổ"]
-const CARD_SIZE := Vector2(380, 66)
+const CARD_SIZE := Vector2(0, 66)
 const NOTE_ROW_HEIGHT := 34.0    ## hàng nội dung rao dưới mỗi thẻ món (có chừa lề dưới)
 
 enum Tab { MARKET, MINE, TRADE }
@@ -52,7 +52,7 @@ static func open(host: Node, profile: PlayerProfile) -> MarketWindow:
 	return SocialWindow.present(host, MarketWindow.new(SocialHub.of(profile)), &"market") as MarketWindow
 
 func _init(hub: SocialHub = null) -> void:
-	super._init("Chợ Giao Thương", "", 860.0)
+	super._init("Giao Dịch", "", 520.0)
 	_hub = hub
 	if _hub == null:
 		return
@@ -62,7 +62,8 @@ func _init(hub: SocialHub = null) -> void:
 	body.add_child(tabs)
 	for t in [["Giao Thương", Tab.MARKET], ["Của Tôi", Tab.MINE], ["Giao Dịch", Tab.TRADE]]:
 		var b := GameUi.button(str(t[0]), GameUi.TAB)
-		b.custom_minimum_size = Vector2(170, 36)
+		b.custom_minimum_size = Vector2(0, 36)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_show_tab.bind(int(t[1])))
 		tabs.add_child(b)
 		_tab_buttons.append(b)
@@ -172,31 +173,41 @@ func _item_of(l: Dictionary) -> ItemInstance:
 func _build_market() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 8)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	page.add_child(row)
-	_f_cat = _option(row, "Loại", MarketBook.CATEGORIES.map(func(c: Array) -> String: return str(c[1])))
-	_f_series = _option(row, "Hệ", ["Toàn bộ"] + ELEMENT_NAMES)
+
+	var filter_box := VBoxContainer.new()
+	filter_box.add_theme_constant_override("separation", 6)
+	page.add_child(filter_box)
+
+	var row1 := HBoxContainer.new()
+	row1.add_theme_constant_override("separation", 4)
+	filter_box.add_child(row1)
+	_f_cat = _option(row1, "Loại", MarketBook.CATEGORIES.map(func(c: Array) -> String: return str(c[1])))
+	_f_series = _option(row1, "Hệ", ["Toàn bộ"] + ELEMENT_NAMES)
 	var levels := ["Toàn bộ"]
 	for i in range(1, 11):
 		levels.append("Cấp %d" % i)
-	_f_level = _option(row, "Cấp", levels)
-	_f_attrib = _option(row, "Thuộc Tính", ["Toàn bộ"] + MarketBook.attrib_options().keys())
-	_f_cur = _option(row, "Tiền", ["Toàn bộ", "Lượng", "KNB"])
+	_f_level = _option(row1, "Cấp", levels)
+	_f_attrib = _option(row1, "Thuộc Tính", ["Toàn bộ"] + MarketBook.attrib_options().keys())
+	_f_cur = _option(row1, "Tiền", ["Toàn bộ", "Lượng", "KNB"])
+
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 6)
+	filter_box.add_child(row2)
 	_f_name = SocialUi.line_edit("Tên vật phẩm")
 	_f_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_f_name.text_submitted.connect(func(_t: String) -> void: _search())
-	row.add_child(_f_name)
+	row2.add_child(_f_name)
 	var find := SocialUi.stone_button("Tìm", Vector2(76, 36))
 	find.pressed.connect(_search)
-	row.add_child(find)
+	row2.add_child(find)
+
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.custom_minimum_size = Vector2(0, 380)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_grid = GridContainer.new()
-	_grid.columns = 2
-	_grid.add_theme_constant_override("h_separation", 10)
-	_grid.add_theme_constant_override("v_separation", 8)
+	_grid.columns = 1
+	_grid.add_theme_constant_override("v_separation", 6)
 	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_grid)
 	page.add_child(scroll)
@@ -224,7 +235,8 @@ func _update_pager(total: int) -> void:
 func _option(parent: Control, label: String, entries: Array) -> OptionButton:
 	var o := OptionButton.new()
 	o.focus_mode = Control.FOCUS_NONE
-	o.custom_minimum_size = Vector2(108 if label != "Thuộc Tính" else 130, 36)
+	o.custom_minimum_size = Vector2(0, 32)
+	o.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	o.fit_to_longest_item = false
 	o.clip_text = true
 	for i in entries.size():

@@ -1,62 +1,99 @@
 [gd_scene format=3 uid="uid://xkfo54r4ssfh"]
 
 [ext_resource type="Texture2D" uid="uid://1r4nd6h4cf4x" path="res://ui/login/icon_apple.png" id="a"]
-[ext_resource type="Texture2D" uid="uid://d1u77f7l50p40" path="res://ui/login/btn_create.png" id="bc"]
-[ext_resource type="Texture2D" uid="uid://c8cxoo7sq4gm4" path="res://ui/login/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" path="res://ui/login/bg.jpg" id="bg"]
 [ext_resource type="Texture2D" uid="uid://coc8fb0dnl6ib" path="res://ui/login/btn_login.png" id="bl"]
+[ext_resource type="Texture2D" uid="uid://c57k6jg6eg3wf" path="res://ui/login/icon_check.png" id="chk"]
+[ext_resource type="Texture2D" uid="uid://bmuabkcor68f" path="res://ui/login/icon_eye.png" id="eye"]
 [ext_resource type="Texture2D" uid="uid://du8l2b0e64aes" path="res://ui/login/icon_facebook.png" id="f"]
-[ext_resource type="Texture2D" uid="uid://dbg7p13ja4xoy" path="res://ui/login/frame.png" id="frame"]
 [ext_resource type="Texture2D" uid="uid://detbv78moby52" path="res://ui/login/icon_google.png" id="g"]
-[ext_resource type="Texture2D" uid="uid://fua8bi4fspi3" path="res://ui/login/logo.png" id="logo"]
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="input_font"]
+[ext_resource type="Texture2D" uid="uid://du2n10s2x3023" path="res://ui/login/icon_lock.png" id="lock"]
+[ext_resource type="Texture2D" uid="uid://mseupjdlo6l6" path="res://ui/login/logo.png" id="logo"]
 [ext_resource type="Script" uid="uid://bju15ew1qv6uc" path="res://ui/login/login_screen.gd" id="s"]
 [ext_resource type="Script" uid="uid://2cpihwqs2dtr" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Texture2D" uid="uid://d20sruog271c1" path="res://ui/login/form_shadow.png" id="shadow"]
 [ext_resource type="Texture2D" uid="uid://l6016uy5d8vx" path="res://ui/login/icon_user.png" id="u"]
+[ext_resource type="Texture2D" uid="uid://nwavw3mrv0hu" path="res://ui/login/icon_uncheck.png" id="unchk"]
 
-[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="input_font"]
-
-[sub_resource type="StyleBoxFlat" id="field"]
-content_margin_left = 68.0
-content_margin_right = 70.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
+[sub_resource type="StyleBoxFlat" id="pill_input"]
+content_margin_left = 56.0
+content_margin_top = 2.0
+content_margin_right = 46.0
+content_margin_bottom = 2.0
+bg_color = Color(0.1, 0.2, 0.24, 0.7)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.62, 0.48, 0.25, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.85, 0.72, 0.45, 0.75)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
-[sub_resource type="StyleBoxFlat" id="field_focus"]
-content_margin_left = 68.0
-content_margin_right = 70.0
-bg_color = Color(0.07, 0.055, 0.045, 0.94)
+[sub_resource type="StyleBoxFlat" id="pill_input_focus"]
+content_margin_left = 56.0
+content_margin_top = 2.0
+content_margin_right = 46.0
+content_margin_bottom = 2.0
+bg_color = Color(0.12, 0.24, 0.28, 0.85)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.38, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.98, 0.86, 0.52, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.95, 0.82, 0.45, 0.3)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="pill_create_btn"]
+content_margin_left = 18.0
+content_margin_top = 4.0
+content_margin_right = 18.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.2, 0.24, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.45, 0.6)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="pill_create_btn_hover"]
+content_margin_left = 18.0
+content_margin_top = 4.0
+content_margin_right = 18.0
+content_margin_bottom = 4.0
+bg_color = Color(0.14, 0.28, 0.32, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.86, 0.52, 0.95)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxEmpty" id="empty"]
 
-[sub_resource type="LabelSettings" id="soft"]
-font_size = 17
-font_color = Color(0.9, 0.82, 0.62, 1)
-outline_size = 4
-outline_color = Color(0.05, 0.02, 0.01, 1)
-
 [sub_resource type="LabelSettings" id="msg"]
-font_size = 22
-font_color = Color(1, 0.9, 0.62, 1)
-outline_size = 8
-outline_color = Color(0.1, 0.04, 0.02, 1)
+font_size = 20
+font_color = Color(1, 0.92, 0.65, 1)
+outline_size = 6
+outline_color = Color(0.1, 0.05, 0.02, 1)
 
-[node name="Login" type="Control" unique_id=936721538]
+[node name="Login" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -65,7 +102,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("s")
 
-[node name="Background" type="TextureRect" parent="." unique_id=681456173]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -77,228 +114,268 @@ texture = ExtResource("bg")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Stage" type="Control" parent="." unique_id=1897982004]
+[node name="Stage" type="Control" parent="."]
 anchors_preset = 0
-offset_left = 0.3400879
-offset_right = 1672.3401
-offset_bottom = 941.0
-scale = Vector2(0.76514345, 0.76514345)
+offset_right = 1280.0
+offset_bottom = 720.0
 mouse_filter = 2
 script = ExtResource("sf")
+design_size = Vector2(1280, 720)
 
-[node name="Logo" type="TextureRect" parent="Stage" unique_id=1105364445]
+[node name="FormShadow" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 630.8097
-offset_right = 1047.0369
-offset_bottom = 260.6222
+offset_left = 540.0
+offset_top = 40.0
+offset_right = 1140.0
+offset_bottom = 690.0
+mouse_filter = 2
+texture = ExtResource("shadow")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Logo" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 670.0
+offset_top = 116.0
+offset_right = 1010.0
+offset_bottom = 297.0
 mouse_filter = 2
 texture = ExtResource("logo")
 expand_mode = 1
+stretch_mode = 5
 
-[node name="Frame" type="TextureRect" parent="Stage" unique_id=449538358]
-layout_mode = 0
-offset_left = 492.0
-offset_top = 248.0
-offset_right = 1182.0
-offset_bottom = 818.0
-mouse_filter = 2
-texture = ExtResource("frame")
-expand_mode = 1
-
-[node name="UserInput" type="LineEdit" parent="Stage" unique_id=493816226]
+[node name="UserInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 360.0
-offset_right = 1043.0
-offset_bottom = 412.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 308.0
+offset_right = 998.0
+offset_bottom = 352.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("field")
-theme_override_styles/focus = SubResource("field_focus")
-placeholder_text = "Tên tài khoản"
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
+placeholder_text = "Tài khoản"
 max_length = 32
 caret_blink = true
 
-[node name="UserIcon" type="TextureRect" parent="Stage" unique_id=1573781180]
+[node name="UserIcon" type="TextureRect" parent="Stage"]
 layout_mode = 0
-offset_left = 640.0
-offset_top = 367.0
-offset_right = 678.0
-offset_bottom = 405.0
+offset_left = 698.0
+offset_top = 319.0
+offset_right = 720.0
+offset_bottom = 341.0
 mouse_filter = 2
 texture = ExtResource("u")
 expand_mode = 1
+stretch_mode = 5
 
-[node name="PasswordInput" type="LineEdit" parent="Stage" unique_id=1745920580]
+[node name="PasswordInput" type="LineEdit" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 630.0
-offset_top = 424.0
-offset_right = 1043.0
-offset_bottom = 476.0
-theme_override_colors/font_color = Color(0.96, 0.9, 0.76, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.65, 0.55, 1)
-theme_override_colors/caret_color = Color(0.96, 0.9, 0.76, 1)
+offset_left = 682.0
+offset_top = 364.0
+offset_right = 998.0
+offset_bottom = 408.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.85, 0.9, 0.92, 0.75)
+theme_override_colors/caret_color = Color(0.96, 0.88, 0.65, 1)
 theme_override_fonts/font = ExtResource("input_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("field")
-theme_override_styles/focus = SubResource("field_focus")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("pill_input")
+theme_override_styles/focus = SubResource("pill_input_focus")
 placeholder_text = "Mật khẩu"
 max_length = 64
-caret_blink = true
 secret = true
+caret_blink = true
 
-[node name="EyeButton" type="Button" parent="Stage" unique_id=1352435139]
+[node name="LockIcon" type="TextureRect" parent="Stage"]
+layout_mode = 0
+offset_left = 698.0
+offset_top = 375.0
+offset_right = 720.0
+offset_bottom = 397.0
+mouse_filter = 2
+texture = ExtResource("lock")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EyeButton" type="Button" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 975.0
-offset_top = 430.0
-offset_right = 1038.0
-offset_bottom = 470.0
+offset_left = 956.0
+offset_top = 372.0
+offset_right = 988.0
+offset_bottom = 400.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0, 0, 0, 0)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 0)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 0)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 0)
 theme_override_styles/normal = SubResource("empty")
 theme_override_styles/pressed = SubResource("empty")
 theme_override_styles/hover = SubResource("empty")
 theme_override_styles/focus = SubResource("empty")
-text = "Hiện"
+icon = ExtResource("eye")
+flat = true
+expand_icon = true
 
-[node name="RememberCheck" type="CheckBox" parent="Stage" unique_id=484049443]
+[node name="RememberCheck" type="CheckBox" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 628.0
-offset_top = 486.0
-offset_right = 830.0
-offset_bottom = 524.0
+offset_left = 684.0
+offset_top = 420.0
+offset_right = 814.0
+offset_bottom = 446.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.9, 0.84, 0.7, 1)
-theme_override_colors/font_pressed_color = Color(0.9, 0.84, 0.7, 1)
-theme_override_colors/font_hover_color = Color(1, 0.93, 0.75, 1)
-theme_override_colors/font_hover_pressed_color = Color(1, 0.93, 0.75, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_hover_pressed_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 14
+theme_override_icons/checked = ExtResource("chk")
+theme_override_icons/unchecked = ExtResource("unchk")
 button_pressed = true
-text = "Ghi nhớ đăng nhập"
+text = "Lưu tài khoản"
 
-[node name="ForgotButton" type="Button" parent="Stage" unique_id=514212321]
+[node name="RegisterLink" type="Button" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 900.0
-offset_top = 486.0
-offset_right = 1043.0
-offset_bottom = 524.0
+offset_left = 818.0
+offset_top = 412.0
+offset_right = 886.0
+offset_bottom = 452.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.95, 0.8, 0.45, 1)
-theme_override_colors/font_hover_color = Color(1, 0.93, 0.7, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.98, 0.86, 0.52, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("empty")
 theme_override_styles/pressed = SubResource("empty")
 theme_override_styles/hover = SubResource("empty")
 theme_override_styles/focus = SubResource("empty")
+action_mode = 0
+text = "Đăng ký"
+flat = true
+alignment = 1
+
+[node name="ForgotButton" type="Button" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 890.0
+offset_top = 412.0
+offset_right = 998.0
+offset_bottom = 452.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.9, 0.86, 0.78, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.85, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("empty")
+theme_override_styles/pressed = SubResource("empty")
+theme_override_styles/hover = SubResource("empty")
+theme_override_styles/focus = SubResource("empty")
+action_mode = 0
 text = "Quên mật khẩu?"
 flat = true
 alignment = 2
 
-[node name="LoginButton" type="TextureButton" parent="Stage" unique_id=210238410]
+[node name="LoginButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 600.0
-offset_top = 526.0
-offset_right = 1070.0
-offset_bottom = 634.0
+offset_left = 697.0
+offset_top = 456.0
+offset_right = 983.0
+offset_bottom = 520.0
 mouse_default_cursor_shape = 2
+action_mode = 0
 texture_normal = ExtResource("bl")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="OrLabel" type="Label" parent="Stage" unique_id=216678621]
-layout_mode = 0
-offset_left = 735.0
-offset_top = 632.0
-offset_right = 935.0
-offset_bottom = 662.0
-text = "Hoặc"
-label_settings = SubResource("soft")
-horizontal_alignment = 1
-
-[node name="GoogleButton" type="TextureButton" parent="Stage" unique_id=1518406327]
+[node name="GoogleButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 806.0
-offset_top = 671.0
-offset_right = 866.0
-offset_bottom = 731.0
+offset_left = 752.0
+offset_top = 530.0
+offset_right = 800.0
+offset_bottom = 578.0
 mouse_default_cursor_shape = 2
+action_mode = 0
 texture_normal = ExtResource("g")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="AppleButton" type="TextureButton" parent="Stage" unique_id=717928078]
+[node name="FacebookButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
-offset_left = 767.0
-offset_top = 671.0
-offset_right = 827.0
-offset_bottom = 731.0
+offset_left = 816.0
+offset_top = 530.0
+offset_right = 864.0
+offset_bottom = 578.0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("a")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="FacebookButton" type="TextureButton" parent="Stage" unique_id=1648133001]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 844.0
-offset_top = 671.0
-offset_right = 904.0
-offset_bottom = 731.0
-mouse_default_cursor_shape = 2
+action_mode = 0
 texture_normal = ExtResource("f")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="GuestButton" type="TextureButton" parent="Stage" unique_id=381592713]
+[node name="AppleButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
-offset_left = 921.0
-offset_top = 671.0
-offset_right = 981.0
-offset_bottom = 731.0
+offset_left = 880.0
+offset_top = 530.0
+offset_right = 928.0
+offset_bottom = 578.0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("u")
+action_mode = 0
+texture_normal = ExtResource("a")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="CreateAccountButton" type="TextureButton" parent="Stage" unique_id=1844711697]
+[node name="CreateAccountButton" type="Button" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 631.0
-offset_top = 728.0
-offset_right = 1041.0
-offset_bottom = 816.0
+offset_left = 710.0
+offset_top = 586.0
+offset_right = 970.0
+offset_bottom = 628.0
+focus_mode = 0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("bc")
-ignore_texture_size = true
-stretch_mode = 5
+theme_override_colors/font_color = Color(0.96, 0.88, 0.65, 1)
+theme_override_colors/font_hover_color = Color(1, 0.96, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("input_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("pill_create_btn")
+theme_override_styles/hover = SubResource("pill_create_btn_hover")
+theme_override_styles/pressed = SubResource("pill_create_btn_hover")
+theme_override_styles/focus = SubResource("pill_create_btn_hover")
+action_mode = 0
+text = "Chưa có tài khoản? Đăng ký ngay"
 
-[node name="Message" type="Label" parent="Stage" unique_id=609020676]
+[node name="Message" type="Label" parent="Stage"]
 unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
-offset_left = 486.0
-offset_top = 830.0
-offset_right = 1186.0
-offset_bottom = 870.0
+offset_left = 590.0
+offset_top = 632.0
+offset_right = 1090.0
+offset_bottom = 668.0
 label_settings = SubResource("msg")
 horizontal_alignment = 1
 vertical_alignment = 1

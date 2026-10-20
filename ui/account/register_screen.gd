@@ -7,7 +7,7 @@ extends AccountScreen
 @onready var _password: LineEdit = %PasswordInput
 @onready var _password2: LineEdit = %PasswordConfirmInput
 @onready var _eye: Button = %EyeButton
-@onready var _create: TextureButton = %CreateButton
+@onready var _create: Button = %CreateButton
 @onready var _back: Button = %BackButton
 @onready var _message: Label = %Message
 
@@ -15,6 +15,8 @@ func _ready() -> void:
 	_setup_screen()
 	_bind_eye(_eye, [_password, _password2])
 	_bind_hover(_create)
+	_create.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+	_back.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 	_create.pressed.connect(_on_create_pressed)
 	_back.pressed.connect(_go.bind(LOGIN_SCENE))
 	## Enter ở mỗi ô nhảy sang ô kế tiếp, ô cuối thì tạo tài khoản.
@@ -22,7 +24,8 @@ func _ready() -> void:
 	for i in order.size() - 1:
 		order[i].text_submitted.connect(func(_t: String) -> void: order[i + 1].grab_focus())
 	_password2.text_submitted.connect(func(_t: String) -> void: _on_create_pressed())
-	_user.grab_focus()
+	if not OS.has_feature("mobile"):
+		_user.grab_focus()
 
 func _on_create_pressed() -> void:
 	if _busy:

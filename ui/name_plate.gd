@@ -9,6 +9,7 @@ const FONT_SIZE := 13
 const GAP := 4.0
 const NAME_COLOR := Color(0.96, 0.95, 0.88)
 const BOSS_NAME_COLOR := Color(0.45, 0.72, 1.0)   ## boss xanh: tên màu xanh dương
+const GOLD_BOSS_NAME_COLOR := Color(1.0, 0.85, 0.15)   ## boss hoàng kim: tên màu vàng rực rỡ
 const OUTLINE_SIZE := 3
 ## Thứ tự hệ = ElementTypes (Kim, Mộc, Thủy, Hỏa, Thổ) = số hệ của series%d.spr gốc.
 const SERIES_ICONS: Array[Texture2D] = [
@@ -21,9 +22,14 @@ var _text := ""
 var _icon: Texture2D
 var _name_color := NAME_COLOR
 
-func setup(display_name: String, element: ElementTypes.ElementType, boss: bool = false) -> void:
-	_text = display_name
-	_name_color = BOSS_NAME_COLOR if boss else NAME_COLOR
+func setup(display_name: String, element: ElementTypes.ElementType, boss: bool = false, is_gold: bool = false) -> void:
+	_text = ("[Hoàng Kim] " + display_name) if is_gold else display_name
+	if is_gold:
+		_name_color = GOLD_BOSS_NAME_COLOR
+	elif boss:
+		_name_color = BOSS_NAME_COLOR
+	else:
+		_name_color = NAME_COLOR
 	_icon = SERIES_ICONS[clampi(int(element), 0, SERIES_ICONS.size() - 1)]
 	z_index = 5
 	queue_redraw()

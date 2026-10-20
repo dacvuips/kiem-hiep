@@ -122,6 +122,12 @@ func in_bounds(world: Vector2) -> bool:
 
 ## Điểm xuất phát mặc định: giữa vùng có nền gần tâm map (giống VltkWorld._default_center).
 func default_center() -> Vector2:
+	if data.has("arena_center"):
+		var ac = data["arena_center"]
+		if ac is Vector2:
+			return ac
+		if ac is Array and (ac as Array).size() >= 2:
+			return Vector2(float(ac[0]), float(ac[1]))
 	if data.has("start"):
 		return (Vector2(float(data["start"][0]), float(data["start"][1])) + Vector2(0.5, 0.5)) * REGION
 	var rect: Array = data.get("rect", [0, 0, 1, 1])

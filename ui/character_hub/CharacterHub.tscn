@@ -1,27 +1,456 @@
 [gd_scene format=3 uid="uid://d2n3u17xda056"]
 
-[ext_resource type="Script" uid="uid://cvvg8fm84ag2k" path="res://ui/character_hub/character_hub.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bj6lcvwxi4dxh" path="res://ui/character_hub/character_hub_bg.png" id="2_bg"]
-[ext_resource type="Texture2D" uid="uid://c76uvs0h71x00" path="res://ui/character_hub/frame_currency_gold.png" id="3_gold"]
-[ext_resource type="Texture2D" uid="uid://c8yxd132svqts" path="res://ui/character_hub/frame_currency_jade.png" id="4_jade"]
-[ext_resource type="Texture2D" uid="uid://ciosirk6hbh8c" path="res://ui/character_hub/frame_currency_stamina.png" id="5_stamina"]
-[ext_resource type="Texture2D" uid="uid://cjtruv3tgft3i" path="res://ui/character_hub/btn_back.png" id="6_back"]
-[ext_resource type="Texture2D" uid="uid://yv8np28aut23" path="res://ui/character_hub/frame_stage.png" id="7_stage"]
-[ext_resource type="Texture2D" uid="uid://b7wi6o06yspiq" path="res://ui/character_hub/btn_challenge.png" id="8_challenge"]
-[ext_resource type="Texture2D" uid="uid://dnh4u3e4c8vap" path="res://ui/character_hub/frame_character.png" id="9_character"]
-[ext_resource type="Texture2D" uid="uid://pb51qjg6aro6" path="res://ui/character_hub/frame_herb_garden.png" id="10_herb"]
-[ext_resource type="Texture2D" uid="uid://dxblj5p0pgile" path="res://ui/character_hub/nav_menu.png" id="11_navmenu"]
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
+[ext_resource type="Texture2D" uid="uid://bj6lcvwxi4dxh" path="res://ui/character_hub/character_hub_bg.png" id="bg"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
+[ext_resource type="Script" path="res://ui/character_hub/character_hub.gd" id="hub_script"]
+[ext_resource type="Script" path="res://systems/avatar/character_avatar.gd" id="avatar_script"]
+[ext_resource type="PackedScene" path="res://ui/debug/DebugCheatPanel.tscn" id="debug_cheat"]
 
-[node name="CharacterHub" type="Control" unique_id=487371878]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/xu_vang_va_nut_cong.png" id="cur_gold"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ngoc_xanh_va_nut_cong.png" id="cur_jade"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/the_luc_va_nut_cong.png" id="cur_stam"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/nut_dong.png" id="btn_close"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nhan_vat/vong_sang_chan.png" id="vong_sang"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nhan_vat/nhan_vat_cuoi_ngua.png" id="nv_ngua"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nhan_vat/ngua_bieu_tuong.png" id="ngua_slot"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nhan_vat/icon_ngua_slot.png" id="ico_ngua_slot"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nhan_vat/nhan_vat_chinh.png" id="nv_chinh"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/head_item.png" id="head_item_tex"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_full.png" id="trang_bi_full"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nam.png" id="trang_bi_nam"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nu.png" id="trang_bi_nu"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_heart.png" id="ico_heart"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_droplet.png" id="ico_droplet"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_leaf.png" id="ico_leaf"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/thanh_sinh_luc.png" id="bar_hp"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/thanh_noi_luc.png" id="bar_mp"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/thanh_the_luc.png" id="bar_stam"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut_pk.png" id="btn_pk_tex"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut-vuot-ai.png" id="btn_va_tex"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut_lv1.png" id="btn_lv_tex"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_nhan_vat.png" id="ico_nv"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_nhiem_vu.png" id="ico_nv_quest"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_trang_bi.png" id="ico_tb"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_ky_nang.png" id="ico_kn"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_bang_hoi.png" id="ico_bh"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_giao_dich.png" id="ico_gd"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_che_tao.png" id="ico_ct"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_bxh.png" id="ico_bxh"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_cai_dat.png" id="ico_cd"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/mu_giap_1.png" id="eq_mu1"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/mu_giap_2.png" id="eq_mu2"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/day_chuyen.png" id="eq_dc"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/gang_tay.png" id="eq_gt"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/nhan_1.png" id="eq_n1"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/nhan_2.png" id="eq_n2"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/nhan_3.png" id="eq_n3"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/quan_giap.png" id="eq_qg"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/giay.png" id="eq_giay"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/vu_khi.png" id="eq_vk"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/vat_pham.png" id="eq_vp"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/khung_tai_nguyen.png" id="khung_tai_nguyen"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_vang.png" id="ico_vang"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_ngoc.png" id="ico_ngoc"]
+[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/btn_cong.png" id="btn_cong"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/icon_chat_msg.png" id="ico_chat_msg"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
+
+
+[sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
+bg_color = Color(0.015, 0.08, 0.09, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.76, 0.63, 0.32, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="wuxia_header_bar"]
+bg_color = Color(0.04, 0.15, 0.16, 0.95)
+border_width_bottom = 1
+border_color = Color(0.45, 0.38, 0.18, 0.6)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+
+[sub_resource type="StyleBoxFlat" id="wuxia_sub_header"]
+bg_color = Color(0.03, 0.12, 0.14, 0.85)
+border_width_bottom = 1
+border_color = Color(0.45, 0.38, 0.18, 0.5)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="wuxia_inner_card"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.01, 0.05, 0.06, 0.4)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="wuxia_slot_box"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.02, 0.07, 0.08, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.68, 0.55, 0.3, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="wuxia_slot_box_hover"]
+bg_color = Color(0.05, 0.14, 0.16, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.86, 0.52, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.98, 0.86, 0.52, 0.4)
+shadow_size = 4
+
+[sub_resource type="StyleBoxEmpty" id="slot_interactive_empty"]
+
+[sub_resource type="StyleBoxFlat" id="slot_interactive_hover"]
+bg_color = Color(1, 0.85, 0.3, 0.15)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.88, 0.45, 0.95)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(1, 0.82, 0.2, 0.4)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="slot_interactive_pressed"]
+bg_color = Color(1, 0.85, 0.3, 0.28)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.6, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="wuxia_slot_gold"]
+bg_color = Color(0.02, 0.07, 0.08, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.82, 0.45, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_add_stat"]
+content_margin_bottom = 2.0
+bg_color = Color(0.88, 0.22, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.45, 0.4, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="btn_sub_stat"]
+content_margin_bottom = 2.0
+bg_color = Color(0.22, 0.26, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.45, 0.48, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="tube_bg"]
+bg_color = Color(0.02, 0.08, 0.09, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.64, 0.32, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="tube_fill_hp"]
+bg_color = Color(0.92, 0.16, 0.12, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="tube_fill_mp"]
+bg_color = Color(0.08, 0.52, 0.96, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="tube_fill_stam"]
+bg_color = Color(0.18, 0.78, 0.24, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="tube_fill_exp"]
+bg_color = Color(0.52, 0.84, 0.16, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="nav_btn_active"]
+content_margin_left = 12.0
+content_margin_right = 8.0
+bg_color = Color(0.85, 0.52, 0.08, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.6, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="wuxia_inner_box"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.02, 0.08, 0.09, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.45, 0.42, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="inv_tab_active"]
+bg_color = Color(0.85, 0.52, 0.08, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.9, 0.6, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.85, 0.5, 0.05, 0.4)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="inv_tab_normal"]
+bg_color = Color(0.04, 0.14, 0.15, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.4, 0.4, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="inv_tab_hover"]
+bg_color = Color(0.08, 0.22, 0.24, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.78, 0.45, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="inv_btn_wuxia"]
+bg_color = Color(0.05, 0.16, 0.18, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.28, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="inv_btn_wuxia_hover"]
+bg_color = Color(0.09, 0.26, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.88, 0.45, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.9, 0.75, 0.2, 0.3)
+shadow_size = 4
+shadow_color = Color(0.85, 0.5, 0.05, 0.6)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="nav_btn_normal"]
+content_margin_left = 12.0
+content_margin_right = 8.0
+bg_color = Color(0.04, 0.15, 0.16, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.44, 0.45, 0.7)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="nav_btn_hover"]
+content_margin_left = 12.0
+content_margin_right = 8.0
+bg_color = Color(0.07, 0.22, 0.24, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.78, 0.45, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="badge_red"]
+bg_color = Color(0.9, 0.15, 0.12, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="wuxia_slot_gold_frame"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.82, 0.45, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="LabelSettings" id="lbl_cyan"]
+font = ExtResource("font")
+font_size = 13
+font_color = Color(0.38, 0.74, 0.82, 1)
+outline_size = 3
+outline_color = Color(0.04, 0.08, 0.09, 1)
+
+[sub_resource type="StyleBoxEmpty" id="empty"]
+
+[sub_resource type="LabelSettings" id="sec_title"]
+font = ExtResource("font")
+font_size = 15
+font_color = Color(0.92, 0.86, 0.62, 1)
+outline_size = 4
+outline_color = Color(0.04, 0.1, 0.12, 1)
+
+[sub_resource type="LabelSettings" id="lbl_stat"]
+font = ExtResource("font")
+font_size = 13
+font_color = Color(0.87, 0.85, 0.82, 1)
+outline_size = 3
+outline_color = Color(0.04, 0.05, 0.06, 1)
+
+[sub_resource type="LabelSettings" id="val_stat"]
+font = ExtResource("font")
+font_size = 13
+font_color = Color(0.98, 0.88, 0.55, 1)
+outline_size = 3
+outline_color = Color(0.04, 0.05, 0.06, 1)
+
+[sub_resource type="LabelSettings" id="val_red"]
+font = ExtResource("font")
+font_size = 14
+font_color = Color(0.96, 0.25, 0.2, 1)
+outline_size = 3
+outline_color = Color(0.15, 0.02, 0.02, 1)
+
+[sub_resource type="LabelSettings" id="val_name"]
+font = ExtResource("font")
+font_size = 17
+font_color = Color(1, 1, 1, 1)
+outline_size = 4
+outline_color = Color(0.04, 0.1, 0.12, 1)
+
+[sub_resource type="LabelSettings" id="bar_text"]
+font = ExtResource("font")
+font_size = 13
+font_color = Color(1, 1, 1, 1)
+outline_size = 4
+outline_color = Color(0.08, 0.04, 0.02, 1)
+
+[sub_resource type="LabelSettings" id="cur_text"]
+font = ExtResource("font")
+font_size = 13
+font_color = Color(1, 1, 1, 1)
+outline_size = 3
+outline_color = Color(0, 0, 0, 0.85)
+
+[node name="CharacterHub" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_script")
+script = ExtResource("hub_script")
 
-[node name="Backdrop" type="TextureRect" parent="." unique_id=1790241755]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,688 +458,2129 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_bg")
+texture = ExtResource("bg")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Frame" type="AspectRatioContainer" parent="." unique_id=286875405]
+[node name="Stage" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+script = ExtResource("sf")
+design_size = Vector2(1280, 720)
+expand_horizontal = true
+
+[node name="TopBar" type="Control" parent="Stage"]
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 60.0
+mouse_filter = 2
+
+[node name="PlayButton" type="TextureButton" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 14.0
+offset_right = 148.0
+offset_bottom = 54.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_pk_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PlayLabel" type="Label" parent="Stage/TopBar/PlayButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.68, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.02, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "PK"
+vertical_alignment = 1
+
+[node name="ChallengeButton" type="TextureButton" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 158.0
+offset_top = 14.0
+offset_right = 288.0
+offset_bottom = 54.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_va_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ChallengeLabel" type="Label" parent="Stage/TopBar/ChallengeButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.68, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.02, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "Vượt Ải"
+vertical_alignment = 1
+
+[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 760.0
+offset_top = 14.0
+offset_right = 910.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = ExtResource("cur_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 114.0
+offset_bottom = 40.0
+text = "998.800"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 114.0
+offset_right = 150.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 924.0
+offset_top = 14.0
+offset_right = 1074.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = ExtResource("cur_jade")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="JadeValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 114.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="JadePlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 114.0
+offset_right = 150.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyStamina" type="TextureRect" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1088.0
+offset_top = 14.0
+offset_right = 1262.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = ExtResource("cur_stam")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StaminaValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyStamina"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 40.0
+offset_right = 142.0
+offset_bottom = 40.0
+text = "1918/1918"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StaminaPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyStamina"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 138.0
+offset_right = 174.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="LeftPanel" type="Control" parent="Stage"]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_right = 545.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="InfoBox" type="Panel" parent="Stage/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 68.0
+offset_right = 545.0
+offset_bottom = 653.0
+theme_override_styles/panel = SubResource("wuxia_panel_box")
+
+[node name="Header" type="Panel" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 30.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("wuxia_header_bar")
+
+[node name="Title" type="Label" parent="Stage/LeftPanel/InfoBox/Header"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 3.0
+offset_right = 200.0
+offset_bottom = 27.0
+text = "Thông tin nhân vật"
+label_settings = SubResource("sec_title")
+vertical_alignment = 1
+
+[node name="LabelTen" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 34.0
+offset_right = 140.0
+offset_bottom = 56.0
+text = "Tên:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="NameValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 140.0
+offset_top = 32.0
+offset_right = 380.0
+offset_bottom = 56.0
+text = "HoaHieu"
+label_settings = SubResource("val_name")
+vertical_alignment = 1
+
+[node name="LabelXungHieu" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 140.0
+offset_bottom = 78.0
+text = "Xưng hiệu:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="TitleValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 140.0
+offset_top = 56.0
+offset_right = 380.0
+offset_bottom = 78.0
+text = "—"
+label_settings = SubResource("val_stat")
+vertical_alignment = 1
+
+[node name="LabelPhucDuyen" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 78.0
+offset_right = 140.0
+offset_bottom = 100.0
+text = "Phúc duyên:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="FuyuanValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 140.0
+offset_top = 78.0
+offset_right = 240.0
+offset_bottom = 100.0
+text = "0"
+label_settings = SubResource("val_stat")
+vertical_alignment = 1
+
+[node name="LabelDanhVong" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 250.0
+offset_top = 78.0
+offset_right = 360.0
+offset_bottom = 100.0
+text = "Danh vọng:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="PrestigeValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 350.0
+offset_top = 78.0
+offset_right = 450.0
+offset_bottom = 100.0
+text = "0"
+label_settings = SubResource("val_stat")
+vertical_alignment = 1
+
+[node name="LabelDangCap" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 100.0
+offset_right = 140.0
+offset_bottom = 122.0
+text = "Đẳng cấp:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="LevelValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 140.0
+offset_top = 100.0
+offset_right = 240.0
+offset_bottom = 122.0
+text = "203"
+label_settings = SubResource("val_stat")
+vertical_alignment = 1
+
+[node name="LabelXepHang" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 250.0
+offset_top = 100.0
+offset_right = 360.0
+offset_bottom = 122.0
+text = "Xếp hạng:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="RankValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 350.0
+offset_top = 100.0
+offset_right = 450.0
+offset_bottom = 122.0
+text = "—"
+label_settings = SubResource("val_stat")
+vertical_alignment = 1
+
+[node name="MountCard" type="Panel" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 126.0
+offset_right = 146.0
+offset_bottom = 250.0
+theme_override_styles/panel = SubResource("wuxia_inner_card")
+
+[node name="PortraitBox" type="Control" parent="Stage/LeftPanel/InfoBox/MountCard"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+
+[node name="PortraitAvatar" type="Node2D" parent="Stage/LeftPanel/InfoBox/MountCard/PortraitBox"]
+unique_name_in_owner = true
+script = ExtResource("avatar_script")
+
+[node name="HpRow" type="Control" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 126.0
+offset_right = 516.0
+offset_bottom = 156.0
+
+[node name="HpIcon" type="TextureRect" parent="Stage/LeftPanel/InfoBox/HpRow"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 4.0
+offset_right = 22.0
+offset_bottom = 26.0
+texture = ExtResource("ico_heart")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HpLabel" type="Label" parent="Stage/LeftPanel/InfoBox/HpRow"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 2.0
+offset_right = 100.0
+offset_bottom = 26.0
+text = "Sinh lực:"
+label_settings = SubResource("lbl_cyan")
+
+[node name="HpBar" type="ProgressBar" parent="Stage/LeftPanel/InfoBox/HpRow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 102.0
+offset_top = 1.0
+offset_right = 356.0
+offset_bottom = 27.0
+theme_override_styles/background = SubResource("tube_bg")
+theme_override_styles/fill = SubResource("tube_fill_hp")
+value = 100.0
+show_percentage = false
+
+[node name="LifeValue" type="Label" parent="Stage/LeftPanel/InfoBox/HpRow/HpBar"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-ratio = 1.7768
+text = "859/859"
+label_settings = SubResource("bar_text")
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Board" type="Control" parent="Frame" unique_id=2010183848]
+[node name="MpRow" type="Control" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 158.0
+offset_right = 516.0
+offset_bottom = 188.0
+
+[node name="MpIcon" type="TextureRect" parent="Stage/LeftPanel/InfoBox/MpRow"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 4.0
+offset_right = 22.0
+offset_bottom = 26.0
+texture = ExtResource("ico_droplet")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MpLabel" type="Label" parent="Stage/LeftPanel/InfoBox/MpRow"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 2.0
+offset_right = 100.0
+offset_bottom = 26.0
+text = "Nội lực:"
+label_settings = SubResource("lbl_cyan")
+
+[node name="MpBar" type="ProgressBar" parent="Stage/LeftPanel/InfoBox/MpRow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 102.0
+offset_top = 1.0
+offset_right = 356.0
+offset_bottom = 27.0
+theme_override_styles/background = SubResource("tube_bg")
+theme_override_styles/fill = SubResource("tube_fill_mp")
+value = 100.0
+show_percentage = false
+
+[node name="ManaValue" type="Label" parent="Stage/LeftPanel/InfoBox/MpRow/MpBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "250/250"
+label_settings = SubResource("bar_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StaminaRow" type="Control" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 190.0
+offset_right = 516.0
+offset_bottom = 220.0
+
+[node name="StaminaIcon" type="TextureRect" parent="Stage/LeftPanel/InfoBox/StaminaRow"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 4.0
+offset_right = 22.0
+offset_bottom = 26.0
+texture = ExtResource("ico_leaf")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StaminaLabel" type="Label" parent="Stage/LeftPanel/InfoBox/StaminaRow"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 2.0
+offset_right = 100.0
+offset_bottom = 26.0
+text = "Thể lực:"
+label_settings = SubResource("lbl_cyan")
+
+[node name="StaminaBar" type="ProgressBar" parent="Stage/LeftPanel/InfoBox/StaminaRow"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 102.0
+offset_top = 1.0
+offset_right = 356.0
+offset_bottom = 27.0
+theme_override_styles/background = SubResource("tube_bg")
+theme_override_styles/fill = SubResource("tube_fill_stam")
+value = 100.0
+show_percentage = false
+
+[node name="StaminaValue" type="Label" parent="Stage/LeftPanel/InfoBox/StaminaRow/StaminaBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "1918/1918"
+label_settings = SubResource("bar_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ElementRow" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 224.0
+offset_right = 360.0
+offset_bottom = 248.0
+theme_override_constants/separation = 6
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ElementRow"]
+layout_mode = 2
+text = "Thuộc tính:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ElementValue" type="Label" parent="Stage/LeftPanel/InfoBox/ElementRow"]
 unique_name_in_owner = true
 layout_mode = 2
+text = "Hỏa"
+label_settings = SubResource("val_stat")
 
-[node name="Background" type="TextureRect" parent="Frame/Board" unique_id=2007379974]
+[node name="ExpHeader" type="Panel" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 256.0
+offset_right = 515.0
+offset_bottom = 280.0
+theme_override_styles/panel = SubResource("wuxia_sub_header")
+
+[node name="Title" type="Label" parent="Stage/LeftPanel/InfoBox/ExpHeader"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 1.0
+offset_right = 200.0
+offset_bottom = 23.0
+text = "Kinh nghiệm"
+label_settings = SubResource("sec_title")
+vertical_alignment = 1
+
+[node name="ExpLabel" type="Label" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 284.0
+offset_right = 110.0
+offset_bottom = 306.0
+text = "Kinh nghiệm:"
+label_settings = SubResource("lbl_stat")
+vertical_alignment = 1
+
+[node name="ExpBar" type="ProgressBar" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 112.0
+offset_top = 287.0
+offset_right = 416.0
+offset_bottom = 303.0
+theme_override_styles/background = SubResource("tube_bg")
+theme_override_styles/fill = SubResource("tube_fill_exp")
+value = 45.0
+show_percentage = false
+
+[node name="ExpValue" type="Label" parent="Stage/LeftPanel/InfoBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 420.0
+offset_top = 284.0
+offset_right = 512.0
+offset_bottom = 306.0
+text = "62/15.200"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="StatRow1" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 308.0
+offset_right = 516.0
+offset_bottom = 332.0
+theme_override_constants/separation = 8
+
+[node name="LblStr" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Sức mạnh:"
+label_settings = SubResource("lbl_stat")
+
+[node name="BaseStatValue0" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "30"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 1
+
+[node name="BaseStatButton0" type="Button" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("btn_add_stat")
+text = "+"
+
+[node name="Spacer" type="Control" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+custom_minimum_size = Vector2(68, 0)
+layout_mode = 2
+
+[node name="LblDex" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Thân pháp:"
+label_settings = SubResource("lbl_stat")
+
+[node name="BaseStatValue1" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "20"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 1
+
+[node name="BaseStatButton1" type="Button" parent="Stage/LeftPanel/InfoBox/StatRow1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("btn_add_stat")
+text = "+"
+
+[node name="StatRow2" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 332.0
+offset_right = 516.0
+offset_bottom = 356.0
+theme_override_constants/separation = 8
+
+[node name="LblVit" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Sinh khí:"
+label_settings = SubResource("lbl_stat")
+
+[node name="BaseStatValue2" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "30"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 1
+
+[node name="BaseStatButton2" type="Button" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("btn_add_stat")
+text = "+"
+
+[node name="Spacer" type="Control" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+custom_minimum_size = Vector2(68, 0)
+layout_mode = 2
+
+[node name="LblEne" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Nội công:"
+label_settings = SubResource("lbl_stat")
+
+[node name="BaseStatValue3" type="Label" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "20"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 1
+
+[node name="BaseStatButton3" type="Button" parent="Stage/LeftPanel/InfoBox/StatRow2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("btn_add_stat")
+text = "+"
+
+[node name="CombatHeader" type="Panel" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 362.0
+offset_right = 515.0
+offset_bottom = 386.0
+theme_override_styles/panel = SubResource("wuxia_sub_header")
+
+[node name="Title" type="Label" parent="Stage/LeftPanel/InfoBox/CombatHeader"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 1.0
+offset_right = 220.0
+offset_bottom = 23.0
+text = "Thuộc tính chiến đấu"
+label_settings = SubResource("sec_title")
+vertical_alignment = 1
+
+[node name="ColLeft" type="VBoxContainer" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 392.0
+offset_right = 240.0
+offset_bottom = 564.0
+theme_override_constants/separation = 2
+
+[node name="Row0" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row0"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Lực tay trái:"
+label_settings = SubResource("lbl_stat")
+
+[node name="DamageLeftValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "6/6"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row1" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Lực tay phải:"
+label_settings = SubResource("lbl_stat")
+
+[node name="DamageRightValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "6/6"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row2" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Chính xác:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ChinhXacValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "52/52"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row3" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Né tránh:"
+label_settings = SubResource("lbl_stat")
+
+[node name="NeTranhValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row3"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "-20"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row4" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row4"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Chạy:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ChayValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row4"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "10"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row5" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row5"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Công kích:"
+label_settings = SubResource("lbl_stat")
+
+[node name="CongKichValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row5"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "0/0"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row6" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColLeft"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row6"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Tiềm năng:"
+label_settings = SubResource("lbl_stat")
+
+[node name="TiemNangValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColLeft/Row6"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "1010"
+label_settings = SubResource("val_red")
+horizontal_alignment = 2
+
+[node name="ColRight" type="VBoxContainer" parent="Stage/LeftPanel/InfoBox"]
+layout_mode = 0
+offset_left = 270.0
+offset_top = 392.0
+offset_right = 512.0
+offset_bottom = 564.0
+theme_override_constants/separation = 2
+
+[node name="Row0" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row0"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Phòng thủ:"
+label_settings = SubResource("lbl_stat")
+
+[node name="DefenseValue" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row0"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "30%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row1" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Kháng hàn:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ResistValue1" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row1"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "-50%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row2" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Kháng hỏa:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ResistValue3" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "0%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row3" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Kháng lôi:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ResistValue2" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row3"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "0%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row4" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row4"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Kháng hóa:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ResistValue0" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row4"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "0%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="Row5" type="HBoxContainer" parent="Stage/LeftPanel/InfoBox/ColRight"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row5"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Kháng độc:"
+label_settings = SubResource("lbl_stat")
+
+[node name="ResistValue4" type="Label" parent="Stage/LeftPanel/InfoBox/ColRight/Row5"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+text = "0%"
+label_settings = SubResource("val_stat")
+horizontal_alignment = 2
+
+[node name="InventoryView" type="Control" parent="Stage/LeftPanel"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 0
+offset_right = 545.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="InvBox" type="Panel" parent="Stage/LeftPanel/InventoryView"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 68.0
+offset_right = 545.0
+offset_bottom = 653.0
+theme_override_styles/panel = SubResource("wuxia_panel_box")
+
+[node name="Header" type="Panel" parent="Stage/LeftPanel/InventoryView/InvBox"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 32.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("wuxia_header_bar")
+
+[node name="Title" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/Header"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 4.0
+offset_right = 200.0
+offset_bottom = 28.0
+text = "Hành trang"
+label_settings = SubResource("sec_title")
+vertical_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 36.0
+offset_right = 515.0
+offset_bottom = 530.0
+theme_override_constants/separation = 10
+
+[node name="GridFrame" type="PanelContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("wuxia_inner_box")
+
+[node name="InvScroll" type="ScrollContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body/GridFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_scroll_mode = 3
+
+[node name="InvGrid" type="GridContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body/GridFrame/InvScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 6
+
+[node name="Side" type="VBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BagTabs" type="VBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BagTab0" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_active")
+theme_override_styles/hover = SubResource("inv_tab_active")
+theme_override_styles/pressed = SubResource("inv_tab_active")
+text = "Túi 1"
+
+[node name="BagTab1" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_normal")
+theme_override_styles/hover = SubResource("inv_tab_hover")
+theme_override_styles/pressed = SubResource("inv_tab_hover")
+text = "Túi 2"
+
+[node name="BagTab2" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_normal")
+theme_override_styles/hover = SubResource("inv_tab_hover")
+theme_override_styles/pressed = SubResource("inv_tab_hover")
+text = "Túi 3"
+
+[node name="BagTab3" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_normal")
+theme_override_styles/hover = SubResource("inv_tab_hover")
+theme_override_styles/pressed = SubResource("inv_tab_hover")
+text = "Túi 4"
+
+[node name="BagTab4" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_normal")
+theme_override_styles/hover = SubResource("inv_tab_hover")
+theme_override_styles/pressed = SubResource("inv_tab_hover")
+text = "Túi 5"
+
+[node name="BagTab5" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/BagTabs"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_tab_normal")
+theme_override_styles/hover = SubResource("inv_tab_hover")
+theme_override_styles/pressed = SubResource("inv_tab_hover")
+text = "Túi 6"
+
+[node name="Spacer" type="Control" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InvActions" type="VBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="SortButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Sắp Xếp"
+
+[node name="ShopButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Hiệu Thuốc"
+
+[node name="CraftButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Chế Tạo"
+
+[node name="TestCreateButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 27)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Tạo Đồ (TEST)"
+
+[node name="TestAddButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 27)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "+10 Đồ (TEST)"
+
+[node name="TestMaskButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 27)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "+Mặt Nạ (TEST)"
+
+[node name="TestMantleButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 27)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "+Phi Phong (TEST)"
+
+
+[node name="BottomMoneyBar" type="HBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 536.0
+offset_right = 515.0
+offset_bottom = 574.0
+theme_override_constants/separation = 16
+
+[node name="FrameGold" type="NinePatchRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("khung_tai_nguyen")
+patch_margin_left = 10
+patch_margin_top = 10
+patch_margin_right = 10
+patch_margin_bottom = 10
+
+[node name="GoldIcon" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 6.0
+offset_top = -14.0
+offset_right = 34.0
+offset_bottom = 14.0
+grow_vertical = 2
+texture = ExtResource("ico_vang")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlusBtn" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -13.0
+offset_right = -8.0
+offset_bottom = 13.0
+grow_horizontal = 0
+grow_vertical = 2
+texture = ExtResource("btn_cong")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InvGoldLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 34.0
+offset_right = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0 Lượng"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FrameJade" type="NinePatchRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("khung_tai_nguyen")
+patch_margin_left = 10
+patch_margin_top = 10
+patch_margin_right = 10
+patch_margin_bottom = 10
+
+[node name="JadeIcon" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = -13.0
+offset_right = 32.0
+offset_bottom = 13.0
+grow_vertical = 2
+texture = ExtResource("ico_ngoc")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlusBtn" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -13.0
+offset_right = -8.0
+offset_bottom = 13.0
+grow_horizontal = 0
+grow_vertical = 2
+texture = ExtResource("btn_cong")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InvJadeLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 34.0
+offset_right = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CenterPanel" type="Control" parent="Stage"]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 565.0
+offset_right = 1040.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="EquipBox" type="Panel" parent="Stage/CenterPanel"]
+layout_mode = 0
+offset_top = 68.0
+offset_right = 475.0
+offset_bottom = 653.0
+theme_override_styles/panel = SubResource("wuxia_panel_box")
+
+[node name="Header" type="Panel" parent="Stage/CenterPanel/EquipBox"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 30.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("wuxia_header_bar")
+
+[node name="Title" type="Label" parent="Stage/CenterPanel/EquipBox/Header"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 3.0
+offset_right = 160.0
+offset_bottom = 27.0
+text = "Trang bị"
+label_settings = SubResource("sec_title")
+vertical_alignment = 1
+
+[node name="EquipBackground" type="TextureRect" parent="Stage/CenterPanel/EquipBox"]
+unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.6)
+layout_mode = 0
+offset_left = 57.0
+offset_top = 39.0
+offset_right = 459.0
+offset_bottom = 636.0
+scale = Vector2(0.896, 0.896)
+mouse_filter = 1
+texture = ExtResource("trang_bi_nam")
+expand_mode = 1
+
+[node name="SlotLeft0" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 20.0
+offset_right = 61.0
+offset_bottom = 110.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotLeft1" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 114.0
+offset_right = 61.0
+offset_bottom = 227.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotLeft2" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 233.0
+offset_right = 61.0
+offset_bottom = 294.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotLeft3" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 299.0
+offset_right = 61.0
+offset_bottom = 359.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotLeft4" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 365.0
+offset_right = 61.0
+offset_bottom = 479.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotLeft5" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 515.0
+offset_right = 61.0
+offset_bottom = 577.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft5"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight0" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 306.0
+offset_top = 51.0
+offset_right = 399.0
+offset_bottom = 89.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight1" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 292.0
+offset_top = 95.0
+offset_right = 401.0
+offset_bottom = 158.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight2" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 292.0
+offset_top = 165.0
+offset_right = 401.0
+offset_bottom = 386.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight3" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 292.0
+offset_top = 398.0
+offset_right = 401.0
+offset_bottom = 507.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight4" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 274.0
+offset_top = 516.0
+offset_right = 328.0
+offset_bottom = 577.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotRight5" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 335.0
+offset_top = 516.0
+offset_right = 400.0
+offset_bottom = 577.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight5"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotHead" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 17.0
+offset_right = 222.0
+offset_bottom = 135.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotHead"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotBody" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 147.0
+offset_right = 222.0
+offset_bottom = 318.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotBody"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotBelt" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 333.0
+offset_right = 222.0
+offset_bottom = 389.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotBelt"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="SlotHorse" type="Button" parent="Stage/CenterPanel/EquipBox/EquipBackground"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 403.0
+offset_right = 222.0
+offset_bottom = 574.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("slot_interactive_empty")
+theme_override_styles/hover = SubResource("slot_interactive_hover")
+theme_override_styles/pressed = SubResource("slot_interactive_pressed")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotHorse"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 3
+
+[node name="RightPanel" type="Control" parent="Stage"]
+anchors_preset = 0
+offset_left = 1060.0
+offset_top = 68.0
+offset_right = 1262.0
+offset_bottom = 662.0
+mouse_filter = 2
+
+[node name="NavList" type="VBoxContainer" parent="Stage/RightPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("2_bg")
-expand_mode = 1
+theme_override_constants/separation = 7
 
-[node name="FrameCurrencyGold" type="TextureRect" parent="Frame/Board" unique_id=823452246]
+[node name="CharacterButton" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.565
-anchor_top = 0.03
-anchor_right = 0.685
-anchor_bottom = 0.09
-mouse_filter = 2
-texture = ExtResource("3_gold")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="GoldValueLabel" type="Label" parent="Frame/Board" unique_id=1071579858]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.6034
-anchor_top = 0.0408
-anchor_right = 0.667
-anchor_bottom = 0.0792
-offset_left = -42.279114
-offset_top = 0.62399864
-offset_right = -42.279114
-offset_bottom = 0.62399673
-text = "0"
-
-[node name="GoldPlusButton" type="Button" parent="Frame/Board" unique_id=1061167425]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.6658
-anchor_top = 0.03
-anchor_right = 0.685
-anchor_bottom = 0.09
-offset_left = -6.1071777
-offset_top = 8.4
-offset_right = -4.6696777
-offset_bottom = -6.0
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="FrameCurrencyJade" type="TextureRect" parent="Frame/Board" unique_id=191959593]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.69
-anchor_top = 0.03
-anchor_right = 0.81
-anchor_bottom = 0.09
-mouse_filter = 2
-texture = ExtResource("4_jade")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="JadeValueLabel" type="Label" parent="Frame/Board" unique_id=224529205]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.7284
-anchor_top = 0.0408
-anchor_right = 0.792
-anchor_bottom = 0.0792
-offset_left = -42.1911
-offset_top = 1.6239986
-offset_right = -42.1911
-offset_bottom = 1.6239967
-text = "0"
-
-[node name="JadePlusButton" type="Button" parent="Frame/Board" unique_id=905926100]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.7908
-anchor_top = 0.03
-anchor_right = 0.81
-anchor_bottom = 0.09
-offset_left = -7.019165
-offset_top = 10.4
-offset_right = -7.019165
-offset_bottom = -8.800003
-focus_mode = 0
-
-[node name="FrameCurrencyStamina" type="TextureRect" parent="Frame/Board" unique_id=1500962448]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.815
-anchor_top = 0.03
-anchor_right = 0.935
-anchor_bottom = 0.09
-mouse_filter = 2
-texture = ExtResource("5_stamina")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="StaminaValueLabel" type="Label" parent="Frame/Board" unique_id=2006809650]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8534
-anchor_top = 0.0408
-anchor_right = 0.917
-anchor_bottom = 0.0792
-offset_left = -4.1030273
-offset_top = 0.62399864
-offset_right = -4.1030273
-offset_bottom = 0.62399673
-text = "100/100"
-
-[node name="StaminaPlusButton" type="Button" parent="Frame/Board" unique_id=1707450252]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.9158
-anchor_top = 0.03
-anchor_right = 0.935
-anchor_bottom = 0.09
-focus_mode = 0
-
-[node name="FrameBack" type="TextureRect" parent="Frame/Board" unique_id=1986706956]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.015
-anchor_top = 0.9
-anchor_right = 0.115
-anchor_bottom = 1.0
-mouse_filter = 2
-texture = ExtResource("6_back")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="BackButton" type="Button" parent="Frame/Board" unique_id=397424537]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.015
-anchor_top = 0.9
-anchor_right = 0.115
-anchor_bottom = 1.0
-offset_left = 4.4585724
-offset_top = 11.0
-offset_right = -7.4710236
-offset_bottom = -13.0
-focus_mode = 0
-
-[node name="BackLabel" type="Label" parent="Frame/Board" unique_id=632366028]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.043
-anchor_top = 0.9
-anchor_right = 0.11
-anchor_bottom = 1.0
-offset_left = 3.6382866
-offset_top = 20.0
-offset_right = 3.6382904
-offset_bottom = -18.0
-text = "Quay Lại"
-
-[node name="FrameStage" type="TextureRect" parent="Frame/Board" unique_id=430589355]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.13
-anchor_top = 0.89
-anchor_right = 0.325
-anchor_bottom = 1.0
-mouse_filter = 2
-texture = ExtResource("7_stage")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="StageButton" type="Button" parent="Frame/Board" unique_id=1965597279]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.2119
-anchor_top = 0.8955
-anchor_right = 0.31525
-anchor_bottom = 0.9945
-offset_left = -89.434784
-offset_top = 8.23999
-offset_bottom = -6.039978
-focus_mode = 0
-
-[node name="StageNameLabel" type="Label" parent="Frame/Board" unique_id=2119419621]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.2158
-anchor_top = 0.8988
-anchor_right = 0.3133
-anchor_bottom = 0.9395
-offset_left = -1.4240417
-offset_top = 14.864014
-offset_right = -1.4240417
-offset_bottom = 14.864014
-text = "1. Ải 1"
-
-[node name="StageProgressLabel" type="Label" parent="Frame/Board" unique_id=1469161797]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.2158
-anchor_top = 0.9505
-anchor_right = 0.3133
-anchor_bottom = 0.9912
-offset_left = -0.42404175
-offset_top = -4.3599854
-offset_right = -0.42404175
-offset_bottom = -4.3599854
-text = "Tiến độ: 0/1"
-
-[node name="FrameChallenge" type="TextureRect" parent="Frame/Board" unique_id=698512668]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.5
-anchor_top = 0.87
-anchor_right = 0.9
-anchor_bottom = 1.0
-offset_left = -121.99994
-offset_top = -8.400024
-offset_right = -162.71832
-offset_bottom = -8.400024
-mouse_filter = 2
-texture = ExtResource("8_challenge")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="ChallengeButton" type="Button" parent="Frame/Board" unique_id=250202627]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.5
-anchor_top = 0.87
-anchor_right = 0.9
-anchor_bottom = 1.0
-offset_left = 115.00006
-offset_top = 2.5999756
-offset_right = -194.71832
-offset_bottom = -7.0
-focus_mode = 0
-
-[node name="ChallengeLabel" type="Label" parent="Frame/Board" unique_id=482579506]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.524
-anchor_top = 0.87
-anchor_right = 0.74
-anchor_bottom = 1.0
-offset_left = 125.297
-offset_top = 34.599976
-offset_right = -29.030945
-offset_bottom = -10.0
-theme_override_font_sizes/font_size = 32
-text = "Vượt Ải"
-
-[node name="PlayButton" type="Button" parent="Frame/Board" unique_id=482579508]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.74
-anchor_top = 0.87
-anchor_right = 0.9
-anchor_bottom = 1.0
-offset_left = -392.03094
-offset_top = -1.4000244
-offset_right = -391.71832
-offset_bottom = -3.0
-focus_mode = 0
-
-[node name="PlayLabel" type="Label" parent="Frame/Board" unique_id=482579507]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.74
-anchor_top = 0.87
-anchor_right = 0.9
-anchor_bottom = 1.0
-offset_left = -336.03094
-offset_top = -1.4000244
-offset_right = -373.71832
-offset_bottom = -32.0
-theme_override_font_sizes/font_size = 32
-text = "PK"
-horizontal_alignment = 1
-
-[node name="FrameCharacter" type="TextureRect" parent="Frame/Board" unique_id=1976506765]
-unique_name_in_owner = true
-z_index = 1
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.83
-anchor_top = 0.04
-anchor_right = 0.975
-anchor_bottom = 0.25
-offset_left = -9.16748
-offset_top = 18.2
-offset_right = 2.3345947
-offset_bottom = 19.200012
-mouse_filter = 2
-texture = ExtResource("9_character")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="CharacterButton" type="Button" parent="Frame/Board" unique_id=1976506766]
-unique_name_in_owner = true
-z_index = 1
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.83
-anchor_top = 0.04
-anchor_right = 0.975
-anchor_bottom = 0.25
-offset_left = -11.16748
-offset_top = 59.2
-offset_right = 1.3345947
-offset_bottom = -29.0
-focus_mode = 0
-
-[node name="CharacterLabel" type="Label" parent="Frame/Board" unique_id=1769091080]
-unique_name_in_owner = true
-z_index = 1
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.888
-anchor_top = 0.061
-anchor_right = 0.9489
-anchor_bottom = 0.2374
-offset_left = -3.3666992
-offset_top = 69.08
-offset_right = -3.3666992
-offset_bottom = -33.927994
-theme_override_font_sizes/font_size = 20
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("nav_btn_active")
+theme_override_styles/hover = SubResource("nav_btn_active")
+theme_override_styles/pressed = SubResource("nav_btn_active")
 text = "Nhân Vật"
+icon = ExtResource("ico_nv")
+alignment = 0
+expand_icon = true
 
-[node name="FrameHerbGarden" type="TextureRect" parent="Frame/Board" unique_id=362267359]
-unique_name_in_owner = true
+[node name="Badge" type="Panel" parent="Stage/RightPanel/NavList/CharacterButton"]
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.855
-anchor_top = 0.9
-anchor_right = 0.985
-anchor_bottom = 0.99
-offset_left = -2.1499023
-offset_top = 11.0
-offset_right = -2.1499023
-offset_bottom = 11.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -22.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 22.0
+grow_horizontal = 0
 mouse_filter = 2
-texture = ExtResource("10_herb")
-expand_mode = 1
-stretch_mode = 6
+theme_override_styles/panel = SubResource("badge_red")
 
-[node name="HerbButton" type="Button" parent="Frame/Board" unique_id=2030542660]
-unique_name_in_owner = true
+[node name="BadgeLbl" type="Label" parent="Stage/RightPanel/NavList/CharacterButton/Badge"]
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.855
-anchor_top = 0.9
-anchor_right = 0.985
-anchor_bottom = 0.989
-offset_left = -0.15002441
-offset_top = 18.0
-offset_right = -0.4584961
-offset_bottom = 7.919983
-focus_mode = 0
-
-[node name="HerbLevelLabel" type="Label" parent="Frame/Board" unique_id=1429652028]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.9096
-anchor_top = 0.927
-anchor_right = 0.9772
-anchor_bottom = 0.963
-offset_left = 12.000488
-offset_top = 11.559998
-offset_right = 12.000488
-offset_bottom = 11.559998
-text = "Lv. 1"
-
-[node name="FrameNavMenu" type="TextureRect" parent="Frame/Board" unique_id=814942801]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82
-anchor_top = 0.15
-anchor_right = 0.985
-anchor_bottom = 0.9
-offset_left = -15.374634
-offset_top = -21.000008
-offset_right = -20.458496
-offset_bottom = 18.0
-mouse_filter = 2
-texture = ExtResource("11_navmenu")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="NavButton0" type="Button" parent="Frame/Board" unique_id=1649555407]
-unique_name_in_owner = true
-z_index = 1
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.155625
-anchor_right = 0.97675
-anchor_bottom = 0.24375
-offset_left = -16.928833
-offset_top = 39.949997
-offset_right = -26.904297
-offset_bottom = 36.5
-focus_mode = 0
-
-[node name="NavLabel0" type="Label" parent="Frame/Board" unique_id=1572621214]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.21375
-anchor_right = 0.9817
-anchor_bottom = 0.24
-offset_left = 4.4038086
-offset_top = 15.099991
-offset_right = 4.4038086
-offset_bottom = 19.199997
-text = "Nhiệm Vụ"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "1"
+label_settings = SubResource("bar_text")
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="NavButton1" type="Button" parent="Frame/Board" unique_id=1737235160]
+[node name="NavButton0" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.249375
-anchor_right = 0.97675
-anchor_bottom = 0.3375
-offset_left = -8.928833
-offset_top = 30.449997
-offset_right = -26.904297
-offset_bottom = 33.0
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
+text = "Sự Kiện"
+icon = ExtResource("ico_nv_quest")
+alignment = 0
+expand_icon = true
 
-[node name="NavLabel1" type="Label" parent="Frame/Board" unique_id=861622562]
+[node name="NavButton1" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.3075
-anchor_right = 0.9817
-anchor_bottom = 0.33375
-offset_left = 0.4038086
-offset_top = 6.599991
-offset_right = 0.4038086
-offset_bottom = 10.699997
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Trang Bị"
-horizontal_alignment = 1
+icon = ExtResource("ico_tb")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton2" type="Button" parent="Frame/Board" unique_id=992377686]
+[node name="NavButton2" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.343125
-anchor_right = 0.97675
-anchor_bottom = 0.43125
-offset_left = -7.928833
-offset_top = 28.950012
-offset_right = -26.904297
-offset_bottom = 27.5
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel2" type="Label" parent="Frame/Board" unique_id=2034174372]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.40125
-anchor_right = 0.9817
-anchor_bottom = 0.4275
-offset_left = 0.4038086
-offset_top = 4.100006
-offset_right = 0.4038086
-offset_bottom = 8.199982
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Kỹ Năng"
-horizontal_alignment = 1
+icon = ExtResource("ico_kn")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton3" type="Button" parent="Frame/Board" unique_id=1680943716]
+[node name="NavButton3" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.436875
-anchor_right = 0.97675
-anchor_bottom = 0.525
-offset_left = -7.928833
-offset_top = 23.450012
-offset_right = -26.904297
-offset_bottom = 31.00003
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel3" type="Label" parent="Frame/Board" unique_id=1110594053]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.495
-anchor_right = 0.9817
-anchor_bottom = 0.52125
-offset_left = 56.40381
-offset_top = 2.600006
-offset_right = -39.0
-offset_bottom = 6.6999817
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Bang Hội"
-horizontal_alignment = 1
+icon = ExtResource("ico_bh")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton4" type="Button" parent="Frame/Board" unique_id=1953394292]
+[node name="NavButton4" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.568
-anchor_right = 0.975
-anchor_bottom = 0.656
-offset_left = -8.928833
-offset_top = -1.960022
-offset_right = -23.665527
-offset_bottom = 2.6799927
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel4" type="Label" parent="Frame/Board" unique_id=403076437]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.58875
-anchor_right = 0.9817
-anchor_bottom = 0.615
-offset_left = 56.40381
-offset_top = 8.100006
-offset_right = -39.0
-offset_bottom = 12.199982
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Giao Dịch"
-horizontal_alignment = 1
+icon = ExtResource("ico_gd")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton5" type="Button" parent="Frame/Board" unique_id=1349647237]
+[node name="NavButton5" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.624375
-anchor_right = 0.97675
-anchor_bottom = 0.7125
-offset_left = -8.928833
-offset_top = 24.450012
-offset_right = -24.904297
-offset_bottom = 27.450012
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel5" type="Label" parent="Frame/Board" unique_id=1445533291]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.6825
-anchor_right = 0.9817
-anchor_bottom = 0.70875
-offset_left = 56.40381
-offset_top = 4.600006
-offset_right = -39.0
-offset_bottom = 8.699982
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Chế Tạo"
-horizontal_alignment = 1
+icon = ExtResource("ico_ct")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton6" type="Button" parent="Frame/Board" unique_id=324955784]
+[node name="NavButton6" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.718125
-anchor_right = 0.97675
-anchor_bottom = 0.80625
-offset_left = -9.928833
-offset_top = 22.950012
-offset_right = -23.904297
-offset_bottom = 22.950012
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel6" type="Label" parent="Frame/Board" unique_id=945624169]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.77625
-anchor_right = 0.9817
-anchor_bottom = 0.8025
-offset_left = 49.40381
-offset_top = -1.9000244
-offset_right = -74.832886
-offset_bottom = 2.2000122
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "BXH"
-horizontal_alignment = 1
+icon = ExtResource("ico_bxh")
+alignment = 0
+expand_icon = true
 
-[node name="NavButton7" type="Button" parent="Frame/Board" unique_id=684549168]
+[node name="NavButton7" type="Button" parent="Stage/RightPanel/NavList"]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.82825
-anchor_top = 0.811875
-anchor_right = 0.97675
-anchor_bottom = 0.9
-offset_left = -9.928833
-offset_top = 17.450012
-offset_right = -24.904297
-offset_bottom = 16.450012
+custom_minimum_size = Vector2(202, 58)
+layout_mode = 2
 focus_mode = 0
-
-[node name="NavLabel7" type="Label" parent="Frame/Board" unique_id=1653444665]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.8233
-anchor_top = 0.87
-anchor_right = 0.9817
-anchor_bottom = 0.89625
-offset_left = 18.403809
-offset_top = -4.4000244
-offset_right = -23.236694
-offset_bottom = -0.2999878
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.08, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("nav_btn_normal")
+theme_override_styles/hover = SubResource("nav_btn_hover")
+theme_override_styles/pressed = SubResource("nav_btn_hover")
 text = "Cài Đặt"
-horizontal_alignment = 1
+icon = ExtResource("ico_cd")
+alignment = 0
+expand_icon = true
 
-[node name="ToastLabel" type="Label" parent="Frame/Board" unique_id=1329863538]
+[node name="BottomBar" type="Control" parent="Stage"]
+anchors_preset = 0
+offset_top = 665.0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="DebugCheatPanel" parent="Stage/BottomBar" instance=ExtResource("debug_cheat")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 6.0
+offset_right = 108.0
+offset_bottom = 48.0
+
+[node name="ChatButton" type="Button" parent="Stage/BottomBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 116.0
+offset_top = 6.0
+offset_right = 160.0
+offset_bottom = 48.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Tán gẫu"
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
+icon = ExtResource("ico_chat_msg")
+icon_alignment = 1
+expand_icon = true
+
+[node name="SocialButton" type="Button" parent="Stage/BottomBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 168.0
+offset_top = 6.0
+offset_right = 212.0
+offset_bottom = 48.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Cộng đồng Telegram"
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
+icon = ExtResource("ico_social")
+icon_alignment = 1
+expand_icon = true
+
+[node name="LevelTag" type="TextureRect" parent="Stage/BottomBar"]
+layout_mode = 0
+offset_left = 1135.0
+offset_top = 8.0
+offset_right = 1262.0
+offset_bottom = 46.0
+mouse_filter = 2
+texture = ExtResource("btn_lv_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ToastLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.335
-anchor_top = 0.765
-anchor_right = 0.665
-anchor_bottom = 0.81
-
-[node name="CharacterStatusWrap" type="Control" parent="Frame/Board" unique_id=1136251995]
-unique_name_in_owner = true
-layout_mode = 1
-anchor_left = 0.15
-anchor_top = 0.075
-anchor_right = 0.83
-anchor_bottom = 0.9
-offset_left = 22.753616
-offset_top = 19.999996
-offset_right = 22.75354
-offset_bottom = -24.0
-mouse_filter = 1
-
+layout_mode = 0
+offset_left = 400.0
+offset_top = 550.0
+offset_right = 880.0
+offset_bottom = 590.0
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1

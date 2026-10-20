@@ -87,6 +87,8 @@ var range_damage_return: int = 0
 var steal_life_p: int = 0             ## % damage vật lý gây ra hút thành máu
 var attack_speed: int = 0             ## attackspeed_v / castspeed_v — gốc giảm số frame ra đòn (chưa áp)
 var cast_speed: int = 0
+var exp_enhance_p: int = 0            ## expenhance_p — % tăng kinh nghiệm đánh quái (Tiên Thảo Lộ)
+var lucky_v: int = 0                  ## lucky_v — điểm may mắn tăng tỉ lệ & phẩm chất rớt đồ (Thiên Sơn Bảo Lộ)
 
 ## Giá trị TRƯỚC khi cộng thuộc tính — cho các thuộc tính % (lifemax_p = % của máu gốc, đúng
 ## m_LifeMax gốc; attackrating_p = % của m_AttackRating gốc).

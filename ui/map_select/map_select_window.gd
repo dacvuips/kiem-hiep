@@ -13,7 +13,7 @@ class_name MapSelectWindow
 ## ở khung trên màn chơi — FieldClient); hàng "ID phòng" dưới cùng: nhập ID của người khác -> tra phòng (GET /v1/field) -> vào đúng map
 ## đó cùng họ. Chưa đăng nhập: chơi một mình như cũ (offline).
 
-const TABS := ["Thường", "Ải", "Địa Ngục"]
+const TABS := ["Thường", "Địa Ngục", "Ải", "Boss"]
 const THUMB_SIZE := Vector2(168, 104)
 const LIST_SIZE := Vector2(620, 440)
 
@@ -58,7 +58,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in TABS.size():
 		var b := GameUi.button(TABS[i], GameUi.TAB)
-		b.custom_minimum_size = Vector2(140, 38)
+		b.custom_minimum_size = Vector2(130, 38)
 		b.pressed.connect(_select_tab.bind(i))
 		tabs.add_child(b)
 		_tab_buttons.append(b)
@@ -78,18 +78,21 @@ func _select_tab(i: int) -> void:
 	for c in _content.get_children():
 		c.queue_free()
 	_tier_buttons.clear()
-	_join_row.visible = i != 1   ## phòng train chung: tab Thường + Địa Ngục
+	_join_row.visible = (i in [0, 1])   ## phòng train chung: tab Thường + Địa Ngục
 	if i == 0:
 		_build_normal()
 		return
 	if i == 1:
+		_build_hell()
+		return
+	if i == 2:
 		_build_ai()
 		return
-	_build_hell()
+	_build_boss()
 
 # ---------------------------------------------------------------- tab Ải (Thách Thức Thời Gian)
 
-## Tab Ải: danh sách cuộn các chế độ (Thách Thức Thời Gian, Chiến Trường Tống Kim).
+## Tab Ải: danh sách cuộn các chế độ (Vượt Ải Giang Hồ, Thách Thức Thời Gian, Phong Lăng Độ, Chiến Trường Tống Kim).
 func _build_ai() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -100,8 +103,88 @@ func _build_ai() -> void:
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	_build_stages_challenge(list)
 	_build_time_challenge(list)
+	_build_phong_lang_do(list)
 	_build_battle(list)
+
+## Thẻ Vượt Ải Giang Hồ (10 Bàn chơi kinh điển có ảnh thumbnail xem trước đầy đủ)
+func _build_stages_challenge(parent: Control) -> void:
+	var card := GameUi.panel(GameUi.PANEL)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(card)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	card.add_child(box)
+
+	box.add_child(SocialUi.label("Thập Đại Vượt Ải — Khiêu Chiến Sơn Môn", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label("Hành trình vượt qua 10 ải giang hồ liên hoàn. Mỗi ải có quái trấn giữ và boss thủ quan, vượt ải để mở khóa các bàn chơi tiếp theo.", SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(desc)
+	box.add_child(SocialUi.divider())
+
+	var middle := HBoxContainer.new()
+	middle.add_theme_constant_override("separation", 16)
+	box.add_child(middle)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	middle.add_child(info)
+
+	var current_stage_idx: int = clampi(_profile.stages_cleared if _profile else 0, 0, 9)
+	var map_dir_current := "res://world/maps/map_20"
+	var preview_stage_name := "Màn %d (Đang mở khóa)" % (current_stage_idx + 1)
+	var hub := get_tree().current_scene
+	var stages_arr: Array[StageData] = hub.stages if hub and "stages" in hub else []
+	if current_stage_idx < stages_arr.size():
+		var st: StageData = stages_arr[current_stage_idx]
+		preview_stage_name = st.stage_name
+		if st.vltk_map_id > 0:
+			map_dir_current = "res://world/maps/map_%d" % st.vltk_map_id
+
+	var map_frame := _minimap_frame({"name": preview_stage_name, "dir": map_dir_current})
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
+	info.add_child(SocialUi.label("Bàn hiện tại: %s" % preview_stage_name, SocialUi.GOLD, 15))
+	var cleared_cnt: int = _profile.stages_cleared if _profile else 0
+	info.add_child(SocialUi.label("Tiến độ: Đã vượt %d/10 bàn" % cleared_cnt, SocialUi.LABEL_BLUE, 14))
+	info.add_child(SocialUi.label("Phần thưởng: Điểm kinh nghiệm, Trang bị, Huyền Tinh và mở khóa các bàn chơi mới.", SocialUi.TEXT, 13))
+
+	box.add_child(SocialUi.divider())
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+
+	var select_btn := SocialUi.stone_button("Chọn Bàn (Danh Sách Có Ảnh)", Vector2(230, 44))
+	select_btn.pressed.connect(func() -> void:
+		var parent_node := get_tree().current_scene
+		var hub_stages: Array[StageData] = parent_node.stages if parent_node and "stages" in parent_node else []
+		var play_cb: Callable = _on_play
+		close_requested.emit()
+		StageSelectScreen.open(parent_node, _profile, hub_stages, func(selected_stage: StageData) -> void:
+			var entry := {"stage": selected_stage, "name": selected_stage.stage_name}
+			if play_cb.is_valid():
+				play_cb.call(entry)
+			elif parent_node != null and parent_node.has_method("_enter_field_map"):
+				parent_node._enter_field_map(entry)
+		, func() -> void: pass)
+	)
+	row.add_child(select_btn)
+
+	var next_btn := SocialUi.stone_button("Vào Bàn %d" % (current_stage_idx + 1), Vector2(170, 44))
+	next_btn.pressed.connect(func() -> void:
+		var parent_node := get_tree().current_scene
+		var hub_stages: Array[StageData] = parent_node.stages if parent_node and "stages" in parent_node else []
+		if current_stage_idx < hub_stages.size():
+			var selected_stage: StageData = hub_stages[current_stage_idx]
+			_play({"stage": selected_stage, "name": selected_stage.stage_name})
+	)
+	row.add_child(next_btn)
 
 func _build_time_challenge(parent: Control) -> void:
 	var r := TimeChallenge.rules()
@@ -164,16 +247,106 @@ func _build_time_challenge(parent: Control) -> void:
 func _start_time_challenge() -> void:
 	var reason := TimeChallenge.check_entry(_profile)
 	if reason != "":
-		_select_tab(1)
+		_select_tab(2)
 		return
 	SocialWindow.confirm(self, "Thách Thức Thời Gian",
 			"Tham gia khiêu chiến? Tốn %s lượng, 1 %s và 1 lượt hôm nay." % [
 				TimeChallenge._money(int(TimeChallenge.rules().get("cost", 150000))), TimeChallenge.ENTRY_ITEM_NAME],
 			func() -> void:
 				if not TimeChallenge.pay_entry(_profile):
-					_select_tab(1)
+					_select_tab(2)
 					return
 				_play(TimeChallenge.map_entry()))
+
+# ---------------------------------------------------------------- tab Ải (Ải Thuyền Phong Lăng Độ)
+
+func _build_phong_lang_do(parent: Control) -> void:
+	var card := GameUi.panel(GameUi.PANEL)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(card)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	card.add_child(box)
+
+	box.add_child(SocialUi.label("Phong Lăng Độ — Bến Thuyền Vượt Sông", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var quote := SocialUi.label("Thuyền Phu: \"Sóng to gió lớn, Thủy Tặc Hoàng Hà cực kỳ hung hãn. Đại hiệp đã chuẩn bị kỹ càng để vượt sông chưa?\"",
+			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(quote)
+	box.add_child(SocialUi.divider())
+
+	var middle := HBoxContainer.new()
+	middle.add_theme_constant_override("separation", 16)
+	box.add_child(middle)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	middle.add_child(info)
+
+	var map_frame := _minimap_frame(PhongLangDoChallenge.map_entry())
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
+	var lines := [
+		"Vượt sông Hoàng Hà trong 10 phút: tiêu diệt 3 đợt Thủy Tặc & Đại Boss Hoàng Kim Yên Hiểu Trái.",
+		"Điều kiện: Cấp từ %d · Phí: 1 %s (hoặc %s lượng) · Mỗi ngày %d lượt." % [
+			PhongLangDoChallenge.MIN_LEVEL,
+			PhongLangDoChallenge.ENTRY_ITEM_NAME,
+			PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE),
+			PhongLangDoChallenge.RUNS_PER_DAY
+		],
+		"Phần thưởng: Kinh nghiệm dồi dào, Phúc duyên, Danh vọng, Thủy Tinh, Huyền Tinh và Trang bị Hoàng Kim.",
+	]
+	for t in lines:
+		var l := SocialUi.label(t, SocialUi.TEXT, 14)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.add_child(l)
+
+	var item_cnt := PhongLangDoChallenge.entry_item_count(_profile)
+	var fee_str := "1 Lệnh bài" if item_cnt > 0 else "%s lượng" % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
+	var best := PhongLangDoChallenge.best_time(_profile)
+	info.add_child(SocialUi.label("Lệnh bài hiện có: %d   ·   Hôm nay đã đi: %d/%d   ·   Kỷ lục: %s" % [
+			item_cnt,
+			PhongLangDoChallenge.runs_today(_profile),
+			PhongLangDoChallenge.RUNS_PER_DAY,
+			PhongLangDoChallenge.format_time(best) if best > 0 else "chưa có"
+		],
+		SocialUi.LABEL_BLUE, 14))
+
+	var reason := PhongLangDoChallenge.check_entry(_profile)
+	var status_text := reason if reason != "" else "Đủ điều kiện lên thuyền (thủ tục: nộp %s)." % fee_str
+	var status := SocialUi.label(status_text, SocialUi.WARN if reason != "" else SocialUi.LABEL_BLUE, 14)
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(status)
+
+	box.add_child(SocialUi.divider())
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+
+	var board_btn := SocialUi.stone_button("Lên thuyền xuất bến", Vector2(220, 44))
+	board_btn.disabled = reason != ""
+	board_btn.pressed.connect(_start_phong_lang_do)
+	row.add_child(board_btn)
+
+func _start_phong_lang_do() -> void:
+	var reason := PhongLangDoChallenge.check_entry(_profile)
+	if reason != "":
+		_select_tab(2)
+		return
+	var item_cnt := PhongLangDoChallenge.entry_item_count(_profile)
+	var cost_desc := "1 %s" % PhongLangDoChallenge.ENTRY_ITEM_NAME if item_cnt > 0 else "%s lượng vé thuyền" % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
+	SocialWindow.confirm(self, "Phong Lăng Độ",
+			"Lên thuyền vượt sông Hoàng Hà? Thủ tục sẽ thu %s và tính 1 lượt hôm nay." % cost_desc,
+			func() -> void:
+				if not PhongLangDoChallenge.pay_entry(_profile):
+					_select_tab(2)
+					return
+				_play(PhongLangDoChallenge.map_entry()))
 
 # ---------------------------------------------------------------- tab Ải (Chiến Trường Tống Kim)
 
@@ -224,9 +397,19 @@ static func _minimap_frame(entry: Dictionary) -> Control:
 	thumb.custom_minimum_size = THUMB_SIZE
 	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	thumb.texture = _crop_dark(MapCatalog.minimap_texture(entry))
+	var tex := _crop_dark(MapCatalog.minimap_texture(entry))
+	thumb.texture = tex
 	var frame := GameUi.panel(GameUi.PANEL)
 	frame.add_child(thumb)
+	if tex == null:
+		var empty_lbl := Label.new()
+		empty_lbl.text = "🗺 %s" % str(entry.get("name", "Bản Đồ"))
+		empty_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		empty_lbl.add_theme_color_override("font_color", SocialUi.MUTED)
+		empty_lbl.add_theme_font_size_override("font_size", 13)
+		frame.add_child(empty_lbl)
 	return frame
 
 ## Ảnh mini map xuất từ tool có phần nền đen ngoài vùng map (map nhỏ chỉ chiếm 1 góc ảnh) — cắt theo khung bao vùng có
@@ -269,7 +452,7 @@ func _cooldown_left() -> float:
 
 ## Mỗi giây: cập nhật đếm ngược nút; mỗi BATTLE_POLL giây hỏi lại trạng thái trận.
 func _battle_tick() -> void:
-	if _tab != 1 or _battle_status == null or not is_instance_valid(_battle_status):
+	if _tab != 2 or _battle_status == null or not is_instance_valid(_battle_status):
 		return
 	_battle_poll_acc += 1.0
 	if _battle_poll_acc >= BATTLE_POLL:
@@ -719,3 +902,159 @@ func _play(m: Dictionary) -> void:
 	close_requested.emit()
 	if _on_play.is_valid():
 		_on_play.call(m)
+
+# ---------------------------------------------------------------- tab Boss (Đại Hoàng Kim & Tiểu Hoàng Kim)
+
+const BOSS_LIST := [
+	# --- Thập Đại Boss Hoàng Kim Môn Phái ---
+	{"name": "Huyền Giác Đại Sư", "id": 740, "res": "boss003", "series": "Kim", "series_idx": 0, "sect": "Thiếu Lâm", "level": 95, "map_id": 320, "map_name": "Chân Núi Trường Bạch", "type": "gold"},
+	{"name": "Cổ Bách", "id": 566, "res": "boss018", "series": "Kim", "series_idx": 0, "sect": "Thiên Vương", "level": 95, "map_id": 123, "map_name": "Lão Hổ Động", "type": "gold"},
+	{"name": "Đường Bất Nhiễm", "id": 741, "res": "boss019", "series": "Mộc", "series_idx": 1, "sect": "Đường Môn", "level": 95, "map_id": 319, "map_name": "Lâm Du Quan", "type": "gold"},
+	{"name": "Bạch Doanh Doanh", "id": 742, "res": "boss007", "series": "Mộc", "series_idx": 1, "sect": "Đường Môn", "level": 95, "map_id": 224, "map_name": "Sa Mạc Địa Biểu", "type": "gold"},
+	{"name": "Lam Y Y", "id": 582, "res": "boss008", "series": "Mộc", "series_idx": 1, "sect": "Ngũ Độc", "level": 95, "map_id": 75, "map_name": "Xi Vưu Động", "type": "gold"},
+	{"name": "Thanh Tiếu Sư Thái", "id": 743, "res": "boss004", "series": "Thủy", "series_idx": 2, "sect": "Nga Mi", "level": 95, "map_id": 321, "map_name": "Trường Bạch Sơn Nam", "type": "gold"},
+	{"name": "Hà Linh Phiêu", "id": 568, "res": "boss002", "series": "Thủy", "series_idx": 2, "sect": "Nga Mi", "level": 95, "map_id": 322, "map_name": "Trường Bạch Sơn Bắc", "type": "gold"},
+	{"name": "Chung Linh Tú", "id": 567, "res": "boss005", "series": "Thủy", "series_idx": 2, "sect": "Thúy Yên", "level": 95, "map_id": 93, "map_name": "Tiến Cúc Động", "type": "gold"},
+	{"name": "Yên Hiểu Trái", "id": 744, "res": "boss023", "series": "Thủy", "series_idx": 2, "sect": "Thúy Yên", "level": 95, "map_id": 337, "map_name": "Thuyền Phong Lăng Độ", "type": "gold"},
+	{"name": "Mạnh Thương Lương", "id": 583, "res": "boss012", "series": "Hỏa", "series_idx": 3, "sect": "Cái Bang", "level": 95, "map_id": 225, "map_name": "Sa Mạc Sơn Động 1", "type": "gold"},
+	{"name": "Hà Nhân Ngã", "id": 745, "res": "boss013", "series": "Hỏa", "series_idx": 3, "sect": "Cái Bang", "level": 95, "map_id": 226, "map_name": "Sa Mạc Sơn Động 2", "type": "gold"},
+	{"name": "Gia Luật Tị Ly", "id": 563, "res": "boss011", "series": "Hỏa", "series_idx": 3, "sect": "Thiên Nhẫn", "level": 95, "map_id": 227, "map_name": "Sa Mạc Sơn Động 3", "type": "gold"},
+	{"name": "Hoàn Nhan Tuyết Y", "id": 564, "res": "boss014", "series": "Hỏa", "series_idx": 3, "sect": "Thiên Nhẫn", "level": 95, "map_id": 340, "map_name": "Mạc Cao Quật", "type": "gold"},
+	{"name": "Đoan Mộc Duệ", "id": 565, "res": "boss015", "series": "Hỏa", "series_idx": 3, "sect": "Thiên Nhẫn", "level": 95, "map_id": 124, "map_name": "Hiên Viên Động", "type": "gold"},
+	{"name": "Đạo Thanh Chân Nhân", "id": 562, "res": "boss001", "series": "Thổ", "series_idx": 4, "sect": "Võ Đang", "level": 95, "map_id": 321, "map_name": "Trường Bạch Sơn Nam", "type": "gold"},
+	{"name": "Sơn Tư Nam", "id": 746, "res": "boss022", "series": "Thổ", "series_idx": 4, "sect": "Côn Lôn", "level": 95, "map_id": 322, "map_name": "Trường Bạch Sơn Bắc", "type": "gold"},
+	{"name": "Tuyền Cơ Tử", "id": 747, "res": "boss017", "series": "Thổ", "series_idx": 4, "sect": "Côn Lôn", "level": 95, "map_id": 340, "map_name": "Mạc Cao Quật", "type": "gold"},
+	# --- Tiểu Hoàng Kim Boss (bosstieuhk.lua) ---
+	{"name": "Diệu Như", "id": 513, "res": "enemy056", "series": "Thủy", "series_idx": 2, "sect": "Nga Mi", "level": 100, "map_id": 162, "map_name": "Đại Lý Phủ", "type": "small_gold"},
+	{"name": "Liễu Thanh Thanh", "id": 523, "res": "enemy173", "series": "Mộc", "series_idx": 1, "sect": "Thúy Yên", "level": 100, "map_id": 11, "map_name": "Biện Kinh Phủ", "type": "small_gold"},
+	{"name": "Trương Tông Chính", "id": 511, "res": "enemy003", "series": "Thổ", "series_idx": 4, "sect": "Côn Lôn", "level": 100, "map_id": 78, "map_name": "Tương Dương Phủ", "type": "small_gold"},
+	# --- Tuyệt Đỉnh Trấn Ải Boss ---
+	{"name": "Độc Cô Cầu Kiếm", "id": 1038, "res": "boss015", "series": "Kim", "series_idx": 0, "sect": "Vượt Ải", "level": 100, "map_id": 489, "map_name": "Thách Thức Ải 28", "type": "challenge"}
+]
+
+const SERIES_COLORS := {
+	"Kim": Color(1.0, 0.85, 0.25),
+	"Mộc": Color(0.35, 0.85, 0.35),
+	"Thủy": Color(0.35, 0.70, 1.0),
+	"Hỏa": Color(1.0, 0.35, 0.25),
+	"Thổ": Color(0.85, 0.65, 0.40)
+}
+
+func _build_boss() -> void:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = LIST_SIZE
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 10)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+
+	# Banner giới thiệu Boss Hoàng Kim
+	var banner := PanelContainer.new()
+	var b_style := GameUi.box(Color(0.12, 0.08, 0.02), Color(0.95, 0.75, 0.2), 8, 2, 8)
+	b_style.shadow_color = Color(0.9, 0.7, 0.1, 0.3)
+	b_style.shadow_size = 6
+	banner.add_theme_stylebox_override("panel", b_style)
+	var b_vbox := VBoxContainer.new()
+	b_vbox.add_theme_constant_override("separation", 4)
+	banner.add_child(b_vbox)
+	b_vbox.add_child(SocialUi.label("Thập Đại Boss Hoàng Kim Môn Phái", SocialUi.TITLE, 18, HORIZONTAL_ALIGNMENT_CENTER))
+	var b_sub := SocialUi.label("Khiêu chiến các cao thủ Hoàng Kim trấn giữ sơn môn · Rơi Trang bị Hoàng Kim, Huyền Tinh, Đồ Phổ bí truyền", SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	b_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b_vbox.add_child(b_sub)
+	list.add_child(banner)
+
+	for boss in BOSS_LIST:
+		list.add_child(_boss_card(boss))
+
+func _boss_card(boss: Dictionary) -> Control:
+	var card := GameUi.panel(GameUi.PANEL)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	card.add_child(row)
+
+	# Avatar Boss Thumbnail
+	var thumb_box := PanelContainer.new()
+	thumb_box.custom_minimum_size = Vector2(80, 80)
+	thumb_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var s_col: Color = SERIES_COLORS.get(str(boss.get("series", "Kim")), Color.GOLD)
+	thumb_box.add_theme_stylebox_override("panel", GameUi.box(Color(0.06, 0.08, 0.09), s_col, 6, 2, 2))
+	var tex_rect := TextureRect.new()
+	tex_rect.custom_minimum_size = Vector2(76, 76)
+	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var boss_res := str(boss.get("res", "boss001"))
+	tex_rect.texture = MonsterData.thumb(boss_res)
+	thumb_box.add_child(tex_rect)
+	row.add_child(thumb_box)
+
+	# Thông tin Boss
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 4)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	info.add_child(head)
+
+	var name_lbl := SocialUi.label(str(boss["name"]), SocialUi.TITLE, 17)
+	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.6))
+	head.add_child(name_lbl)
+
+	var series_badge := SocialUi.label("Hệ %s · %s" % [boss["series"], boss["sect"]], s_col, 13)
+	series_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(series_badge)
+
+	info.add_child(SocialUi.label("Cấp độ: %d  ·  Bản đồ xuất hiện: %s" % [int(boss["level"]), boss["map_name"]], SocialUi.LABEL_BLUE, 13))
+
+	var drop_lbl := SocialUi.label("Vật phẩm rơi: Trang bị Hoàng Kim môn phái, Huyền Tinh, Đồ phổ, Bí kíp 90", SocialUi.TEXT, 12)
+	drop_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(drop_lbl)
+
+	# Nút hành động (Vào map tìm Boss)
+	var map_id: int = int(boss["map_id"])
+	var map_entry_dict := {}
+	for m in MapCatalog.all():
+		if int(m["id"]) == map_id:
+			map_entry_dict = m
+			break
+
+	var playable := not map_entry_dict.is_empty() and MapCatalog.is_playable(map_entry_dict)
+	var play := SocialUi.stone_button("Khiêu chiến" if playable else "Chưa mở", Vector2(110, 42))
+	play.disabled = not playable
+	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if playable:
+		play.pressed.connect(func() -> void:
+			var entry := map_entry_dict.duplicate()
+			entry["boss"] = {
+				"id": int(boss.get("id", 740)),
+				"name": str(boss["name"]),
+				"res": str(boss["res"]),
+				"sect": str(boss["sect"]),
+				"series": int(boss.get("series_idx", 0)),
+				"level": int(boss["level"]),
+				"type": str(boss.get("type", "gold")),
+				"is_gold": true,
+			}
+			_play(entry)
+		)
+	else:
+		play.tooltip_text = "Bản đồ %s chưa sẵn sàng" % boss["map_name"]
+	row.add_child(play)
+
+	return card
+
+static func _load_thumb(path: String) -> Texture2D:
+	if FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) == OK:
+			return ImageTexture.create_from_image(img)
+	if ResourceLoader.exists(path):
+		var res := load(path)
+		if res is Texture2D:
+			return res
+	return null

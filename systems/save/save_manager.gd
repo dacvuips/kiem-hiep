@@ -148,28 +148,44 @@ func _refresh_version() -> void:
 				return
 
 func has_profile() -> bool:
-	if _online():
+	if _online() and online_character_id != 0:
 		return false
 	return FileAccess.file_exists(PROFILE_PATH)
 
 func save_profile(profile: PlayerProfile) -> void:
 	if profile == null:
 		return
-	## Online: lưu lên server cho nhân vật ĐÃ CHỌN trong tiến trình này (set_online_character) — KIEMHIEP_NO_SAVE không chặn (nó chỉ
-	## bảo vệ FILE LƯU TRÊN MÁY; bài test online chọn nhân vật của tài khoản test).
+	## Luôn lưu vào file máy cục bộ (PROFILE_PATH) để không bao giờ mất dữ liệu test / tắt game đột ngột
+	if not _saving_disabled():
+		var file := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
+		if file != null:
+			file.store_string(JSON.stringify(profile.to_dict(), "\t"))
+			file.close()
+		else:
+			push_warning("SaveManager: không mở được file để ghi (%s)" % PROFILE_PATH)
+
+	## Online: lưu lên server cho nhân vật ĐÃ CHỌN trong tiến trình này (set_online_character)
 	if _online():
 		if online_character_id != 0:
 			_pending_profile = profile
 			_online_timer.start(ONLINE_SAVE_DELAY)
 		return
-	if _saving_disabled():
+
+## Khôi phục GameManager.local_profile về bản đã lưu (dùng khi nhân vật thường chết/thoát trận, không phải GM).
+## Online: bản trên server (flush_online phải gọi trước); Offline: bản trong file.
+func restore_profile_from_save() -> void:
+	if GameManager.local_profile == null:
 		return
-	var file := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_warning("SaveManager: không mở được file để ghi (%s)" % PROFILE_PATH)
+	var restored: PlayerProfile = null
+	if _online() and online_character_id != 0:
+		## Online: server giữ bản đúng (game server không lưu khi người chơi chết/thoát giữa chừng bởi flush_online trả về không gửi S_PROFILE)
+		## — nạp lại khi vào Hub qua AccountApi.characters; không cần làm gì thêm ở đây.
 		return
-	file.store_string(JSON.stringify(profile.to_dict(), "\t"))
-	file.close()
+	## Offline: nạp lại từ file
+	restored = load_profile()
+	if restored != null:
+		GameManager.local_profile.copy_from(restored)
+		print("SaveManager: khôi phục hồ sơ về bản lưu gần nhất (nhân vật thường, không phải GM)")
 
 func load_profile() -> PlayerProfile:
 	if not has_profile():

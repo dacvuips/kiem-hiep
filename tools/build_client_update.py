@@ -136,6 +136,7 @@ def main() -> None:
     ap.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--force", default="", help="tên gói ép xuất lại, cách nhau dấu phẩy (all = tất cả)")
+    ap.add_argument("--only", default="", help="chỉ tính và xuất các gói này (ví dụ: core), các gói khác giữ nguyên từ manifest cũ")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--min-launcher", type=int, help="LAUNCHER_VERSION tối thiểu (launcher cũ hơn -> báo tải APK mới)")
     ap.add_argument("--apk-url", help="link tải APK mới, hiện khi launcher quá cũ")
@@ -148,6 +149,7 @@ def main() -> None:
     old = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
     old_packs = {p["name"]: p for p in old.get("packs", [])}
     force = {s.strip() for s in args.force.split(",") if s.strip()}
+    only = {s.strip() for s in args.only.split(",") if s.strip()}
 
     for proj in (ROOT / "project.godot", ROOT / "launcher" / "project.godot"):
         m = re.search(r'(?m)^network/account_url="([^"]*)"', proj.read_text(encoding="utf-8"))
@@ -163,6 +165,9 @@ def main() -> None:
     for name, preset, folders in PACKS:
         if preset not in presets:
             sys.exit(f"Thiếu preset '{preset}' trong export_presets.cfg")
+        if only and name not in only and name in old_packs:
+            plan.append((name, preset, old_packs[name].get("src", ""), False))
+            continue
         src = fingerprint(name, preset, folders, engine, presets[preset])
         prev = old_packs.get(name)
         changed = ("all" in force or name in force or prev is None or prev.get("src") != src

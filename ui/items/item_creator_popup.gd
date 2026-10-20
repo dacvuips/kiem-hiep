@@ -11,7 +11,7 @@ class_name ItemCreatorPopup
 ##     chọn cấp / hệ (món có cấp, hệ) + số lượng — sinh bằng ItemGenerator.generate_misc.
 ## Mỗi lần đổi lựa chọn sinh lại bản xem trước; "Tạo" thêm đúng món đang xem trước.
 
-enum Quality { NORMAL, MAGIC, GOLD, POTION, PURPLE, KILLER, FERRY, MONEY }
+enum Quality { NORMAL, MAGIC, GOLD, MASK, MANTLE, POTION, PURPLE, KILLER, FERRY, MONEY }
 ## Nhóm "Ngân lượng": cộng thẳng vào tiền mang theo (profile.gold), không phải vật phẩm.
 const MONEY_AMOUNTS := [10000, 100000, 1000000, 10000000, 100000000]
 const MONEY_MAX := 2000000000  ## int32 gốc — không cho tiền vượt quá
@@ -96,7 +96,7 @@ func _ready() -> void:
 	form.custom_minimum_size = Vector2(330, 0)
 	body.add_child(form)
 
-	_quality = _add_option(form, "quality", "Nhóm", ["Thường", "Xanh (magic)", "Hoàng kim", "Thuốc",
+	_quality = _add_option(form, "quality", "Nhóm", ["Thường", "Xanh (magic)", "Hoàng kim", "Mặt nạ", "Phi phong", "Thuốc",
 		"Huyền Tinh - ép đồ tím", "Sát thủ (lệnh bài)", "Phong Lăng Độ (lệnh bài)", "Ngân lượng"])
 	_type = _add_option(form, "type", "Loại", [])
 	_level = _add_option(form, "level", "Cấp đồ", [])
@@ -222,6 +222,33 @@ func _on_quality_changed() -> void:
 	if money:
 		_rebuild_preview()
 		return
+	if _quality.selected == Quality.MASK:
+		for k in ["level", "series", "lines", "magic_level", "menpai", "gold_item", "perfection", "amount"]:
+			_rows[k].visible = false
+		_equip_button.visible = true
+		_type.clear()
+		for particular in ItemDatabase.get_particulars(ItemDatabase.Detail.MASK):
+			var base := ItemDatabase.get_base(ItemDatabase.find_base(ItemDatabase.Detail.MASK, particular, 1))
+			var label: String = str(base.get("name", "Mặt nạ %d" % particular))
+			var icon := ItemDatabase.get_icon(base, true)
+			_add_option_item(_type, label, icon)
+		_type.select(0)
+		_rebuild_preview()
+		return
+	if _quality.selected == Quality.MANTLE:
+		for k in ["level", "series", "lines", "magic_level", "menpai", "gold_item", "perfection", "amount"]:
+			_rows[k].visible = false
+		_equip_button.visible = true
+		_type.clear()
+		for lv in ItemDatabase.get_levels(ItemDatabase.Detail.MANTLE, 0):
+			var base := ItemDatabase.get_base(ItemDatabase.find_base(ItemDatabase.Detail.MANTLE, 0, lv))
+			var label: String = "%s (Cấp %d)" % [str(base.get("name", "Phi phong")), lv]
+			var icon := ItemDatabase.get_icon(base, true)
+			_add_option_item(_type, label, icon)
+		_type.select(0)
+		_rebuild_preview()
+		return
+
 	var gold := _quality.selected == Quality.GOLD
 	var misc := _is_misc_mode()
 	_rows["level"].visible = not gold
@@ -256,6 +283,9 @@ func _on_quality_changed() -> void:
 	_on_type_changed()
 
 func _on_type_changed() -> void:
+	if _quality.selected == Quality.MASK or _quality.selected == Quality.MANTLE:
+		_rebuild_preview()
+		return
 	if _quality.selected == Quality.GOLD:
 		_refresh_gold_items()
 		return
@@ -328,6 +358,12 @@ func _rebuild_preview() -> void:
 				_money_text(MONEY_AMOUNTS[_money.selected]), _money_text(_profile.gold)]
 		return
 	match _quality.selected:
+		Quality.MASK:
+			var particular := _type.selected if _type.selected >= 0 else 0
+			_preview = ItemGenerator.generate(ItemDatabase.Detail.MASK, particular, 1, 0, [])
+		Quality.MANTLE:
+			var level := _type.selected + 1 if _type.selected >= 0 else 1
+			_preview = ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, level, 0, [])
 		Quality.POTION, Quality.PURPLE, Quality.KILLER, Quality.FERRY:
 			var level := _level.get_item_id(_level.selected) if _rows["level"].visible and _level.selected >= 0 else 0
 			_preview = ItemGenerator.generate_misc(_misc_id(), level, _series.selected, AMOUNTS[_amount.selected])
@@ -368,6 +404,7 @@ func _on_create(equip_now: bool) -> void:
 		var err := _profile.equip_from_inventory(_profile.inventory.size() - 1)
 		_message.text = "Đã tạo và mặc: %s" % item_name if err == "" else "Đã tạo %s — %s" % [item_name, err]
 	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
 	if _on_changed.is_valid():
 		_on_changed.call()
 	_rebuild_preview()  ## roll món mới cho lần tạo tiếp
@@ -386,6 +423,7 @@ func _create_misc() -> void:
 	_message.text = "Đã tạo: %s x%d" % [item_name, added] if remaining == 0 			else "Hành trang đầy — mới tạo được %s x%d" % [item_name, added]
 	if added > 0:
 		SaveManager.save_profile(_profile)
+		SaveManager.flush_online()
 		if _on_changed.is_valid():
 			_on_changed.call()
 
@@ -395,6 +433,7 @@ func _create_money() -> void:
 	_profile.gold = mini(_profile.gold + MONEY_AMOUNTS[_money.selected], MONEY_MAX)
 	_message.text = "Đã thêm %s lượng" % _money_text(_profile.gold - before) if _profile.gold > before 			else "Tiền mang theo đã tối đa (%s lượng)." % _money_text(MONEY_MAX)
 	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
 	if _on_changed.is_valid():
 		_on_changed.call()
 	_rebuild_preview()
