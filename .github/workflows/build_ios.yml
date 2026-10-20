@@ -86,6 +86,29 @@ jobs:
           fi
           ls -la build/ios/
 
+      - name: Vá lỗi liên kết các symbol Core Animation / Metal còn thiếu
+        run: |
+          echo "Tìm và bổ sung định nghĩa các symbol iOS 18..."
+          for f in $(find build/ios -name "dummy.cpp"); do
+            echo "Bổ sung definitions vào $f..."
+            cat << 'EOF' >> "$f"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+__attribute__((weak)) void* CADynamicRangeAutomatic = 0;
+__attribute__((weak)) void* CADynamicRangeConstrainedHigh = 0;
+__attribute__((weak)) void* CADynamicRangeHigh = 0;
+__attribute__((weak)) void* CADynamicRangeStandard = 0;
+__attribute__((weak)) void* MTLTensorDomain = 0;
+#ifdef __cplusplus
+}
+#endif
+EOF
+            echo "--- $f sau khi cập nhật ---"
+            tail -n 16 "$f"
+          done
+
       - name: Biên dịch Xcode Project (xcodebuild)
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
