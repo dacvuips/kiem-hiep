@@ -16,6 +16,11 @@ run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 run/max_fps=60
 config/icon="res://icon.png"
+boot_splash/bg_color=Color(0.04, 0.04, 0.04, 1)
+boot_splash/image="res://art/logo.png"
+boot_splash/fullsize=false
+boot_splash/use_filter=true
+boot_splash/minimum_display_time=1200
 
 [display]
 
