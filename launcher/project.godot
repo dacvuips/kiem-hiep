@@ -13,7 +13,7 @@ config_version=5
 config/name="Kiem-hiep Launcher"
 config/description="Trình tải và cập nhật game Kiếm Hiệp"
 run/main_scene="res://launcher.tscn"
-config/features=PackedStringArray("4.7", "Mobile")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=60
 config/icon="res://icon.png"
 boot_splash/bg_color=Color(0.04, 0.04, 0.04, 1)
@@ -41,5 +41,6 @@ network/account_url="https://kiem-hiep-api.viettheo.site"
 
 [rendering]
 
-renderer/rendering_method="mobile"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
