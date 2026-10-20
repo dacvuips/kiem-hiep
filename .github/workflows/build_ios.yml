@@ -66,26 +66,54 @@ jobs:
 
       - name: Xuất dự án Xcode từ Godot
         run: |
-          godot --headless --path . --export-debug "iOS" build/ios/KiemHiep.xcodeproj
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          echo "Xuất Xcode project với kiểu: $BUILD_TYPE"
+          if [ "$BUILD_TYPE" = "release" ]; then
+            godot --headless --path . --export-release "iOS" build/ios/KiemHiep.xcodeproj
+          else
+            godot --headless --path . --export-debug "iOS" build/ios/KiemHiep.xcodeproj
+          fi
           ls -la build/ios/
 
       - name: Biên dịch Xcode Project (xcodebuild)
         run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          if [ "$BUILD_TYPE" = "release" ]; then
+            CONFIG="Release"
+          else
+            CONFIG="Debug"
+          fi
+          echo "Biên dịch cấu hình: $CONFIG"
+
           xcodebuild -project build/ios/KiemHiep.xcodeproj \
             -scheme KiemHiep \
-            -configuration Debug \
+            -configuration "$CONFIG" \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
             build
 
       - name: Đóng gói file .ipa
         run: |
+          rm -rf Payload kiem-hiep-ios.ipa
           mkdir -p Payload
-          # Tìm thư mục .app vừa build xong
-          APP_PATH=$(find build/ios -name "*.app" -type d | head -n 1)
+
+          # Tìm thư mục .app trong DerivedData
+          APP_PATH=$(find build/DerivedData -name "*.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          fi
+
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::Không tìm thấy file .app nào sau khi build!"
+            exit 1
+          fi
+
           echo "Tìm thấy App tại: $APP_PATH"
           cp -r "$APP_PATH" Payload/
           zip -r -q kiem-hiep-ios.ipa Payload
