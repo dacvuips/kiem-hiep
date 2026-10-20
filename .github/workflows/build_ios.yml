@@ -92,19 +92,18 @@ jobs:
           for f in $(find build/ios -name "dummy.cpp"); do
             echo "Bổ sung definitions vào $f..."
             cat << 'EOF' >> "$f"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-__attribute__((weak)) void* CADynamicRangeAutomatic = 0;
-__attribute__((weak)) void* CADynamicRangeConstrainedHigh = 0;
-__attribute__((weak)) void* CADynamicRangeHigh = 0;
-__attribute__((weak)) void* CADynamicRangeStandard = 0;
-__attribute__((weak)) void* MTLTensorDomain = 0;
-#ifdef __cplusplus
-}
-#endif
-EOF
+          #ifdef __cplusplus
+          extern "C" {
+          #endif
+          __attribute__((weak)) void* CADynamicRangeAutomatic = 0;
+          __attribute__((weak)) void* CADynamicRangeConstrainedHigh = 0;
+          __attribute__((weak)) void* CADynamicRangeHigh = 0;
+          __attribute__((weak)) void* CADynamicRangeStandard = 0;
+          __attribute__((weak)) void* MTLTensorDomain = 0;
+          #ifdef __cplusplus
+          }
+          #endif
+          EOF
             echo "--- $f sau khi cập nhật ---"
             tail -n 16 "$f"
           done
