@@ -13,6 +13,7 @@ config_version=5
 config/name="Kiem-hiep"
 run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.png"
 run/max_fps=60
 
 [autoload]
