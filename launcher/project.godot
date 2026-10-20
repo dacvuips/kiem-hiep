@@ -15,7 +15,7 @@ config/description="Trình tải và cập nhật game Kiếm Hiệp"
 run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 run/max_fps=60
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [display]
 
