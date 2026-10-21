@@ -719,7 +719,6 @@ func _net_damage(amount: float, staggers: bool) -> void:
 		die()
 	elif staggers and _state != State.ATTACK and _state != State.DEAD:
 		_enter(State.HURT, "hurt")
-		_play_vltk_sound("hurt")
 	NetClient.send_damage(net_eid, amount, staggers)
 
 func _tick_net(frames: float) -> void:
@@ -764,8 +763,6 @@ func _tick_net(frames: float) -> void:
 			var act := NetProto.monster_action_name(int(a.action))
 			if act != _action:
 				_enter(State.WALK if act == "walk" else (State.HURT if act == "hurt" else State.IDLE), act)
-				if act == "hurt":
-					_play_action_sound("hurt")
 			_dir64 = int(a.dir)
 	if _state != State.ATTACK:
 		var looping := _state == State.IDLE or _state == State.WALK
