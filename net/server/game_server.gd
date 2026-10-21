@@ -418,15 +418,19 @@ func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "", base
 	return best
 
 ## Quái bắt đầu ra chiêu: báo cho mọi người đang thấy quái (máy người bị nhắm chạy đòn thật).
+## Dùng lưới AOI thay vì duyệt toàn bộ kết nối — O(ô) thay vì O(n người chơi).
 func monster_attack(m: ServerMonster, slot: int, target: ServerEntity) -> void:
 	var b := NetProto.writer(NetProto.S_MATTACK)
 	b.put_u32(m.eid)
 	b.put_u8(slot)
 	b.put_u32(target.eid)
 	b.put_u8(m.dir)
-	for c: Conn in _conns.values():
-		if c.state == ConnState.IN_WORLD and (c.known.has(m.eid) or c.entity == target):
-			_send(c, b)
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			for e: ServerEntity in aoi.bucket(m.cell + Vector2i(dx, dy)).values():
+				var vc: Conn = _players_by_eid.get(e.eid)
+				if vc and vc.state == ConnState.IN_WORLD and (vc.known.has(m.eid) or e == target):
+					_send(vc, b)
 
 # ---------------------------------------------------------------- kết nối
 
@@ -912,6 +916,12 @@ func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	if m.battle_side != "" and (battle == null or not battle.can_hit_monster(c, m)):
 		return   ## Nguyên Soái: chỉ người phe kia đánh được
 	amount = minf(amount, c.max_hit)
+	## Khi quái bị khựng: ép trạng thái "hurt" ngay vào entity để S_STATE tiếp theo broadcast cho mọi người thấy
+	if staggers and not m.is_dead():
+		var hurt_action := NetProto.monster_action_index("hurt")
+		if m.hp > 0 and m.action != hurt_action:
+			m.action = hurt_action
+			m.touch()
 	if m.receive_damage(c.entity.eid, amount, staggers):
 		_on_monster_killed(m)
 

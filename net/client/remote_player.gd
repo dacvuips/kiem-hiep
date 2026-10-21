@@ -7,6 +7,7 @@ class_name RemotePlayer
 const INTERP_DELAY_MS := 140.0
 const FEET_OFFSET := 30.0
 const MAX_BUFFER := 20
+const DamageNumberScene := preload("res://effects/damage_number.tscn")
 
 var eid := 0
 var display_name := ""
@@ -19,6 +20,8 @@ var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo gi�
 var _action := ""
 var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở giao dịch...)
 var _look := {}
+var _last_vel: Vector2 = Vector2.ZERO   ## vận tốc ước lượng từ 2 mốc cuối (dead-reckoning)
+var _last_feet: Vector2 = Vector2.ZERO  ## vị trí chân cuối đã áp
 ## Đang cừu sát với mình (giai đoạn đánh): là "địch" — chiêu của mình va chạm và gây sát thương (gửi qua server).
 var pk_enemy := false
 ## Tên quầy đang bày bán ("" = không bày) — biển trên đầu, bấm vào mở quầy xem hàng.
@@ -76,6 +79,12 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		mods: CombatFormulas.HitModifiers = null) -> void:
 	if not pk_enemy or is_dead():
 		return
+	var est_dmg := (min_damage + max_damage) / 2
+	var at := global_position + Vector2(0, -50.0)
+	ObjectPool.acquire_deferred(DamageNumberScene, get_parent(), at, func(number):
+		number.set_damage(float(est_dmg)))
+	if avatar and _action != "attack" and _action != "die":
+		avatar.play("hurt")
 	NetClient.send_pvp_hit(eid, PvpHit.encode(attacker_stats, min_damage, max_damage, damage_type, attacker_element, mods))
 
 func take_damage(amount: float) -> void:
@@ -172,8 +181,14 @@ func _process(_delta: float) -> void:
 	if _open_stall_until != 0:
 		_tick_stall_approach()
 	if _buffer.is_empty():
+		## Dead-reckoning: tiếp tục trượt theo vận tốc cuối (giảm dần để không đi xa)
+		if _last_vel.length_squared() > 1.0:
+			_last_feet += _last_vel * _delta
+			_last_vel = _last_vel.lerp(Vector2.ZERO, _delta * 8.0)
+			position = _last_feet - Vector2(0, FEET_OFFSET)
 		return
-	var render_t := NetClient.server_now_ms() - INTERP_DELAY_MS
+	var delay := NetClient.adaptive_interp_delay_ms() if NetClient.has_method("adaptive_interp_delay_ms") else INTERP_DELAY_MS
+	var render_t := NetClient.server_now_ms() - delay
 	## Bỏ bản tin đã cũ (giữ lại 1 bản trước thời điểm vẽ để nội suy).
 	while _buffer.size() >= 2 and float(_buffer[1].t) <= render_t:
 		_buffer.pop_front()
@@ -184,9 +199,19 @@ func _process(_delta: float) -> void:
 		var span := float(b.t) - float(a.t)
 		var k := clampf((render_t - float(a.t)) / span, 0.0, 1.0) if span > 0.0 else 1.0
 		feet = (a.pos as Vector2).lerp(b.pos, k)
+		## Cập nhật vận tốc cho dead-reckoning
+		if span > 0.0:
+			_last_vel = (b.pos as Vector2 - a.pos as Vector2) / span
 		## Quá xa (dịch chuyển / bị kéo về) thì nhảy thẳng tới, không trượt.
 		if (a.pos as Vector2).distance_to(b.pos) > 600.0:
 			feet = b.pos if k > 0.5 else a.pos
+			_last_vel = Vector2.ZERO
+	else:
+		## Chỉ còn 1 mốc: dead-reckoning ngoại suy
+		var overshoot := render_t - float(a.t)
+		if overshoot > 0.0 and _last_vel.length_squared() > 1.0:
+			feet = (a.pos as Vector2) + _last_vel * clampf(overshoot / 1000.0, 0.0, 0.1)
+	_last_feet = feet
 	position = feet - Vector2(0, FEET_OFFSET)
 	_apply(a)
 

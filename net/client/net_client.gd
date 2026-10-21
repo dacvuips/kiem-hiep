@@ -113,6 +113,12 @@ func is_in_world() -> bool:
 func server_now_ms() -> float:
 	return Time.get_ticks_msec() + clock_offset
 
+## Độ trễ nội suy thích ứng theo Ping (VLTK gốc):
+## Ping thấp (<= 30ms): hạ xuống 85ms - 90ms (nhanh hơn 50ms).
+## Ping cao (> 80ms): tự nâng lên 140ms - 160ms chống rỗng bộ đệm.
+func adaptive_interp_delay_ms() -> float:
+	return clampf(85.0 + rtt_ms * 0.5, 85.0, 160.0)
+
 func _fail(code: String, message: String) -> void:
 	var was := status
 	disconnect_from_server()

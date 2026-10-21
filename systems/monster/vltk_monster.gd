@@ -73,6 +73,7 @@ var net_eid: int = 0
 var hp_override: int = 0
 var _net_buffer: Array = []       ## [{t, pos, dir, action, hp, flags}] theo giờ server
 var _net_real_attack := false     ## đòn đang ra nhắm vào chính mình -> gây sát thương thật
+var _last_predicted_dmg_ms: int = 0 ## thời điểm gần nhất client gây sát thương (chống rubberband máu)
 const NET_INTERP_DELAY_MS := 140.0
 
 ## Tạo quái `monster_id` (STT Npcs.txt) cấp `lvl` tại `world_pos`. null nếu không có dữ liệu.
@@ -660,6 +661,8 @@ func die() -> void:
 ## Rớt đồ theo bảng script server gốc (DropTable) + kinh nghiệm (KillRewards, chia theo tổ đội).
 ## Online: chỉ gọi khi server báo mình được thưởng; `with_drops` = mình là người hạ đòn cuối.
 func grant_rewards(with_drops := true) -> void:
+	if _state != State.DEAD:
+		die()
 	if with_drops and net_eid == 0:   ## online: đồ rơi do server tung (S_DROPS)
 		var drops: Array
 		var luck := 0
@@ -708,9 +711,15 @@ func net_attack(slot: int, target_node: Node2D, dir64: int, real: bool) -> void:
 
 func _net_damage(amount: float, staggers: bool) -> void:
 	_spawn_number(amount, false)
-	## Hiện trước trên thanh máu cho cảm giác ngay; số máu thật lấy theo server ở bản tin sau.
-	health = maxf(1.0, health - amount)
+	_last_predicted_dmg_ms = Time.get_ticks_msec()
+	## Trừ trước trên thanh máu theo cơ chế Client Prediction (VLTK gốc): không có delay
+	health = maxf(0.0, health - amount)
 	_health_bar.set_health(health)
+	if health <= 0.0:
+		die()
+	elif staggers and _state != State.ATTACK and _state != State.DEAD:
+		_enter(State.HURT, "hurt")
+		_play_vltk_sound("hurt")
 	NetClient.send_damage(net_eid, amount, staggers)
 
 func _tick_net(frames: float) -> void:
@@ -719,7 +728,8 @@ func _tick_net(frames: float) -> void:
 		_tick_attack()   ## diễn hết đòn đang ra (bắn ở 60%) rồi mới theo động tác server
 		_sprite.set_pose(_action, _dir64, _progress(false))
 	if not _net_buffer.is_empty():
-		var render_t := NetClient.server_now_ms() - NET_INTERP_DELAY_MS
+		var delay := NetClient.adaptive_interp_delay_ms() if NetClient.has_method("adaptive_interp_delay_ms") else NET_INTERP_DELAY_MS
+		var render_t := NetClient.server_now_ms() - delay
 		while _net_buffer.size() >= 2 and float(_net_buffer[1].t) <= render_t:
 			_net_buffer.pop_front()
 		var a: Dictionary = _net_buffer[0]
@@ -727,9 +737,25 @@ func _tick_net(frames: float) -> void:
 		if _net_buffer.size() >= 2:
 			var b: Dictionary = _net_buffer[1]
 			var span := float(b.t) - float(a.t)
-			feet = (a.pos as Vector2).lerp(b.pos, clampf((render_t - float(a.t)) / span, 0.0, 1.0) if span > 0.0 else 1.0)
-		global_position = feet
-		health = max_health * float(a.hp) / 100.0
+			var k := clampf((render_t - float(a.t)) / span, 0.0, 1.0) if span > 0.0 else 1.0
+			feet = (a.pos as Vector2).lerp(b.pos, k)
+			## Dead-reckoning: nếu đã vượt qua mốc b, tiếp tục ngoại suy theo hướng di chuyển
+			if k >= 1.0 and span > 0.0:
+				var vel := (b.pos as Vector2 - a.pos as Vector2) / span
+				var overshoot := render_t - float(b.t)
+				feet = (b.pos as Vector2) + vel * clampf(overshoot, 0.0, span * 0.5)
+		## Snap: quái bị dịch chuyển đột ngột (hồi sinh / teleport) thì nhảy ngay, không lerp.
+		## Gần (< 400px): lerp mượt về đúng vị trí (hệ số 0.85/frame tại 60fps = hội tụ trong ~4 frame).
+		if global_position.distance_to(feet) > 400.0:
+			global_position = feet
+		else:
+			global_position = global_position.lerp(feet, 0.85)
+		var server_hp := max_health * float(a.hp) / 100.0
+		## Cơ chế VLTK gốc: trong 1.2s sau khi đánh, không cho bản tin trễ kéo ngược máu lên
+		if Time.get_ticks_msec() - _last_predicted_dmg_ms < 1200:
+			health = minf(health, server_hp)
+		else:
+			health = server_hp
 		_health_bar.set_health(health)
 		if (int(a.flags) & NetProto.FLAG_DEAD) != 0:
 			die()
@@ -738,6 +764,8 @@ func _tick_net(frames: float) -> void:
 			var act := NetProto.monster_action_name(int(a.action))
 			if act != _action:
 				_enter(State.WALK if act == "walk" else (State.HURT if act == "hurt" else State.IDLE), act)
+				if act == "hurt":
+					_play_action_sound("hurt")
 			_dir64 = int(a.dir)
 	if _state != State.ATTACK:
 		var looping := _state == State.IDLE or _state == State.WALK

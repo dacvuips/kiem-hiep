@@ -14,6 +14,12 @@ var attacker_stats: CombatantStats = null
 ## Nhóm node bị đạn va chạm/gây sát thương (quái: "enemies").
 var target_group: StringName = &"enemies"
 
+## Cache mảng mục tiêu theo từng physics frame (Zero-Allocation GC):
+## Tránh gọi get_nodes_in_group() hàng nghìn lần mỗi giây khi có nhiều đạn bay cùng lúc.
+static var _cached_frame: int = -1
+static var _cached_group: StringName = &""
+static var _cached_list: Array[Node] = []
+
 func is_valid() -> bool:
 	return launcher != null and is_instance_valid(launcher) and launcher.is_inside_tree()
 
@@ -23,7 +29,13 @@ func launcher_logic() -> Vector2:
 func targets() -> Array[Node]:
 	if launcher == null or not launcher.is_inside_tree():
 		return []
-	return launcher.get_tree().get_nodes_in_group(target_group)
+	var f := Engine.get_physics_frames()
+	if _cached_frame == f and _cached_group == target_group:
+		return _cached_list
+	_cached_frame = f
+	_cached_group = target_group
+	_cached_list = launcher.get_tree().get_nodes_in_group(target_group)
+	return _cached_list
 
 ## KMissle::ProcessDamage -> ReceiveDamage: mỗi lần trúng roll chí mạng riêng.
 func deal_damage(target: Node, skill: Dictionary = {}) -> void:
