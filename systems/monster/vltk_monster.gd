@@ -750,13 +750,11 @@ func _tick_net(frames: float) -> void:
 		else:
 			global_position = global_position.lerp(feet, 0.85)
 		var server_hp := max_health * float(a.hp) / 100.0
-		## Cơ chế VLTK gốc: trong 1.2s sau khi đánh, không cho bản tin trễ kéo ngược máu lên
-		if Time.get_ticks_msec() - _last_predicted_dmg_ms < 1200:
-			health = minf(health, server_hp)
-		else:
-			health = server_hp
+		## Máu quái trong giao tranh là đơn điệu giảm (monotonic decreasing):
+		## Tuyệt đối không cho bản tin trễ / độ phân giải 1-byte kéo ngược máu lên ("mất rồi có lại").
+		health = minf(health, server_hp)
 		_health_bar.set_health(health)
-		if (int(a.flags) & NetProto.FLAG_DEAD) != 0:
+		if (int(a.flags) & NetProto.FLAG_DEAD) != 0 or int(a.hp) == 0:
 			die()
 			return
 		if _state != State.ATTACK:
