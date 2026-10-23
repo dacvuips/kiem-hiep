@@ -106,7 +106,12 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	_acc = 0.0
 	_cur_life = 0
 	_start_life = start_life
-	_life = int(data.get("life", 0)) + start_life
+	var range_mult := 1.0
+	if ctx != null and ctx.stats != null and ctx.stats.range_multiplier > 0.0:
+		range_mult = ctx.stats.range_multiplier
+	elif ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player"):
+		range_mult = PlayerStats.range_multiplier
+	_life = int((int(data.get("life", 0)) + start_life) * range_mult)
 	_launcher_src = ctx.launcher_logic() if ctx.is_valid() else logic
 	## MultiShow: cùng 1 đạn có 2 bộ ảnh, chọn ngẫu nhiên (KMissle::operator=).
 	_phases = data.get("anims", [])
@@ -319,7 +324,22 @@ func _nearest_collision() -> Node2D:
 	return best
 
 func _is_target(t: Node) -> bool:
-	return t is Node2D and is_instance_valid(t) and t.is_inside_tree() and t != ctx.launcher
+	if not (t is Node2D and is_instance_valid(t) and t.is_inside_tree() and t != ctx.launcher):
+		return false
+	if t.has_method("is_dead") and t.is_dead():
+		return false
+	if ctx != null and ctx.launcher != null:
+		var l_side: String = str(ctx.launcher.get("battle_side")) if "battle_side" in ctx.launcher else ""
+		if l_side != "":
+			var t_side: String = ""
+			if "battle_side" in t:
+				t_side = str(t.battle_side)
+			elif t.is_in_group("player"):
+				if TongKimLolState.current != null:
+					t_side = TongKimLolState.current.team_side
+			if t_side == l_side:
+				return false
+	return true
 
 ## KMissle::ProcessCollision: mọi mục tiêu trong ±range/2 ô quanh tâm — hiệu ứng trúng đòn + sát thương.
 func _process_collision_at(center: Vector2, dmg_range: int) -> int:

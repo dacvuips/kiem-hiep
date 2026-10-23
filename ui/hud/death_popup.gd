@@ -6,8 +6,13 @@ class_name DeathPopup
 const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
 
 static func show_for(host: Node) -> DeathPopup:
+	if host == null or not is_instance_valid(host):
+		return null
+	var tree := host.get_tree() if host.is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree == null or tree.current_scene == null:
+		return null
 	var popup := DeathPopup.new()
-	host.get_tree().current_scene.add_child(popup)
+	tree.current_scene.add_child(popup)
 	return popup
 
 func _init() -> void:
@@ -50,8 +55,11 @@ func _ready() -> void:
 ## Mọi map: về Character Hub. Riêng Chiến trường Tống Kim: sống lại ở hậu doanh phe mình (server kéo về điểm hồi sinh).
 ## GM: lưu và giữ nguyên dữ liệu (không rollback). Người thường: load lại từ bản đã lưu trước khi vào màn (không lưu bản chết).
 func _go_home() -> void:
-	get_tree().paused = false
-	var player := get_tree().get_first_node_in_group("player")
+	PlayerStats.reset()
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree != null:
+		tree.paused = false
+	var player: Node = tree.get_first_node_in_group("player") if tree != null else null
 	var in_battle := not (GameManager.field_map.get("battle", {}) as Dictionary).is_empty()
 	if in_battle and player != null and player.has_method("revive_at_start"):
 		player.revive_at_start()

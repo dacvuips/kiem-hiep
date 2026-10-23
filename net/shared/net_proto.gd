@@ -200,14 +200,157 @@ static func reader(packet: PackedByteArray) -> StreamPeerBuffer:
 	b.data_array = packet
 	return b
 
-## Ngoại hình: gender (0 nam / 1 nữ) + 4 mã hình. look = {gender, helm, armor, weapon, horse}
+## Ngoại hình: gender (0 nam / 1 nữ) + 4 mã hình + mask_particular + aura_state. look = {gender, helm, armor, weapon, horse, mask_particular, aura_state}
 static func put_look(b: StreamPeerBuffer, look: Dictionary) -> void:
 	b.put_u8(int(look.get("gender", 0)))
 	for k in ["helm", "armor", "weapon", "horse"]:
 		b.put_16(clampi(int(look.get(k, -1)), -1, 32767))
+	b.put_16(int(look.get("mask_particular", -1)))
+	b.put_16(int(look.get("aura_state", 0)))
 
 static func get_look(b: StreamPeerBuffer) -> Dictionary:
 	var look := {"gender": b.get_u8()}
 	for k in ["helm", "armor", "weapon", "horse"]:
 		look[k] = b.get_16()
+	if b.get_available_bytes() >= 4:
+		look["mask_particular"] = b.get_16()
+		look["aura_state"] = b.get_16()
+	else:
+		look["mask_particular"] = -1
+		look["aura_state"] = 0
 	return look
+
+# ---------------------------------------------------------------- Đấu trường PK Binary Packing
+const ARENA_MAGIC_BIN := 0xFA
+const ARENA_MAGIC_GZIP := 0xFB
+
+const ARENA_STATE_WAITING := 0
+const ARENA_STATE_PREPARE := 1
+const ARENA_STATE_FIGHT := 2
+const ARENA_STATE_ENDED := 3
+
+static func arena_state_to_code(st: String) -> int:
+	match st:
+		"prepare": return ARENA_STATE_PREPARE
+		"fight": return ARENA_STATE_FIGHT
+		"ended": return ARENA_STATE_ENDED
+		_: return ARENA_STATE_WAITING
+
+static func arena_code_to_state(code: int) -> String:
+	match code:
+		ARENA_STATE_PREPARE: return "prepare"
+		ARENA_STATE_FIGHT: return "fight"
+		ARENA_STATE_ENDED: return "ended"
+		_: return "waiting"
+
+## Đóng gói gói tin S_ARENA nhị phân: giảm 90-95% băng thông so với JSON thuần
+static func pack_arena_msg(b: StreamPeerBuffer, msg: Dictionary) -> void:
+	if msg.get("op") == "state":
+		b.put_u8(ARENA_MAGIC_BIN)
+		put_str(b, str(msg.get("id", "")))
+		b.put_u8(int(msg.get("mode", 0)))
+		b.put_u8(arena_state_to_code(str(msg.get("state", "waiting"))))
+		b.put_u16(clampi(int(msg.get("left", 0)), 0, 65535))
+		b.put_u8(int(msg.get("round", 1)))
+		b.put_u16(clampi(int(msg.get("spectators", 0)), 0, 65535))
+		put_str(b, str(msg.get("role", "")))
+		put_str(b, str(msg.get("my_team", "")))
+
+		# Team A: [cid, eid, name]
+		var team_a: Array = msg.get("team_a", [])
+		var eids_a: Array = msg.get("team_a_eids", [])
+		var names_a: Array = msg.get("team_a_names", [])
+		b.put_u8(mini(team_a.size(), 255))
+		for i in team_a.size():
+			b.put_u32(int(team_a[i]))
+			b.put_u32(int(eids_a[i]) if i < eids_a.size() else 0)
+			put_str(b, str(names_a[i]) if i < names_a.size() else "")
+
+		# Team B: [cid, eid, name]
+		var team_b: Array = msg.get("team_b", [])
+		var eids_b: Array = msg.get("team_b_eids", [])
+		var names_b: Array = msg.get("team_b_names", [])
+		b.put_u8(mini(team_b.size(), 255))
+		for i in team_b.size():
+			b.put_u32(int(team_b[i]))
+			b.put_u32(int(eids_b[i]) if i < eids_b.size() else 0)
+			put_str(b, str(names_b[i]) if i < names_b.size() else "")
+		return
+
+	# Với các op khác: nén GZIP nếu JSON > 80 bytes
+	var raw := JSON.stringify(msg).to_utf8_buffer()
+	if raw.size() > 80:
+		var packed := raw.compress(FileAccess.COMPRESSION_GZIP)
+		if packed.size() < raw.size():
+			b.put_u8(ARENA_MAGIC_GZIP)
+			b.put_u32(raw.size())
+			b.put_u32(packed.size())
+			b.put_data(packed)
+			return
+
+	# Fallback chuẩn UTF-8 string
+	b.put_u8(0)
+	put_str(b, JSON.stringify(msg))
+
+## Giải nén gói tin S_ARENA nhị phân / GZIP / JSON chuỗi
+static func unpack_arena_msg(b: StreamPeerBuffer) -> Dictionary:
+	if b.get_available_bytes() < 1:
+		return {}
+	var magic := b.get_u8()
+	if magic == ARENA_MAGIC_BIN:
+		var st := {"op": "state"}
+		st["id"] = get_str(b)
+		st["mode"] = b.get_u8()
+		st["state"] = arena_code_to_state(b.get_u8())
+		st["left"] = b.get_u16()
+		st["round"] = b.get_u8()
+		st["spectators"] = b.get_u16()
+		st["role"] = get_str(b)
+		st["my_team"] = get_str(b)
+
+		var na := b.get_u8()
+		var team_a := []
+		var eids_a := []
+		var names_a := []
+		for i in na:
+			team_a.append(b.get_u32())
+			eids_a.append(b.get_u32())
+			names_a.append(get_str(b))
+
+		var nb := b.get_u8()
+		var team_b := []
+		var eids_b := []
+		var names_b := []
+		for i in nb:
+			team_b.append(b.get_u32())
+			eids_b.append(b.get_u32())
+			names_b.append(get_str(b))
+
+		st["team_a"] = team_a
+		st["team_b"] = team_b
+		st["team_a_eids"] = eids_a
+		st["team_b_eids"] = eids_b
+		st["team_a_names"] = names_a
+		st["team_b_names"] = names_b
+		st["fighters"] = team_a + team_b
+		st["fighter_eids"] = eids_a + eids_b
+		return st
+	elif magic == ARENA_MAGIC_GZIP:
+		var raw_size := b.get_u32()
+		var packed_size := b.get_u32()
+		if raw_size > 1 << 20 or packed_size > b.get_available_bytes():
+			return {}
+		var r := b.get_data(packed_size)
+		if r[0] != OK:
+			return {}
+		var raw := (r[1] as PackedByteArray).decompress(raw_size, FileAccess.COMPRESSION_GZIP)
+		var parsed: Variant = JSON.parse_string(raw.get_string_from_utf8())
+		return parsed if parsed is Dictionary else {}
+	elif magic == 0:
+		var parsed: Variant = JSON.parse_string(get_str(b, 1 << 16))
+		return parsed if parsed is Dictionary else {}
+	else:
+		# Trường hợp gói cũ không có byte magic: rewind 1 byte
+		b.seek(b.get_position() - 1)
+		var parsed: Variant = JSON.parse_string(get_str(b, 1 << 16))
+		return parsed if parsed is Dictionary else {}

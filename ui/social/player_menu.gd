@@ -16,10 +16,15 @@ var _panel: PanelContainer
 
 static func open(player: Node2D, target: RemotePlayer, screen_pos: Vector2) -> PlayerMenu:
 	close_current()
+	if player == null or not is_instance_valid(player):
+		return null
+	var tree := player.get_tree() if player.is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree == null or tree.current_scene == null:
+		return null
 	var m := PlayerMenu.new()
 	m._player = player
 	m._target = target
-	player.get_tree().current_scene.add_child(m)
+	tree.current_scene.add_child(m)
 	m._build(screen_pos)
 	current = m
 	return m
@@ -77,6 +82,8 @@ func _items() -> Array:
 	items.append(["Tán gẫu", _chat])
 	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false):
 		items.append(["Giao dịch", _trade])
+	else:
+		items.append(["Giao dịch (chưa mở)", _trade_not_open])
 	items.append(["Theo sau", func() -> void:
 		if is_instance_valid(_player) and is_instance_valid(_target) and _player.has_method("start_follow"):
 			_player.start_follow(_target)])
@@ -88,7 +95,11 @@ func _items() -> Array:
 	return items
 
 func _host() -> Node:
-	return _player.get_tree().current_scene
+	if _player != null and is_instance_valid(_player):
+		var tree := _player.get_tree() if _player.is_inside_tree() else Engine.get_main_loop() as SceneTree
+		if tree != null:
+			return tree.current_scene
+	return null
 
 func _notify(text: String) -> void:
 	if is_instance_valid(_player) and _player.has_method("notify"):
@@ -104,12 +115,28 @@ func _chat() -> void:
 		box.open_whisper(_target.display_name)
 
 func _trade() -> void:
+	var p := _profile()
+	if p == null:
+		return
 	var m := _mock()
 	if m == null:
 		return
-	var err := SocialHub.of(_profile()).start_trade(m)
-	if err != "" and err != "online":
+	if not p.trade_open and not p.stall_open:
+		var err_open := StallService.open_trade(p)
+		if err_open == "" and NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_OPEN)
+	var hub := SocialHub.of(p)
+	var err := hub.start_trade(m)
+	if err == "online":
+		_notify("Đã gửi lời mời giao dịch — hãy chờ đối phương trả lời.")
+		return
+	if err != "":
 		_notify(err)
+		return
+	TradeWindow.open(_host(), hub)
+
+func _trade_not_open() -> void:
+	_notify("%s chưa bật mở giao dịch. Họ cần bấm icon Giao dịch (F4) để mở." % _target.display_name)
 
 func _team() -> void:
 	var m := _mock()

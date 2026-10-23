@@ -58,7 +58,8 @@ func _init(profile: PlayerProfile = null) -> void:
 	_refresh()
 
 func _host() -> Node:
-	return get_tree().current_scene
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else null
 
 func _result(err: String, ok_text: String) -> void:
 	SocialUi.set_banner(_msg, err if err != "" else ok_text, err == "")

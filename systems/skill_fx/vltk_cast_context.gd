@@ -34,7 +34,13 @@ func targets() -> Array[Node]:
 		return _cached_list
 	_cached_frame = f
 	_cached_group = target_group
-	_cached_list = launcher.get_tree().get_nodes_in_group(target_group)
+	if target_group == &"moba_all":
+		var list: Array[Node] = []
+		list.append_array(launcher.get_tree().get_nodes_in_group(&"enemies"))
+		list.append_array(launcher.get_tree().get_nodes_in_group(&"player"))
+		_cached_list = list
+	else:
+		_cached_list = launcher.get_tree().get_nodes_in_group(target_group)
 	return _cached_list
 
 ## KMissle::ProcessDamage -> ReceiveDamage: mỗi lần trúng roll chí mạng riêng.

@@ -377,6 +377,9 @@ func send_look(look: Dictionary) -> void:
 	var b := NetProto.writer(NetProto.C_LOOK)
 	for k in ["helm", "armor", "weapon", "horse"]:
 		b.put_16(int(look.get(k, -1)))
+	b.put_u8(int(look.get("gender", 0)))
+	b.put_16(int(look.get("mask_particular", -1)))
+	b.put_16(int(look.get("aura_state", 0)))
 	_send(b)
 
 func _process(delta: float) -> void:
@@ -553,8 +556,8 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			if msg is Dictionary:
 				battle_message.emit(msg)
 		NetProto.S_ARENA:
-			var amsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
-			if amsg is Dictionary:
+			var amsg := NetProto.unpack_arena_msg(b)
+			if not amsg.is_empty():
 				arena_message.emit(amsg)
 		NetProto.S_FIELD:
 			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))

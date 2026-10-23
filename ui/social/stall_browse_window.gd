@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name StallBrowseWindow
+
 ## XEM QUẦY CỦA NGƯỜI KHÁC và MUA (c2s_playertradeview / c2s_playertradebuy gốc). Luật mua: StallService.buy (không mua khi bị khoá bảo vệ,
 ## đang chiến đấu, thiếu tiền, hết chỗ, quầy đã đóng hoặc món đã bán).
 
@@ -35,6 +36,7 @@ func _init(hub: SocialHub = null, seller: MockPlayer = null) -> void:
 	scroll.add_child(_list)
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sec[1].add_child(scroll)
+	TouchScrollHelperScript.attach(scroll, sec[0] as Control)
 	body.add_child(sec[0])
 	_msg = SocialUi.banner("", true)
 	_msg.visible = false

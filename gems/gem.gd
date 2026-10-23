@@ -49,6 +49,16 @@ func _physics_process(delta: float) -> void:
 		global_position += to_target.normalized() * MAGNET_SPEED * delta
 		return
 
+	# Hút ngọc theo bán kính nhặt Thâu Thiên Hoán Nhật
+	if not is_attracted:
+		var p := get_tree().get_first_node_in_group("player")
+		if p != null and is_instance_valid(p):
+			var rad: float = PlayerStats.pickup_radius if "pickup_radius" in PlayerStats else 80.0
+			if global_position.distance_to(p.global_position) <= rad:
+				is_attracted = true
+				attract_target = p
+				return
+
 	## Area2D.body_entered chỉ bắn khi 2 vật thể BẮT ĐẦU chồng lấn từ trạng thái không chạm
 	## trước đó — nếu quái chết ngay sát/tại vị trí Player đang đứng yên, gem exp spawn ra đã
 	## CHỒNG LẤN SẴN với Player, signal không bao giờ bắn tự nhiên (Player phải nhúc nhích để

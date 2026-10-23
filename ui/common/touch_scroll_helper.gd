@@ -77,19 +77,22 @@ func _is_covered_by_higher_layer(pos: Vector2) -> bool:
 		parent_node = parent_node.get_parent()
 	var my_layer: int = my_cl.layer if my_cl != null else 0
 
-	var root := scroll_container.get_tree().root
-	if root == null:
+	var tree := scroll_container.get_tree()
+	if tree == null:
 		return false
-	var layers := root.find_children("", "CanvasLayer", true, false)
-	for l in layers:
-		var cl := l as CanvasLayer
+	var check_nodes := tree.get_nodes_in_group(DraggableWindow.GROUP) + tree.get_nodes_in_group(UiPopups.GROUP)
+	for n in check_nodes:
+		if not is_instance_valid(n) or n.is_queued_for_deletion():
+			continue
+		var cl := n.get_parent() as CanvasLayer if n is Control else (n as CanvasLayer)
 		if cl == null or not cl.visible or cl == my_cl:
 			continue
 		if cl.layer > my_layer:
-			for c in cl.get_children():
-				if c is Control and c.visible and c.is_visible_in_tree() and c.mouse_filter != Control.MOUSE_FILTER_IGNORE:
-					if c.get_global_rect().has_point(pos):
-						return true
+			var ctrl := n as Control if n is Control else (n.get_child(0) as Control if n.get_child_count() > 0 and n.get_child(0) is Control else null)
+			if ctrl != null and ctrl.visible and ctrl.is_visible_in_tree():
+				var local_pos = ctrl.get_global_transform_with_canvas().affine_inverse() * pos
+				if Rect2(Vector2.ZERO, ctrl.size).has_point(local_pos):
+					return true
 	return false
 
 func _is_scroll_visible() -> bool:
@@ -116,11 +119,9 @@ func _input(event: InputEvent) -> void:
 		if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT]:
 			return
 
-	# Không can thiệp nếu đang kéo thả vật phẩm hệ thống Godot
+	# Không can thiệp nếu đang kéo thả vật phẩm hệ thống Godot (trừ khi đang trong quá trình cuộn)
 	var vp := scroll_container.get_viewport()
-	if vp != null and vp.gui_is_dragging():
-		_is_touching = false
-		_is_dragging = false
+	if vp != null and vp.gui_is_dragging() and not _is_dragging and not _is_touching:
 		return
 
 	var is_press := false
@@ -144,18 +145,32 @@ func _input(event: InputEvent) -> void:
 			return
 
 		# Kiểm tra xem chạm có nằm trong ScrollContainer hoặc Body của khung không
-		var in_scroll := scroll_container.get_global_rect().has_point(pos)
-		var in_body := body_control != null and is_instance_valid(body_control) and (body_control.visible if DisplayServer.get_name() == "headless" else body_control.is_visible_in_tree()) and body_control.get_global_rect().has_point(pos)
+		var in_scroll := false
+		if scroll_container != null and is_instance_valid(scroll_container):
+			var local_pos = scroll_container.get_global_transform_with_canvas().affine_inverse() * pos
+			in_scroll = Rect2(Vector2.ZERO, scroll_container.size).has_point(local_pos)
+
+		var in_body := false
+		if body_control != null and is_instance_valid(body_control):
+			var body_visible = body_control.visible if DisplayServer.get_name() == "headless" else body_control.is_visible_in_tree()
+			if body_visible:
+				var local_body_pos = body_control.get_global_transform_with_canvas().affine_inverse() * pos
+				in_body = Rect2(Vector2.ZERO, body_control.size).has_point(local_body_pos)
+
 		if not in_scroll and not in_body:
 			return
 
 		# Nếu bấm trực tiếp vào thanh cuộn thì để thanh cuộn tự xử lý
 		var v_bar := scroll_container.get_v_scroll_bar()
-		if v_bar != null and v_bar.visible and v_bar.get_global_rect().has_point(pos):
-			return
+		if v_bar != null and v_bar.visible:
+			var local_vbar = v_bar.get_global_transform_with_canvas().affine_inverse() * pos
+			if Rect2(Vector2.ZERO, v_bar.size).has_point(local_vbar):
+				return
 		var h_bar := scroll_container.get_h_scroll_bar()
-		if h_bar != null and h_bar.visible and h_bar.get_global_rect().has_point(pos):
-			return
+		if h_bar != null and h_bar.visible:
+			var local_hbar = h_bar.get_global_transform_with_canvas().affine_inverse() * pos
+			if Rect2(Vector2.ZERO, h_bar.size).has_point(local_hbar):
+				return
 
 		# Bỏ qua nếu bị che bởi CanvasLayer cao hơn (Popup, modal...)
 		if _is_covered_by_higher_layer(pos):

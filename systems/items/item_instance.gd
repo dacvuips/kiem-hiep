@@ -118,11 +118,20 @@ func get_max_durability() -> int:
 ## Tên hiển thị: tên đồ gốc (+ hệ). Màu theo phẩm chất: get_quality_color().
 func get_display_name() -> String:
 	if is_misc():
-		return "%s x%d" % [get_base().get("name", "?"), count] if count > 1 else str(get_base().get("name", "?"))
+		var n := str(get_base().get("name", "?"))
+		if misc_id == "6_1_147" and item_level > 0:
+			n = "Huyền Tinh Cấp %d" % item_level
+		return "%s x%d" % [n, count] if count > 1 else n
 	return "%s (%s)" % [get_base().get("name", "?"), ElementTypes.ELEMENT_NAME.get(series, "?")]
 
 ## Thường trắng, có dòng magic xanh lam (đồ xanh VLTK), hoàng kim vàng.
 func get_quality_color() -> Color:
+	if misc_id == "6_1_147":
+		if item_level >= 8:
+			return Color(1.0, 0.78, 0.25)
+		if item_level >= 4:
+			return Color(0.82, 0.48, 1.0)
+		return Color(0.45, 0.75, 1.0)
 	if is_gold():
 		return Color(1.0, 0.82, 0.25)
 	if is_purple():

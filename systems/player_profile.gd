@@ -288,13 +288,11 @@ func _init() -> void:
 	loop_skill_ids.resize(LOOP_SLOT_COUNT)
 	loop_skill_ids.fill("")
 
-## TẠM THỜI — đường cong EXP ngoài trận, chỉnh khi cân bằng game.
-## Đã giảm: cấp < 80 còn 1/3 (giảm 2/3), cấp 80 trở lên còn 1/2.
+## Đường cong EXP ngoài trận — đã nâng x10 lần theo yêu cầu cân bằng game.
 func get_exp_to_next_level() -> int:
 	var base := 100 + (level - 1) * 150
-	if level >= 80:
-		return int(base / 2)
-	return int(base / 3)
+	var cur := int(base / 2) if level >= 80 else int(base / 3)
+	return cur * 10
 
 func is_gem_slot_unlocked(index: int) -> bool:
 	return level >= GEM_SLOT_UNLOCK_LEVELS[index]
@@ -743,6 +741,11 @@ func unequip(part: int) -> bool:
 	if part == Equipment.Part.HORSE:
 		riding = false
 	return true
+
+## Trả về Dictionary ngoại hình theo trang bị, giới tính và trạng thái cưỡi ngựa (xem Equipment.get_appearance).
+func get_equipped_look() -> Dictionary:
+	var gender_key := "female" if gender == Gender.FEMALE else "male"
+	return Equipment.get_appearance(equipment, gender_key, riding)
 
 ## Gắn skill vào ô hotbar `index` — skill đã nằm ở ô khác thì chuyển sang ô mới (không cho 1 skill
 ## chiếm 2 ô). Việc kiểm tra skill có được phép gắn không (ACTIVE, đã học) do nơi gọi đảm nhận, xem

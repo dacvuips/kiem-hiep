@@ -95,6 +95,8 @@ static func entry_item_count(profile: PlayerProfile) -> int:
 
 ## Kiểm tra thủ tục bên ngoài: "" = đủ điều kiện, ngược lại là lý do
 static func check_entry(profile: PlayerProfile) -> String:
+	if AccountApi.is_gm():
+		return ""
 	if profile == null:
 		return "Chưa có nhân vật."
 	if profile.level < MIN_LEVEL:
@@ -330,7 +332,7 @@ func _build_hud() -> void:
 	add_child(_hud)
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.position = Vector2(-180, 8)
+	box.position = Vector2(-180, 52)
 	box.custom_minimum_size = Vector2(360, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(box)

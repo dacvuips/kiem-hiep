@@ -8,6 +8,9 @@ func _enter_tree() -> void:
 	_sync_font.call_deferred()
 
 func _sync_font() -> void:
-	var scene := get_tree().current_scene
+	var tree := get_tree()
+	if tree == null:
+		return
+	var scene := tree.current_scene
 	if scene != null:
 		GameUi.use_game_font(not GameUi.is_pregame_scene(scene))

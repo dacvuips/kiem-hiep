@@ -172,6 +172,8 @@ func face(vec: Vector2) -> void:
 		_apply_frame()
 
 func _rebuild() -> void:
+	if _data == null:
+		return
 	var weapon := weapon_res if weapon_res >= 0 else _data.default_res("weapon")
 	## Động tác không có bản cưỡi ngựa (nhảy: cột JunpFly bảng cưỡi ngựa để trống) -> vẽ như đang đi bộ, ẩn ngựa —
 	## đúng KNpc gốc: `if (m_bRideHorse && m_ClientDoing == cdo_jump) m_DataRes.SetRideHorse(FALSE)`.

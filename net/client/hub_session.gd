@@ -66,6 +66,10 @@ func _on_disconnected(code: String, message: String) -> void:
 	SaveManager.mark_version_unknown()
 	if code in NO_RECONNECT:
 		_toast(message)
+		if code in ["logged_in_elsewhere", "unauthorized", "banned"]:
+			AccountScreen.next_login_message = message if message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+			AccountApi.logout()
+			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 		return
 	_reconnect_in = RECONNECT_SECONDS
 

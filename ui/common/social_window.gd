@@ -171,11 +171,16 @@ func add_button_row() -> HBoxContainer:
 ## chỉ mở 1 cái — mở lại thì đưa cái đang mở lên trên và trả về nó.
 var kind: StringName = &""
 
+func get_host() -> Node:
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else null
+
 static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
 	if host != null and (host.name == "CharacterHub" or host.is_in_group("character_hub") or host.find_parent("CharacterHub") != null or (host.get_tree() and host.get_tree().current_scene != null and host.get_tree().current_scene.name == "CharacterHub")):
 		win.set_draggable(false)
-	if window_kind != &"":
-		for w in host.get_tree().get_nodes_in_group("social_windows"):
+	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if window_kind != &"" and tree != null:
+		for w in tree.get_nodes_in_group("social_windows"):
 			if w is SocialWindow and w.kind == window_kind and is_instance_valid(w):
 				(w as SocialWindow).bring_to_front()
 				win.queue_free()
@@ -186,7 +191,10 @@ static func present(host: Node, win: SocialWindow, window_kind: StringName = &""
 	layer.layer = DraggableWindow.WINDOW_LAYER + 1
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	layer.add_child(win)
-	host.add_child(layer)
+	if host != null and is_instance_valid(host):
+		host.add_child(layer)
+	elif tree != null and tree.current_scene != null:
+		tree.current_scene.add_child(layer)
 	win.close_requested.connect(func() -> void: layer.queue_free())
 	return win
 

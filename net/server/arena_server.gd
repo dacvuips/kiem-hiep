@@ -141,7 +141,7 @@ func on_arena(c, b: StreamPeerBuffer) -> void:
 	var args: Dictionary = parsed if parsed is Dictionary else {}
 	match op:
 		OP_CREATE:
-			_create(c, int(args.get("mode", PkRules.Mode.LIEN_DAU)), str(args.get("password", "")).left(16), int(args.get("team_size", 1)))
+			_create(c, int(args.get("mode", PkRules.Mode.LIEN_DAU)), str(args.get("password", "")).left(16), int(args.get("team_size", 1)), args)
 		OP_JOIN:
 			_join(c, str(args.get("room", "")), str(args.get("password", "")), false, str(args.get("team", "")))
 		OP_WATCH:
@@ -174,18 +174,24 @@ func _mode_ok(c, mode: int) -> bool:
 		return false
 	return true
 
-func _create(c, mode: int, password: String, team_size: int = 1) -> void:
+func _create(c, mode: int, password: String, team_size: int = 1, extra: Dictionary = {}) -> void:
 	if room_of.has(c.character_id) or not _mode_ok(c, mode):
 		return
 	var sect := SectRegistry.get_by_id(c.profile.sect_id)
 	var id := ""
 	while id == "" or rooms.has(id):
 		id = "%06d" % randi_range(100000, 999999)
-	var s_size: int = clampi(team_size, 1, 8) if mode == PkRules.Mode.THACH_DAU else 1
+	var s_size: int = clampi(team_size, 1, 5) if mode == PkRules.Mode.TONG_KIM_LOL else (clampi(team_size, 1, 8) if (mode == PkRules.Mode.THACH_DAU or mode == PkRules.Mode.LON_XON) else 1)
+	var brawl_type: String = str(extra.get("brawl_type", "solo")) if mode == PkRules.Mode.LON_XON else ""
+	var map_id: int = int(extra.get("map_id", 319))
+	var target_kills: int = int(extra.get("target_kills", 20))
 	rooms[id] = {"id": id, "mode": mode, "team_size": s_size, "password": password, "host": c.profile.display_name, "level": c.profile.level,
-		"sect_id": c.profile.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái", "team_a": [c.character_id], "team_b": [],
+		"sect_id": c.profile.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái",
+		"brawl_type": brawl_type, "map_id": map_id, "target_kills": target_kills,
+		"team_a": [c.character_id], "team_b": [],
 		"fighters": [c.character_id], "ready": {c.character_id: true}, "spectators": [], "state": WAITING, "left": 0.0, "winner": ""}
 	_enter_room(c, id, false)
+	_report()
 
 func _join(c, id: String, password: String, watch: bool, target_team := "") -> void:
 	if room_of.has(c.character_id):
@@ -197,31 +203,47 @@ func _join(c, id: String, password: String, watch: bool, target_team := "") -> v
 	if str(r["password"]) != "" and password != str(r["password"]):
 		_reject(c, "Sai mật khẩu phòng #%s." % id)
 		return
+	var r_mode := int(r.get("mode", 0))
+	if r_mode == PkRules.Mode.TONG_KIM_LOL and r["state"] != WAITING:
+		_reject(c, "Phòng #%s đang trong trận đấu, không thể vào." % id)
+		return
 	if not watch:
+		var is_solo_brawl := (r_mode == PkRules.Mode.LON_XON and str(r.get("brawl_type", "solo")) == "solo")
 		var team_size: int = int(r.get("team_size", 1))
 		var team_a: Array = r.get("team_a", [])
 		var team_b: Array = r.get("team_b", [])
-		if r["state"] != WAITING or (team_a.size() >= team_size and team_b.size() >= team_size):
-			_reject(c, "Phòng #%s đã đủ người đấu — có thể vào xem." % id)
+		if is_solo_brawl:
+			if r["state"] != WAITING or (r.get("fighters", []) as Array).size() >= 16:
+				_reject(c, "Phòng #%s đã đủ 16 người hoặc đang trong trận đấu." % id)
+				return
+		else:
+			if r["state"] != WAITING or (team_a.size() >= team_size and team_b.size() >= team_size):
+				_reject(c, "Phòng #%s đã đủ người đấu hoặc đang trong trận đấu." % id)
+				return
+		if not _mode_ok(c, r_mode):
 			return
-		if not _mode_ok(c, int(r["mode"])):
-			return
-		if not PkRules.can_match(int(r["mode"]), c.profile.level, c.profile.sect_id, int(r["level"]), str(r["sect_id"])):
+		if not PkRules.can_match(r_mode, c.profile.level, c.profile.sect_id, int(r["level"]), str(r["sect_id"])):
 			_reject(c, "Chênh lệch quá %d cấp%s với chủ phòng." % [PkRules.MATCH_LEVEL_DIFF,
-					" hoặc khác môn phái" if int(r["mode"]) == PkRules.Mode.DAI_HOI else ""])
+					" hoặc khác môn phái" if r_mode == PkRules.Mode.DAI_HOI else ""])
 			return
-		if target_team == "b" and team_b.size() < team_size:
-			team_b.append(c.character_id)
-		elif target_team == "a" and team_a.size() < team_size:
-			team_a.append(c.character_id)
-		elif team_b.size() < team_size:
-			team_b.append(c.character_id)
-		elif team_a.size() < team_size:
-			team_a.append(c.character_id)
-		r["team_a"] = team_a
-		r["team_b"] = team_b
-		r["fighters"] = team_a + team_b
+		if is_solo_brawl:
+			if not (r["fighters"] as Array).has(c.character_id):
+				(r["fighters"] as Array).append(c.character_id)
+				(r["team_a"] as Array).append(c.character_id)
+		else:
+			if target_team == "b" and team_b.size() < team_size:
+				team_b.append(c.character_id)
+			elif target_team == "a" and team_a.size() < team_size:
+				team_a.append(c.character_id)
+			elif team_b.size() < team_size:
+				team_b.append(c.character_id)
+			elif team_a.size() < team_size:
+				team_a.append(c.character_id)
+			r["team_a"] = team_a
+			r["team_b"] = team_b
+			r["fighters"] = team_a + team_b
 		(r["ready"] as Dictionary)[c.character_id] = false
+		_report()
 	_enter_room(c, id, watch)
 
 func _match(c, mode: int) -> void:
@@ -259,7 +281,7 @@ func _enter_room(c, id: String, watch: bool) -> void:
 		r["fighters"].append(c.character_id)
 	_refresh_view(id)
 	_send(c, {"op": "room", "role": "spectator" if watch else "fighter"})
-	if int(r.get("mode", 0)) != PkRules.Mode.THACH_DAU and r["fighters"].size() == 2 and r["state"] == WAITING:
+	if int(r.get("mode", 0)) != PkRules.Mode.THACH_DAU and int(r.get("mode", 0)) != PkRules.Mode.TONG_KIM_LOL and int(r.get("mode", 0)) != PkRules.Mode.LON_XON and r["fighters"].size() == 2 and r["state"] == WAITING:
 		_start_prepare(id)
 	_broadcast_state(id)
 
@@ -326,6 +348,16 @@ func _start_match(c) -> void:
 	if team_b.is_empty():
 		_reject(c, "Chưa có đối thủ tham gia.")
 		return
+	var team_size: int = int(r.get("team_size", 1))
+	if int(r.get("mode", 0)) == PkRules.Mode.TONG_KIM_LOL:
+		if team_a.size() < team_size or team_b.size() < team_size:
+			_reject(c, "Phòng chưa đủ người chơi (cần %d/%d người mỗi phe)." % [team_size, team_size])
+			return
+		var ready_map: Dictionary = r.get("ready", {})
+		for cid in team_a + team_b:
+			if cid != c.character_id and not bool(ready_map.get(cid, false)):
+				_reject(c, "Vẫn còn người chơi chưa sẵn sàng.")
+				return
 	_start_prepare(id)
 	_broadcast_state(id)
 
@@ -553,6 +585,7 @@ func _finish(id: String, winner_cid: int, why: String) -> void:
 
 func _close(id: String) -> void:
 	rooms.erase(id)
+	_report()
 
 # ---------------------------------------------------------------- gửi tin
 
@@ -576,7 +609,9 @@ func _public_room(r: Dictionary) -> Dictionary:
 	var names := []
 	for inf in team_a_info: names.append(inf["name"])
 	for inf in team_b_info: names.append(inf["name"])
-	return {"id": r["id"], "mode": int(r["mode"]), "team_size": int(r.get("team_size", 1)), "host": r["host"],
+	return {"id": r["id"], "mode": int(r["mode"]), "team_size": int(r.get("team_size", 1)),
+		"brawl_type": str(r.get("brawl_type", "solo")), "map_id": int(r.get("map_id", 319)),
+		"target_kills": int(r.get("target_kills", 20)), "host": r["host"],
 		"level": int(r["level"]), "sect_name": r["sect_name"], "locked": str(r["password"]) != "", "state": r["state"],
 		"fighters": names, "team_a": team_a_info, "team_b": team_b_info,
 		"spectators": r["spectators"].size(), "left": ceili(maxf(float(r["left"]), 0.0)), "winner": r.get("winner", "")}
@@ -620,7 +655,7 @@ func _reject(c, text: String) -> void:
 
 func _send(c, msg: Dictionary) -> void:
 	var b := NetProto.writer(NetProto.S_ARENA)
-	NetProto.put_str(b, JSON.stringify(msg))
+	NetProto.pack_arena_msg(b, msg)
 	gs.send(c, b)
 
 func _report() -> void:

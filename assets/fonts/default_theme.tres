@@ -2,9 +2,10 @@
 
 [ext_resource type="FontFile" uid="uid://c1ufvxcvnbh6a" path="res://assets/fonts/NotoSerif-Variable.ttf" id="1_font"]
 [ext_resource type="FontFile" uid="uid://b6whr5l32ctr7" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="2_input"]
+[ext_resource type="FontFile" uid="uid://cbu74uj7f22lp" path="res://assets/fonts/symbol_fallback.ttf" id="3_sym"]
 
 [sub_resource type="SystemFont" id="SystemFont_vltk"]
-fallbacks = Array[Font]([ExtResource("1_font")])
+fallbacks = Array[Font]([ExtResource("1_font"), ExtResource("3_sym")])
 font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI")
 
 [resource]

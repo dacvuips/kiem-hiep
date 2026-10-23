@@ -6,8 +6,8 @@ class_name MiniMap
 ##     chấm vàng + tên địa điểm; cuộn theo nhân vật, chấm VÀNG ở giữa = người chơi.
 ##   - Hệ toạ độ như game gốc (UiMiniMap::UpdateSceneTimeInfo): X/Y = pixel map / 256 (hiển thị "194/202").
 ##   - Bấm vào dòng toạ độ (hoặc nút cờ) để NHẬP toạ độ "X/Y" rồi Enter -> nhân vật tự đi tới đó (đường vòng vật cản, trong ô
-##     màn chơi). Bấm lên bản đồ cũng tự đi tới chỗ đó.
-##   - Nút đổi mức phóng, nút "bản đồ thế giới" = xem toàn bộ map (hiện luôn ô vuông màn chơi viền vàng).
+##     màn chơi). Bấm lên bản đồ để mở bản đồ lớn (MapPanel).
+##   - Nút "bản đồ thế giới" = xem toàn bộ map (hiện luôn ô vuông màn chơi viền vàng).
 
 const BASE_SIZE := Vector2(130, 145)
 const MAP_RECT := Rect2(1, 1, 129, 128)
@@ -142,6 +142,7 @@ func _build() -> void:
 	_view.clip_contents = true
 	_view.mouse_filter = Control.MOUSE_FILTER_STOP
 	_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_view.tooltip_text = "Nhấp để mở bản đồ lớn"
 	_view.draw.connect(_draw_view)
 	_view.gui_input.connect(_on_view_input)
 	add_child(_view)
@@ -168,7 +169,7 @@ func _build() -> void:
 	add_child(pos_bg)
 	_pos_label = _make_label("")
 	_pos_label.position = Vector2(2, 129)
-	_pos_label.size = Vector2(70, 14)
+	_pos_label.size = Vector2(86, 14)
 	_pos_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pos_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_pos_label.tooltip_text = "Nhấp chuột để nhập toạ độ và tự đi tới đó"
@@ -179,7 +180,7 @@ func _build() -> void:
 
 	_pos_input = LineEdit.new()
 	_pos_input.position = Vector2(1, 129)
-	_pos_input.size = Vector2(72, 14)
+	_pos_input.size = Vector2(88, 14)
 	_pos_input.add_theme_font_size_override("font_size", 10)
 	_pos_input.add_theme_color_override("font_color", GREEN)
 	_pos_input.add_theme_color_override("caret_color", GREEN)
@@ -197,10 +198,10 @@ func _build() -> void:
 	_pos_input.focus_exited.connect(func() -> void: _close_input())
 	add_child(_pos_input)
 
-	## Nút gốc 14x14 (Up/Down/Over = frame 0/1/2): cờ = nhập toạ độ, switch = đổi mức phóng, thế giới = toàn bản đồ.
-	_add_button("flag", 73, "Nhập toạ độ để tự đi", _open_input)
-	_add_button("switch", 87, "Mở bản đồ lớn", _open_map_panel)
-	_add_button("world", 101, "Xem toàn bộ bản đồ", _toggle_world)
+	## Nút gốc 14x14 (Up/Down/Over = frame 0/1/2): cờ = nhập toạ độ, thế giới = toàn bản đồ.
+	## Nhấp trực tiếp lên bản đồ để mở bản đồ lớn (bỏ nút kính lúp).
+	_add_button("flag", 93, "Nhập toạ độ để tự đi", _open_input)
+	_add_button("world", 111, "Xem toàn bộ bản đồ", _toggle_world)
 
 	_notice_label = _make_label("")
 	_notice_label.position = Vector2(2, 20)
@@ -353,7 +354,9 @@ func player_feet() -> Vector2:
 	return _feet()
 
 func _open_map_panel() -> void:
-	if get_tree().root.has_node("MapPanel"):
+	var existing := get_tree().root.get_node_or_null("MapPanel")
+	if existing != null:
+		existing.queue_free()
 		return
 	var panel := MapPanel.new()
 	panel.name = "MapPanel"
@@ -455,6 +458,5 @@ func _draw_view() -> void:
 
 func _on_view_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var zoom := _zoom()
-		_walk_to(_view_to_world(event.position, zoom, _src_origin(zoom)))
+		_open_map_panel()
 		accept_event()

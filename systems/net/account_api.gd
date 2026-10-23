@@ -35,12 +35,22 @@ var _remember := true
 var _refreshing := false
 var _google_cancel := false
 signal _refresh_finished(ok: bool)
+## Phát khi phát hiện tài khoản bị đá do đăng nhập ở thiết bị khác
+signal session_invalidated(reason: String)
 
 func _ready() -> void:
 	base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
 	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
 		if arg.begins_with("--account-url="):
 			base_url = arg.get_slice("=", 1)
+	if OS.has_feature("web"):
+		var web_override: Variant = JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('account-url')")
+		if web_override != null and str(web_override).begins_with("http"):
+			base_url = str(web_override)
+		else:
+			var origin: Variant = JavaScriptBridge.eval("window.location.origin")
+			if origin != null and str(origin).begins_with("http"):
+				base_url = str(origin)
 	base_url = base_url.trim_suffix("/")
 
 func is_logged_in() -> bool:
@@ -49,19 +59,10 @@ func is_logged_in() -> bool:
 func username() -> String:
 	return str(account.get("username", ""))
 
-## Kiểm tra tài khoản có quyền GM (được server xác nhận hoặc chỉ định qua GM_ACCOUNTS / cú pháp (GM))
+## Kiểm tra tài khoản có quyền GM (được server xác nhận trong dữ liệu tài khoản)
 func is_gm() -> bool:
 	if is_logged_in():
-		if bool(account.get("is_gm", false)):
-			return true
-		var u := username().to_lower()
-		if "(gm)" in u or "[gm]" in u:
-			return true
-		if GameManager.local_profile != null:
-			var dname := GameManager.local_profile.display_name.to_lower()
-			if "(gm)" in dname or "[gm]" in dname:
-				return true
-		return false
+		return bool(account.get("is_gm", false))
 	return OS.is_debug_build()
 
 # ---------------------------------------------------------------- tài khoản
@@ -106,7 +107,10 @@ func google_login(link := false) -> Dictionary:
 	if not start.ok:
 		return start
 	var d: Dictionary = start.data
-	OS.shell_open(str(d.auth_url))
+	var auth_url := str(d.get("auth_url", ""))
+	if not auth_url.begins_with("https://"):
+		return _fail(0, "bad_auth_url", "Địa chỉ đăng nhập không hợp lệ hoặc không an toàn")
+	OS.shell_open(auth_url)
 	var interval := maxf(1.0, float(d.get("interval", 2)))
 	var deadline := _now() + float(d.get("expires_in", 300))
 	while _now() < deadline:
@@ -192,6 +196,10 @@ func save_character(character_id: int, version: int, profile_data: Dictionary) -
 func delete_character(character_id: int, password: String) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_DELETE, "/v1/characters/%d" % character_id, {"password": password})
 
+## Kiểm tra phiên đăng nhập còn hiệu lực hay đã bị đá do thiết bị khác đăng nhập.
+func check_session() -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/auth/session")
+
 ## Access token hiện tại (còn hạn) — dùng khi kết nối game server. Rỗng nếu chưa đăng nhập / không làm mới được.
 func access_token() -> String:
 	if not await _ensure_access():
@@ -246,10 +254,13 @@ func _exit_tree() -> void:
 	if FileAccess.file_exists(SESSION_LOCK_PATH) 			and FileAccess.get_file_as_string(SESSION_LOCK_PATH).strip_edges().to_int() == OS.get_process_id():
 		DirAccess.remove_absolute(SESSION_LOCK_PATH)
 
+const _SESSION_PREFIX_OBF: PackedByteArray = [49, 8, 13, 2, 30, 20, 225, 251, 191, 234, 197, 212, 221, 220, 211, 173, 240]
+
 func _session_key() -> String:
 	## Không phải bí mật của server — chỉ gắn file phiên với máy này.
 	var id := OS.get_unique_id()
-	return ("kiemhiep-session:" + (id if id != "" else OS.get_name())).sha256_text()
+	var prefix := Obfuscator.deobfuscate(_SESSION_PREFIX_OBF)
+	return (prefix + (id if id != "" else OS.get_name())).sha256_text()
 
 func _write_session_file() -> void:
 	var f := FileAccess.open_encrypted_with_pass(SESSION_PATH, FileAccess.WRITE, _session_key())
@@ -295,8 +306,16 @@ func _authed(method: HTTPClient.Method, path: String, body: Variant = null) -> D
 	if not await _ensure_access():
 		return _fail(401, "unauthorized", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại")
 	var r := await _request(method, path, body, _access)
-	if r.status == 401 and _refresh != "" and await _do_refresh():
-		r = await _request(method, path, body, _access)
+	if r.status == 401:
+		if r.code == "logged_in_elsewhere":
+			_clear_session()
+			session_invalidated.emit(r.message)
+			return r
+		if _refresh != "" and await _do_refresh():
+			r = await _request(method, path, body, _access)
+			if r.code == "logged_in_elsewhere":
+				_clear_session()
+				session_invalidated.emit(r.message)
 	return r
 
 # ---------------------------------------------------------------- HTTP
@@ -321,8 +340,14 @@ func _request(method: HTTPClient.Method, path: String, body: Variant = null, bea
 		if result == HTTPRequest.RESULT_TIMEOUT:
 			return _fail(0, "network", "Máy chủ không phản hồi, vui lòng thử lại")
 		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
-	var text := (res[3] as PackedByteArray).get_string_from_utf8()
-	var data: Variant = JSON.parse_string(text) if text != "" else null
+	var raw_bytes: PackedByteArray = res[3]
+	if raw_bytes.size() >= 2 and raw_bytes[0] == 0x1F and raw_bytes[1] == 0x8B:
+		raw_bytes = raw_bytes.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+	var text := raw_bytes.get_string_from_utf8()
+	var trimmed := text.strip_edges()
+	var data: Variant = null
+	if trimmed.begins_with("{") or trimmed.begins_with("["):
+		data = JSON.parse_string(trimmed)
 	if status >= 200 and status < 300:
 		return {"ok": true, "status": status, "code": "", "message": "", "data": data}
 	if data is Dictionary:

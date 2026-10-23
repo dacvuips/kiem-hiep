@@ -1,10 +1,28 @@
 [gd_scene format=3 uid="uid://df7w0r63k2qsb"]
 
 [ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
-[ext_resource type="Texture2D" uid="uid://c8cxoo7sq4gm4" path="res://ui/login/bg.jpg" id="bg"]
-[ext_resource type="Texture2D" path="res://ui/server_select/btn_enter.png" id="be"]
+[ext_resource type="Texture2D" uid="uid://ba1nhwyn1mlnq" path="res://ui/login/bg.jpg" id="bg"]
+[ext_resource type="Shader" path="res://ui/server_select/vao_game_button.gdshader" id="vao_game_shader"]
 [ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
 [ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
+
+[sub_resource type="ShaderMaterial" id="enter_btn_mat"]
+shader = ExtResource("vao_game_shader")
+shader_parameter/button_size = Vector2(270, 60)
+shader_parameter/corner_cut = 8.0
+shader_parameter/border_width = 2.0
+shader_parameter/border_color = Color(1, 0.9, 0.45, 1)
+shader_parameter/border_inner_color = Color(0.96, 0.65, 0.12, 1)
+shader_parameter/glow_color = Color(1, 0.65, 0.08, 0.35)
+shader_parameter/col_top = Color(1, 0.84, 0.28, 1)
+shader_parameter/col_mid = Color(0.98, 0.63, 0.05, 1)
+shader_parameter/col_bot = Color(0.55, 0.22, 0.02, 1)
+shader_parameter/hover_boost = 0.0
+shader_parameter/is_pressed = 0.0
+shader_parameter/is_disabled = 0.0
+
+[sub_resource type="StyleBoxFlat" id="enter_btn_flat"]
+bg_color = Color(1, 1, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="dialog_bg"]
 bg_color = Color(0.04, 0.11, 0.13, 0.6)
@@ -345,17 +363,40 @@ layout_mode = 2
 text = "Bảo trì"
 label_settings = SubResource("legend_setting")
 
-[node name="EnterButton" type="TextureButton" parent="Stage"]
+[node name="EnterButton" type="Button" parent="Stage"]
 unique_name_in_owner = true
+material = SubResource("enter_btn_mat")
 layout_mode = 0
 offset_left = 505.0
 offset_top = 484.0
 offset_right = 775.0
 offset_bottom = 544.0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("be")
-ignore_texture_size = true
-stretch_mode = 5
+theme_override_styles/normal = SubResource("enter_btn_flat")
+theme_override_styles/hover = SubResource("enter_btn_flat")
+theme_override_styles/pressed = SubResource("enter_btn_flat")
+theme_override_styles/disabled = SubResource("enter_btn_flat")
+theme_override_styles/focus = SubResource("enter_btn_flat")
+
+[node name="EnterLabel" type="Label" parent="Stage/EnterButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.24, 0.1, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+text = "Vào Game"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="AccountLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true

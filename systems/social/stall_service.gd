@@ -80,8 +80,7 @@ static func buy(buyer: TradeParty, seller: TradeParty, item: ItemInstance, buyer
 			return blocked
 	if buyer_fighting:
 		return "Đang ở chế độ chiến đấu, không mua được."
-	if not seller_stall_open:
-		return "Quầy đã đóng."
+	# Cho phép mua khi người bán offline / ủy thác bày bán
 	if not seller.owns(item) or item.trade_price <= 0 or SecurityLock.is_item_locked(item):
 		return "Món đồ đã được bán hoặc không còn trên quầy."
 	var price := item.trade_price

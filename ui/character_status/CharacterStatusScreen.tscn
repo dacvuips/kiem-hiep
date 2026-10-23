@@ -1254,3 +1254,41 @@ flat = true
 autowrap_mode = 3
 clip_text = true
 script = ExtResource("99_item_slot")
+
+[node name="EquipSlot11" type="Button" parent="Aspect/Frame/Board" unique_id=1950000011]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.20994
+anchor_right = 0.5766
+anchor_bottom = 0.31123
+offset_left = -3.9871826
+offset_top = -0.40480042
+offset_right = -3.9871826
+offset_bottom = -0.40478516
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")
+
+[node name="EquipSlot12" type="Button" parent="Aspect/Frame/Board" unique_id=1950000012]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.49582
+anchor_top = 0.76888
+anchor_right = 0.5766
+anchor_bottom = 0.87017
+offset_left = -4.9871826
+offset_top = -0.06478882
+offset_right = -4.9871826
+offset_bottom = -0.064819336
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+autowrap_mode = 3
+clip_text = true
+script = ExtResource("99_item_slot")

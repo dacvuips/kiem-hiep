@@ -1,5 +1,5 @@
 extends Control
-## Trình tải game Kiếm Hiệp — thứ DUY NHẤT nằm trong APK (vài chục MB, chủ yếu là engine Godot).
+## Trình tải game JX1 Idle Origin — thứ DUY NHẤT nằm trong APK (vài chục MB, chủ yếu là engine Godot).
 ##
 ## Mỗi lần mở app:
 ##   1. Hỏi máy chủ GET /v1/client/manifest (danh sách gói .pck của bản game mới nhất + sha256).

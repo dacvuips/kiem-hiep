@@ -42,5 +42,13 @@ func set_title(new_title: String) -> void:
 	if new_title == title:
 		return
 	title = new_title
-	_label.text = "🏷 " + title if title != "" else ""
-	tooltip_text = title
+	if title == "Mở giao dịch" or title.begins_with("🤝"):
+		_label.text = "🤝 Mở giao dịch"
+		_label.add_theme_color_override("font_color", Color(0.4, 0.95, 1.0))
+		add_theme_stylebox_override("panel", SocialUi.box(Color(0.04, 0.08, 0.12, 0.90), Color(0.3, 0.75, 0.95), 4, 1, 3))
+		tooltip_text = "Đang mở giao dịch — bấm vào để giao dịch trực tiếp"
+	else:
+		_label.text = "🏷 " + title if title != "" else ""
+		_label.add_theme_color_override("font_color", SocialUi.GOLD)
+		add_theme_stylebox_override("panel", SocialUi.box(Color(0.10, 0.07, 0.03, 0.88), SocialUi.GOLD.darkened(0.25), 4, 1, 3))
+		tooltip_text = title

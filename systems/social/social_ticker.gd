@@ -19,6 +19,9 @@ func _process(delta: float) -> void:
 	_hub.tick(delta)
 
 func _on_notice(text: String, good: bool) -> void:
-	var player := get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	if tree == null:
+		return
+	var player := tree.get_first_node_in_group("player")
 	if player != null and player.has_method("_notice"):
 		player._notice(text)

@@ -101,7 +101,7 @@ func on_trade_request_id(c, character_id: int) -> void:
 		gs.notice(c, "Không thể giao dịch với chính mình.")
 		return
 	if t == null or gs.battle:
-		gs.notice(c, "Không tìm thấy người chơi có ID %d hoặc họ đang không trực tuyến." % character_id)
+		gs.notice(c, "Không tìm thấy người chơi có ID %d hoặc họ đang không trực tuyến. (Bạn có thể mua vật phẩm của họ trên Chợ Giao Thương)." % character_id)
 		return
 	_invite(c, t, false)
 

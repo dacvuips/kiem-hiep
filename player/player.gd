@@ -63,6 +63,8 @@ var camp: int = Camp.Type.BEGIN
 ## Bật PK: mới đánh/bùa được người chơi KHÁC màu (phe Sát thủ luôn đánh được).
 var pk_enabled: bool = false
 var _name_label: Label
+var _match_level_tag: String = ""
+var _match_side: String = ""
 var _zoom_target: float = CAMERA_ZOOM
 var _head_hp_bar: Node2D
 
@@ -136,6 +138,11 @@ func _ready() -> void:
 	auto = AutoController.new(self)
 	add_child(auto)
 	_refresh_aura_sprite()
+	PlayerStats.stats_reset.connect(_on_stats_reset)
+
+func _on_stats_reset() -> void:
+	if range_indicator:
+		range_indicator.set_radius(get_current_range())
 
 ## Đổi phe (màu tên) — VD vào sự kiện/bang chiến, bật PK thành Sát thủ. Đồng đội tính lại tự động vì
 ## CombatTargeting đọc `camp` mỗi lần quét.
@@ -174,8 +181,17 @@ func _build_name_label(display_name: String) -> void:
 	_stall_sign = StallSign.new()
 	_stall_sign.place_above(NAME_LABEL_Y)
 	_stall_sign.clicked.connect(func() -> void:
-		if GameManager.local_profile:
-			StallWindow.open(get_tree().current_scene, SocialHub.of(GameManager.local_profile)))
+		var prof := GameManager.local_profile
+		if prof == null:
+			return
+		if prof.stall_open:
+			StallWindow.open(get_tree().current_scene, SocialHub.of(prof))
+		elif prof.trade_open:
+			StallService.close_trade(prof)
+			if NetClient.is_in_world():
+				NetClient.send_stall(SocialServer.TRADE_CLOSE)
+			SaveManager.save_profile(prof)
+			notify("Đã tắt mở giao dịch."))
 	add_child(_stall_sign)
 
 ## BÀY BÁN (StallService): quầy vừa mở thì ngồi xuống tại chỗ, biển tên quầy hiện trên đầu; đang bày mà đứng dậy (di chuyển, đánh,
@@ -195,7 +211,12 @@ func _tick_stall() -> void:
 		_close_stall(p, "Đã đứng dậy — quầy hàng đã dọn.")
 		open = false
 	_stall_was_open = open
-	_stall_sign.set_title(p.stall_title if open else "")
+	if open:
+		_stall_sign.set_title(p.stall_title)
+	elif p != null and p.trade_open and not _dead:
+		_stall_sign.set_title("Mở giao dịch")
+	else:
+		_stall_sign.set_title("")
 
 func _close_stall(p: PlayerProfile, why: String) -> void:
 	StallService.close_stall(p)
@@ -223,7 +244,7 @@ func refresh_appearance() -> void:
 	if profile == null:
 		return
 	var gender_key := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	var look := Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
+	var look: Dictionary = profile.get_equipped_look() if profile.has_method("get_equipped_look") else Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
 	var final_gender: String = str(look.get("gender", gender_key))
 	if avatar != null:
 		avatar.voice_gender = final_gender
@@ -238,22 +259,52 @@ func refresh_appearance() -> void:
 
 	_update_name_label_disguise(look)
 
+func get_current_look() -> Dictionary:
+	var profile := GameManager.local_profile
+	if profile == null:
+		return {}
+	var gender_key := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
+	var look: Dictionary = profile.get_equipped_look() if profile.has_method("get_equipped_look") else Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
+	var final_look := look.duplicate()
+	var final_gender: String = str(look.get("gender", gender_key))
+	final_look["gender"] = 1 if final_gender == "female" else 0
+	final_look["mask_particular"] = int(look.get("mask_particular", -1))
+	final_look["aura_state"] = _aura_sprite_state
+	return final_look
+
+func set_match_level_tag(lvl: int, side: String = "") -> void:
+	if lvl > 0:
+		_match_level_tag = "[Cấp %d] " % lvl
+	else:
+		_match_level_tag = ""
+		_match_side = ""
+	if side != "":
+		_match_side = side
+	var profile := GameManager.local_profile
+	if profile and _name_label:
+		var look: Dictionary = profile.get_equipped_look() if profile.has_method("get_equipped_look") else Equipment.get_appearance(profile.equipment, "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male", profile.riding)
+		_update_name_label_disguise(look)
+
 func _update_name_label_disguise(look: Dictionary) -> void:
 	var profile := GameManager.local_profile
 	if _name_label == null or profile == null:
 		return
 	if look.get("is_masked", false):
 		var d_title: String = str(look.get("disguise_title", "Dịch Dung"))
-		_name_label.text = "🎭 [%s]\n%s" % [d_title, profile.display_name]
+		_name_label.text = "🎭 [%s]\n%s%s" % [d_title, _match_level_tag, profile.display_name]
 		_name_label.size = Vector2(200, 32)
 		_name_label.position.x = -100
 		var m_color: Color = look.get("modulate", Color(1.0, 0.85, 0.4))
 		_name_label.add_theme_color_override("font_color", m_color)
 	else:
-		_name_label.text = profile.display_name
-		_name_label.size = Vector2(160, 18)
-		_name_label.position.x = -80
-		_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
+		_name_label.text = "%s%s" % [_match_level_tag, profile.display_name]
+		_name_label.size = Vector2(180, 18)
+		_name_label.position.x = -90
+		if _match_side != "":
+			var side_col := Color(0.2, 0.6, 1.0) if _match_side == "song" else Color(1.0, 0.35, 0.2)
+			_name_label.add_theme_color_override("font_color", side_col)
+		else:
+			_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
 	_apply_name_y()
 
 ## Thanh máu trên đầu, dưới tên — chạy theo signal health_changed (cùng nguồn với HUD góc trái).
@@ -329,6 +380,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			## Bấm 1 lần = TỰ TÌM ĐƯỜNG vòng vật cản (có map chính); giữ chuột quá HOLD_FOLLOW_TIME thì bám theo con trỏ.
 			auto.on_manual_input()
+			_clear_chase_main()
 			var feet := get_global_mouse_position() + Vector2(0, VltkWorld.FEET_OFFSET)
 			if VltkWorld.current == null or not walk_to_feet(feet):
 				_set_move_target(get_global_mouse_position())
@@ -374,27 +426,32 @@ func pick_target_at(world_pos: Vector2) -> Node2D:
 				best = node
 	return best
 
-func _is_valid_target(node: Node2D) -> bool:
-	if node == null or not is_instance_valid(node) or node.is_queued_for_deletion() or not node.is_inside_tree():
+func _is_valid_target(node: Variant) -> bool:
+	if node == null or not is_instance_valid(node) or not (node is Node2D):
 		return false
-	return not (node.has_method("is_dead") and node.call("is_dead"))
+	var n := node as Node2D
+	if n.is_queued_for_deletion() or not n.is_inside_tree():
+		return false
+	return not (n.has_method("is_dead") and n.call("is_dead"))
 
-func set_target(node: Node2D, by_player := false) -> void:
+func set_target(node: Variant, by_player := false) -> void:
+	if node != null and (not is_instance_valid(node) or not (node is Node2D)):
+		node = null
 	if node == selected_target:
 		if by_player:
 			target_by_player = true
 		return
 	target_by_player = by_player
 	_clear_ring()
-	selected_target = node
-	if node == null:
+	selected_target = node as Node2D
+	if selected_target == null:
 		return
 	_target_ring = TargetRing.new()
-	node.add_child(_target_ring)
+	selected_target.add_child(_target_ring)
 
 ## Skill vừa ra chiêu vào `node`: nếu là quái/người chơi khác thật (không phải điểm ngắm ảo) thì chọn làm mục tiêu.
-func mark_cast_target(node: Node2D) -> void:
-	if node != null and node != self and _is_valid_target(node) and (node.is_in_group("enemies") or node.is_in_group("other_players")):
+func mark_cast_target(node: Variant) -> void:
+	if node != null and is_instance_valid(node) and (node is Node2D) and node != self and _is_valid_target(node) and ((node as Node2D).is_in_group("enemies") or (node as Node2D).is_in_group("other_players")):
 		set_target(node)
 
 func clear_target() -> void:
@@ -604,8 +661,11 @@ func _physics_process(delta: float) -> void:
 		if _has_move_target:
 			_clear_move_target()
 		stop_follow()
+		_clear_chase_main()
 		auto.on_manual_input()
 	else:
+		if not is_auto_mode:
+			_tick_chase_main(delta)
 		input_vector = _get_move_target_vector(delta)
 		if input_vector == Vector2.ZERO:
 			input_vector = _get_follow_vector()
@@ -632,7 +692,7 @@ func _physics_process(delta: float) -> void:
 
 	## Làm chậm (Băng sát) giảm tốc độ chạy theo StatusEffectController.move_speed_multiplier.
 	## fastwalkrun_p (buff tốc chạy, VD Thanh Phong phù) cộng % tốc độ gốc.
-	var speed := SPEED * (1.0 + combat_stats.move_speed_p / 100.0) * status_controller.move_speed_multiplier
+	var speed := SPEED * (1.0 + combat_stats.move_speed_p / 100.0) * status_controller.move_speed_multiplier * PlayerStats.move_speed_multiplier
 	if _is_jumping:
 		velocity = _jump_dir * JUMP_SPEED
 	elif _rush_time_left > 0.0 and input_vector != Vector2.ZERO:
@@ -680,19 +740,28 @@ func _physics_process(delta: float) -> void:
 	skill_controller.tick_aura(self, delta)
 	_tick_loop_skills(delta)
 
+	# Hồi phục Khiên Chân Khí sau thời gian không bị đánh (Kim Chung Tráo)
+	if PlayerStats.max_shield > 0.0 and PlayerStats.current_shield < PlayerStats.max_shield:
+		PlayerStats.shield_timer -= delta
+		if PlayerStats.shield_timer <= 0.0:
+			PlayerStats.current_shield = minf(PlayerStats.max_shield, PlayerStats.current_shield + PlayerStats.max_shield * 0.25 * delta)
+			PlayerStats.shield_changed.emit(PlayerStats.current_shield, PlayerStats.max_shield)
+
+	# Tự hồi phục Sinh Lực theo thời gian (Dịch Cân Kinh)
+	if PlayerStats.hp_regen_percent > 0.0 and health < max_health and not _dead:
+		heal(max_health * PlayerStats.hp_regen_percent * delta)
+
 	## Auto: chọn mục tiêu / ra chiêu / buff / nhặt đồ theo "Thiết lập auto đánh" (AutoController). Skill phụ phím skill_1-4
 	## vẫn bấm tay được song song.
 	auto.tick(delta, is_auto_mode)
 	if not is_auto_mode and _key_pressed("attack_skill"):
-		## Không bắt buộc có mục tiêu ở đây — skill buff lên mình thi triển được khi không có quái gần,
-		## SectSkillController._try_cast tự từ chối đòn đánh thiếu mục tiêu.
-		if skill_controller.try_cast_main(self, get_cast_target(skill_controller.get_main_skill())):
-			play_cast()
+		use_main_skill()
 
 	## Phím skill_1-4 = 4 ô đầu của trang thanh skill đang chọn.
 	var page_start: int = GameManager.local_profile.hotbar_page * PlayerProfile.HOTBAR_SLOTS_PER_PAGE 			if GameManager.local_profile else 0
 	for i in range(4):
 		if _key_pressed("skill_%d" % (i + 1)):
+			_clear_chase_main()
 			var sub_skill: SkillDefinition = skill_controller.get_sub_skills()[page_start + i]
 			if skill_controller.try_cast_skill(page_start + i, self, get_cast_target(sub_skill)):
 				play_cast()
@@ -721,6 +790,146 @@ func play_cast() -> void:
 	is_casting = true
 	_face_nearest_enemy()
 	avatar.play("cast")
+
+# ------------------------------------------------------------ Tiếp cận & Thi triển Skill Đánh Chính
+const CHASE_SEARCH_MAX_RADIUS := 3000.0
+
+var _chase_main_target: Node2D = null
+var _chase_main_skill: SkillDefinition = null
+var _chase_replan_timer: float = 0.0
+var _chase_elapsed_time: float = 0.0
+
+## Sử dụng Skill Đánh Chính (bấm phím attack_skill hoặc nhấp nút chính trên SkillBarUI):
+##   - Nếu có quái trong phạm vi thi triển skill chính -> thi triển ngay vào quái gần nhất.
+##   - Nếu không có quái trong phạm vi thi triển -> tự động tiến tới quái gần nhất cho đến khi vào phạm vi rồi đánh.
+func use_main_skill() -> void:
+	if _dead or _is_jumping or status_controller.is_stunned:
+		return
+	if _is_sitting:
+		_stand_up()
+
+	var main_skill := skill_controller.get_main_skill() if skill_controller else null
+	if main_skill == null:
+		return
+
+	# Hào quang hoặc buff bản thân: thi triển ngay lên mình
+	if SectSkillController.is_self_buff(main_skill) or main_skill.is_aura:
+		_clear_chase_main()
+		if skill_controller.try_cast_main(self, null):
+			play_cast()
+		return
+
+	# Thiết lập đánh theo hướng nhìn hoặc đang ngắm hướng kéo:
+	var profile := GameManager.local_profile
+	if (profile and profile.get_skill_setting("face_direction")) or aim_dir != Vector2.ZERO:
+		_clear_chase_main()
+		var pt := _make_cast_point(main_skill)
+		if skill_controller.try_cast_main(self, pt):
+			play_cast()
+		return
+
+	var skill_range := get_skill_radius(main_skill)
+
+	# 1. Kiểm tra xem có quái nằm trong phạm vi thi triển skill chính hay không
+	# (Ưu tiên mục tiêu người chơi đã bấm chọn nếu mục tiêu đó còn sống và trong tầm)
+	var chosen := get_selected_target()
+	var target_in_range: Node2D = null
+	if chosen != null and _is_valid_target(chosen) and chosen.is_in_group("enemies"):
+		var cd: Vector2 = chosen.global_position - global_position
+		if cd.x * cd.x + cd.y * cd.y * 4.0 <= skill_range * skill_range:
+			target_in_range = chosen
+
+	if target_in_range == null:
+		target_in_range = get_nearest_enemy(skill_range)
+
+	if target_in_range != null:
+		_clear_chase_main()
+		if is_moving_to_target():
+			stop_walking()
+		update_facing(target_in_range.global_position - global_position)
+		if skill_controller.try_cast_main(self, target_in_range):
+			play_cast()
+		return
+
+	# 2. Không có quái trong phạm vi thi triển: tìm quái gần nhất trên bản đồ để tiến tới
+	var target_to_chase: Node2D = null
+	if chosen != null and _is_valid_target(chosen) and chosen.is_in_group("enemies"):
+		target_to_chase = chosen
+	else:
+		target_to_chase = get_nearest_enemy(CHASE_SEARCH_MAX_RADIUS)
+
+	if target_to_chase != null:
+		_start_chase_main(target_to_chase, main_skill)
+	else:
+		# Không có quái nào trên bản đồ: thi triển điểm ảo phía trước mặt (nếu có đạn)
+		_clear_chase_main()
+		var pt := _make_cast_point(main_skill)
+		if skill_controller.try_cast_main(self, pt):
+			play_cast()
+
+func _start_chase_main(target: Variant, skill: SkillDefinition) -> void:
+	if target == null or not is_instance_valid(target) or not (target is Node2D):
+		return
+	var n := target as Node2D
+	_chase_main_target = n
+	_chase_main_skill = skill
+	_chase_replan_timer = 0.35
+	_chase_elapsed_time = 0.0
+	set_target(n, false)
+	_move_towards_target(n)
+
+func _clear_chase_main() -> void:
+	_chase_main_target = null
+	_chase_main_skill = null
+	_chase_replan_timer = 0.0
+	_chase_elapsed_time = 0.0
+
+func _move_towards_target(target: Variant) -> void:
+	if target == null or not is_instance_valid(target) or not (target is Node2D):
+		return
+	var n := target as Node2D
+	var feet := VltkMath.ground_of(n)
+	if VltkWorld.current == null or not walk_to_feet(feet):
+		_set_move_target(n.global_position)
+	_show_route = false
+
+func _tick_chase_main(delta: float) -> void:
+	if _chase_main_target == null:
+		return
+	if not _is_valid_target(_chase_main_target):
+		_clear_chase_main()
+		stop_walking()
+		return
+
+	_chase_elapsed_time += delta
+	if _chase_elapsed_time > 10.0:
+		_clear_chase_main()
+		stop_walking()
+		return
+
+	var d: Vector2 = _chase_main_target.global_position - global_position
+	var dist_logic: float = sqrt(d.x * d.x + d.y * d.y * 4.0)
+	var skill_range: float = get_skill_radius(_chase_main_skill) if _chase_main_skill else get_current_range()
+
+	# Đã tiến tới mức phạm vi có thể thi triển skill:
+	if dist_logic <= skill_range:
+		stop_walking()
+		update_facing(_chase_main_target.global_position - global_position)
+		var target := _chase_main_target
+		if skill_controller.try_cast_main(self, target):
+			play_cast()
+			_clear_chase_main()
+		elif not skill_controller.is_skill_usable(skill_controller.get_main_skill()):
+			if _chase_elapsed_time > 2.0:
+				_clear_chase_main()
+		return
+
+	# Chưa tới phạm vi: định kỳ cập nhật đường đi nếu quái di chuyển hoặc chưa có đường
+	_chase_replan_timer -= delta
+	if _chase_replan_timer <= 0.0:
+		_chase_replan_timer = 0.35
+		if not is_moving_to_target() or dist_logic > skill_range * 1.3:
+			_move_towards_target(_chase_main_target)
 
 ## Mục tiêu khi người chơi TỰ ra chiêu (phím / nút skill), theo khung "Tùy chỉnh kỹ năng":
 ##   - Đánh theo hướng trước mặt: luôn là 1 điểm phía trước mặt (không nhắm quái).
@@ -825,8 +1034,11 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	avatar.face(last_direction)
 	_is_sitting = false
 	is_casting = true
-	avatar.play("attack" if physical else "cast", duration)
-	return avatar.get_action_duration() if duration <= 0.0 else duration
+	var speed_mult: float = maxf(0.5, PlayerStats.attack_speed_multiplier)
+	var base_dur := duration if duration > 0.0 else avatar.get_action_duration()
+	var act_duration := base_dur / speed_mult
+	avatar.play("attack" if physical else "cast", act_duration)
+	return act_duration
 
 ## CHẠY LAO TỚI mục tiêu (Melee_RunAndAttack gốc): tới khi cách mục tiêu `stop_distance` hoặc hết `seconds` thì dừng và
 ## phát signal rush_finished. Trong lúc lao không nhận phím di chuyển; xuyên qua quái nhưng vẫn vướng vật cản.
@@ -953,11 +1165,13 @@ func get_nearest_enemy(radius: float = -1.0) -> Node2D:
 	var max_sq := max_range * max_range
 	## Đang chọn mục tiêu (bấm vào quái/người): ưu tiên đánh nó nếu nằm trong tầm.
 	var chosen := get_selected_target()
-	if chosen != null:
+	if chosen != null and _is_valid_target(chosen):
 		var cd: Vector2 = chosen.global_position - global_position
 		if cd.x * cd.x + cd.y * cd.y * 4.0 <= max_sq:
 			return chosen
 	for enemy in enemies:
+		if not _is_valid_target(enemy):
+			continue
 		var d: Vector2 = enemy.global_position - global_position
 		var distance_sq := d.x * d.x + d.y * d.y * 4.0
 		if distance_sq <= max_sq and distance_sq < best_sq:
@@ -968,12 +1182,36 @@ func get_nearest_enemy(radius: float = -1.0) -> Node2D:
 func heal(amount: float) -> void:
 	health = min(max_health, health + amount)
 
+## Tăng tốc độ chạy tạm thời (Phi Tốc Đan, buff chiêu...)
+func apply_speed_buff(percent: float, duration: float) -> void:
+	if status_controller and status_controller.has_method("apply_speed_buff"):
+		status_controller.apply_speed_buff(percent, duration)
+
+## Hồi máu theo thời gian (HOT: Heal Over Time)
+func apply_hot(total_heal: float, duration: float) -> void:
+	if duration <= 0.0:
+		heal(total_heal)
+		return
+	var tick_interval := 0.5
+	var ticks := int(duration / tick_interval)
+	if ticks <= 0:
+		heal(total_heal)
+		return
+	var heal_per_tick := total_heal / float(ticks)
+	var t := create_tween()
+	for i in ticks:
+		t.tween_callback(func() -> void: heal(heal_per_tick))
+		t.tween_interval(tick_interval)
+
 ## Nhận 1 đòn tấn công THẬT — chạy đúng pipeline CombatFormulas.resolve_damage (CHÍNH XÁC 100%
 ## VLTK: tương khắc Ngũ Hành, % kháng, chí mạng...). `attacker_stats` là CombatantStats của bên gây
 ## damage (Enemy dùng CombatantStats.from_enemy_tier(), Player khác dùng combat_stats của chính nó
 ## khi PvP online sau này) — bắt buộc truyền vào để roll trúng/né đúng AttackRating vs Defense của
 ## CHÍNH player này, không còn dùng % giảm sát thương cố định (PlayerDefenseStats cũ, đã xoá).
 ## mods: phần phụ của đòn skill — xem Enemy.take_damage_from() / CombatFormulas.HitModifiers.
+var last_attacker: Node = null
+var last_attacker_name: String = ""
+
 func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
 		damage_type: CombatFormulas.DamageType = CombatFormulas.DamageType.PHYSICS,
 		attacker_element: ElementTypes.ElementType = ElementTypes.ElementType.KIM,
@@ -981,6 +1219,12 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	## Đang nhảy (bay trên không): miễn nhiễm mọi sát thương.
 	if _dead or is_invincible or _is_jumping:
 		return
+	if mods != null and mods.attacker_node != null:
+		last_attacker = mods.attacker_node
+		if "profile" in last_attacker and last_attacker.profile:
+			last_attacker_name = str(last_attacker.profile.display_name)
+		elif "display_name" in last_attacker:
+			last_attacker_name = str(last_attacker.display_name)
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED:
@@ -988,6 +1232,19 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		return
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
+
+	# Hấp thụ sát thương bằng Khiên Chân Khí Kim Chung Tráo nếu có
+	if PlayerStats.current_shield > 0.0:
+		PlayerStats.shield_timer = PlayerStats.shield_recharge_delay
+		if PlayerStats.current_shield >= final_damage:
+			PlayerStats.current_shield -= final_damage
+			PlayerStats.shield_changed.emit(PlayerStats.current_shield, PlayerStats.max_shield)
+			VfxManager.play("hit", global_position)
+			return
+		else:
+			final_damage -= int(PlayerStats.current_shield)
+			PlayerStats.current_shield = 0.0
+			PlayerStats.shield_changed.emit(0.0, PlayerStats.max_shield)
 
 	health -= final_damage
 	if health <= 0:
@@ -1050,8 +1307,14 @@ func die() -> void:
 	print("Player died")
 	avatar.play_event_sound("die")
 	_clear_move_target()
+	_clear_chase_main()
 	clear_target()
 	stop_follow()
+	var prof := GameManager.local_profile
+	if prof != null and prof.trade_open:
+		StallService.close_trade(prof)
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_CLOSE)
 	if is_auto_mode:
 		auto.on_player_died()
 	is_auto_mode = false
@@ -1080,6 +1343,33 @@ func revive_at_start() -> void:
 	velocity = Vector2.ZERO
 	if NetWorldSync.is_online_mode():
 		NetClient.send_revive()
+
+## Hồi sinh tại toạ độ chỉ định (chế độ đấu trường / lộn xộn).
+func respawn_at(spawn_pos: Vector2) -> void:
+	_dead = false
+	health = max_health
+	avatar.modulate = Color(1, 1, 1, 1)
+	avatar.play("stand")
+	GameManager.is_game_over = false
+	global_position = spawn_pos
+	velocity = Vector2.ZERO
+	last_attacker = null
+	last_attacker_name = ""
+	start_invincibility()
+
+## Hồi sinh tại chỗ đầy máu (phục vụ các chế độ đặc biệt).
+func revive() -> void:
+	if not _dead:
+		return
+	_dead = false
+	health = max_health
+	avatar.modulate = Color(1, 1, 1, 1)
+	avatar.play("stand")
+	GameManager.is_game_over = false
+	velocity = Vector2.ZERO
+	last_attacker = null
+	last_attacker_name = ""
+	start_invincibility()
 
 ## Hình trạng thái (StateSpecialId) của hào quang đang bật — gắn lên người suốt lúc hào quang còn bật.
 var _aura_sprite: VltkStateSprite = null
@@ -1122,6 +1412,7 @@ func _jump_height() -> float:
 func start_jump(frames: int = JUMP_DEFAULT_FRAMES, target_pos: Vector2 = Vector2.INF) -> bool:
 	if _is_jumping or is_attacking or is_casting or status_controller.is_stunned:
 		return false
+	_clear_chase_main()
 	## Trên ngựa không nhảy được.
 	if avatar.is_riding():
 		_notice("Đang cưỡi ngựa, không thể nhảy")

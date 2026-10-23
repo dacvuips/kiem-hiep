@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3]
+
+[ext_resource type="Script" path="res://upgrades/upgrade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://gems/heart.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "hp_regen"
+title = "Dịch Cân Kinh"
+description = "Tự hồi phục 1.5% Sinh Lực tối đa mỗi giây"
+icon = ExtResource("2_icon")
+stat_type = 5
+value = 0.015
+rarity = 0

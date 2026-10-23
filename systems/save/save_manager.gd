@@ -5,6 +5,14 @@ extends Node
 
 const SAVE_PATH := "user://savegame.json"
 
+## Khóa mã hóa bảo vệ file lưu cục bộ, gắn liền với thiết bị người chơi (chống sửa file text trực tiếp).
+const _KEY_PREFIX_OBF: PackedByteArray = [48, 25, 89, 66, 5, 28, 242, 238, 191, 234, 197, 196, 219, 199, 213, 183, 179, 235]
+
+static func _save_key() -> String:
+	var id := OS.get_unique_id()
+	var prefix := Obfuscator.deobfuscate(_KEY_PREFIX_OBF)
+	return (prefix + (id if id != "" else OS.get_name())).sha256_text()
+
 signal game_saved
 signal game_loaded
 
@@ -20,7 +28,7 @@ func save_game(_player: Node) -> void:
 		"player_stats": _serialize_player_stats(),
 	}
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var file := FileAccess.open_encrypted_with_pass(SAVE_PATH, FileAccess.WRITE, _save_key())
 	if file == null:
 		push_warning("SaveManager: không mở được file để ghi (%s)" % SAVE_PATH)
 		return
@@ -35,12 +43,20 @@ func load_game(_player: Node) -> bool:
 	if not has_save():
 		return false
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		push_warning("SaveManager: không mở được file để đọc (%s)" % SAVE_PATH)
-		return false
-	var text := file.get_as_text()
-	file.close()
+	var text := ""
+	# Thử đọc mã hoá trước; nếu file cũ chưa mã hoá thì đọc thường để tương thích ngược
+	var file := FileAccess.open_encrypted_with_pass(SAVE_PATH, FileAccess.READ, _save_key())
+	if file != null:
+		text = file.get_as_text()
+		file.close()
+	else:
+		file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+		if file != null:
+			text = file.get_as_text()
+			file.close()
+		else:
+			push_warning("SaveManager: không mở được file để đọc (%s)" % SAVE_PATH)
+			return false
 
 	var parsed = JSON.parse_string(text)
 	if not (parsed is Dictionary):
@@ -155,9 +171,9 @@ func has_profile() -> bool:
 func save_profile(profile: PlayerProfile) -> void:
 	if profile == null:
 		return
-	## Luôn lưu vào file máy cục bộ (PROFILE_PATH) để không bao giờ mất dữ liệu test / tắt game đột ngột
+	## Luôn lưu vào file máy cục bộ (PROFILE_PATH) được mã hoá bằng khoá máy để bảo vệ dữ liệu
 	if not _saving_disabled():
-		var file := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
+		var file := FileAccess.open_encrypted_with_pass(PROFILE_PATH, FileAccess.WRITE, _save_key())
 		if file != null:
 			file.store_string(JSON.stringify(profile.to_dict(), "\t"))
 			file.close()
@@ -190,7 +206,20 @@ func restore_profile_from_save() -> void:
 func load_profile() -> PlayerProfile:
 	if not has_profile():
 		return null
-	var parsed = JSON.parse_string(FileAccess.get_file_as_string(PROFILE_PATH))
+	var text := ""
+	var file := FileAccess.open_encrypted_with_pass(PROFILE_PATH, FileAccess.READ, _save_key())
+	if file != null:
+		text = file.get_as_text()
+		file.close()
+	else:
+		file = FileAccess.open(PROFILE_PATH, FileAccess.READ)
+		if file != null:
+			text = file.get_as_text()
+			file.close()
+		else:
+			push_warning("SaveManager: không mở được file profile.")
+			return null
+	var parsed = JSON.parse_string(text)
 	if not (parsed is Dictionary):
 		push_warning("SaveManager: file profile hỏng hoặc sai định dạng.")
 		return null
@@ -219,11 +248,11 @@ func _deserialize_player_stats(data: Dictionary) -> void:
 		return
 	PlayerStats.level = int(data.get("level", 1))
 	PlayerStats.current_exp = float(data.get("current_exp", 0.0))
-	PlayerStats.exp_to_next_level = float(data.get("exp_to_next_level", 10.0))
+	PlayerStats.exp_to_next_level = float(data.get("exp_to_next_level", 500.0))
 	PlayerStats.damage_multiplier = float(data.get("damage_multiplier", 1.0))
 	PlayerStats.attack_speed_multiplier = float(data.get("attack_speed_multiplier", 1.0))
 	PlayerStats.range_multiplier = float(data.get("range_multiplier", 1.0))
-	PlayerStats.extra_projectile_count = int(data.get("extra_projectile_count", 0))
+	PlayerStats.extra_projectile_count = 0
 	var ids: Array[String] = []
 	for id in data.get("applied_upgrade_ids", []):
 		ids.append(str(id))

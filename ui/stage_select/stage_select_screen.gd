@@ -1,6 +1,7 @@
 extends CanvasLayer
 class_name StageSelectScreen
 
+const StageRewards = preload("res://systems/stage_rewards.gd")
 const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Màn "Chọn Ải" — liệt kê TOÀN BỘ StageData (Character Hub Screen truyền vào, xem
 ## CharacterHubScreen.stages), cho người chơi chọn map cụ thể để vào trận thay vì chỉ chơi tuần
@@ -29,6 +30,12 @@ var _on_closed: Callable
 ## `func() -> void: pass` nếu nơi gọi không cần xử lý gì khi đóng.
 static func open(parent: Node, profile: PlayerProfile, stages: Array[StageData],
 		on_stage_chosen: Callable, on_closed: Callable) -> void:
+	if parent == null or not is_instance_valid(parent):
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree != null and tree.current_scene != null:
+			parent = tree.current_scene
+		else:
+			return
 	var screen := StageSelectScreen.new()
 	screen._profile = profile
 	screen._stages = stages
@@ -72,13 +79,15 @@ func _ready() -> void:
 	vbox.add_child(title)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(520, min(_stages.size() * 105, 520))
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var max_scroll_h := clampf(get_viewport().get_visible_rect().size.y - 180.0, 240.0, 560.0)
+	scroll.custom_minimum_size = Vector2(660, minf(_stages.size() * 118.0, max_scroll_h))
 	vbox.add_child(scroll)
 	TouchScrollHelperScript.attach(scroll, vbox)
 
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
-	list.custom_minimum_size.x = 500
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 
 	for i in _stages.size():
@@ -91,11 +100,14 @@ func _ready() -> void:
 	vbox.add_child(close_button)
 
 func _build_stage_card(stage: StageData, index: int) -> Control:
-	var is_unlocked := index <= _profile.stages_cleared
+	var is_admin := AccountApi.is_gm()
+	var is_unlocked := is_admin or index <= _profile.stages_cleared
 	var is_completed := index < _profile.stages_cleared
 
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(0, 92)
+	button.custom_minimum_size = Vector2(0, 108)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.clip_contents = true
 	button.disabled = not is_unlocked
 	button.focus_mode = Control.FOCUS_NONE
 	if is_unlocked:
@@ -106,7 +118,7 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	style.border_color = BORDER_UNLOCKED if is_unlocked else BORDER_LOCKED
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
-	style.set_content_margin_all(8)
+	style.set_content_margin_all(0)
 	button.add_theme_stylebox_override("normal", style)
 	button.add_theme_stylebox_override("disabled", style)
 	if is_unlocked:
@@ -114,15 +126,25 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 		hover.border_color = GOLD
 		button.add_theme_stylebox_override("hover", hover)
 
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	button.add_child(margin)
+
 	var hbox := HBoxContainer.new()
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	hbox.add_theme_constant_override("separation", 12)
-	button.add_child(hbox)
+	margin.add_child(hbox)
 
 	# Khung ảnh thu nhỏ xem trước của bàn chơi (Stage Thumbnail)
 	var thumb_box := PanelContainer.new()
-	thumb_box.custom_minimum_size = Vector2(104, 68)
+	thumb_box.custom_minimum_size = Vector2(96, 68)
 	thumb_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var t_style := StyleBoxFlat.new()
 	t_style.bg_color = Color(0.04, 0.05, 0.06, 0.95)
@@ -132,7 +154,7 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	thumb_box.add_theme_stylebox_override("panel", t_style)
 
 	var thumb := TextureRect.new()
-	thumb.custom_minimum_size = Vector2(100, 64)
+	thumb.custom_minimum_size = Vector2(92, 64)
 	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	thumb.texture = stage.get_preview_texture() if stage.has_method("get_preview_texture") else null
@@ -141,13 +163,17 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	info.add_theme_constant_override("separation", 4)
 	hbox.add_child(info)
 
 	var name_label := Label.new()
 	name_label.text = "%d. %s" % [index + 1, stage.stage_name]
 	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color", TEXT_LIGHT if is_unlocked else TEXT_DIM)
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(name_label)
 
 	var detail_label := Label.new()
@@ -155,7 +181,26 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	detail_label.text = "Boss: %s   •   %d loại quái" % [boss_text, stage.enemy_tiers.size()]
 	detail_label.add_theme_font_size_override("font_size", 12)
 	detail_label.add_theme_color_override("font_color", TEXT_DIM)
+	detail_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(detail_label)
+
+	# Hàng hiển thị các ô phần thưởng xem trước
+	var rewards_row := HBoxContainer.new()
+	rewards_row.mouse_filter = Control.MOUSE_FILTER_PASS
+	rewards_row.add_theme_constant_override("separation", 10)
+	info.add_child(rewards_row)
+
+	var rw_lbl := Label.new()
+	rw_lbl.text = "Thưởng:"
+	rw_lbl.add_theme_font_size_override("font_size", 11)
+	rw_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.72) if is_unlocked else TEXT_DIM)
+	rw_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rewards_row.add_child(rw_lbl)
+
+	var previews := StageRewards.get_previews_for_stage(stage, index)
+	for p in previews:
+		rewards_row.add_child(_build_reward_slot(p, is_unlocked))
 
 	var status_label := Label.new()
 	if not is_unlocked:
@@ -164,14 +209,59 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	elif is_completed:
 		status_label.text = "✓ Đã vượt"
 		status_label.add_theme_color_override("font_color", Color(0.4, 0.85, 0.4))
+	elif is_admin and index > _profile.stages_cleared:
+		status_label.text = "✦ Mở khoá"
+		status_label.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))
 	else:
 		status_label.text = "▶ Đang chơi"
 		status_label.add_theme_color_override("font_color", GOLD)
 	status_label.add_theme_font_size_override("font_size", 13)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status_label.custom_minimum_size = Vector2(90, 0)
+	status_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hbox.add_child(status_label)
 
 	return button
+
+func _build_reward_slot(p: Dictionary, is_unlocked: bool) -> Control:
+	var item_box := HBoxContainer.new()
+	item_box.add_theme_constant_override("separation", 4)
+	item_box.tooltip_text = str(p.get("tooltip", ""))
+	item_box.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var icon_box := PanelContainer.new()
+	icon_box.custom_minimum_size = Vector2(28, 28)
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.04, 0.05, 0.06, 0.95)
+	st.border_color = (p.get("border_color", Color(0.5, 0.5, 0.5)) as Color) if is_unlocked else Color(0.3, 0.3, 0.3)
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(4)
+	icon_box.add_theme_stylebox_override("panel", st)
+	item_box.add_child(icon_box)
+
+	var tex := TextureRect.new()
+	tex.custom_minimum_size = Vector2(24, 24)
+	tex.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tex.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var icon_path: String = p.get("icon_path", "")
+	if ResourceLoader.exists(icon_path):
+		tex.texture = load(icon_path)
+	if not is_unlocked:
+		tex.modulate = Color(0.5, 0.5, 0.5, 0.6)
+	icon_box.add_child(tex)
+
+	var badge := Label.new()
+	badge.text = str(p.get("badge", ""))
+	badge.add_theme_font_size_override("font_size", 11)
+	var badge_col: Color = p.get("border_color", Color(0.8, 0.8, 0.8)) if is_unlocked else TEXT_DIM
+	badge.add_theme_color_override("font_color", badge_col)
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	item_box.add_child(badge)
+
+	return item_box
 
 func _on_stage_pressed(stage: StageData) -> void:
 	var cb := _on_stage_chosen

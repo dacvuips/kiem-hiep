@@ -12,17 +12,27 @@ class_name PkRules
 ## Ghép đối thủ (thiết kế của game này): chênh lệch cấp <= MATCH_LEVEL_DIFF; tìm quá MATCH_WAIT_SEC giây không có người thì
 ## đấu với bot cùng cấp (PkBotProfile).
 
-enum Mode { DAI_HOI, LIEN_DAU, THACH_DAU }
+enum Mode {
+	DAI_HOI = 0,
+	LIEN_DAU = 1,
+	THACH_DAU = 2,
+	TONG_KIM_LOL = 3,
+	LON_XON = 4,
+}
 
 const MODE_NAMES := {
 	Mode.DAI_HOI: "Đại hội võ lâm",
 	Mode.LIEN_DAU: "Võ lâm Liên đấu",
 	Mode.THACH_DAU: "Thách đấu",
+	Mode.TONG_KIM_LOL: "Tống Kim LOL",
+	Mode.LON_XON: "Lộn xộn",
 }
 const MIN_LEVEL := {
 	Mode.DAI_HOI: 90,
 	Mode.LIEN_DAU: 80,
 	Mode.THACH_DAU: 10,
+	Mode.TONG_KIM_LOL: 10,
+	Mode.LON_XON: 10,
 }
 const SENIOR_LEVEL := 120                ## Liên đấu: từ cấp này là hạng cao cấp
 const PREPARE_SEC := 10.0
@@ -62,20 +72,49 @@ const ARENA_DIR := "res://world/maps/map_397"
 ## Tâm sàn đấu chính giữa của đấu trường (trung tâm sàn đấu có sàn gạch bằng phẳng, tránh rơi vào tường/vùng rìa kẹt rào)
 const ARENA_CENTER := Vector2(53136.0, 54696.0)
 
+const BRAWL_MAPS := [
+	{
+		"id": 319,
+		"name": "Lâm Du Quan",
+		"dir": "res://world/maps/map_319",
+		"desc": "Map 8x - Cửa ải quan ải hiểm địa"
+	},
+	{
+		"id": 320,
+		"name": "Chân Núi Trường Bạch (9x)",
+		"dir": "res://world/maps/map_320",
+		"desc": "Map 9x - Vùng đồi tuyết hiểm trở"
+	},
+	{
+		"id": 336,
+		"name": "Phong Lăng Độ (12x)",
+		"dir": "res://world/maps/map_336",
+		"desc": "Map 12x - Bến đò giông bão"
+	}
+]
+
+static func get_brawl_map_info(map_id: int) -> Dictionary:
+	for m in BRAWL_MAPS:
+		if int(m["id"]) == map_id:
+			return m
+	return BRAWL_MAPS[0]
+
 ## Lời giới thiệu ở popup PK (theo lời NPC gốc).
 const MODE_INTRO := {
 	Mode.DAI_HOI: "Võ Lâm Minh Chủ có lệnh: chỉ người của môn phái mới được tham gia Đại hội võ lâm. Đấu 1 chọi 1 với cao thủ cùng phái. Thắng +10, thua -2 điểm BXH.",
 	Mode.LIEN_DAU: "Võ lâm Liên đấu: cao thủ mọi môn phái so tài 1 chọi 1, ai cũng có thể ghi danh. Thắng +10, thua -2 điểm BXH.",
 	Mode.THACH_DAU: "Thách đấu võ nghệ: Đấu trường tự do tỷ thí võ nghệ giữa các hiệp khách. Chủ phòng có thể từ chối đối thủ trước khi bắt đầu. Không tính điểm xếp hạng.",
+	Mode.LON_XON: "Đấu trường Lộn Xộn: Chế độ Loạn Đả tự do (16 người) và Đấu đội sinh tử (1vs1 đến 8vs8) trên các bản đồ 9x, 12x, Lâm Du Quan. Mỗi mạng hạ gục nhận 300 điểm, bị diệt trừ 100 điểm. Kết thúc trận quy đổi x30 điểm thành EXP thực tế!",
+	Mode.TONG_KIM_LOL: "Ải Tống Kim LOL: Bảo vệ Tướng Soái, công phá 3 cổng, diệt lính và Boss Hoàng Kim theo phong cách đối kháng MOBA (1vs1 đến 5vs5).",
 }
 
 ## Chế độ có cho phép chủ phòng từ chối/đá đối thủ ra không
 static func can_kick(mode: Mode) -> bool:
-	return mode == Mode.THACH_DAU
+	return mode == Mode.THACH_DAU or mode == Mode.TONG_KIM_LOL or mode == Mode.LON_XON
 
 ## Chế độ có tính điểm trên bảng xếp hạng không
 static func has_rank_points(mode: Mode) -> bool:
-	return mode != Mode.THACH_DAU
+	return mode != Mode.THACH_DAU and mode != Mode.TONG_KIM_LOL and mode != Mode.LON_XON
 
 ## Lý do không vào được chế độ này ("" = được).
 static func check_entry(profile: PlayerProfile, mode: Mode) -> String:
@@ -90,7 +129,7 @@ static func check_entry(profile: PlayerProfile, mode: Mode) -> String:
 
 ## 2 người có ghép được không: chênh cấp <= MATCH_LEVEL_DIFF; Đại hội võ lâm phải cùng phái; Thách đấu tự do.
 static func can_match(mode: Mode, level_a: int, sect_a: String, level_b: int, sect_b: String) -> bool:
-	if mode == Mode.THACH_DAU:
+	if mode == Mode.THACH_DAU or mode == Mode.TONG_KIM_LOL or mode == Mode.LON_XON:
 		return true
 	if absi(level_a - level_b) > MATCH_LEVEL_DIFF:
 		return false
@@ -98,4 +137,27 @@ static func can_match(mode: Mode, level_a: int, sect_a: String, level_b: int, se
 
 ## Mục "map" đưa cho Character Hub (GameManager.field_map) để vào đấu trường. `pk` = {mode, room_id, opponent: hồ sơ bot (dict)}.
 static func arena_entry(pk: Dictionary) -> Dictionary:
+	var m := int(pk.get("mode", Mode.LIEN_DAU))
+	if m == Mode.TONG_KIM_LOL:
+		return {
+			"id": TongKimLolRules.MAP_ID,
+			"name": TongKimLolRules.MAP_NAME,
+			"dir": TongKimLolRules.MAP_DIR,
+			"level": 1,
+			"tong_kim_lol": true,
+			"pk": pk,
+			"room": pk
+		}
+	if m == Mode.LON_XON:
+		var map_id: int = int(pk.get("map_id", 319))
+		var map_info := get_brawl_map_info(map_id)
+		return {
+			"id": map_id,
+			"name": map_info.get("name", "Lâm Du Quan"),
+			"dir": map_info.get("dir", "res://world/maps/map_319"),
+			"level": 1,
+			"brawl": true,
+			"pk": pk,
+			"room": pk
+		}
 	return {"id": ARENA_MAP_ID, "name": ARENA_MAP_NAME, "dir": ARENA_DIR, "level": 1, "pk": pk, "arena_center": ARENA_CENTER}

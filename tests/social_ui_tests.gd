@@ -493,6 +493,33 @@ rẻ	 lắm  "))
 	check("quầy: dọn quầy thì biển biến mất", not stall_rp._sign.visible)
 	stall_rp.queue_free()
 
+	## Giao dịch trực tiếp: icon thanh công cụ, biển mở giao dịch, menu người chơi
+	var menu_test := SideMenu.new()
+	var trade_btn := menu_test.add_entry("exchange", "🤝", "Bật giao dịch", func() -> void: pass)
+	check("giao dịch: SideMenu tạo nút giao dịch", trade_btn != null)
+	SideMenu.set_active(trade_btn, true)
+	var badge: Control = trade_btn.get_node_or_null("ActiveBadge")
+	check("giao dịch: SideMenu.set_active bật chấm xanh", badge != null and badge.visible)
+	SideMenu.set_active(trade_btn, false)
+	check("giao dịch: SideMenu.set_active tắt chấm xanh", badge != null and not badge.visible)
+	menu_test.queue_free()
+
+	var trade_rp := RemotePlayer.new()
+	add_child(trade_rp)
+	trade_rp.setup({"eid": 951, "name": "Người mua", "level": 55, "camp": Camp.Type.JUSTICE, "nation": 0, "stall_title": "",
+		"look": {"gender": 0, "helm": -1, "armor": -1, "weapon": -1, "horse": -1}, "pos": Vector2.ZERO,
+		"dir": 0, "action": 0, "z": 0, "flags": NetProto.FLAG_TRADE_OPEN, "hp": 100})
+	check("giao dịch: RemotePlayer mở giao dịch hiện biển Mở giao dịch", trade_rp._sign.visible and trade_rp._sign.title == "Mở giao dịch")
+	var pm_trade := PlayerMenu.new()
+	pm_trade._target = trade_rp
+	check("giao dịch: menu người chơi hiện Giao dịch khi đối phương mở giao dịch", pm_trade._items().any(func(i: Array) -> bool: return i[0] == "Giao dịch"))
+	trade_rp.flags = 0
+	trade_rp._refresh_sign()
+	check("giao dịch: tắt mở giao dịch thì biển biến mất", not trade_rp._sign.visible)
+	check("giao dịch: menu hiện Giao dịch (chưa mở) khi đối phương tắt", pm_trade._items().any(func(i: Array) -> bool: return i[0] == "Giao dịch (chưa mở)"))
+	pm_trade.free()
+	trade_rp.queue_free()
+
 	## Đánh thường ở nút chính: trống thì tay không / vũ khí cận chiến = bàn tay, phi tiêu / phi đao / tụ tiễn = phi đao; không có trong bảng Kỹ năng
 	var bp := PlayerProfile.new()
 	bp.display_name = "BasicTester"

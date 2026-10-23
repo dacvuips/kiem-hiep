@@ -10,32 +10,31 @@ config_version=5
 
 [application]
 
-config/name="Kiem-hiep"
+config/name="JX1 Idle Origin"
 run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=60
-config/icon="res://icon.png"
-boot_splash/show_image=true
 boot_splash/bg_color=Color(0.04, 0.04, 0.04, 1)
+boot_splash/stretch_mode=0
 boot_splash/image="res://art/logo.png"
-boot_splash/fullsize=false
-boot_splash/use_filter=true
+config/icon="res://icon.png"
 boot_splash/minimum_display_time=1200
+run/main_scene.web="res://ui/login/Login.tscn"
 
 [autoload]
 
 GameUiBoot="*res://ui/common/game_ui_boot.gd"
-PlayerStats="*uid://cq1yslh370n4s"
+PlayerStats="*res://systems/player_stats.gd"
 VfxManager="*res://systems/vfx_manager.gd"
 SfxManager="*res://systems/sfx_manager.gd"
-ObjectPool="*uid://b3lfdja4o5cws"
-GameManager="*uid://cakgoqlhg0ma0"
+ObjectPool="*res://systems/object_pool.gd"
+GameManager="*res://systems/game_manager.gd"
 SaveManager="*res://systems/save/save_manager.gd"
 MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
 NetClient="*res://net/client/net_client.gd"
-PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
 ContentPacks="*res://systems/boot/content_packs.gd"
+PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
 
 [display]
 
@@ -162,7 +161,6 @@ toggle_sit={
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true
-pointing/emulate_mouse_from_touch=true
 
 [kiem_hiep]
 
@@ -182,7 +180,8 @@ network/account_url="https://kiem-hiep-api.viettheo.site"
 
 [rendering]
 
-textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true

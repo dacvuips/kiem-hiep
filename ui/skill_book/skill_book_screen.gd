@@ -71,7 +71,7 @@ var _toast_tween: Tween
 
 ## `skills` = TOÀN BỘ sect.skills. Tham số cuối giữ cho tương thích (bảng giờ có sẵn ô gắn thanh kỹ năng).
 static func open(parent: Node, profile: PlayerProfile, skills: Array[SkillDefinition], on_closed: Callable,
-		_allow_drag_to_skill_bar: bool = false) -> void:
+		_allow_drag_to_skill_bar: bool = false) -> SkillBookScreen:
 	var screen: SkillBookScreen = load(SCENE_PATH).instantiate()
 	screen._profile = profile
 	screen._all_skills = skills
@@ -79,6 +79,7 @@ static func open(parent: Node, profile: PlayerProfile, skills: Array[SkillDefini
 	screen._skills = skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden and not s.is_basic_attack)
 	screen._on_closed = on_closed
 	parent.add_child(screen)
+	return screen
 
 func _ready() -> void:
 	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
@@ -87,9 +88,13 @@ func _ready() -> void:
 	GameUi.apply()
 	(%Dim as ColorRect).color = GameUi.DIM
 	%CloseButton.pressed.connect(_on_close_pressed)
-	%TestButton.pressed.connect(func() -> void:
-		if _selected and _profile.debug_raise_skill(_selected.id):
-			_after_skill_changed())
+	if not AccountApi.is_gm() and has_node("%TestButton"):
+		%TestButton.visible = false
+		%TestButton.queue_free()
+	elif has_node("%TestButton"):
+		%TestButton.pressed.connect(func() -> void:
+			if _selected and _profile.debug_raise_skill(_selected.id):
+				_after_skill_changed())
 	%LearnButton.pressed.connect(_on_learn_pressed)
 	_bind_setting(%NoTargetCheck, "no_target")
 	_bind_setting(%FaceDirectionCheck, "face_direction")
@@ -253,7 +258,8 @@ func _update_buttons(skill: SkillDefinition, learned: int) -> void:
 	else:
 		b.text = "Học / Nâng cấp (+1)"
 		b.disabled = false
-	%TestButton.visible = OS.is_debug_build() and learned < skill.max_level
+	if has_node("%TestButton"):
+		%TestButton.visible = AccountApi.is_gm() and learned < skill.max_level
 
 func _on_learn_pressed() -> void:
 	if _selected == null:
@@ -401,6 +407,7 @@ func _set_arranging(on: bool) -> void:
 	_arranging = on
 	_selected_slot = NO_DRAG
 	_refresh_slot_controls()
+	_apply_slot_looks()
 	for slot in _wheel_slots:
 		(_wheel_slots[slot] as Control).mouse_default_cursor_shape = Control.CURSOR_MOVE if on else Control.CURSOR_ARROW
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ — tắt \"Sắp xếp\" để gắn kỹ năng" if on else "Đã lưu vị trí các nút")
@@ -413,6 +420,7 @@ func _reset_layout() -> void:
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
 	SaveManager.save_profile(_profile)
 	_apply_slot_looks()
+	_update_hud_layout()
 	_show_toast("Đã đưa các nút về vị trí mặc định")
 
 ## Kéo nút để dời chỗ (chỉ khi đang bật "Sắp xếp vị trí"): giữ trong khung %Wheel, thả ra thì lưu độ dời theo toạ độ HUD.
@@ -508,6 +516,7 @@ func _refresh_wheel() -> void:
 		_wheel_page_buttons[p].set_pressed_no_signal(p == _profile.hotbar_page)
 	if _wheel_swap:
 		_wheel_swap.text = "⇄ %d" % (_profile.hotbar_page + 1)
+	_apply_slot_looks()
 	for slot in _wheel_slots:
 		var holder: Panel = _wheel_slots[slot]
 		if _is_tool(slot):   ## nút tiện ích: ảnh thanh công cụ gốc, không gắn kỹ năng
@@ -517,7 +526,7 @@ func _refresh_wheel() -> void:
 			var icon := holder.get_node("Icon") as TextureRect
 			## Nút Nhảy là ô tròn cắt icon như nút skill (SkillBarUI._style_jump_button); Ngồi / Ngựa giữ ảnh tròn gốc.
 			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if str(tool[0]) == "horse" else CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
 			holder.tooltip_text = "%s — bật \"Sắp xếp\" để dời / ẩn / đổi cỡ" % str(tool[4])
@@ -540,7 +549,9 @@ func _apply_slot_looks() -> void:
 		var k := _profile.get_skill_slot_size(key)
 		holder.pivot_offset = holder.size * 0.5
 		holder.scale = Vector2(k, k)
-		holder.modulate.a = 1.0 if slot == MAIN_SLOT or _profile.is_skill_slot_on(key) else 0.3
+		var is_on: bool = (slot == MAIN_SLOT or _profile.is_skill_slot_on(key))
+		holder.visible = is_on or _arranging
+		holder.modulate.a = 1.0 if is_on else 0.35
 		if _selected_slot == slot:
 			holder.modulate = Color(1.25, 1.15, 0.7, holder.modulate.a)
 		else:
@@ -622,7 +633,11 @@ func _get_wheel_drag_data(_pos: Vector2, slot: int) -> Variant:
 	return SkillBarUI.make_drag_data(skill.id, slot)
 
 func _can_drop_wheel(_pos: Vector2, data: Variant, slot: int) -> bool:
-	return not _arranging and not _is_tool(slot) and data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
+	if _arranging or _is_tool(slot):
+		return false
+	if slot != MAIN_SLOT and not _profile.is_skill_slot_on(_layout_key(slot)):
+		return false
+	return data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
 
 ## Thả lên 1 ô = gắn; kéo giữa 2 ô = đổi chỗ (như cụm nút skill trong trận).
 func _drop_wheel(_pos: Vector2, data: Variant, slot: int) -> void:

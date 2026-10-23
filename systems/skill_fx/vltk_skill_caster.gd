@@ -122,12 +122,16 @@ static func _emit(ctx: VltkCastContext, s: Dictionary, i: int, pos: Vector2, mis
 	_cast(ctx, child, pos, null, t, parent)
 	return null
 
+static func _get_extra_projectiles(_ctx: VltkCastContext) -> int:
+	## Bỏ chức năng tăng/x2 lượng đạn khi lên cấp — giữ đúng số tia đạn chuẩn theo dữ liệu kỹ năng VLTK
+	return 0
+
 static func _offset(dir: int, dist: float) -> Vector2:
 	return Vector2(VltkMath.dir_cos(dir) * dist, VltkMath.dir_sin(dir) * dist) / 1024.0
 
 ## CastWall: Param1 = khoảng cách giữa 2 đạn; Param2 != 0 thì đạn quay về hướng ban đầu (bay tới trước).
 static func _wall(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"])
+	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
 	var each := int(s["param1"])
 	var cur := -each * num / 2
 	var count := 0
@@ -140,7 +144,7 @@ static func _wall(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, t
 
 ## CastLine: Param1 = khoảng cách mỗi đạn dọc hướng bay; Param2 != 0 = xếp so le 2 bên vuông góc.
 static func _line(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"])
+	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
 	var each := int(s["param1"])
 	var count := 0
 	var side := 0
@@ -169,17 +173,32 @@ static func _extractive_line(ctx: VltkCastContext, s: Dictionary, dir: int, src:
 	if int(s["base"]) != 1:
 		_cast(ctx, VltkSkillData.skill(int(s["child"]), int(s["level"])), des, null, wait + generate_time(s, 0), null)
 		return 0
-	var m := VltkMissile.create(ctx, s, src, dir, target, wait + generate_time(s, 0), null)
-	if m == null:
-		return 0
-	m.aim_parabola(dist)
-	if int(m.data.get("move_kind", 0)) in [VltkMissile.MoveKind.LINE, VltkMissile.MoveKind.PARABOLA, VltkMissile.MoveKind.FOLLOW]:
-		m.set_factors((int(des.x - src.x) << 10) / dist, (int(des.y - src.y) << 10) / dist)
-	return 1
+	var total_count := 0
+	var extra := _get_extra_projectiles(ctx)
+	var total_shots := 1 + extra
+	for i in total_shots:
+		var cur_dir := dir
+		var cur_des := des
+		if i > 0:
+			var step := (1 if (i % 2 == 1) else -1) * int((i + 1) / 2)
+			cur_dir = wrapi(dir + step * 2, 0, VltkMath.MAX_DIR)
+			var angle_rad := float(step) * 0.12
+			var diff := des - src
+			var rotated := diff.rotated(angle_rad)
+			cur_des = src + rotated
+		var m := VltkMissile.create(ctx, s, src, cur_dir, target if i == 0 else null, wait + generate_time(s, 0), null)
+		if m != null:
+			var cur_dist := int(src.distance_to(cur_des))
+			m.aim_parabola(cur_dist)
+			if int(m.data.get("move_kind", 0)) in [VltkMissile.MoveKind.LINE, VltkMissile.MoveKind.PARABOLA, VltkMissile.MoveKind.FOLLOW]:
+				if cur_dist > 0:
+					m.set_factors((int(cur_des.x - src.x) << 10) / cur_dist, (int(cur_des.y - src.y) << 10) / cur_dist)
+			total_count += 1
+	return total_count
 
 ## CastCircle: num đạn chia đều 64 hướng, cách tâm Param2.
 static func _circle(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := maxi(1, int(s["child_num"]))
+	var num := maxi(1, int(s["child_num"]) + _get_extra_projectiles(ctx))
 	var first := int(s["param2"])
 	var per := VltkMath.MAX_DIR / num
 	var count := 0
@@ -192,7 +211,7 @@ static func _circle(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2,
 ## CastSpread: toả quạt, Param1 = góc giữa 2 đạn (đơn vị 1/64 vòng), Param2 = quãng đầu; có mục tiêu thì xoay quanh
 ## đúng vector tới mục tiêu.
 static func _spread(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"])
+	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
 	var first := int(s["param2"])
 	var step := int(s["param1"])
 	var radius := num / 2

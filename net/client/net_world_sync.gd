@@ -270,6 +270,10 @@ func _on_disconnected(code: String, message: String) -> void:
 	_notify(message)
 	if code not in FATAL:
 		_reconnect_in = RECONNECT_DELAY
+	else:
+		AccountScreen.next_login_message = message if message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+		AccountApi.logout()
+		get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 
 func _teleport(feet: Vector2) -> void:
 	if player == null:
@@ -383,7 +387,9 @@ func _process(delta: float) -> void:
 	if not NetClient.is_in_world() or player == null or not is_instance_valid(player):
 		return
 	var av: CharacterAvatar = player.avatar
-	var look := {"helm": av.helm_res, "armor": av.armor_res, "weapon": av.weapon_res, "horse": av.horse_res}
+	var look: Dictionary = player.get_current_look() if player.has_method("get_current_look") else {
+		"helm": av.helm_res, "armor": av.armor_res, "weapon": av.weapon_res, "horse": av.horse_res
+	}
 	if look != _last_look:
 		_last_look = look
 		NetClient.send_look(look)

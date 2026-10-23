@@ -350,10 +350,34 @@ func get_support_percent_from_other_skills(all_skills: Array[SkillDefinition], p
 	for other in all_skills:
 		if other.id == id:
 			continue
-		var other_learned_level := profile.get_skill_level(other.id)
+		var other_learned_level := profile.get_skill_level(other.id) if profile else 0
 		if other_learned_level <= 0:
 			continue
 		for stat_line in other.stat_lines:
 			if stat_line.target_skill_id == id:
 				total += other.interpolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_learned_level)
+			elif stat_line.target_skill_id == "" and other.category == SkillCategory.PASSIVE:
+				var lbl := stat_line.label.to_lower()
+				if ("sát thương" in lbl or "công kích" in lbl) and stat_line.suffix.strip_edges() == "%":
+					var self_school := school_text.to_lower()
+					var other_school := other.school_text.to_lower()
+					var match_school := (
+						("kiếm" in other_school and "kiếm" in self_school) or
+						("đao" in other_school and "đao" in self_school) or
+						("côn" in other_school and "côn" in self_school) or
+						("thương" in other_school and "thương" in self_school) or
+						("chùy" in other_school and "chùy" in self_school) or
+						("quyền" in other_school and "quyền" in self_school) or
+						("chưởng" in other_school and "chưởng" in self_school) or
+						("ám khí" in other_school and "ám khí" in self_school) or
+						("nội công" in other_school and "nội công" in self_school) or
+						("hỗ trợ" in other_school and not ("kiếm" in other_school or "đao" in other_school or "chưởng" in other_school or "côn" in other_school))
+					)
+					if match_school:
+						total += other.interpolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_learned_level)
+		if other.category == SkillCategory.PASSIVE and other.passive_attack_bonus > 0.0:
+			var self_sc := school_text.to_lower()
+			var other_sc := other.school_text.to_lower()
+			if ("kiếm" in other_sc and "kiếm" in self_sc) or ("đao" in other_sc and "đao" in self_sc) or ("quyền" in other_sc and "quyền" in self_sc) or ("chưởng" in other_sc and "chưởng" in self_sc) or ("hỗ trợ" in other_sc):
+				total += other.passive_attack_bonus * float(other_learned_level)
 	return total

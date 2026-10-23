@@ -10,11 +10,14 @@ const FIGHTING := "fighting"
 
 static var _rooms: Array[Dictionary] = []
 
-static func rooms(mode: PkRules.Mode, state: String) -> Array[Dictionary]:
+static func rooms(mode: int = -1, state: String = "") -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for r in _rooms:
-		if int(r["mode"]) == mode and str(r["state"]) == state:
-			out.append(r)
+		if mode >= 0 and int(r.get("mode", -1)) != mode:
+			continue
+		if state != "" and str(r.get("state", "")) != state:
+			continue
+		out.append(r)
 	return out
 
 static func find(room_id: String) -> Dictionary:
@@ -23,11 +26,11 @@ static func find(room_id: String) -> Dictionary:
 			return r
 	return {}
 
-## Mở phòng mới của `profile`; password "" = phòng không khoá; team_size 1..8 (mặc định 1).
-static func create(profile: PlayerProfile, mode: PkRules.Mode, password: String, team_size: int = 1) -> Dictionary:
+## Mở phòng mới của `profile`; password "" = phòng không khoá; team_size 1..8 (mặc định 1); extra thông tin mở rộng.
+static func create(profile: PlayerProfile, mode: PkRules.Mode, password: String, team_size: int = 1, extra: Dictionary = {}) -> Dictionary:
 	close_own(profile)
 	var sect := SectRegistry.get_by_id(profile.sect_id)
-	var s_size := clampi(team_size, 1, 8) if mode == PkRules.Mode.THACH_DAU else 1
+	var s_size := clampi(team_size, 1, 5) if mode == PkRules.Mode.TONG_KIM_LOL else (clampi(team_size, 1, 8) if (mode == PkRules.Mode.THACH_DAU or mode == PkRules.Mode.LON_XON) else 1)
 	var host_member := {
 		"name": profile.display_name,
 		"level": profile.level,
@@ -36,9 +39,29 @@ static func create(profile: PlayerProfile, mode: PkRules.Mode, password: String,
 		"ready": true,
 		"is_host": true
 	}
-	var room := {"id": _new_id(), "mode": mode, "team_size": s_size, "host": profile.display_name, "level": profile.level,
-		"sect_id": profile.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái", "password": password,
-		"state": WAITING, "team_a": [host_member], "team_b": [], "guest": "", "created_ms": Time.get_ticks_msec()}
+	var brawl_type: String = str(extra.get("brawl_type", "solo")) if mode == PkRules.Mode.LON_XON else ""
+	var map_id: int = int(extra.get("map_id", 319))
+	var target_kills: int = int(extra.get("target_kills", 20))
+	var solo_slots: Array = [host_member] if brawl_type == "solo" else []
+	var room := {
+		"id": _new_id(),
+		"mode": mode,
+		"team_size": s_size,
+		"brawl_type": brawl_type,
+		"map_id": map_id,
+		"target_kills": target_kills,
+		"host": profile.display_name,
+		"level": profile.level,
+		"sect_id": profile.sect_id,
+		"sect_name": sect.sect_name if sect else "Vô môn phái",
+		"password": password,
+		"state": WAITING,
+		"team_a": [host_member],
+		"team_b": [],
+		"solo_slots": solo_slots,
+		"guest": "",
+		"created_ms": Time.get_ticks_msec()
+	}
 	_rooms.append(room)
 	return room
 
@@ -109,14 +132,9 @@ static func add_bot(room_id: String, target_team: String, level: int = 90) -> bo
 	var r := find(room_id)
 	if r.is_empty():
 		return false
-	var team_size: int = int(r.get("team_size", 1))
-	var key := "team_a" if target_team == "a" else "team_b"
-	var list: Array = r.get(key, [])
-	if list.size() >= team_size:
-		return false
 	var bot := PkBotProfile.create(level)
 	var sect := SectRegistry.get_by_id(bot.sect_id)
-	list.append({
+	var bot_dict := {
 		"name": bot.display_name,
 		"level": bot.level,
 		"sect_id": bot.sect_id,
@@ -125,7 +143,21 @@ static func add_bot(room_id: String, target_team: String, level: int = 90) -> bo
 		"is_host": false,
 		"is_bot": true,
 		"bot_data": bot.to_dict()
-	})
+	}
+	if str(r.get("brawl_type", "")) == "solo":
+		var solo_slots: Array = r.get("solo_slots", [])
+		if solo_slots.size() >= 16:
+			return false
+		solo_slots.append(bot_dict)
+		r["solo_slots"] = solo_slots
+		return true
+
+	var team_size: int = int(r.get("team_size", 1))
+	var key := "team_a" if target_team == "a" else "team_b"
+	var list: Array = r.get(key, [])
+	if list.size() >= team_size:
+		return false
+	list.append(bot_dict)
 	r[key] = list
 	return true
 

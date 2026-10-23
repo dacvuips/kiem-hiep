@@ -21,7 +21,16 @@ class_name StageData
 @export var boss_tier: EnemySpawnEntry
 
 ## Thời gian màn kéo dài (giây) trước khi boss xuất hiện / màn kết thúc
-@export var stage_duration: float = 300.0
+@export var stage_duration: float = 180.0
+
+## Thời điểm boss xuất hiện (giây). 0.0 = tự động tính bằng 2/3 stage_duration (VD màn 180s -> boss ra lúc 120s, tương ứng chặng 3/3).
+@export var boss_spawn_time: float = 0.0
+
+## Lấy thời điểm boss xuất hiện (giây).
+func get_boss_spawn_time() -> float:
+	if boss_spawn_time > 0.0:
+		return boss_spawn_time
+	return stage_duration * (2.0 / 3.0)
 
 @export_group("Ô vuông màn chơi trên map chính")
 ## Toàn bộ game dùng 1 MAP CHÍNH duy nhất (Main.tscn/World = VltkWorld). Mỗi màn chơi chỉ là 1 ô vuông trên map đó: nhân vật

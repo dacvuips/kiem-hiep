@@ -18,6 +18,7 @@ const POTION_COOLDOWN := 3.0
 const POTION_COUNT := 6                  ## số bình thuốc mang theo cả trận
 const STRAFE_CHANCE := 0.12              ## mỗi lượt suy nghĩ trong tầm: xác suất chạy ngang 1 đoạn
 const HealthBarScene := preload("res://ui/HealthBar.tscn")
+const CharacterAura = preload("res://systems/effects/character_aura.gd")
 const NAME_COLOR := Color(1.0, 0.3, 1.0)  ## tên đối thủ PK màu tím hồng (như RemotePlayer.PK_ENEMY_COLOR)
 
 var profile: PlayerProfile
@@ -35,10 +36,15 @@ var active := false
 var invulnerable := true
 
 var avatar: CharacterAvatar
+var aura: AnimatedSprite2D
 var status_controller: StatusEffectController
 var skill_controller: SectSkillController
 var target: Node2D
 var potions_left := POTION_COUNT
+var last_attacker: Node = null
+var last_attacker_name: String = ""
+var brawl_team: String = ""
+var _name_label: Label = null
 
 var _dead := false
 var _main_skill: SkillDefinition
@@ -76,6 +82,10 @@ func _ready() -> void:
 	avatar.position = Vector2(0, FEET_OFFSET)
 	add_child(avatar)
 	avatar.action_finished.connect(_on_action_finished)
+
+	aura = CharacterAura.create_aura_node()
+	aura.position = avatar.position + Vector2(0, 1)
+	add_child(aura)
 
 	status_controller = StatusEffectController.new()
 	status_controller.name = "StatusEffectController"
@@ -120,11 +130,19 @@ func _build_name_plate() -> void:
 	label.size = Vector2(160, 18)
 	label.position = Vector2(-80, -66)
 	add_child(label)
+	_name_label = label
 	_health_bar = HealthBarScene.instantiate()
 	add_child(_health_bar)
 	_health_bar.position = Vector2(0, -44)
 	_health_bar.scale = Vector2(1.4, 0.7)
 	_update_bar()
+
+## Đổi màu tên và tiền tố phe (VD đấu đội Lộn Xộn: [Phe Xanh], [Phe Đỏ]).
+func set_name_color(col: Color, prefix: String = "") -> void:
+	if _name_label:
+		_name_label.add_theme_color_override("font_color", col)
+		if prefix != "":
+			_name_label.text = "%s %s" % [prefix, profile.display_name if profile else ""]
 
 func _update_bar() -> void:
 	if _health_bar:
@@ -202,6 +220,14 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		mods: CombatFormulas.HitModifiers = null) -> void:
 	if _dead or invulnerable:
 		return
+	if mods != null and mods.attacker_node != null:
+		last_attacker = mods.attacker_node
+		if "profile" in last_attacker and last_attacker.profile:
+			last_attacker_name = str(last_attacker.profile.display_name)
+		elif "display_name" in last_attacker:
+			last_attacker_name = str(last_attacker.display_name)
+		elif last_attacker.is_in_group("player") and GameManager.local_profile:
+			last_attacker_name = str(GameManager.local_profile.display_name)
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED or final_damage == 0:
@@ -209,6 +235,20 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	_lose(float(final_damage))
 	if not _dead:
 		avatar.play_event_sound("hurt")
+
+## Hồi sinh bot tại toạ độ chỉ định (chế độ Lộn Xộn / Loạn đả).
+func respawn_at(spawn_pos: Vector2) -> void:
+	_dead = false
+	active = true
+	invulnerable = false
+	health = max_health
+	_apply_look()
+	avatar.play("stand")
+	global_position = spawn_pos
+	_update_bar()
+	potions_left = POTION_COUNT
+	last_attacker = null
+	last_attacker_name = ""
 
 func take_damage(amount: float) -> void:
 	var a := CombatantStats.new()

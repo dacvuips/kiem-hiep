@@ -63,7 +63,7 @@ func _build_hud() -> void:
 	add_child(anchor)
 	var panel := GameUi.panel(GameUi.PANEL)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.position = Vector2(-210, 8)
+	panel.position = Vector2(-210, 52)
 	panel.custom_minimum_size.x = 420
 	anchor.add_child(panel)
 	var box := VBoxContainer.new()

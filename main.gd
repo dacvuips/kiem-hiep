@@ -12,12 +12,13 @@ var elapsed_time: float = 0.0
 const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
 
 var _skill_book_open: bool = false
+var _skill_book_screen: SkillBookScreen
 ## Map hiện tại có cho hiện joystick không (StageData.show_move_joystick) — để khôi phục đúng trạng
 ## thái sau khi đóng bảng skill (lúc mở bảng luôn ẩn joystick).
 var _joystick_enabled: bool = true
 var _exit_confirm: PanelContainer
-## Khung Nhân vật / Hành trang mở trong trận (null = đang đóng). KHÔNG tạm dừng trận, joystick vẫn hiện —
-## vừa xem đồ vừa chạy được (giống VLTK, cũng là cách duy nhất khi chơi online).
+## Khung Nhân vật / Hành trang mở trong trận (null = đang đóng).
+## Riêng ở ải "Khiêu Chiến Sơn Môn" (StageData), mở bất kỳ khung nào (Nhân vật, Hành trang, Kỹ năng) đều tạm dừng trận.
 var _status_window: CharacterStatusWindow
 var _inventory_window: InventoryPopup
 
@@ -30,6 +31,10 @@ func _play_stage_music(stage: StageData) -> void:
 
 func _exit_tree() -> void:
 	MusicManager.stop()
+	PlayerStats.reset()
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree != null:
+		tree.paused = false
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_args():
@@ -79,7 +84,7 @@ func _ready() -> void:
 	add_child(SocialTicker.new())   ## nhịp nền xã hội: khách mua hàng bày bán, người xin vào đội/bang
 	_sect_prompt = SectPrompt.new()   ## Vô Môn Phái đủ cấp 10 thì hỏi gia nhập môn phái
 	add_child(_sect_prompt)
-	if OS.is_debug_build():   ## công cụ thử (chỉ bản debug): hàng nút nhỏ góc trên trái
+	if AccountApi.is_gm():   ## công cụ thử (chỉ admin GM): hàng nút nhỏ góc trên trái
 		_build_debug_button("Quái", "Danh sách quái VLTK — tạo quái để thử", _toggle_monster_popup)
 		_build_debug_button("Skill", "Bảng tất cả skill theo phái — thi triển thử", _toggle_skill_popup)
 		_build_debug_button("TEST", "Thử nhân vật: lên cấp, đồ, tiền, cộng chỉ số", _open_test_window)
@@ -87,6 +92,7 @@ func _ready() -> void:
 ## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
 ## Vẫn giữ nguyên: skill + thanh skill, trang bị, cộng chỉ số, di chuyển, ngựa, mini map.
 func _enter_main_map() -> void:
+	PlayerStats.reset()
 	GameManager.current_stage = null
 	joystick.visible = true
 	_joystick_enabled = true
@@ -119,8 +125,19 @@ func _enter_main_map() -> void:
 		var pld := PhongLangDoChallenge.new()
 		pld.name = "PhongLangDoChallenge"
 		add_child(pld)
+	## Ải Tống Kim LOL (MOBA 1vs1 - 5vs5 trên map 378)
+	if field.get("tong_kim_lol", false) or int(field.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL:
+		var lol_match := TongKimLolMatch.new()
+		lol_match.name = "TongKimLolMatch"
+		add_child(lol_match)
+	## Trận PK Lộn Xộn (Loạn đả 16 người hoặc Đấu đội)
+	elif int(field.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON or field.get("brawl", false):
+		var brawl_script: GDScript = load("res://systems/pk/pk_brawl_match.gd")
+		var brawl_match = brawl_script.new()
+		brawl_match.name = "PkBrawlMatch"
+		add_child(brawl_match)
 	## Trận PK với bot (nút PK ở Character Hub, offline / không tìm được người): đấu trường map 397.
-	if field.has("pk") and not pk_online:
+	elif field.has("pk") and not pk_online:
 		var match_node := PkMatch.new()
 		match_node.name = "PkMatch"
 		add_child(match_node)
@@ -145,7 +162,10 @@ func _enter_main_map() -> void:
 		_spawn_offline_guild_members.call_deferred()
 
 func _spawn_offline_guild_members() -> void:
-	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var tree := get_tree()
+	if tree == null:
+		return
+	var player := tree.get_first_node_in_group("player") as Node2D
 	var base_pos: Vector2 = player.global_position if player != null else Vector2.ZERO
 	var profile := GameManager.local_profile
 	if profile == null:
@@ -184,17 +204,27 @@ func _spawn_offline_guild_members() -> void:
 			break
 
 func load_stage(stage: StageData) -> void:
+	PlayerStats.reset()
 	GameManager.start_stage(stage)
 	_joystick_enabled = stage.show_move_joystick
 	joystick.visible = _joystick_enabled
 
 	## Map chính (World = VltkWorld) dùng chung mọi màn; màn chỉ là 1 ô vuông trên đó (StageData.arena_*).
 	if VltkWorld.current != null:
+		if stage.vltk_map_id > 0:
+			var target_dir := "res://world/maps/map_%d" % stage.vltk_map_id
+			if DirAccess.dir_exists_absolute(target_dir):
+				VltkWorld.current.map_dir = target_dir
 		VltkWorld.current.setup_stage(stage)
 
 func _process(delta: float) -> void:
-	if get_tree().paused:
+	if get_tree().paused or GameManager.is_game_over or (has_node("Spawner") and $Spawner.stage_cleared):
 		return
+	var p := GameManager.local_profile
+	var cur_trade_open: bool = p != null and p.trade_open
+	if cur_trade_open != _last_trade_open:
+		_last_trade_open = cur_trade_open
+		_refresh_trade_button()
 	elapsed_time += delta
 	var total_seconds := int(elapsed_time)
 	@warning_ignore("integer_division")
@@ -233,16 +263,47 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		DebugDataBrowser.open(self, func() -> void: pass)
 
 ## Mở bảng "Kỹ Năng Võ Công" ngay trong trận (tái dùng phím open_gem_menu vốn dùng cho
-## GemSocketScreen cũ, đã gỡ bỏ cùng gem_system) — pause game trong lúc xem/học skill.
+## GemSocketScreen cũ, đã gỡ bỏ cùng gem_system) — pause game trong lúc xem/học skill khi ở chế độ ải.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_gem_menu"):
-		_open_skill_book()
+		_toggle_skill_book()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F4:
+		_toggle_trade_mode()
 
 var _sect_prompt: SectPrompt
 
+func _is_stage_mode() -> bool:
+	return GameManager.current_stage != null or GameManager.game_mode == GameManager.GameMode.STAGE
+
+func is_any_menu_window_open() -> bool:
+	if _skill_book_open or is_instance_valid(_skill_book_screen):
+		return true
+	if is_instance_valid(_status_window) and not _status_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_inventory_window) and not _inventory_window.is_queued_for_deletion():
+		return true
+	return false
+
+func _update_stage_pause() -> void:
+	if not _is_stage_mode():
+		return
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	if _exit_confirm != null:
+		tree.paused = true
+		return
+	tree.paused = is_any_menu_window_open()
+
+func _toggle_skill_book() -> void:
+	if is_instance_valid(_skill_book_screen):
+		_skill_book_screen._on_close_pressed()
+		return
+	_open_skill_book()
+
 ## Mở bảng Kỹ Năng — phím G (action open_gem_menu) hoặc nút "Kỹ năng" ở thanh trên.
 func _open_skill_book() -> void:
-	if _skill_book_open:
+	if _skill_book_open or is_instance_valid(_skill_book_screen):
 		return
 	if GameManager.local_profile == null:
 		return
@@ -256,44 +317,68 @@ func _open_skill_book() -> void:
 		player._notice("Chưa gia nhập môn phái — đạt cấp %d để chọn phái và học võ công." % PlayerProfile.NEWBIE_LEVEL)
 		return
 	_skill_book_open = true
-	## Chỉ mở bảng — trận vẫn chạy bình thường (không dừng game, không tắt nhạc, giữ joystick). Gắn skill lên thanh kỹ năng làm
-	## ngay trong cột "Tùy chỉnh kỹ năng" của bảng, đóng bảng thì thanh skill trong trận vẽ lại theo profile.
-	SkillBookScreen.open(self, GameManager.local_profile, sect.skills, func() -> void:
+	_update_stage_pause()
+	_skill_book_screen = SkillBookScreen.open(self, GameManager.local_profile, sect.skills, func() -> void:
 		_skill_book_open = false
+		_skill_book_screen = null
+		_update_stage_pause()
 		skill_bar_ui.refresh_sub_skills()
 		## Skill nội tại vừa học trong bảng cộng bonus vào combat_stats — áp dụng ngay, không đợi trận sau.
 		if is_instance_valid(player):
-			player.refresh_combat_stats())
+			player.refresh_combat_stats()
+	)
 
 # ------------------------------------------------- khung Nhân vật / Hành trang trong trận
 
-## 2 khung độc lập, kéo di chuyển được, mở cùng lúc được. Bấm lại nút để đóng. Trận vẫn chạy.
+## 2 khung độc lập, kéo di chuyển được, mở cùng lúc được. Bấm lại nút để đóng.
+## Riêng ở ải "Khiêu Chiến Sơn Môn", mở bất kỳ khung nào (Kỹ năng, Hành trang, Trang bị) đều tạm dừng game lại.
+## Ở map dã ngoại / train chung, trận vẫn chạy tự do bình thường.
 func _toggle_status_window() -> void:
 	if is_instance_valid(_status_window):
-		_status_window.queue_free()
+		var win := _status_window
+		_status_window = null
+		win.queue_free()
+		_update_stage_pause()
 		return
 	if GameManager.local_profile == null:
 		return
 	_status_window = CharacterStatusWindow.open(self, GameManager.local_profile, _toggle_inventory_window)
 	_status_window.screen.profile_changed.connect(_on_panel_profile_changed)
+	_status_window.tree_exited.connect(func() -> void:
+		if _status_window == null or _status_window.is_queued_for_deletion():
+			_status_window = null
+			_update_stage_pause()
+	)
+	_update_stage_pause()
 
 func _toggle_inventory_window() -> void:
 	if not is_instance_valid(_inventory_window):
 		_inventory_window = InventoryPopup.find_open(get_tree())   ## có thể đang mở kèm Rương chứa đồ
 	if is_instance_valid(_inventory_window):
-		_inventory_window.queue_free()
+		var win := _inventory_window
+		_inventory_window = null
+		win.queue_free()
+		_update_stage_pause()
 		return
 	if GameManager.local_profile == null:
 		return
 	_inventory_window = InventoryPopup.open(self, GameManager.local_profile, _on_panel_profile_changed, false)
+	_inventory_window.tree_exited.connect(func() -> void:
+		if _inventory_window == null or _inventory_window.is_queued_for_deletion():
+			_inventory_window = null
+			_update_stage_pause()
+	)
+	_update_stage_pause()
 
 ## Mặc/tháo đồ, cộng điểm: vẽ lại khung Nhân vật + áp chỉ số mới lên nhân vật ngay.
 func _on_panel_profile_changed() -> void:
 	if is_instance_valid(_status_window):
 		_status_window.screen.refresh()
-	var player := get_tree().get_first_node_in_group("player")
-	if player:
-		player.refresh_combat_stats()
+	var tree := get_tree()
+	if tree != null:
+		var player := tree.get_first_node_in_group("player")
+		if player:
+			player.refresh_combat_stats()
 
 ## Nút "Quái" — mở/đóng popup thử quái VLTK (danh sách mọi quái, xem động tác, tạo quái quanh người chơi để thử).
 var _monster_popup: MonsterTestPopup
@@ -315,13 +400,18 @@ func _toggle_skill_popup() -> void:
 		return
 	_skill_popup.visible = not _skill_popup.visible
 
-## Cột nút tiện ích bên trái (kiểu VLTK mobile) — SideMenu (hàng ngang góc trên phải): Nhân vật, Hành trang, Kỹ năng, sát bên trái nút Cài đặt (có Thoát) cạnh mini map.
+var _trade_button: Button
+var _last_trade_open: bool = false
+
+## Cột nút tiện ích bên trái (kiểu VLTK mobile) — SideMenu (hàng ngang góc trên phải): Nhân vật, Hành trang, Kỹ năng, Giao dịch, sát bên trái nút Cài đặt (có Thoát) cạnh mini map.
 func _build_side_menu() -> void:
 	var menu := SideMenu.new()
 	menu.name = "SideMenu"
 	menu.add_entry("status", "", "Nhân vật", _toggle_status_window)
 	menu.add_entry("items", "", "Hành trang", _toggle_inventory_window)
-	menu.add_entry("skills", "", "Kỹ năng (phím G)", _open_skill_book)
+	menu.add_entry("skills", "", "Kỹ năng (phím G)", _toggle_skill_book)
+	_trade_button = menu.add_entry("exchange", "🤝", "Bật giao dịch (phím F4)", _toggle_trade_mode)
+	_refresh_trade_button()
 	## Nút Cài đặt: góc trên phải, sát bên trái mini map. Nút "Thoát về Character Hub" nằm trong khung Cài đặt.
 	var exit_button := SideMenu.make_button("", "⚙", "Cài đặt: nhạc nền, zoom camera, thoát", func() -> void:
 		SettingsWindow.open(self, _on_exit_button_pressed))
@@ -333,15 +423,101 @@ func _build_side_menu() -> void:
 	exit_button.offset_bottom = MiniMap.SCREEN_MARGIN + SideMenu.SLOT
 	exit_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	$UI.add_child(exit_button)
-	## 3 nút Nhân vật / Hành trang / Kỹ năng: hàng ngang sát bên trái nút Cài đặt.
+	## Các nút tiện ích: hàng ngang sát bên trái nút Cài đặt.
 	menu.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	menu.offset_right = exit_button.offset_left - SideMenu.GAP
-	menu.offset_left = menu.offset_right - (3 * SideMenu.SLOT + 2 * SideMenu.GAP)
+	var count := menu.get_child_count()
+	menu.offset_left = menu.offset_right - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP)
 	menu.offset_top = exit_button.offset_top
 	menu.offset_bottom = exit_button.offset_bottom
 	menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	menu.alignment = BoxContainer.ALIGNMENT_END
 	$UI.add_child(menu)
+
+func _toggle_trade_mode() -> void:
+	var p := GameManager.local_profile
+	if p == null:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and is_instance_valid(player) and player.get("selected_target") is RemotePlayer:
+		var target: RemotePlayer = player.get("selected_target")
+		if target != null and is_instance_valid(target):
+			_request_direct_trade(target)
+			return
+
+	if p.trade_open:
+		StallService.close_trade(p)
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_CLOSE)
+		SaveManager.save_profile(p)
+		_notify_player("Đã tắt mở giao dịch.")
+	else:
+		var err := StallService.open_trade(p)
+		if err != "":
+			_notify_player(err)
+			return
+		if NetClient.is_in_world():
+			NetClient.send_stall(SocialServer.TRADE_OPEN)
+		SaveManager.save_profile(p)
+		_notify_player("Đã bật mở giao dịch — người chơi khác có thể giao dịch trực tiếp với bạn.")
+	_refresh_trade_button()
+
+func _request_direct_trade(target: RemotePlayer) -> void:
+	var p := GameManager.local_profile
+	if p == null or target == null:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+
+	var dist := player.global_position.distance_to(target.global_position)
+	if dist > SocialServer.TRADE_RANGE:
+		_notify_player("Đứng gần hơn mới giao dịch được.")
+		return
+
+	if not p.trade_open and not p.stall_open:
+		var err := StallService.open_trade(p)
+		if err == "":
+			if NetClient.is_in_world():
+				NetClient.send_stall(SocialServer.TRADE_OPEN)
+			SaveManager.save_profile(p)
+			_refresh_trade_button()
+
+	var target_open: bool = (target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false)
+	if not target_open:
+		_notify_player("%s chưa bật mở giao dịch." % target.display_name)
+		return
+
+	var hub := SocialHub.of(p)
+	if NetClient.is_in_world():
+		NetClient.send_trade_request(target.eid)
+		_notify_player("Đã gửi lời mời giao dịch tới %s." % target.display_name)
+	else:
+		var m := SocialDirectory.find_by_id(p, target.eid)
+		if m != null:
+			var err := hub.start_trade(m)
+			if err == "":
+				TradeWindow.open(self, hub)
+			elif err != "online":
+				_notify_player(err)
+
+func _notify_player(text: String) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and is_instance_valid(player) and player.has_method("notify"):
+		player.notify(text)
+	else:
+		print("[Giao dịch] ", text)
+
+func _refresh_trade_button() -> void:
+	if _trade_button == null or not is_instance_valid(_trade_button):
+		return
+	var p := GameManager.local_profile
+	var is_open: bool = p != null and p.trade_open
+	SideMenu.set_active(_trade_button, is_open)
+	if is_open:
+		_trade_button.tooltip_text = "Đang mở giao dịch (F4)\nNgười chơi khác có thể giao dịch trực tiếp với bạn.\n(Bấm để tắt mở giao dịch)"
+	else:
+		_trade_button.tooltip_text = "Bật giao dịch (F4)\nBật mở giao dịch để người chơi khác có thể giao dịch trực tiếp với bạn.\n(Chọn người chơi rồi bấm để xin giao dịch)"
 
 ## Nút công cụ thử (chỉ bản debug) — xếp thành hàng nhỏ ở góc trên trái; trong phòng train chung thì nằm dưới khung ID phòng.
 var _debug_x := 70.0
@@ -426,7 +602,9 @@ func _on_exit_button_pressed() -> void:
 	button_row.add_child(cancel_button)
 
 func _on_exit_confirmed() -> void:
-	get_tree().paused = false
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree != null:
+		tree.paused = false
 	if GameManager.local_profile != null:
 		if AccountApi.is_gm():
 			## GM: lưu toàn bộ tiến trình khi thoát trận
@@ -435,12 +613,18 @@ func _on_exit_confirmed() -> void:
 			## Người thường: KHÔNG lưu bản thoát giữa trận — khôi phục về trạng thái trước trận
 			SaveManager.restore_profile_from_save()
 		await SaveManager.flush_online()
-	get_tree().change_scene_to_file(HUB_SCENE_PATH)
+	if tree != null:
+		tree.change_scene_to_file(HUB_SCENE_PATH)
 
 func _on_exit_cancelled(overlay: CanvasLayer) -> void:
 	overlay.queue_free()
 	_exit_confirm = null
-	get_tree().paused = false
+	if _is_stage_mode():
+		_update_stage_pause()
+	else:
+		var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+		if tree != null:
+			tree.paused = false
 
 func _test_badge_and_quit() -> void:
 	await get_tree().create_timer(1.2).timeout

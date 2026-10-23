@@ -120,6 +120,7 @@ static func apply() -> void:
 ## gộp thành 1 TTF (tools/merge_plex_mono_font.py) để dấu tiếng Việt không lệch; font cũ của project làm fallback cho emoji/ký hiệu.
 ## Màn đăng nhập / đăng ký / chọn server / chọn-tạo nhân vật (PREGAME_SCENES) giữ font cũ — GameUiBoot đổi qua lại khi chuyển màn.
 const GAME_FONT_PATH := "res://assets/fonts/ibm_plex_mono/IBMPlexMono-Regular-vi.ttf"
+const SYMBOL_FONT_PATH := "res://assets/fonts/symbol_fallback.ttf"
 const PREGAME_SCENES := [
 	"res://ui/login/Login.tscn",
 	"res://ui/account/Register.tscn",
@@ -145,6 +146,13 @@ static func game_font() -> Font:
 		var old: Font = _pregame_fonts.get("default", project.default_font if project != null else null)
 		if old != null:
 			chain.append(old)
+		if ResourceLoader.exists(SYMBOL_FONT_PATH):
+			var sym_font: Font = load(SYMBOL_FONT_PATH)
+			if sym_font != null:
+				chain.append(sym_font)
+				var base_f: Font = load(GAME_FONT_PATH)
+				if base_f != null and not base_f.fallbacks.has(sym_font):
+					base_f.fallbacks.append(sym_font)
 		_game_font.fallbacks = chain
 	return _game_font
 

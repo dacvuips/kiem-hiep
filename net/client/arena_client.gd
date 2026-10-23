@@ -26,6 +26,9 @@ var _clock: Label
 var _info: Label
 var _leave_button: Button
 var _reject_button: Button
+var _start_button: Button
+var _ready_button: Button
+var _is_ready: bool = false
 
 static func create(pk_entry: Dictionary) -> ArenaClient:
 	var a := ArenaClient.new()
@@ -53,7 +56,10 @@ func _send_action() -> void:
 		"room": str(action.get("room", "")),
 		"password": str(action.get("password", "")),
 		"team_size": int(action.get("team_size", 1)),
-		"team": str(action.get("team", ""))
+		"team": str(action.get("team", "")),
+		"brawl_type": str(action.get("brawl_type", "solo")),
+		"map_id": int(action.get("map_id", 319)),
+		"target_kills": int(action.get("target_kills", 20))
 	}
 	match str(action.get("op", "match")):
 		"create":
@@ -132,6 +138,23 @@ func _on_state(s: Dictionary) -> void:
 		var my_name := GameManager.local_profile.display_name if GameManager.local_profile else ""
 		var is_host: bool = fighters.size() > 0 and str(fighters[0]) == my_name
 		_reject_button.visible = is_host and fighters.size() >= 2 and _state in ["waiting", "prepare"] and not _done
+	if _start_button and _ready_button:
+		var my_name := GameManager.local_profile.display_name if GameManager.local_profile else ""
+		var is_host: bool = fighters.size() > 0 and str(fighters[0]) == my_name
+		var can_wait := _state == "waiting" and not _done
+		_start_button.visible = is_host and can_wait
+		_ready_button.visible = (not is_host) and role == "fighter" and can_wait
+		if is_host and can_wait:
+			if mode == PkRules.Mode.TONG_KIM_LOL:
+				var count_a: int = (s.get("team_a", []) as Array).size()
+				var count_b: int = (s.get("team_b", []) as Array).size()
+				var is_full := (count_a == team_size and count_b == team_size)
+				if not is_full:
+					_start_button.disabled = true
+					_start_button.text = "Chờ đủ người (%d/%d)" % [fighters.size(), team_size * 2]
+				else:
+					_start_button.disabled = false
+					_start_button.text = "Bắt đầu trận"
 
 ## Chỉ đối thủ của mình là địch (chiêu trúng -> gửi server như cừu sát); người xem / người phòng khác không bao giờ.
 func _set_enemies(on: bool) -> void:
@@ -145,6 +168,10 @@ func _set_enemies(on: bool) -> void:
 func _on_reject_pressed() -> void:
 	if _reject_button:
 		_reject_button.visible = false
+	if _start_button:
+		_start_button.visible = false
+	if _ready_button:
+		_ready_button.visible = false
 	NetClient.send_arena(ArenaServer.OP_REJECT_OPPONENT)
 	_say("Đang từ chối đối thủ…")
 
@@ -153,6 +180,10 @@ func _on_result(r: Dictionary) -> void:
 	_set_enemies(false)
 	if _reject_button:
 		_reject_button.visible = false
+	if _start_button:
+		_start_button.visible = false
+	if _ready_button:
+		_ready_button.visible = false
 	var fighter := bool(r.get("fighter", false))
 	if fighter:
 		var win := bool(r.get("win", false))
@@ -217,7 +248,7 @@ func _say(text: String) -> void:
 func _build_hud() -> void:
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.position = Vector2(-200, 8)
+	box.position = Vector2(-200, 52)
 	box.custom_minimum_size = Vector2(400, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)
@@ -236,6 +267,24 @@ func _build_hud() -> void:
 		_reject_button.visible = false
 		_reject_button.pressed.connect(_on_reject_pressed)
 		box.add_child(_reject_button)
+	if mode == PkRules.Mode.TONG_KIM_LOL or mode == PkRules.Mode.THACH_DAU or mode == PkRules.Mode.LON_XON:
+		_start_button = GameUi.button("Bắt đầu trận")
+		_start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_start_button.visible = false
+		_start_button.pressed.connect(func() -> void:
+			NetClient.send_arena(ArenaServer.OP_START)
+		)
+		box.add_child(_start_button)
+
+		_ready_button = GameUi.button("Sẵn sàng")
+		_ready_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_ready_button.visible = false
+		_ready_button.pressed.connect(func() -> void:
+			_is_ready = not _is_ready
+			_ready_button.text = "Hủy sẵn sàng" if _is_ready else "Sẵn sàng"
+			NetClient.send_arena(ArenaServer.OP_READY, {"ready": _is_ready})
+		)
+		box.add_child(_ready_button)
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var l := Label.new()

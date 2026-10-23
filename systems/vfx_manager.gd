@@ -3,6 +3,7 @@ extends Node
 ## Đăng ký hiệu ứng ở đây — key là tên gọi khi play(), value là scene VFX tương ứng.
 ## Muốn thêm hiệu ứng mới, chỉ cần thêm 1 dòng vào đây, không cần sửa nơi nào khác gọi VfxManager.
 const EFFECTS := {
+	"hit": preload("res://vfx/HitExplosion.tscn"),
 	"hit_explosion": preload("res://vfx/HitExplosion.tscn"),
 	"enemy_death": preload("res://vfx/BandDie.tscn"),
 }
@@ -18,7 +19,10 @@ func play(effect_name: String, world_position: Vector2, parent: Node = null) -> 
 		return
 
 	var scene: PackedScene = EFFECTS[effect_name]
-	var target_parent := parent if parent else get_tree().current_scene
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	var target_parent := parent if parent else (tree.current_scene if tree else null)
+	if target_parent == null:
+		return
 	var effect: Node2D = ObjectPool.acquire(scene, target_parent)
 	effect.global_position = world_position
 

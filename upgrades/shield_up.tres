@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3]
+
+[ext_resource type="Script" path="res://upgrades/upgrade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/icons/aogiap.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "shield_up"
+title = "Kim Chung Tráo"
+description = "Tạo Khiên Chân Khí chặn 150 sát thương (tự hồi sau 8s)"
+icon = ExtResource("2_icon")
+stat_type = 7
+value = 150.0
+rarity = 2

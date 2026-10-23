@@ -40,6 +40,34 @@ static func find_by_id(profile: PlayerProfile, player_id: int) -> MockPlayer:
 	for p in players(profile):
 		if p.id == player_id:
 			return p
+	# Nếu người chơi không nằm trong danh sách quanh đây (offline / vắng mặt):
+	# Vẫn tạo/tìm thấy người chơi theo ID để cho phép giao dịch/mua bán kể cả khi offline
+	if player_id > 0:
+		var m := MockPlayer.new()
+		m.id = player_id
+		var rng := RandomNumberGenerator.new()
+		rng.seed = (hash(profile.display_name) if profile != null else 0) ^ (player_id * 31)
+		var sects := SectRegistry.load_all()
+		var fam: String = FAMILY[rng.randi() % FAMILY.size()]
+		var giv: String = GIVEN[rng.randi() % GIVEN.size()]
+		m.name = "%s %s" % [fam, giv]
+		m.level = clampi((profile.level if profile != null else 50) + rng.randi_range(-10, 10), 1, 150)
+		var sect: SectDefinition = sects[rng.randi() % sects.size()]
+		m.sect_id = sect.id
+		m.sect_name = sect.sect_name
+		m.female = rng.randf() < 0.35
+		m.trade_open = true
+		m.stall_open = true
+		m.stall_title = "Quầy hàng của %s" % m.name
+		m.invite_accept_rate = 1.0
+		# Cung cấp vật phẩm để giao dịch/mua bán
+		for k in rng.randi_range(3, 8):
+			var it := ItemGenerator.random_equipment(m.level)
+			if it:
+				it.trade_price = MockPlayer.suggested_price(it)
+				m.bag.add_item(it)
+		m.gold = rng.randi_range(100_000, 5_000_000)
+		return m
 	return null
 
 static func guild_members(profile: PlayerProfile, guild_name: String) -> Array[MockPlayer]:

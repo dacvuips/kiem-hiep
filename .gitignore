@@ -19,3 +19,11 @@ build/
 
 # Thông tin SSH lên VPS (server/deploy/deploy.sh)
 server/deploy/deploy.env
+
+# Khóa mã hóa bảo mật & Keystore phát hành
+.encryption_key
+*.keystore
+
+# Build output Web Docker
+docker/web/dist/
+*.jks

@@ -54,6 +54,7 @@ func _make_slot(i: int, pos: Vector2) -> Button:
 	var icon := TextureRect.new()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	icon.position = Vector2(10, 10)
 	icon.size = Vector2(SLOT_SIZE - 20, SLOT_SIZE - 20)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -179,7 +180,10 @@ func _open_picker(i: int) -> void:
 	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func() -> void: win.close_requested.emit())
 	buttons.add_child(close)
-	SocialWindow.present(get_tree().current_scene, win, &"quick_item_picker")
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	var host := tree.current_scene if tree != null else null
+	if host != null:
+		SocialWindow.present(host, win, &"quick_item_picker")
 
 ## Thả món kéo từ hành trang: chỉ nhận thuốc / đan dùng được (PotionEffect.usable).
 func _can_drop(_at: Vector2, data: Variant, _i: int) -> bool:

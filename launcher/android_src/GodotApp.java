@@ -52,7 +52,7 @@ import androidx.core.splashscreen.SplashScreen;
  * Template activity for Godot Android builds.
  * Feel free to extend and modify this class for your custom logic.
  *
- * KIẾM HIỆP (launcher/android_src/GodotApp.java — bash launcher/setup_android.sh chép đè vào template):
+ * JX1 IDLE ORIGIN (launcher/android_src/GodotApp.java — bash launcher/setup_android.sh chép đè vào template):
  * APK chỉ chứa launcher. launcher.gd tải gói game về getFilesDir()/content/, ghi file đánh dấu "boot_game"
  * (dòng 1 = core.pck, dòng 2 = thư mục gói) rồi khởi động lại app -> lần này chạy thẳng game bằng --main-pack.
  * File đánh dấu dùng 1 lần (đọc xong xoá), nên lần mở app sau lại vào launcher kiểm tra cập nhật.
@@ -91,6 +91,11 @@ public class GodotApp extends GodotActivity {
 		SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
 		EdgeToEdge.enable(this);
 		super.onCreate(savedInstanceState);
+
+		// Chống dịch ngược và can thiệp bộ nhớ (Frida, Debugger, Hooking)
+		if (!BuildConfig.DEBUG) {
+			SecurityGuard.checkAndEnforce(this);
+		}
 
 		Godot godot = getGodot();
 		if (godot != null && godot.getDisableGodotSplash()) {
@@ -145,15 +150,9 @@ public class GodotApp extends GodotActivity {
 		String pck = lines.get(0);
 		String dir = lines.size() > 1 ? lines.get(1) : new File(getFilesDir(), "content").getAbsolutePath();
 
-		File pckFile = new File(pck);
-		if (!pckFile.isFile()) {
-			// Thử tìm trong files/content/<pck>
-			pckFile = new File(new File(getFilesDir(), "content"), pckFile.getName());
-		}
-		File dirFile = new File(dir);
-		if (!dirFile.isDirectory()) {
-			dirFile = new File(getFilesDir(), "content");
-		}
+		File contentDir = new File(getFilesDir(), "content");
+		File pckFile = new File(contentDir, new File(pck).getName());
+		File dirFile = contentDir;
 
 		if (!pckFile.isFile()) {
 			Log.e(TAG, "File gói game không tồn tại: " + pckFile.getAbsolutePath());
@@ -176,6 +175,9 @@ public class GodotApp extends GodotActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		if (!BuildConfig.DEBUG) {
+			SecurityGuard.checkAndEnforce(this);
+		}
 		updateWindowAppearance.run();
 	}
 

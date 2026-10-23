@@ -297,12 +297,26 @@ func _hit_with_resolved_stats(target: Node) -> void:
 ## nên vẫn rơi vào fallback bên dưới cho tới khi Enemy cũng chuyển sang take_damage_from()).
 func _deal_damage_to(target: Node, amount: float) -> void:
 	if target.has_method("take_damage_from"):
-		var whole := int(amount)
+		var min_dmg := int(amount)
+		var max_dmg := int(amount)
+		var mods := _hit_mods
+		if resolved_stats != null and resolved_stats.damage_min >= 0.0 and resolved_stats.damage_max >= 0.0:
+			var scale := amount / damage if damage > 0.0 else 1.0
+			min_dmg = int(round(resolved_stats.damage_min * scale))
+			max_dmg = int(round(resolved_stats.damage_max * scale))
+			if scale != 1.0 and mods != null and not mods.extra_damages.is_empty():
+				mods = mods.duplicate()
+				var scaled_extra := {}
+				for t in mods.extra_damages:
+					var r: Vector2i = mods.extra_damages[t]
+					scaled_extra[t] = Vector2i(int(round(r.x * scale)), int(round(r.y * scale)))
+				mods.extra_damages = scaled_extra
 		var stats := attacker_stats if attacker_stats else _fallback_attacker_stats()
+		var elem: ElementTypes.ElementType = resolved_stats.element if resolved_stats != null else ElementTypes.ElementType.KIM
 		var damage_type: CombatFormulas.DamageType = resolved_stats.main_damage_type \
-				if resolved_stats.main_damage_type >= 0 \
-				else _combat_damage_type_for_element(resolved_stats.element)
-		target.take_damage_from(stats, whole, whole, damage_type, resolved_stats.element, _hit_mods)
+				if (resolved_stats != null and resolved_stats.main_damage_type >= 0) \
+				else _combat_damage_type_for_element(elem)
+		target.take_damage_from(stats, min_dmg, max_dmg, damage_type, elem, mods)
 	elif target.has_method("take_damage"):
 		target.take_damage(amount)
 

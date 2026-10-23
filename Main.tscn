@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://bw78oxafwchs2" path="res://spawner/spawner.gd" id="3_r0du0"]
 [ext_resource type="PackedScene" path="res://world/vltk_world.tscn" id="4_cm0pq"]
 [ext_resource type="Script" uid="uid://x04wym6dmid4" path="res://main.gd" id="5_main"]
-[ext_resource type="PackedScene" uid="uid://bbso8vaqgekud" path="res://ui/level_up/LevelUpUI.tscn" id="6_3dxm6"]
+[ext_resource type="PackedScene" uid="uid://bbso8vaqgekud" path="res://ui/joystick/LevelUpUI.tscn" id="6_3dxm6"]
 [ext_resource type="Script" uid="uid://b7h1uw2yrj4nj" path="res://stages/enemy_spawn_entry.gd" id="6_03owx"]
 [ext_resource type="PackedScene" uid="uid://soru5wkiajxi" path="res://world/obstacles/tree.tscn" id="6_sc1dx"]
 [ext_resource type="PackedScene" uid="uid://bvqabsqp88773" path="res://world/obstacles/stone-2.tscn" id="7_fpfj3"]
@@ -43,9 +43,9 @@ stage_for_testing = ExtResource("2_03owx")
 
 [node name="TimeLabel" type="Label" parent="UI" unique_id=793653693]
 offset_left = 602.0
-offset_top = 50.0
+offset_top = 52.0
 offset_right = 658.0
-offset_bottom = 75.0
+offset_bottom = 77.0
 theme_override_font_sizes/font_size = 20
 
 [node name="PlayerStatusHud" parent="UI" unique_id=1900000005 instance=ExtResource("18_status_hud")]

@@ -1,4 +1,4 @@
-# Hướng Dẫn Vận Hành, Build & Phát Hành Game (Kiếm Hiệp)
+# Hướng Dẫn Vận Hành, Build & Phát Hành Game (JX1 Idle Origin)
 
 Tài liệu này tổng hợp toàn bộ quy trình từ triển khai máy chủ (VPS), quản lý Docker Hub, cơ chế đóng gói tài nguyên, xuất bản APK và cập nhật từ xa.
 
@@ -122,6 +122,39 @@ Chỉ cần build APK launcher một lần (hoặc khi cập nhật phiên bản
    - Chép file `build/kiem-hiep-launcher.apk` vào điện thoại và cài đặt đè.
    - Do cùng package `com.kiemhiep.game`, toàn bộ 1.2 GB tài nguyên bạn đã tải về trước đó vẫn được giữ nguyên trong `user://content/`.
    - Mở app lên: Launcher kiểm tra nhanh các gói, nạp vào engine và chuyển ngay sang màn hình Đăng nhập mà không bị văng.
+
+5. **Hệ Thống Phòng Thủ Chống Dịch Ngược (Anti-Reverse Engineering)**:
+   Game đã được tích hợp 5 lớp bảo vệ chuyên sâu chống dịch ngược, decompile và can thiệp bộ nhớ:
+
+   - **Lớp 1: Anti-Frida, Anti-Debugging & Anti-Hooking (`SecurityGuard.java`)**:
+     Tự động kiểm tra trong bản phát hành Release (`!BuildConfig.DEBUG`):
+     - Phát hiện kết nối Debugger / ptrace tracer (`/proc/self/status` TracerPid).
+     - Quét bộ nhớ `/proc/self/maps` chặn các thư viện Frida, Xposed, Substrate.
+     - Kiểm tra cổng mạng Frida server (`127.0.0.1:27042`).
+     - Tự động đóng ứng dụng nếu phát hiện công cụ dịch ngược hoặc hooking đang can thiệp.
+
+   - **Lớp 2: R8 / ProGuard Code Obfuscation & Shrinking**:
+     File `proguard-rules.pro` đã được kích hoạt trong `build.gradle` (release mode). Giúp làm mờ mã Java, rút gọn tên class, chống đọc ngược bằng JADX / Bytecode Viewer.
+
+   - **Lớp 3: Làm mờ chuỗi nhạy cảm (String Obfuscation - `Obfuscator.gd`)**:
+     Toàn bộ các chuỗi salt, khóa máy cục bộ, định danh phiên (`jx1-save-security:`, `vltk-lock|`, `kiemhiep-session:`) đều được mã hóa mảng byte XOR runtime. Lệnh `strings` hoặc dịch ngược bytecode sẽ không tìm thấy plain text.
+
+   - **Lớp 4: Biên dịch mã nguồn nén (Script Export Mode = 2)**:
+     Toàn bộ mã GDScript được xuất dưới dạng binary tokens đã nén thay vì plain text `.gd`.
+
+   - **Lớp 5: Mã hóa PCK bằng AES-256 (Chống GodotRETools / gdsdecomp)**:
+     Quản lý khóa và bật mã hóa tự động bằng công cụ:
+     ```powershell
+     # Xem trạng thái khóa
+     python tools/security/setup_encryption.py
+
+     # Bật mã hóa trong cấu hình export
+     python tools/security/setup_encryption.py --enable
+
+     # Thiết lập biến môi trường khóa AES-256 khi build
+     $key = Get-Content .encryption_key
+     $env:SCRIPT_AES256_ENCRYPTION_KEY = $key
+     ```
 
 ---
 

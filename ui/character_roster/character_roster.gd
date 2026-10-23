@@ -49,6 +49,10 @@ func _ready() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 	if AccountApi.is_logged_in():
+		AccountApi.session_invalidated.connect(func(reason: String) -> void:
+			AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
+		)
 		await _build_slots_online()
 	else:
 		_build_slots()
@@ -127,7 +131,7 @@ func _build_slots_online() -> void:
 		_message.modulate.a = 0.0
 		for c in r.data.get("characters", []):
 			by_slot[int(c.get("slot", 0))] = c
-	elif r.code == "unauthorized" or r.code == "banned":
+	elif r.code in ["unauthorized", "banned", "logged_in_elsewhere"]:
 		AccountScreen.next_login_message = r.message
 		get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 		return
@@ -182,20 +186,21 @@ func _make_character_slot(i: int, profile: PlayerProfile) -> Dictionary:
 	portrait.mouse_filter = Control.MOUSE_FILTER_STOP
 	portrait.setup(load(path), meta[key], key)
 	portrait.scale = Vector2.ONE * CHAR_SCALE
-	portrait.pivot_offset = Vector2(ref.size.x * 0.5, ref.size.y)
-	portrait.position = Vector2(SLOT_FEET_X[i], FEET_Y) - portrait.pivot_offset
+	## Điểm chân thực tế trong toạ độ local của portrait (đã tính offset riêng của từng nhân vật)
+	var char_offset: Vector2 = portrait.offsets.get(key, Vector2.ZERO)
+	var foot_local: Vector2 = Vector2(ref.size.x * 0.5, ref.size.y) + char_offset
+	portrait.pivot_offset = foot_local
+	portrait.position = Vector2(SLOT_FEET_X[i], FEET_Y) - foot_local
 	portrait.pressed.connect(_select.bind(i))
-	## Vòng hào quang: giữ đúng vị trí so với chân như màn Tạo Nhân Vật, rồi thu nhỏ cùng nhân vật.
+	## Vòng hào quang: đặt tâm chính xác tại chân nhân vật (SLOT_FEET_X[i], FEET_Y), đồng trục và vừa vặn
 	var aura := AuraRing.new()
 	aura.size = ref_aura.size
 	aura.aura_name = ref_aura.aura_name
 	aura.tilt = ref_aura.tilt
 	aura.fps = ref_aura.fps
-	var feet_ref := ref.feet_point(key)
-	var delta := (ref_aura.position + ref_aura.size * 0.5) - feet_ref
 	aura.scale = Vector2.ONE * CHAR_SCALE
 	aura.pivot_offset = aura.size * 0.5
-	aura.position = Vector2(SLOT_FEET_X[i], FEET_Y) + delta * CHAR_SCALE - aura.size * 0.5
+	aura.position = Vector2(SLOT_FEET_X[i], FEET_Y) - aura.size * 0.5
 	_stage.add_child(aura)
 	_stage.add_child(portrait)
 	slot["portrait"] = portrait
@@ -286,6 +291,17 @@ func _on_enter_pressed() -> void:
 	if not slot.has("profile"):
 		_toast("Ô này chưa có nhân vật — bấm \"Tạo nhân vật\"")
 		return
+
+	# Kiểm tra xác thực phiên trước khi vào Hub
+	if AccountApi.is_logged_in():
+		var chk: Dictionary = await AccountApi.check_session()
+		if not is_inside_tree():
+			return
+		if not chk.ok:
+			AccountScreen.next_login_message = chk.message if chk.message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
+			return
+
 	GameManager.local_profile = slot["profile"]
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]

@@ -145,6 +145,7 @@ func _ready() -> void:
 	_main_button.gui_input.connect(_on_main_gui_input)
 	_build_page_swap()
 	_capture_base_offsets()
+	apply_layout()
 
 ## Nút tròn đổi nhóm skill 1 <-> 2 (thay chỗ 2 nút "1"/"2" — hai nút đó ẩn đi, chỉ giữ logic trang).
 func _build_page_swap() -> void:
@@ -227,7 +228,7 @@ func apply_layout() -> void:
 		c.pivot_offset = Vector2(b[2] - b[0], b[3] - b[1]) * 0.5
 		c.scale = Vector2(k, k)
 		if key != "main":
-			c.visible = profile == null or profile.is_skill_slot_on(key)
+			c.visible = profile.is_skill_slot_on(key) if profile != null else (not PlayerProfile.DEFAULT_HIDDEN_SLOTS.has(key))
 
 func setup(player: Node) -> void:
 	_player = player
@@ -445,10 +446,12 @@ func _on_main_pressed() -> void:
 	if _suppress_main_press:
 		_suppress_main_press = false
 		return
-	## Mục tiêu có thể null — skill buff lên mình vẫn thi triển được (xem SectSkillController._try_cast).
-	var target: Node2D = _player.get_cast_target(_main_button.skill)
-	if _player.skill_controller.try_cast_main(_player, target):
-		_player.play_cast()
+	if _player != null and _player.has_method("use_main_skill"):
+		_player.use_main_skill()
+	elif _player != null:
+		var target: Node2D = _player.get_cast_target(_main_button.skill)
+		if _player.skill_controller.try_cast_main(_player, target):
+			_player.play_cast()
 
 func _on_sub_pressed(index: int) -> void:
 	if editing_hotbar:
@@ -503,7 +506,7 @@ func _style_round_button(button: Button, sheet_name: String, normal_frame: int, 
 		box.texture = atlas
 		return box
 	button.text = ""
-	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	button.add_theme_stylebox_override("normal", make.call(normal_frame))
 	button.add_theme_stylebox_override("hover", make.call(active_frame if button.toggle_mode == false else normal_frame))
 	button.add_theme_stylebox_override("pressed", make.call(active_frame))

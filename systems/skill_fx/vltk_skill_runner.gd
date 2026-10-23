@@ -216,10 +216,13 @@ static func replay(caster: Node2D, vltk_skill_id: int, level: int, aim_node: Nod
 	VltkSkillCaster.cast(ctx, fire_id, level, des, aim_node)
 
 ## Tiếng ra chiêu gốc (KSkill::PlayPreCastSound: ManCastSnd / FMCastSnd theo giới tính người thi triển).
-## Giọng theo nhân vật đang hiển thị (avatar.gender) để khớp với tiếng đánh/chạy của CharacterAvatar; quái/NPC không có
-## avatar thì giọng nam. Skill không có tiếng gốc thì thôi (âm theo hệ của SfxManager.play_skill_cast vẫn chạy riêng).
+## Theo chuẩn VLTK gốc (KNpc::PlayPreCastSound: if (IsPlayer())): chỉ người chơi (Player/RemotePlayer/PKBot có avatar)
+## mới phát tiếng hô hào nam/nữ. Quái vật / NPC dùng tiếng động tác quái riêng trong npc动作声音表 (VltkSound.npc), không
+## la hét giọng người chơi. Skill không có tiếng gốc thì thôi (âm theo hệ của SfxManager.play_skill_cast vẫn chạy riêng).
 static func play_cast_sound(caster: Node2D, vltk_skill_id: int) -> void:
-	var female: bool = "avatar" in caster and caster.avatar != null and caster.avatar.is_voice_female()
+	if caster == null or not ("avatar" in caster and caster.avatar != null):
+		return
+	var female: bool = caster.avatar.is_voice_female()
 	var stream := VltkSound.skill_cast(vltk_skill_id, female)
 	if stream != null:
 		SfxManager.play(stream, caster.global_position)

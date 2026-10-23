@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal died
+
 const DamageNumberScene := preload("res://effects/damage_number.tscn")
 const GemScene := preload("res://gems/Gem.tscn")
 const PickupScene := preload("res://gems/Pickup.tscn")
@@ -17,8 +19,12 @@ var combat_stats: CombatantStats
 
 var health: float
 var target: Node2D
+## Cấu hình spawn của quái này ở map hiện tại (chứa các hệ số nhân strength/vitality/level_add).
+var _entry: EnemySpawnEntry
 ## Bản dựng combat (CombatantBuild) của con quái này — giữ lại để dựng lại chỉ số khi dính buff/bùa.
 var _build: CombatantBuild
+var level: int:
+	get: return _build.level if _build != null else 1
 ## Phe (Camp.Type) — quái mặc định Camp.Type.ANIMAL (địch của mọi người chơi), xem CombatTargeting.
 var camp: int = Camp.Type.ANIMAL
 
@@ -44,29 +50,43 @@ var _active_skill_level: int = 1
 var _attack_radius: float = ATTACK_RANGE
 var _attack_action: String = "attack1"
 
+## VLTK gốc (NormalSync): gom sát thương theo chu kỳ (~0.2s) rồi mới hiển thị 1 số duy nhất,
+## tránh spam số đè nhau khi trúng skill nhiều tia / hiệu ứng đa tầng.
+const DAMAGE_BATCH_INTERVAL := 0.2
+var _accumulated_damage: float = 0.0
+var _damage_batch_timer: float = 0.0
+
 @onready var health_bar := $HealthBar
 @onready var sprite: AnimatedSprite2D = $Sprite2D
 @onready var status_controller: StatusEffectController = $StatusEffectController
 
+var _base_sprite_scale: Vector2 = Vector2.ONE
+
 func _ready() -> void:
+	collision_mask &= ~32  ## Quái đi xuyên vật cản (obstacle layer)
+	_base_sprite_scale = sprite.scale
 	target = get_tree().get_first_node_in_group("player")
-	$HitArea.body_entered.connect(_on_hit_area_body_entered)
+	if not $HitArea.body_entered.is_connected(_on_hit_area_body_entered):
+		$HitArea.body_entered.connect(_on_hit_area_body_entered)
 	sprite.play("walk")
 
 ## `entry` gắn EnemyTierData gốc + hệ số nhân/thời điểm RIÊNG cho map đang chơi — xem
 ## stages/enemy_spawn_entry.gd. Contact damage/speed/scale vẫn lấy nguyên từ `entry.tier` (chưa hỗ
 ## trợ nhân theo map cho các field gameplay-ngoài-combat này).
 func setup(entry: EnemySpawnEntry) -> void:
+	_entry = entry
 	var tier := entry.tier
 	_build = entry.to_build()
 	camp = _build.camp
+	_accumulated_damage = 0.0
+	_damage_batch_timer = 0.0
 	status_controller.clear_all()
 	_use_vltk_look(tier.vltk_monster_id, tier.scale_override)
 	_build_name_plate(tier)
 	combat_stats = CombatantStats.build(_build)
 	_apply_vltk_stats()
 	max_health = float(combat_stats.max_hp)  ## HP CHÍNH XÁC 100% VLTK, suy từ Vitality — xem CombatantStats
-	contact_damage = tier.contact_damage
+	contact_damage = tier.contact_damage * entry.strength_multiplier
 	speed = tier.speed
 	exp_drop = tier.exp_drop
 	gem_texture = tier.gem_texture
@@ -74,7 +94,7 @@ func setup(entry: EnemySpawnEntry) -> void:
 
 	health = max_health
 	health_bar.set_max_health(max_health)
-	sprite.scale = sprite.scale * tier.scale_override
+	sprite.scale = _base_sprite_scale * tier.scale_override
 	if not status_controller.stats_changed.is_connected(refresh_combat_stats):
 		status_controller.stats_changed.connect(refresh_combat_stats)
 
@@ -101,24 +121,30 @@ func _apply_vltk_stats() -> void:
 	_attack_action = "attack1"
 	if _vltk_data.is_empty():
 		return
-	var level := _build.level
+	var lvl := level
 	if _vltk_id >= 0:
 		if _build != null:
 			_vltk_data["series"] = int(_build.element)
-		_vltk_data = MonsterData.apply_level_script(_vltk_data, _vltk_id, level)
+		_vltk_data = MonsterData.apply_level_script(_vltk_data, _vltk_id, lvl)
 	if not _vltk_data.has("stats"):
 		return
-	combat_stats.max_hp = maxi(1, MonsterData.stat_at_level(_vltk_data, "life", level))
-	combat_stats.defense = MonsterData.stat_at_level(_vltk_data, "defense", level)
-	combat_stats.attack_rating = MonsterData.stat_at_level(_vltk_data, "attack_rating", level)
+	combat_stats.max_hp = maxi(1, MonsterData.stat_at_level(_vltk_data, "life", lvl))
+	combat_stats.defense = MonsterData.stat_at_level(_vltk_data, "defense", lvl)
+	combat_stats.attack_rating = MonsterData.stat_at_level(_vltk_data, "attack_rating", lvl)
+	if _entry != null:
+		combat_stats.max_hp = maxi(1, int(combat_stats.max_hp * _entry.vitality_multiplier))
+		combat_stats.defense = int(combat_stats.defense * _entry.dexterity_multiplier)
+		combat_stats.attack_rating = int(combat_stats.attack_rating * _entry.dexterity_multiplier)
 	for sk in _vltk_data.get("skills", []):
 		var sid := int(sk[0])
 		var slv := int(sk[1])
 		if sid <= 0:
 			continue
-		var eff_lv := slv if _vltk_data.get("skill_levels_exact", false) else clampi(slv + level / 5, 1, 30)
+		var eff_lv := slv if _vltk_data.get("skill_levels_exact", false) else clampi(slv + lvl / 5, 1, 30)
 		if _vltk_damage.x < 0:
-			_vltk_damage = MonsterData.melee_damage(_vltk_data, level, sid, eff_lv)
+			_vltk_damage = MonsterData.melee_damage(_vltk_data, lvl, sid, eff_lv)
+			if _entry != null and _vltk_damage.x >= 0:
+				_vltk_damage = Vector2i(int(_vltk_damage.x * _entry.strength_multiplier), int(_vltk_damage.y * _entry.strength_multiplier))
 		var s := VltkSkillData.skill(sid, eff_lv)
 		if not s.is_empty():
 			var rad := float(s.get("attack_radius", ATTACK_RANGE))
@@ -164,10 +190,11 @@ func _use_vltk_look(monster_id: int, scale_factor: float) -> void:
 	var feet_y := old_shadow.position.y if old_shadow else 29.0
 	if old_shadow:
 		old_shadow.visible = false
-	_vltk_sprite = MonsterSprite.new()
+	if _vltk_sprite == null:
+		_vltk_sprite = MonsterSprite.new()
+		add_child(_vltk_sprite)
 	_vltk_sprite.position = Vector2(0, feet_y)
 	_vltk_sprite.scale = Vector2.ONE * scale_factor
-	add_child(_vltk_sprite)
 	_vltk_sprite.set_resource(str(_vltk_data["res"]))
 	_vltk_dir64 = randi() % VltkMath.MAX_DIR
 	health_bar.position = Vector2(health_bar.position.x, feet_y - _vltk_sprite.get_height() * scale_factor - 10.0)
@@ -188,6 +215,11 @@ func _update_vltk_pose(direction: Vector2, delta: float) -> void:
 	_vltk_sprite.set_pose(action, _vltk_dir64, fmod(_vltk_time, length) / length)
 
 func _physics_process(delta: float) -> void:
+	if _accumulated_damage > 0.0:
+		_damage_batch_timer -= delta
+		if _damage_batch_timer <= 0.0:
+			_flush_damage_number()
+
 	## Player đã chết (queue_free()) — target vẫn còn tham chiếu cũ (không tự về null), truy cập
 	## target.global_position lúc này sẽ lỗi vì object đã bị giải phóng. Dừng hẳn di chuyển thay
 	## vì không còn ai để đuổi theo nữa.
@@ -220,7 +252,8 @@ func _physics_process(delta: float) -> void:
 	var direction := (target.global_position - global_position).normalized()
 	var speed_bonus := 1.0 + (combat_stats.move_speed_p / 100.0 if combat_stats else 0.0)
 	velocity = direction * speed * speed_bonus * status_controller.move_speed_multiplier
-	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta)
+	## Quái có thể đi xuyên vật cản (ignore_obstacles = true) để không kẹt cây/đá ngoài trời, nhưng vẫn bị chặn trong ô vuông ải
+	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, false, true)
 	move_and_slide()
 
 	if direction.x != 0:
@@ -265,10 +298,7 @@ func _tick_vltk_attack(delta: float) -> void:
 
 func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
-	var lv := skill_level
-	var base_dmg := contact_damage
-	if _vltk_damage.x >= 0:
-		base_dmg = float((_vltk_damage.x + _vltk_damage.y) / 2)
+	var lv := skill_level if _vltk_data.get("skill_levels_exact", false) else clampi(skill_level + level / 5, 1, 30)
 	var skill_info := VltkSkillData.skill(skill_id, skill_level)
 	var series := int(skill_info.get("series", -1))
 	stats.element = (series if series >= 0 and series <= 4 else int(_build.element)) as ElementTypes.ElementType
@@ -302,31 +332,65 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	if not series_p.is_empty():
 		stats.five_elements_damage_p = int(series_p[0])
 
-	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
+	var is_physical := int(skill_info.get("physical", 1)) == 1
 	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
-	if not enhance.is_empty():
-		stats.damage = base_dmg * (100.0 + float(enhance[0])) / 100.0
-	elif not flat.is_empty():
-		stats.damage = (float(flat[0]) + float(flat[2] if flat.size() > 2 else flat[0])) * 0.5 + base_dmg * 0.5
-	elif elements.is_empty():
-		stats.damage = base_dmg
-	else:
-		stats.damage = 0.0
+	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
 
-	var physical := int(skill_info.get("physical", 1)) == 1
-	var extra: Dictionary = combat_stats.outer_element_damage if physical else combat_stats.inner_element_damage
+	if not _vltk_data.is_empty():
+		var dmg := MonsterData.melee_damage(_vltk_data, level, skill_id, skill_level)
+		var mult := _entry.strength_multiplier if _entry != null else 1.0
+		if dmg.x >= 0 and is_physical:
+			stats.damage_min = float(dmg.x) * mult
+			stats.damage_max = float(dmg.y) * mult
+			stats.damage = (stats.damage_min + stats.damage_max) * 0.5
+		elif not is_physical:
+			if not flat.is_empty():
+				var f_min := float(flat[0]) * mult
+				var f_max := float(flat[2] if flat.size() > 2 else flat[0]) * mult
+				stats.damage_min = f_min
+				stats.damage_max = f_max
+				stats.damage = (f_min + f_max) * 0.5
+			else:
+				stats.damage_min = 0.0
+				stats.damage_max = 0.0
+				stats.damage = 0.0
+		else:
+			stats.damage_min = 0.0
+			stats.damage_max = 0.0
+			stats.damage = 0.0
+	else:
+		# Fallback cho Enemy thuần roguelite không có dữ liệu VLTK gốc
+		var base_dmg := contact_damage
+		if not enhance.is_empty():
+			stats.damage = base_dmg * (100.0 + float(enhance[0])) / 100.0
+		elif not flat.is_empty():
+			stats.damage = (float(flat[0]) + float(flat[2] if flat.size() > 2 else flat[0])) * 0.5 + base_dmg * 0.5
+		elif elements.is_empty():
+			stats.damage = base_dmg
+		else:
+			stats.damage = 0.0
+		if stats.damage > 0.0:
+			stats.damage_min = maxf(1.0, stats.damage * 0.85)
+			stats.damage_max = maxf(stats.damage_min, stats.damage * 1.15)
+		else:
+			stats.damage_min = 0.0
+			stats.damage_max = 0.0
+
+	if _entry != null and _entry.strength_multiplier != 1.0:
+		for t in elements:
+			var rg: Vector2i = elements[t]
+			elements[t] = Vector2i(int(rg.x * _entry.strength_multiplier), int(rg.y * _entry.strength_multiplier))
+
+	var extra: Dictionary = combat_stats.outer_element_damage if is_physical else combat_stats.inner_element_damage
 	for t in extra:
 		elements[t] = elements.get(t, Vector2i.ZERO) + extra[t]
-	if stats.damage > 0.0 or elements.is_empty():
-		stats.damage_min = maxf(1.0, stats.damage * 0.8)
-		stats.damage_max = maxf(stats.damage_min, stats.damage * 1.2)
 	stats.extra_damage_ranges = elements
 	return stats
 
 func take_damage(amount: float) -> void:
 	health -= amount
 	health_bar.set_health(health)
-	spawn_damage_number(amount)
+	_accumulate_damage(amount)
 	play_hit_punch()
 	if health <= 0:
 		die()
@@ -356,7 +420,7 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 
 	health -= final_damage
 	health_bar.set_health(health)
-	spawn_damage_number(final_damage)
+	_accumulate_damage(float(final_damage))
 	play_hit_punch()
 	if health <= 0:
 		die()
@@ -370,7 +434,7 @@ func spawn_miss_number() -> void:
 func take_status_damage(amount: float, _effect_id: String) -> void:
 	health -= amount
 	health_bar.set_health(health)
-	spawn_damage_number(amount)
+	_accumulate_damage(amount)
 	if health <= 0:
 		die()
 
@@ -391,16 +455,74 @@ func play_hit_punch() -> void:
 	var tween := create_tween()
 	tween.tween_property(look, "scale", base_scale, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
+var _is_dead: bool = false
+
+func is_dead() -> bool:
+	return _is_dead
+
+func _on_pool_acquire() -> void:
+	_is_dead = false
+	visible = true
+	_accumulated_damage = 0.0
+	_damage_batch_timer = 0.0
+	_atk_time = -1.0
+	_atk_hit = false
+	_atk_cooldown = 0.0
+	_vltk_time = 0.0
+	modulate = Color.WHITE
+	target = get_tree().get_first_node_in_group("player")
+	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.set_deferred("disabled", false)
+	var hit_col := get_node_or_null("HitArea/CollisionShape2D") as CollisionShape2D
+	if hit_col:
+		hit_col.set_deferred("disabled", false)
+
+func _on_pool_release() -> void:
+	_is_dead = true
+	if status_controller:
+		status_controller.clear_all()
+	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.set_deferred("disabled", true)
+	var hit_col := get_node_or_null("HitArea/CollisionShape2D") as CollisionShape2D
+	if hit_col:
+		hit_col.set_deferred("disabled", true)
+
 func die() -> void:
+	if _is_dead:
+		return
+	_is_dead = true
+	died.emit()
+	_flush_damage_number()
 	_play_vltk_sound("die")
 	if _vltk_sprite != null:
 		## Cảnh chết đúng hình quái VLTK (xác nằm lại rồi mờ dần) thay cho hiệu ứng nổ chung.
 		MonsterCorpse.spawn(get_parent(), _vltk_id, _vltk_dir64, _vltk_sprite.global_position, _vltk_sprite.scale.x)
 	else:
 		VfxManager.play("enemy_death", global_position)
+	if PlayerStats.explosion_on_kill_chance > 0.0 and randf() < PlayerStats.explosion_on_kill_chance:
+		_trigger_kill_explosion()
 	spawn_gem()
 	spawn_random_drops()
-	queue_free()
+	if has_meta("pool_key"):
+		ObjectPool.release(self)
+	else:
+		queue_free()
+
+func _trigger_kill_explosion() -> void:
+	var pos := global_position
+	VfxManager.play("hit_explosion", pos)
+	var tree := get_tree()
+	if tree == null:
+		return
+	var enemies := tree.get_nodes_in_group("enemies")
+	var base_dmg := 60.0 * PlayerStats.damage_multiplier
+	for e in enemies:
+		if e != null and is_instance_valid(e) and e != self and e is Node2D:
+			if pos.distance_to(e.global_position) <= PlayerStats.explosion_radius:
+				if e.has_method("take_damage"):
+					e.take_damage(base_dmg * PlayerStats.explosion_damage_ratio)
 
 func spawn_random_drops() -> void:
 	if possible_drops.is_empty():
@@ -425,6 +547,19 @@ func spawn_gem() -> void:
 			gem.get_node("Sprite").texture = gem_tex
 	)
 
+func _accumulate_damage(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if _accumulated_damage <= 0.0:
+		_damage_batch_timer = DAMAGE_BATCH_INTERVAL
+	_accumulated_damage += amount
+
+func _flush_damage_number() -> void:
+	if _accumulated_damage > 0.0:
+		spawn_damage_number(_accumulated_damage)
+		_accumulated_damage = 0.0
+		_damage_batch_timer = 0.0
+
 func spawn_damage_number(amount: float) -> void:
 	var spawn_position := global_position + Vector2(0, -20)
 	ObjectPool.acquire_deferred(DamageNumberScene, get_parent(), spawn_position, func(number): number.set_damage(amount))
@@ -448,6 +583,8 @@ func _deal_contact_damage(body: Node) -> void:
 		var mods := CombatFormulas.HitModifiers.new()
 		mods.attacker_node = self
 		mods.is_melee = true
+		if not combat_stats.outer_element_damage.is_empty():
+			mods.extra_damages = combat_stats.outer_element_damage.duplicate()
 		body.take_damage_from(combat_stats, min_dmg, max_dmg, CombatFormulas.DamageType.PHYSICS, combat_stats.element, mods)
 	elif body.has_method("take_damage"):
 		body.take_damage(contact_damage)

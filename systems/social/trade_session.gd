@@ -34,7 +34,7 @@ static func request(local: PlayerProfile, partner: MockPlayer, out_error: Array 
 	if err == "":
 		if partner == null or not partner.trade_open:
 			err = "Đối phương không mở giao dịch."
-		elif partner.stall_open:
+		elif partner.stall_open and not partner.trade_open:
 			err = "Đối phương đang bày bán."
 		elif RandomNumberGenerator.new().randf() > partner.invite_accept_rate:
 			err = "%s từ chối giao dịch." % partner.name

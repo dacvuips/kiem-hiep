@@ -53,5 +53,7 @@ func to_build() -> CombatantBuild:
 ## Thời điểm/tần suất xuất hiện — RIÊNG CHO MAP NÀY (khác EnemyTierData.unlock_time/spawn_weight cũ,
 ## vốn dùng chung mọi map). Cùng 1 quái có thể xuất hiện sớm/muộn, nhiều/ít khác nhau tuỳ map.
 @export var unlock_time: float = 0.0
+## Thời điểm dừng spawn (giây). 0.0 = không khoá, quái spawn cho đến khi hết màn/boss ra.
+@export var lock_time: float = 0.0
 @export var spawn_weight: float = 10.0
 @export var weight_change_per_second: float = 0.0

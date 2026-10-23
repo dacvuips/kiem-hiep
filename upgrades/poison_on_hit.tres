@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" format=3]
+
+[ext_resource type="Script" path="res://upgrades/upgrade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/icons/banhhemoc.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+id = "poison_on_hit"
+title = "Vạn Độc Xâm Cốt"
+description = "Đòn đánh tiêm Độc Sát rút máu quái liên tục theo thời gian"
+icon = ExtResource("2_icon")
+stat_type = 11
+value = 35.0
+rarity = 1

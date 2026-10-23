@@ -25,11 +25,11 @@ static func open(host: Node, profile: PlayerProfile) -> StorageWindow:
 	return win
 
 func _init(profile: PlayerProfile = null) -> void:
-	super._init("Rương Chứa Đồ", "Kéo thả đồ giữa rương và hành trang", 280.0)
+	super._init("Rương Chứa Đồ", "Kéo thả đồ giữa rương và hành trang", 300.0)
 	_profile = profile
 	if _profile == null:
 		return
-	_cell = clampi(int((DisplayServer.window_get_size().y - 360.0) / PlayerProfile.ROOM_HEIGHT), 16, 28)
+	_cell = clampi(int((DisplayServer.window_get_size().y - 360.0) / _profile.storage.ROOM_HEIGHT), 28, 37)
 
 	var chest := SocialUi.section(GameUi.ICON_CHEST + " Rương chứa đồ", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
 	_box_tabs = HBoxContainer.new()
@@ -80,7 +80,7 @@ func _init(profile: PlayerProfile = null) -> void:
 	_box_view.changed.connect(_refresh)
 	_box_view.item_pressed.connect(_show_item)
 	_lock_btn.pressed.connect(_on_lock_button)
-	pw_btn.pressed.connect(func() -> void: SecurityWindow.open(get_tree().current_scene, _profile))
+	pw_btn.pressed.connect(func() -> void: SecurityWindow.open(get_host(), _profile))
 	_expand_btn.pressed.connect(_on_expand)
 	dep.pressed.connect(func() -> void: _ask_money(true))
 	wd.pressed.connect(func() -> void: _ask_money(false))

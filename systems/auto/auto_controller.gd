@@ -69,6 +69,12 @@ func settings() -> AutoSettings:
 # ------------------------------------------------------------------ vòng chạy (Player._physics_process gọi)
 
 func tick(delta: float, on: bool) -> void:
+	if target != null and (not is_instance_valid(target) or not (target is Node2D) or (target is Node and target.is_queued_for_deletion())):
+		_drop_target()
+	if _leader != null and (not is_instance_valid(_leader) or not (_leader is Node2D) or (_leader is Node and _leader.is_queued_for_deletion())):
+		_leader = null
+	if _loot != null and (not is_instance_valid(_loot) or (_loot is Node and _loot.is_queued_for_deletion())):
+		_loot = null
 	if not on:
 		if running:
 			_stop()
@@ -346,7 +352,8 @@ func _cast_buff(skill: SkillDefinition) -> bool:
 func _update_target(s: AutoSettings) -> void:
 	if _target_alive(target) and _accepts(target, s) and _in_zone(target, s) and _rescore > 0.0:
 		if _chasing and _chase_time > CHASE_GIVE_UP:
-			_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
+			if is_instance_valid(target):
+				_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
 		else:
 			return
 	_rescore = RESCORE_INTERVAL
@@ -393,16 +400,19 @@ func _find_target(s: AutoSettings, threat_only: bool) -> Node2D:
 	return best
 
 ## Lọc người/quái, ngũ hành, môn phái.
-func _accepts(e: Node2D, s: AutoSettings) -> bool:
-	if e is RemotePlayer:
+func _accepts(e: Variant, s: AutoSettings) -> bool:
+	if e == null or not is_instance_valid(e) or not (e is Node2D):
+		return false
+	var node := e as Node2D
+	if node is RemotePlayer:
 		if not s.target_players:
 			return false
-		if s.sect_filter_on and "sect_id" in e and not (str(e.get("sect_id")) in s.sects):
+		if s.sect_filter_on and "sect_id" in node and not (str(node.get("sect_id")) in s.sects):
 			return false     ## người chơi chưa gửi môn phái (online hiện chưa có) thì không lọc được -> vẫn đánh
 		return true
 	if not s.target_monsters:
 		return false
-	var data: Variant = e.get("data")
+	var data: Variant = node.get("data")
 	if s.element_filter_on and data is Dictionary:
 		var series := clampi(int(data.get("series", 0)), 0, 4)
 		if not bool(s.elements[series]):
@@ -411,9 +421,12 @@ func _accepts(e: Node2D, s: AutoSettings) -> bool:
 
 ## Đánh quanh điểm / Chạy toạ độ: chỉ đánh địch trong vùng quanh điểm đó (không bị dụ chạy xa) — kiểm tra cả lúc chọn lẫn suốt lúc
 ## đánh/đuổi (quái chạy ra ngoài vùng thì thôi). Ngoại lệ tự vệ: con đang nhắm vào mình và đã ở trong tầm đòn chính thì vẫn đánh trả.
-func _in_zone(e: Node2D, s: AutoSettings) -> bool:
-	if not _point_in_zone(e.global_position + Vector2(0, VltkWorld.FEET_OFFSET), s):
-		return e.has_method("is_engaging") and e.is_engaging(player) and _logic_dist(e) <= player.get_skill_radius(_attack_skill(s))
+func _in_zone(e: Variant, s: AutoSettings) -> bool:
+	if e == null or not is_instance_valid(e) or not (e is Node2D):
+		return false
+	var node := e as Node2D
+	if not _point_in_zone(node.global_position + Vector2(0, VltkWorld.FEET_OFFSET), s):
+		return node.has_method("is_engaging") and node.is_engaging(player) and _logic_dist(node) <= player.get_skill_radius(_attack_skill(s))
 	return true
 
 ## Toạ độ chân `feet` có nằm trong vùng đánh (điểm Chạy toạ độ đang tới / điểm Đánh quanh điểm) không; không bật vùng nào = luôn có.
@@ -426,6 +439,9 @@ func _point_in_zone(feet: Vector2, s: AutoSettings) -> bool:
 	return true
 
 func _attack(s: AutoSettings) -> void:
+	if not _target_alive(target):
+		_drop_target()
+		return
 	var skill := _attack_skill(s)
 	var radius: float = player.get_skill_radius(skill)
 	if _logic_dist(target) <= radius:
@@ -447,30 +463,32 @@ func _attack(s: AutoSettings) -> void:
 	## Tiếp cận theo lộ trình tìm đường (vòng qua vật cản); mục tiêu di chuyển -> tìm lại mỗi REPLAN_SEC. Không có đường tới
 	## (sau tường kín, bên kia sông...) -> bỏ qua mục tiêu, chọn con khác ngay.
 	if not _walk_towards(target):
-		_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
+		if is_instance_valid(target):
+			_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
 		_drop_target()
 		_rescore = 0.0
 
 ## Đi tới chỗ đứng của `node` theo lộ trình tìm đường của map (như bấm điểm trên bản đồ). false = không có đường.
-func _walk_towards(node: Node2D) -> bool:
-	if node == null or not is_instance_valid(node):
+func _walk_towards(node: Variant) -> bool:
+	if node == null or not is_instance_valid(node) or not (node is Node2D):
 		return false
 	if _replan > 0.0 and player.is_moving_to_target():
 		return true
 	_replan = REPLAN_SEC
-	return player.walk_to_feet(VltkMath.ground_of(node))
+	return player.walk_to_feet(VltkMath.ground_of(node as Node2D))
 
 ## Mỗi lần ra chiêu: so máu mục tiêu với lần ra chiêu trước (đòn trước đã kịp trúng hay chưa). Không giảm thì đếm 1 lần
 ## "không lên dame"; đủ NO_DAMAGE_GIVE_UP lần liên tiếp -> bỏ qua mục tiêu này, tìm con khác. Mục tiêu không có máu để đọc: bỏ qua.
 func _check_damage() -> void:
-	if target == null or not ("health" in target):
+	if not _target_alive(target) or not ("health" in target):
 		return
 	var hp := float(target.health)
 	if _last_hp != INF:
 		_no_damage = 0 if hp < _last_hp else _no_damage + 1
 	_last_hp = hp
 	if _no_damage >= NO_DAMAGE_GIVE_UP:
-		_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
+		if is_instance_valid(target):
+			_target_skip[target.get_instance_id()] = Time.get_ticks_msec() + TARGET_SKIP_MS
 		_drop_target()
 		_rescore = 0.0   ## chọn mục tiêu mới ngay lượt sau
 
@@ -599,7 +617,7 @@ func _update_leader(s: AutoSettings) -> void:
 			return
 
 func _leader_far(s: AutoSettings) -> bool:
-	return _leader != null and is_instance_valid(_leader) \
+	return _leader != null and is_instance_valid(_leader) and (_leader is Node2D) \
 			and _logic_dist(_leader) > float(s.follow_leader_dist)
 
 # ------------------------------------------------------------------ tiện ích
@@ -614,10 +632,13 @@ func _usable(id: String) -> SkillDefinition:
 func _busy() -> bool:
 	return player.is_attacking or player.is_casting or not player.can_cast() or player.status_controller.is_stunned
 
-func _target_alive(e: Node2D) -> bool:
-	if e == null or not is_instance_valid(e) or e.is_queued_for_deletion() or not e.is_in_group("enemies"):
+func _target_alive(e: Variant) -> bool:
+	if e == null or not is_instance_valid(e) or not (e is Node2D):
 		return false
-	return not (e.has_method("is_dead") and e.is_dead())
+	var node := e as Node2D
+	if node.is_queued_for_deletion() or not node.is_in_group("enemies"):
+		return false
+	return not (node.has_method("is_dead") and node.is_dead())
 
 ## Khoảng cách logic VLTK (dọc nhân đôi) — giống Player.get_nearest_enemy.
 static func _logic_sq(d: Vector2) -> float:
@@ -626,5 +647,8 @@ static func _logic_sq(d: Vector2) -> float:
 static func _logic_len(d: Vector2) -> float:
 	return sqrt(_logic_sq(d))
 
-func _logic_dist(e: Node2D) -> float:
-	return _logic_len(e.global_position - player.global_position)
+func _logic_dist(e: Variant) -> float:
+	if e == null or not is_instance_valid(e) or not (e is Node2D):
+		return INF
+	var node := e as Node2D
+	return _logic_len(node.global_position - player.global_position)

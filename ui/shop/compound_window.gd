@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name CompoundWindow
+
 ## GIAO DIỆN CHẾ TẠO ĐỒ TÍM & HUYỀN TINH CHUẨN VLTK (5 TAB):
 ##   1. Tinh luyện ▼: Luyện Huyền Tinh (3 trang sức) / Thăng cấp Huyền Tinh (3 viên) / Thăng cấp khoáng thuộc tính (3 viên)
 ##   2. Lấy: Hút thuộc tính từ trang bị xanh vào khoáng thạch nguyên/nguyên thạch
@@ -317,6 +318,7 @@ func _init() -> void:
 	_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_preview.add_theme_font_size_override("normal_font_size", 11)
 	preview_scroll.add_child(_preview)
+	TouchScrollHelperScript.attach(preview_scroll, right_panel)
 
 	var act_box := HBoxContainer.new()
 	act_box.alignment = BoxContainer.ALIGNMENT_END
@@ -336,6 +338,7 @@ func _init() -> void:
 	_grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_grid_scroll.set_drag_forwarding(Callable(), _can_drop_on_remove_zone, _drop_on_remove_zone)
 	body.add_child(_grid_scroll)
+	TouchScrollHelperScript.attach(_grid_scroll, _grid_scroll)
 
 	_grid = GridContainer.new()
 	_grid.columns = GRID_COLUMNS

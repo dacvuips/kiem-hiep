@@ -51,7 +51,7 @@ func _ready() -> void:
 func _setup_policy_text() -> void:
 	var bb := ""
 	bb += "[b][color=#FFD54F]KÍNH CHÀO QUÝ HIỆP KHÁCH BỐN PHƯƠNG,[/color][/b]\n"
-	bb += "Chào mừng quý nhân sĩ đã gia nhập thế giới võ lâm [color=#FFD54F][b]Kiếm Hiệp[/b][/color]. Để xây dựng một môi trường giang hồ công bằng, an toàn và lành mạnh, xin vui lòng đọc kỹ và tuân thủ các điều khoản dịch vụ dưới đây trước khi đăng nhập trải nghiệm trò chơi.\n\n"
+	bb += "Chào mừng quý nhân sĩ đã gia nhập thế giới võ lâm [color=#FFD54F][b]JX1 Idle Origin[/b][/color]. Để xây dựng một môi trường giang hồ công bằng, an toàn và lành mạnh, xin vui lòng đọc kỹ và tuân thủ các điều khoản dịch vụ dưới đây trước khi đăng nhập trải nghiệm trò chơi.\n\n"
 
 	bb += "[b][color=#81C784]I. ĐIỀU KHOẢN DỊCH VỤ & THỎA THUẬN NGƯỜI CHƠI[/color][/b]\n"
 	bb += "1. [color=#FFE082]Tôn trọng sân chơi công bằng:[/color] Nghiêm cấm mọi hành vi sử dụng phần mềm thứ ba can thiệp vào game (hack, cheat, mod, auto can thiệp bộ nhớ máy chủ, thay đổi chỉ số nhân vật trái phép). Mọi tài khoản vi phạm sẽ bị khóa vĩnh viễn không cần báo trước.\n"
@@ -93,7 +93,7 @@ func _on_agree_pressed() -> void:
 	)
 
 func _on_decline_pressed() -> void:
-	_show_message("Hiệp khách cần đồng ý điều khoản dịch vụ để tiếp tục tham gia Kiếm Hiệp.")
+	_show_message("Hiệp khách cần đồng ý điều khoản dịch vụ để tiếp tục tham gia JX1 Idle Origin.")
 
 func _show_message(msg: String, color: Color = Color(1.0, 0.85, 0.55)) -> void:
 	_message.text = msg

@@ -38,7 +38,7 @@ static func make_button(sheet: String, glyph: String, tip: String, on_press: Cal
 	else:
 		var icon := TextureRect.new()
 		icon.texture = frames[0]
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.size = Vector2(ICON, ICON)
@@ -49,8 +49,47 @@ static func make_button(sheet: String, glyph: String, tip: String, on_press: Cal
 		b.mouse_exited.connect(func() -> void: icon.texture = frames[0])
 		b.button_down.connect(func() -> void: icon.texture = frames[frames.size() - 1])
 		b.button_up.connect(func() -> void: icon.texture = frames[0])
+
+	var badge := PanelContainer.new()
+	badge.name = "ActiveBadge"
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.visible = false
+	var dot := StyleBoxFlat.new()
+	dot.bg_color = Color(0.25, 0.95, 0.35)
+	dot.set_corner_radius_all(5)
+	dot.border_width_left = 1
+	dot.border_width_top = 1
+	dot.border_width_right = 1
+	dot.border_width_bottom = 1
+	dot.border_color = Color(0.1, 0.35, 0.1, 0.9)
+	badge.add_theme_stylebox_override("panel", dot)
+	badge.custom_minimum_size = Vector2(10, 10)
+	badge.size = Vector2(10, 10)
+	badge.position = Vector2(SLOT - 13, SLOT - 13)
+	b.add_child(badge)
+
 	b.pressed.connect(on_press)
 	return b
+
+## Bật/tắt trạng thái hoạt động (viền vàng rực, chấm xanh góc dưới) cho nút tiện ích có chế độ toggle (như Giao dịch).
+static func set_active(b: Button, active: bool) -> void:
+	if b == null or not is_instance_valid(b):
+		return
+	var normal_box: StyleBox
+	var hover_box: StyleBox
+	if active:
+		normal_box = GameUi.box(Color(0.20, 0.16, 0.05, 0.95), GameUi.GOLD, int(SLOT / 2), 2, 0)
+		hover_box = GameUi.box(Color(0.28, 0.22, 0.06, 0.98), Color(1.0, 0.95, 0.5), int(SLOT / 2), 2, 0)
+	else:
+		normal_box = GameUi.box(Color(0.06, 0.07, 0.06, 0.82), Color(0.45, 0.42, 0.30), int(SLOT / 2), 2, 0)
+		hover_box = GameUi.box(Color(0.12, 0.12, 0.08, 0.92), GameUi.BORDER_ACTIVE, int(SLOT / 2), 2, 0)
+	for st in ["normal", "focus"]:
+		b.add_theme_stylebox_override(st, normal_box)
+	b.add_theme_stylebox_override("hover", hover_box)
+	b.add_theme_stylebox_override("pressed", hover_box)
+	var badge := b.get_node_or_null("ActiveBadge") as Control
+	if badge:
+		badge.visible = active
 
 ## Các khung (vuông, ghép ngang) của ảnh thanh công cụ gốc; [] nếu không có ảnh.
 static func _frames(sheet: String) -> Array[Texture2D]:

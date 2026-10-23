@@ -5,12 +5,12 @@
 [ext_resource type="Resource" uid="uid://xfxafqmgxsc3" path="res://upgrades/damage_up.tres" id="3_rdm1f"]
 [ext_resource type="Resource" uid="uid://csthxxv5uxrhx" path="res://upgrades/attack_speed_up.tres" id="4_5sn0s"]
 [ext_resource type="Resource" uid="uid://sj85xvlamet" path="res://upgrades/range_up.tres" id="5_5am43"]
-[ext_resource type="Resource" uid="uid://dwebdi4p53a3" path="res://upgrades/double_shot.tres" id="6_udtcw"]
 
 [node name="LevelUpUi" type="CanvasLayer" unique_id=1272959011]
 process_mode = 3
 script = ExtResource("1_87182")
-all_upgrades = Array[ExtResource("2_encji")]([ExtResource("3_rdm1f"), ExtResource("4_5sn0s"), ExtResource("5_5am43"), ExtResource("6_udtcw")])
+all_upgrades = Array[ExtResource("2_encji")]([ExtResource("3_rdm1f"), ExtResource("4_5sn0s"), ExtResource("5_5am43")])
+choices_count = 3
 
 [node name="DimOverlay" type="ColorRect" parent="." unique_id=1305905335]
 anchors_preset = 15

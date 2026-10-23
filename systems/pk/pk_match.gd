@@ -404,7 +404,7 @@ func _build_hud() -> void:
 	add_child(_hud)
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.position = Vector2(-220, 8)
+	box.position = Vector2(-220, 52)
 	box.custom_minimum_size = Vector2(440, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(box)

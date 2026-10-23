@@ -34,9 +34,12 @@ func _init(hub: SocialHub = null) -> void:
 
 	var left := SocialUi.info_box("🎒 Hành trang — bấm món để đặt giá")
 	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left[1].add_child(tabs)
 	for i in PlayerProfile.OPEN_BAGS:
 		var b := GameUi.button("Túi %d" % (i + 1), GameUi.TAB)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func() -> void:
 			_bag = i
 			_refresh())
@@ -44,9 +47,10 @@ func _init(hub: SocialHub = null) -> void:
 		_bag_tabs.append(b)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 20 + 8, 330)
+	scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 37 + 10, 390)
+	scroll.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_bag_view = ItemRoomView.new()
-	_bag_view.cell = 20
+	_bag_view.cell = 37
 	scroll.add_child(_bag_view)
 	left[1].add_child(scroll)
 	cols.add_child(left[0])

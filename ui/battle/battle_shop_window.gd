@@ -18,7 +18,22 @@ func _init() -> void:
 		if rec.is_empty():
 			continue
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
+		row.add_theme_constant_override("separation", 10)
+		var icon_frame := PanelContainer.new()
+		icon_frame.custom_minimum_size = Vector2(40, 40)
+		icon_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var frame_box := GameUi.box(GameUi.BG_INNER, GameUi.BORDER, 4, 1, 2)
+		icon_frame.add_theme_stylebox_override("panel", frame_box)
+		var icon_rect := TextureRect.new()
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		icon_rect.custom_minimum_size = Vector2(32, 32)
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.texture = ItemDatabase.get_icon(rec)
+		icon_frame.add_child(icon_rect)
+		row.add_child(icon_frame)
+
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		info.add_child(SocialUi.label(str(rec["name"]), SocialUi.TEXT, 14))

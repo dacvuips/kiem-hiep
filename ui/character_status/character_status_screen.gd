@@ -32,6 +32,9 @@ const COLOR_DIM := Color(0.65, 0.6, 0.5)
 signal profile_changed
 
 var _profile: PlayerProfile
+var _disguise_banner: PanelContainer
+var _disguise_label: Label
+var _disguise_icon: TextureRect
 ## Ai mở Hành trang khi bấm nút "Hành trang"/ô trống. Rỗng = popup modal mặc định (màn Hub). Map đánh
 ## quái gán hàm riêng để mở khung Hành trang không modal, cùng lúc với khung Nhân vật.
 var inventory_opener: Callable
@@ -247,12 +250,60 @@ func _setup_portrait() -> void:
 func _place_portrait() -> void:
 	var box: Control = %PortraitBox
 	(%PortraitAvatar as Node2D).position = Vector2(box.size.x * 0.5, box.size.y - 8.0)
+	if _disguise_icon:
+		_disguise_icon.position = Vector2(box.size.x - 24.0, 4.0)
 
 func _turn_portrait() -> void:
 	var avatar: CharacterAvatar = %PortraitAvatar
 	avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * ((avatar.direction + 1) % 8))))
 
+func _setup_disguise_ui() -> void:
+	if not has_node("%PortraitBox"):
+		return
+	var box: Control = %PortraitBox
+	if _disguise_banner == null:
+		_disguise_banner = PanelContainer.new()
+		_disguise_banner.name = "DisguiseBanner"
+		_disguise_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_disguise_banner.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		_disguise_banner.offset_top = -24.0
+		_disguise_banner.offset_bottom = 0.0
+		_disguise_banner.offset_left = 2.0
+		_disguise_banner.offset_right = -2.0
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.06, 0.04, 0.08, 0.92)
+		sb.border_width_top = 1
+		sb.border_color = Color(0.85, 0.7, 0.25, 0.9)
+		sb.corner_radius_bottom_left = 4
+		sb.corner_radius_bottom_right = 4
+		sb.content_margin_top = 2
+		sb.content_margin_bottom = 2
+		_disguise_banner.add_theme_stylebox_override("panel", sb)
+
+		_disguise_label = Label.new()
+		_disguise_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_disguise_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_disguise_label.add_theme_font_size_override("font_size", 11)
+		_disguise_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.4))
+		_disguise_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_disguise_label.add_theme_constant_override("outline_size", 3)
+		_disguise_banner.add_child(_disguise_label)
+		box.add_child(_disguise_banner)
+
+	if _disguise_icon == null:
+		_disguise_icon = TextureRect.new()
+		_disguise_icon.name = "DisguiseIcon"
+		_disguise_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_disguise_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_disguise_icon.custom_minimum_size = Vector2(20, 20)
+		_disguise_icon.size = Vector2(20, 20)
+		_disguise_icon.position = Vector2(box.size.x - 24.0, 4.0)
+		box.add_child(_disguise_icon)
+
 func _refresh_portrait() -> void:
+	if not has_node("%PortraitAvatar") or _profile == null:
+		return
+	_setup_disguise_ui()
 	var avatar: CharacterAvatar = %PortraitAvatar
 	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
 	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding)
@@ -263,13 +314,26 @@ func _refresh_portrait() -> void:
 	else:
 		avatar.modulate = Color.WHITE
 
+	var is_masked: bool = bool(look.get("is_masked", false))
+	if _disguise_banner:
+		_disguise_banner.visible = is_masked
+		if is_masked:
+			_disguise_label.text = "🎭 %s" % str(look.get("disguise_title", "Dịch Dung"))
+	if _disguise_icon:
+		_disguise_icon.visible = is_masked
+		if is_masked:
+			_disguise_icon.texture = look.get("mask_icon")
+			_disguise_icon.tooltip_text = "Đang dịch dung: %s" % str(look.get("mask_name", ""))
+
 # ---------------------------------------------------------------- trang bị
 
-## 10 ô trang bị (%EquipSlot<Equipment.Part>) đặt sẵn trong scene đè lên ô vẽ trên khung ảnh, + nút
+## 13 ô trang bị (%EquipSlot<Equipment.Part>) đặt sẵn trong scene đè lên ô vẽ trên khung ảnh, + nút
 ## bấm ô trống mở Hành trang (nút Hành trang riêng nằm ở menu "Trang Bị" màn Hub / nút "Hành trang" trong trận).
 func _style_equipment_slots() -> void:
 	for part in Equipment.Part.values():
-		var slot: Button = get_node("%%EquipSlot%d" % part)
+		var slot: Button = get_node_or_null("%%EquipSlot%d" % part)
+		if slot == null:
+			continue
 		slot.add_theme_font_size_override("font_size", 11)
 		slot.add_theme_color_override("font_outline_color", Color.BLACK)
 		slot.add_theme_constant_override("outline_size", 3)
@@ -281,12 +345,18 @@ func _refresh_equipment_slots() -> void:
 	var series: int = _profile.get_element()
 	var counts := Equipment.get_active_counts(_profile.equipment, series)
 	for part in Equipment.Part.values():
-		var slot: ItemSlotButton = get_node("%%EquipSlot%d" % part)
+		var slot: ItemSlotButton = get_node_or_null("%%EquipSlot%d" % part)
+		if slot == null:
+			continue
 		var item: ItemInstance = _profile.equipment.get(part)
 		var bbcode := ItemText.build(item, _profile, counts.get(part, 0), part) if item else ""
 		## Đồ đang mặc luôn có tác dụng (VLTK gốc) — không tô nền đỏ ở đây; nền đỏ chỉ ở Hành trang, nơi chặn
 		## mặc. Dòng yêu cầu chưa đạt vẫn đỏ trong tooltip.
-		slot.show_item(item, bbcode, Equipment.PART_NAMES[part])
+		slot.show_item(item, bbcode, Equipment.PART_NAMES.get(part, ""))
+
+func _host() -> Node:
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else null
 
 func _on_equip_slot_pressed(part: int) -> void:
 	var item: ItemInstance = _profile.equipment.get(part)
@@ -294,7 +364,7 @@ func _on_equip_slot_pressed(part: int) -> void:
 		_open_inventory()
 		return
 	var counts := Equipment.get_active_counts(_profile.equipment, _profile.get_element())
-	ItemDetailPopup.open(get_tree().current_scene, ItemText.build(item, _profile, counts.get(part, 0), part, false),
+	ItemDetailPopup.open(_host(), ItemText.build(item, _profile, counts.get(part, 0), part, false),
 		[["Tháo", func() -> void:
 			if _profile.unequip(part):
 				SaveManager.save_profile(_profile)
@@ -305,7 +375,7 @@ func _open_inventory() -> void:
 	if inventory_opener.is_valid():
 		inventory_opener.call()
 		return
-	InventoryPopup.open(get_tree().current_scene, _profile, refresh)
+	InventoryPopup.open(_host(), _profile, refresh)
 
 func _sect_element() -> ElementTypes.ElementType:
 	return _profile.get_element()
@@ -314,7 +384,7 @@ func _sect_element() -> ElementTypes.ElementType:
 func _on_add_stat_pressed(stat_index: int) -> void:
 	if _profile.potential_points <= 0:
 		return
-	PotentialPointPopup.open(get_tree().current_scene, _profile, stat_index, func(added: int) -> void:
+	PotentialPointPopup.open(_host(), _profile, stat_index, func(added: int) -> void:
 		if added > 0:
 			refresh()
 			profile_changed.emit())

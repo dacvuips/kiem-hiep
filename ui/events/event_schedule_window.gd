@@ -597,4 +597,7 @@ func _show_detail_popup(event: Dictionary) -> void:
 	close_btn.pressed.connect(func() -> void: win.close_requested.emit())
 	btn_row.add_child(close_btn)
 	
-	SocialWindow.present(get_tree().current_scene, win, &"event_detail")
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	var host := tree.current_scene if tree != null else null
+	if host != null:
+		SocialWindow.present(host, win, &"event_detail")

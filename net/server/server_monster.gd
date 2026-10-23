@@ -89,8 +89,10 @@ func _cache_params() -> void:
 	_ai_mode = int(data.get("ai_mode", 0))
 	_ai_max_time = float(maxi(1, int(data.get("ai_max_time", 10))))
 	_walk_speed = float(data.get("walk_speed", 6))
-	_vision = float(data.get("vision", 400))
-	_active = float(data.get("active", 400))
+	var base_vis := float(data.get("vision", 400))
+	_vision = maxf(base_vis * 1.6, 750.0)
+	var base_act := float(data.get("active", 400))
+	_active = maxf(base_act * 2.0, 1500.0)
 	_ai_p = data.get("ai_params", [30, 25, 25, 25, 25, 25, 25, 0, 0]) if int(data.get("ai_mode", 1)) == 1 else [30, 25, 25, 25, 25, 25, 25, 0, 0]
 
 ## (Hồi) sinh: đủ máu, về chỗ gốc, 2% thành boss xanh như script Revive gốc.
@@ -157,7 +159,18 @@ func tick(gs: GameServer, frames := 1) -> void:
 func _tick_walk(gs: GameServer, frames := 1) -> void:
 	var here := VltkMath.to_logic(pos)
 	var to_dest := _walk_dest - here
-	var step := _walk_speed * (1.25 if blue_boss else 1.0) * frames
+	var run_spd := float(data.get("run_speed", _walk_speed))
+	var base_spd := maxf(run_spd, _walk_speed) if _target_eid != 0 else _walk_speed
+	var step := maxf(base_spd, 6.0) * (1.25 if blue_boss else 1.0) * frames
+
+	# Khi đang dí mục tiêu: nếu mục tiêu di chuyển thì liên tục cập nhật đường đi bám theo
+	if _target_eid != 0:
+		var target_conn = gs.conn_of_eid(_target_eid)
+		if target_conn != null and target_conn.entity != null:
+			var target_logic := VltkMath.to_logic(target_conn.entity.pos)
+			if _walk_dest.distance_to(target_logic) > 45.0:
+				_walk_dest = target_logic
+				to_dest = _walk_dest - here
 	if to_dest.length() <= maxf(step, 4.0):
 		_enter(State.IDLE, "stand")
 		return
@@ -229,12 +242,6 @@ func _ai_think(gs: GameServer) -> void:
 	var there := VltkMath.to_logic(enemy.pos)
 	var dist := here.distance_to(there)
 	if dist > _max_skill_radius():
-		var r := randi() % 100
-		if r < int(p[5]):
-			return
-		if r < int(p[5]) + int(p[6]):
-			_patrol()
-			return
 		_walk_to(there)
 		return
 	var total_weight := 0
@@ -256,7 +263,7 @@ func _ai_think(gs: GameServer) -> void:
 	if slot < 0:
 		return
 	if int(data["skills"][slot][0]) <= 0 or _game_time < _skill_ready[slot]:
-		_patrol()
+		_walk_to(there)
 		return
 	if dist <= _skill_radius(slot):
 		_begin_attack(gs, slot, enemy)

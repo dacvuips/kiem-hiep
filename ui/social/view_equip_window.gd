@@ -1,7 +1,27 @@
 extends SocialWindow
 class_name ViewEquipWindow
-## XEM TRANG BỊ của người chơi khác (màn "xem trang bị" — c2s_viewequip gốc): hình nhân vật + thông tin cơ bản bên trái, 11 ô trang bị bên phải.
+## XEM TRANG BỊ của người chơi khác (màn "xem trang bị" — c2s_viewequip gốc): hình nhân vật + thông tin cơ bản bên trái,
+## giao diện "Trang bị" chuẩn VLTK (hình người mẫu mannequin + 13 ô trang bị theo vị trí chuẩn) bên phải.
 ## Bấm ô có đồ để xem chi tiết (chỉ xem, không có nút trang bị/vứt). Dữ liệu là BẢN SAO từ ViewEquipService.
+
+const TEX_EQUIP_BG_MALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nam.png")
+const TEX_EQUIP_BG_FEMALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nu.png")
+
+const SLOT_RECTS := {
+	Equipment.Part.MASK: Rect2(1.0, 20.0, 60.0, 90.0),       # SlotLeft0
+	Equipment.Part.CUFF: Rect2(1.0, 114.0, 60.0, 113.0),     # SlotLeft1
+	Equipment.Part.RING1: Rect2(1.0, 233.0, 60.0, 61.0),     # SlotLeft2
+	Equipment.Part.RING2: Rect2(1.0, 299.0, 60.0, 60.0),     # SlotLeft3
+	Equipment.Part.PENDANT: Rect2(1.0, 365.0, 60.0, 114.0),   # SlotLeft4
+	Equipment.Part.MANTLE: Rect2(1.0, 515.0, 60.0, 62.0),    # SlotLeft5
+	Equipment.Part.HEAD: Rect2(109.0, 17.0, 113.0, 118.0),    # SlotHead
+	Equipment.Part.BODY: Rect2(109.0, 147.0, 113.0, 171.0),   # SlotBody
+	Equipment.Part.BELT: Rect2(109.0, 333.0, 113.0, 56.0),    # SlotBelt
+	Equipment.Part.HORSE: Rect2(109.0, 403.0, 113.0, 171.0),  # SlotHorse
+	Equipment.Part.AMULET: Rect2(292.0, 95.0, 109.0, 63.0),   # SlotRight1
+	Equipment.Part.WEAPON: Rect2(292.0, 165.0, 109.0, 221.0), # SlotRight2
+	Equipment.Part.FOOT: Rect2(292.0, 398.0, 109.0, 109.0),   # SlotRight3
+}
 
 var _snap: Dictionary
 var _avatar: CharacterAvatar
@@ -31,7 +51,7 @@ static func open_snapshot(host: Node, snapshot: Dictionary) -> ViewEquipWindow:
 	return SocialWindow.present(host, ViewEquipWindow.new(snapshot), &"view_equip") as ViewEquipWindow
 
 func _init(snapshot: Dictionary = {}) -> void:
-	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), "Cấp %d · %s" % [int(snapshot.get("level", 1)), str(snapshot.get("sect_name", ""))], 640.0)
+	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), "Cấp %d · %s" % [int(snapshot.get("level", 1)), str(snapshot.get("sect_name", ""))], 670.0)
 	_snap = snapshot.duplicate()
 	if snapshot.is_empty():
 		return
@@ -72,43 +92,104 @@ func _init(snapshot: Dictionary = {}) -> void:
 	left[1].add_child(SocialUi.kv("Lãnh đạo:", str(int(snapshot.get("lead_level", 0))), SocialUi.LABEL_BLUE))
 	cols.add_child(left[0])
 
-	## ---- Phải: 11 ô trang bị
-	var right := SocialUi.section("Trang bị đang mặc")
-	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	## ---- Phải: Giao diện "Trang bị" chuẩn theo CharacterHub
+	var equip_box := Panel.new()
+	equip_box.name = "EquipBox"
+	equip_box.custom_minimum_size = Vector2(440, 585)
+	equip_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	equip_box.add_theme_stylebox_override("panel", WuxiaStyle.create_panel_box())
+
+	var equip_header := Panel.new()
+	equip_header.custom_minimum_size = Vector2(0, 28)
+	equip_header.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	equip_header.offset_left = 2
+	equip_header.offset_top = 2
+	equip_header.offset_right = -2
+	equip_header.offset_bottom = 30
+	equip_header.add_theme_stylebox_override("panel", WuxiaStyle.create_header_bar())
+	equip_box.add_child(equip_header)
+
+	var equip_title := Label.new()
+	equip_title.text = "Trang bị"
+	equip_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equip_title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	equip_title.offset_left = 12
+	equip_title.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
+	equip_title.add_theme_font_size_override("font_size", 14)
+	equip_header.add_child(equip_title)
+
+	var is_female := bool(snapshot.get("female", false))
+	var equip_bg := TextureRect.new()
+	equip_bg.name = "EquipBackground"
+	equip_bg.texture = TEX_EQUIP_BG_FEMALE if is_female else TEX_EQUIP_BG_MALE
+	equip_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	equip_bg.mouse_filter = Control.MOUSE_FILTER_PASS
+	equip_bg.self_modulate = Color(1, 1, 1, 0.85)
+	equip_bg.scale = Vector2(0.896, 0.896)
+	equip_bg.size = Vector2(402, 597)
+	equip_bg.position = Vector2(40, 36)
+	equip_box.add_child(equip_bg)
+
 	var counts := Equipment.get_active_counts(equipment, int(snapshot.get("series", 0)))
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 8)
 	for part in Equipment.Part.values():
-		var cell := VBoxContainer.new()
-		cell.add_theme_constant_override("separation", 2)
-		cell.add_child(SocialUi.label(Equipment.PART_NAMES[part], SocialUi.SUBTITLE, 12, HORIZONTAL_ALIGNMENT_CENTER))
 		var slot := ItemSlotButton.new()
-		slot.custom_minimum_size = Vector2(70, 70)
-		slot.focus_mode = Control.FOCUS_NONE
-		slot.filled_backdrop = Color(0.06, 0.05, 0.04, 0.96)
-		slot.add_theme_font_size_override("font_size", 11)
-		## Ô trang bị (ô vật phẩm, không phải nút chữ) — giữ khung ô riêng, màu viền lấy từ GameUi
-		var slot_bg := Color(0.03, 0.035, 0.035)
-		var slot_hover := Color(0.06, 0.07, 0.06)
-		slot.add_theme_stylebox_override("normal", GameUi.box(slot_bg, GameUi.BORDER, 4, 1, 2))
-		slot.add_theme_stylebox_override("hover", GameUi.box(slot_hover, GameUi.BORDER_ACTIVE, 4, 1, 2))
-		slot.add_theme_stylebox_override("pressed", GameUi.box(slot_hover, GameUi.BORDER_ACTIVE, 4, 1, 2))
-		slot.add_theme_stylebox_override("disabled", GameUi.box(slot_bg, GameUi.BORDER, 4, 1, 2))
-		var item: ItemInstance = equipment.get(part)
 		slot.name = "Slot%d" % part
-		## Người ngoài xem nên không đánh giá yêu cầu dùng đồ (profile = null).
-		slot.show_item(item, ItemText.build(item, null, counts.get(part, 0), part) if item else "", Equipment.PART_NAMES[part])
-		slot.pressed.connect(func() -> void:
-			if item != null:
+		var rect: Rect2 = SLOT_RECTS.get(part, Rect2(0, 0, 60, 60))
+		slot.position = rect.position
+		slot.size = rect.size
+		slot.custom_minimum_size = rect.size
+		slot.focus_mode = Control.FOCUS_NONE
+		slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		slot.mouse_filter = Control.MOUSE_FILTER_STOP
+
+		var item: ItemInstance = equipment.get(part)
+		if item != null:
+			slot.filled_backdrop = Color(0.04, 0.05, 0.06, 0.96)
+			var slot_bg := Color(0.02, 0.07, 0.08, 0.88)
+			var border_col := WuxiaStyle.COLOR_BORDER_GOLD if item.is_gold() else (Color(0.85, 0.28, 1.0, 0.8) if item.is_purple() else WuxiaStyle.COLOR_BORDER_SLOT)
+			var normal_sb := StyleBoxFlat.new()
+			normal_sb.bg_color = slot_bg
+			normal_sb.set_border_width_all(1)
+			normal_sb.border_color = border_col
+			normal_sb.set_corner_radius_all(4)
+			slot.add_theme_stylebox_override("normal", normal_sb)
+			slot.add_theme_stylebox_override("disabled", normal_sb)
+
+			var hover_sb := StyleBoxFlat.new()
+			hover_sb.bg_color = Color(0.05, 0.14, 0.16, 0.95)
+			hover_sb.set_border_width_all(2)
+			hover_sb.border_color = WuxiaStyle.COLOR_BORDER_GOLD_BRIGHT if item.is_gold() else (Color(0.95, 0.45, 1.0, 1.0) if item.is_purple() else WuxiaStyle.COLOR_BORDER_GOLD_BRIGHT)
+			hover_sb.set_corner_radius_all(4)
+			hover_sb.shadow_color = Color(0.98, 0.86, 0.52, 0.35)
+			hover_sb.shadow_size = 4
+			slot.add_theme_stylebox_override("hover", hover_sb)
+			slot.add_theme_stylebox_override("pressed", hover_sb)
+
+			var bbcode := ItemText.build(item, null, counts.get(part, 0), part)
+			slot.show_item(item, bbcode, Equipment.PART_NAMES[part])
+			slot.pressed.connect(func() -> void:
 				ItemDetailPopup.open(get_tree().current_scene, ItemText.build(item, null, counts.get(part, 0), part, false), [], item))
-		cell.add_child(slot)
-		grid.add_child(cell)
-	right[1].add_child(grid)
-	cols.add_child(right[0])
+		else:
+			slot.flat = true
+			slot.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+			slot.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+			slot.add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
+			var empty_hover := StyleBoxFlat.new()
+			empty_hover.bg_color = Color(1, 1, 1, 0.05)
+			empty_hover.set_border_width_all(1)
+			empty_hover.border_color = Color(0.68, 0.55, 0.30, 0.4)
+			empty_hover.set_corner_radius_all(4)
+			slot.add_theme_stylebox_override("hover", empty_hover)
+
+			slot.show_item(null, "", Equipment.PART_NAMES[part])
+
+		equip_bg.add_child(slot)
+
+	cols.add_child(equip_box)
 
 	var close := SocialUi.stone_button("Đóng")
+	close.custom_minimum_size.x = 120
+	close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close)
 

@@ -1,0 +1,95 @@
+[gd_resource type="Resource" script_class="StageData" format=3]
+
+[ext_resource type="Script" uid="uid://b71mckxmnthbu" path="res://stages/stage_data.gd" id="1_stage_data"]
+[ext_resource type="Script" uid="uid://b7h1uw2yrj4nj" path="res://stages/enemy_spawn_entry.gd" id="2_spawn_entry"]
+[ext_resource type="Script" uid="uid://dkgscgyg7l28e" path="res://enemies/enemy_tier_data.gd" id="3_tier_data"]
+[ext_resource type="PackedScene" uid="uid://dvxbf0isvuopc" path="res://enemies/Enemy.tscn" id="4_enemy_scene"]
+[ext_resource type="PackedScene" uid="uid://6qsp2rjk51rt" path="res://enemies/EliteEnemy.tscn" id="5_elite_scene"]
+[ext_resource type="Script" uid="uid://cuadd783f0q8h" path="res://gems/pickup_data.gd" id="6_pickup_data"]
+[ext_resource type="Resource" uid="uid://dh5078gdtvmvf" path="res://gems/pickup_heal.tres" id="7_pickup_heal"]
+[ext_resource type="Resource" uid="uid://bvw0sc0ypw1wc" path="res://gems/pickup_magnet.tres" id="8_pickup_magnet"]
+
+[sub_resource type="Resource" id="Tier_1"]
+script = ExtResource("3_tier_data")
+tier_name = "Đao Trảm"
+enemy_scene = ExtResource("4_enemy_scene")
+vltk_monster_id = 594
+level = 110
+element = 0
+strength = 240
+dexterity = 248
+vitality = 355
+energy = 125
+speed = 100.0
+contact_damage = 138.0
+exp_drop = 1320
+possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal"), ExtResource("8_pickup_magnet")])
+
+[sub_resource type="Resource" id="SpawnEntry_1"]
+script = ExtResource("2_spawn_entry")
+tier = SubResource("Tier_1")
+unlock_time = 0.0
+lock_time = 60.0
+spawn_weight = 10.0
+weight_change_per_second = -0.02
+
+[sub_resource type="Resource" id="Tier_2"]
+script = ExtResource("3_tier_data")
+tier_name = "Hàn Thương"
+enemy_scene = ExtResource("4_enemy_scene")
+vltk_monster_id = 596
+level = 113
+element = 2
+strength = 245
+dexterity = 252
+vitality = 360
+energy = 125
+speed = 100.0
+contact_damage = 144.0
+exp_drop = 1420
+possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal"), ExtResource("8_pickup_magnet")])
+
+[sub_resource type="Resource" id="SpawnEntry_2"]
+script = ExtResource("2_spawn_entry")
+tier = SubResource("Tier_2")
+unlock_time = 60.0
+lock_time = 120.0
+strength_multiplier = 2.0
+dexterity_multiplier = 1.0
+vitality_multiplier = 2.0
+spawn_weight = 10.0
+weight_change_per_second = 0.02
+
+[sub_resource type="Resource" id="Tier_Boss"]
+script = ExtResource("3_tier_data")
+tier_name = "Thủ Quan · Đao Trảm Thần Tướng"
+enemy_scene = ExtResource("5_elite_scene")
+vltk_monster_id = 594
+level = 115
+element = 0
+strength = 510
+dexterity = 265
+vitality = 1125
+energy = 135
+speed = 105.0
+contact_damage = 270.8
+scale_override = 1.40
+exp_drop = 9200
+possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal"), ExtResource("8_pickup_magnet")])
+
+[sub_resource type="Resource" id="BossEntry"]
+script = ExtResource("2_spawn_entry")
+tier = SubResource("Tier_Boss")
+strength_multiplier = 3.0
+dexterity_multiplier = 1.0
+vitality_multiplier = 3.0
+spawn_weight = 1.0
+
+[resource]
+script = ExtResource("1_stage_data")
+stage_name = "Ải 11 · Trường Bạch Sơn Bắc (11x)"
+vltk_map_id = 322
+stage_duration = 180.0
+boss_spawn_time = 120.0
+enemy_tiers = Array[ExtResource("2_spawn_entry")]([SubResource("SpawnEntry_1"), SubResource("SpawnEntry_2")])
+boss_tier = SubResource("BossEntry")

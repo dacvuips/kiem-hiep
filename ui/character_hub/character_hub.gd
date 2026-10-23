@@ -58,6 +58,8 @@ const TEX_EQUIP_BG_FEMALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/
 	preload("res://stages/stage_08/stage_08.tres"),
 	preload("res://stages/stage_09/stage_09.tres"),
 	preload("res://stages/stage_10/stage_10.tres"),
+	preload("res://stages/stage_11/stage_11.tres"),
+	preload("res://stages/stage_12/stage_12.tres"),
 ]
 
 var _profile: PlayerProfile
@@ -85,6 +87,7 @@ var _disguise_label: Label
 var _disguise_icon: TextureRect
 
 func _ready() -> void:
+	PlayerStats.reset()
 	add_to_group("character_hub")
 	if "--capture-screenshot" in OS.get_cmdline_args() or "--test-open-popup" in OS.get_cmdline_args() or "--test-open-inventory" in OS.get_cmdline_args() or "--test-open-skills" in OS.get_cmdline_args() or "--test-equipment-red" in OS.get_cmdline_args() or "--test-open-events" in OS.get_cmdline_args():
 		_create_mock_profile()
@@ -714,7 +717,10 @@ func _setup_inventory_view() -> void:
 		%InvScroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		%InvScroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		%InvScroll.add_child(_room)
-		TouchScrollHelperScript.attach(%InvScroll, %InventoryView.get_node_or_null("InvBox"))
+		var inv_body := %InvScroll.get_parent() as Control
+		if inv_body and inv_body.get_parent():
+			inv_body = inv_body.get_parent() as Control
+		TouchScrollHelperScript.attach(%InvScroll, inv_body if inv_body != null else %InvScroll)
 
 	var bags := %BagTabs.get_children()
 	for i in bags.size():
@@ -732,57 +738,66 @@ func _setup_inventory_view() -> void:
 	%CraftButton.pressed.connect(func() -> void:
 		_set_view("crafting")
 	)
-	if has_node("%TestCreateButton"):
-		%TestCreateButton.pressed.connect(func() -> void:
-			ItemCreatorPopup.open(self, _profile, func() -> void:
+	var is_gm := AccountApi.is_gm()
+	for btn_name in ["%TestCreateButton", "%TestAddButton", "%TestMaskButton", "%TestMantleButton"]:
+		if has_node(btn_name):
+			var btn: Button = get_node(btn_name)
+			btn.visible = is_gm
+			if not is_gm:
+				btn.queue_free()
+
+	if is_gm:
+		if has_node("%TestCreateButton"):
+			%TestCreateButton.pressed.connect(func() -> void:
+				ItemCreatorPopup.open(self, _profile, func() -> void:
+					SaveManager.save_profile(_profile)
+					SaveManager.flush_online()
+					refresh()
+					_refresh_inventory_view()
+				)
+			)
+		if has_node("%TestAddButton"):
+			%TestAddButton.pressed.connect(func() -> void:
+				if _profile == null:
+					return
+				for i in 10:
+					_profile.add_item(ItemGenerator.random_equipment(_profile.level))
 				SaveManager.save_profile(_profile)
 				SaveManager.flush_online()
 				refresh()
 				_refresh_inventory_view()
+				_show_toast("Đã thêm 10 trang bị ngẫu nhiên")
 			)
-		)
-	if has_node("%TestAddButton"):
-		%TestAddButton.pressed.connect(func() -> void:
-			if _profile == null:
-				return
-			for i in 10:
-				_profile.add_item(ItemGenerator.random_equipment(_profile.level))
-			SaveManager.save_profile(_profile)
-			SaveManager.flush_online()
-			refresh()
-			_refresh_inventory_view()
-			_show_toast("Đã thêm 10 trang bị ngẫu nhiên")
-		)
-	if has_node("%TestMaskButton"):
-		%TestMaskButton.pressed.connect(func() -> void:
-			if _profile == null:
-				return
-			var added := 0
-			for p in 5:
-				var mask_item := ItemGenerator.generate(ItemDatabase.Detail.MASK, p, 1, int(_profile.get_element()), [5, 5, 5, 5, 5, 5])
-				if mask_item and _profile.add_item(mask_item):
-					added += 1
-			SaveManager.save_profile(_profile)
-			SaveManager.flush_online()
-			refresh()
-			_refresh_inventory_view()
-			_show_toast("Đã thêm %d Mặt Nạ vào hành trang!" % added)
-		)
-	if has_node("%TestMantleButton"):
-		%TestMantleButton.pressed.connect(func() -> void:
-			if _profile == null:
-				return
-			var added := 0
-			for lv in [1, 3, 5, 6, 7]:
-				var mantle_item := ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, lv, int(_profile.get_element()), [6, 6, 6, 6, 6, 6])
-				if mantle_item and _profile.add_item(mantle_item):
-					added += 1
-			SaveManager.save_profile(_profile)
-			SaveManager.flush_online()
-			refresh()
-			_refresh_inventory_view()
-			_show_toast("Đã thêm %d Phi Phong vào hành trang!" % added)
-		)
+		if has_node("%TestMaskButton"):
+			%TestMaskButton.pressed.connect(func() -> void:
+				if _profile == null:
+					return
+				var added := 0
+				for p in 5:
+					var mask_item := ItemGenerator.generate(ItemDatabase.Detail.MASK, p, 1, int(_profile.get_element()), [5, 5, 5, 5, 5, 5])
+					if mask_item and _profile.add_item(mask_item):
+						added += 1
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+				refresh()
+				_refresh_inventory_view()
+				_show_toast("Đã thêm %d Mặt Nạ vào hành trang!" % added)
+			)
+		if has_node("%TestMantleButton"):
+			%TestMantleButton.pressed.connect(func() -> void:
+				if _profile == null:
+					return
+				var added := 0
+				for lv in [1, 3, 5, 6, 7]:
+					var mantle_item := ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, lv, int(_profile.get_element()), [6, 6, 6, 6, 6, 6])
+					if mantle_item and _profile.add_item(mantle_item):
+						added += 1
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+				refresh()
+				_refresh_inventory_view()
+				_show_toast("Đã thêm %d Phi Phong vào hành trang!" % added)
+			)
 	if has_node("%CloseInvBtn"):
 		%CloseInvBtn.pressed.connect(func() -> void:
 			_set_view("character")
@@ -973,7 +988,7 @@ func _on_equip_slot_pressed(part: int) -> void:
 	var actions: Array = [
 		["Tháo đồ", func() -> void: _unequip_item(part, item)]
 	]
-	ItemDetailPopup.open(get_tree().current_scene, desc, actions, item)
+	ItemDetailPopup.open(self, desc, actions, item)
 
 func _unequip_item(part: int, item: ItemInstance) -> void:
 	if _profile.unequip(part):
@@ -1108,6 +1123,7 @@ func _show_social_view() -> void:
 		%LeftPanel.add_child(_market_view)
 	_market_view.set_docked(true, true)
 	_market_view.visible = true
+	_market_view.size = Vector2(1000, 585)
 	_market_view._refresh_money()
 
 func _show_crafting_view() -> void:
@@ -1230,7 +1246,7 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 		actions[0] = ["Dùng", func() -> void: _use_item_from_inv(index)]
 	if _current_view == "crafting" and _crafting_view and is_instance_valid(_crafting_view):
 		actions.insert(0, ["Đặt vào chế tạo", func() -> void: _crafting_view._put(item)])
-	ItemDetailPopup.open(get_tree().current_scene, ItemText.build(item, _profile, -1, -1, false), actions, item)
+	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
 func _equip_item_from_inv(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():

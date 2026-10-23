@@ -83,6 +83,14 @@ def export_sheet(task):
     boxes = [im.getbbox() for im in images if im.getbbox()]
     if not boxes:
         return key, None
+    ## File SPR gốc của enemy177_wlk lưu frame của mỗi hướng bị ngược (10..0 thay vì 0..10), khiến quái đi lùi (moonwalk).
+    if key == "enemy177_enemy177_wlk":
+        dirs = max(meta["directions"], 1)
+        per_dir = len(images) // dirs
+        new_images = []
+        for d in range(dirs):
+            new_images.extend(reversed(images[d * per_dir : (d + 1) * per_dir]))
+        images = new_images
     left, top = min(b[0] for b in boxes), min(b[1] for b in boxes)
     right, bottom = max(b[2] for b in boxes), max(b[3] for b in boxes)
     w, h = right - left, bottom - top

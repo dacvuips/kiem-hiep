@@ -60,13 +60,13 @@ func _ready() -> void:
 	## Hiệu thuốc
 	if has_node("%ShopButton"):
 		%ShopButton.pressed.connect(func() -> void:
-			PotionShopWindow.open(get_tree().current_scene, func() -> void:
+			PotionShopWindow.open(_get_host(), func() -> void:
 				if is_instance_valid(self):
 					_refresh()))
 	else:
 		var shop := GameUi.button("Hiệu thuốc")
 		shop.custom_minimum_size = (%SortButton as Control).custom_minimum_size
-		shop.pressed.connect(func() -> void: PotionShopWindow.open(get_tree().current_scene, func() -> void:
+		shop.pressed.connect(func() -> void: PotionShopWindow.open(_get_host(), func() -> void:
 			if is_instance_valid(self):
 				_refresh()))
 		(%SortButton as Control).add_sibling(shop)
@@ -116,15 +116,19 @@ func _ready() -> void:
 		TouchScrollHelperScript.attach(scroll, $Frame/Root/Body as Control)
 
 	if has_node("%TestRow"):
-		%TestRow.visible = OS.is_debug_build()
-	if has_node("%TestAddButton"):
-		%TestAddButton.pressed.connect(_on_test_items_pressed)
-	if has_node("%TestCreateButton"):
-		%TestCreateButton.pressed.connect(func() -> void: ItemCreatorPopup.open(self, _profile, _commit))
-	if has_node("%TestMaskButton"):
-		%TestMaskButton.pressed.connect(_on_test_mask_pressed)
-	if has_node("%TestMantleButton"):
-		%TestMantleButton.pressed.connect(_on_test_mantle_pressed)
+		var is_gm := AccountApi.is_gm()
+		%TestRow.visible = is_gm
+		if not is_gm:
+			%TestRow.queue_free()
+		else:
+			if has_node("%TestAddButton"):
+				%TestAddButton.pressed.connect(_on_test_items_pressed)
+			if has_node("%TestCreateButton"):
+				%TestCreateButton.pressed.connect(func() -> void: ItemCreatorPopup.open(self, _profile, _commit))
+			if has_node("%TestMaskButton"):
+				%TestMaskButton.pressed.connect(_on_test_mask_pressed)
+			if has_node("%TestMantleButton"):
+				%TestMantleButton.pressed.connect(_on_test_mantle_pressed)
 
 	_room.setup(_profile)
 	_refresh()
@@ -134,8 +138,12 @@ func _ready() -> void:
 	frame.size = frame.get_combined_minimum_size()
 	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
 
+func _get_host() -> Node:
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else null
+
 func _open_crafting() -> void:
-	_crafting_win = CompoundWindow.open(get_tree().current_scene, _profile, func() -> void:
+	_crafting_win = CompoundWindow.open(_get_host(), _profile, func() -> void:
 		if is_instance_valid(self):
 			_refresh())
 	if is_instance_valid(_crafting_win):

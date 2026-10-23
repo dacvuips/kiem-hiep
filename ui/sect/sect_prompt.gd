@@ -35,7 +35,10 @@ func ask_now() -> bool:
 	if is_instance_valid(_window):
 		_window.bring_to_front()
 		return true
-	_window = SectChoiceWindow.open(get_tree().current_scene, p)
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return false
+	_window = SectChoiceWindow.open(tree.current_scene, p)
 	_window.chosen.connect(_on_chosen)
 	return true
 
@@ -46,12 +49,14 @@ func _on_chosen(sect: SectDefinition) -> void:
 		weapon = StarterKit.give_sect_weapon(p)
 	SaveManager.save_profile(p)
 	SaveManager.flush_online()   ## online: gửi ngay, tránh bản server cũ (S_PROFILE) ghi đè phái vừa chọn
-	var player := get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	var player := tree.get_first_node_in_group("player") if tree != null else null
 	if player != null and player.has_method("refresh_sect"):
 		player.refresh_sect()
-	var bar := get_tree().current_scene.get_node_or_null("UI/SkillBarUI") as SkillBarUI
-	if bar != null:
-		bar.refresh_sub_skills()
+	if tree != null and tree.current_scene != null:
+		var bar := tree.current_scene.get_node_or_null("UI/SkillBarUI") as SkillBarUI
+		if bar != null:
+			bar.refresh_sub_skills()
 	if player != null and player.has_method("_notice"):
 		player._notice("Đã gia nhập %s! Mở bảng Kỹ năng để học võ công." % sect.sect_name)
 		if weapon != null:

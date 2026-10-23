@@ -98,10 +98,10 @@ func _find_skill(skill_id: String) -> SkillDefinition:
 func get_skill(skill_id: String) -> SkillDefinition:
 	return _find_skill(skill_id)
 
-func try_cast_main(caster: Node2D, target: Node2D) -> bool:
+func try_cast_main(caster: Node2D, target: Variant = null) -> bool:
 	return _try_cast(get_main_skill(), caster, target)
 
-func try_cast_skill(index: int, caster: Node2D, target: Node2D) -> bool:
+func try_cast_skill(index: int, caster: Node2D, target: Variant = null) -> bool:
 	var subs := get_sub_skills()
 	if index < 0 or index >= subs.size():
 		return false
@@ -111,7 +111,7 @@ func try_cast_skill(index: int, caster: Node2D, target: Node2D) -> bool:
 	return _try_cast(skill, caster, target)
 
 ## Ra chiêu skill ở ô thi triển liên tục (cùng điều kiện như bấm tay: hồi chiêu, vũ khí/ngựa, choáng...).
-func try_cast_loop(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
+func try_cast_loop(skill: SkillDefinition, caster: Node2D, target: Variant = null) -> bool:
 	return _try_cast(skill, caster, target)
 
 ## Buff hỗ trợ (skill trạng thái không nhắm địch, VD Thanh Phong phù) — tâm là người thi triển, không
@@ -135,13 +135,16 @@ func get_cast_block_reason(skill: SkillDefinition, caster: Node2D) -> String:
 		return ""
 	return skill.get_cast_block_reason(Equipment.get_weapon_class(profile.equipment), caster.is_riding())
 
-func _try_cast(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
+func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -> bool:
 	if skill == null:
 		return false
+	if target != null and (not is_instance_valid(target) or not (target is Node2D) or (target is Node and (target as Node).is_queued_for_deletion())):
+		target = null
+	var tgt_node: Node2D = target as Node2D
 	var self_buff := is_self_buff(skill)
 	## Hào quang LUÔN là bật/tắt (kể cả hào quang gây hại như Vô Hình Độc) — hiệu quả do nhịp hào quang lo, xem tick_aura.
 	var toggle_aura := skill.is_aura
-	if target == null and not self_buff and not toggle_aura:
+	if tgt_node == null and not self_buff and not toggle_aura:
 		return false
 	if _cooldowns.get(skill.id, 0.0) > 0.0:
 		return false
@@ -177,31 +180,34 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Node2D) -> bool:
 		_cast_support_buff(skill, caster)
 		_net_cast(skill, caster, null, true)
 	elif is_instant_curse(skill):
-		_play_vltk_precast(skill, caster, target)
-		_cast_instant_curse(skill, caster, target)
-		_net_cast(skill, caster, target, true)
+		_play_vltk_precast(skill, caster, tgt_node)
+		_cast_instant_curse(skill, caster, tgt_node)
+		_net_cast(skill, caster, tgt_node, true)
 	elif USE_VLTK_SKILL_FX and VltkSkillRunner.supports(skill, _learned_level(skill)):
-		VltkSkillRunner.execute(caster, target, stats, skill, _learned_level(skill))
-		_net_cast(skill, caster, target, false)
+		VltkSkillRunner.execute(caster, tgt_node, stats, skill, _learned_level(skill))
+		_net_cast(skill, caster, tgt_node, false)
 	else:
-		SectSkillCast.execute(caster, target, stats, skill)
+		SectSkillCast.execute(caster, tgt_node, stats, skill)
 	## Đánh trúng quái/người nào thì vòng đỏ hiện dưới chân đó (như khi bấm chọn).
 	if caster.has_method("mark_cast_target"):
-		caster.mark_cast_target(target)
+		caster.mark_cast_target(tgt_node)
 	skill_cast.emit(skill.id)
 	return true
 
 ## Online: báo server để máy người xung quanh VẼ lại chiêu này (chỉ nhân vật của mình, không phải quái / bot dùng chung bộ điều khiển).
-func _net_cast(skill: SkillDefinition, caster: Node2D, target: Node2D, support: bool) -> void:
+func _net_cast(skill: SkillDefinition, caster: Node2D, target: Variant, support: bool) -> void:
 	if skill.vltk_skill_id <= 0 or not caster.is_in_group("player") or not NetClient.is_in_world():
 		return
-	var aim_node: Node2D = target if target != null else caster
+	if target != null and (not is_instance_valid(target) or not (target is Node2D)):
+		target = null
+	var tgt_node := target as Node2D
+	var aim_node: Node2D = tgt_node if tgt_node != null else caster
 	var target_eid := 0
-	if target != null and not target.has_meta("cast_point"):
-		if target is RemotePlayer:
-			target_eid = (target as RemotePlayer).eid
-		elif "net_eid" in target:
-			target_eid = int(target.net_eid)
+	if tgt_node != null and not tgt_node.has_meta("cast_point"):
+		if tgt_node is RemotePlayer:
+			target_eid = (tgt_node as RemotePlayer).eid
+		elif "net_eid" in tgt_node:
+			target_eid = int(tgt_node.net_eid)
 	NetClient.send_cast(skill.vltk_skill_id, _learned_level(skill), NetProto.CAST_SUPPORT if support else 0,
 		target_eid, VltkMath.ground_of(aim_node))
 
@@ -293,7 +299,10 @@ func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D =
 		VltkSkillRunner.play_support(caster, target, skill, _learned_level(skill))
 
 func _learned_level(skill: SkillDefinition) -> int:
-	return maxi(1, _profile().get_skill_level(skill.id))
+	var base_lvl := maxi(1, _profile().get_skill_level(skill.id))
+	if PlayerStats.level > 1:
+		base_lvl += int((PlayerStats.level - 1) / 2)
+	return maxi(1, base_lvl)
 
 ## Hiệu ứng trúng đòn — NGUYÊN VĂN KNpc::AppendSkillEffect gốc (giá trị skill đọc từ vltk_attribs):
 ##   Làm chậm  = colddamage_v[2] + m_CurrentColdEnhance (khi skill có Băng sát); có thêm "Băng sát" của
@@ -357,6 +366,18 @@ func _resolve_hit_effects(stats: ResolvedSkillStats, skill: SkillDefinition, lev
 	stats.stun_chance_p = stun.x
 	stats.stun_frames = stun.y
 
+	# Áp dụng hiệu ứng khống chế từ nâng cấp Level Up
+	if PlayerStats.freeze_frames > 0:
+		stats.freeze_frames = maxi(stats.freeze_frames, PlayerStats.freeze_frames)
+	if PlayerStats.stun_chance_p > 0:
+		stats.stun_chance_p = maxi(stats.stun_chance_p, PlayerStats.stun_chance_p)
+		stats.stun_frames = maxi(stats.stun_frames, PlayerStats.stun_frames)
+	if PlayerStats.poison_damage > 0:
+		elements[poison_type] = elements.get(poison_type, Vector2i.ZERO) + Vector2i(PlayerStats.poison_damage, PlayerStats.poison_damage)
+		stats.poison_tick_damage = maxi(stats.poison_tick_damage, PlayerStats.poison_damage)
+		stats.poison_time_frames = maxi(stats.poison_time_frames, PlayerStats.poison_time_frames)
+		stats.poison_interval_frames = mini(stats.poison_interval_frames if stats.poison_interval_frames > 0 else 18, 18)
+
 ## "Độc sát" của nhân vật — AddPoisonDamageV/AddPoisonMagicV gốc: thời gian và nhịp là hằng số.
 static func _bonus_poison(damage: Vector2i) -> Vector3i:
 	return Vector3i(damage.x, MagicAttribTable.POISON_DAMAGE_TIME, MagicAttribTable.POISON_DAMAGE_INTERVAL)
@@ -411,6 +432,10 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 	var sect_skills: Array[SkillDefinition] = []
 	if sect:
 		sect_skills = sect.skills
+	elif profile and profile.sect_id != "":
+		sect = SectRegistry.get_by_id(profile.sect_id)
+		if sect:
+			sect_skills = sect.skills
 	var add_damage_p := skill.get_support_percent_from_other_skills(sect_skills, profile)
 	var is_physical := skill.is_physical()
 
@@ -422,7 +447,8 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 	var has_real_damage := enhance_percent >= 0.0 or physics_flat != Vector2i.ZERO or not skill_elements.is_empty()
 	if enhance_percent >= 0.0:
 		var effective_p := enhance_percent + enhance_percent * add_damage_p / 100.0
-		physics_damage = (base_unarmed_damage + combat_stats.add_physics_damage) * (100.0 + effective_p) / 100.0 				+ base_unarmed_damage * combat_stats.outer_physics_enhance_p / 100.0
+		physics_damage = (base_unarmed_damage + combat_stats.add_physics_damage) * (100.0 + effective_p) / 100.0 \
+				+ base_unarmed_damage * combat_stats.outer_physics_enhance_p / 100.0
 	elif has_real_damage:
 		physics_damage = (physics_flat.x + physics_flat.y) * 0.5 * (100.0 + add_damage_p) / 100.0
 		if not is_physical and physics_flat != Vector2i.ZERO:
@@ -437,8 +463,13 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 		## AppendSkillEffect gốc: min và max nhân riêng (nMinDamage/nMaxDamage) rồi mỗi đòn roll trong khoảng.
 		var effective := enhance_percent + enhance_percent * add_damage_p / 100.0
 		var outer := combat_stats.outer_physics_enhance_p / 100.0
-		stats.damage_min = ((combat_stats.unarmed_min_damage + combat_stats.add_physics_damage) * (100.0 + effective) / 100.0 				+ combat_stats.unarmed_min_damage * outer) * PlayerStats.damage_multiplier
-		stats.damage_max = ((combat_stats.unarmed_max_damage + combat_stats.add_physics_damage) * (100.0 + effective) / 100.0 				+ combat_stats.unarmed_max_damage * outer) * PlayerStats.damage_multiplier
+		stats.damage_min = ((combat_stats.unarmed_min_damage + combat_stats.add_physics_damage) * (100.0 + effective) / 100.0 \
+				+ combat_stats.unarmed_min_damage * outer) * PlayerStats.damage_multiplier
+		stats.damage_max = ((combat_stats.unarmed_max_damage + combat_stats.add_physics_damage) * (100.0 + effective) / 100.0 \
+				+ combat_stats.unarmed_max_damage * outer) * PlayerStats.damage_multiplier
+	elif physics_damage > 0.0:
+		stats.damage_min = maxf(1.0, physics_damage * 0.85)
+		stats.damage_max = maxf(stats.damage_min, physics_damage * 1.15)
 
 	var elements := {}
 	for damage_type in skill_elements:
@@ -455,11 +486,18 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 		for damage_type in combat_stats.outer_element_damage:
 			if damage_type != CombatFormulas.DamageType.POISON:
 				elements[damage_type] = elements.get(damage_type, Vector2i.ZERO) + combat_stats.outer_element_damage[damage_type]
+	if PlayerStats.damage_multiplier != 1.0:
+		for dt in elements.keys():
+			var ev: Vector2i = elements[dt]
+			elements[dt] = Vector2i(
+				int(ev.x * PlayerStats.damage_multiplier),
+				int(ev.y * PlayerStats.damage_multiplier)
+			)
 	_resolve_hit_effects(stats, skill, learned_level, elements, is_physical, combat_stats)
 	stats.extra_damage_ranges = elements
 	stats.main_damage_type = CombatFormulas.DamageType.PHYSICS
 	var deadly_strike: int = real["deadly_strike"] + (combat_stats.deadly_strike_enhance_p if is_physical else 0)
-	stats.crit_chance = clampf(deadly_strike / 100.0, 0.0, 1.0)
+	stats.crit_chance = clampf((deadly_strike / 100.0) + PlayerStats.crit_chance, 0.0, 1.0)
 	stats.five_elements_damage_p = real["five_elements_damage_p"]
 	## Bùa (nhắm địch, chỉ trạng thái — VD Mê Tung ảo ảnh): đạn không gây damage, trúng thì áp trạng thái.
 	if skill.is_state_skill() and skill.target_enemy:
@@ -474,6 +512,7 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 		stats.extra_damage_ranges = {}
 	stats.element = skill.element	
 	stats.cooldown = skill.cooldown / PlayerStats.attack_speed_multiplier
+	stats.range_multiplier = PlayerStats.range_multiplier
 	stats.projectile_speed = 350.00
 	stats.vfx_hit_name = skill.vfx_hit_name
 	stats.color = skill.color

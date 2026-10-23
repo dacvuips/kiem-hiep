@@ -81,6 +81,8 @@ static func best_time(profile: PlayerProfile) -> int:
 
 ## "" = đủ điều kiện, ngược lại là lý do (như các câu Talk của Nhiếp Thí Trần).
 static func check_entry(profile: PlayerProfile) -> String:
+	if AccountApi.is_gm():
+		return ""
 	var r := rules()
 	if profile == null:
 		return "Chưa có nhân vật."
@@ -300,7 +302,7 @@ func _build_hud() -> void:
 	add_child(_hud)
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.position = Vector2(-160, 8)
+	box.position = Vector2(-160, 52)
 	box.custom_minimum_size = Vector2(320, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(box)

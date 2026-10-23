@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name MarketWindow
+
 ## CHỢ GIAO THƯƠNG — 3 tab:
 ##   [Giao Thương] hàng mọi người đang treo, lọc theo Loại / Hệ / Cấp / Thuộc Tính / Tiền / tên; bấm món xem chi tiết + Mua.
 ##   [Của Tôi]     món mình đang treo (Hủy treo / Nhận lại khi hết hạn) + hành trang: chạm món để định giá bán (lượng hoặc KNB).
@@ -52,7 +53,7 @@ static func open(host: Node, profile: PlayerProfile) -> MarketWindow:
 	return SocialWindow.present(host, MarketWindow.new(SocialHub.of(profile)), &"market") as MarketWindow
 
 func _init(hub: SocialHub = null) -> void:
-	super._init("Giao Dịch", "", 520.0)
+	super._init("Giao Dịch", "", 760.0)
 	_hub = hub
 	if _hub == null:
 		return
@@ -92,7 +93,8 @@ func _exit_tree() -> void:
 		_hub.notice.disconnect(_on_notice)
 
 func _host() -> Node:
-	return get_tree().current_scene
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else null
 
 func _say(text: String, good: bool) -> void:
 	SocialUi.set_banner(_msg, text, good)
@@ -104,6 +106,8 @@ func _show_tab(t: int) -> void:
 		_pages[i].visible = i == t
 		GameUi.set_active(_tab_buttons[i], i == t)
 	_msg.visible = false
+	if is_docked:
+		size.y = 585.0
 	_refresh_money()
 	match t:
 		Tab.MARKET:
@@ -173,6 +177,8 @@ func _item_of(l: Dictionary) -> ItemInstance:
 func _build_market() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 8)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	var filter_box := VBoxContainer.new()
 	filter_box.add_theme_constant_override("separation", 6)
@@ -203,13 +209,14 @@ func _build_market() -> Control:
 
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 380)
+	scroll.custom_minimum_size = Vector2(0, 320)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_grid = GridContainer.new()
 	_grid.columns = 1
 	_grid.add_theme_constant_override("v_separation", 6)
 	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_grid)
+	TouchScrollHelperScript.attach(scroll, page)
 	page.add_child(scroll)
 	var pager := HBoxContainer.new()
 	pager.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -413,8 +420,12 @@ func _confirm_buy(l: Dictionary, item: ItemInstance) -> void:
 func _build_mine() -> Control:
 	var page := HBoxContainer.new()
 	page.add_theme_constant_override("separation", 14)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var left := SocialUi.section()
 	left[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left[0].size_flags_stretch_ratio = 1.3
 	var head := HBoxContainer.new()
 	var title := SocialUi.label("Vật phẩm đang treo", SocialUi.LABEL_GREEN, 15)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -424,19 +435,27 @@ func _build_mine() -> Control:
 	left[1].add_child(head)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 400)
+	scroll.custom_minimum_size = Vector2(0, 320)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_mine_box = VBoxContainer.new()
 	_mine_box.add_theme_constant_override("separation", 6)
 	_mine_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_mine_box)
+	TouchScrollHelperScript.attach(scroll, left[0] as Control)
 	left[1].add_child(scroll)
 	page.add_child(left[0])
 
 	var right := SocialUi.info_box("Hành trang")
+	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right[0].size_flags_stretch_ratio = 1.0
 	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right[1].add_child(tabs)
 	for i in PlayerProfile.OPEN_BAGS:
 		var b := GameUi.button("Túi %d" % (i + 1), GameUi.TAB)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func() -> void:
 			_bag_view.bag = i
 			_refresh_bag())
@@ -444,11 +463,14 @@ func _build_mine() -> Control:
 		_bag_tabs.append(b)
 	var bag_scroll := ScrollContainer.new()
 	bag_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	bag_scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 20 + 8, 318)
+	bag_scroll.custom_minimum_size = Vector2(PlayerProfile.ROOM_WIDTH * 37 + 10, 320)
+	bag_scroll.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	bag_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_bag_view = ItemRoomView.new()
-	_bag_view.cell = 20
+	_bag_view.cell = 37
 	_bag_view.item_pressed.connect(_on_bag_item)
 	bag_scroll.add_child(_bag_view)
+	TouchScrollHelperScript.attach(bag_scroll, right[0] as Control)
 	right[1].add_child(bag_scroll)
 	right[1].add_child(SocialUi.label("Chạm vật phẩm để định giá bán", SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER))
 	right[1].add_child(SocialUi.label("Hệ thống sẽ thu thuế tự động %d%% khi bán thành công" % MarketBook.TAX_PERCENT,
@@ -560,6 +582,8 @@ func _on_bag_item(item: ItemInstance) -> void:
 func _build_trade() -> Control:
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", 10)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var box := SocialUi.info_box("Giao dịch theo ID")
 	box[1].add_child(_my_id_row())
 	var row := HBoxContainer.new()
@@ -578,13 +602,17 @@ func _build_trade() -> Control:
 	box[1].add_child(hint)
 	page.add_child(box[0])
 	var near := SocialUi.section("Người chơi quanh đây")
+	near[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	near[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 280)
+	scroll.custom_minimum_size = Vector2(0, 260)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_near_box = VBoxContainer.new()
 	_near_box.add_theme_constant_override("separation", 6)
 	_near_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_near_box)
+	TouchScrollHelperScript.attach(scroll, near[0] as Control)
 	near[1].add_child(scroll)
 	page.add_child(near[0])
 	return page

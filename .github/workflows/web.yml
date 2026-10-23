@@ -1,0 +1,163 @@
+name: Web Client CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "server/**"
+      - "android/**"
+      - "launcher/**"
+      - "docs/**"
+      - "tools/**"
+      - "tests/**"
+      - "**/*.md"
+      - ".github/workflows/game-server.yml"
+      - ".github/workflows/build_ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}/kiemhiep-web
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Tạo build tag
+        id: tag
+        run: echo "tag=$(date -u +%Y%m%d-%H%M)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Cài đặt Godot ${{ env.GODOT_VERSION }}
+        run: |
+          curl -fsSL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          godot --version
+
+      - name: Cài đặt Export Templates ${{ env.GODOT_VERSION }}
+        run: |
+          curl -fsSL -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          ls -la ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+
+      - name: Cache .godot (tài nguyên đã import)
+        uses: actions/cache@v4
+        with:
+          path: .godot
+          key: godot-web-import-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.import') }}
+          restore-keys: godot-web-import-${{ env.GODOT_VERSION }}-
+
+      - name: Xuất bản Web (HTML5 / Wasm)
+        run: |
+          echo "==> Bắt đầu quét & import tài nguyên"
+          godot --headless --path . --import > import.log 2>&1 || { tail -n 50 import.log; exit 1; }
+          mkdir -p docker/web/dist
+          echo "==> Xuất bản Web bằng preset 'Web'"
+          godot --headless --path . --export-release "Web" docker/web/dist/index.html > export.log 2>&1 \
+            || { tail -n 50 export.log; exit 1; }
+          ls -lh docker/web/dist
+
+      - name: Setup QEMU (nếu VPS là arm64)
+        uses: docker/setup-qemu-action@v3
+        if: ${{ vars.VPS_PLATFORM == 'linux/arm64' }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Đăng nhập Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build và Push Docker Image cho Web
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/web
+          platforms: ${{ vars.VPS_PLATFORM || 'linux/amd64' }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      IMAGE: ${{ vars.DOCKER_HUB_USERNAME || secrets.DOCKER_HUB_USERNAME }}/kiemhiep-web
+      TAG: ${{ needs.build.outputs.tag }}
+      VPS: ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}
+      PORT: ${{ vars.VPS_PORT || '22' }}
+      WEB_PORT: ${{ vars.WEB_PORT || '8088' }}
+    steps:
+      - name: Cấu hình SSH Key
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$SSH_KEY" ] || [ -z "$KNOWN_HOSTS" ]; then
+            echo "Thiếu secret VPS_SSH_KEY hoặc VPS_KNOWN_HOSTS"
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Tự động Deploy Docker Container lên VPS
+        run: |
+          SSH_OPTS="-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -p $PORT"
+          ssh $SSH_OPTS "$VPS" "
+            set -e
+            echo '==> Đang kéo image Web mới: $IMAGE:$TAG'
+            docker pull '$IMAGE:$TAG'
+
+            # 1. Nếu trên VPS đang cấu hình service Swarm 'kiemhiep_web'
+            if docker service inspect kiemhiep_web >/dev/null 2>&1; then
+              echo '==> Đang cập nhật service kiemhiep_web trong Docker Swarm'
+              docker service update --image '$IMAGE:$TAG' kiemhiep_web
+            else
+              # 2. Khởi chạy container độc lập
+              echo '==> Đang khởi động lại container kiemhiep-web'
+              docker rm -f kiemhiep-web 2>/dev/null || true
+
+              # Tự động kết nối vào mạng Swarm/Compose kiemhiep nếu có
+              NET_ARGS=''
+              if docker network inspect kiemhiep >/dev/null 2>&1; then
+                NET_ARGS='--network kiemhiep'
+              elif docker network inspect kiemhiep_kiemhiep >/dev/null 2>&1; then
+                NET_ARGS='--network kiemhiep_kiemhiep'
+              fi
+
+              docker run -d \
+                --name kiemhiep-web \
+                --restart always \
+                \$NET_ARGS \
+                -p $WEB_PORT:80 \
+                '$IMAGE:$TAG'
+            fi
+
+            echo '==> Dọn dẹp Docker images cũ'
+            docker image prune -f >/dev/null 2>&1 || true
+            echo '==> Đã deploy bản Web thành công!'
+          "

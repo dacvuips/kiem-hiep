@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="Kiem-hiep Launcher"
-config/description="Trình tải và cập nhật game Kiếm Hiệp"
+config/name="JX1 Idle Origin Launcher"
+config/description="Trình tải và cập nhật game JX1 Idle Origin"
 run/main_scene="res://launcher.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=60
@@ -42,6 +42,9 @@ network/account_url="https://kiem-hiep-api.viettheo.site"
 
 [rendering]
 
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
+textures/canvas_textures/default_texture_filter=1
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true

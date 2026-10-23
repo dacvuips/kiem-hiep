@@ -313,7 +313,7 @@ static func stat_at_level(m: Dictionary, stat: String, level: int) -> int:
 	return result
 
 ## Sát thương đòn cận chiến [nhỏ nhất, lớn nhất] của quái ở cấp `level` khi ra skill (skill_id, skill_level):
-## sát thương cơ bản theo cấp + sát thương cộng thêm của chính skill (physicsdamage_v / physicsenhance_p).
+## sát thương cơ bản theo cấp + PhysicalDamageBase + sát thương cộng thêm của skill (đúng KNpc::AppendSkillEffect gốc).
 ## Quái chưa có dữ liệu gốc -> (-1, -1).
 static func melee_damage(m: Dictionary, level: int, skill_id: int, skill_level: int) -> Vector2i:
 	var lo := stat_at_level(m, "min_damage", level)
@@ -321,13 +321,26 @@ static func melee_damage(m: Dictionary, level: int, skill_id: int, skill_level: 
 	if lo < 0 or hi < 0:
 		return Vector2i(-1, -1)
 	hi = maxi(lo, hi)
-	var lv := clampi(skill_level + level / 5, 1, 30)
-	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
-	if not flat.is_empty():
-		lo += int(flat[0])
-		hi += int(flat[2] if flat.size() > 2 else flat[0])
+
+	## KNpc::AppendSkillEffect gốc: cộng PhysicalDamageBase (m_CurrentAddPhysicsDamage) vào lực tay
+	var add_phys := 0
+	var table: Dictionary = m.get("level_table", {})
+	if not table.is_empty():
+		add_phys = maxi(0, level_value(table, "PhysicalDamageBase", level))
+	elif m.has("damage_base") and m["damage_base"].has("physical"):
+		var p: Array = m["damage_base"]["physical"]
+		if p.size() >= 2:
+			add_phys = maxi(0, int(floorf(float(p[0]) * level + float(p[1]))))
+	lo += add_phys
+	hi += add_phys
+
+	var lv := skill_level if m.get("skill_levels_exact", false) else clampi(skill_level + level / 5, 1, 30)
 	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
 	if not enhance.is_empty():
 		lo = lo * (100 + int(enhance[0])) / 100
 		hi = hi * (100 + int(enhance[0])) / 100
+	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
+	if not flat.is_empty():
+		lo += int(flat[0])
+		hi += int(flat[2] if flat.size() > 2 else flat[0])
 	return Vector2i(lo, hi)

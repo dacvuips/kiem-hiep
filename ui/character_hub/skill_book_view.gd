@@ -307,13 +307,14 @@ func _build_col_detail(parent: HBoxContainer) -> void:
 	_learn_button.pressed.connect(_on_learn_pressed)
 	btn_row.add_child(_learn_button)
 
-	_test_button = GameUi.button("Nâng cấp (TEST)")
-	_test_button.custom_minimum_size = Vector2(100, 32)
-	_test_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_test_button.pressed.connect(func() -> void:
-		if _selected and _profile.debug_raise_skill(_selected.id):
-			_after_skill_changed())
-	btn_row.add_child(_test_button)
+	if AccountApi.is_gm():
+		_test_button = GameUi.button("Nâng cấp (TEST)")
+		_test_button.custom_minimum_size = Vector2(100, 32)
+		_test_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_test_button.pressed.connect(func() -> void:
+			if _selected and _profile.debug_raise_skill(_selected.id):
+				_after_skill_changed())
+		btn_row.add_child(_test_button)
 
 # ==============================================================================
 # CỘT 3: TÙY CHỈNH & BỐ CỤC PHÍM TRONG TRẬN (PHẢI)
@@ -517,6 +518,7 @@ func _set_arranging(on: bool) -> void:
 	_arranging = on
 	_selected_slot = NO_DRAG
 	_refresh_slot_controls()
+	_apply_slot_looks()
 	for slot in _wheel_slots:
 		(_wheel_slots[slot] as Control).mouse_default_cursor_shape = Control.CURSOR_MOVE if on else Control.CURSOR_ARROW
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ" if on else "Đã lưu vị trí các nút")
@@ -529,6 +531,7 @@ func _reset_layout() -> void:
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
 	SaveManager.save_profile(_profile)
 	_apply_slot_looks()
+	_update_hud_layout()
 	_show_toast("Đã đưa các nút về vị trí mặc định")
 
 func _on_wheel_slot_input(event: InputEvent, slot: int) -> void:
@@ -563,7 +566,9 @@ func _apply_slot_looks() -> void:
 		var k := _profile.get_skill_slot_size(key)
 		holder.pivot_offset = holder.size * 0.5
 		holder.scale = Vector2(k, k)
-		holder.modulate.a = 1.0 if slot == MAIN_SLOT or _profile.is_skill_slot_on(key) else 0.3
+		var is_on: bool = (slot == MAIN_SLOT or _profile.is_skill_slot_on(key))
+		holder.visible = is_on or _arranging
+		holder.modulate.a = 1.0 if is_on else 0.35
 		if _selected_slot == slot:
 			holder.modulate = Color(1.25, 1.15, 0.7, holder.modulate.a)
 		else:
@@ -635,6 +640,7 @@ func _wheel_skill(slot: int) -> SkillDefinition:
 func _refresh_wheel() -> void:
 	if _wheel_swap:
 		_wheel_swap.text = "⇄ %d" % (_profile.hotbar_page + 1)
+	_apply_slot_looks()
 	for slot in _wheel_slots:
 		var holder: Panel = _wheel_slots[slot]
 		if _is_tool(slot):
@@ -643,7 +649,7 @@ func _refresh_wheel() -> void:
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
 			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if str(tool[0]) == "horse" else CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
 			holder.tooltip_text = "%s — bật \"Sắp xếp\" để dời / ẩn / đổi cỡ" % str(tool[4])
@@ -694,7 +700,11 @@ func _get_wheel_drag_data(_pos: Vector2, slot: int) -> Variant:
 
 # 4. Thả vào Ô Wheel
 func _can_drop_wheel(_pos: Vector2, data: Variant, slot: int) -> bool:
-	return not _arranging and not _is_tool(slot) and data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
+	if _arranging or _is_tool(slot):
+		return false
+	if slot != MAIN_SLOT and not _profile.is_skill_slot_on(_layout_key(slot)):
+		return false
+	return data is Dictionary and data.get("type") == SkillBarUI.DRAG_TYPE
 
 func _drop_wheel(_pos: Vector2, data: Variant, slot: int) -> void:
 	var skill_id: String = data.get("skill_id", "")
@@ -784,7 +794,8 @@ func _select(skill: SkillDefinition) -> void:
 		_skill_school_label.text = ""
 		_skill_desc.text = ""
 		_learn_button.visible = false
-		_test_button.visible = false
+		if _test_button:
+			_test_button.visible = false
 		return
 
 	var learned := _profile.get_skill_level(skill.id)
@@ -855,7 +866,8 @@ func _update_buttons(skill: SkillDefinition, learned: int) -> void:
 		_learn_button.text = "Học / Nâng cấp (+1)"
 		_learn_button.disabled = false
 
-	_test_button.visible = OS.is_debug_build() and learned < skill.max_level
+	if _test_button:
+		_test_button.visible = AccountApi.is_gm() and learned < skill.max_level
 
 func _on_learn_pressed() -> void:
 	if _selected == null:

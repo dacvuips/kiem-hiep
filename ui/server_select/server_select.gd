@@ -46,7 +46,7 @@ static var selected_server: Dictionary = {}
 
 @onready var _rows: VBoxContainer = %Rows
 @onready var _filter_box: VBoxContainer = %Filters
-@onready var _enter: TextureButton = %EnterButton
+@onready var _enter: Button = %EnterButton
 @onready var _message: Label = %Message
 @onready var _account_label: Label = %AccountLabel
 @onready var _back: Button = %BackButton
@@ -89,18 +89,49 @@ func _ready() -> void:
 	_enter.pressed.connect(_on_enter_pressed)
 	_enter.mouse_entered.connect(_hover.bind(true))
 	_enter.mouse_exited.connect(_hover.bind(false))
+	_enter.button_down.connect(_set_enter_pressed.bind(true))
+	_enter.button_up.connect(_set_enter_pressed.bind(false))
 
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 
 	if AccountApi.is_logged_in():
 		_fetch_servers()
+		AccountApi.session_invalidated.connect(_on_session_invalidated)
 	else:
 		_refresh_rows()
+
+var _session_poll_timer := 0.0
+const SESSION_POLL_INTERVAL := 5.0
+
+func _process(delta: float) -> void:
+	if not AccountApi.is_logged_in() or _loading:
+		return
+	_session_poll_timer += delta
+	if _session_poll_timer >= SESSION_POLL_INTERVAL:
+		_session_poll_timer = 0.0
+		_poll_session()
+
+func _poll_session() -> void:
+	var chk: Dictionary = await AccountApi.check_session()
+	if not is_inside_tree():
+		return
+	if not chk.ok and chk.code in ["logged_in_elsewhere", "unauthorized", "banned"]:
+		_on_session_invalidated(chk.message)
+
+func _on_session_invalidated(reason: String) -> void:
+	AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+	get_tree().change_scene_to_file(LOGIN_SCENE)
 
 func _hover(on: bool) -> void:
 	_enter.pivot_offset = _enter.size * 0.5
 	create_tween().tween_property(_enter, "scale", Vector2.ONE * (1.04 if on else 1.0), 0.1)
+	if _enter.material is ShaderMaterial:
+		(_enter.material as ShaderMaterial).set_shader_parameter("hover_boost", 0.4 if on else 0.0)
+
+func _set_enter_pressed(down: bool) -> void:
+	if _enter.material is ShaderMaterial:
+		(_enter.material as ShaderMaterial).set_shader_parameter("is_pressed", 1.0 if down else 0.0)
 
 func _fetch_servers() -> void:
 	if _loading:
@@ -112,7 +143,7 @@ func _fetch_servers() -> void:
 	_loading = false
 	if r.ok and r.data is Dictionary:
 		_servers = r.data.get("servers", [])
-	elif r.code == "unauthorized" or r.code == "banned":
+	elif r.code in ["unauthorized", "banned", "logged_in_elsewhere"]:
 		AccountScreen.next_login_message = r.message
 		get_tree().change_scene_to_file(LOGIN_SCENE)
 		return
@@ -125,6 +156,8 @@ func _fetch_servers() -> void:
 func _on_back_pressed() -> void:
 	_back.disabled = true
 	_enter.disabled = true
+	if _enter.material is ShaderMaterial:
+		(_enter.material as ShaderMaterial).set_shader_parameter("is_disabled", 1.0)
 	if AccountApi.is_logged_in():
 		await AccountApi.logout()
 	var t := create_tween()
@@ -343,12 +376,26 @@ func _on_enter_pressed() -> void:
 		_toast("Máy chủ %s đang bảo trì, vui lòng chọn máy chủ khác" % server.get("name", ""))
 		return
 
+	# Kiểm tra xác thực phiên đăng nhập trước khi cho phép vào bên trong
+	if AccountApi.is_logged_in():
+		_enter.disabled = true
+		var chk: Dictionary = await AccountApi.check_session()
+		if not is_inside_tree():
+			return
+		if not chk.ok:
+			_enter.disabled = false
+			AccountScreen.next_login_message = chk.message if chk.message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+			get_tree().change_scene_to_file(LOGIN_SCENE)
+			return
+
 	var cfg := ConfigFile.new()
 	cfg.load(CFG_PATH)
 	cfg.set_value("server", "id", selected_server_id)
 	cfg.save(CFG_PATH)
 	selected_server = server
 	_enter.disabled = true
+	if _enter.material is ShaderMaterial:
+		(_enter.material as ShaderMaterial).set_shader_parameter("is_disabled", 1.0)
 
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)

@@ -50,6 +50,12 @@ func apply_effect(effect: StatusEffect) -> void:
 		effect_applied.emit(effect.effect_id)
 	_recalculate_derived_state()
 
+## Tăng tốc độ chạy tạm thời (Phi Tốc Đan, buff chiêu thức...)
+func apply_speed_buff(percent: float, duration: float) -> void:
+	if duration <= 0.0 or percent <= 0.0:
+		return
+	apply_effect(StatusEffect.new("speed_buff", duration, 0.0, 1.0, percent))
+
 ## Làm chậm của Băng sát: VLTK bỏ qua 1/2 số frame hành động (m_FreezeState, `nTime & 1`) = chậm 50%.
 const VLTK_FREEZE_SLOW := 0.5
 
@@ -274,6 +280,8 @@ func _recalculate_derived_state() -> void:
 				move_speed_multiplier *= (1.0 - effect.magnitude)
 			"freeze":
 				move_speed_multiplier *= (1.0 - effect.magnitude)
+			"speed_buff":
+				move_speed_multiplier *= (1.0 + effect.magnitude)
 			"stun":
 				is_stunned = true
 	_update_tint()

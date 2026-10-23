@@ -330,6 +330,8 @@ class SortedMap extends VltkMap:
 
 	## Quái thật do override này sinh -> bản gốc bỏ qua chúng.
 	func _spawn_filter(n: Dictionary) -> bool:
+		if (GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl()) and str(n.get("role", "")) == "monster":
+			return false
 		return not _is_real_monster(n)
 
 	func _spawn_npcs(rx: int, ry: int, made: Array) -> void:
@@ -344,7 +346,7 @@ class SortedMap extends VltkMap:
 					made.append(m)
 
 	func _spawn_monster(n: Dictionary) -> VltkMonster:
-		if VltkWorld.net_monsters:
+		if VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl():
 			return null
 		var uid := str(n.get("uid", ""))
 		if _live_monsters.has(uid) and is_instance_valid(_live_monsters[uid]):
@@ -376,6 +378,30 @@ class SortedMap extends VltkMap:
 		var wait := float(n.get("respawn", 40))
 		_dead_until[uid] = Time.get_ticks_msec() / 1000.0 + (wait if wait > 0.0 else 1.0e12)
 		_respawns.append({"n": n, "at": float(_dead_until[uid])})
+
+	func clear_map_monsters() -> void:
+		for uid in _live_monsters.keys():
+			var m = _live_monsters[uid]
+			if is_instance_valid(m):
+				m.queue_free()
+		_live_monsters.clear()
+		_respawns.clear()
+		_dead_until.clear()
+		if objects_root != null:
+			for child in objects_root.get_children():
+				if not is_instance_valid(child):
+					continue
+				if child is VltkMonster:
+					child.queue_free()
+				elif child.has_meta("role") and str(child.get_meta("role")) == "monster":
+					child.queue_free()
+				elif child.has_meta("npc"):
+					var info: Dictionary = child.get_meta("npc", {})
+					if str(info.get("role", "")) == "monster":
+						child.queue_free()
+
+	func clear_all_monsters() -> void:
+		clear_map_monsters()
 
 	## Quái đã chết: hết thời gian chờ thì sinh lại tại chỗ cũ (nếu vùng của nó đang được nạp).
 	func _tick_respawns() -> void:
@@ -441,6 +467,16 @@ func setup_stage(stage: StageData) -> void:
 		player.global_position = _free_position_near(center) - Vector2(0, FEET_OFFSET)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+
+	## Chỉ clear quái gắn liền của map (map monsters), KHÔNG xoá tất cả quái của các hệ thống khác
+	if map is SortedMap:
+		(map as SortedMap).clear_map_monsters()
+	for m in get_tree().get_nodes_in_group("monster"):
+		if is_instance_valid(m) and (m.has_meta("npc") or (map != null and m.get_parent() == map.objects_root)):
+			m.queue_free()
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e) and (e is VltkMonster or e.has_meta("npc")):
+			e.queue_free()
 
 ## Lưới A* nhỏ phủ đúng ô vuông (vài chục nghìn ô) — đường đi không bao giờ vòng ra ngoài ô.
 func _build_nav() -> void:
@@ -653,6 +689,16 @@ static func clamp_to_arena(feet: Vector2) -> Vector2:
 	var r := current.arena_rect
 	return Vector2(clampf(feet.x, r.position.x, r.end.x), clampf(feet.y, r.position.y, r.end.y))
 
+## Có đang trong chế độ PK Lộn Xộn không.
+static func is_brawl() -> bool:
+	var f: Dictionary = GameManager.field_map
+	return bool(f.get("brawl", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
+
+## Dọn sạch toàn bộ quái trên map hiện tại.
+func clear_all_monsters() -> void:
+	if map != null and map.has_method("clear_map_monsters"):
+		map.clear_map_monsters()
+
 ## Chế độ "Chơi" (map chính, đi lại tự do): dựng map, KHÔNG có ô vuông / hào quang, nhân vật đứng ở ô trống gần tâm khu chơi.
 func setup_main_map() -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
@@ -671,6 +717,8 @@ func setup_main_map() -> void:
 		player.global_position = _open_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+	if VltkWorld.is_brawl():
+		clear_all_monsters()
 	_spawn_boss_if_requested(player)
 
 ## Thả Boss Hoàng Kim / Tiểu Hoàng Kim khi khiêu chiến từ tab Boss
@@ -755,7 +803,10 @@ func place_at_start(node: Node2D) -> void:
 ## Dựng VltkMap lần đầu: phải có `focus` TRƯỚC khi vào cây, nếu không nạp cả nghìn vùng.
 func _ensure_map(player: Node2D) -> void:
 	if map != null:
-		return
+		if map.map_dir == map_dir:
+			return
+		map.queue_free()
+		map = null
 	map = SortedMap.new()
 	map.name = "Map"
 	map.map_dir = map_dir
@@ -855,27 +906,33 @@ func _clear_around(c: Vector2i) -> bool:
 
 ## Chân đứng tại `feet` có bị chặn không: ô vật cản của map HOẶC ngoài ô vuông màn chơi (khi đã có ô).
 ## jumping = true: cho phép vượt qua ô cản thấp (sông suối / hào nước: kind 3/4).
-func _blocked_at(feet: Vector2, jumping: bool = false) -> bool:
-	if jumping and map.has_method("is_jumpable"):
-		if not map.is_jumpable(feet):
+## ignore_obstacles = true: bỏ qua vật cản của map (cây cối, đá, tường), chỉ giữ trong ô vuông màn chơi.
+func _blocked_at(feet: Vector2, jumping: bool = false, ignore_obstacles: bool = false) -> bool:
+	if not ignore_obstacles:
+		if jumping and map.has_method("is_jumpable"):
+			if not map.is_jumpable(feet):
+				return true
+		elif map != null and map.is_blocked(feet):
 			return true
-	elif map.is_blocked(feet):
-		return true
 	return arena_rect.size != Vector2.ZERO and not arena_rect.has_point(feet)
 
 ## Giảm vận tốc để thực thể có chân tại `feet` không bước vào ô vật cản của map và không ra khỏi ô vuông màn chơi
 ## (trượt dọc tường theo từng trục). Đang đứng sẵn trong chỗ bị chặn (vd quái sinh ra trong nhà) thì không giữ lại.
-static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumping: bool = false) -> Vector2:
+static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumping: bool = false, ignore_obstacles: bool = false) -> Vector2:
 	var w := current
-	if w == null or w.map == null or w.map.grid == null or velocity == Vector2.ZERO:
+	if w == null or velocity == Vector2.ZERO:
 		return velocity
-	if w._blocked_at(feet, jumping):
+	if w.map == null or w.map.grid == null:
+		if w.arena_rect.size != Vector2.ZERO and not w.arena_rect.has_point(feet + velocity * delta):
+			return Vector2.ZERO
+		return velocity
+	if not ignore_obstacles and w._blocked_at(feet, jumping, false):
 		return velocity
 	var step := velocity * delta
-	if not w._blocked_at(feet + step, jumping):
+	if not w._blocked_at(feet + step, jumping, ignore_obstacles):
 		return velocity
-	if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping):
+	if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping, ignore_obstacles):
 		return Vector2(velocity.x, 0.0)
-	if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping):
+	if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping, ignore_obstacles):
 		return Vector2(0.0, velocity.y)
 	return Vector2.ZERO

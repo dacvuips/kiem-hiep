@@ -18,4 +18,5 @@ static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, s
 	## Mục tiêu ảo (điểm phía trước mặt — "Không mục tiêu"/"Đánh theo hướng trước mặt"): chỉ lấy hướng, không đuổi theo.
 	var real_target: Node2D = null if target.has_meta("cast_point") else target
 	projectile.setup_from_resolved(direction, stats, real_target, caster_stats, caster)
-	SfxManager.play_skill_cast(stats, caster.global_position)
+	var is_player := caster.is_in_group("player") if caster else false
+	SfxManager.play_skill_cast(stats, caster.global_position, is_player)

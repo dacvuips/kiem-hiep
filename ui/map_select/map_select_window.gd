@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name MapSelectWindow
+
 ## Màn "Vượt Ải" (mở từ nút Vượt Ải ở Character Hub): 3 tab lớn Thường / Ải / Địa Ngục.
 ##   - Thường: cột trái là nhóm cấp 1x..12x, bên phải là các map luyện công thuộc nhóm đó (MapCatalog) — mỗi map có ảnh mini map,
 ##     tên map, cấp quái + tên quái, nút [Vào] đưa thẳng người chơi vào map (đi lại tự do, quái của map, như map chính).
@@ -19,6 +20,7 @@ const LIST_SIZE := Vector2(620, 440)
 
 var _profile: PlayerProfile
 var _on_play: Callable
+var _host: Node
 var _tab := 0
 var _tier := 1
 var _tab_buttons: Array[Button] = []
@@ -44,13 +46,14 @@ var _battle_timer: Timer
 var _battle_poll_acc := 0.0
 
 static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> MapSelectWindow:
-	var win := MapSelectWindow.new(profile, on_play)
+	var win := MapSelectWindow.new(profile, on_play, host)
 	return SocialWindow.present(host, win, &"map_select") as MapSelectWindow
 
-func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
+func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: Node = null) -> void:
 	super._init("Vượt Ải", "Chọn bản đồ luyện công theo cấp", 800.0)
 	_profile = profile
 	_on_play = on_play
+	_host = host
 	_tier = MapCatalog.normal_tier_for_level(profile.level if profile else 1)
 
 	var tabs := HBoxContainer.new()
@@ -103,10 +106,23 @@ func _build_ai() -> void:
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	TouchScrollHelperScript.attach(scroll, scroll)
 	_build_stages_challenge(list)
 	_build_time_challenge(list)
 	_build_phong_lang_do(list)
+	_build_tong_kim_lol(list)
 	_build_battle(list)
+
+func _get_hub() -> Node:
+	if _host != null and is_instance_valid(_host):
+		return _host
+	var tree := get_tree()
+	if tree != null and tree.current_scene != null:
+		return tree.current_scene
+	var ml := Engine.get_main_loop() as SceneTree
+	if ml != null and ml.current_scene != null:
+		return ml.current_scene
+	return null
 
 ## Thẻ Vượt Ải Giang Hồ (10 Bàn chơi kinh điển có ảnh thumbnail xem trước đầy đủ)
 func _build_stages_challenge(parent: Control) -> void:
@@ -118,8 +134,8 @@ func _build_stages_challenge(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("Thập Đại Vượt Ải — Khiêu Chiến Sơn Môn", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var desc := SocialUi.label("Hành trình vượt qua 10 ải giang hồ liên hoàn. Mỗi ải có quái trấn giữ và boss thủ quan, vượt ải để mở khóa các bàn chơi tiếp theo.", SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	box.add_child(SocialUi.label("Thập Nhị Đại Vượt Ải — Khiêu Chiến Sơn Môn (1x - 12x)", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label("Hành trình vượt qua 12 ải giang hồ liên hoàn (từ 1x đến 12x). Mỗi ải tương ứng với một bản đồ ngoài trời và hệ thống quái đặc trưng của bản đồ đó.", SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(desc)
 	box.add_child(SocialUi.divider())
@@ -134,11 +150,16 @@ func _build_stages_challenge(parent: Control) -> void:
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
 
-	var current_stage_idx: int = clampi(_profile.stages_cleared if _profile else 0, 0, 9)
+	var hub := _get_hub()
+	var stages_arr: Array[StageData] = []
+	if GameManager != null and GameManager.has_method("get_all_stages"):
+		stages_arr = GameManager.get_all_stages()
+	if stages_arr.is_empty() and hub and "stages" in hub:
+		stages_arr = hub.stages
+	var total_stages: int = stages_arr.size() if not stages_arr.is_empty() else 12
+	var current_stage_idx: int = clampi(_profile.stages_cleared if _profile else 0, 0, total_stages - 1)
 	var map_dir_current := "res://world/maps/map_20"
 	var preview_stage_name := "Màn %d (Đang mở khóa)" % (current_stage_idx + 1)
-	var hub := get_tree().current_scene
-	var stages_arr: Array[StageData] = hub.stages if hub and "stages" in hub else []
 	if current_stage_idx < stages_arr.size():
 		var st: StageData = stages_arr[current_stage_idx]
 		preview_stage_name = st.stage_name
@@ -151,7 +172,9 @@ func _build_stages_challenge(parent: Control) -> void:
 
 	info.add_child(SocialUi.label("Bàn hiện tại: %s" % preview_stage_name, SocialUi.GOLD, 15))
 	var cleared_cnt: int = _profile.stages_cleared if _profile else 0
-	info.add_child(SocialUi.label("Tiến độ: Đã vượt %d/10 bàn" % cleared_cnt, SocialUi.LABEL_BLUE, 14))
+	info.add_child(SocialUi.label("Tiến độ: Đã vượt %d/%d bàn" % [cleared_cnt, total_stages], SocialUi.LABEL_BLUE, 14))
+	if AccountApi.is_gm():
+		info.add_child(SocialUi.label("✦ Quyền Admin: Mở khóa toàn bộ %d bàn chơi (chọn trong danh sách)" % total_stages, SocialUi.GOLD, 13))
 	info.add_child(SocialUi.label("Phần thưởng: Điểm kinh nghiệm, Trang bị, Huyền Tinh và mở khóa các bàn chơi mới.", SocialUi.TEXT, 13))
 
 	box.add_child(SocialUi.divider())
@@ -162,24 +185,33 @@ func _build_stages_challenge(parent: Control) -> void:
 
 	var select_btn := SocialUi.stone_button("Chọn Bàn (Danh Sách Có Ảnh)", Vector2(230, 44))
 	select_btn.pressed.connect(func() -> void:
-		var parent_node := get_tree().current_scene
-		var hub_stages: Array[StageData] = parent_node.stages if parent_node and "stages" in parent_node else []
+		var parent_node := _get_hub()
+		var hub_stages: Array[StageData] = []
+		if GameManager != null and GameManager.has_method("get_all_stages"):
+			hub_stages = GameManager.get_all_stages()
+		if hub_stages.is_empty() and parent_node and "stages" in parent_node:
+			hub_stages = parent_node.stages
 		var play_cb: Callable = _on_play
 		close_requested.emit()
-		StageSelectScreen.open(parent_node, _profile, hub_stages, func(selected_stage: StageData) -> void:
-			var entry := {"stage": selected_stage, "name": selected_stage.stage_name}
-			if play_cb.is_valid():
-				play_cb.call(entry)
-			elif parent_node != null and parent_node.has_method("_enter_field_map"):
-				parent_node._enter_field_map(entry)
-		, func() -> void: pass)
+		if parent_node != null and is_instance_valid(parent_node):
+			StageSelectScreen.open(parent_node, _profile, hub_stages, func(selected_stage: StageData) -> void:
+				var entry := {"stage": selected_stage, "name": selected_stage.stage_name}
+				if play_cb.is_valid():
+					play_cb.call(entry)
+				elif parent_node != null and parent_node.has_method("_enter_field_map"):
+					parent_node._enter_field_map(entry)
+			, func() -> void: pass)
 	)
 	row.add_child(select_btn)
 
 	var next_btn := SocialUi.stone_button("Vào Bàn %d" % (current_stage_idx + 1), Vector2(170, 44))
 	next_btn.pressed.connect(func() -> void:
-		var parent_node := get_tree().current_scene
-		var hub_stages: Array[StageData] = parent_node.stages if parent_node and "stages" in parent_node else []
+		var parent_node := _get_hub()
+		var hub_stages: Array[StageData] = []
+		if GameManager != null and GameManager.has_method("get_all_stages"):
+			hub_stages = GameManager.get_all_stages()
+		if hub_stages.is_empty() and parent_node and "stages" in parent_node:
+			hub_stages = parent_node.stages
 		if current_stage_idx < hub_stages.size():
 			var selected_stage: StageData = hub_stages[current_stage_idx]
 			_play({"stage": selected_stage, "name": selected_stage.stage_name})
@@ -348,6 +380,36 @@ func _start_phong_lang_do() -> void:
 					return
 				_play(PhongLangDoChallenge.map_entry()))
 
+# ---------------------------------------------------------------- tab Ải (Tống Kim LOL)
+
+func _build_tong_kim_lol(parent: Control) -> void:
+	var card := GameUi.panel(GameUi.PANEL)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(card)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+	row.add_child(_minimap_frame({"dir": TongKimLolRules.MAP_DIR}))
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	info.add_child(SocialUi.label("Ải Tống Kim LOL (MOBA 1v1 - 5v5)", SocialUi.TITLE, 18))
+	var desc := SocialUi.label("Chiến trường MOBA bảo vệ Tướng Soái, công phá cổng thành, diệt 3 đường lính và Boss Hoàng Kim. Tặng 100 điểm tiềm năng, mở full skill phái, thăng cấp 1-15 trong trận và thưởng x10 EXP thực tế!", SocialUi.MUTED, 13)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(desc)
+
+	var enter_btn := SocialUi.stone_button("Vào Sảnh Chờ Tống Kim LOL", Vector2(230, 40))
+	enter_btn.pressed.connect(func() -> void:
+		var hub := _get_hub()
+		if hub:
+			close_requested.emit()
+			var win := PkWindow.open(hub, _profile, _on_play)
+			if win:
+				win._select_mode(PkRules.Mode.TONG_KIM_LOL)
+	)
+	info.add_child(enter_btn)
+
 # ---------------------------------------------------------------- tab Ải (Chiến Trường Tống Kim)
 
 func _build_battle(parent: Control) -> void:
@@ -504,7 +566,7 @@ func _join_battle(side: String) -> void:
 		_battle_msg.text = "Chiến trường chưa mở."
 	elif str(_battle.get("phase", "")) == "ended":
 		_battle_msg.text = "Trận này đã kết thúc, xin chờ trận sau."
-	elif _profile and _profile.level < int(_battle.get("min_level", 0)):
+	elif not AccountApi.is_gm() and _profile and _profile.level < int(_battle.get("min_level", 0)):
 		_battle_msg.text = "Cấp %d trở lên mới được vào chiến trường." % int(_battle.get("min_level", 0))
 	else:
 		var other := "jin" if side == "song" else "song"
@@ -540,6 +602,7 @@ func _build_normal() -> void:
 		tiers.add_child(b)
 		_tier_buttons.append(b)
 	_content.add_child(tier_scroll)
+	TouchScrollHelperScript.attach(tier_scroll, tier_scroll)
 
 	var list_scroll := ScrollContainer.new()
 	list_scroll.name = "MapList"
@@ -562,11 +625,13 @@ func _select_tier(t: int) -> void:
 	if scroll == null:
 		return
 	for c in scroll.get_children():
-		c.queue_free()
+		if c is Control:
+			c.queue_free()
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 8)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	TouchScrollHelperScript.attach(scroll, scroll)
 	var maps := MapCatalog.in_tier(t)
 	if maps.is_empty():
 		list.add_child(SocialUi.label("Chưa có bản đồ %dx." % t, SocialUi.MUTED, 14))
@@ -681,11 +746,13 @@ func _select_hell_tier(t: int) -> void:
 	if scroll == null:
 		return
 	for c in scroll.get_children():
-		c.queue_free()
+		if c is Control:
+			c.queue_free()
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	TouchScrollHelperScript.attach(scroll, scroll)
 	var maps := MapCatalog.hell_maps(t)
 	if maps.is_empty():
 		list.add_child(SocialUi.label("Chưa có bản đồ Địa Ngục %dx." % t, HELL_DIM, 14))
@@ -951,6 +1018,7 @@ func _build_boss() -> void:
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	TouchScrollHelperScript.attach(scroll, scroll)
 
 	# Banner giới thiệu Boss Hoàng Kim
 	var banner := PanelContainer.new()

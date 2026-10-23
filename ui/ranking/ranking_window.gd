@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name RankingWindow
+
 ## Bảng xếp hạng (nút "BXH" ở Character Hub) — số liệu từ server (GET /v1/rankings, server giữ ~60 giây):
 ##   - Cao Thủ: cấp cao nhất toàn máy chủ (cùng cấp: nhiều kinh nghiệm hơn đứng trên).
 ##   - Phú Hộ: nhiều tiền nhất toàn máy chủ (tiền mang theo + tiền trong rương).
@@ -194,6 +195,7 @@ func _board(header: String, rows: Array, value_type: String, compact := false) -
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 	sec[1].add_child(scroll)
+	TouchScrollHelperScript.attach(scroll, panel)
 	if rows.is_empty():
 		list.add_child(SocialUi.label("Chưa có ai.", SocialUi.MUTED, 13))
 		return panel

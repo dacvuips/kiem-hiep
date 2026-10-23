@@ -8,6 +8,7 @@ var _display: Label
 var _on_ok: Callable
 var _hint: Label
 var _msg: Label
+var _ok_btn: Button
 
 ## Mở hộp nhập mật mã. on_ok(code: String) được gọi khi bấm xác nhận (mật mã không rỗng).
 static func ask(host: Node, window_title: String, hint: String, on_ok: Callable) -> KeypadWindow:
@@ -52,13 +53,13 @@ func _init(window_title: String = "", hint: String = "", on_ok: Callable = Calla
 	grid.add_child(clear)
 
 	var row := add_button_row()
-	var ok := SocialUi.stone_button("xác nhận")
-	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ok_btn = SocialUi.stone_button("xác nhận")
+	_ok_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cancel := SocialUi.stone_button("hủy bỏ")
 	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(ok)
+	row.add_child(_ok_btn)
 	row.add_child(cancel)
-	ok.pressed.connect(_submit)
+	_ok_btn.pressed.connect(_submit)
 	cancel.pressed.connect(func() -> void: close_requested.emit())
 	_update()
 
@@ -67,16 +68,31 @@ func _digit_button(d: String) -> Button:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.add_theme_font_size_override("font_size", 20)
 	b.pressed.connect(func() -> void:
+		if SecurityLock.is_locked_out():
+			_update()
+			return
 		if _digits.length() < SecurityLock.MAX_PASSWORD_LENGTH:
 			_digits += d
 		_update())
 	return b
 
 func _update() -> void:
-	_display.text = "●".repeat(_digits.length()) if not _digits.is_empty() else "—"
-	_msg.text = ""
+	if SecurityLock.is_locked_out():
+		_display.text = "🔒"
+		var rem := SecurityLock.remaining_lockout_seconds()
+		_msg.text = "Tạm khoá nhập do sai quá %d lần.\nThử lại sau: %02d:%02d" % [SecurityLock.MAX_FAILED_ATTEMPTS, rem / 60, rem % 60]
+		if _ok_btn:
+			_ok_btn.disabled = true
+	else:
+		_display.text = "●".repeat(_digits.length()) if not _digits.is_empty() else "—"
+		_msg.text = ""
+		if _ok_btn:
+			_ok_btn.disabled = false
 
 func _submit() -> void:
+	if SecurityLock.is_locked_out():
+		_update()
+		return
 	if _digits.is_empty():
 		_msg.text = "Hãy nhập mật mã."
 		return

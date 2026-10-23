@@ -24,6 +24,12 @@ const DEFAULT_ATTACK_RADIUS := 75.0
 const CORPSE_STAY := 1.0
 const CORPSE_FADE := 0.6
 
+## VLTK gốc (NormalSync): gom sát thương theo chu kỳ (~0.2s) rồi mới hiển thị 1 số duy nhất,
+## tránh spam số đè nhau khi trúng skill nhiều tia / hiệu ứng đa tầng.
+const DAMAGE_BATCH_INTERVAL := 0.2
+var _accumulated_damage: float = 0.0
+var _damage_batch_timer: float = 0.0
+
 var monster_id: int = 0
 var data: Dictionary = {}
 var level: int = 1
@@ -45,7 +51,17 @@ var combat_stats: CombatantStats
 var health: float = 1.0
 var max_health: float = 1.0
 var status_controller: StatusEffectController
+## Phe trong Chiến Trường / MOBA Tống Kim LOL ("song", "jin" hoặc "")
+var battle_side: String = ""
 var target: Node2D = null
+
+## MOBA Tống Kim LOL: lính hành quân 3 đường & tướng soái
+var is_lane_creep: bool = false
+var lane_waypoints: Array[Vector2] = []
+var lane_waypoint_idx: int = 0
+var moba_damage_multiplier: float = 1.0
+var is_moba_general: bool = false
+var _foe_search_timer: float = 0.0
 
 var _build: CombatantBuild
 var _sprite: MonsterSprite
@@ -65,6 +81,13 @@ var _active_slot: int = 0
 var _fired: bool = false
 var _death_time: float = 0.0
 var _max_radius: float = -1.0
+var _last_walk_pos: Vector2 = Vector2.ZERO
+var _stuck_time: float = 0.0
+var _avoid_timer: float = 0.0
+var _avoid_dir: Vector2 = Vector2.ZERO
+var _ghost_timer: float = 0.0
+var _nav_path: PackedVector2Array = PackedVector2Array()
+var _nav_goal: Vector2 = Vector2.ZERO
 
 ## ONLINE: quái do game server điều khiển (net_eid != 0). Không chạy AI / không tự trừ máu: vị trí + động tác lấy từ
 ## server (nội suy), sát thương mình gây được báo lên server, chiêu của quái chỉ ra khi server báo (S_MATTACK).
@@ -197,7 +220,8 @@ func _build_stats() -> void:
 	_apply_vltk_stats(combat_stats)
 	max_health = maxf(1.0, float(combat_stats.max_hp))
 	health = max_health
-	_health_bar.set_max_health(max_health)
+	if _health_bar != null:
+		_health_bar.set_max_health(max_health)
 
 ## Ghi đè máu / chính xác / phòng thủ bằng số gốc theo cấp (máu thử nghiệm theo Vitality bị thay).
 func _apply_vltk_stats(stats: CombatantStats) -> void:
@@ -215,7 +239,8 @@ func _apply_vltk_stats(stats: CombatantStats) -> void:
 		stats.defense = def
 	_apply_level_combat(stats)
 	if gold_boss:
-		stats.max_hp = maxi(stats.max_hp, 1800000)
+		if hp_override <= 0:
+			stats.max_hp = maxi(stats.max_hp, 1800000)
 		for type in [CombatFormulas.DamageType.PHYSICS, CombatFormulas.DamageType.COLD, CombatFormulas.DamageType.FIRE, CombatFormulas.DamageType.LIGHT, CombatFormulas.DamageType.POISON]:
 			stats.resist_percent[type] = maxi(int(stats.resist_percent.get(type, 0)), 85)
 			stats.resist_percent_cap[type] = maxi(int(stats.resist_percent_cap.get(type, 0)), 85)
@@ -233,7 +258,8 @@ func refresh_combat_stats() -> void:
 	_apply_vltk_stats(combat_stats)
 	max_health = maxf(1.0, float(combat_stats.max_hp))
 	health = max_health * ratio
-	_health_bar.set_max_health(max_health)
+	if _health_bar != null:
+		_health_bar.set_max_health(max_health)
 	_health_bar.set_health(health)
 
 func get_ground_position() -> Vector2:
@@ -248,7 +274,10 @@ func is_dead() -> bool:
 
 ## Quái đang giao chiến với `node` (nhắm vào nó và nó trong tầm nhìn — như _ai_think khoá địch). Auto dùng để tự vệ.
 func is_engaging(node: Node2D) -> bool:
-	return node != null and target == node and not is_dead() 			and VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(node)) <= float(data.get("vision", 400))
+	var base_vis := float(data.get("vision", 400))
+	var max_vis: float = 2500.0 if (gold_boss and not is_moba_general) else maxf(base_vis * 1.6, 750.0)
+	return node != null and target == node and not is_dead() \
+		and VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(node)) <= max_vis
 
 # ---------------------------------------------------------------- trạng thái / hoạt ảnh
 
@@ -257,6 +286,12 @@ func _enter(state: State, action: String) -> void:
 	_action = action
 	_state_frames = 0.0
 	_state_len = float(MonsterData.action_frames(data, action))
+	if state == State.WALK:
+		_last_walk_pos = global_position
+	else:
+		_stuck_time = 0.0
+		_avoid_timer = 0.0
+		_ghost_timer = 0.0
 	_play_action_sound(action)
 
 ## KNpcRes::PlaySound — phát tiếng của động tác khi động tác bắt đầu (bảng npc动作声音表: quái → động tác → wav).
@@ -273,14 +308,26 @@ func _progress(loop: bool) -> float:
 func _physics_process(delta: float) -> void:
 	var frames := delta * FPS
 	_game_time += frames
+	if _accumulated_damage > 0.0:
+		_damage_batch_timer -= delta
+		if _damage_batch_timer <= 0.0:
+			_flush_damage_number()
 	if _state == State.DEAD:
 		_tick_dead(delta, frames)
 		return
 	if net_eid != 0:
 		_tick_net(frames)
 		return
-	if target == null or not is_instance_valid(target):
-		target = get_tree().get_first_node_in_group("player")
+	if target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
+		target = null
+		if battle_side != "":
+			_foe_search_timer -= delta
+			if _foe_search_timer <= 0.0:
+				_foe_search_timer = 0.35
+				var foe := "jin" if battle_side == "song" else "song"
+				target = _find_nearest_foe(foe)
+		else:
+			target = get_tree().get_first_node_in_group("player")
 	var frozen := GameManager.is_game_over or status_controller.is_stunned
 	_state_frames += frames
 	velocity = Vector2.ZERO
@@ -298,26 +345,152 @@ func _physics_process(delta: float) -> void:
 			if _ai_time >= float(maxi(1, int(data.get("ai_max_time", 10)))):
 				_ai_time = 0.0
 				_ai_think()
-	velocity = VltkWorld.slide_velocity(global_position, velocity, get_physics_process_delta_time())
+	if _ghost_timer > 0.0:
+		_ghost_timer -= get_physics_process_delta_time()
+	var ignore_obs: bool = _ghost_timer > 0.0
+	velocity = VltkWorld.slide_velocity(global_position, velocity, get_physics_process_delta_time(), false, ignore_obs)
 	move_and_slide()
+	if is_moba_general:
+		var here_logic := VltkMath.to_logic(global_position)
+		if here_logic.distance_to(_origin_logic) > TongKimLolRules.GENERAL_CAMP_RADIUS:
+			var clamped_logic := _origin_logic + (here_logic - _origin_logic).normalized() * TongKimLolRules.GENERAL_CAMP_RADIUS
+			global_position = VltkMath.to_world(clamped_logic)
 	var looping := _state == State.IDLE or _state == State.WALK
 	_sprite.set_pose(_action, _dir64, _progress(looping))
 
 func _tick_walk(frames: float) -> void:
 	var here := VltkMath.to_logic(global_position)
 	var to_dest := _walk_dest - here
-	var step := float(data.get("walk_speed", 6)) * frames * status_controller.move_speed_multiplier
-	if to_dest.length() <= maxf(step, 4.0):
-		_enter(State.IDLE, "stand")
-		return
-	var dir := VltkMath.dir_between(here, _walk_dest)
+	var speed_mult: float = status_controller.move_speed_multiplier if status_controller != null else 1.0
+	var speed_val := float(data.get("run_speed", data.get("walk_speed", 7))) if (target != null and is_instance_valid(target)) else float(data.get("walk_speed", 6))
+	var step := maxf(speed_val, 6.0) * frames * speed_mult
+
+	# Khi đang dí mục tiêu: nếu mục tiêu di chuyển cách đích đến hiện tại > 45 logic px thì liên tục cập nhật đường đi bám theo
+	if target != null and is_instance_valid(target) and not GameManager.is_game_over:
+		var target_logic := VltkMath.logic_of(target)
+		var target_world := VltkMath.to_world(target_logic)
+		if _nav_goal.distance_to(target_world) > 45.0:
+			_walk_to(target_logic)
+			to_dest = _walk_dest - here
+
+	# Khi đã tới gần nút đường dẫn A* hiện tại
+	if to_dest.length() <= maxf(step, 24.0):
+		if _nav_path.size() > 1:
+			_nav_path.remove_at(0)
+			_walk_dest = VltkMath.to_logic(_nav_path[0])
+			to_dest = _walk_dest - here
+		elif _nav_path.size() == 1:
+			_nav_path.clear()
+			if _nav_goal != Vector2.ZERO:
+				_walk_dest = VltkMath.to_logic(_nav_goal)
+				to_dest = _walk_dest - here
+			else:
+				_enter(State.IDLE, "stand")
+				_stuck_time = 0.0
+				_avoid_timer = 0.0
+				return
+		elif to_dest.length() <= maxf(step, 4.0):
+			_enter(State.IDLE, "stand")
+			_stuck_time = 0.0
+			_avoid_timer = 0.0
+			return
+
+	# Phát hiện vướng vật cản (quái không di chuyển được dù đang trong trạng thái WALK)
+	var delta := frames / float(FPS)
+	var moved_dist := global_position.distance_to(_last_walk_pos)
+	_last_walk_pos = global_position
+	if moved_dist < 1.0 and step > 1.0:
+		_stuck_time += delta
+	else:
+		_stuck_time = maxf(0.0, _stuck_time - delta * 2.0)
+
+	# Tự động tìm lại đường A* mới từ vị trí hiện tại khi bị kẹt > 0.25s
+	if _stuck_time >= 0.25 and _nav_goal != Vector2.ZERO:
+		var w := VltkWorld.current
+		if w != null and w._nav != null:
+			var replanned := VltkWorld.find_path(global_position, _nav_goal)
+			if replanned.size() > 0:
+				_nav_path = replanned
+				_walk_dest = VltkMath.to_logic(_nav_path[0])
+				to_dest = _walk_dest - here
+
+	# Nếu bị kẹt góc hẹp > 0.8s: kích hoạt chế độ ghost 0.4s để trượt thoát khỏi mép vật cản
+	if _stuck_time >= 0.8:
+		_ghost_timer = 0.4
+
+	# Bỏ qua waypoint nếu bị kẹt vật cản quá 1.5 giây (dành cho lính hành quân is_lane_creep)
+	if is_lane_creep and _stuck_time >= 1.5 and not lane_waypoints.is_empty():
+		if lane_waypoint_idx < lane_waypoints.size() - 1:
+			lane_waypoint_idx += 1
+			_nav_goal = lane_waypoints[lane_waypoint_idx]
+			_nav_path.clear()
+			_walk_dest = VltkMath.to_logic(_nav_goal)
+		_stuck_time = 0.0
+		_avoid_timer = 0.0
+
+	var dir_norm := to_dest.normalized()
+	var move_dir := dir_norm
+
+	# Cơ chế lách vật cản đa góc (Obstacle Avoidance): thử các góc trượt 30, -30, 45, -45, 60, -60, 90, -90, 120, -120 độ
+	if _avoid_timer > 0.0:
+		_avoid_timer -= delta
+		move_dir = _avoid_dir
+	elif _stuck_time >= 0.25:
+		var best_cand := Vector2.ZERO
+		var candidates: Array[Vector2] = [
+			dir_norm.rotated(PI * 0.17),
+			dir_norm.rotated(-PI * 0.17),
+			dir_norm.rotated(PI * 0.25),
+			dir_norm.rotated(-PI * 0.25),
+			dir_norm.rotated(PI * 0.35),
+			dir_norm.rotated(-PI * 0.35),
+			dir_norm.rotated(PI * 0.5),
+			dir_norm.rotated(-PI * 0.5),
+			dir_norm.rotated(PI * 0.67),
+			dir_norm.rotated(-PI * 0.67)
+		]
+		var w := VltkWorld.current
+		for cand in candidates:
+			if w != null:
+				var test_pos := global_position + VltkMath.to_world(cand * 28.0)
+				if not w._blocked_at(test_pos):
+					best_cand = cand
+					break
+			else:
+				best_cand = cand
+				break
+		if best_cand != Vector2.ZERO:
+			_avoid_dir = best_cand
+			_avoid_timer = 0.45
+			move_dir = best_cand
+
+	var dir := VltkMath.dir_between(Vector2.ZERO, move_dir)
 	if dir >= 0:
 		_dir64 = dir
-	var speed_logic := to_dest.normalized() * float(data.get("walk_speed", 6)) * (1.25 if blue_boss else 1.0) * FPS * status_controller.move_speed_multiplier
+	var speed_logic := move_dir * float(data.get("walk_speed", 6)) * (1.25 if blue_boss else 1.0) * FPS * speed_mult
 	velocity = VltkMath.to_world(speed_logic)
 
 func _walk_to(dest_logic: Vector2) -> void:
-	_walk_dest = dest_logic
+	if is_moba_general:
+		var d := dest_logic.distance_to(_origin_logic)
+		if d > TongKimLolRules.GENERAL_CAMP_RADIUS:
+			dest_logic = _origin_logic + (dest_logic - _origin_logic).normalized() * TongKimLolRules.GENERAL_CAMP_RADIUS
+
+	var dest_world := VltkMath.to_world(dest_logic)
+	var w := VltkWorld.current
+	if w != null and w._nav != null and global_position.distance_to(dest_world) > 40.0:
+		if _nav_path.is_empty() or _nav_goal.distance_to(dest_world) > 40.0:
+			_nav_goal = dest_world
+			var path := VltkWorld.find_path(global_position, dest_world)
+			if not path.is_empty():
+				_nav_path = path
+				_walk_dest = VltkMath.to_logic(_nav_path[0])
+			else:
+				_walk_dest = dest_logic
+	else:
+		_nav_goal = dest_world
+		_walk_dest = dest_logic
+
 	if _state != State.WALK:
 		_enter(State.WALK, "walk")
 
@@ -350,39 +523,123 @@ func _max_skill_radius() -> float:
 			_max_radius = DEFAULT_ATTACK_RADIUS
 	return _max_radius
 
+## Tìm mục tiêu phe địch gần nhất trong MOBA Tống Kim LOL
+func _find_nearest_foe(foe_side: String) -> Node2D:
+	var best_node: Node2D = null
+	var best_dist := 1.0e9
+	var my_pos := global_position
+	var is_gb: bool = gold_boss and not is_moba_general
+	var max_range: float = 2500.0 if is_gb else 900.0
+	var max_dist_sq: float = max_range * max_range
+
+	# Nếu là Boss Hoàng Kim, ưu tiên tuyệt đối tìm Boss Hoàng Kim phe đối phương trước
+	if is_gb:
+		for node in get_tree().get_nodes_in_group("enemies"):
+			if node == self or not is_instance_valid(node) or not (node is Node2D):
+				continue
+			if node.has_method("is_dead") and node.is_dead():
+				continue
+			if "battle_side" in node and node.battle_side == foe_side:
+				if "gold_boss" in node and node.gold_boss and not node.get("is_moba_general"):
+					var d := my_pos.distance_squared_to(node.global_position)
+					if d <= max_dist_sq:
+						return node
+
+	# 1. Kiểm tra người chơi
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player and is_instance_valid(player) and not (player.has_method("is_dead") and player.is_dead()):
+		var p_side := "song"
+		if TongKimLolState.current != null:
+			p_side = TongKimLolState.current.team_side
+		if p_side == foe_side:
+			var allowed := true
+			if is_moba_general:
+				allowed = player.global_position.distance_to(VltkMath.to_world(_origin_logic)) <= TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0
+			if allowed:
+				var d := my_pos.distance_squared_to(player.global_position)
+				if d < best_dist and d <= max_dist_sq:
+					best_dist = d
+					best_node = player
+
+	# 2. Kiểm tra quái/lính/Tướng phe đối địch
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or not is_instance_valid(node) or not (node is Node2D):
+			continue
+		if node.has_method("is_dead") and node.is_dead():
+			continue
+		if "battle_side" in node and node.battle_side == foe_side:
+			if is_moba_general and node.global_position.distance_to(VltkMath.to_world(_origin_logic)) > TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0:
+				continue
+			var d := my_pos.distance_squared_to(node.global_position)
+			if d < best_dist and d <= max_dist_sq:
+				best_dist = d
+				best_node = node
+
+	return best_node
+
 func _ai_think() -> void:
 	var mode := int(data.get("ai_mode", 0))
 	if mode <= 0:
 		return  ## AIMode 0/trống: NPC đứng yên
 	var p := _ai_params()
 	var here := VltkMath.to_logic(global_position)
-	## KeepActiveRange: ra khỏi vùng hoạt động thì quay về chỗ sinh ra.
-	var active := float(data.get("active", 400))
-	var from_origin := here.distance_to(_origin_logic)
-	if active < from_origin:
-		_cur_active = active * 0.5
-	if _cur_active < from_origin:
-		_walk_to(_origin_logic)
-		return
-	_cur_active = active
+	## KeepActiveRange: lính thường ra khỏi vùng hoạt động thì quay về chỗ sinh ra.
+	## Lính lane MOBA & Boss Hoàng Kim không bị leash về chỗ sinh mà hành quân theo đường.
+	## Tướng Soái MOBA không bao giờ được ra khỏi doanh trại GENERAL_CAMP_RADIUS.
+	if is_moba_general:
+		var camp_dist := here.distance_to(_origin_logic)
+		if camp_dist > TongKimLolRules.GENERAL_CAMP_RADIUS:
+			target = null
+			_walk_to(_origin_logic)
+			return
+	elif not is_lane_creep and not gold_boss:
+		var base_active := float(data.get("active", 400))
+		# Khi đang dí mục tiêu: nới rộng bán kính hoạt động để quái truy đuổi người chơi
+		var active := maxf(base_active * 2.0, 1500.0) if (target != null and is_instance_valid(target)) else base_active
+		var from_origin := here.distance_to(_origin_logic)
+		if active < from_origin:
+			_cur_active = active * 0.5
+		if _cur_active < from_origin:
+			target = null
+			_walk_to(_origin_logic)
+			return
+		_cur_active = active
+	else:
+		_origin_logic = here
 	## Khoá kẻ địch trong tầm nhìn.
 	var enemy: Node2D = null
 	if target != null and is_instance_valid(target) and not GameManager.is_game_over:
-		if here.distance_to(VltkMath.logic_of(target)) <= float(data.get("vision", 400)):
-			enemy = target
+		if is_moba_general:
+			var t_from_camp := VltkMath.logic_of(target).distance_to(_origin_logic)
+			if t_from_camp <= TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0:
+				enemy = target
+			else:
+				target = null
+		else:
+			# Nâng phạm vi nhìn thấy player rộng hơn (tối thiểu 750 logic px bao quát toàn màn hình)
+			var base_vis := float(data.get("vision", 400))
+			var max_vis: float = 2500.0 if (gold_boss and not is_moba_general) else maxf(base_vis * 1.6, 750.0)
+			if here.distance_to(VltkMath.logic_of(target)) <= max_vis:
+				enemy = target
 	if enemy == null:
+		if is_lane_creep and not lane_waypoints.is_empty():
+			_march_lane(here)
+			return
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):
 			_patrol()
 		return
 	var dist := here.distance_to(VltkMath.logic_of(enemy))
 	if dist > _max_skill_radius():
-		var r := randi() % 100
-		if r < int(p[5]):
-			return                          # đứng chờ
-		if r < int(p[5]) + int(p[6]):
-			_patrol()                       # tuần tra
+		if is_moba_general:
+			var enemy_from_camp := VltkMath.logic_of(enemy).distance_to(_origin_logic)
+			if enemy_from_camp > TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0:
+				target = null
+				_walk_to(_origin_logic)
+				return
+			_walk_to(VltkMath.logic_of(enemy))
 			return
-		_walk_to(VltkMath.logic_of(enemy))  # tiến lại gần
+		# Đang ngoài tầm skill: quái PHẢI DÍ theo kẻ địch
+		_walk_to(VltkMath.logic_of(enemy))
 		return
 	## Trong tầm: chọn 1 trong 4 skill theo xác suất AIParam2-5.
 	var total_weight := 0
@@ -404,10 +661,29 @@ func _ai_think() -> void:
 	if slot < 0:
 		return
 	if int(data["skills"][slot][0]) <= 0 or _game_time < _skill_ready[slot]:
-		_patrol()
+		# Skill chưa sẵn sàng / đang hồi: tiếp tục bám theo dí kẻ địch
+		_walk_to(VltkMath.logic_of(enemy))
 		return
 	_active_slot = slot
 	_follow_attack(enemy)
+
+## Lính hành quân theo đường (lane march) cho đến khi gặp địch hoặc tới đích
+func _march_lane(here: Vector2) -> void:
+	while lane_waypoint_idx < lane_waypoints.size():
+		var wp_world: Vector2 = lane_waypoints[lane_waypoint_idx]
+		var wp_logic := VltkMath.to_logic(wp_world)
+		if here.distance_to(wp_logic) <= 120.0:
+			lane_waypoint_idx += 1
+			_nav_path.clear()
+		else:
+			_walk_to(wp_logic)
+			return
+	# Khi đã đi hết waypoint, tìm Tướng đối phương làm mục tiêu tối hậu
+	if battle_side != "":
+		var foe := "jin" if battle_side == "song" else "song"
+		var final_foe := _find_nearest_foe(foe)
+		if final_foe != null:
+			target = final_foe
 
 ## CommonAction: 80% về/đứng ở chỗ sinh ra, 20% đi tới điểm ngẫu nhiên trong nửa vùng hoạt động.
 func _patrol() -> void:
@@ -443,7 +719,6 @@ func _begin_attack(slot: int) -> void:
 	_skill_ready[slot] = _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len)))
 	if not s.is_empty():
 		VltkSkillRunner.play_precast(self, s)
-		VltkSkillRunner.play_cast_sound(self, int(data["skills"][slot][0]))
 
 func _tick_attack() -> void:
 	if not _fired and _state_frames >= _state_len * ATTACK_FIRE_PERCENT:
@@ -469,7 +744,10 @@ func _fire_skill() -> void:
 		ctx.world = get_parent()
 		ctx.stats = null if visual_only else _make_hit_stats(skill_id, skill_level)
 		ctx.attacker_stats = combat_stats
-		ctx.target_group = &"player"
+		if battle_side != "":
+			ctx.target_group = &"moba_all"
+		else:
+			ctx.target_group = &"player"
 		VltkSkillCaster.cast(ctx, skill_id, skill_level, VltkMath.logic_of(target), target)
 		return
 	if visual_only:
@@ -477,28 +755,35 @@ func _fire_skill() -> void:
 	## Skill cận chiến (melee = 1) hoặc kiểu 1/2/3: đánh thẳng nếu người chơi còn trong tầm.
 	var radius := float(s.get("attack_radius", DEFAULT_ATTACK_RADIUS)) if not s.is_empty() else DEFAULT_ATTACK_RADIUS
 	if VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(target)) <= radius * 1.2:
-		## Đòn cận chiến = sát thương cơ bản theo cấp + sát thương cộng thêm của chính skill (thú/quái cơ bản có
-		## min/max cơ bản = 0, toàn bộ sát thương nằm ở skill) — giống _make_hit_stats.
-		var dmg := MonsterData.melee_damage(data, level, skill_id, skill_level)
-		var dmg_min := int(dmg.x * _boss_damage_mult() * _hell_mult())
-		var dmg_max := int(dmg.y * _boss_damage_mult() * _hell_mult())
-		if dmg_min < 0:  # chưa có dữ liệu gốc
-			dmg_min = int(_test_damage() * _hell_mult())
-			dmg_max = dmg_min
-		var mods := CombatFormulas.HitModifiers.new()
-		mods.attacker_node = self
-		mods.is_melee = true
+		## Đòn cận chiến: tính đúng công thức KNpc::AppendSkillEffect qua _make_hit_stats (bao gồm sát thương Min/Max,
+		## nguyên tố ngoại công/nội công, làm chậm, choáng, chí mạng và tương khắc ngũ hành).
+		var hit_stats := _make_hit_stats(skill_id, skill_level)
+		var dmg_min := int(hit_stats.damage_min)
+		var dmg_max := int(hit_stats.damage_max)
+		var mods := hit_stats.make_hit_mods(self, true)
+		mods.use_attack_rating = int(s.get("use_ar", 1)) != 0
+		mods.do_hurt_p = int(s.get("do_hurt", 100))
 		if target.has_method("take_damage_from"):
-			target.take_damage_from(combat_stats, dmg_min, dmg_max, CombatFormulas.DamageType.PHYSICS, _build.element, mods)
+			target.take_damage_from(combat_stats, dmg_min, dmg_max, hit_stats.main_damage_type, hit_stats.element, mods)
 
 ## Sát thương cơ bản [nhỏ nhất, lớn nhất] theo cấp (công thức gốc); quái chưa có dữ liệu -> chỉ số thử nghiệm.
 func _damage_range() -> Vector2:
+	# Quái / Lính trong MOBA Tống Kim LOL (Bộ binh & Cung binh):
+	# Sử dụng công thức dame hợp lý theo cấp để lính đánh nhau vừa phải (~150 dame), không bị one-shot lính hay người chơi
+	if is_lane_creep or monster_id == TongKimLolRules.CREEP_MELEE_TPL or monster_id == TongKimLolRules.CREEP_RANGED_TPL:
+		var creep_dmg := 35.0 + float(level) * 2.3
+		var add_phys_creep: int = combat_stats.add_physics_damage if combat_stats else 0
+		return Vector2(creep_dmg + add_phys_creep, creep_dmg + add_phys_creep)
+
 	var lo := MonsterData.stat_at_level(data, "min_damage", level)
 	var hi := MonsterData.stat_at_level(data, "max_damage", level)
-	if lo >= 0 and hi >= 0:
-		return Vector2(lo, maxf(lo, hi))
+	var add_phys: int = combat_stats.add_physics_damage if combat_stats else 0
+	if lo > 0 or hi > 0:
+		return Vector2(lo + add_phys, maxf(lo, hi) + add_phys)
 	var d := _test_damage()
-	return Vector2(d, d)
+	if is_moba_general:
+		d = maxf(d, 300.0)
+	return Vector2(d + add_phys, d + add_phys)
 
 func _hell_mult() -> int:
 	return maxi(1, hell_stars)
@@ -514,19 +799,19 @@ func _test_damage() -> float:
 	var k := (float(data.get("min_damage_param", 100)) + float(data.get("max_damage_param", 100))) / 200.0
 	return (8.0 + level * 3.0) * k
 
-## Đòn của skill quái THEO HỆ: thuộc tính theo cấp của chính skill (đọc từ lua gốc) quyết định loại sát thương —
-##   physicsenhance_p/physicsdamage_v = vật lý; colddamage_v = băng (+ làm chậm); firedamage_v = hỏa;
-##   lightingdamage_v = lôi; poisondamage_v = độc (rút máu dần); stun_p = choáng; deadlystrike_p = chí mạng;
-##   seriesdamage_p = ngũ hành tương khắc. Hệ của đòn = Series của skill (không có thì Series của quái).
-## Cấp skill hiệu dụng = cấp skill gốc + cấp quái / 5 (giá trị gốc ở cấp 1 rất nhỏ, quái cấp cao cần mạnh hơn).
+## Đòn của skill quái THEO HỆ: chuẩn công thức KNpc::AppendSkillEffect gốc VLTK 1:
+## - Lực tay gốc = [MinDamage + PhysicalDamageBase, MaxDamage + PhysicalDamageBase]
+## - Ngoại công (physical = 1): Lực tay * (100 + physicsenhance_p) / 100 + physicsdamage_v
+## - Nội công (physical = 0): physicsdamage_v + PhysicalMagicBase
+## - Thuộc tính nguyên tố (colddamage_v, firedamage_v, lightingdamage_v, poisondamage_v) + *DamageBase / *MagicBase
+## - Hiệu ứng trúng đòn: stun_p (choáng), deadlystrike_p (chí mạng), seriesdamage_p (ngũ hành)
 func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
 	## Có script cấp: cấp chiêu đúng như script trả (Level1-4); không có: cấp gốc + cấp quái / 5 (số gốc cấp 1 quá nhỏ).
 	var lv := skill_level if data.get("skill_levels_exact", false) else clampi(skill_level + level / 5, 1, 30)
-	var base := _base_damage()
 	var skill := VltkSkillData.skill(skill_id, skill_level)
 	var series := int(skill.get("series", -1))
-	stats.element = (series if series >= 0 and series <= 4 else int(_build.element)) as ElementTypes.ElementType
+	stats.element = (series if series >= 0 and series <= 4 else (int(_build.element) if _build else 0)) as ElementTypes.ElementType
 	stats.main_damage_type = CombatFormulas.DamageType.PHYSICS
 
 	var elements := {}
@@ -557,27 +842,76 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	if not series_p.is_empty():
 		stats.five_elements_damage_p = int(series_p[0])
 
+	var is_physical := int(skill.get("physical", 1)) == 1
+	var r := _damage_range()
+	var lo := r.x
+	var hi := r.y
+
 	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
 	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
-	if not enhance.is_empty():
-		stats.damage = base * (100.0 + float(enhance[0])) / 100.0
-	elif not flat.is_empty():
-		stats.damage = (float(flat[0]) + float(flat[2] if flat.size() > 2 else flat[0])) * 0.5 + base * 0.5
-	elif elements.is_empty():
-		stats.damage = base       # skill không khai báo gì: đòn vật lý thường
+	var has_physics := false
+
+	if is_physical:
+		if not enhance.is_empty():
+			lo = lo * (100.0 + float(enhance[0])) / 100.0
+			hi = hi * (100.0 + float(enhance[0])) / 100.0
+			has_physics = true
+		if not flat.is_empty():
+			var f_min := float(flat[0])
+			var f_max := float(flat[2] if flat.size() > 2 else flat[0])
+			lo += f_min
+			hi += f_max
+			has_physics = true
+		if not has_physics:
+			if elements.is_empty():
+				has_physics = true  # đòn vật lý thường không khai báo thuộc tính
+			else:
+				lo = 0.0
+				hi = 0.0
 	else:
-		stats.damage = 0.0        # chỉ có sát thương nguyên tố
-	## Sát thương cơ bản của script cấp: chiêu ngoại công cộng *DamageBase, nội công cộng *MagicBase (như người chơi).
-	var physical := int(skill.get("physical", 1)) == 1
-	var extra: Dictionary = combat_stats.outer_element_damage if physical else combat_stats.inner_element_damage
+		# Chiêu nội công (không dùng lực tay nhân physicsenhance_p)
+		if not flat.is_empty():
+			lo = float(flat[0])
+			hi = float(flat[2] if flat.size() > 2 else flat[0])
+			var add_magic: float = float(combat_stats.add_physics_magic) if combat_stats else 0.0
+			lo += add_magic
+			hi += add_magic
+			has_physics = true
+		else:
+			# Chiêu nội công không có physicsdamage_v:
+			# Với quái / NPC, lực tay cơ bản r.x / r.y luôn được sử dụng làm sát thương nền,
+			# đảm bảo quái đánh xa (như Cung Binh dùng skill 165) và Tướng Soái có sát thương vật lý đầy đủ ngang bộ binh
+			lo = r.x
+			hi = r.y
+			has_physics = true
+
+	## Sát thương cơ bản của script cấp: chiêu ngoại công cộng *DamageBase, nội công cộng *MagicBase (đúng KNpc::AppendSkillEffect).
+	var extra: Dictionary = (combat_stats.outer_element_damage if is_physical else combat_stats.inner_element_damage) if combat_stats != null else {}
 	for t in extra:
 		elements[t] = elements.get(t, Vector2i.ZERO) + extra[t]
-	if stats.damage > 0.0 or elements.is_empty():
-		stats.damage += float(combat_stats.add_physics_damage if physical else combat_stats.add_physics_magic)
-	if hell_stars > 1:
-		stats.damage *= hell_stars
+
+	var boss_mult := _boss_damage_mult()
+	if is_moba_general:
+		boss_mult = maxf(boss_mult, 8.0)
+	var hell_mult := float(_hell_mult())
+	var total_mult := boss_mult * hell_mult * moba_damage_multiplier
+
+	if has_physics and (lo > 0.0 or hi > 0.0):
+		lo *= total_mult
+		hi *= total_mult
+		stats.damage_min = lo
+		stats.damage_max = hi
+		stats.damage = (lo + hi) * 0.5
+	else:
+		stats.damage_min = 0.0
+		stats.damage_max = 0.0
+		stats.damage = 0.0
+
+	if total_mult != 1.0:
 		for t in elements:
-			elements[t] = (elements[t] as Vector2i) * hell_stars
+			var elem_range: Vector2i = elements[t]
+			elements[t] = Vector2i(int(elem_range.x * total_mult), int(elem_range.y * total_mult))
+
 	stats.extra_damage_ranges = elements
 	return stats
 
@@ -596,6 +930,15 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		mods: CombatFormulas.HitModifiers = null) -> void:
 	if _state == State.DEAD:
 		return
+	if battle_side != "":
+		# Chặn quái/tướng cùng phe đánh nhau
+		if mods != null and mods.attacker_node != null and "battle_side" in mods.attacker_node:
+			if str(mods.attacker_node.battle_side) == battle_side:
+				return
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if player != null and "combat_stats" in player and attacker_stats == player.combat_stats:
+			if TongKimLolState.current != null and TongKimLolState.current.team_side == battle_side:
+				return
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED:
@@ -631,7 +974,7 @@ func heal(amount: float) -> void:
 func _apply_damage(amount: float, staggers: bool) -> void:
 	health -= amount
 	_health_bar.set_health(health)
-	_spawn_number(amount, false)
+	_accumulate_damage(amount)
 	if health <= 0.0:
 		die()
 		return
@@ -646,6 +989,7 @@ func _apply_damage(amount: float, staggers: bool) -> void:
 func die() -> void:
 	if _state == State.DEAD:
 		return
+	_flush_damage_number()
 	remove_from_group("enemies")  ## xác không còn là mục tiêu của skill
 	set_deferred("collision_layer", 0)
 	_health_bar.visible = false
@@ -653,10 +997,26 @@ func die() -> void:
 	z_index = -1
 	_enter(State.DEAD, "die")
 	_death_time = 0.0
+	if net_eid == 0 and PlayerStats.explosion_on_kill_chance > 0.0 and randf() < PlayerStats.explosion_on_kill_chance:
+		_trigger_kill_explosion()
 	if net_eid != 0:
 		return   ## online: thưởng do server báo (S_KILL -> grant_rewards)
 	grant_rewards()
 	died.emit(self)
+
+func _trigger_kill_explosion() -> void:
+	var pos := global_position
+	VfxManager.play("hit_explosion", pos)
+	var tree := get_tree()
+	if tree == null:
+		return
+	var enemies := tree.get_nodes_in_group("enemies")
+	var base_dmg := 60.0 * PlayerStats.damage_multiplier
+	for e in enemies:
+		if e != null and is_instance_valid(e) and e != self and e is Node2D:
+			if pos.distance_to(e.global_position) <= PlayerStats.explosion_radius:
+				if e.has_method("take_damage"):
+					e.take_damage(base_dmg * PlayerStats.explosion_damage_ratio)
 
 ## Rớt đồ theo bảng script server gốc (DropTable) + kinh nghiệm (KillRewards, chia theo tổ đội).
 ## Online: chỉ gọi khi server báo mình được thưởng; `with_drops` = mình là người hạ đòn cuối.
@@ -710,7 +1070,7 @@ func net_attack(slot: int, target_node: Node2D, dir64: int, real: bool) -> void:
 	_begin_attack(slot)
 
 func _net_damage(amount: float, staggers: bool) -> void:
-	_spawn_number(amount, false)
+	_accumulate_damage(amount)
 	_last_predicted_dmg_ms = Time.get_ticks_msec()
 	## Trừ trước trên thanh máu theo cơ chế Client Prediction (VLTK gốc): không có delay
 	health = maxf(0.0, health - amount)
@@ -776,6 +1136,19 @@ func _tick_dead(delta: float, frames: float) -> void:
 		modulate.a = clampf(1.0 - (_death_time - CORPSE_STAY) / CORPSE_FADE, 0.0, 1.0)
 	if _death_time >= CORPSE_STAY + CORPSE_FADE:
 		queue_free()
+
+func _accumulate_damage(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if _accumulated_damage <= 0.0:
+		_damage_batch_timer = DAMAGE_BATCH_INTERVAL
+	_accumulated_damage += amount
+
+func _flush_damage_number() -> void:
+	if _accumulated_damage > 0.0:
+		_spawn_number(_accumulated_damage, false)
+		_accumulated_damage = 0.0
+		_damage_batch_timer = 0.0
 
 func _spawn_number(amount: float, miss: bool) -> void:
 	var at := global_position + Vector2(0, -_sprite.get_height() * 0.6)

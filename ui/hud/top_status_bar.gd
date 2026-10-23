@@ -74,8 +74,8 @@ func _ready() -> void:
 
 	_disguise_tag = PanelContainer.new()
 	_disguise_tag.name = "DisguiseTag"
-	_disguise_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_disguise_tag.position = Vector2(size_px.x + 8.0, 4.0)
+	_disguise_tag.mouse_filter = Control.MOUSE_FILTER_PASS
+	_disguise_tag.position = Vector2(size_px.x + 4.0, 2.0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.08, 0.06, 0.05, 0.92)
 	sb.border_width_left = 1
@@ -87,18 +87,19 @@ func _ready() -> void:
 	sb.corner_radius_top_right = 4
 	sb.corner_radius_bottom_right = 4
 	sb.corner_radius_bottom_left = 4
-	sb.content_margin_left = 6
-	sb.content_margin_right = 6
-	sb.content_margin_top = 2
-	sb.content_margin_bottom = 2
+	sb.content_margin_left = 4
+	sb.content_margin_right = 4
+	sb.content_margin_top = 1
+	sb.content_margin_bottom = 1
 	_disguise_tag.add_theme_stylebox_override("panel", sb)
 
 	_disguise_tag_label = Label.new()
 	_disguise_tag_label.add_theme_font_override("font", _bold_font())
-	_disguise_tag_label.add_theme_font_size_override("font_size", 11)
+	_disguise_tag_label.add_theme_font_size_override("font_size", 12)
 	_disguise_tag_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.4))
 	_disguise_tag_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_disguise_tag_label.add_theme_constant_override("outline_size", 3)
+	_disguise_tag_label.text = "🎭"
 	_disguise_tag.add_child(_disguise_tag_label)
 	_disguise_tag.visible = false
 	add_child(_disguise_tag)
@@ -126,7 +127,7 @@ func _make_bar(key: String) -> Dictionary:
 	add_child(back)
 	var bar := BarCell.new()
 	bar.texture = load(TEX_DIR + key + ".png")
-	bar.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	bar.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	bar.position = back.position
 	bar.size = back.size
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -170,8 +171,8 @@ func _refresh() -> void:
 		if mask_item:
 			_disguise_tag.visible = true
 			var d_title: String = mask_item.get_display_name()
-			if _disguise_tag_label.text != "🎭 " + d_title:
-				_disguise_tag_label.text = "🎭 " + d_title
+			_disguise_tag_label.text = "🎭"
+			_disguise_tag.tooltip_text = "Mặt Nạ: %s\n(Đang dịch dung ngoại hình)" % d_title
 		else:
 			_disguise_tag.visible = false
 

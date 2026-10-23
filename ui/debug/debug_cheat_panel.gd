@@ -18,7 +18,10 @@ signal profile_changed
 @onready var _reset_confirm: ConfirmationDialog = %ResetConfirm
 
 func _ready() -> void:
-	visible = OS.is_debug_build() or AccountApi.is_gm()
+	if not AccountApi.is_gm():
+		queue_free()
+		return
+	visible = true
 	_cheat_box.visible = false
 	_toggle_button.toggled.connect(func(on: bool) -> void:
 		_cheat_box.visible = on

@@ -13,6 +13,27 @@ const MAX_PASSWORD_LENGTH := 16
 const MIN_PASSWORD_LENGTH := 1
 const ITEM_UNLOCK_SECONDS := 259200
 
+## Chống vét cạn (brute-force) mật mã khoá bảo vệ: tạm khoá nếu nhập sai quá 5 lần
+static var _failed_attempts: int = 0
+static var _lockout_until: float = 0.0
+const MAX_FAILED_ATTEMPTS: int = 5
+const LOCKOUT_DURATION_SEC: float = 600.0  ## Khoá 10 phút
+
+static func is_locked_out() -> bool:
+	return (Time.get_ticks_msec() / 1000.0) < _lockout_until
+
+static func remaining_lockout_seconds() -> int:
+	return maxi(0, int(_lockout_until - (Time.get_ticks_msec() / 1000.0)))
+
+static func reset_lockout_for_test() -> void:
+	_failed_attempts = 0
+	_lockout_until = 0.0
+
+static func _record_failure() -> void:
+	_failed_attempts += 1
+	if _failed_attempts >= MAX_FAILED_ATTEMPTS:
+		_lockout_until = (Time.get_ticks_msec() / 1000.0) + LOCKOUT_DURATION_SEC
+
 ## Lệnh bị chặn khi đang khoá bảo vệ.
 const A_OPEN_STALL := &"open_stall"
 const A_TRADE_START := &"trade_start"
@@ -28,12 +49,22 @@ const BLOCKED_WHEN_LOCKED := [A_OPEN_STALL, A_TRADE_START, A_STALL_BUY, A_NPC_BU
 const MSG_LOCKED := "Chức năng này đang bị khoá bảo vệ, hãy mở khoá bằng mật khẩu trước!"
 const MSG_STORAGE_LOCKED := "Rương đang bị khoá bảo vệ, hãy nhập mật khẩu để mở khoá rương!"
 
+const _SALT_PREFIX_OBF: PackedByteArray = [44, 13, 28, 4, 91, 17, 235, 232, 249, 229]
+
 static func _hash(password: String) -> String:
-	return ("vltk-lock|" + password).sha256_text()
+	return (Obfuscator.deobfuscate(_SALT_PREFIX_OBF) + password).sha256_text()
 
 ## Mật mã nhập vào có đúng không (không đổi trạng thái khoá).
 static func unlock_check(p: PlayerProfile, password: String) -> bool:
-	return has_password(p) and _hash(password) == p.security_hash
+	if is_locked_out():
+		return false
+	var ok := has_password(p) and _hash(password) == p.security_hash
+	if ok:
+		_failed_attempts = 0
+		_lockout_until = 0.0
+	else:
+		_record_failure()
+	return ok
 
 static func has_password(p: PlayerProfile) -> bool:
 	return p.security_hash != ""
@@ -54,8 +85,15 @@ static func validate_password(password: String) -> String:
 
 ## Đặt mật khẩu mới (nếu đã có mật khẩu phải nhập đúng mật khẩu cũ). Trả về "" nếu thành công, hoặc lời báo lỗi.
 static func set_password(p: PlayerProfile, new_password: String, old_password := "") -> String:
-	if has_password(p) and _hash(old_password) != p.security_hash:
-		return "Mật khẩu cũ không chính xác!"
+	if has_password(p):
+		if is_locked_out():
+			var rem := remaining_lockout_seconds()
+			return "Đang bị tạm khoá chức năng mật khẩu (%d phút %02d giây)." % [rem / 60, rem % 60]
+		if _hash(old_password) != p.security_hash:
+			_record_failure()
+			return "Mật khẩu cũ không chính xác!"
+	_failed_attempts = 0
+	_lockout_until = 0.0
 	var err := validate_password(new_password)
 	if err != "":
 		return err
@@ -74,8 +112,14 @@ static func _tell_server(op: int, hash1 := "", hash2 := "") -> void:
 static func clear_password(p: PlayerProfile, password: String) -> String:
 	if not has_password(p):
 		return "Bạn chưa đặt mật khẩu bảo vệ."
+	if is_locked_out():
+		var rem := remaining_lockout_seconds()
+		return "Đang bị tạm khoá chức năng mật khẩu (%d phút %02d giây)." % [rem / 60, rem % 60]
 	if _hash(password) != p.security_hash:
+		_record_failure()
 		return "Mật mã kiểm chứng không chính xác!"
+	_failed_attempts = 0
+	_lockout_until = 0.0
 	p.security_hash = ""
 	p.security_locked = false
 	_tell_server(SocialServer.SEC_CLEAR, _hash(password))
@@ -93,8 +137,16 @@ static func lock(p: PlayerProfile) -> String:
 static func unlock(p: PlayerProfile, password: String) -> String:
 	if not has_password(p):
 		return ""
+	if is_locked_out():
+		var rem := remaining_lockout_seconds()
+		return "Bạn đã nhập sai quá %d lần! Vui lòng thử lại sau %d phút %02d giây." % [MAX_FAILED_ATTEMPTS, rem / 60, rem % 60]
 	if _hash(password) != p.security_hash:
-		return "Giải mã khoá bảo vệ thất bại: mật mã kiểm chứng không chính xác!"
+		_record_failure()
+		if is_locked_out():
+			return "Nhập sai quá %d lần! Chức năng nhập mật mã đã bị tạm khoá 10 phút." % MAX_FAILED_ATTEMPTS
+		return "Giải mã khoá bảo vệ thất bại: mật mã kiểm chứng không chính xác! (Còn %d lần thử)" % (MAX_FAILED_ATTEMPTS - _failed_attempts)
+	_failed_attempts = 0
+	_lockout_until = 0.0
 	p.security_locked = false
 	_tell_server(SocialServer.SEC_UNLOCK, _hash(password))
 	return ""

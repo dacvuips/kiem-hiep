@@ -119,6 +119,7 @@ var _enet := ENetMultiplayerPeer.new()
 var _ws := WebSocketMultiplayerPeer.new()
 var _conns: Dictionary = {}            ## key -> Conn
 var _by_character: Dictionary = {}     ## character_id -> Conn (1 nhân vật chỉ online 1 nơi)
+var _by_account: Dictionary = {}       ## account_id -> Conn (1 tài khoản chỉ online 1 nơi trên server)
 var _saving_chars: Dictionary = {}     ## character_id -> số lần lưu đang chạy (vào lại ngay sau khi thoát phải chờ)
 var _entities: Dictionary = {}         ## eid -> ServerEntity
 var _monsters: Array[ServerMonster] = []
@@ -471,6 +472,8 @@ func _drop(c: Conn) -> void:
 		c.save_queued = c.dirty
 	if c.character_id != 0 and _by_character.get(c.character_id) == c:
 		_by_character.erase(c.character_id)
+	if c.account_id != 0 and _by_account.get(c.account_id) == c:
+		_by_account.erase(c.account_id)
 	if c.entity:
 		aoi.remove(c.entity)
 		_entities.erase(c.entity.eid)
@@ -669,6 +672,14 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		return
 	var acc: Dictionary = r.account
 	var ch: Dictionary = r.character
+	var acc_id := int(acc.id)
+
+	## Tài khoản đang online ở phiên khác -> đá phiên cũ ngay lập tức
+	var old_acc: Conn = _by_account.get(acc_id)
+	if old_acc and old_acc != c:
+		old_acc.character_id = 0
+		_kick(old_acc, "logged_in_elsewhere", "Tài khoản vừa đăng nhập ở thiết bị khác")
+
 	## Nhân vật đang online ở nơi khác -> đá phiên cũ.
 	var old: Conn = _by_character.get(character_id)
 	var take_over: Conn = null
@@ -679,7 +690,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		_kick(old, "logged_in_elsewhere", "Nhân vật vừa đăng nhập ở nơi khác")
 	elif old and old != c:
 		_kick(old, "logged_in_elsewhere", "Nhân vật vừa đăng nhập ở nơi khác")
-	c.account_id = int(acc.id)
+	c.account_id = acc_id
+	_by_account[acc_id] = c
 	c.muted_until = _unix_of(acc.get("muted_until"))
 	c.username = str(acc.username)
 	c.is_gm = bool(acc.get("is_gm", false))
@@ -690,11 +702,6 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 			if trimmed != "" and trimmed.to_lower() == c.username.to_lower():
 				c.is_gm = true
 				break
-	if not c.is_gm:
-		var ch_name: String = str(ch.get("name", "")).to_lower()
-		var u_name: String = c.username.to_lower()
-		if "(gm)" in ch_name or "[gm]" in ch_name or "(gm)" in u_name or "[gm]" in u_name:
-			c.is_gm = true
 	c.character_id = character_id
 	_by_character[character_id] = c
 	var data: Dictionary = ch.get("data", {}) if ch.get("data") is Dictionary else {}
@@ -791,7 +798,18 @@ static func look_from_profile(data: Dictionary) -> Dictionary:
 	var profile := PlayerProfile.from_dict(data)
 	var gender_key := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
 	var look := Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
-	look["gender"] = 1 if gender_key == "female" else 0
+	var final_gender: String = str(look.get("gender", gender_key))
+	look["gender"] = 1 if final_gender == "female" else 0
+	look["mask_particular"] = int(look.get("mask_particular", -1))
+	var state_id := 0
+	if profile.active_aura_id != "":
+		var sect := SectRegistry.get_by_id(profile.sect_id)
+		if sect:
+			for skill in sect.skills:
+				if skill.id == profile.active_aura_id:
+					state_id = skill.vltk_state_special_id
+					break
+	look["aura_state"] = state_id
 	return look
 
 func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
@@ -1410,6 +1428,13 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	var look := {"gender": e.look.get("gender", 0)}
 	for k in ["helm", "armor", "weapon", "horse"]:
 		look[k] = clampi(b.get_16(), -1, 4096)
+	if b.get_available_bytes() >= 5:
+		look["gender"] = b.get_u8()
+		look["mask_particular"] = b.get_16()
+		look["aura_state"] = b.get_16()
+	else:
+		look["mask_particular"] = int(e.look.get("mask_particular", -1))
+		look["aura_state"] = int(e.look.get("aura_state", 0))
 	if look != e.look:
 		e.look = look
 		e.touch()

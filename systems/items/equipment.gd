@@ -238,37 +238,52 @@ static func can_use(item: ItemInstance, profile: PlayerProfile, ctx: Dictionary 
 ## không thì theo loại/cấp của chính nó. Online chỉ cần gửi 4 số này.
 ## Hỗ trợ MẶT NẠ (Part.MASK): Dịch dung biến đổi giới tính, phong thái (Liễu Thanh Thanh -> mỹ nhân áo lụa tím,
 ## Đạo Thanh Chân Nhân -> đạo sĩ lam bào, Chiến Thần -> thiết khôi xích giáp, Hoàng Kim -> ánh hào quang kim sắc).
+## Lấy thông tin dịch dung / ngoại hình từ mã particular của Mặt Nạ.
+static func get_mask_appearance_info(mask_particular: int, default_gender: String = "male") -> Dictionary:
+	var info := {
+		"is_masked": mask_particular >= 0,
+		"disguise_title": "",
+		"gender": default_gender,
+		"modulate": Color.WHITE,
+	}
+	if mask_particular < 0:
+		return info
+	match mask_particular:
+		1: # Mặt Nạ - Liễu Thanh Thanh
+			info["gender"] = "female"
+			info["disguise_title"] = "Liễu Thanh Thanh"
+			info["modulate"] = Color(1.08, 0.88, 1.08, 1.0)
+		2: # Mặt Nạ - Đạo Thanh Chân Nhân
+			info["gender"] = "male"
+			info["disguise_title"] = "Đạo Thanh Chân Nhân"
+			info["modulate"] = Color(0.92, 0.98, 1.15, 1.0)
+		3: # Mặt Nạ Chiến Thần
+			info["gender"] = default_gender
+			info["disguise_title"] = "Chiến Thần"
+			info["modulate"] = Color(1.25, 0.82, 0.78, 1.0)
+		4: # Mặt Nạ Hoàng Kim
+			info["gender"] = default_gender
+			info["disguise_title"] = "Hoàng Kim Chí Tôn"
+			info["modulate"] = Color(1.35, 1.25, 0.72, 1.0)
+		0, _:
+			info["gender"] = default_gender
+			info["disguise_title"] = "Vô Danh Hiệp Khách"
+			info["modulate"] = Color(0.88, 0.90, 0.98, 1.0)
+	return info
+
 static func get_appearance(equipped: Dictionary, gender: String = "male", riding: bool = true) -> Dictionary:
 	var mask_item: ItemInstance = equipped.get(Part.MASK)
 	var is_masked: bool = (mask_item != null)
-	var disguise_title := ""
-	var mask_gender := gender
-	var mask_modulate := Color.WHITE
 	var mask_particular := -1
-
 	if is_masked:
 		var m_base := mask_item.get_base()
 		mask_particular = int(m_base.get("particular", 0))
-		match mask_particular:
-			1: # Mặt Nạ - Liễu Thanh Thanh
-				mask_gender = "female"
-				disguise_title = "Liễu Thanh Thanh"
-				mask_modulate = Color(1.08, 0.88, 1.08, 1.0)
-			2: # Mặt Nạ - Đạo Thanh Chân Nhân
-				mask_gender = "male"
-				disguise_title = "Đạo Thanh Chân Nhân"
-				mask_modulate = Color(0.92, 0.98, 1.15, 1.0)
-			3: # Mặt Nạ Chiến Thần
-				disguise_title = "Chiến Thần"
-				mask_modulate = Color(1.25, 0.82, 0.78, 1.0)
-			4: # Mặt Nạ Hoàng Kim
-				disguise_title = "Hoàng Kim Chí Tôn"
-				mask_modulate = Color(1.35, 1.25, 0.72, 1.0)
-			0, _:
-				disguise_title = "Vô Danh Hiệp Khách"
-				mask_modulate = Color(0.88, 0.90, 0.98, 1.0)
 
-	var target_gender := mask_gender if is_masked else gender
+	var mask_info := get_mask_appearance_info(mask_particular, gender)
+	var disguise_title: String = mask_info["disguise_title"]
+	var target_gender: String = mask_info["gender"]
+	var mask_modulate: Color = mask_info["modulate"]
+
 	var data := AvatarData.get_for(target_gender)
 	var result := {
 		"helm": data.default_res("helm"),

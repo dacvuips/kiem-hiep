@@ -129,7 +129,10 @@ func _open_buy(mid: String) -> void:
 	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cancel.pressed.connect(func() -> void: win.close_requested.emit())
 	buttons.add_child(cancel)
-	SocialWindow.present(get_tree().current_scene, win, &"potion_buy")
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	var host := tree.current_scene if tree != null else null
+	if host != null:
+		SocialWindow.present(host, win, &"potion_buy")
 
 func _buy(mid: String, n: int) -> void:
 	var p := GameManager.local_profile

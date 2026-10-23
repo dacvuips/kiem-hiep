@@ -1,5 +1,8 @@
 extends Node
 
+const StageRewards = preload("res://systems/stage_rewards.gd")
+const StageVictoryPopup = preload("res://ui/hud/stage_victory_popup.gd")
+
 ## Danh sách quái dùng khi không có StageData (fallback cho test nhanh trong Editor).
 ## Khi có GameManager.current_stage, spawner luôn ưu tiên đọc enemy_tiers từ đó.
 @export var fallback_enemy_tiers: Array[EnemySpawnEntry] = []
@@ -26,23 +29,37 @@ var current_interval: float
 var time_since_last_spawn: float = 0.0
 var elapsed_time: float = 0.0
 var boss_spawned: bool = false
+var stage_cleared: bool = false
 
 func _ready() -> void:
 	current_interval = initial_spawn_interval
+	if not GameManager.stage_started.is_connected(_on_stage_started):
+		GameManager.stage_started.connect(_on_stage_started)
+
+func _on_stage_started(_stage: StageData) -> void:
+	elapsed_time = 0.0
+	boss_spawned = false
+	stage_cleared = false
+	time_since_last_spawn = 0.0
+	set_process(true)
 
 func _process(delta: float) -> void:
-	## Player đã chết — dừng sinh quái mới ngay, không có ý nghĩa tiếp tục tăng độ khó/spawn
-	## thêm quái khi không còn ai để chúng tấn công.
-	if GameManager.is_game_over:
+	## Player đã chết hoặc màn đã vượt ải thành công — dừng sinh quái mới ngay
+	if GameManager.is_game_over or stage_cleared:
 		return
 
 	elapsed_time += delta
 	time_since_last_spawn += delta
 
 	var stage: StageData = GameManager.current_stage
-	if stage and not boss_spawned and elapsed_time >= stage.stage_duration and stage.boss_tier:
+	var boss_time := stage.get_boss_spawn_time() if stage != null else 120.0
+	if stage and not boss_spawned and elapsed_time >= boss_time and stage.boss_tier:
 		boss_spawned = true
 		spawn_boss(stage.boss_tier)
+		return
+
+	## Khi Boss đã xuất hiện (chặng 3/3 thời gian), dừng sinh thêm quái thường để tập trung quyết chiến Thủ Quan
+	if boss_spawned:
 		return
 
 	## SPAWN_RATE_MULTIPLIER < 1 = quái xuất hiện ÍT hơn theo thời gian (khoảng cách giữa 2 đợt giãn ra 1 / hệ số).
@@ -62,14 +79,82 @@ func spawn_boss(boss_entry: EnemySpawnEntry) -> void:
 	boss.global_position = get_random_spawn_position()
 	boss.setup(boss_entry)
 	GameManager.notify_boss_spawned()
+	if boss.has_signal("died"):
+		boss.died.connect(_on_boss_died.bind(boss))
+
+	var tree := get_tree()
+	if tree != null:
+		var p := tree.get_first_node_in_group("player")
+		if p and p.has_method("notify"):
+			p.notify("Thủ Quan [%s] đã xuất hiện! Hãy tiêu diệt để Vượt Ải!" % boss_entry.tier.tier_name)
+
+func _on_boss_died(_boss: Node = null) -> void:
+	if not is_inside_tree():
+		return
+	var tree := get_tree()
+	if tree == null:
+		return
+	if not GameManager.current_stage or GameManager.is_game_over:
+		return
+
+	# 1. Đánh dấu vượt ải thành công và LẬP TỨC DỪNG PHÁT SINH QUÁI
+	stage_cleared = true
+	set_process(false)
+	var parent_node := get_parent()
+	if parent_node != null:
+		var pickup_spawner := parent_node.get_node_or_null("PickupSpawner")
+		if pickup_spawner and pickup_spawner.has_method("set_process"):
+			pickup_spawner.set_process(false)
+
+	# 2. Quét sạch tất cả quái thường còn lại trên map để bảo đảm an toàn cho người chơi
+	var enemies := tree.get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if is_instance_valid(enemy) and enemy != _boss:
+			enemy.queue_free()
+	var monsters := tree.get_nodes_in_group("monster")
+	for monster in monsters:
+		if is_instance_valid(monster) and monster != _boss:
+			monster.queue_free()
+
+	# 3. Ghi nhận mở khoá màn tiếp theo
+	var profile := GameManager.local_profile
+	if profile == null:
+		profile = SaveManager.load_profile()
+		GameManager.local_profile = profile
+
+	var cur_stage: StageData = GameManager.current_stage
+	var idx: int = -1
+	if GameManager != null and GameManager.has_method("get_stage_index"):
+		idx = GameManager.get_stage_index(cur_stage)
+	if idx < 0 and cur_stage != null:
+		idx = StageRewards.get_stage_tier(cur_stage) - 1
+
+	if profile != null and idx >= 0:
+		if profile.stages_cleared <= idx:
+			profile.stages_cleared = idx + 1
+			SaveManager.save_profile(profile)
+			SaveManager.flush_online()
+
+	# 4. Trao phần thưởng ngẫu nhiên theo từng màn (cấp càng cao thưởng càng xịn)
+	var rewards: Dictionary = {}
+	if profile != null:
+		rewards = StageRewards.roll_stage_rewards(cur_stage, profile, idx)
+	GameManager.notify_stage_completed()
+	var p := tree.get_first_node_in_group("player")
+	if p and p.has_method("notify"):
+		p.notify("Chúc mừng đại hiệp đã đánh bại Thủ Quan và vượt ải thành công!")
+	if p and p.has_method("refresh_combat_stats"):
+		p.refresh_combat_stats()
+	# 5. Hiển thị popup nhận thưởng trực quan
+	if not rewards.is_empty():
+		StageVictoryPopup.show_reward(self, rewards)
 
 func spawn_enemy() -> void:
 	var entry := get_random_unlocked_entry()
 	if entry == null or entry.tier.enemy_scene == null:
 		return
 
-	var enemy := entry.tier.enemy_scene.instantiate()
-	_entity_parent().add_child(enemy)
+	var enemy := ObjectPool.acquire(entry.tier.enemy_scene, _entity_parent()) as Node2D
 	enemy.global_position = get_random_spawn_position()
 	enemy.setup(entry)
 
@@ -84,13 +169,21 @@ func get_current_enemy_entries() -> Array[EnemySpawnEntry]:
 	return fallback_enemy_tiers
 
 func get_current_weight(entry: EnemySpawnEntry) -> float:
+	if entry.lock_time > 0.0 and elapsed_time >= entry.lock_time:
+		return 0.0
 	var time_since_unlock := elapsed_time - entry.unlock_time
 	var weight := entry.spawn_weight + entry.weight_change_per_second * time_since_unlock
 	return max(0.0, weight)
 
 func get_random_unlocked_entry() -> EnemySpawnEntry:
 	var entries := get_current_enemy_entries()
-	var unlocked := entries.filter(func(e): return elapsed_time >= e.unlock_time)
+	var unlocked := entries.filter(func(e: EnemySpawnEntry) -> bool:
+		if elapsed_time < e.unlock_time:
+			return false
+		if e.lock_time > 0.0 and elapsed_time >= e.lock_time:
+			return false
+		return true
+	)
 	if unlocked.is_empty():
 		return null
 
