@@ -46,6 +46,7 @@ const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd"
 
 const TEX_EQUIP_BG_MALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nam.png")
 const TEX_EQUIP_BG_FEMALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nu.png")
+const ICON_CHECK := preload("res://ui/login/icon_check.png")
 
 @export var stages: Array[StageData] = [
 	preload("res://stages/stage_01/stage_01.tres"),
@@ -85,6 +86,9 @@ var _portrait_timer: Timer
 var _disguise_banner: PanelContainer
 var _disguise_label: Label
 var _disguise_icon: TextureRect
+var _hub_custom_avatar_view: TextureRect
+var _hub_avatar_upload_box: PanelContainer
+var _hub_avatar_delete_btn: Button
 
 func _ready() -> void:
 	PlayerStats.reset()
@@ -113,11 +117,48 @@ func _ready() -> void:
 	%PlayButton.pressed.connect(func() -> void: PkWindow.open(self, _profile, _enter_field_map))
 	%ChallengeButton.pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
 
+	# Nút Kỳ Trân Các trên TopBar (thay thế ô thể lực cuối)
+	if has_node("%KyTranCacTopButton"):
+		%KyTranCacTopButton.pressed.connect(func() -> void:
+			KyTranCacWindow.open(self, func() -> void:
+				refresh()
+				_refresh_inventory_view()
+				_refresh_equipment_display()
+			, _profile)
+		)
 
-	# Sự kiện nạp / mua thêm
-	%GoldPlusButton.pressed.connect(_show_toast.bind("Nạp Vàng: đang phát triển"))
-	%JadePlusButton.pressed.connect(_show_toast.bind("Nạp Ngọc: đang phát triển"))
-	%StaminaPlusButton.pressed.connect(_show_toast.bind("Hồi Thể Lực: đang phát triển"))
+	# Sự kiện nạp / mua thêm (Mở Tiền Trang & Kỳ Trân Các)
+	%GoldPlusButton.pressed.connect(func() -> void:
+		TienTrangWindow.open(self, func() -> void:
+			refresh()
+			_refresh_inventory_view()
+		, _profile)
+	)
+	if has_node("%XuPlusButton"):
+		%XuPlusButton.pressed.connect(func() -> void:
+			KyTranCacWindow.open(self, func() -> void:
+				refresh()
+				_refresh_inventory_view()
+			, _profile)
+		)
+	if has_node("%FrameCurrencyXu"):
+		%FrameCurrencyXu.mouse_filter = Control.MOUSE_FILTER_STOP
+		%FrameCurrencyXu.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		%FrameCurrencyXu.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				KyTranCacWindow.open(self, func() -> void:
+					refresh()
+					_refresh_inventory_view()
+				, _profile)
+		)
+	%JadePlusButton.pressed.connect(func() -> void:
+		TienTrangWindow.open(self, func() -> void:
+			refresh()
+			_refresh_inventory_view()
+		, _profile)
+	)
+	if has_node("%StaminaPlusButton"):
+		%StaminaPlusButton.pressed.connect(_show_toast.bind("Hồi Thể Lực: đang phát triển"))
 
 	# Nút cộng điểm tiềm năng
 	%BaseStatButton0.pressed.connect(_add_stat.bind(0)) # Sức mạnh
@@ -163,6 +204,7 @@ func _ready() -> void:
 	_update_responsive_layout.call_deferred()
 
 	refresh()
+	_sync_world_rank.call_deferred()
 
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
@@ -452,7 +494,7 @@ func _create_mock_profile() -> void:
 	_profile.title = ""
 	_profile.fuyuan = 0
 	_profile.prestige = 0
-	_profile.level = 203
+	_profile.level = 200
 	_profile.world_rank = ""
 	_profile.gold = 998800
 	_profile.jade = 0
@@ -479,8 +521,11 @@ func refresh() -> void:
 
 	# Thanh tiền tệ top
 	%GoldValueLabel.text = _format_number(_profile.gold)
+	if has_node("%XuValueLabel"):
+		%XuValueLabel.text = _format_number(_profile.xu)
 	%JadeValueLabel.text = _format_number(_profile.jade if _profile.jade > 0 else 0)
-	%StaminaValueLabel.text = "%d/%d" % [_profile.stamina, _profile.max_stamina]
+	if has_node("%StaminaValueLabel"):
+		%StaminaValueLabel.text = "%d/%d" % [_profile.stamina, _profile.max_stamina]
 
 	# Thông tin nhân vật
 	%NameValue.text = _profile.display_name
@@ -520,6 +565,22 @@ func refresh() -> void:
 		elem_name = ElementTypes.ELEMENT_NAME.get(_profile.get_element(), "Vô Hệ")
 	%ElementValue.text = elem_name
 
+	if has_node("%LeadValue"):
+		var next_lead_exp := SocialRules.lead_exp_to_next(_profile.lead_level)
+		if next_lead_exp > 0:
+			%LeadValue.text = "Cấp %d (%s/%s)" % [_profile.lead_level, _format_number(_profile.lead_exp), _format_number(next_lead_exp)]
+		else:
+			%LeadValue.text = "Cấp %d (Tối đa)" % _profile.lead_level
+	if has_node("%LeadRow"):
+		var cap := SocialRules.team_size(_profile.lead_level)
+		var next_exp_str := _format_number(SocialRules.lead_exp_to_next(_profile.lead_level)) if SocialRules.lead_exp_to_next(_profile.lead_level) > 0 else "Tối đa"
+		(%LeadRow as Control).tooltip_text = "Cấp Lãnh Đạo: %d\nKinh nghiệm: %s / %s\nSố thành viên tổ đội tối đa: %d người" % [
+			_profile.lead_level,
+			_format_number(_profile.lead_exp),
+			next_exp_str,
+			cap
+		]
+
 	# Kinh nghiệm
 	var max_e: int = _profile.get_exp_to_next_level() if _profile.get_exp_to_next_level() > 0 else 15200
 	%ExpValue.text = "%s/%s" % [_format_number(_profile.current_exp), _format_number(max_e)]
@@ -542,9 +603,13 @@ func refresh() -> void:
 	# Thuộc tính chiến đấu
 	var min_dmg: int = s.unarmed_min_damage if s.unarmed_min_damage > 0 else 6
 	var max_dmg: int = s.unarmed_max_damage if s.unarmed_max_damage > 0 else 6
-	%DamageLeftValue.text = "%d/%d" % [min_dmg, max_dmg]
+	var player := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	var left_info := SectSkillController.get_left_hand_info(_profile, player)
+	var left_damage: Vector2i = left_info.damage
+	var left_uses_ar: bool = left_info.use_ar
+	%DamageLeftValue.text = "%d/%d" % [left_damage.x, left_damage.y]
 	%DamageRightValue.text = "%d/%d" % [min_dmg, max_dmg]
-	%ChinhXacValue.text = "%d/%d" % [s.attack_rating if s.attack_rating > 0 else 52, s.attack_rating if s.attack_rating > 0 else 52]
+	%ChinhXacValue.text = "%s/%d" % [str(s.attack_rating) if left_uses_ar else "-", s.attack_rating if s.attack_rating > 0 else 52]
 	%NeTranhValue.text = str(s.defense if s.defense != 0 else -20)
 	%ChayValue.text = "10"
 	%CongKichValue.text = "%d/%d" % [s.attack_speed, s.cast_speed]
@@ -560,34 +625,171 @@ func refresh() -> void:
 	_refresh_equipment_display()
 	_refresh_portrait()
 
+	if has_node("%SecurityButton"):
+		var sec_btn: Button = %SecurityButton
+		if not SecurityLock.has_password(_profile):
+			sec_btn.text = "Đặt Khóa"
+		elif SecurityLock.is_locked(_profile):
+			sec_btn.text = "🔒 Mở Khóa"
+		else:
+			sec_btn.text = "🔓 Đang Mở"
+
+func _sync_world_rank() -> void:
+	if _profile == null:
+		return
+	var rank_str := await RankingWindow.fetch_my_rank(_profile)
+	if not rank_str.is_empty() and rank_str != "—":
+		_profile.world_rank = rank_str
+		if has_node("%RankValue"):
+			%RankValue.text = _profile.world_rank
+
 func _setup_portrait() -> void:
 	if not has_node("%PortraitBox"):
 		return
 	var box: Control = %PortraitBox
+	box.clip_contents = true
 	box.resized.connect(_place_portrait)
-	box.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			_turn_portrait()
-			if _portrait_timer:
-				_portrait_timer.start()
-	)
-	if _portrait_timer == null:
-		_portrait_timer = Timer.new()
-		_portrait_timer.wait_time = PORTRAIT_TURN_SECONDS
-		_portrait_timer.timeout.connect(_turn_portrait)
-		add_child(_portrait_timer)
-		_portrait_timer.start()
+
+	if _hub_custom_avatar_view == null:
+		_hub_custom_avatar_view = TextureRect.new()
+		_hub_custom_avatar_view.name = "CustomAvatarView"
+		_hub_custom_avatar_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_hub_custom_avatar_view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_hub_custom_avatar_view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_hub_custom_avatar_view.mouse_filter = Control.MOUSE_FILTER_STOP
+		_hub_custom_avatar_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		_hub_custom_avatar_view.tooltip_text = "Nhấp để đổi ảnh đại diện (200×200)"
+		_hub_custom_avatar_view.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_open_avatar_uploader()
+		)
+		box.add_child(_hub_custom_avatar_view)
+
+	if _hub_avatar_upload_box == null:
+		_hub_avatar_upload_box = PanelContainer.new()
+		_hub_avatar_upload_box.name = "AvatarUploadBox"
+		_hub_avatar_upload_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_hub_avatar_upload_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		_hub_avatar_upload_box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.06, 0.08, 0.12, 0.85)
+		sb.border_width_left = 1
+		sb.border_width_top = 1
+		sb.border_width_right = 1
+		sb.border_width_bottom = 1
+		sb.border_color = Color(0.35, 0.6, 0.85, 0.7)
+		sb.corner_radius_top_left = 4
+		sb.corner_radius_top_right = 4
+		sb.corner_radius_bottom_left = 4
+		sb.corner_radius_bottom_right = 4
+		_hub_avatar_upload_box.add_theme_stylebox_override("panel", sb)
+
+		var v_box := VBoxContainer.new()
+		v_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		v_box.add_theme_constant_override("separation", 4)
+		_hub_avatar_upload_box.add_child(v_box)
+
+		var cam_icon := Label.new()
+		cam_icon.text = "📷"
+		cam_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cam_icon.add_theme_font_size_override("font_size", 22)
+		v_box.add_child(cam_icon)
+
+		var upload_lbl := Label.new()
+		upload_lbl.text = "Tải ảnh lên"
+		upload_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		upload_lbl.add_theme_font_size_override("font_size", 13)
+		upload_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+		v_box.add_child(upload_lbl)
+
+		var size_hint := Label.new()
+		size_hint.text = "200×200 px"
+		size_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		size_hint.add_theme_font_size_override("font_size", 10)
+		size_hint.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
+		v_box.add_child(size_hint)
+
+		_hub_avatar_upload_box.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_open_avatar_uploader()
+		)
+		box.add_child(_hub_avatar_upload_box)
+
+	if _hub_avatar_delete_btn == null:
+		_hub_avatar_delete_btn = Button.new()
+		_hub_avatar_delete_btn.name = "AvatarDeleteBtn"
+		_hub_avatar_delete_btn.text = "✕"
+		_hub_avatar_delete_btn.custom_minimum_size = Vector2(22, 22)
+		_hub_avatar_delete_btn.size = Vector2(22, 22)
+		_hub_avatar_delete_btn.tooltip_text = "Xóa ảnh đại diện"
+		_hub_avatar_delete_btn.focus_mode = Control.FOCUS_NONE
+		_hub_avatar_delete_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+		var b_style := StyleBoxFlat.new()
+		b_style.bg_color = Color(0.75, 0.15, 0.15, 0.85)
+		b_style.border_width_left = 1
+		b_style.border_width_top = 1
+		b_style.border_width_right = 1
+		b_style.border_width_bottom = 1
+		b_style.border_color = Color(1.0, 0.4, 0.4, 0.9)
+		b_style.corner_radius_top_left = 11
+		b_style.corner_radius_top_right = 11
+		b_style.corner_radius_bottom_left = 11
+		b_style.corner_radius_bottom_right = 11
+		_hub_avatar_delete_btn.add_theme_stylebox_override("normal", b_style)
+		_hub_avatar_delete_btn.add_theme_color_override("font_color", Color.WHITE)
+		_hub_avatar_delete_btn.add_theme_font_size_override("font_size", 11)
+
+		_hub_avatar_delete_btn.pressed.connect(_on_delete_avatar_pressed)
+		box.add_child(_hub_avatar_delete_btn)
+
 	_place_portrait()
 
+func _open_avatar_uploader() -> void:
+	CustomAvatarHelper.pick_image_file(self, func(img: Image) -> void:
+		if img == null:
+			return
+		AvatarCropPopup.open(self, img, func(jpg_bytes: PackedByteArray) -> void:
+			if jpg_bytes.is_empty():
+				return
+			if _profile:
+				_profile.set_custom_avatar_from_jpg(jpg_bytes)
+				CustomAvatarHelper.save_avatar_cache(_profile.display_name, SaveManager.online_character_id, jpg_bytes)
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+			if _hub_custom_avatar_view:
+				var res_img := CustomAvatarHelper.load_image_from_bytes(jpg_bytes)
+				if res_img:
+					_hub_custom_avatar_view.texture = ImageTexture.create_from_image(res_img)
+			_refresh_portrait()
+			_show_toast("Đã cập nhật ảnh đại diện thành công!")
+		)
+	)
+
+func _on_delete_avatar_pressed() -> void:
+	SocialWindow.ask_yes_no(self, "Xóa Ảnh Đại Diện", "Bạn có chắc chắn muốn xóa ảnh đại diện này không?", func(yes: bool) -> void:
+		if yes:
+			if _profile:
+				_profile.clear_custom_avatar()
+				CustomAvatarHelper.delete_avatar_cache(_profile.display_name, SaveManager.online_character_id)
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+			_refresh_portrait()
+			_show_toast("Đã xóa ảnh đại diện!")
+	)
+
 func _place_portrait() -> void:
-	if not has_node("%PortraitBox") or not has_node("%PortraitAvatar"):
+	if not has_node("%PortraitBox"):
 		return
 	var box: Control = %PortraitBox
-	var avatar: Node2D = %PortraitAvatar
-	avatar.scale = Vector2(1.4, 1.4)
-	avatar.position = Vector2(box.size.x * 0.5, box.size.y - 6.0)
+	if has_node("%PortraitAvatar"):
+		var avatar: Node2D = %PortraitAvatar
+		avatar.scale = Vector2(1.4, 1.4)
+		avatar.position = Vector2(box.size.x * 0.5, box.size.y - 6.0)
 	if _disguise_icon:
 		_disguise_icon.position = Vector2(box.size.x - 24.0, 4.0)
+	if _hub_avatar_delete_btn:
+		_hub_avatar_delete_btn.position = Vector2(box.size.x - 26.0, 4.0)
 
 func _turn_portrait() -> void:
 	if not has_node("%PortraitAvatar"):
@@ -639,30 +841,59 @@ func _setup_disguise_ui() -> void:
 		box.add_child(_disguise_icon)
 
 func _refresh_portrait() -> void:
-	if not has_node("%PortraitAvatar") or _profile == null:
+	if not has_node("%PortraitBox") or _profile == null:
 		return
+	if _hub_avatar_upload_box == null:
+		_setup_portrait()
 	_setup_disguise_ui()
-	var avatar: CharacterAvatar = %PortraitAvatar
-	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding)
-	var final_gender: String = str(look.get("gender", gender_str))
-	avatar.set_gender(final_gender)
-	avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
-	if look.has("modulate"):
-		avatar.modulate = look["modulate"]
-	else:
-		avatar.modulate = Color.WHITE
 
+	# Luôn ẩn mannequin nhân vật/ngựa để dành trọn vẹn ô cho Avatar / Tải ảnh lên
+	if has_node("%PortraitAvatar"):
+		(%PortraitAvatar as Node2D).visible = false
+	if _portrait_timer and not _portrait_timer.is_stopped():
+		_portrait_timer.stop()
+
+	if not _profile.has_custom_avatar() and _profile.display_name != "":
+		var cached := CustomAvatarHelper.get_avatar_base64_cache(_profile.display_name, SaveManager.online_character_id)
+		if cached != "":
+			_profile.custom_avatar = cached
+
+	var has_custom: bool = _profile.has_custom_avatar()
+	if has_custom:
+		var tex: ImageTexture = _profile.get_custom_avatar_texture()
+		if tex and _hub_custom_avatar_view:
+			_hub_custom_avatar_view.texture = tex
+			_hub_custom_avatar_view.visible = true
+			if _hub_avatar_upload_box:
+				_hub_avatar_upload_box.visible = false
+			if _hub_avatar_delete_btn:
+				_hub_avatar_delete_btn.visible = true
+				_hub_avatar_delete_btn.move_to_front()
+	else:
+		# Chưa có avatar: Hiển thị ô "Tải ảnh lên" 📷
+		if _hub_custom_avatar_view:
+			_hub_custom_avatar_view.visible = false
+		if _hub_avatar_upload_box:
+			_hub_avatar_upload_box.visible = true
+			_hub_avatar_upload_box.move_to_front()
+		if _hub_avatar_delete_btn:
+			_hub_avatar_delete_btn.visible = false
+
+	# Cập nhật hiển thị dịch dung (nếu có mặt nạ)
+	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
+	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding, _profile.show_mask)
 	var is_masked: bool = bool(look.get("is_masked", false))
 	if _disguise_banner:
 		_disguise_banner.visible = is_masked
 		if is_masked:
 			_disguise_label.text = "🎭 %s" % str(look.get("disguise_title", "Dịch Dung"))
+			_disguise_banner.move_to_front()
 	if _disguise_icon:
 		_disguise_icon.visible = is_masked
 		if is_masked:
 			_disguise_icon.texture = look.get("mask_icon")
 			_disguise_icon.tooltip_text = "Đang dịch dung: %s" % str(look.get("mask_name", ""))
+			_disguise_icon.move_to_front()
 
 func _sect_element() -> ElementTypes.ElementType:
 	var sect := SectRegistry.get_by_id(_profile.sect_id)
@@ -693,6 +924,8 @@ func _setup_inventory_view() -> void:
 			_refresh_inventory_view()
 		)
 		_room.transfer_handler = func(item: ItemInstance, source: Variant, _target: Object, x: int, y: int, bag: int) -> bool:
+			if (source is Object) and source == _profile.storage:
+				return StorageService.transfer(_profile, item, source, _profile, x, y, bag)
 			if str(source) == "mannequin":
 				var part: int = -1
 				for p in _profile.equipment:
@@ -708,19 +941,15 @@ func _setup_inventory_view() -> void:
 						_profile.equipment.erase(part)
 						if part == Equipment.Part.HORSE:
 							_profile.riding = false
-						SaveManager.save_profile(_profile)
-						SaveManager.flush_online()
-						refresh()
-						_refresh_inventory_view()
 						return true
 			return false
 		%InvScroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		%InvScroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		%InvScroll.add_child(_room)
-		var inv_body := %InvScroll.get_parent() as Control
-		if inv_body and inv_body.get_parent():
-			inv_body = inv_body.get_parent() as Control
-		TouchScrollHelperScript.attach(%InvScroll, inv_body if inv_body != null else %InvScroll)
+		TouchScrollHelperScript.attach(%InvScroll, %InvScroll)
+
+	if _profile and _profile.storage and not _profile.storage.changed.is_connected(_on_storage_changed):
+		_profile.storage.changed.connect(_on_storage_changed)
 
 	var bags := %BagTabs.get_children()
 	for i in bags.size():
@@ -732,12 +961,72 @@ func _setup_inventory_view() -> void:
 	%SortButton.pressed.connect(_on_sort_pressed)
 	%ShopButton.pressed.connect(func() -> void:
 		PotionShopWindow.open(self, func() -> void:
+			refresh()
 			_refresh_inventory_view()
+		, _profile)
+	)
+	if %ShopButton != null and %ShopButton.get_parent() != null:
+		var parent_box = %ShopButton.get_parent()
+		var btn_vd := Button.new()
+		btn_vd.name = "ViemDeShopButton"
+		btn_vd.custom_minimum_size = Vector2(0, 30)
+		btn_vd.text = "Đổi Viêm Đế"
+		btn_vd.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn_vd.focus_mode = Control.FOCUS_NONE
+		btn_vd.add_theme_font_override("font", %ShopButton.get_theme_font("font"))
+		btn_vd.add_theme_font_size_override("font_size", 13)
+		if %ShopButton.has_theme_stylebox_override("normal"):
+			btn_vd.add_theme_stylebox_override("normal", %ShopButton.get_theme_stylebox("normal"))
+		if %ShopButton.has_theme_stylebox_override("hover"):
+			btn_vd.add_theme_stylebox_override("hover", %ShopButton.get_theme_stylebox("hover"))
+		btn_vd.pressed.connect(func() -> void:
+			ViemDeWindow.open_reward_shop(self, _profile)
 		)
-	)
-	%CraftButton.pressed.connect(func() -> void:
-		_set_view("crafting")
-	)
+		parent_box.add_child(btn_vd)
+
+		var btn_ktc := Button.new()
+		btn_ktc.name = "KyTranCacButton"
+		btn_ktc.custom_minimum_size = Vector2(0, 30)
+		btn_ktc.text = "Kỳ Trân Các"
+		btn_ktc.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn_ktc.focus_mode = Control.FOCUS_NONE
+		btn_ktc.add_theme_font_override("font", %ShopButton.get_theme_font("font"))
+		btn_ktc.add_theme_font_size_override("font_size", 13)
+		if %ShopButton.has_theme_stylebox_override("normal"):
+			btn_ktc.add_theme_stylebox_override("normal", %ShopButton.get_theme_stylebox("normal"))
+		if %ShopButton.has_theme_stylebox_override("hover"):
+			btn_ktc.add_theme_stylebox_override("hover", %ShopButton.get_theme_stylebox("hover"))
+		btn_ktc.pressed.connect(func() -> void:
+			KyTranCacWindow.open(self, func() -> void:
+				refresh()
+				_refresh_inventory_view()
+			, _profile)
+		)
+		parent_box.add_child(btn_ktc)
+	if has_node("%CraftButton"):
+		%CraftButton.pressed.connect(func() -> void:
+			_set_view("crafting")
+		)
+	if has_node("%StorageButton"):
+		%StorageButton.pressed.connect(_toggle_storage_window)
+	if has_node("%SecurityButton"):
+		%SecurityButton.pressed.connect(func() -> void:
+			if not SecurityLock.has_password(_profile):
+				SecurityWindow.open(self, _profile)
+			elif SecurityLock.is_locked(_profile):
+				KeypadWindow.ask(self, "Mở khóa bảo vệ", "Nhập mật mã để mở khóa.", func(code: String) -> void:
+					var err := SecurityLock.unlock(_profile, code)
+					if err == "":
+						_show_toast("Giải mã khóa bảo vệ thành công!")
+					else:
+						_show_toast("Mật mã kiểm chứng không chính xác!")
+					refresh()
+				)
+			else:
+				var _err := SecurityLock.lock(_profile)
+				_show_toast("Đã bật khóa bảo vệ!")
+				refresh()
+		)
 	var is_gm := AccountApi.is_gm()
 	for btn_name in ["%TestCreateButton", "%TestAddButton", "%TestMaskButton", "%TestMantleButton"]:
 		if has_node(btn_name):
@@ -747,6 +1036,36 @@ func _setup_inventory_view() -> void:
 				btn.queue_free()
 
 	if is_gm:
+		var top_bar := get_node_or_null("Stage/TopBar")
+		if top_bar and not top_bar.has_node("GmTopButton"):
+			var gm_btn := Button.new()
+			gm_btn.name = "GmTopButton"
+			gm_btn.text = "★ GM (F12) ★"
+			gm_btn.tooltip_text = "Mở Trung tâm điều hành Game Master (Phím F12)"
+			gm_btn.position = Vector2(298, 14)
+			gm_btn.size = Vector2(110, 40)
+			gm_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			var st_normal := StyleBoxFlat.new()
+			st_normal.bg_color = Color(0.14, 0.11, 0.04, 0.92)
+			st_normal.border_color = Color(1.0, 0.85, 0.25, 0.95)
+			st_normal.set_border_width_all(2)
+			st_normal.set_corner_radius_all(6)
+			gm_btn.add_theme_stylebox_override("normal", st_normal)
+			var st_hover := StyleBoxFlat.new()
+			st_hover.bg_color = Color(0.24, 0.18, 0.06, 0.98)
+			st_hover.border_color = Color(1.0, 0.95, 0.4, 1.0)
+			st_hover.set_border_width_all(2)
+			st_hover.set_corner_radius_all(6)
+			gm_btn.add_theme_stylebox_override("hover", st_hover)
+			gm_btn.add_theme_color_override("font_color", Color(1.0, 0.9, 0.35))
+			gm_btn.add_theme_font_size_override("font_size", 13)
+			gm_btn.pressed.connect(func() -> void:
+				var gm_script: GDScript = load("res://ui/gm/gm_control_window.gd")
+				if gm_script:
+					gm_script.open(self)
+			)
+			top_bar.add_child(gm_btn)
+
 		if has_node("%TestCreateButton"):
 			%TestCreateButton.pressed.connect(func() -> void:
 				ItemCreatorPopup.open(self, _profile, func() -> void:
@@ -817,10 +1136,13 @@ func _drop_on_tab(_at: Vector2, data: Variant, bag: int) -> void:
 		_show_toast("Túi %d đã đầy chỗ cho món này" % (bag + 1))
 
 func _setup_equipment_slots() -> void:
+	if has_node("%MaskVisualCheck"):
+		%MaskVisualCheck.toggled.connect(_on_mask_visual_check_toggled)
 	for slot_name in SLOT_TO_PART:
 		var btn: Button = get_node_or_null("%" + slot_name)
 		if btn:
 			var part: int = SLOT_TO_PART[slot_name]
+			btn.set_meta("draggable", true)
 			btn.pressed.connect(_on_equip_slot_pressed.bind(part))
 			btn.set_drag_forwarding(Callable(), _can_drop_on_equip_slot.bind(part), _drop_on_equip_slot.bind(part))
 
@@ -843,7 +1165,7 @@ func _drop_on_equip_slot(_at: Vector2, data: Variant, _part: int) -> void:
 
 func _drag_equipped_item(at_position: Vector2, part: int, item: ItemInstance, widget: Control) -> Variant:
 	var preview := Control.new()
-	var icon := item.get_icon(false)
+	var icon = item.get_icon(false)
 	if icon != null:
 		var tex := TextureRect.new()
 		tex.texture = icon
@@ -879,6 +1201,7 @@ func _refresh_equipment_display() -> void:
 		var unusable: bool = (item != null and not Equipment.can_use(item, _profile, ctx))
 		_update_slot_backdrop(btn, item != null, unusable, item)
 		_update_slot_rarity(btn, item)
+		btn.set_meta("draggable", true)
 		if item != null:
 			btn.set_drag_forwarding(_drag_equipped_item.bind(part, item, btn), _can_drop_on_equip_slot.bind(part), _drop_on_equip_slot.bind(part))
 			if icon:
@@ -908,6 +1231,53 @@ func _refresh_equipment_display() -> void:
 			_update_slot_backdrop(btn, false)
 			_update_slot_rarity(btn, null)
 			btn.tooltip_text = ""
+	_refresh_mask_check()
+	_refresh_pk_label()
+
+func _refresh_pk_label() -> void:
+	if not has_node("%PkValueLabel"):
+		return
+	var pk_val: int = _profile.pk_value if _profile else 0
+	var lbl: Label = %PkValueLabel
+	lbl.text = str(pk_val)
+	if pk_val > 0:
+		lbl.add_theme_color_override("font_color", Color(0.95, 0.25, 0.2))
+	else:
+		lbl.add_theme_color_override("font_color", Color(0.98, 0.78, 0.12))
+	lbl.tooltip_text = "Điểm PK: %d\n(Mỗi lần đồ sát người chơi sẽ tăng 1 điểm PK)" % pk_val
+
+func _refresh_mask_check() -> void:
+	if not has_node("%MaskVisualCheck") or _profile == null:
+		return
+	var btn: Button = %MaskVisualCheck
+	var mask_item: ItemInstance = _profile.equipment.get(Equipment.Part.MASK)
+	if mask_item == null:
+		btn.disabled = true
+		btn.button_pressed = false
+		btn.icon = null
+		btn.tooltip_text = "Chưa đeo mặt nạ"
+	else:
+		btn.disabled = false
+		btn.set_pressed_no_signal(_profile.show_mask)
+		btn.icon = ICON_CHECK if _profile.show_mask else null
+		btn.tooltip_text = "Ngoại hình mặt nạ: Đang bật\n(Bấm để tắt hiển thị giao diện bên ngoài)" if _profile.show_mask else "Ngoại hình mặt nạ: Đang tắt\n(Bấm để mở hiển thị giao diện bên ngoài)"
+
+func _on_mask_visual_check_toggled(pressed: bool) -> void:
+	if _profile == null:
+		return
+	_profile.show_mask = pressed
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	_refresh_mask_check()
+	_refresh_portrait()
+	_sync_game_player_appearance()
+
+func _sync_game_player_appearance() -> void:
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	if tree != null:
+		var player = tree.get_first_node_in_group("player")
+		if player != null and player.has_method("refresh_appearance"):
+			player.refresh_appearance()
 
 func _update_slot_rarity(btn: Control, item: ItemInstance) -> void:
 	RarityRing.attach(btn, item)
@@ -1099,6 +1469,8 @@ func _show_skills_view() -> void:
 		_skills_view.close_requested.connect(func() -> void: _set_view("character"))
 		_skills_view.skill_changed.connect(func() -> void: refresh())
 		%LeftPanel.add_child(_skills_view)
+	else:
+		_skills_view._profile = _profile
 	_skills_view.set_docked(true, true)
 	_skills_view.visible = true
 	_skills_view.size = Vector2(1000, 585)
@@ -1158,7 +1530,7 @@ func _show_settings_view() -> void:
 		_settings_view = SettingsWindow.new(true)
 		_settings_view.set_docked(true, true)
 		_settings_view.close_requested.connect(func() -> void: _set_view("character"))
-		_settings_view.setup_hub_actions(_on_change_server_pressed, _on_quit_game_pressed)
+		_settings_view.setup_hub_actions(_on_change_server_pressed, _on_quit_game_pressed, _on_change_character_pressed)
 		%LeftPanel.add_child(_settings_view)
 	_settings_view.set_docked(true, true)
 	_settings_view.visible = true
@@ -1176,11 +1548,27 @@ func _show_events_view() -> void:
 
 func _on_event_action(event_id: String) -> void:
 	match event_id:
-		"battle", "time_challenge":
+		"battle", "time_challenge", "ferry":
 			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
-			win._select_tab(1)
+			win._select_tab(2)
+		"world_boss":
+			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
+			win._select_tab(3)
 		"pk_arena":
 			PkWindow.open(self, _profile, _enter_field_map)
+		"hoa_dang":
+			LanternWindow.open(self, _profile)
+		"escort":
+			var pk_win := PkWindow.open(self, _profile, _enter_field_map)
+			pk_win._select_mode(PkRules.Mode.VAN_TIEU)
+		"siege":
+			SiegeWindow.open(self, _profile, _enter_field_map)
+		"huy_hoang":
+			HuyHoangWindow.open(self, _profile)
+		"bat_nha":
+			BatNhaWindow.open(self, _profile)
+		"viem_de":
+			ViemDeWindow.open(self, _profile, _enter_field_map)
 
 func _setup_nav_buttons() -> void:
 	%CharacterButton.pressed.connect(func() -> void:
@@ -1229,8 +1617,26 @@ func _refresh_inventory_view() -> void:
 			_room.slotted_counts = {}
 		_room.setup(_profile)
 
-	%InvGoldLabel.text = InventoryPopup.format_money(_profile.gold) + " Lượng"
-	%InvJadeLabel.text = InventoryPopup.format_money(_profile.jade)
+	if has_node("%InvGoldLabel"):
+		%InvGoldLabel.text = InventoryPopup.format_money(_profile.gold) + " Lượng"
+	if has_node("%InvXuLabel"):
+		%InvXuLabel.text = InventoryPopup.format_money(_profile.xu) + " Xu"
+	if has_node("%InvJadeLabel"):
+		%InvJadeLabel.text = InventoryPopup.format_money(_profile.jade)
+
+func _toggle_storage_window() -> void:
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StorageWindow and is_instance_valid(w):
+			w.close_requested.emit()
+			return
+	var win := StorageWindow.open(self, _profile)
+	if win:
+		win.position = Vector2(560.0, 68.0)
+		win.size = Vector2(280.0, 585.0)
+
+func _on_storage_changed() -> void:
+	refresh()
+	_refresh_inventory_view()
 
 func _on_room_item_pressed(item: ItemInstance) -> void:
 	if _profile == null or item == null:
@@ -1238,21 +1644,50 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
-	var actions: Array = [
-		["Trang bị", func() -> void: _equip_item_from_inv(index)],
-		["Vứt bỏ", func() -> void: _drop_item_from_inv(index)],
-	]
-	if PotionEffect.usable(item):
-		actions[0] = ["Dùng", func() -> void: _use_item_from_inv(index)]
+	var actions: Array = []
+	if not item.is_misc():
+		actions.append(["Trang bị", func() -> void: _equip_item_from_inv(index)])
+	else:
+		var use_label := ItemConsumer.get_action_label(item)
+		actions.append([use_label, func() -> void: _use_item_from_inv(index)])
+	actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])
+
+	if item.misc_id in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
+		actions.append(["Tiệm Ép Đồ", func() -> void: CompoundWindow.open(self, _profile, Callable())])
+	elif item.misc_id in ["6_1_2805", "6_1_1685", "6_1_1606"]:
+		actions.append(["Tiệm Đổi Viêm Đế", func() -> void: ViemDeWindow.open_reward_shop(self, _profile)])
+	if item.can_sell():
+		var label := "Bán (%s Lượng)" % InventoryPopup.format_money(item.get_sale_price())
+		actions.insert(1, [label, func() -> void: _sell_item_from_inv(index)])
 	if _current_view == "crafting" and _crafting_view and is_instance_valid(_crafting_view):
 		actions.insert(0, ["Đặt vào chế tạo", func() -> void: _crafting_view._put(item)])
+
+	var storage_win: StorageWindow = null
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StorageWindow and is_instance_valid(w):
+			storage_win = w
+			break
+	if storage_win:
+		actions.insert(0, ["Cất vào rương", func() -> void:
+			var err := StorageService.store_item(_profile, item, storage_win._box)
+			if err != "":
+				_show_toast(err)
+			else:
+				_show_toast("Đã cất %s vào rương." % item.get_display_name())
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+				refresh()
+				_refresh_inventory_view()
+				storage_win._refresh()
+		])
+
 	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
 func _equip_item_from_inv(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
 		return
 	var item: ItemInstance = _profile.inventory[index]
-	var item_name := item.get_display_name()
+	var item_name: String = str(item.get_display_name())
 	var err := _profile.equip_from_inventory(index)
 	if err != "":
 		_show_toast(err)
@@ -1278,23 +1713,120 @@ func _drop_item_from_inv(index: int) -> void:
 	refresh()
 	_refresh_inventory_view()
 
+func _sell_item_from_inv(index: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
+		return
+	var item: ItemInstance = _profile.inventory[index]
+	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
+	if blocked == "" and SecurityLock.is_item_locked(item):
+		blocked = "Món đồ đang bị khoá, không thể bán."
+	if blocked != "":
+		_show_toast(blocked)
+		return
+	if not item.can_sell():
+		_show_toast("Vật phẩm này không thể bán.")
+		return
+
+	var sale_price: int = int(item.get_sale_price())
+	var item_name: String = str(item.get_display_name())
+
+	if item.is_gold() or item.is_purple():
+		var popup := ConfirmationDialog.new()
+		popup.title = "Xác nhận bán"
+		popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, InventoryPopup.format_money(sale_price)]
+		popup.ok_button_text = "Bán"
+		popup.cancel_button_text = "Hủy"
+		add_child(popup)
+		popup.confirmed.connect(func() -> void:
+			_execute_sell_from_inv(index, item_name, sale_price)
+			popup.queue_free()
+		)
+		popup.canceled.connect(func() -> void:
+			popup.queue_free()
+		)
+		popup.popup_centered()
+		return
+
+	_execute_sell_from_inv(index, item_name, sale_price)
+
+func _execute_sell_from_inv(index: int, item_name: String, sale_price: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
+		return
+	_profile.inventory.remove_at(index)
+	_profile.gold += sale_price
+	_show_toast("Đã bán %s nhận được %s Lượng." % [item_name, InventoryPopup.format_money(sale_price)])
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	refresh()
+	_refresh_inventory_view()
+
 func _use_item_from_inv(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
 		return
 	var item: ItemInstance = _profile.inventory[index]
 	var player := get_tree().get_first_node_in_group("player")
-	if player == null:
-		_show_toast("Chỉ dùng được thuốc khi đang ở trên bản đồ.")
-		return
-	var blocked := PotionEffect.block_reason(item)
-	if blocked != "":
-		_show_toast(blocked)
-		return
-	if PotionEffect.consume(_profile, player, item):
-		_show_toast("Đã dùng %s" % item.get_display_name())
+	var res := ItemConsumer.use_item(_profile, item, player, self)
+	if res.has("message") and str(res["message"]) != "":
+		_show_toast(str(res["message"]))
+	if res.get("ok", false):
 		SaveManager.save_profile(_profile)
+		SaveManager.flush_online()
 		refresh()
 		_refresh_inventory_view()
+
+func _open_viem_de_chest_hub(index: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
+		return
+	var item: ItemInstance = _profile.inventory[index]
+	if item.count > 1:
+		item.count -= 1
+	else:
+		_profile.inventory.remove_at(index)
+
+	var gained_exp := randi_range(1500000, 3500000)
+	var gained_gold := randi_range(150000, 350000)
+	_profile.add_exp(gained_exp)
+	_profile.gold += gained_gold
+
+	var frags := randi_range(1, 3)
+	for i in frags:
+		var frag_it := ItemGenerator.generate_misc("6_1_1685")
+		if frag_it != null:
+			_profile.add_item(frag_it)
+
+	var tt_ids := ["4_238_1", "4_239_1", "4_240_1"]
+	var tt_pick: String = tt_ids.pick_random()
+	var tt_it := ItemGenerator.generate_misc(tt_pick)
+	var tt_name := "Thủy Tinh"
+	if tt_it != null:
+		tt_name = tt_it.get_name()
+		_profile.add_item(tt_it)
+
+	var w_script: GDScript = load("res://ui/events/viem_de_window.gd")
+	if w_script != null:
+		var rec: Dictionary = w_script._get_records_for(_profile)
+		rec["chests"] = maxi(0, int(rec.get("chests", 0)) - 1)
+		rec["totem_fragments"] = int(rec.get("totem_fragments", 0)) + frags
+		w_script._save_records_for(rec, _profile)
+
+	_show_toast("Mở [Viêm Đế Bí Bảo] thành công!\n+ %s EXP\n+ %s Lượng\n+ %d Mảnh Đồ Đằng\n+ 1 %s" % [
+		InventoryPopup.format_money(gained_exp),
+		InventoryPopup.format_money(gained_gold),
+		frags,
+		tt_name
+	])
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	refresh()
+	_refresh_inventory_view()
+
+func _craft_viem_de_totem_hub(_index: int) -> void:
+	if _profile == null:
+		return
+	var res: Dictionary = ViemDeWindow.craft_totem_quick(_profile)
+	_show_toast(str(res.get("message", "")))
+	refresh()
+	_refresh_inventory_view()
 
 func _on_sort_pressed() -> void:
 	if _profile == null:
@@ -1306,6 +1838,17 @@ func _on_sort_pressed() -> void:
 
 func _on_skills_nav_pressed() -> void:
 	_set_view("skills")
+
+func _on_change_character_pressed() -> void:
+	SocialWindow.confirm(self, "Chọn Nhân Vật", "Lưu dữ liệu và trở về màn hình chọn nhân vật?", func() -> void:
+		if _profile != null:
+			SaveManager.save_profile(_profile)
+			await SaveManager.flush_online()
+		if AccountApi.is_logged_in():
+			get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
+			return
+		get_tree().change_scene_to_file(SELECT_SCENE_PATH)
+	)
 
 func _on_change_server_pressed() -> void:
 	SocialWindow.confirm(self, "Chọn Máy Chủ", "Lưu dữ liệu và trở về màn hình chọn máy chủ?", func() -> void:
@@ -1412,17 +1955,25 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	if top_bar:
 		top_bar.size.x = vw
 		var gold := top_bar.get_node_or_null("FrameCurrencyGold") as Control
+		var xu := top_bar.get_node_or_null("FrameCurrencyXu") as Control
 		var jade := top_bar.get_node_or_null("FrameCurrencyJade") as Control
+		var ktc := top_bar.get_node_or_null("KyTranCacTopButton") as Control
 		var stam := top_bar.get_node_or_null("FrameCurrencyStamina") as Control
 		if gold:
-			gold.offset_left = 760.0 + extra_w
-			gold.offset_right = 910.0 + extra_w
+			gold.offset_left = 696.0 + extra_w
+			gold.offset_right = 836.0 + extra_w
+		if xu:
+			xu.offset_left = 844.0 + extra_w
+			xu.offset_right = 984.0 + extra_w
 		if jade:
-			jade.offset_left = 924.0 + extra_w
-			jade.offset_right = 1074.0 + extra_w
-		if stam:
-			stam.offset_left = 1088.0 + extra_w
-			stam.offset_right = 1262.0 + extra_w
+			jade.offset_left = 992.0 + extra_w
+			jade.offset_right = 1132.0 + extra_w
+		if ktc:
+			ktc.offset_left = 1140.0 + extra_w
+			ktc.offset_right = 1256.0 + extra_w
+		elif stam:
+			stam.offset_left = 1140.0 + extra_w
+			stam.offset_right = 1256.0 + extra_w
 
 	# 2. RightPanel bám sát mép phải
 	var right_panel := stage.get_node_or_null("RightPanel") as Control

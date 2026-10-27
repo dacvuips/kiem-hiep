@@ -57,6 +57,8 @@ func _add_social_row() -> void:
 	var row := HBoxContainer.new()
 	var items := [
 		["+20tr", func(p: PlayerProfile) -> void: p.gold += 20_000_000],
+		["+1.000 KNB", func(p: PlayerProfile) -> void: p.jade += 1000],
+		["+Tiên Thảo Lộ", func(p: PlayerProfile) -> void: _give_cheat_potions(p)],
 		["+Danh vọng/Phúc duyên", func(p: PlayerProfile) -> void:
 			p.prestige += 100
 			p.fuyuan += 100],
@@ -71,6 +73,14 @@ func _add_social_row() -> void:
 			_commit())
 		row.add_child(b)
 	rows.add_child(row)
+
+func _give_cheat_potions(p: PlayerProfile) -> void:
+	if p == null:
+		return
+	for mid in ["6_1_71", "6_1_1181", "6_1_113", "6_1_1877"]:
+		var t := ItemGenerator.generate_misc(mid)
+		if t:
+			p.add_item(t)
 
 func _add_sect_row() -> void:
 	var rows := get_node_or_null("CheatBox/Rows")
@@ -124,6 +134,11 @@ func _add_levels(count: int) -> void:
 func _add_exp(amount: int) -> void:
 	var profile := GameManager.local_profile
 	if profile:
+		var max_lvl: int = 200
+		if profile.level >= max_lvl:
+			_result_label.visible = true
+			_result_label.text = "Cấp nhân vật đã đạt tối đa %d." % max_lvl
+			return
 		profile.add_exp(amount)
 		_commit()
 		_result_label.visible = true
