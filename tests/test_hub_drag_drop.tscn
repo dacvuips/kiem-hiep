@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dqo4mfr72s5ei"]
+
+[ext_resource type="Script" path="res://tests/test_hub_drag_drop.gd" id="1_test"]
+
+[node name="TestHubDragDrop" type="Node"]
+script = ExtResource("1_test")

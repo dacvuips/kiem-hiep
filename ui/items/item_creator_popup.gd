@@ -86,7 +86,7 @@ func _ready() -> void:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 6)
 	panel.add_child(root)
-	var title := GameUi.title("Tạo đồ (TEST)")
+	var title := GameUi.title("Test đồ (TEST)")
 	root.add_child(title)
 
 	var body := HBoxContainer.new()
@@ -133,9 +133,34 @@ func _ready() -> void:
 	preview_box.add_child(_preview_icon)
 	_preview_text = RichTextLabel.new()
 	_preview_text.bbcode_enabled = true
-	_preview_text.custom_minimum_size = Vector2(300, 300)
+	_preview_text.fit_content = true
+	_preview_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_preview_text.custom_minimum_size = Vector2(400, 300)
 	_preview_text.add_theme_font_size_override("normal_font_size", 13)
 	preview_box.add_child(_preview_text)
+
+	## Thanh nhận nhanh đồ test (Đồ ngẫu nhiên, Mặt Nạ, Phi Phong)
+	var quick_bar := HBoxContainer.new()
+	quick_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	quick_bar.add_theme_constant_override("separation", 8)
+	root.add_child(quick_bar)
+
+	var q_label := Label.new()
+	q_label.text = "Nhận nhanh:"
+	q_label.add_theme_color_override("font_color", GameUi.GOLD)
+	quick_bar.add_child(q_label)
+
+	var btn_add_items := GameUi.button("+10 Đồ (TEST)", GameUi.BUTTON)
+	btn_add_items.pressed.connect(_on_quick_add_items)
+	quick_bar.add_child(btn_add_items)
+
+	var btn_add_masks := GameUi.button("+Mặt Nạ (TEST)", GameUi.BUTTON)
+	btn_add_masks.pressed.connect(_on_quick_add_masks)
+	quick_bar.add_child(btn_add_masks)
+
+	var btn_add_mantles := GameUi.button("+Phi Phong (TEST)", GameUi.BUTTON)
+	btn_add_mantles.pressed.connect(_on_quick_add_mantles)
+	quick_bar.add_child(btn_add_mantles)
 
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -450,3 +475,45 @@ static func _money_text(v: int) -> String:
 			out += "."
 		out += s[i]
 	return out
+
+func _on_quick_add_items() -> void:
+	if _profile == null:
+		return
+	var added := 0
+	for i in 10:
+		if _profile.add_item(ItemGenerator.random_equipment(_profile.level)):
+			added += 1
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	if _on_changed.is_valid():
+		_on_changed.call()
+	_message.text = "Đã nhận %d trang bị ngẫu nhiên (Hành trang %d/%d)." % [added, _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY]
+
+func _on_quick_add_masks() -> void:
+	if _profile == null:
+		return
+	var added := 0
+	for p in 5:
+		var mask_item := ItemGenerator.generate(ItemDatabase.Detail.MASK, p, 1, int(_profile.get_element()), [5, 5, 5, 5, 5, 5])
+		if mask_item and _profile.add_item(mask_item):
+			added += 1
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	if _on_changed.is_valid():
+		_on_changed.call()
+	_message.text = "Đã nhận %d Mặt Nạ vào hành trang (%d/%d)." % [added, _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY]
+
+func _on_quick_add_mantles() -> void:
+	if _profile == null:
+		return
+	var added := 0
+	for lv in [1, 3, 5, 6, 7]:
+		var mantle_item := ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, lv, int(_profile.get_element()), [6, 6, 6, 6, 6, 6])
+		if mantle_item and _profile.add_item(mantle_item):
+			added += 1
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	if _on_changed.is_valid():
+		_on_changed.call()
+	_message.text = "Đã nhận %d Phi Phong vào hành trang (%d/%d)." % [added, _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY]
+

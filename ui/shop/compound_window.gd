@@ -74,7 +74,6 @@ func clear_all_slots() -> void:
 func _exit_tree() -> void:
 	_slots.clear()
 	_alts.clear()
-	_notify_slots_changed()
 
 var _tab_buttons: Array[Button] = []
 var _refine_popup: PopupMenu
@@ -1368,14 +1367,23 @@ func _make() -> void:
 	var uids := _slots.map(func(it: ItemInstance) -> String: return it.ensure_uid())
 	var alt := _alts.map(func(it: ItemInstance) -> String: return it.ensure_uid())
 
+	if NetClient.is_in_world() and not NetClient.is_hub:
+		NetClient.send_craft(op, uids, alt)
+		_slots = []
+		for s in _current_slot_defs():
+			_slots.append(null)
+		_alts = []
+		_target = 0
+		_notify_slots_changed()
+		_after_craft()
+		return
+
 	var r := Compound.run(_profile, op, uids, alt)
 	_message.text = str(r["message"])
 	if r["ok"]:
 		SaveManager.save_profile(_profile)
 		if AccountApi.is_logged_in():
 			SaveManager.flush_online()
-		if NetClient.is_in_world() and not NetClient.is_hub:
-			NetClient.send_profile(_profile.to_dict())
 		_slots = []
 		for s in _current_slot_defs():
 			_slots.append(null)

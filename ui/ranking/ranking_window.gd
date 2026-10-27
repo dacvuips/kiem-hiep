@@ -69,7 +69,73 @@ func _load() -> void:
 		return
 	_data = r.data if r.data is Dictionary else {}
 	_status.text = "Máy chủ %s · cập nhật mỗi %d giây" % [str(ServerSelectScreen.selected_server.get("name", ServerSelectScreen.selected_server_id)), int(_data.get("ttl_seconds", 60))]
+	_update_profile_rank()
 	_select_tab(_tab)
+
+func _update_profile_rank() -> void:
+	if _profile == null:
+		return
+	var me := _profile.display_name
+	var found := false
+	for entry in _data.get("level", []):
+		if entry is Dictionary and str(entry.get("name", "")) == me:
+			_profile.world_rank = str(entry.get("rank", "—"))
+			found = true
+			break
+	if not found and not (_data.get("level", []) as Array).is_empty():
+		_profile.world_rank = ">100"
+
+## Đồng bộ và trả về vị trí xếp hạng của nhân vật
+static func fetch_my_rank(profile: PlayerProfile) -> String:
+	if profile == null:
+		return "—"
+	var me := profile.display_name
+	if AccountApi.is_logged_in():
+		var r: Dictionary = await AccountApi.rankings(ServerSelectScreen.selected_server_id)
+		if r.ok and r.data is Dictionary:
+			var levels: Array = r.data.get("level", [])
+			for entry in levels:
+				if entry is Dictionary and str(entry.get("name", "")) == me:
+					return str(entry.get("rank", "—"))
+			if not levels.is_empty():
+				return ">100"
+	var entries: Array[Dictionary] = []
+	entries.append({"name": me, "level": profile.level, "pk_points": profile.pk_points})
+	var recs: Dictionary = PkMatch._records()
+	for p_name in recs:
+		if p_name == me:
+			continue
+		var user_rec: Dictionary = recs[p_name]
+		var pts: int = 0
+		for m_str in user_rec:
+			var m_dict: Dictionary = user_rec[m_str]
+			pts = maxi(pts, int(m_dict.get("points", 0)))
+		entries.append({"name": str(p_name), "level": 90, "pk_points": pts})
+	var default_masters: Array[Dictionary] = [
+		{"name": "Độc Cô Cầu Bại", "level": 120, "pk_points": 250},
+		{"name": "Trương Tam Phong", "level": 118, "pk_points": 220},
+		{"name": "Vô Danh Thần Tăng", "level": 115, "pk_points": 200},
+		{"name": "Tiêu Phong", "level": 112, "pk_points": 180},
+		{"name": "Dương Quá", "level": 110, "pk_points": 160},
+		{"name": "Lệnh Hồ Xung", "level": 105, "pk_points": 140},
+		{"name": "Đoàn Dự", "level": 102, "pk_points": 120},
+		{"name": "Hoàng Dược Sư", "level": 100, "pk_points": 100},
+	]
+	for dm in default_masters:
+		var dm_name: String = str(dm["name"])
+		if not entries.any(func(e: Dictionary) -> bool: return str(e["name"]) == dm_name):
+			entries.append(dm)
+	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var pa: int = int(a.get("pk_points", 0))
+		var pb: int = int(b.get("pk_points", 0))
+		if pa != pb:
+			return pa > pb
+		return int(a.get("level", 0)) > int(b.get("level", 0))
+	)
+	for idx in entries.size():
+		if str(entries[idx]["name"]) == me:
+			return str(idx + 1)
+	return "—"
 
 func _select_tab(i: int) -> void:
 	_tab = i

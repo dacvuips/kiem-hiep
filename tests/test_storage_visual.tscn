@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dt156unncwree"]
+
+[ext_resource type="Script" path="res://tests/test_storage_visual.gd" id="1_test"]
+
+[node name="TestStorageVisual" type="Node"]
+script = ExtResource("1_test")

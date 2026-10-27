@@ -194,63 +194,29 @@ func test_trade() -> void:
 	s5.set_money(s5.local(), 100000)
 	s5.lock(s5.local())
 	check("giao dịch: người giả hết đồ để đáp thì không khoá", true)
+	## Hết chỗ nhận đồ khi xác nhận: tự hủy giao dịch và hoàn trả đồ về cho cả 2 bên
+	var p6_a := new_profile()
+	var p6_b := new_profile()
+	var it6_a := item_for(p6_a)
+	while p6_b.add_item(ItemGenerator.random_equipment(5)):
+		pass
+	var s6 := TradeSession.new()
+	s6._setup(TradeParty.of_profile(p6_a), TradeParty.of_profile(p6_b))
+	s6.offer_item(s6.local(), it6_a)
+	s6.lock(s6.local())
+	s6.lock(s6.partner())
+	s6.confirm(s6.local())
+	s6.now_ms += 6000
+	var res6 := s6.confirm(s6.partner())
+	check("giao dịch: túi đầy tự hủy và trả đồ về cho chủ cũ", not s6.active and p6_a.inventory.has(it6_a) and res6.contains("không đủ chỗ"), res6)
 
 func test_stall() -> void:
 	var p := new_profile()
 	var it := item_for(p)
 	check("bày bán: giá âm bị từ chối", StallService.set_price(p, it, -5) != "")
-	check("bày bán: mở quầy khi chưa có món đặt giá bị từ chối", StallService.open_stall(p, "ban do") != "")
-	check("bày bán: đặt giá được", StallService.set_price(p, it, 5000) == "" and it.trade_price == 5000)
-	var locked := item_for(p)
-	SecurityLock.lock_item(locked)
-	check("bày bán: món khoá không đặt giá được", StallService.set_price(p, locked, 100) != "")
-	check("bày bán: cưỡi ngựa không mở quầy", StallService.open_stall(p, "x", true) != "")
-	check("bày bán: mở quầy được", StallService.open_stall(p, "Bán đồ") == "" and p.stall_open and not p.trade_open)
-	check("bày bán: đang bày bán thì không mở giao dịch", StallService.open_trade(p) != "")
-	StallService.close_stall(p)
+	check("bày bán: mở quầy bị từ chối và hướng dẫn sang Chợ", StallService.open_stall(p, "ban do").contains("Chợ Giao Thương"))
 	check("bày bán: dọn quầy", not p.stall_open)
-	check("bày bán: mở giao dịch được khi hết bày bán", StallService.open_trade(p) == "" and p.trade_open)
-	SecurityLock.set_password(p, "abc")
-	check("bày bán: khoá bảo vệ chặn mở quầy", StallService.open_stall(p, "x") != "")
-	## Mua từ quầy người giả
-	var buyer := new_profile()
-	var seller: MockPlayer = null
-	for m in SocialDirectory.players(buyer):
-		if m.stall_open and not StallService.browse(m).is_empty():
-			seller = m
-			break
-	check("bày bán: có quầy giả đang mở", seller != null)
-	if seller == null:
-		return
-	var goods := StallService.browse(seller)
-	var good := goods[0]
-	var price := good.trade_price
-	buyer.gold = price - 1
-	var party_b := TradeParty.of_profile(buyer)
-	var party_s := TradeParty.of_mock(seller)
-	check("bày bán: thiếu tiền không mua được", StallService.buy(party_b, party_s, good) != "")
-	buyer.gold = price + 10
-	var seller_gold := seller.gold
-	check("bày bán: chiến đấu không mua được", StallService.buy(party_b, party_s, good, true) != "")
-	SecurityLock.set_password(buyer, "pw")
-	check("bày bán: khoá bảo vệ chặn mua", StallService.buy(party_b, party_s, good) != "")
-	SecurityLock.unlock(buyer, "pw")
-	check("bày bán: mua thành công", StallService.buy(party_b, party_s, good) == "" and buyer.inventory.has(good) and buyer.gold == 10 and seller.gold == seller_gold + price)
-	check("bày bán: món đã bán không còn trên quầy", good not in StallService.browse(seller) and good.trade_price == 0)
-	check("bày bán: mua lại món đã bán bị từ chối", StallService.buy(party_b, party_s, good) != "")
-	## Khách giả mua từ quầy người chơi
-	var q := new_profile()
-	var qi := item_for(q)
-	StallService.set_price(q, qi, 1)    ## giá rẻ → bán chạy
-	StallService.open_stall(q, "re")
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	var sold := 0
-	for i in 200:
-		sold += StallService.simulate_customers(q, rng).size()
-		if not q.stall_open:
-			break
-	check("bày bán: khách giả mua hàng rẻ và quầy tự dọn khi hết hàng", sold == 1 and not q.stall_open and not q.inventory.has(qi), "sold=%d" % sold)
+	check("bày bán: mở giao dịch được", StallService.open_trade(p) == "" and p.trade_open)
 
 func test_team() -> void:
 	SocialDirectory.reset()

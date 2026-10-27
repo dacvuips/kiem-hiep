@@ -38,7 +38,7 @@ const WHEEL_LOOP_SIZE := 44.0
 ## Nút tiện ích trên thanh skill (chỉ sắp xếp vị trí / ẩn / cỡ, không gắn kỹ năng): [khoá bố cục, ảnh thanh công cụ, tâm, cỡ, tên].
 ## Mã ô âm (TOOL_BASE - i) để không lẫn với ô skill (0..7), ô chính (MAIN_SLOT), ô liên tục (>= LOOP_BASE).
 const TOOL_BASE := -50
-const WHEEL_TOOLS := [["sit", "sit", Vector2(-445, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-269, -209), 56.0, "Nhảy"],
+const WHEEL_TOOLS := [["sit", "sit", Vector2(-383, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-269, -209), 56.0, "Nhảy"],
 	["horse", "horse", Vector2(-315, -44), 64.0, "Ngựa"]]
 var _wheel_page_buttons: Array[Button] = []
 var _wheel_swap: Button
@@ -74,6 +74,8 @@ static func open(parent: Node, profile: PlayerProfile, skills: Array[SkillDefini
 		_allow_drag_to_skill_bar: bool = false) -> SkillBookScreen:
 	var screen: SkillBookScreen = load(SCENE_PATH).instantiate()
 	screen._profile = profile
+	if screen._profile == null and GameManager.local_profile != null:
+		screen._profile = GameManager.local_profile
 	screen._all_skills = skills
 	## Đánh thường không hiện trong bảng: nút chính trống tự dùng đòn đánh thường hợp vũ khí (SectSkillController.get_default_main_skill).
 	screen._skills = skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden and not s.is_basic_attack)
@@ -110,10 +112,11 @@ func _bind_setting(check: CheckBox, key: String) -> void:
 	## Ô tick mặc định của Godot gần như không thấy trên nền tối -> vẽ ô vuông viền vàng (bật thì có lõi vàng).
 	check.add_theme_icon_override("unchecked", _make_check_icon(false))
 	check.add_theme_icon_override("checked", _make_check_icon(true))
-	check.button_pressed = _profile.get_skill_setting(key)
+	check.button_pressed = _profile.get_skill_setting(key) if _profile != null else false
 	check.toggled.connect(func(on: bool) -> void:
-		_profile.skill_settings[key] = on
-		SaveManager.save_profile(_profile))
+		if _profile != null:
+			_profile.skill_settings[key] = on
+			SaveManager.save_profile(_profile))
 
 static func _make_check_icon(checked: bool) -> Texture2D:
 	const SIZE := 20
@@ -168,10 +171,13 @@ func _build_grid() -> void:
 		_slots[skill.id] = b
 
 func _refresh() -> void:
-	(%PointsLabel as Label).text = "Điểm kỹ năng: %d" % _profile.skill_points
+	if _profile == null and GameManager.local_profile != null:
+		_profile = GameManager.local_profile
+	if _profile != null:
+		(%PointsLabel as Label).text = "Điểm kỹ năng: %d" % _profile.skill_points
 	for skill in _skills:
 		var b: Button = _slots[skill.id]
-		var lv := _profile.get_skill_level(skill.id)
+		var lv := _profile.get_skill_level(skill.id) if _profile != null else 0
 		var label: Label = b.get_node("LevelLabel")
 		label.text = str(lv) if lv > 0 else "Chưa"
 		label.add_theme_color_override("font_color", COLOR_STAT if lv > 0 else COLOR_NOT_LEARNED)
@@ -195,7 +201,9 @@ func _select(skill: SkillDefinition) -> void:
 		%LearnButton.visible = false
 		%TestButton.visible = false
 		return
-	var learned := _profile.get_skill_level(skill.id)
+	if _profile == null and GameManager.local_profile != null:
+		_profile = GameManager.local_profile
+	var learned := _profile.get_skill_level(skill.id) if _profile != null else 0
 	(%SkillName as Label).text = skill.skill_name
 	(%SkillIcon as TextureRect).texture = skill.icon
 	(%SkillDesc as Label).text = skill.description
@@ -204,8 +212,9 @@ func _select(skill: SkillDefinition) -> void:
 
 	_add_line(stat_box, "Đẳng cấp hiện thời: %d" % learned, COLOR_CURRENT_LEVEL, 16)
 	if skill.req_level > 1:
+		var has_level := _profile != null and _profile.level >= skill.req_level
 		_add_line(stat_box, "Yêu cầu cấp nhân vật: %d" % skill.req_level,
-				COLOR_STAT if _profile.level >= skill.req_level else COLOR_WARNING)
+				COLOR_STAT if has_level else COLOR_WARNING)
 	## Hạn chế vũ khí / cưỡi ngựa — đúng chữ GameSetting.ini gốc.
 	var weapon_text := skill.get_weapon_limit_bbcode()
 	if weapon_text != "":
@@ -616,7 +625,8 @@ func _get_grid_drag_data(_pos: Vector2, skill: SkillDefinition, source: Control)
 	if not skill.can_assign_to_hotbar():
 		_show_toast("Kỹ năng nội tại không thi triển được — không gắn vào thanh kỹ năng")
 		return null
-	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and _profile.get_skill_level(skill.id) <= 0:
+	var learned_lv: int = _profile.get_skill_level(skill.id) if _profile != null else 0
+	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and learned_lv <= 0:
 		_show_toast("Chưa học kỹ năng này — học ít nhất 1 cấp để gắn")
 		return null
 	source.set_drag_preview(SkillBarUI.make_drag_preview(skill))
@@ -654,6 +664,9 @@ func _drop_wheel(_pos: Vector2, data: Variant, slot: int) -> void:
 func _assign(slot: int, skill_id: String) -> void:
 	if slot >= LOOP_BASE:
 		_profile.set_loop_slot(slot - LOOP_BASE, skill_id)
+		var player: Node = get_tree().get_first_node_in_group("player") if get_tree() else null
+		if player and player.has_method("on_loop_slot_updated"):
+			player.on_loop_slot_updated(slot - LOOP_BASE, skill_id)
 	elif slot == MAIN_SLOT:
 		_profile.set_main_skill(skill_id)
 	else:
@@ -666,6 +679,9 @@ func _notification(what: int) -> void:
 	if _dragged_wheel_slot != NO_DRAG and not get_viewport().gui_is_drag_successful():
 		if _dragged_wheel_slot >= LOOP_BASE:
 			_profile.set_loop_slot(_dragged_wheel_slot - LOOP_BASE, "")
+			var player: Node = get_tree().get_first_node_in_group("player") if get_tree() else null
+			if player and player.has_method("on_loop_slot_updated"):
+				player.on_loop_slot_updated(_dragged_wheel_slot - LOOP_BASE, "")
 		elif _dragged_wheel_slot == MAIN_SLOT:
 			_profile.set_main_skill("")
 		else:

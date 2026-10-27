@@ -24,6 +24,7 @@ var guild_figure: int = 0                        ## GuildRules.Figure
 var recruit: bool = false                        ## đang tuyển người (chỉ bang chủ/trưởng lão)
 var invite_accept_rate: float = 0.75             ## xác suất đồng ý lời mời tổ đội/bang
 var equipment: Dictionary = {}                   ## Equipment.Part -> ItemInstance đang mặc (để người khác xem trang bị)
+var custom_avatar: String = ""                   ## Chuỗi base64 ảnh đại diện tùy chỉnh 200x200 JPG
 var team_tag: String = ""                       ## "" = không ở trong đội; "c" = đội trưởng đội giả; "t" = thành viên đội của người chơi
 var haggle: float = 0.9                          ## hệ số: người này chỉ giao dịch khi giá trị mình nhận >= haggle * giá trị mình đưa
 

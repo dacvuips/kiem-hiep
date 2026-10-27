@@ -14,12 +14,13 @@ const GROUP := "draggable_windows"
 var title: String = ""
 var body: VBoxContainer
 var bar: PanelContainer
+var is_docked: bool = false
 var _draggable_explicit: bool = true
 var draggable: bool:
 	get:
 		if not _draggable_explicit:
 			return false
-		if _is_in_character_hub():
+		if is_docked:
 			return false
 		return true
 	set(v):
@@ -107,21 +108,25 @@ func _is_in_character_hub() -> bool:
 	return false
 
 func _enter_tree() -> void:
-	if _is_in_character_hub():
+	if is_docked:
 		set_draggable(false)
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	if _is_in_character_hub():
+	if is_docked:
 		set_draggable(false)
 	## Đặt giữa màn hình (lệch theo số khung đang mở để 2 khung không chồng khít nhau).
 	await get_tree().process_frame
-	if not is_inside_tree() or get("is_docked") == true:
+	if not is_inside_tree() or is_docked:
 		return
 	## Dùng kích thước tối thiểu của nội dung — `size` có thể chưa được container cập nhật ở frame đầu.
 	size = get_combined_minimum_size()
-	var offset := Vector2(28, 28) * (get_tree().get_nodes_in_group(GROUP).size() - 1)
-	position = (get_viewport_rect().size - size) * 0.5 + offset
+	var open_floating := 0
+	for w in get_tree().get_nodes_in_group(GROUP):
+		if w is DraggableWindow and is_instance_valid(w) and w.is_inside_tree() and w.visible and not w.is_docked and w != self:
+			open_floating += 1
+	var offset := Vector2(24, 24) * open_floating
+	position = ((get_viewport_rect().size - size) * 0.5 + offset).round()
 	_clamp_to_screen()
 	bring_to_front()
 
@@ -160,4 +165,11 @@ func bring_to_front() -> void:
 
 func _clamp_to_screen() -> void:
 	var screen := get_viewport_rect().size
-	position = position.clamp(Vector2.ZERO, (screen - size).max(Vector2.ZERO))
+	if size.x >= screen.x:
+		position.x = 0.0
+	else:
+		position.x = clampf(position.x, 0.0, screen.x - size.x)
+	if size.y >= screen.y:
+		position.y = 0.0
+	else:
+		position.y = clampf(position.y, 0.0, screen.y - size.y)

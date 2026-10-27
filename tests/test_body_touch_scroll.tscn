@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_body_touch_scroll_01"]
+
+[ext_resource type="Script" path="res://tests/test_body_touch_scroll.gd" id="1_test"]
+
+[node name="TestBodyTouchScroll" type="Node"]
+script = ExtResource("1_test")

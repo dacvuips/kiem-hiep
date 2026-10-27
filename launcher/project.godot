@@ -23,6 +23,21 @@ boot_splash/fullsize=false
 boot_splash/use_filter=true
 boot_splash/minimum_display_time=1200
 
+[autoload]
+
+GameUiBoot="*res://ui/common/game_ui_boot.gd"
+PlayerStats="*res://systems/player_stats.gd"
+VfxManager="*res://systems/vfx_manager.gd"
+SfxManager="*res://systems/sfx_manager.gd"
+ObjectPool="*res://systems/object_pool.gd"
+GameManager="*res://systems/game_manager.gd"
+SaveManager="*res://systems/save/save_manager.gd"
+MusicManager="*res://systems/music_manager.gd"
+AccountApi="*res://systems/net/account_api.gd"
+NetClient="*res://net/client/net_client.gd"
+ContentPacks="*res://systems/boot/content_packs.gd"
+GmManager="*res://systems/gm/gm_manager.gd"
+
 [display]
 
 window/size/viewport_width=1280

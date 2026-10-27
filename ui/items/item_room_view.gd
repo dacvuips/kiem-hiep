@@ -104,6 +104,7 @@ func _make_widget(item: ItemInstance, ctx: Dictionary, rem_count: int = -1) -> I
 		b.set_count(rem_count)
 	b.pressed.connect(func() -> void: item_pressed.emit(item))
 	if interactive:
+		b.set_meta("draggable", true)
 		b.set_drag_forwarding(_drag_data.bind(item, b), _can_drop_forward.bind(b), _drop_forward.bind(b))
 	return b
 

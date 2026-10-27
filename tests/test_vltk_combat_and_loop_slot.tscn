@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://vltk_combat_loop_test"]
+
+[ext_resource type="Script" path="res://tests/test_vltk_combat_and_loop_slot.gd" id="1_test"]
+
+[node name="TestVltkCombatAndLoopSlot" type="Node"]
+script = ExtResource("1_test")

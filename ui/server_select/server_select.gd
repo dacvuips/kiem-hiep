@@ -239,9 +239,12 @@ func _matches(s: Dictionary) -> bool:
 		"new":
 			return bool(s.get("is_new", false))
 		"crowded":
-			return str(s.get("status", "")) == "crowded" or bool(s.get("is_recommended", false))
+			if str(s.get("status", "")) == "crowded" or bool(s.get("is_recommended", false)):
+				return true
+			# Nếu danh sách ít server, tự động đề cử máy chủ chính
+			return _servers.size() <= 2
 		"normal":
-			return str(s.get("status", "")) == "normal" or str(s.get("status", "")) == "smooth"
+			return str(s.get("status", "")) in ["normal", "smooth", "crowded"]
 	return true
 
 # ---------------------------------------------------------------- Danh sách Server

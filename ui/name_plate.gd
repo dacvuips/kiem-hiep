@@ -21,10 +21,19 @@ const SERIES_ICONS: Array[Texture2D] = [
 var _text := ""
 var _icon: Texture2D
 var _name_color := NAME_COLOR
+var side_color: Color = Color.TRANSPARENT
+
+func set_side_color(c: Color) -> void:
+	side_color = c
+	if side_color != Color.TRANSPARENT:
+		_name_color = side_color
+	queue_redraw()
 
 func setup(display_name: String, element: ElementTypes.ElementType, boss: bool = false, is_gold: bool = false) -> void:
 	_text = ("[Hoàng Kim] " + display_name) if is_gold else display_name
-	if is_gold:
+	if side_color != Color.TRANSPARENT:
+		_name_color = side_color
+	elif is_gold:
 		_name_color = GOLD_BOSS_NAME_COLOR
 	elif boss:
 		_name_color = BOSS_NAME_COLOR

@@ -73,14 +73,34 @@ func _init(snapshot: Dictionary = {}) -> void:
 	var portrait := Control.new()
 	portrait.custom_minimum_size = Vector2(170, 210)
 	portrait.mouse_filter = Control.MOUSE_FILTER_STOP
-	portrait.tooltip_text = "Bấm để xoay nhân vật"
-	_avatar = CharacterAvatar.new()
-	_avatar.position = Vector2(85, 190)
-	portrait.add_child(_avatar)
-	portrait.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			_turn = (_turn + 1) % 8
-			_avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * _turn))))
+
+	var custom_av_b64 := str(snapshot.get("custom_avatar", "")).strip_edges()
+	var custom_tex: ImageTexture = CustomAvatarHelper.base64_to_texture(custom_av_b64) if custom_av_b64 != "" else null
+
+	if custom_tex != null:
+		var av_card := Panel.new()
+		av_card.custom_minimum_size = Vector2(170, 170)
+		av_card.size = Vector2(170, 170)
+		av_card.position = Vector2(0, 20)
+		av_card.clip_contents = true
+		av_card.add_theme_stylebox_override("panel", GameUi.box(GameUi.BG_INNER, GameUi.BORDER_ACTIVE, 6, 2, 2))
+		portrait.add_child(av_card)
+
+		var av_rect := TextureRect.new()
+		av_rect.texture = custom_tex
+		av_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		av_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		av_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		av_card.add_child(av_rect)
+	else:
+		portrait.tooltip_text = "Bấm để xoay nhân vật"
+		_avatar = CharacterAvatar.new()
+		_avatar.position = Vector2(85, 190)
+		portrait.add_child(_avatar)
+		portrait.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_turn = (_turn + 1) % 8
+				_avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * _turn))))
 	left[1].add_child(portrait)
 	left[1].add_child(SocialUi.kv("Tên:", str(snapshot.get("name", "")), SocialUi.LABEL_RED, Camp.get_color(int(snapshot.get("camp", 0)))))
 	left[1].add_child(SocialUi.kv("Cấp:", str(int(snapshot.get("level", 1))), SocialUi.LABEL_BLUE))

@@ -27,7 +27,13 @@ func test_rules() -> void:
 	check("Rules: Map ID là 378", TongKimLolRules.MAP_ID == 378)
 	check("Rules: Thời gian trận 40 phút", TongKimLolRules.MATCH_DURATION_SEC == 2400.0)
 	check("Rules: Chu kỳ lính 20 giây", TongKimLolRules.WAVE_INTERVAL_SEC == 20.0)
-	check("Rules: Buff x2 lính mỗi 5 phút", TongKimLolRules.CREEP_BUFF_INTERVAL_SEC == 300.0)
+	check("Rules: Chu kỳ buff lính 5 phút", TongKimLolRules.CREEP_BUFF_INTERVAL_SEC == 300.0)
+	check("Rules: Hệ số buff lính mỗi 5 phút là 1.3 (30%)", TongKimLolRules.CREEP_BUFF_RATE == 1.3)
+	check("Rules: Chu kỳ Siêu Lính 10 phút", TongKimLolRules.SUPER_MINION_INTERVAL_SEC == 600.0)
+	check("Rules: Máu Siêu Lính gấp 8 lần lính thường", TongKimLolRules.SUPER_MINION_HP_MULT == 8.0)
+	check("Rules: Thời điểm xuất hiện Long Trụ ở phút 15 (900s)", TongKimLolRules.PILLAR_SPAWN_TIME_SEC == 900.0)
+	check("Rules: Máu Boss Thượng Cổ gấp 10 lần Boss Hoàng Kim", TongKimLolRules.ANCIENT_BOSS_HP_MULT == 10.0)
+	check("Rules: Sát thương Boss Thượng Cổ gấp 6 lần lính", TongKimLolRules.ANCIENT_BOSS_DAMAGE_MULT == 6.0)
 	check("Rules: Boss Hoàng Kim mỗi 10 phút", TongKimLolRules.BOSS_INTERVAL_SEC == 600.0)
 	check("Rules: Cấp tối đa trong trận 15", TongKimLolRules.MAX_MATCH_LEVEL == 15)
 	check("Rules: Tặng 100 điểm tiềm năng", TongKimLolRules.INITIAL_POTENTIAL_POINTS == 100)
@@ -127,6 +133,18 @@ func test_shop_items() -> void:
 	var shop_win := TongKimLolShopWindow.new()
 	check("Shop: Cửa sổ Quân Nhu Tống Kim khởi tạo thành công", shop_win != null)
 	shop_win.free()
+
+	# Test sinh thuốc Tống Kim vào hành trang và dọn sạch khi rời trận
+	var p := GameManager.local_profile
+	if p:
+		var tk_item := ItemGenerator.generate_misc("tk_phi_toc")
+		check("Shop: Sinh ItemInstance Phi Tốc Đan thành công", tk_item != null)
+		if tk_item:
+			check("Shop: Thuốc có cờ songjin_only", bool(tk_item.get_base().get("songjin_only", false)) == true)
+			p.add_item(tk_item)
+			check("Shop: Thuốc đã vào hành trang", p.inventory.has(tk_item))
+			TongKimLolState.cleanup_tk_items()
+			check("Shop: Thuốc tự động mất khỏi hành trang khi kết thúc/rời trận", not p.inventory.has(tk_item))
 
 	# Kiểm tra hàm apply_speed_buff trên StatusEffectController
 	var sec := StatusEffectController.new()
@@ -404,7 +422,7 @@ func test_moba_lane_and_balance() -> void:
 	# 9. Kiểm tra giới hạn lính tối đa tăng lên 120 lính mỗi phe
 	check("Rules: Giới hạn lính lane tối đa 120 con", TongKimLolRules.MAX_LANE_MINIONS_PER_SIDE == 120)
 
-	# 10. Kiểm tra UI HUD: Nền toolbar mờ hơn & Vị trí nút Quân Nhu / Rời Ải
+	# 10. Kiểm tra UI HUD Tống Kim LOL: Nền đen và ống máu bỏ, VS Bar Tướng Tống / Tướng Kim %, Vàng trên nút bấm
 	var hud := TongKimLolClient.new()
 	add_child(hud)
 	check("HUD: Nút Quân Nhu tồn tại", hud._shop_button != null)
@@ -412,4 +430,47 @@ func test_moba_lane_and_balance() -> void:
 	var btn_parent := hud._shop_button.get_parent() as Control
 	check("HUD: Cụm nút Quân Nhu & Rời Ải neo góc dưới phải (PRESET_BOTTOM_RIGHT)", btn_parent != null and btn_parent.anchors_preset == Control.PRESET_BOTTOM_RIGHT)
 	check("HUD: Đặt ngay trên 4 ô dùng thuốc (offset_bottom <= -360)", btn_parent != null and btn_parent.offset_bottom <= -360.0)
+
+	# Kiểm tra nhãn Vàng đặt phía trên nút Quân Nhu & Rời Ải
+	check("HUD: Nhãn Vàng tồn tại", hud._gold_label != null)
+	var gold_panel := hud._gold_label.get_parent().get_parent() as Control
+	check("HUD: Cụm Vàng nằm phía trên cụm nút (offset_bottom <= btn_parent.offset_top)", gold_panel != null and gold_panel.offset_bottom <= btn_parent.offset_top)
+
+	# Bỏ hiển thị cấp trên HUD (đã có ở tên nhân vật) và bỏ thanh máu riêng
+	check("HUD: Đã bỏ nhãn cấp riêng trên HUD", hud._level_label == null)
+	check("HUD: Đã bỏ ống máu riêng của Tướng Tống", hud._song_hp_bar == null)
+
+	# Banner Tướng Tống vs Tướng Kim và số %
+	check("HUD: VsScoreBar tồn tại", hud._vs_bar != null)
+	check("HUD: VsScoreBar tên phe Trái là 'Tướng Tống'", hud._vs_bar._left_name_lbl.text == "Tướng Tống")
+	check("HUD: VsScoreBar tên phe Phải là 'Tướng Kim'", hud._vs_bar._right_name_lbl.text == "Tướng Kim")
+	hud.update_generals(0.85, 0.40)
+	check("HUD: Điểm số bên trong UI là số % Tướng Tống (85%)", hud._vs_bar._left_score_lbl.text == "85%")
+	check("HUD: Điểm số bên trong UI là số % Tướng Kim (40%)", hud._vs_bar._right_score_lbl.text == "40%")
 	hud.queue_free()
+
+	# 11. Kiểm tra Signal chết của quái kết nối _on_creep_died (sửa lỗi Method expected 2 arguments but called with 3)
+	var match_ctrl := TongKimLolMatch.new()
+	add_child(match_ctrl)
+	match_ctrl.side = "song"
+	match_ctrl.state = TongKimLolState.new()
+	match_ctrl.state.init_match("song")
+	var initial_gold: int = match_ctrl.state.match_gold
+	var creep := VltkMonster.new()
+	creep.monster_id = TongKimLolRules.CREEP_MELEE_TPL
+	creep.data = MonsterData.monster(creep.monster_id).duplicate()
+	creep.battle_side = "jin"
+	add_child(creep)
+	creep.died.connect(match_ctrl._on_creep_died.bind("jin"))
+	# Gọi die() thực tế để kích hoạt signal 'died' -> _on_creep_died
+	creep.die()
+	var drops := get_tree().get_nodes_in_group(GroundDrop.GROUP)
+	var has_drop: bool = false
+	for d in drops:
+		if d is GroundDrop and d.amount == TongKimLolRules.CREEP_BASE_GOLD:
+			has_drop = true
+			d.queue_free()
+			break
+	check("Signal: Quái Kim chết rơi cọc Vàng Tống Kim", has_drop)
+	creep.queue_free()
+	match_ctrl.queue_free()

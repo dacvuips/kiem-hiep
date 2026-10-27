@@ -75,18 +75,6 @@ func tick(delta: float) -> void:
 		trade.tick(delta)
 	if NetClient.is_in_world():
 		return   ## online: khách mua hàng / người xin vào là người thật (server báo) — không giả lập
-	for line in OfflineMarket.tick(profile, delta, _rng):
-		notice.emit(line, true)
-	if profile.stall_open:
-		_stall_clock += delta
-		if _stall_clock >= 6.0:
-			_stall_clock = 0.0
-			for sale in StallService.simulate_customers(profile, _rng):
-				var line := "%s mua %s với giá %d lượng." % [sale["buyer"], sale["item_name"], sale["price"]]
-				stall_log.append(line)
-				if stall_log.size() > 30:
-					stall_log.pop_front()
-				notice.emit(line, true)
 	if team.is_captain():
 		_team_clock += delta
 		if _team_clock >= 9.0:

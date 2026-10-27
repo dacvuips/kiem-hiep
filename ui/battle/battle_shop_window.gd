@@ -13,6 +13,20 @@ func _init() -> void:
 	super._init("Quân Nhu Quan", "Thuốc cho tráng sĩ trước khi ra trận", 460.0)
 	_gold_label = SocialUi.label("", SocialUi.GOLD, 14)
 	body.add_child(_gold_label)
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.custom_minimum_size = Vector2(0, 320)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 8)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+
 	for mid in BattleServer.SHOP_ITEMS:
 		var rec := ItemDatabase.get_misc(mid)
 		if rec.is_empty():
@@ -43,7 +57,7 @@ func _init() -> void:
 			var b := SocialUi.small_button("Mua %d" % n)
 			b.pressed.connect(func() -> void: NetClient.send_battle(BattleServer.OP_BUY, {"mid": mid, "count": n}))
 			row.add_child(b)
-		body.add_child(row)
+		list.add_child(row)
 	var close := SocialUi.stone_button("Đóng")
 	close.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close)

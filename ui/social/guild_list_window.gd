@@ -15,13 +15,13 @@ func _init(hub: SocialHub = null) -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	body.add_child(box)
-	GuildListWindow.fill(box, hub, null, true)
+	GuildListWindow.fill(box, hub, null, false)
 	var close := SocialUi.stone_button("Đóng")
 	close.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close)
 
 ## Đổ bảng các bang vào `into`. `host` = nơi mở hộp phụ (null → cảnh hiện tại).
-static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: bool) -> void:
+static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: bool = false) -> void:
 	var profile := hub.profile
 	var guild := hub.guild
 	if show_requirements:
@@ -56,9 +56,18 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 	filter_bar.add_child(refresh_btn)
 	sec[1].add_child(filter_bar)
 
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.custom_minimum_size = Vector2(0, 360)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sec[1].add_child(scroll)
+
 	var list_container := VBoxContainer.new()
 	list_container.add_theme_constant_override("separation", 8)
-	sec[1].add_child(list_container)
+	list_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list_container)
 
 	## Render hàm nội bộ
 	var render_list := func() -> void:

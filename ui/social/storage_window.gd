@@ -21,21 +21,31 @@ var _own_inventory := false
 
 static func open(host: Node, profile: PlayerProfile) -> StorageWindow:
 	var win := SocialWindow.present(host, StorageWindow.new(profile), &"storage") as StorageWindow
-	win.open_inventory()
 	return win
 
+func _ready() -> void:
+	super._ready()
+	if _is_in_character_hub():
+		set_draggable(false)
+		await get_tree().process_frame
+		position = Vector2(560.0, 68.0)
+		size = Vector2(280.0, 585.0)
+
 func _init(profile: PlayerProfile = null) -> void:
-	super._init("Rương Chứa Đồ", "Kéo thả đồ giữa rương và hành trang", 300.0)
+	super._init("Rương Chứa Đồ", "", 280.0)
 	_profile = profile
 	if _profile == null:
 		return
-	_cell = clampi(int((DisplayServer.window_get_size().y - 360.0) / _profile.storage.ROOM_HEIGHT), 28, 37)
+	_cell = 37
+	custom_minimum_size = Vector2(280.0, 585.0)
 
-	var chest := SocialUi.section(GameUi.ICON_CHEST + " Rương chứa đồ", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
+	var chest := SocialUi.section("", SocialUi.SECTION_ACCENT, SocialUi.SECTION_BG)
 	_box_tabs = HBoxContainer.new()
+	_box_tabs.add_theme_constant_override("separation", 4)
 	chest[1].add_child(_box_tabs)
 	var stack := Control.new()
 	stack.custom_minimum_size = Vector2(_profile.storage.ROOM_WIDTH * _cell + 8, _profile.storage.ROOM_HEIGHT * _cell + 8)
+	stack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var box_scroll := ScrollContainer.new()
 	box_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -89,12 +99,9 @@ func _init(profile: PlayerProfile = null) -> void:
 	_msg.visible = false
 	body.add_child(_msg)
 	var buttons := add_button_row()
-	var bag_btn := SocialUi.stone_button("Hành trang")
 	var close := SocialUi.stone_button("Đóng")
-	for b in [bag_btn, close]:
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		buttons.add_child(b)
-	bag_btn.pressed.connect(open_inventory)
+	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buttons.add_child(close)
 	close.pressed.connect(func() -> void: close_requested.emit())
 	close_requested.connect(_release_inventory)
 	_refresh()
@@ -107,7 +114,10 @@ func open_inventory() -> void:
 		_inventory = InventoryPopup.find_open(get_tree())
 		_own_inventory = _inventory == null
 		if _own_inventory:
-			_inventory = InventoryPopup.open(get_parent().get_parent(), _profile, Callable(), false)
+			var host_target: Node = get_host()
+			if get_parent() != null and get_parent().get_parent() != null:
+				host_target = get_parent().get_parent()
+			_inventory = InventoryPopup.open(host_target, _profile, Callable(), false)
 		_inventory.link_partner(_transfer, func(item: ItemInstance) -> Array:
 			return ["Cất vào rương", func() -> void:
 				_say(StorageService.store_item(_profile, item, _box), "Đã cất %s vào rương." % item.get_display_name())
@@ -154,16 +164,53 @@ func _say(err: String, ok_text: String) -> void:
 func _tab_row(row: HBoxContainer, count: int, current: int, label_prefix: String, on_pick: Callable) -> void:
 	for c in row.get_children():
 		c.queue_free()
+	var unlocked := StorageService.box_count(_profile)
 	for i in count:
-		var b := GameUi.button("%s %d" % [label_prefix, i + 1], GameUi.TAB)
-		GameUi.set_active(b, i == current)
-		b.pressed.connect(on_pick.bind(i))
+		var is_unlocked := i < unlocked
+		var has_items := _has_items_in_bag(i)
+		var text := "%s %d" % [label_prefix, i + 1]
+		if not is_unlocked:
+			text = "🔒 %s %d" % [label_prefix, i + 1]
+			if has_items:
+				text = "🔒 %s %d (Có đồ)" % [label_prefix, i + 1]
+		var b := GameUi.button(text, GameUi.TAB)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size", 10 if has_items else 11)
+		if not is_unlocked:
+			if has_items:
+				b.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+			else:
+				b.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65, 0.8))
+			b.pressed.connect(func() -> void:
+				var cost := StorageService.extra_box_cost(_profile)
+				SocialWindow.confirm(get_tree().current_scene, "Mở khóa %s %d" % [label_prefix, i + 1],
+					"Rương này đang bị khóa%s. Mở khóa rương với giá %s lượng để sử dụng và lấy đồ?" % [
+						" (đang chứa vật phẩm ký gửi hoàn trả)" if has_items else "",
+						InventoryPopup.format_money(cost)
+					],
+					func() -> void:
+						_say(StorageService.buy_extra_box(_profile), "Đã mở khóa %s %d thành công!" % [label_prefix, i + 1])
+						_refresh()
+				)
+			)
+		else:
+			GameUi.set_active(b, i == current)
+			b.pressed.connect(on_pick.bind(i))
 		row.add_child(b)
+
+func _has_items_in_bag(bag_idx: int) -> bool:
+	if _profile == null or _profile.storage == null:
+		return false
+	for it in _profile.storage.inventory:
+		if it != null and it.room_bag == bag_idx:
+			return true
+	return false
 
 func _refresh() -> void:
 	var locked := SecurityLock.is_locked(_profile)
 	_box = clampi(_box, 0, StorageService.box_count(_profile) - 1)
-	_tab_row(_box_tabs, StorageService.box_count(_profile), _box, "Rương", func(i: int) -> void:
+	var total_tabs := 1 + StorageService.MAX_EXTRA_BOXES
+	_tab_row(_box_tabs, total_tabs, _box, "Rương", func(i: int) -> void:
 		_box = i
 		_refresh())
 	_box_view.bag = _box
@@ -200,18 +247,19 @@ func _show_item(item: ItemInstance) -> void:
 
 func _on_expand() -> void:
 	var cost := StorageService.extra_box_cost(_profile)
-	SocialWindow.confirm(get_tree().current_scene, "Mở rộng rương", "Mở thêm 1 rương (6 × 10 ô) với giá %s lượng?" % InventoryPopup.format_money(cost), func() -> void:
+	SocialWindow.confirm(get_tree().current_scene, "Mở rộng rương", "Mở thêm 1 rương (6 × %d ô) với giá %s lượng?" % [_profile.storage.ROOM_HEIGHT, InventoryPopup.format_money(cost)], func() -> void:
 		_say(StorageService.buy_extra_box(_profile), "Đã mở thêm một rương.")
 		_refresh())
 
-## Gửi/rút tiền: hộp nhập số tiền (bị chặn nếu rương đang khoá).
+## Gửi/rút tiền: hộp nhập số tiền (bị chặn nếu rương đang khoá, tối đa 2 tỷ lượng).
 func _ask_money(deposit: bool) -> void:
-	SocialWindow.prompt(get_tree().current_scene, "Gửi tiền" if deposit else "Rút tiền", "Số tiền (lượng)", func(text: String) -> void:
-		submit_money(deposit, text))
+	var max_amt: int = mini(_profile.gold, 2000000000) if deposit else mini(_profile.storage_gold, 2000000000)
+	SocialWindow.prompt(get_tree().current_scene, "Gửi tiền" if deposit else "Rút tiền", "Số tiền (tối đa %s lượng)" % InventoryPopup.format_money(max_amt), func(text: String) -> void:
+		submit_money(deposit, text), "", false, 2000000000)
 
 func submit_money(deposit: bool, text: String) -> void:
 	var t := text.strip_edges()
-	var amount := int(t) if t.is_valid_int() else 0
+	var amount := clampi(int(t) if t.is_valid_int() else 0, 0, 2000000000)
 	var err := StorageService.deposit_gold(_profile, amount) if deposit else StorageService.withdraw_gold(_profile, amount)
 	_say(err, "Đã %s %d lượng." % ["gửi" if deposit else "rút", amount])
 	_refresh()

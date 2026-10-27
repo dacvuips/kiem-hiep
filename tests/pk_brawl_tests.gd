@@ -95,6 +95,16 @@ func test_scoring_and_exp() -> void:
 	p.add_exp(exp_gained)
 	check("profile: cộng exp thực tế thành công", p.level > 10 or p.current_exp > old_exp)
 
+	# Test giới hạn level max 200
+	p.level = PlayerProfile.MAX_LEVEL
+	p.current_exp = 0
+	p.level_up()
+	check("profile: level_up không vượt quá max 200", p.level == 200)
+	p.add_exp(10_000_000)
+	check("profile: add_exp không vượt quá max 200 và exp bằng 0", p.level == 200 and p.current_exp == 0)
+	var loaded := PlayerProfile.from_dict({"level": 250, "exp": 5000})
+	check("profile: from_dict giới hạn level max 200", loaded.level == 200 and loaded.current_exp == 0)
+
 func test_brawl_match_coordinator() -> void:
 	var bot := PkBot.new()
 	check("bot: có hàm respawn_at", bot.has_method("respawn_at"))
@@ -117,6 +127,6 @@ func test_brawl_match_coordinator() -> void:
 	check("world: VltkWorld.is_brawl() trả về false khi không ở Lộn xộn", VltkWorld.is_brawl() == false)
 	
 	add_child(match_node)
-	check("hud: bảng thông tin dời xuống y >= 50 để lộ thanh máu", match_node._top_panel.position.y >= 50.0)
-	check("hud: nút BXH và Rời trận nằm dưới MiniMap (y >= 150)", match_node._btn_scoreboard.get_parent().position.y >= 150.0)
+	check("hud: VsScoreBar căn giữa đỉnh màn hình", match_node._vs_bar.offset_left == -230.0 and match_node._vs_bar.offset_right == 230.0)
+	check("hud: nút BXH và Rời trận nằm trên chỗ để bình bơm máu (QuickItemBar)", match_node._btn_scoreboard.get_parent().offset_bottom <= -360.0)
 	match_node.queue_free()

@@ -1,5 +1,8 @@
 extends Node
 
+const PkStakeSession = preload("res://systems/pk/pk_stake_session.gd")
+const PkStakeWindow = preload("res://ui/pk/pk_stake_window.gd")
+
 var _pass := 0
 var _fail := 0
 
@@ -20,7 +23,10 @@ func _ready() -> void:
 	test_pk_window_ui()
 	test_pk_match_reject()
 	test_pk_match_team()
+	test_thach_dau_side_colors()
 	test_ranking_window()
+	test_stake_system()
+	test_stake_window_ui()
 	print("--- KẾT THÚC TEST: RESULT %d/%d (Thất bại: %d) ---" % [_pass, _pass + _fail, _fail])
 	get_tree().quit(0 if _fail == 0 else 1)
 
@@ -42,6 +48,8 @@ func test_rules() -> void:
 	check("rules: cấp 5 vào Thách đấu bị từ chối", PkRules.check_entry(p, PkRules.Mode.THACH_DAU) != "")
 
 	check("rules: Thách đấu cho phép ghép tự do", PkRules.can_match(PkRules.Mode.THACH_DAU, 10, "hoa_son", 90, "cai_bang") == true)
+	check("rules: Liên đấu chênh lệch cấp vẫn ghép được", PkRules.can_match(PkRules.Mode.LIEN_DAU, 10, "hoa_son", 90, "cai_bang") == true)
+	check("rules: Đại hội cùng phái chênh lệch cấp vẫn ghép được", PkRules.can_match(PkRules.Mode.DAI_HOI, 10, "hoa_son", 90, "hoa_son") == true)
 	check("rules: Đại hội khác phái không ghép được", PkRules.can_match(PkRules.Mode.DAI_HOI, 90, "hoa_son", 90, "cai_bang") == false)
 
 func test_profile_and_points() -> void:
@@ -85,12 +93,17 @@ func test_pk_window_ui() -> void:
 	var win := PkWindow.new(p)
 	add_child(win)
 
-	var tabs_found: Array[String] = []
+	var modes_found: Array[String] = []
+	if win._mode_filter_btn != null:
+		for i in win._mode_filter_btn.item_count:
+			modes_found.append(win._mode_filter_btn.get_item_text(i))
 	for b in win.find_children("*", "Button", true, false):
 		var btn := b as Button
-		if btn.text in ["Đại hội võ lâm", "Võ lâm Liên đấu", "Thách đấu"]:
-			tabs_found.append(btn.text)
-	check("ui: PkWindow có đủ 3 nút tab", tabs_found.has("Đại hội võ lâm") and tabs_found.has("Võ lâm Liên đấu") and tabs_found.has("Thách đấu"))
+		modes_found.append(btn.text)
+	var has_dh := modes_found.any(func(s: String) -> bool: return s.to_lower().contains("đại hội"))
+	var has_ld := modes_found.any(func(s: String) -> bool: return s.to_lower().contains("liên đấu"))
+	var has_td := modes_found.any(func(s: String) -> bool: return s.to_lower().contains("thách đấu"))
+	check("ui: PkWindow có đủ các chế độ PK", has_dh and has_ld and has_td)
 
 	# Test switching to THACH_DAU
 	win._select_mode(PkRules.Mode.THACH_DAU)
@@ -198,3 +211,216 @@ func test_ranking_window() -> void:
 	check("ranking: tab Võ Lâm PK có hiển thị bảng xếp hạng", not boards.is_empty())
 
 	rw.queue_free()
+
+func test_thach_dau_side_colors() -> void:
+	print("--- TEST MÀU SẮC 2 PHE THÁCH ĐẤU ---")
+	# 1. Test Player overhead color & prefix
+	var prof := PlayerProfile.new()
+	prof.display_name = "HiepKhachXanh"
+	prof.level = 80
+	GameManager.local_profile = prof
+
+	var player_script = load("res://player/player.gd")
+	var p = CharacterBody2D.new()
+	p.set_script(player_script)
+	p.set_physics_process(false)
+	p._build_name_label(prof.display_name)
+
+	# Phe Xanh
+	p.set_name_color(Color(0.25, 0.70, 1.0), "[Phe Xanh]")
+	check("player: tiền tố [Phe Xanh] hiển thị trên đầu", p._name_label.text.contains("[Phe Xanh]"))
+	var col_blue: Color = p._name_label.get_theme_color("font_color")
+	check("player: màu tên Phe Xanh (xanh dương)", is_equal_approx(col_blue.r, 0.25) and is_equal_approx(col_blue.b, 1.0))
+
+	# Phe Đỏ
+	p.set_name_color(Color(1.0, 0.35, 0.35), "[Phe Đỏ]")
+	check("player: tiền tố [Phe Đỏ] hiển thị trên đầu", p._name_label.text.contains("[Phe Đỏ]"))
+	var col_red: Color = p._name_label.get_theme_color("font_color")
+	check("player: màu tên Phe Đỏ (đỏ)", is_equal_approx(col_red.r, 1.0) and is_equal_approx(col_red.g, 0.35))
+
+	p.reset_name_color()
+	check("player: reset_name_color xóa bỏ tiền tố", not p._name_label.text.contains("[Phe"))
+	p.queue_free()
+
+	# 2. Test RemotePlayer overhead color & prefix
+	var rp := RemotePlayer.new()
+	rp.setup({"eid": 999, "name": "DoiThuDo", "level": 80, "camp": 0, "pos": Vector2.ZERO, "look": {}, "flags": 0, "dir": 0, "action": "stand", "z": 0.0})
+	rp.set_name_color(Color(1.0, 0.35, 0.35), "[Phe Đỏ]")
+	check("remote_player: có hàm set_name_color và tiền tố [Phe Đỏ]", rp._label != null and rp._label.text.contains("[Phe Đỏ]"))
+	rp.queue_free()
+
+	# 3. Test Room UI colors in PkWindow
+	var win := PkWindow.new(prof)
+	add_child(win)
+	win._select_mode(PkRules.Mode.THACH_DAU)
+	var room := PkLobby.create(prof, PkRules.Mode.THACH_DAU, "", 2)
+	win._show_room(room)
+
+	# Tìm các panel 2 phe trong phòng
+	var labels := win.find_children("*", "Label", true, false)
+	var has_blue_header := false
+	var has_red_header := false
+	for l in labels:
+		var lbl := l as Label
+		if lbl.text.contains("Phe Xanh Dương"):
+			has_blue_header = true
+			var c: Color = lbl.get_theme_color("font_color")
+			check("ui_room: tiêu đề Phe Xanh Dương có màu xanh", is_equal_approx(c.r, 0.25) and is_equal_approx(c.b, 1.0))
+		elif lbl.text.contains("Phe Đỏ ("):
+			has_red_header = true
+			var c: Color = lbl.get_theme_color("font_color")
+			check("ui_room: tiêu đề Phe Đỏ có màu đỏ", is_equal_approx(c.r, 1.0) and is_equal_approx(c.g, 0.40))
+	check("ui_room: có tiêu đề Phe Xanh Dương", has_blue_header)
+	check("ui_room: có tiêu đề Phe Đỏ", has_red_header)
+	PkLobby.close(str(room["id"]))
+	win.queue_free()
+
+	# 4. Test PkMatch HUD & VsScoreBar colors for Thách Đấu
+	GameManager.field_map = {"pk": {"mode": PkRules.Mode.THACH_DAU, "team_size": 2}}
+	var m := PkMatch.new()
+	add_child(m)
+	check("pk_match: VsScoreBar bên trái là Phe Xanh", m._vs_bar._left_name_lbl.text == "Phe Xanh")
+	check("pk_match: VsScoreBar bên phải là Phe Đỏ", m._vs_bar._right_name_lbl.text == "Phe Đỏ")
+	var l_col: Color = m._vs_bar._left_name_lbl.get_theme_color("font_color")
+	var r_col: Color = m._vs_bar._right_name_lbl.get_theme_color("font_color")
+	check("pk_match: màu tên Phe Xanh là xanh dương", is_equal_approx(l_col.r, 0.25) and is_equal_approx(l_col.b, 1.0))
+	check("pk_match: màu tên Phe Đỏ là đỏ", is_equal_approx(r_col.r, 1.0) and is_equal_approx(r_col.g, 0.35))
+	m.queue_free()
+	GameManager.field_map = {}
+
+func test_stake_system() -> void:
+	print("--- TEST HỆ THỐNG ĐẶT CƯỢC THÁCH ĐẤU ---")
+	var p_a := PlayerProfile.new()
+	p_a.display_name = "DaiHiepA"
+	p_a.gold = 500000
+	p_a.xu = 200
+	p_a.jade = 50
+
+	var test_item := ItemGenerator.generate_misc("6_1_1877")
+	if test_item != null:
+		p_a.add_item(test_item)
+
+	var p_b := PlayerProfile.new()
+	p_b.display_name = "DaiHiepB"
+	p_b.gold = 300000
+	p_b.xu = 150
+	p_b.jade = 30
+
+	var session := PkStakeSession.new()
+	session.side_a.leader_name = p_a.display_name
+	session.side_b.leader_name = p_b.display_name
+
+	# Test đặt tiền, xu, knb phe A
+	var err_gold := session.set_gold("a", 100000, p_a)
+	check("stake: đặt tiền lượng A thành công", err_gold == "" and session.side_a.gold == 100000)
+	var err_xu := session.set_xu("a", 50, p_a)
+	check("stake: đặt xu A thành công", err_xu == "" and session.side_a.xu == 50)
+	var err_jade := session.set_jade("a", 15, p_a)
+	check("stake: đặt KNB A thành công", err_jade == "" and session.side_a.jade == 15)
+
+	# Test đặt vật phẩm phe A
+	if test_item != null:
+		var has_before := p_a.inventory.has(test_item)
+		var err_item := session.offer_item("a", test_item, p_a)
+		check("stake: đặt vật phẩm A thành công", err_item == "")
+		check("stake: vật phẩm bị gỡ khỏi hành trang A", not p_a.inventory.has(test_item) and has_before)
+		check("stake: vật phẩm nằm trong khung cược A", session.side_a.room.owns(test_item))
+
+	# Test đặt tiền phe B
+	session.set_gold("b", 80000, p_b)
+	session.set_xu("b", 40, p_b)
+	session.set_jade("b", 10, p_b)
+	check("stake: phe B đặt cược đúng", session.side_b.gold == 80000 and session.side_b.xu == 40 and session.side_b.jade == 10)
+
+	# Test khoá cược
+	check("stake: trước khi khoá cả hai chưa khoá", not session.is_both_locked())
+	session.toggle_lock("a")
+	check("stake: phe A đã khoá", session.side_a.locked == true)
+
+	# Khi đã khoá thử sửa cược thì bị chặn
+	var err_modify := session.set_gold("a", 200000, p_a)
+	check("stake: khi đã khoá thì không sửa được cược", err_modify != "" and session.side_a.gold == 100000)
+
+	session.toggle_lock("b")
+	check("stake: cả hai bên đã xác nhận khoá", session.is_both_locked() == true)
+
+	# Test khấu trừ ký quỹ khi vào trận
+	session.deduct_escrow(p_a, "a")
+	check("stake: khấu trừ tiền ký quỹ của trưởng nhóm A", p_a.gold == 400000)
+	check("stake: khấu trừ xu ký quỹ của trưởng nhóm A", p_a.xu == 150)
+	check("stake: khấu trừ KNB ký quỹ của trưởng nhóm A", p_a.jade == 35)
+
+	# Test trao thưởng khi phe A THẮNG
+	var res := session.payout_to_winner("a", p_a, "a")
+	check("stake: kết quả trả về là bên A thắng", res.is_winner == true)
+	check("stake: tổng tiền cược gộp cả 2 bên (100k + 80k)", res.total_gold == 180000)
+	check("stake: tổng xu gộp cả 2 bên (50 + 40)", res.total_xu == 90)
+	check("stake: tổng KNB gộp cả 2 bên (15 + 10)", res.total_jade == 25)
+
+	# Kiểm tra tài sản thực tế của trưởng nhóm A sau khi nhận giải thưởng:
+	# Ban đầu có 500k, bị trừ 100k ký quỹ còn 400k, sau đó nhận tổng 180k -> 580k (+80k thắng từ B)
+	check("stake: trưởng nhóm A nhận đủ 580k lượng", p_a.gold == 580000)
+	# Xu: 200 - 50 = 150 + 90 = 240 xu (+40 xu thắng từ B)
+	check("stake: trưởng nhóm A nhận đủ 240 xu", p_a.xu == 240)
+	# KNB: 50 - 15 = 35 + 25 = 60 KNB (+10 KNB thắng từ B)
+	check("stake: trưởng nhóm A nhận đủ 60 KNB", p_a.jade == 60)
+	if test_item != null:
+		check("stake: trưởng nhóm A nhận lại vật phẩm vào hành trang", p_a.inventory.has(test_item))
+
+	# Test hoàn trả khi huỷ / hoà (refund_all)
+	var s2 := PkStakeSession.new()
+	s2.set_gold("a", 50000, p_a)
+	s2.deduct_escrow(p_a, "a")
+	check("stake: sau khi trừ cược s2", p_a.gold == 530000)
+	s2.refund_all(p_a, "a")
+	check("stake: hoàn trả toàn bộ khi huỷ trận", p_a.gold == 580000)
+
+func test_stake_window_ui() -> void:
+	print("--- TEST UI CỬA SỔ ĐẶT CƯỢC THÁCH ĐẤU ---")
+	var p := PlayerProfile.new()
+	p.display_name = "BangChu"
+	p.gold = 1000000
+	p.xu = 500
+	p.jade = 100
+
+	var sess := PkStakeSession.new()
+	sess.side_a.leader_name = p.display_name
+	sess.side_b.leader_name = "DoiThu"
+
+	var win := PkStakeWindow.new(sess, p, {}, "a")
+	add_child(win)
+
+	check("stake_ui: khởi tạo cửa sổ đặt cược thành công", win != null)
+	check("stake_ui: nút tiền A tồn tại", win._a_money_btn != null)
+	check("stake_ui: nút xu A tồn tại", win._a_xu_btn != null)
+	check("stake_ui: nút KNB A tồn tại", win._a_jade_btn != null)
+	check("stake_ui: nút khoá cược A tồn tại", win._a_lock_btn != null)
+	check("stake_ui: nút khoá cược B tồn tại", win._b_lock_btn != null)
+
+	# Bấm khoá cược A trên UI
+	win._a_lock_btn.emit_signal("pressed")
+	check("stake_ui: bấm nút khoá cược A cập nhật trạng thái", sess.side_a.locked == true)
+
+	win.queue_free()
+
+	# Kiểm tra nút mở khung cược trong phòng Thách Đấu
+	var p_host := PlayerProfile.new()
+	p_host.display_name = "ChuPhong"
+	var pk_win := PkWindow.new(p_host)
+	add_child(pk_win)
+	pk_win._select_mode(PkRules.Mode.THACH_DAU)
+	var room := PkLobby.create(p_host, PkRules.Mode.THACH_DAU, "", 2)
+	check("lobby: phòng thách đấu tự động có stake_session", room.has("stake") and room["stake"] != null)
+
+	pk_win._show_room(room)
+	var found_btn := false
+	for b in pk_win.find_children("*", "Button", true, false):
+		var btn := b as Button
+		if btn.text.contains("Khung Cược") or btn.text.contains("Đặt Cược"):
+			found_btn = true
+			break
+	check("lobby_ui: phòng chờ Thách Đấu có nút mở khung đặt cược", found_btn)
+
+	PkLobby.close(str(room["id"]))
+	pk_win.queue_free()
+

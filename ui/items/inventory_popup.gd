@@ -62,23 +62,62 @@ func _ready() -> void:
 		%ShopButton.pressed.connect(func() -> void:
 			PotionShopWindow.open(_get_host(), func() -> void:
 				if is_instance_valid(self):
-					_refresh()))
+					_refresh()
+			, _profile))
 	else:
 		var shop := GameUi.button("Hiệu thuốc")
 		shop.custom_minimum_size = (%SortButton as Control).custom_minimum_size
 		shop.pressed.connect(func() -> void: PotionShopWindow.open(_get_host(), func() -> void:
 			if is_instance_valid(self):
-				_refresh()))
+				_refresh()
+		, _profile))
 		(%SortButton as Control).add_sibling(shop)
 
-	## Chế tạo
-	if has_node("%CraftButton"):
-		%CraftButton.pressed.connect(_open_crafting)
-	else:
-		var craft := GameUi.button("Chế tạo")
-		craft.custom_minimum_size = (%SortButton as Control).custom_minimum_size
-		craft.pressed.connect(_open_crafting)
-		(%SortButton as Control).add_sibling(craft)
+	## Nút mở Tiệm Đổi Viêm Đế (không cần chạy tới NPC)
+	var vd_btn := GameUi.button("Đổi Viêm Đế")
+	vd_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	vd_btn.pressed.connect(func() -> void:
+		ViemDeWindow.open_reward_shop(_get_host(), _profile)
+	)
+	(%SortButton as Control).add_sibling(vd_btn)
+
+	## Nút mở Tiền Trang (Nạp / Đổi Tiền Xu & KNB)
+	var tt_btn := GameUi.button("Tiền Trang")
+	tt_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	tt_btn.pressed.connect(func() -> void:
+		TienTrangWindow.open(_get_host(), func() -> void:
+			if is_instance_valid(self):
+				_refresh()
+		, _profile)
+	)
+	(%SortButton as Control).add_sibling(tt_btn)
+
+	## Nút mở Kỳ Trân Các (Cửa hàng Tiền Xu)
+	var ktc_btn := GameUi.button("Kỳ Trân Các")
+	ktc_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	ktc_btn.pressed.connect(func() -> void:
+		KyTranCacWindow.open(_get_host(), func() -> void:
+			if is_instance_valid(self):
+				_refresh()
+		, _profile)
+	)
+	(%SortButton as Control).add_sibling(ktc_btn)
+
+	# Gắn sự kiện click cho các nút cộng trong thanh tiền tệ
+	for frame_path in ["Frame/Root/BottomMoneyBar/FrameGold", "Frame/Root/BottomMoneyBar/FrameXu", "Frame/Root/BottomMoneyBar/FrameJade"]:
+		var f := get_node_or_null(frame_path)
+		if f:
+			var plus: Control = f.get_node_or_null("PlusBtn")
+			if plus:
+				plus.mouse_filter = Control.MOUSE_FILTER_STOP
+				plus.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+				plus.gui_input.connect(func(e: InputEvent) -> void:
+					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+						TienTrangWindow.open(_get_host(), func() -> void:
+							if is_instance_valid(self):
+								_refresh()
+						, _profile)
+				)
 
 	## Phong cách tab giống CharacterHub
 	if %BagTabs.get_child_count() > 1:
@@ -154,7 +193,6 @@ func _open_crafting() -> void:
 			_crafting_win = null
 			if is_instance_valid(self):
 				_refresh())
-	_refresh()
 
 ## Ghép với cửa sổ khác (Rương chứa đồ): `handler(item, from, to, x, y, bag) -> bool` cho phép kéo món từ lưới của cửa sổ đó thả vào
 ## hành trang; `item_action(item) -> Array` trả thêm 1 nút [nhãn, Callable] trong khung chi tiết món (vd. "Cất vào rương"), [] = không thêm.
@@ -203,6 +241,8 @@ func _refresh() -> void:
 	_room.rebuild()
 	if has_node("%GoldValue"):
 		(%GoldValue as Label).text = format_money(_profile.gold) + " Lượng"
+	if has_node("%XuValue"):
+		(%XuValue as Label).text = format_money(_profile.xu) + " Xu"
 	if has_node("%JadeValue"):
 		(%JadeValue as Label).text = format_money(_profile.jade)
 
@@ -219,15 +259,25 @@ func _on_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
-	var actions := [
-		["Trang bị", _equip.bind(index)],
-		["Vứt bỏ", _drop.bind(index)],
-	]
+	var actions := []
+	if not item.is_misc():
+		actions.append(["Trang bị", _equip.bind(index)])
+	else:
+		var use_label := ItemConsumer.get_action_label(item)
+		actions.append([use_label, _use.bind(index)])
+	actions.append(["Vứt bỏ", _drop.bind(index)])
+
+	if item.misc_id in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
+		actions.append(["Tiệm Ép Đồ", func() -> void: CompoundWindow.open(_get_host(), _profile, Callable())])
+	elif item.misc_id in ["6_1_2805", "6_1_1685", "6_1_1606"]:
+		actions.append(["Tiệm Đổi Viêm Đế", func() -> void: ViemDeWindow.open_reward_shop(_get_host(), _profile)])
+
 	if PotionEffect.usable(item):
-		actions[0] = ["Dùng", _use.bind(index)]
-		## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): gắn loại thuốc này vào 1 ô.
 		for i in _profile.quick_items.size():
 			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
+	if item.can_sell():
+		var label := "Bán (%s Lượng)" % format_money(item.get_sale_price())
+		actions.insert(1, [label, _sell.bind(index)])
 	if _partner_action.is_valid():
 		var extra: Array = _partner_action.call(item)
 		if not extra.is_empty():
@@ -236,30 +286,116 @@ func _on_item_pressed(item: ItemInstance) -> void:
 		actions.insert(0, ["Đặt vào chế tạo", func() -> void: _crafting_win._put(item)])
 	ItemDetailPopup.open(self, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
-## "Dùng" thuốc / đan: chỉ trong trận (có nhân vật trên bản đồ) — PotionEffect.consume.
-func _use(index: int) -> void:
-	if index >= _profile.inventory.size():
+## "Bán": đổi vật phẩm lấy Lượng theo công thức VLTK gốc (price / 4). Đồ quý (hoàng kim, đồ tím) hỏi xác nhận trước.
+func _sell(index: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
 		return
-	var player := get_tree().get_first_node_in_group("player")
-	var item := _profile.inventory[index]
-	if PotionEffect.is_fuyuan_potion(item):
-		var fy := PotionEffect.get_fuyuan_amount(item)
-		if not PotionEffect.consume(_profile, player, item):
-			return
-		_show_message("Đã dùng %s (+%d Phúc Duyên)" % [item.get_display_name(), fy])
-		_commit()
-		return
-	if player == null:
-		_show_message("Chỉ dùng được thuốc khi đang ở trên bản đồ.")
-		return
-	var blocked := PotionEffect.block_reason(item)
+	var item: ItemInstance = _profile.inventory[index]
+	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
+	if blocked == "" and SecurityLock.is_item_locked(item):
+		blocked = "Món đồ đang bị khoá, không thể bán."
 	if blocked != "":
 		_show_message(blocked)
 		return
-	if not PotionEffect.consume(_profile, player, item):
+	if not item.can_sell():
+		_show_message("Vật phẩm này không thể bán.")
 		return
-	_show_message("Đã dùng %s" % item.get_display_name())
+
+	var sale_price := item.get_sale_price()
+	var item_name := item.get_display_name()
+
+	if item.is_gold() or item.is_purple():
+		_confirm_sell(index, item_name, sale_price)
+		return
+
+	_execute_sell(index, item_name, sale_price)
+
+func _confirm_sell(index: int, item_name: String, sale_price: int) -> void:
+	var popup := ConfirmationDialog.new()
+	popup.title = "Xác nhận bán"
+	popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, format_money(sale_price)]
+	popup.ok_button_text = "Bán"
+	popup.cancel_button_text = "Hủy"
+	add_child(popup)
+	popup.confirmed.connect(func() -> void:
+		_execute_sell(index, item_name, sale_price)
+		popup.queue_free()
+	)
+	popup.canceled.connect(func() -> void:
+		popup.queue_free()
+	)
+	popup.popup_centered()
+
+func _execute_sell(index: int, item_name: String, sale_price: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
+		return
+	_profile.inventory.remove_at(index)
+	_profile.gold += sale_price
+	_show_message("Đã bán %s nhận được %s Lượng." % [item_name, format_money(sale_price)])
 	_commit()
+
+func _open_viem_de_chest(index: int) -> void:
+	if _profile == null or index < 0 or index >= _profile.inventory.size():
+		return
+	var item: ItemInstance = _profile.inventory[index]
+	if item.count > 1:
+		item.count -= 1
+	else:
+		_profile.inventory.remove_at(index)
+
+	var gained_exp := randi_range(1500000, 3500000)
+	var gained_gold := randi_range(150000, 350000)
+	_profile.add_exp(gained_exp)
+	_profile.gold += gained_gold
+
+	var frags := randi_range(1, 3)
+	for i in frags:
+		var frag_it := ItemGenerator.generate_misc("6_1_1685")
+		if frag_it != null:
+			_profile.add_item(frag_it)
+
+	var tt_ids := ["4_238_1", "4_239_1", "4_240_1"]
+	var tt_pick: String = tt_ids.pick_random()
+	var tt_it := ItemGenerator.generate_misc(tt_pick)
+	var tt_name := "Thủy Tinh"
+	if tt_it != null:
+		tt_name = tt_it.get_name()
+		_profile.add_item(tt_it)
+
+	var w_script: GDScript = load("res://ui/events/viem_de_window.gd")
+	if w_script != null:
+		var rec: Dictionary = w_script._get_records_for(_profile)
+		rec["chests"] = maxi(0, int(rec.get("chests", 0)) - 1)
+		rec["totem_fragments"] = int(rec.get("totem_fragments", 0)) + frags
+		w_script._save_records_for(rec, _profile)
+
+	_show_message("Mở [Viêm Đế Bí Bảo] thành công!\n+ %s EXP\n+ %s Lượng\n+ %d Mảnh Đồ Đằng Viêm Đế\n+ 1 %s" % [
+		format_money(gained_exp),
+		format_money(gained_gold),
+		frags,
+		tt_name
+	])
+	_commit()
+
+func _craft_viem_de_totem(_index: int) -> void:
+	if _profile == null:
+		return
+	var res: Dictionary = ViemDeWindow.craft_totem_quick(_profile)
+	_show_message(str(res.get("message", "")))
+	_commit()
+	_refresh()
+
+## "Dùng" vật phẩm: hỗ trợ dùng rương báu, lễ hộp, thuốc lắc, bí kíp, lệnh bài, đan dược...
+func _use(index: int) -> void:
+	if _profile == null or index >= _profile.inventory.size():
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	var item := _profile.inventory[index]
+	var res := ItemConsumer.use_item(_profile, item, player, _get_host())
+	if res.has("message") and str(res["message"]) != "":
+		_show_message(str(res["message"]))
+	if res.get("ok", false):
+		_commit()
 
 func _set_quick_slot(misc_id: String, slot: int) -> void:
 	_profile.quick_items[slot] = misc_id

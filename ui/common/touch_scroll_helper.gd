@@ -58,12 +58,63 @@ func _exit_tree() -> void:
 func can_scroll_v() -> bool:
 	if scroll_container == null or not is_instance_valid(scroll_container):
 		return false
-	return scroll_container.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED
+	if scroll_container.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		return false
+
+	var total_ch: float = 0.0
+	for c in scroll_container.get_children():
+		if c is Control and not (c is VScrollBar or c is HScrollBar):
+			var ch: float = (c as Control).size.y
+			if ch <= 0.0:
+				ch = (c as Control).get_combined_minimum_size().y
+			total_ch = maxf(total_ch, ch)
+	var sc_height := scroll_container.size.y
+	if sc_height <= 0.0:
+		sc_height = scroll_container.get_combined_minimum_size().y
+	if total_ch > 0.0 and sc_height > 0.0:
+		return total_ch > sc_height
+
+	var v_bar := scroll_container.get_v_scroll_bar()
+	if v_bar != null and v_bar.max_value > 0.0 and v_bar.page > 0.0:
+		return v_bar.max_value > v_bar.page
+	return true
 
 func can_scroll_h() -> bool:
 	if scroll_container == null or not is_instance_valid(scroll_container):
 		return false
-	return scroll_container.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED
+	if scroll_container.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		return false
+	var h_bar := scroll_container.get_h_scroll_bar()
+	if h_bar != null and h_bar.max_value > 0.0 and h_bar.page > 0.0:
+		return h_bar.max_value > h_bar.page
+	for c in scroll_container.get_children():
+		if c is Control and not (c is VScrollBar or c is HScrollBar):
+			var cw: float = (c as Control).size.x
+			if cw <= 0.0:
+				cw = (c as Control).get_combined_minimum_size().x
+			if cw > 0.0 and scroll_container.size.x > 0.0:
+				return cw > scroll_container.size.x
+	return true
+
+func _is_draggable_at(_pos: Vector2) -> bool:
+	if scroll_container == null or not is_instance_valid(scroll_container):
+		return false
+	var vp := scroll_container.get_viewport()
+	if vp == null:
+		return false
+	var ctrl := vp.gui_get_hovered_control()
+	var p: Node = ctrl
+	var limit: Node = scroll_container.get_parent()
+	while p != null and p != limit:
+		if p is Control:
+			if p.has_meta("draggable") or p.has_meta("drag_data"):
+				return true
+			if p is ItemSlotButton:
+				return true
+			if p.has_method("_get_drag_data"):
+				return true
+		p = p.get_parent()
+	return false
 
 func _is_covered_by_higher_layer(pos: Vector2) -> bool:
 	if scroll_container == null or not is_instance_valid(scroll_container):
@@ -119,9 +170,13 @@ func _input(event: InputEvent) -> void:
 		if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT]:
 			return
 
-	# Không can thiệp nếu đang kéo thả vật phẩm hệ thống Godot (trừ khi đang trong quá trình cuộn)
+	# Không can thiệp nếu đang kéo thả vật phẩm hệ thống Godot
 	var vp := scroll_container.get_viewport()
-	if vp != null and vp.gui_is_dragging() and not _is_dragging and not _is_touching:
+	if vp != null and vp.gui_is_dragging():
+		_is_touching = false
+		_is_dragging = false
+		_velocity_v = 0.0
+		_velocity_h = 0.0
 		return
 
 	var is_press := false
@@ -143,6 +198,16 @@ func _input(event: InputEvent) -> void:
 	if is_press:
 		if not can_scroll_v() and not can_scroll_h():
 			return
+		if _is_draggable_at(pos):
+			return
+
+		# Nếu bấm vào header_panel của cửa sổ thì để người dùng kéo cửa sổ
+		if body_control != null and is_instance_valid(body_control):
+			var hdr = body_control.get("header_panel")
+			if hdr is Control and is_instance_valid(hdr) and (hdr as Control).visible:
+				var local_hdr = (hdr as Control).get_global_transform_with_canvas().affine_inverse() * pos
+				if Rect2(Vector2.ZERO, (hdr as Control).size).has_point(local_hdr):
+					return
 
 		# Kiểm tra xem chạm có nằm trong ScrollContainer hoặc Body của khung không
 		var in_scroll := false

@@ -45,15 +45,16 @@ static func handle(p: PlayerProfile, op: String, args: Dictionary) -> Dictionary
 			res["now"] = t
 			return res
 		"mine":
+			var tax_events := b.process_seller_daily_taxes(p, SELF_SID, t)
 			var got := b.claim_sold(p, SELF_SID)
-			if got[0] > 0 or got[1] > 0:
+			if got[0] > 0 or got[1] > 0 or not tax_events.is_empty():
 				_store(p)
 			return {"op": "mine", "items": b.of_seller(SELF_SID), "now": t, "slots": MarketBook.MAX_SLOTS}
 		"sell":
 			var r := b.sell(p, SELF_SID, str(args.get("uid", "")), int(args.get("price", 0)), int(args.get("cur", 0)), t, str(args.get("note", "")))
 			if r[0] == "":
 				_store(p)
-			return _done(r[0], "Đã treo bán %s." % _name(r[1]))
+			return _done(r[0], "Đã treo bán %s (đã trừ 3%% thuế)." % _name(r[1]))
 		"buy":
 			var r := b.buy(p, SELF_SID, str(args.get("id", "")), t)
 			if r[0] == "":
@@ -61,43 +62,17 @@ static func handle(p: PlayerProfile, op: String, args: Dictionary) -> Dictionary
 				_store(p)
 			return _done(r[0], "Mua %s thành công!" % str(r[1].get("name", "")))
 		"cancel":
-			var err := b.cancel(p, SELF_SID, str(args.get("id", "")))
+			var res := b.cancel(p, SELF_SID, str(args.get("id", "")))
+			var err: String = str(res.get("error", ""))
 			if err == "":
 				_store(p)
-			return _done(err, "Đã huỷ treo — món đồ đã về hành trang.")
+			var target_str := str(res.get("target", "hành trang"))
+			return _done(err, "Đã huỷ treo — món đồ đã chuyển về %s." % target_str)
 	return _done("Thao tác không hợp lệ.", "")
 
-## Khách giả mua hàng mình treo (gọi từ SocialHub.tick). Trả về các dòng thông báo bán được.
-static var _clock := 0.0
-static func tick(p: PlayerProfile, delta: float, rng: RandomNumberGenerator) -> Array[String]:
-	var lines: Array[String] = []
-	if p.market.is_empty():
-		return lines
-	_clock += delta
-	if _clock < CUSTOMER_SECONDS:
-		return lines
-	_clock = 0.0
-	var b := book(p)
-	var t := now()
-	var mine := b.of_seller(SELF_SID).filter(func(l: Dictionary) -> bool: return MarketBook.is_live(l, t))
-	if mine.is_empty():
-		return lines
-	var l: Dictionary = mine[rng.randi() % mine.size()]
-	var item := b.item_of(str(l["id"]))
-	var fair := float(MockPlayer.suggested_price(item)) if item else 1.0
-	var price := float(l["price"]) * (30000.0 if int(l["cur"]) == MarketBook.CUR_JADE else 1.0)   ## 1 KNB ~ 3 vạn lượng
-	var chance := clampf(1.2 - price / maxf(1.0, fair) * 0.6, 0.03, 0.8)
-	if rng.randf() > chance:
-		return lines
-	var buyers := SocialDirectory.players(p)
-	l["state"] = MarketBook.STATE_SOLD
-	l["buyer"] = buyers[rng.randi() % buyers.size()].name if not buyers.is_empty() else "Khách"
-	l["name"] = str(item.get_base().get("name", "?")) if item else "?"
-	l["item"] = {}
-	lines.append(MarketBook.sold_line(l))
-	b.claim_sold(p, SELF_SID)
-	_store(p)
-	return lines
+## Cấm tuyệt đối bot mua đồ — chỉ người chơi thật mới có quyền mua đồ.
+static func tick(_p: PlayerProfile, _delta: float, _rng: RandomNumberGenerator) -> Array[String]:
+	return []
 
 static func _store(p: PlayerProfile) -> void:
 	p.market = _book.of_seller(SELF_SID).duplicate(true)

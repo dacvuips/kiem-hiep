@@ -44,8 +44,10 @@ static func team_shares(exp: int, levels: Array) -> Array:
 		out.append(exp * pct / 100)
 	return out
 
-## Kinh nghiệm LÃNH ĐẠO đội trưởng nhận mỗi lần chia: exp * k * LeadExpShare * (tổng_cấp - cấp_đội_trưởng) / (tổng_cấp * 10000).
-static func lead_exp(exp: int, levels: Array, captain_level: int) -> int:
+## Kinh nghiệm LÃNH ĐẠO đội trưởng nhận mỗi lần chia (gốc KPlayer.cpp dòng 2469):
+##   LeadExp = exp * k * LeadExpShare * (tổng_cấp - cấp_người_hạ_quái) / (tổng_cấp * 10000)
+## `killer_level` = cấp độ của thành viên vừa hạ gục quái (nếu đội trưởng tự giết thì là cấp đội trưởng).
+static func lead_exp(exp: int, levels: Array, killer_level: int) -> int:
 	var n := levels.size()
 	if n <= 1:
 		return 0
@@ -55,7 +57,7 @@ static func lead_exp(exp: int, levels: Array, captain_level: int) -> int:
 	if total_level <= 0:
 		return 0
 	var k := 100 + n * 15
-	return exp * k * LEAD_EXP_SHARE * (total_level - captain_level) / (total_level * 10000)
+	return exp * k * LEAD_EXP_SHARE * (total_level - killer_level) / (total_level * 10000)
 
 ## Cộng kinh nghiệm lãnh đạo vào hồ sơ, lên cấp theo bảng (KPlayer::AddLeadExp). Trả về số cấp lãnh đạo tăng.
 static func add_lead_exp(p: PlayerProfile, amount: int) -> int:

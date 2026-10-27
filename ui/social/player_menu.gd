@@ -77,9 +77,9 @@ func _items() -> Array:
 	var name := _target.display_name
 	var eid := _target.eid
 	var items := []
-	if _target.stall_title != "":
-		items.append(["Xem quầy", _target.open_stall])
+	items.append(["Xem thông tin", _view_info])
 	items.append(["Tán gẫu", _chat])
+	items.append(["Tổ đội", _team])
 	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false):
 		items.append(["Giao dịch", _trade])
 	else:
@@ -87,7 +87,6 @@ func _items() -> Array:
 	items.append(["Theo sau", func() -> void:
 		if is_instance_valid(_player) and is_instance_valid(_target) and _player.has_method("start_follow"):
 			_player.start_follow(_target)])
-	items.append(["Tin tức", func() -> void: NetClient.send_view_equip(eid)])
 	items.append(["Cừu sát", _enmity])
 	if p == null or not p.blacklist.has(name):
 		items.append(["Sổ đen", _blacklist])
@@ -107,6 +106,20 @@ func _notify(text: String) -> void:
 
 func _mock() -> MockPlayer:
 	return SocialDirectory.find_by_id(_profile(), _target.eid) if _profile() else null
+
+func _view_info() -> void:
+	var p := _profile()
+	if p == null:
+		return
+	if NetClient.is_in_world():
+		NetClient.send_view_equip(_target.eid)
+		return
+	var m := _mock()
+	if m != null:
+		var err := []
+		ViewEquipWindow.open_for(_host(), p, m, err)
+	else:
+		_notify("Không tìm thấy thông tin của %s." % _target.display_name)
 
 func _chat() -> void:
 	var sync := NetWorldSync.current
@@ -139,12 +152,24 @@ func _trade_not_open() -> void:
 	_notify("%s chưa bật mở giao dịch. Họ cần bấm icon Giao dịch (F4) để mở." % _target.display_name)
 
 func _team() -> void:
-	var m := _mock()
-	if m == null:
+	var p := _profile()
+	if p == null:
 		return
-	var err := SocialHub.of(_profile()).team.invite(m)
-	if err != "":
-		_notify(err)
+	var hub := SocialHub.of(p)
+	if NetClient.is_in_world():
+		NetClient.send_team(SocialServer.TEAM_INVITE, _target.eid)
+		_notify("Đã gửi lời mời vào tổ đội tới %s." % _target.display_name)
+	else:
+		var m := _mock()
+		if m != null:
+			var err := hub.team.invite(m)
+			if err != "":
+				_notify(err)
+				return
+			_notify("Đã gửi lời mời vào tổ đội tới %s." % _target.display_name)
+		else:
+			_notify("Đã mời %s vào tổ đội." % _target.display_name)
+	TeamWindow.open(_host(), hub)
 
 func _enmity() -> void:
 	var eid := _target.eid
@@ -157,8 +182,8 @@ func _blacklist() -> void:
 	var name := _target.display_name
 	if p == null or p.blacklist.has(name):
 		return
-	if p.blacklist.size() >= PlayerProfile.MAX_BLACKLIST:
-		_notify("Sổ đen đã đầy (%d người)." % PlayerProfile.MAX_BLACKLIST)
+	if p.blacklist.size() >= 100:
+		_notify("Sổ đen đã đầy (100 người).")
 		return
 	p.blacklist.append(name)
 	SaveManager.save_profile(p)

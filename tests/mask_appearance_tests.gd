@@ -68,7 +68,13 @@ func test_mask_appearance_rules() -> void:
 	check("Hoàng Kim có danh hiệu dịch dung", str(look_hk.get("disguise_title")) == "Hoàng Kim Chí Tôn")
 	check("Hoàng Kim có ánh kim sắc chói lọi", (look_hk.get("modulate") as Color).r > 1.3)
 
-	# 6. Tháo mặt nạ ra
+	# 6. Tắt ngoại hình mặt nạ (show_mask = false) khi vẫn đang đeo mặt nạ
+	var look_masked_off := Equipment.get_appearance(equipped, "male", false, false)
+	check("khi đeo mặt nạ nhưng show_mask = false thì is_masked là false", look_masked_off.get("is_masked") == false)
+	check("khi đeo mặt nạ nhưng show_mask = false thì disguise_title rỗng", str(look_masked_off.get("disguise_title")) == "")
+	check("khi đeo mặt nạ nhưng show_mask = false thì modulate là WHITE", look_masked_off.get("modulate") == Color.WHITE)
+
+	# 7. Tháo mặt nạ ra
 	equipped.erase(Equipment.Part.MASK)
 	var look_after := Equipment.get_appearance(equipped, "male", false)
 	check("tháo mặt nạ is_masked trở về false", look_after.get("is_masked") == false)
@@ -97,6 +103,16 @@ func test_player_nameplate_disguise() -> void:
 	player.refresh_appearance()
 	check("player đeo mặt nạ tên có tag dịch dung", player._name_label.text.contains("Liễu Thanh Thanh") and player._name_label.text.contains("ĐộcCôCầuBại"))
 
+	# Tắt hiển thị mặt nạ khi vẫn đeo (show_mask = false)
+	profile.show_mask = false
+	player.refresh_appearance()
+	check("player đeo mặt nạ nhưng show_mask = false thì tên trở lại nguyên bản", player._name_label.text == "ĐộcCôCầuBại")
+
+	# Bật lại hiển thị mặt nạ (show_mask = true)
+	profile.show_mask = true
+	player.refresh_appearance()
+	check("player bật lại show_mask = true thì tên có tag dịch dung", player._name_label.text.contains("Liễu Thanh Thanh"))
+
 	# Tháo mặt nạ
 	profile.equipment.erase(Equipment.Part.MASK)
 	player.refresh_appearance()
@@ -123,17 +139,36 @@ func test_character_hub_disguise_ui() -> void:
 	var mask_hk := ItemGenerator.generate(ItemDatabase.Detail.MASK, 4, 1, 0, [])
 	profile.equipment[Equipment.Part.MASK] = mask_hk
 	hub._refresh_portrait()
+	hub._refresh_equipment_display()
 
+	check("CharacterHub có MaskVisualCheck", hub.has_node("%MaskVisualCheck"))
+	var hub_check: Button = hub.get_node("%MaskVisualCheck")
+	check("MaskVisualCheck bật khi đeo mặt nạ", hub_check.button_pressed == true and not hub_check.disabled)
 	check("đeo mặt nạ banner dịch dung hiện", hub._disguise_banner.visible == true)
 	check("banner dịch dung hiện đúng tên", hub._disguise_label.text.contains("Hoàng Kim Chí Tôn"))
 	check("icon dịch dung hiện", hub._disguise_icon.visible == true)
 
+	# Bấm tắt ô check mặt nạ trên Hub
+	hub_check.button_pressed = false
+	hub._on_mask_visual_check_toggled(false)
+	check("tắt check mặt nạ trên Hub thì banner ẩn", hub._disguise_banner.visible == false)
+	check("tắt check mặt nạ trên Hub thì icon dịch dung ẩn", hub._disguise_icon.visible == false)
+	check("tắt check mặt nạ trên Hub thì profile.show_mask là false", profile.show_mask == false)
+
+	# Bật lại ô check mặt nạ trên Hub
+	hub_check.button_pressed = true
+	hub._on_mask_visual_check_toggled(true)
+	check("bật lại check mặt nạ trên Hub thì banner hiện", hub._disguise_banner.visible == true)
+	check("bật lại check mặt nạ trên Hub thì profile.show_mask là true", profile.show_mask == true)
+
 	# Tháo mặt nạ
 	profile.equipment.erase(Equipment.Part.MASK)
 	hub._refresh_portrait()
+	hub._refresh_equipment_display()
 
 	check("tháo mặt nạ banner dịch dung tự ẩn", hub._disguise_banner.visible == false)
 	check("tháo mặt nạ icon dịch dung tự ẩn", hub._disguise_icon.visible == false)
+	check("tháo mặt nạ MaskVisualCheck bị vô hiệu hoá", hub_check.disabled == true)
 
 	hub.queue_free()
 
@@ -150,11 +185,28 @@ func test_character_status_screen_mask() -> void:
 	check("CharacterStatusScreen gắn thành công", screen != null)
 	check("CharacterStatusScreen có EquipSlot11 (Mặt nạ)", screen.has_node("%EquipSlot11"))
 	check("CharacterStatusScreen có EquipSlot12 (Phi phong)", screen.has_node("%EquipSlot12"))
+	check("CharacterStatusScreen có MaskVisualCheck", screen.has_node("%MaskVisualCheck"))
+	var status_check: Button = screen.get_node("%MaskVisualCheck")
+	check("MaskVisualCheck trên status screen bật khi đeo mặt nạ", status_check.button_pressed == true and not status_check.disabled)
 	var slot11: ItemSlotButton = screen.get_node("%EquipSlot11")
 	check("EquipSlot11 có icon mặt nạ", slot11._item_icon != null)
 	check("CharacterStatusScreen có banner dịch dung", screen._disguise_banner != null and screen._disguise_banner.visible == true)
 	check("CharacterStatusScreen banner hiện Liễu Thanh Thanh", screen._disguise_label.text.contains("Liễu Thanh Thanh"))
 	check("CharacterStatusScreen có icon dịch dung", screen._disguise_icon != null and screen._disguise_icon.visible == true)
+
+	# Bấm tắt ô check trên Status Screen
+	status_check.button_pressed = false
+	screen._on_mask_visual_check_toggled(false)
+	check("tắt check mặt nạ trên Status Screen thì banner tự ẩn", screen._disguise_banner.visible == false)
+	check("tắt check mặt nạ trên Status Screen thì icon tự ẩn", screen._disguise_icon.visible == false)
+	check("tắt check mặt nạ trên Status Screen thì profile.show_mask là false", profile.show_mask == false)
+	check("tắt check mặt nạ nhưng EquipSlot11 vẫn giữ icon món đồ (vẫn đeo)", slot11._item_icon != null)
+
+	# Bật lại ô check trên Status Screen
+	status_check.button_pressed = true
+	screen._on_mask_visual_check_toggled(true)
+	check("bật lại check mặt nạ trên Status Screen thì banner hiện", screen._disguise_banner.visible == true)
+	check("bật lại check mặt nạ trên Status Screen thì profile.show_mask là true", profile.show_mask == true)
 	
 	# Tháo mặt nạ
 	profile.equipment.erase(Equipment.Part.MASK)
@@ -162,6 +214,7 @@ func test_character_status_screen_mask() -> void:
 	check("Tháo mặt nạ thì EquipSlot11 không còn icon", slot11._item_icon == null)
 	check("Tháo mặt nạ banner dịch dung tự ẩn", screen._disguise_banner.visible == false)
 	check("Tháo mặt nạ icon dịch dung tự ẩn", screen._disguise_icon.visible == false)
+	check("Tháo mặt nạ MaskVisualCheck bị vô hiệu hoá", status_check.disabled == true)
 	
 	holder.queue_free()
 

@@ -36,6 +36,8 @@ static func store_item(p: PlayerProfile, item: ItemInstance, bag: int = -1) -> S
 		return locked
 	if not p.inventory.has(item):
 		return "Món đồ không có trong hành trang."
+	if item.trade_price > 0:
+		return "Vật phẩm đang được đặt giá bán, không thể cất vào rương."
 	var spot: Vector3i
 	if bag >= 0:
 		var s2 := p.storage.find_free_spot(item.get_size(), bag)
@@ -75,8 +77,12 @@ static func deposit_gold(p: PlayerProfile, amount: int) -> String:
 		return blocked
 	if amount <= 0:
 		return "Số tiền không hợp lệ."
+	if amount > PlayerProfile.MAX_GOLD:
+		return "Số tiền vượt quá giới hạn tối đa (2 tỷ lượng)."
 	if p.gold < amount:
 		return "Không đủ tiền trong hành trang."
+	if p.storage_gold + amount > PlayerProfile.MAX_STORAGE_GOLD:
+		return "Rương chứa tiền đã đầy (tối đa 2 tỷ lượng)."
 	p.gold -= amount
 	p.storage_gold += amount
 	return ""
@@ -88,8 +94,12 @@ static func withdraw_gold(p: PlayerProfile, amount: int) -> String:
 		return blocked
 	if amount <= 0:
 		return "Số tiền không hợp lệ."
+	if amount > PlayerProfile.MAX_GOLD:
+		return "Số tiền vượt quá giới hạn tối đa (2 tỷ lượng)."
 	if p.storage_gold < amount:
 		return "Không đủ tiền trong rương."
+	if p.gold + amount > PlayerProfile.MAX_GOLD:
+		return "Hành trang không thể chứa thêm tiền (tối đa 2 tỷ lượng)."
 	p.storage_gold -= amount
 	p.gold += amount
 	return ""
@@ -99,6 +109,8 @@ static func transfer(p: PlayerProfile, item: ItemInstance, from: Object, to: Obj
 	if SecurityLock.check(p, SecurityLock.A_STORAGE) != "":
 		return false
 	if from == p and to == p.storage:
+		if item.trade_price > 0:
+			return false
 		if not p.inventory.has(item) or not p.storage.can_place(item, x, y, bag):
 			return false
 		p.inventory.erase(item)

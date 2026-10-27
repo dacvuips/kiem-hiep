@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_sam_la_skull_001"]
+
+[ext_resource type="Script" path="res://tests/test_sam_la_skull.gd" id="1_test"]
+
+[node name="TestSamLaSkull" type="Node2D"]
+script = ExtResource("1_test")

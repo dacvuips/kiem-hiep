@@ -52,13 +52,28 @@ const EVENTS_DATA := [
 		"category_name": "Săn Boss",
 		"icon_emoji": "🐉",
 		"level_req": "Cấp 80+",
-		"times": ["12:30", "19:30", "22:30"],
+		"times": ["12:00", "19:30", "23:00"],
 		"duration_mins": 45,
-		"location": "Cổ Dương Động, Lâm Du Quan, Phượng Tường",
-		"rewards": "Trang bị Hoàng Kim Môn Phái, Thủy Tinh, Tinh Hồng Bảo Thạch",
-		"desc": "Các thủ lĩnh võ lâm xuất thế tại bản đồ dã ngoại: Lam Y Y, Huyền Giác Đại Sư, Cổ Bách, Hà Nhân Ngã, Đường Phi Yến...",
-		"action_type": "detail",
-		"action_text": "Chi Tiết",
+		"location": "Trường Bạch Sơn, Sa Mạc, Mạc Cao Quật, Lâm Du Quan...",
+		"rewards": "Trang bị Hoàng Kim Môn Phái, Định Quốc, An Bang, Thủy Tinh, Tinh Hồng Bảo Thạch",
+		"desc": "Thập Đại Boss Hoàng Kim xuất thế theo chuẩn VLTK gốc (12:00 trưa, 19:30 tối, 23:00 đêm): Lam Y Y, Huyền Giác Đại Sư, Cổ Bách, Hà Nhân Ngã, Đường Bất Nhiễm...",
+		"action_type": "world_boss",
+		"action_text": "Săn Boss",
+	},
+	{
+		"id": "small_boss",
+		"title": "Tiểu Hoàng Kim Boss (Dã Ngoại)",
+		"type": "boss",
+		"category_name": "Tiểu Boss",
+		"icon_emoji": "👹",
+		"level_req": "Cấp 60+",
+		"times": ["09:10", "17:10", "21:10", "23:10"],
+		"duration_mins": 35,
+		"location": "Thành Đô, Đại Lý Phủ, Trường Giang Đầu Nguồn...",
+		"rewards": "Thủy Tinh (Lam/Tử/Lục), Tinh Hồng Bảo Thạch, Tiên Thảo Lộ, Bí Kíp Môn Phái",
+		"desc": "Thủ lĩnh tà phái dã ngoại theo chuẩn bosstieuhk (09:10, 17:10, 21:10, 23:10): Liễu Thanh Thanh, Diệu Như, Trương Tông Chính...",
+		"action_type": "world_boss",
+		"action_text": "Săn Boss",
 	},
 	{
 		"id": "huashan",
@@ -87,8 +102,8 @@ const EVENTS_DATA := [
 		"location": "Bến Thuyền Phong Lăng Độ (Gặp Thuyền Phu)",
 		"rewards": "Thủy Tinh, Huyền Tinh Khoáng Thạch, Lượng, Exp",
 		"desc": "Vượt Hoàng Hà sang bờ Bắc. Trên thuyền tiêu diệt thủy tặc và thủ lĩnh Viễn Độ Đầu Lĩnh để đoạt bảo rương.",
-		"action_type": "detail",
-		"action_text": "Chi Tiết",
+		"action_type": "ferry",
+		"action_text": "Lên Thuyền",
 	},
 	{
 		"id": "siege",
@@ -102,8 +117,8 @@ const EVENTS_DATA := [
 		"location": "Biện Kinh, Phượng Tường, Tương Dương, Lâm An",
 		"rewards": "Quyền Thành Chủ, Thuế Suất Thành Thị, Danh Hiệu Bang Hội",
 		"desc": "Cuộc chiến tranh đoạt lãnh địa khốc liệt giữa các bang hội. Chiếm Long Trụ và giữ thành đến giây phút cuối cùng.",
-		"action_type": "detail",
-		"action_text": "Chi Tiết",
+		"action_type": "siege",
+		"action_text": "Công Thành",
 	},
 	{
 		"id": "escort",
@@ -116,9 +131,9 @@ const EVENTS_DATA := [
 		"duration_mins": 120,
 		"location": "Long Môn Tiêu Cục (Ba Lăng Huyện)",
 		"rewards": "Ngân Lượng dồi dào, Điểm Cống Hiến Bang, Thẻ Đổi Tiêu",
-		"desc": "Nhận tiêu xa vận chuyển qua các vùng hiểm trở về đích an toàn, đề phòng đạo tặc và người chơi khác cướp tiêu.",
-		"action_type": "detail",
-		"action_text": "Chi Tiết",
+		"desc": "Nhận tiêu xa vận chuyển qua các vùng hiểm trở về đích an toàn, đề phòng đạo tặc và người chơi khác cướp tiêu (Chỉ mở vào Thứ Bảy & Chủ Nhật hàng tuần).",
+		"action_type": "escort",
+		"action_text": "Vận Tiêu",
 	},
 	{
 		"id": "hoa_dang",
@@ -132,8 +147,53 @@ const EVENTS_DATA := [
 		"location": "Bờ sông các Thôn Trấn & Thành Thị",
 		"rewards": "Kinh Nghiệm cực cao, Điểm Phúc Duyên, Danh Vọng, Thủy Tinh",
 		"desc": "Tham gia thắp sáng hoa đăng và giải các câu đố văn hóa kiếm hiệp, lịch sử giang hồ. Mỗi câu trả lời đúng nhận lượng lớn kinh nghiệm và điểm phúc duyên.",
-		"action_type": "detail",
-		"action_text": "Chi Tiết",
+		"action_type": "hoa_dang",
+		"action_text": "Hoa Đăng",
+	},
+	{
+		"id": "huy_hoang",
+		"title": "Quả Huy Hoàng & Hạt Huy Hoàng",
+		"type": "daily",
+		"category_name": "Huy Hoàng",
+		"icon_emoji": "🌟",
+		"level_req": "Cấp 40+",
+		"times": ["12:00", "20:00"],
+		"duration_mins": 30,
+		"location": "Các bản đồ dã ngoại (Cổ Dương Động, Lâm Du Quan...)",
+		"rewards": "Hàng triệu EXP, Điểm Phúc Duyên, Ngân Lượng, Rương Huy Hoàng",
+		"desc": "Hạt mầm Huy Hoàng nảy mầm kết trái. Hái quả thưởng thức giúp bồi tăng công lực, khai thông kinh mạch thần tốc.",
+		"action_type": "huy_hoang",
+		"action_text": "Hái Quả",
+	},
+	{
+		"id": "bat_nha",
+		"title": "Trồng Cây Bát Nhã",
+		"type": "daily",
+		"category_name": "Bát Nhã",
+		"icon_emoji": "🌱",
+		"level_req": "Cấp 30+",
+		"times": ["all_day"],
+		"duration_mins": 60,
+		"location": "Linh thổ Bát Nhã ngoại thành",
+		"rewards": "Kinh Nghiệm khổng lồ, Ngân Lượng, Huyền Tinh, Thủy Tinh",
+		"desc": "Gieo trồng hạt giống Bát Nhã Ba La Mật. Cây tự sinh trưởng theo thời gian thực (AFK), kết trái thu hoạch linh dược quý giá.",
+		"action_type": "bat_nha",
+		"action_text": "Trồng Cây",
+	},
+	{
+		"id": "viem_de",
+		"title": "Viêm Đế Bảo Tàng",
+		"type": "pve",
+		"category_name": "Viêm Đế",
+		"icon_emoji": "🏛️",
+		"level_req": "Cấp 50+",
+		"times": ["all_day"],
+		"duration_mins": 30,
+		"location": "Kho Báu Viêm Đế",
+		"rewards": "Rương Viêm Đế Bí Bảo, Thủy Tinh, Mảnh Đồ Đằng, 20.000.000 EXP",
+		"desc": "Chiến trường Viêm Đế Bảo Tàng thực địa nguyên bản VLTK: 3 lộ trình tiến công, vượt 10 ải môn phái, đoạt Đồ Đằng và tiêu diệt Boss Lương Mi Nhi.",
+		"action_type": "viem_de",
+		"action_text": "Bảo Tàng",
 	},
 ]
 
@@ -152,7 +212,7 @@ static func open(host: Node, profile: PlayerProfile = null, on_play: Callable = 
 	return SocialWindow.present(host, win, &"events") as EventScheduleWindow
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
-	super._init("Sự Kiện Võ Lâm", "Danh sách các sự kiện giang hồ & hoạt động sắp diễn ra", 1000.0)
+	super._init("Sự Kiện Võ Lâm", "", 1000.0)
 	_profile = profile
 	_on_play = on_play
 
@@ -561,7 +621,7 @@ func _update_card_timings() -> void:
 func _on_card_action(event: Dictionary) -> void:
 	var action_type := str(event.get("action_type", "detail"))
 	match action_type:
-		"battle", "time_challenge", "pk_arena":
+		"battle", "time_challenge", "pk_arena", "world_boss", "ferry", "siege", "escort", "hoa_dang", "huy_hoang", "bat_nha", "viem_de":
 			event_action_requested.emit(action_type)
 		_:
 			_show_detail_popup(event)
@@ -592,6 +652,16 @@ func _show_detail_popup(event: Dictionary) -> void:
 	win.body.add_child(rew_sec[0])
 	
 	var btn_row := win.add_button_row()
+	var act_type := str(event.get("action_type", ""))
+	if act_type in ["battle", "time_challenge", "pk_arena", "world_boss", "ferry", "siege", "escort", "hoa_dang", "huy_hoang", "bat_nha", "viem_de"]:
+		var act_btn := SocialUi.stone_button(str(event.get("action_text", "Tham Gia")))
+		act_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		act_btn.pressed.connect(func() -> void:
+			win.close_requested.emit()
+			event_action_requested.emit(act_type)
+		)
+		btn_row.add_child(act_btn)
+
 	var close_btn := SocialUi.stone_button("Đóng")
 	close_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close_btn.pressed.connect(func() -> void: win.close_requested.emit())

@@ -9,10 +9,10 @@ class_name MiniMap
 ##     màn chơi). Bấm lên bản đồ để mở bản đồ lớn (MapPanel).
 ##   - Nút "bản đồ thế giới" = xem toàn bộ map (hiện luôn ô vuông màn chơi viền vàng).
 
-const BASE_SIZE := Vector2(130, 145)
-const MAP_RECT := Rect2(1, 1, 129, 128)
+const BASE_SIZE := Vector2(140, 140)
+const MAP_RECT := Rect2(1, 1, 138, 138)
 const NAME_BAR_HEIGHT := 17.0
-const POS_BAR := Rect2(0, 129, 130, 14)
+const POS_BAR := Rect2(16, 114, 108, 20)
 const UI_SCALE := 1.0   ## 1.5 cũ thu nhỏ 1/3 (khung thật 130x145)
 const SCREEN_MARGIN := 8.0
 const COORD_UNIT := 256.0               ## 1 đơn vị toạ độ hiển thị = 256 pixel map (gốc: logic/32/8)
@@ -154,87 +154,89 @@ func _build() -> void:
 	bar.size = Vector2(BASE_SIZE.x, NAME_BAR_HEIGHT)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
-	var name_label := _make_label(_title if _title != "" else "Bản đồ")
+	var name_label := _make_label(_title if _title != "" else "Bản đồ", 12)
 	name_label.position = Vector2(2, 1)
-	name_label.size = Vector2(BASE_SIZE.x - 4, 14)
+	name_label.size = Vector2(BASE_SIZE.x - 4, 16)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(name_label)
 
-	## Hàng dưới: toạ độ (bấm để nhập) + nút.
-	var pos_bg := ColorRect.new()
-	pos_bg.color = Color(0.08, 0.06, 0.04, 0.95)
+	## Hàng dưới: toạ độ font_size = 16 nằm bên trong bản đồ, nhấp vào để sửa trực tiếp và tự tìm đường.
+	var pos_bg := Panel.new()
+	var pos_sb := StyleBoxFlat.new()
+	pos_sb.bg_color = Color(0.04, 0.03, 0.02, 0.65)
+	pos_sb.set_border_width_all(0)
+	pos_sb.set_corner_radius_all(3)
+	pos_bg.add_theme_stylebox_override("panel", pos_sb)
 	pos_bg.position = POS_BAR.position
 	pos_bg.size = POS_BAR.size
 	pos_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(pos_bg)
-	_pos_label = _make_label("")
-	_pos_label.position = Vector2(2, 129)
-	_pos_label.size = Vector2(86, 14)
+
+	_pos_label = _make_label("", 16)
+	_pos_label.position = POS_BAR.position
+	_pos_label.size = POS_BAR.size
+	_pos_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pos_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_pos_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pos_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_pos_label.tooltip_text = "Nhấp chuột để nhập toạ độ và tự đi tới đó"
+	_pos_label.tooltip_text = "Nhấp để sửa toạ độ và tự tìm đường"
 	_pos_label.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			_open_input())
 	add_child(_pos_label)
 
 	_pos_input = LineEdit.new()
-	_pos_input.position = Vector2(1, 129)
-	_pos_input.size = Vector2(88, 14)
-	_pos_input.add_theme_font_size_override("font_size", 10)
+	_pos_input.position = POS_BAR.position
+	_pos_input.size = POS_BAR.size
+	_pos_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pos_input.add_theme_font_size_override("font_size", 16)
 	_pos_input.add_theme_color_override("font_color", GREEN)
 	_pos_input.add_theme_color_override("caret_color", GREEN)
-	var empty := StyleBoxFlat.new()
-	empty.bg_color = Color(0, 0, 0, 0.55)
-	empty.content_margin_left = 2
-	empty.content_margin_top = 0
-	empty.content_margin_bottom = 0
-	_pos_input.add_theme_stylebox_override("normal", empty)
-	_pos_input.add_theme_stylebox_override("focus", empty)
+	var edit_sb := StyleBoxFlat.new()
+	edit_sb.bg_color = Color(0.04, 0.03, 0.02, 0.85)
+	edit_sb.set_border_width_all(0)
+	edit_sb.set_corner_radius_all(3)
+	edit_sb.content_margin_left = 2
+	edit_sb.content_margin_top = 0
+	edit_sb.content_margin_bottom = 0
+	_pos_input.add_theme_stylebox_override("normal", edit_sb)
+	_pos_input.add_theme_stylebox_override("focus", edit_sb)
 	_pos_input.placeholder_text = "X/Y"
 	_pos_input.max_length = 12
 	_pos_input.visible = false
 	_pos_input.text_submitted.connect(_on_input_submitted)
-	_pos_input.focus_exited.connect(func() -> void: _close_input())
+	_pos_input.focus_exited.connect(func() -> void:
+		if _pos_input.visible:
+			if _pos_input.text.strip_edges() != "" and _pos_input.text.strip_edges() != _pos_label.text:
+				_on_input_submitted(_pos_input.text)
+			else:
+				_close_input()
+	)
+	_pos_input.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventKey and e.pressed and e.keycode == KEY_ESCAPE:
+			_close_input()
+			_pos_input.release_focus()
+	)
 	add_child(_pos_input)
 
-	## Nút gốc 14x14 (Up/Down/Over = frame 0/1/2): cờ = nhập toạ độ, thế giới = toàn bản đồ.
-	## Nhấp trực tiếp lên bản đồ để mở bản đồ lớn (bỏ nút kính lúp).
-	_add_button("flag", 93, "Nhập toạ độ để tự đi", _open_input)
-	_add_button("world", 111, "Xem toàn bộ bản đồ", _toggle_world)
-
-	_notice_label = _make_label("")
+	_notice_label = _make_label("", 12)
 	_notice_label.position = Vector2(2, 20)
-	_notice_label.size = Vector2(126, 22)
+	_notice_label.size = Vector2(BASE_SIZE.x - 4, 30)
 	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notice_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	_notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_notice_label.visible = false
 	add_child(_notice_label)
 
-func _make_label(text: String) -> Label:
+func _make_label(text: String, font_size: int = 12) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", 11)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", GREEN)
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
-	l.add_theme_constant_override("outline_size", 3)
+	l.add_theme_constant_override("outline_size", 4 if font_size > 20 else 2)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
-
-func _add_button(key: String, x: float, tip: String, on_press: Callable) -> void:
-	var b := TextureButton.new()
-	b.position = Vector2(x, 129)
-	b.size = Vector2(14, 14)
-	b.ignore_texture_size = true
-	b.stretch_mode = TextureButton.STRETCH_SCALE
-	b.texture_normal = _btn_tex(key, 0)
-	b.texture_pressed = _btn_tex(key, 1)
-	b.texture_hover = _btn_tex(key, 2)
-	b.tooltip_text = tip
-	b.focus_mode = Control.FOCUS_NONE
-	b.pressed.connect(on_press)
-	add_child(b)
 
 func _btn_tex(key: String, frame: int) -> Texture2D:
 	var path := "%sbtn_%s_%d.png" % [BTN_DIR, key, frame]
@@ -287,9 +289,14 @@ func _on_input_submitted(text: String) -> void:
 	_close_input()
 	_pos_input.release_focus()
 	if parsed.x < 0:
-		_show_notice("Toạ độ không hợp lệ. Nhập dạng 194/202")
+		_show_notice("Toạ độ không hợp lệ. Nhập dạng X/Y (ví dụ 194/202)")
 		return
-	_walk_to(_coord_to_world(Vector2i(parsed.x, parsed.y)))
+	var target := _coord_to_world(Vector2i(parsed.x, parsed.y))
+	var msg := walk_to_feet(target)
+	if msg != "":
+		_show_notice(msg)
+	else:
+		_show_notice("Đang tìm đường tới %d/%d..." % [parsed.x, parsed.y])
 
 ## "194/202", "194 202", "194,202" -> (x, y); (-1, -1) nếu sai.
 func _parse_coord(text: String) -> Vector2i:
@@ -450,6 +457,36 @@ func _draw_view() -> void:
 		var d := _world_to_view(_dest, zoom, src)
 		_view.draw_line(d, d + Vector2(0, -9), Color(0.95, 0.95, 0.95), 1.2)
 		_view.draw_colored_polygon(PackedVector2Array([d + Vector2(0, -9), d + Vector2(6, -7), d + Vector2(0, -4)]), Color(0.9, 0.12, 0.1))
+	## Tiêu Xa & Lộ trình Vận Tiêu trên MiniMap
+	var escort_cart := _view.get_tree().get_first_node_in_group("escort_carts") as CharacterBody2D
+	if escort_cart != null and is_instance_valid(escort_cart):
+		var wps: Array = escort_cart.get("waypoints") if escort_cart.get("waypoints") != null else []
+		var c_pts: PackedVector2Array = [_world_to_view(escort_cart.global_position, zoom, src)]
+		var cur_w_idx: int = int(escort_cart.get("current_waypoint_idx"))
+		for idx in range(cur_w_idx, wps.size()):
+			c_pts.append(_world_to_view(wps[idx], zoom, src))
+		if c_pts.size() >= 2:
+			var box := Rect2(Vector2.ZERO, _view.size).grow(2.0)
+			for i in range(c_pts.size() - 1):
+				var a := c_pts[i]
+				var b := c_pts[i + 1]
+				var length := a.distance_to(b)
+				if length < 0.01:
+					continue
+				var dir := (b - a) / length
+				var d := 0.0
+				while d <= length:
+					var q := a + dir * d
+					if box.has_point(q):
+						_view.draw_circle(q, 1.5, Color(0.2, 0.85, 1.0))
+					d += ROUTE_DOT_GAP
+		if not wps.is_empty():
+			var dp := _world_to_view(wps[-1], zoom, src)
+			_view.draw_circle(dp, 3.2, Color(1.0, 0.25, 0.25))
+		var cp := _world_to_view(escort_cart.global_position, zoom, src)
+		_view.draw_circle(cp, 5.0, Color(0.0, 0.0, 0.0, 0.85))
+		_view.draw_circle(cp, 4.0, Color(1.0, 0.8, 0.2))
+		_view.draw_circle(cp, 2.2, Color(0.2, 0.9, 1.0))
 	## Người chơi = chấm VÀNG.
 	if _player != null and is_instance_valid(_player):
 		var p := _world_to_view(_feet(), zoom, src)

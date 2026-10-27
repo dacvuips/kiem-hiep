@@ -113,10 +113,10 @@ func _on_item(item: ItemInstance) -> void:
 	if SecurityLock.is_item_locked(item):
 		_say("Món đồ đang bị khoá, không đặt giá được. (%s)" % SecurityLock.describe_item_lock(item))
 		return
-	SocialWindow.prompt(get_tree().current_scene, "Đặt giá bán", "Giá (lượng), 0 = bỏ khỏi quầy", func(text: String) -> void:
-		var price := int(text.strip_edges()) if text.strip_edges().is_valid_int() else -1
+	SocialWindow.prompt(get_tree().current_scene, "Đặt giá bán", "Giá (lượng, tối đa 2 tỷ), 0 = bỏ khỏi quầy", func(text: String) -> void:
+		var price := clampi(int(text.strip_edges()) if text.strip_edges().is_valid_int() else -1, -1, 2_000_000_000)
 		_say(StallService.set_price(_profile, item, price), "Đã đặt giá %d lượng." % price if price > 0 else "Đã bỏ món khỏi quầy.")
-		_refresh(), str(item.trade_price) if item.trade_price > 0 else "")
+		_refresh(), str(item.trade_price) if item.trade_price > 0 else "", false, 2_000_000_000)
 
 func _on_stall() -> void:
 	if _profile.stall_open:

@@ -8,7 +8,7 @@ signal changed
 
 var inventory: Array[ItemInstance] = []   ## tên `inventory` để ItemRoomView dùng chung
 var room_width: int = 6
-var room_height: int = 10
+var room_height: int = 8
 var bag_count: int = 1                    ## số "túi" (rương mở rộng) đang mở — bag = 0..bag_count-1
 var ROOM_WIDTH: int:
 	get:
@@ -17,7 +17,7 @@ var ROOM_HEIGHT: int:
 	get:
 		return room_height
 
-func _init(width := 6, height := 10, bags := 1) -> void:
+func _init(width := 6, height := 8, bags := 1) -> void:
 	room_width = width
 	room_height = height
 	bag_count = bags

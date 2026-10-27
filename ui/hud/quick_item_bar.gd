@@ -10,7 +10,8 @@ const GROUP := &"quick_item_bar"
 const SLOT_SIZE := 56.0
 const GAP := 10.0
 const RIGHT := 14.0
-const BOTTOM := 306.0          ## mép dưới hàng ô, tính từ đáy màn hình — cách nút skill cao nhất đang hiện (SkillBarUI Sub4) 10px
+const BOTTOM := 384.0          ## mép dưới hàng ô, tính từ đáy màn hình — cách nút skill cao nhất (SkillBarUI Sub5 offset_top=-374) 10px
+const TOP_OFFSET := BOTTOM + SLOT_SIZE ## đỉnh của hàng ô (440.0)
 const CORNER := 10             ## ô vuông bo góc
 const HOLD_SECONDS := 0.45
 const USE_COOLDOWN := 0.3

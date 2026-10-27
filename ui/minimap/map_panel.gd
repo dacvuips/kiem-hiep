@@ -64,12 +64,16 @@ func _build() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
 
+	var vp_size := get_viewport().get_visible_rect().size
+	var m_pad: float = 10.0 if vp_size.x < 850.0 else MARGIN
+	var left_w: float = 170.0 if vp_size.x < 850.0 else LEFT_WIDTH
+
 	var panel := GameUi.panel(GameUi.WINDOW)
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = MARGIN
-	panel.offset_top = MARGIN
-	panel.offset_right = -MARGIN
-	panel.offset_bottom = -MARGIN
+	panel.offset_left = m_pad
+	panel.offset_top = m_pad
+	panel.offset_right = -m_pad
+	panel.offset_bottom = -m_pad
 	add_child(panel)
 
 	var root := VBoxContainer.new()
@@ -94,7 +98,7 @@ func _build() -> void:
 
 	## --- cột trái: tìm NPC / địa điểm
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	left.custom_minimum_size = Vector2(left_w, 0)
 	left.add_theme_constant_override("separation", 8)
 	body.add_child(left)
 	_search = GameUi.line_edit("Tìm tên NPC / địa điểm")
@@ -125,7 +129,7 @@ func _build() -> void:
 	head.add_child(names)
 	var map_name := Label.new()
 	map_name.text = _mini.get_title() if _mini.get_title() != "" else "Bản đồ"
-	map_name.add_theme_font_size_override("font_size", 26)
+	map_name.add_theme_font_size_override("font_size", 20)
 	map_name.add_theme_color_override("font_color", GameUi.TITLE)
 	names.add_child(map_name)
 	_pos_label = Label.new()
@@ -144,12 +148,12 @@ func _build() -> void:
 	_y_input = _make_coord_input("Y")
 	head.add_child(_y_input)
 	var go := GameUi.button("✓")
-	go.custom_minimum_size = Vector2(48, 44)
+	go.custom_minimum_size = Vector2(38, 38)
 	go.tooltip_text = "Đi tới toạ độ X/Y"
 	go.pressed.connect(_on_go_pressed)
 	head.add_child(go)
 	var locate := GameUi.button("◎")
-	locate.custom_minimum_size = Vector2(48, 44)
+	locate.custom_minimum_size = Vector2(38, 38)
 	locate.tooltip_text = "Về chỗ nhân vật"
 	locate.pressed.connect(_center_on_player)
 	head.add_child(locate)
@@ -175,7 +179,7 @@ func _build() -> void:
 
 func _make_coord_input(hint: String) -> LineEdit:
 	var le := GameUi.line_edit(hint)
-	le.custom_minimum_size = Vector2(96, 44)
+	le.custom_minimum_size = Vector2(64, 38)
 	le.max_length = 5
 	le.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	le.add_theme_font_size_override("font_size", 20)
@@ -344,6 +348,22 @@ func _draw_view() -> void:
 			pts.append(_world_to_view(w))
 		_draw_dotted(pts)
 		_draw_flag(_world_to_view(_mini.destination_feet()))
+	## Tiêu Xa & Lộ trình Vận Tiêu (nếu có xe tiêu đang chạy trên map)
+	var escort_cart := _view.get_tree().get_first_node_in_group("escort_carts") as CharacterBody2D
+	if escort_cart != null and is_instance_valid(escort_cart):
+		var wps: Array = escort_cart.get("waypoints") if escort_cart.get("waypoints") != null else []
+		var c_pts: PackedVector2Array = [_world_to_view(escort_cart.global_position)]
+		var cur_w_idx: int = int(escort_cart.get("current_waypoint_idx"))
+		for idx in range(cur_w_idx, wps.size()):
+			c_pts.append(_world_to_view(wps[idx]))
+		if c_pts.size() >= 2:
+			_draw_dotted(c_pts)
+		if not wps.is_empty():
+			_draw_flag(_world_to_view(wps[-1]))
+		var cp := _world_to_view(escort_cart.global_position)
+		_view.draw_circle(cp, 10.0, Color(0, 0, 0, 0.7))
+		_view.draw_circle(cp, 8.0, Color(0.2, 0.85, 1.0))
+		_view.draw_string(ThemeDB.fallback_font, cp + Vector2(-16, -12), "Tiêu Xa", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1.0, 0.9, 0.3))
 	## Nhân vật.
 	_view.draw_circle(me, 10.0, Color(0, 0, 0, 0.55))
 	_view.draw_circle(me, 8.0, Color(1.0, 0.85, 0.0))

@@ -52,6 +52,9 @@ func test_new_character() -> void:
 	var main := ctrl.get_main_skill()
 	check("Vô Môn Phái: nút chính = đánh thường", main != null and main.is_basic_attack, main)
 	check("Vô Môn Phái: không có skill phụ", ctrl.get_sub_skills().all(func(s: SkillDefinition) -> bool: return s == null))
+	var left_info := SectSkillController.get_left_hand_info(p, null)
+	var s := p.get_combat_stats()
+	check("get_left_hand_info Vô Môn Phái khớp sát thương tay không", left_info.damage == Vector2i(s.unarmed_min_damage, s.unarmed_max_damage), str(left_info.damage))
 	ctrl.free()
 	GameManager.local_profile = prev
 
@@ -157,6 +160,18 @@ func test_choice_window() -> void:
 	check("Đồng ý -> vào phái", press(self, "Đồng ý"))
 	await frames()
 	check("Đã vào phái đã chọn", p.sect_id == sects[0].id and got.size() == 1, p.sect_id)
+
+	var sect_def: SectDefinition = sects[0]
+	var attack_skill: SkillDefinition = null
+	for sk in sect_def.skills:
+		if not sk.is_basic_attack and sk.can_assign_to_hotbar():
+			attack_skill = sk
+			break
+	if attack_skill != null:
+		p.learn_skill(attack_skill.id)
+		p.set_main_skill(attack_skill.id)
+		var info := SectSkillController.get_left_hand_info(p, null)
+		check("Lực tay trái tính đúng sát thương chiêu thức khi không có player node", info.damage.x > 0 and info.damage.y >= info.damage.x, str(info.damage))
 
 func test_equipment_sect_requirement() -> void:
 	var p := PlayerProfile.new()

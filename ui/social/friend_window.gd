@@ -16,12 +16,25 @@ func _init(profile: PlayerProfile = null) -> void:
 	_profile = profile
 	if _profile == null:
 		return
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.custom_minimum_size = Vector2(0, 360)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 8)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+
 	var fr := SocialUi.section("🤝 Hảo hữu")
 	_friend_box = fr[1]
-	body.add_child(fr[0])
+	list.add_child(fr[0])
 	var bl := SocialUi.section("⛔ Sổ đen (không nhận tin nhắn)")
 	_black_box = bl[1]
-	body.add_child(bl[0])
+	list.add_child(bl[0])
 	var close := SocialUi.stone_button("Đóng")
 	close.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close)

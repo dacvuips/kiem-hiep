@@ -78,6 +78,7 @@ func offer_item(side: TradeSide, item: ItemInstance) -> String:
 	var spot := side.room.find_free_spot_any(item.get_size())
 	if spot.z < 0:
 		return "Phòng giao dịch đã đầy."
+	item.trade_price = 0   ## Xoá giá định giá bày bán cũ (nếu có) khi đưa vào giao dịch
 	side.party.detach(item)
 	side.room.place_item(item, spot.x, spot.y, spot.z)
 	_after_change(side)
@@ -142,8 +143,10 @@ func cancel(reason := "Giao dịch đã bị huỷ.") -> void:
 		for it in s.room.inventory.duplicate():
 			s.room.remove_item(it)
 			if not s.party.receive(it):
-				## Túi đầy khi trả đồ (hiếm): ép vào túi bằng cách thêm hàng mới — mô phỏng bằng thêm vào cuối danh sách.
-				s.party.items().append(it)
+				if s.party.profile:
+					MarketBook.return_item_to_player(s.party.profile, it)
+				else:
+					s.party.items().append(it)
 		s.money = 0
 	active = false
 	finished.emit(false, reason)
@@ -161,23 +164,20 @@ func _finalize() -> String:
 	var b := partner()
 	## Tiền: mỗi bên sau khi đổi không được âm.
 	if a.money < 0 or a.party.gold() + b.money - a.money < 0:
-		a.money = 0
-		a.ok = false
-		b.ok = false
-		return "Số tiền của bạn không đủ."
+		var err := "Số tiền của bạn không đủ, giao dịch tự động bị huỷ!"
+		cancel(err)
+		return err
 	if b.money < 0 or b.party.gold() + a.money - b.money < 0:
-		b.money = 0
-		a.ok = false
-		b.ok = false
-		return "Đối phương không đủ tiền."
-	## Chỗ nhận đồ.
+		var err := "Số tiền của đối phương không đủ, giao dịch tự động bị huỷ!"
+		cancel(err)
+		return err
+	## Chỗ nhận đồ: Nếu 1 trong 2 bên không đủ chỗ chứa đồ, giao dịch TỰ ĐỘNG HỦY, đồ trả về cho cả 2 bên!
 	var a_can := a.party.can_receive(b.room.inventory)
 	var b_can := b.party.can_receive(a.room.inventory)
 	if not a_can or not b_can:
-		a.ok = false
-		b.ok = false
-		changed.emit()
-		return "Hành trang của bạn không đủ chỗ." if not a_can else "Hành trang của đối phương không đủ chỗ."
+		var full_msg := "Hành trang của bạn không đủ chỗ chứa đồ, giao dịch tự động bị huỷ!" if not a_can else "Hành trang của đối phương không đủ chỗ chứa đồ, giao dịch tự động bị huỷ!"
+		cancel(full_msg)
+		return full_msg
 	a.party.add_gold(b.money - a.money)
 	b.party.add_gold(a.money - b.money)
 	for it in b.room.inventory.duplicate():

@@ -5,6 +5,7 @@ func _ready() -> void:
 	var profile := PlayerProfile.new()
 	profile.display_name = "TestPlayer"
 	profile.gold = 1250000
+	profile.xu = 500
 	profile.jade = 888
 
 	var popup := InventoryPopup.open(self, profile, func() -> void: pass, false)
@@ -25,15 +26,18 @@ func _ready() -> void:
 	assert(close_btn != null, "CloseButton should exist")
 
 	var gold_val: Label = popup.get_node("%GoldValue")
+	var xu_val: Label = popup.get_node("%XuValue")
 	var jade_val: Label = popup.get_node("%JadeValue")
-	assert(gold_val != null and jade_val != null, "Gold and Jade labels must exist")
+	assert(gold_val != null and xu_val != null and jade_val != null, "Gold, Xu and Jade labels must exist")
 	print("Gold text: ", gold_val.text)
+	print("Xu text: ", xu_val.text)
 	print("Jade text: ", jade_val.text)
 	assert(gold_val.text == "125 vạn Lượng", "Gold text formatted correctly: " + gold_val.text)
+	assert(xu_val.text == "500 Xu", "Xu text formatted correctly: " + xu_val.text)
 	assert(jade_val.text == "888", "Jade text formatted correctly: " + jade_val.text)
 
 	var bag_tabs: Control = popup.get_node("%BagTabs")
-	assert(bag_tabs.get_child_count() == 6, "Must have 6 bag tabs")
+	assert(bag_tabs.get_child_count() == 5, "Must have 5 bag tabs")
 	print("Bag tabs count: ", bag_tabs.get_child_count())
 
 	# Test tab switching
@@ -43,11 +47,7 @@ func _ready() -> void:
 	# Test test buttons
 	assert(popup.has_node("%SortButton"), "SortButton exists")
 	assert(popup.has_node("%ShopButton"), "ShopButton exists")
-	assert(popup.has_node("%CraftButton"), "CraftButton exists")
-	assert(popup.has_node("%TestAddButton"), "TestAddButton exists")
 	assert(popup.has_node("%TestCreateButton"), "TestCreateButton exists")
-	assert(popup.has_node("%TestMaskButton"), "TestMaskButton exists")
-	assert(popup.has_node("%TestMantleButton"), "TestMantleButton exists")
 
 	# Test adding masks via test button
 	popup._on_test_mask_pressed()

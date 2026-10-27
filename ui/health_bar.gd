@@ -34,7 +34,9 @@ func set_max_health(value: float) -> void:
 	bar.value = value
 	_update_color()
 
-func set_health(value: float) -> void:
+func set_health(value: float, new_max_health: float = -1.0) -> void:
+	if new_max_health > 0.0:
+		bar.max_value = new_max_health
 	bar.value = value
 	_update_color()
 

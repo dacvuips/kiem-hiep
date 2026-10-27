@@ -51,8 +51,10 @@ func _ready() -> void:
 	## Mô tả ngắn thì khung vừa nội dung, dài thì cuộn trong BODY_MAX_HEIGHT.
 	await get_tree().process_frame
 	var body: RichTextLabel = %Body
-	(%BodyScroll as ScrollContainer).custom_minimum_size.y = minf(body.get_content_height() + 4.0, BODY_MAX_HEIGHT)
-	TouchScrollHelperScript.attach(%BodyScroll as ScrollContainer, $Center/Row/Card as Control)
+	var scroll: ScrollContainer = %BodyScroll
+	scroll.custom_minimum_size.x = maxf(430.0, body.get_content_width() + 12.0)
+	scroll.custom_minimum_size.y = minf(body.get_content_height() + 4.0, BODY_MAX_HEIGHT)
+	TouchScrollHelperScript.attach(scroll, $Center/Row/Card as Control)
 
 func _fill_header() -> void:
 	var name_label: Label = %NameLabel
@@ -72,4 +74,26 @@ func _fill_header() -> void:
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	(%LevelLabel as RichTextLabel).text = "[color=#e8d9a8]Cấp:[/color] [color=#ffffff]%d[/color]" % _item.get_level()
 	var quality := ItemText.quality_name_of(_item)
-	(%NoteLabel as Label).text = "%s · %s" % [ItemDatabase.DETAIL_NAMES.get(_item.get_detail(), ""), quality]
+	var detail_text: String = ItemDatabase.DETAIL_NAMES.get(_item.get_detail(), "")
+	if detail_text == "":
+		(%NoteLabel as Label).text = quality
+	else:
+		(%NoteLabel as Label).text = "%s · %s" % [detail_text, quality]
+
+	if has_node("%PriceLabel"):
+		var price_label: RichTextLabel = %PriceLabel
+		if _item.can_sell():
+			var sale_price := _item.get_sale_price()
+			var price_str := InventoryPopup.format_money(sale_price)
+			if _item.is_misc() and _item.count > 1:
+				var unit_str := InventoryPopup.format_money(_item.get_unit_sale_price())
+				price_label.text = "[color=#e8d9a8]Giá bán:[/color] [color=#ffd700]%s Lượng[/color] [color=#a0a0a0](%s/cái)[/color]" % [price_str, unit_str]
+			else:
+				price_label.text = "[color=#e8d9a8]Giá bán:[/color] [color=#ffd700]%s Lượng[/color]" % price_str
+			price_label.visible = true
+		else:
+			if _item.is_locked():
+				price_label.text = "[color=#ff6060]Vật phẩm đã khóa (Không thể bán)[/color]"
+			else:
+				price_label.text = "[color=#808080]Không thể bán[/color]"
+			price_label.visible = true

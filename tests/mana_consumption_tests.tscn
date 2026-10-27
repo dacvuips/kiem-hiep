@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8mn76mana01"]
+
+[ext_resource type="Script" path="res://tests/mana_consumption_tests.gd" id="1_test"]
+
+[node name="ManaConsumptionTests" type="Node"]
+script = ExtResource("1_test")

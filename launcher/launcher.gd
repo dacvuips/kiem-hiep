@@ -358,6 +358,33 @@ func _boot(installed: Dictionary) -> void:
 			_fail("Thiếu gói dữ liệu: " + file_name)
 			return
 
+	# Đảm bảo toàn bộ các Autoload singleton được tạo và gắn vào cây /root
+	var autoloads: Array = [
+		["GameUiBoot", "res://ui/common/game_ui_boot.gd"],
+		["PlayerStats", "res://systems/player_stats.gd"],
+		["VfxManager", "res://systems/vfx_manager.gd"],
+		["SfxManager", "res://systems/sfx_manager.gd"],
+		["ObjectPool", "res://systems/object_pool.gd"],
+		["GameManager", "res://systems/game_manager.gd"],
+		["SaveManager", "res://systems/save/save_manager.gd"],
+		["MusicManager", "res://systems/music_manager.gd"],
+		["AccountApi", "res://systems/net/account_api.gd"],
+		["NetClient", "res://net/client/net_client.gd"],
+		["ContentPacks", "res://systems/boot/content_packs.gd"],
+		["GmManager", "res://systems/gm/gm_manager.gd"],
+	]
+	for al in autoloads:
+		var node_name: String = al[0]
+		var script_path: String = al[1]
+		if not get_tree().root.has_node(node_name):
+			if ResourceLoader.exists(script_path):
+				var scr = load(script_path)
+				if scr:
+					var inst = scr.new()
+					inst.name = node_name
+					get_tree().root.add_child(inst)
+					print("Launcher: Khởi tạo singleton %s -> OK" % node_name)
+
 	await get_tree().process_frame
 	print("Launcher: Chuyển cảnh sang màn hình đăng nhập...")
 	get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")

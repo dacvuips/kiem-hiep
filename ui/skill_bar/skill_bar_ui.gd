@@ -314,6 +314,8 @@ func _assign(slot: int, skill_id: String) -> void:
 	var profile := GameManager.local_profile
 	if slot >= LOOP_SLOT_BASE:
 		profile.set_loop_slot(slot - LOOP_SLOT_BASE, skill_id)
+		if _player and _player.has_method("on_loop_slot_updated"):
+			_player.on_loop_slot_updated(slot - LOOP_SLOT_BASE, skill_id)
 	elif slot == MAIN_SLOT:
 		profile.set_main_skill(skill_id)
 	else:
@@ -325,6 +327,8 @@ func _notification(what: int) -> void:
 	if _dragged_slot != NO_DRAG and not get_viewport().gui_is_drag_successful():
 		if _dragged_slot >= LOOP_SLOT_BASE:
 			GameManager.local_profile.set_loop_slot(_dragged_slot - LOOP_SLOT_BASE, "")
+			if _player and _player.has_method("on_loop_slot_updated"):
+				_player.on_loop_slot_updated(_dragged_slot - LOOP_SLOT_BASE, "")
 		elif _dragged_slot == MAIN_SLOT:
 			GameManager.local_profile.set_main_skill("")
 		else:
@@ -341,6 +345,20 @@ func _on_loop_pressed(index: int) -> void:
 	if editing_hotbar or _player.skill_controller.get_loop_skill(index) == null:
 		return
 	_player.skill_controller.loop_enabled[index] = not _player.skill_controller.loop_enabled[index]
+	var loop_skill: SkillDefinition = _player.skill_controller.get_loop_skill(index)
+	if loop_skill != null and loop_skill.is_aura:
+		if _player.skill_controller.loop_enabled[index]:
+			GameManager.local_profile.active_aura_id = loop_skill.id
+		else:
+			if GameManager.local_profile.active_aura_id == loop_skill.id:
+				GameManager.local_profile.active_aura_id = ""
+		SaveManager.save_profile(GameManager.local_profile)
+		_player.refresh_combat_stats()
+		_player._refresh_aura_sprite()
+	elif loop_skill != null and SectSkillController.is_self_buff(loop_skill):
+		if _player.skill_controller.loop_enabled[index]:
+			_player.skill_controller.try_cast_loop(loop_skill, _player, null)
+	refresh_sub_skills()
 
 func _on_jump_pressed() -> void:
 	if not editing_hotbar:
@@ -398,7 +416,10 @@ func _process(_delta: float) -> void:
 		if button.skill == null:
 			button.refresh(0.0, true)
 			continue
-		var learned := SectSkillController.DEBUG_UNLOCK_ALL_SKILLS or GameManager.local_profile.get_skill_level(button.skill.id) > 0
+		var profile: PlayerProfile = GameManager.local_profile
+		if profile == null and _player != null and "profile" in _player:
+			profile = _player.get("profile") as PlayerProfile
+		var learned := SectSkillController.DEBUG_UNLOCK_ALL_SKILLS or (profile != null and profile.get_skill_level(button.skill.id) > 0)
 		button.refresh(controller.get_cooldown_ratio(button.skill.id), learned)
 
 	## Đồng bộ hiển thị nút Auto với is_auto_mode — cần refresh mỗi frame vì phím tắt "toggle_auto"

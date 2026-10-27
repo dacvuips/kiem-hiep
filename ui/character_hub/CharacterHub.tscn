@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://ui/debug/DebugCheatPanel.tscn" id="debug_cheat"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/xu_vang_va_nut_cong.png" id="cur_gold"]
+[ext_resource type="Texture2D" uid="uid://hy2t28lduct7" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/dong_tien_vang_va_nut_cong.png" id="cur_coin_gold"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ngoc_xanh_va_nut_cong.png" id="cur_jade"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/the_luc_va_nut_cong.png" id="cur_stam"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/nut_dong.png" id="btn_close"]
@@ -308,6 +309,49 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="ktc_btn_normal"]
+bg_color = Color(0.92, 0.72, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.48, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 2
+shadow_offset = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="ktc_btn_hover"]
+bg_color = Color(0.98, 0.8, 0.22, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.96, 0.65, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.95, 0.75, 0.2, 0.4)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="ktc_btn_pressed"]
+bg_color = Color(0.78, 0.58, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.68, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxEmpty" id="ktc_btn_focus"]
+
 [sub_resource type="StyleBoxFlat" id="inv_btn_wuxia"]
 bg_color = Color(0.05, 0.16, 0.18, 0.95)
 border_width_left = 1
@@ -544,12 +588,12 @@ vertical_alignment = 1
 [node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 760.0
+offset_left = 696.0
 offset_top = 14.0
-offset_right = 910.0
+offset_right = 836.0
 offset_bottom = 54.0
 mouse_filter = 2
-texture = ExtResource("cur_gold")
+texture = ExtResource("cur_coin_gold")
 expand_mode = 1
 stretch_mode = 5
 
@@ -557,7 +601,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 36.0
-offset_right = 114.0
+offset_right = 104.0
 offset_bottom = 40.0
 text = "998.800"
 label_settings = SubResource("cur_text")
@@ -567,8 +611,41 @@ vertical_alignment = 1
 [node name="GoldPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyGold"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 114.0
-offset_right = 150.0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 844.0
+offset_top = 14.0
+offset_right = 984.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = ExtResource("cur_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="XuValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="XuPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
 offset_bottom = 40.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
@@ -577,9 +654,9 @@ flat = true
 [node name="FrameCurrencyJade" type="TextureRect" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 924.0
+offset_left = 992.0
 offset_top = 14.0
-offset_right = 1074.0
+offset_right = 1132.0
 offset_bottom = 54.0
 mouse_filter = 2
 texture = ExtResource("cur_jade")
@@ -590,7 +667,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 36.0
-offset_right = 114.0
+offset_right = 104.0
 offset_bottom = 40.0
 text = "0"
 label_settings = SubResource("cur_text")
@@ -600,45 +677,32 @@ vertical_alignment = 1
 [node name="JadePlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyJade"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 114.0
-offset_right = 150.0
+offset_left = 104.0
+offset_right = 140.0
 offset_bottom = 40.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
 
-[node name="FrameCurrencyStamina" type="TextureRect" parent="Stage/TopBar"]
+[node name="KyTranCacTopButton" type="Button" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1088.0
-offset_top = 14.0
-offset_right = 1262.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_stam")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="StaminaValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyStamina"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 40.0
-offset_right = 142.0
-offset_bottom = 40.0
-text = "1918/1918"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="StaminaPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyStamina"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 138.0
-offset_right = 174.0
-offset_bottom = 40.0
+offset_left = 1140.0
+offset_top = 15.0
+offset_right = 1256.0
+offset_bottom = 53.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-flat = true
+theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.04, 0.01, 1)
+theme_override_colors/font_pressed_color = Color(0.05, 0.02, 0, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("ktc_btn_normal")
+theme_override_styles/hover = SubResource("ktc_btn_hover")
+theme_override_styles/pressed = SubResource("ktc_btn_pressed")
+theme_override_styles/focus = SubResource("ktc_btn_focus")
+text = "Kỳ Trân Các"
 
 [node name="LeftPanel" type="Control" parent="Stage"]
 unique_name_in_owner = true

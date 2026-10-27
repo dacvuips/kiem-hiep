@@ -8,7 +8,6 @@ const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd"
 var subtitle_label: Label
 var header_panel: Panel
 var title_label: Label
-var is_docked: bool = false
 var is_full_width: bool = false
 var docked_width: float = 0.0
 
@@ -86,11 +85,17 @@ func set_draggable(can_drag: bool) -> void:
 	if header_panel:
 		header_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE if draggable else Control.CURSOR_ARROW
 
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		bring_to_front()
+	elif event is InputEventScreenTouch and event.pressed:
+		bring_to_front()
+
 func setup_touch_scroll() -> void:
 	var scrolls: Array[ScrollContainer] = []
 	_collect_scrolls(self, scrolls)
 	if scrolls.size() == 1:
-		TouchScrollHelperScript.attach(scrolls[0], body)
+		TouchScrollHelperScript.attach(scrolls[0], self)
 	else:
 		for s in scrolls:
 			var parent_control := s.get_parent() as Control
@@ -104,11 +109,11 @@ func _collect_scrolls(node: Node, out: Array[ScrollContainer]) -> void:
 			_collect_scrolls(c, out)
 
 func _enter_tree() -> void:
-	if is_docked or _is_in_character_hub():
+	if is_docked:
 		set_draggable(false)
 
 func _ready() -> void:
-	if is_docked or _is_in_character_hub():
+	if is_docked:
 		set_draggable(false)
 	setup_touch_scroll.call_deferred()
 	if is_docked:
@@ -123,6 +128,12 @@ func _ready() -> void:
 		set_deferred("position", docked_pos)
 		return
 	super._ready()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_docked and event.is_action_pressed("ui_cancel"):
+		close_requested.emit()
+		if get_viewport():
+			get_viewport().set_input_as_handled()
 
 func set_docked(docked: bool, full_width: bool = false, custom_width: float = 0.0, custom_pos: Vector2 = Vector2(-1, -1)) -> void:
 	is_docked = docked
@@ -176,8 +187,6 @@ func get_host() -> Node:
 	return tree.current_scene if tree != null else null
 
 static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
-	if host != null and (host.name == "CharacterHub" or host.is_in_group("character_hub") or host.find_parent("CharacterHub") != null or (host.get_tree() and host.get_tree().current_scene != null and host.get_tree().current_scene.name == "CharacterHub")):
-		win.set_draggable(false)
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
 	if window_kind != &"" and tree != null:
 		for w in tree.get_nodes_in_group("social_windows"):
@@ -199,9 +208,21 @@ static func present(host: Node, win: SocialWindow, window_kind: StringName = &""
 	return win
 
 ## Hộp nhập 1 dòng chữ (đặt giá, nhập số tiền, mật khẩu...). on_ok(text) được gọi khi bấm Đồng ý.
-static func prompt(host: Node, window_title: String, hint: String, on_ok: Callable, default_text := "", secret := false) -> void:
+## Nếu max_value > 0 thì chỉ cho phép nhập số và tự động khống chế tối đa bằng max_value.
+static func prompt(host: Node, window_title: String, hint: String, on_ok: Callable, default_text := "", secret := false, max_value: int = -1) -> void:
 	var win := SocialWindow.new(window_title, "", 340.0)
 	var edit := SocialUi.line_edit(hint, secret)
+	if max_value > 0:
+		edit.max_length = str(max_value).length()
+		edit.text_changed.connect(func(t: String) -> void:
+			var filtered := "".join(Array(t.split("")).filter(func(ch: String) -> bool: return ch.is_valid_int()))
+			if filtered != t:
+				edit.text = filtered
+				edit.caret_column = edit.text.length()
+			if filtered.is_valid_int() and int(filtered) > max_value:
+				edit.text = str(max_value)
+				edit.caret_column = edit.text.length()
+		)
 	edit.text = default_text
 	win.body.add_child(edit)
 	var row := win.add_button_row()
@@ -251,4 +272,22 @@ static func ask_yes_no(host: Node, window_title: String, question: String, on_an
 	yes.pressed.connect(answer.bind(true))
 	no.pressed.connect(answer.bind(false))
 	win.close_requested.connect(func() -> void: answer.call(false))
+	return win
+
+## Hộp thông báo 1 nút Đồng ý.
+static func info(host: Node, window_title: String, message: String, on_ok: Callable = Callable()) -> SocialWindow:
+	var win := SocialWindow.new(window_title, "", 380.0)
+	var l := SocialUi.label(message, SocialUi.TEXT, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	win.body.add_child(l)
+	var row := win.add_button_row()
+	var ok := SocialUi.stone_button("Đồng ý")
+	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(ok)
+	present(host, win, &"")
+	ok.pressed.connect(func() -> void:
+		win.close_requested.emit()
+		if on_ok.is_valid():
+			on_ok.call()
+	)
 	return win

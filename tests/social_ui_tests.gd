@@ -141,16 +141,16 @@ rẻ	 lắm  "))
 	market.close_requested.emit()
 	await frames()
 
-	## Vượt Ải › Địa Ngục: 11x / 12x có thẻ map, vào map mang theo độ khó (quái cấp 110 / 120, số sao)
+	## Vượt Ải › Tinh anh: 11x / 12x có thẻ map, vào map mang theo độ khó (quái cấp 110 / 120, số sao)
 	var maps_win := MapSelectWindow.open(self, p, func(_e: Dictionary) -> void: pass)
-	maps_win._select_tab(2)
+	maps_win._select_tab(1)
 	await frames()
-	check("ui: tab Địa Ngục có thẻ map 11x", maps_win.find_children("*", "Button", true, false).any(
+	check("ui: tab Tinh anh có thẻ map 11x", maps_win.find_children("*", "Button", true, false).any(
 		func(b: Button) -> bool: return b.text == "Khiêu chiến"))
 	var hell := MapCatalog.hell_entry(MapCatalog.hell_maps(12)[0], 5)
-	check("địa ngục: mục map 12x 5 sao", int(hell["hell"]["level"]) == 120 and int(hell["hell"]["stars"]) == 5)
+	check("tinh anh: mục map 12x 5 sao", int(hell["hell"]["level"]) == 120 and int(hell["hell"]["stars"]) == 5)
 	var full := DropTable._roll_blue_item(DropTable.TIERS[10], 0, ItemInstance.MAX_MAGIC)
-	check("địa ngục: đồ đủ dòng có đủ %d dòng" % ItemInstance.MAX_MAGIC, full != null and full.magic.size() == ItemInstance.MAX_MAGIC)
+	check("tinh anh: đồ đủ dòng có đủ %d dòng" % ItemInstance.MAX_MAGIC, full != null and full.magic.size() == ItemInstance.MAX_MAGIC)
 	maps_win.close_requested.emit()
 	await frames()
 
@@ -196,7 +196,7 @@ rẻ	 lắm  "))
 	await frames()
 	check("ui: rương đang khoá bị che bằng tấm khoá", st._lock_cover.visible)
 	var inv := InventoryPopup.find_open(get_tree())
-	check("ui: mở rương thì mở kèm khung Hành trang riêng", inv != null and st._inventory == inv and inv._room.transfer_handler.is_valid())
+	check("ui: mở rương độc lập không mở thêm hành trang", inv == null and st != null and st._box_view != null)
 	var item := p.inventory[0]
 	check("ui: rương khoá không kéo thả được", not StorageService.transfer(p, item, p, p.storage, 0, 0, 0))
 	st.submit_money(true, "100")
@@ -233,39 +233,19 @@ rẻ	 lắm  "))
 	SecurityLock.unlock(p, "1234")
 	SecurityLock.clear_password(p, "1234")
 
-	## Bày bán
+	## Bày bán (tính năng đã đóng chuyển sang Chợ)
 	var stall_item := p.inventory[1]
 	StallService.set_price(p, stall_item, 777)
 	var sw := StallWindow.open(self, hub)
 	await frames()
-	check("ui: không cưỡi ngựa (không có nhân vật) thì không báo lỗi cưỡi", not sw._is_riding())
 	press(sw, "Mở quầy")
 	await frames()
-	check("ui: mở quầy bày bán", p.stall_open, ((sw._msg.get_child(0) as Label).text if sw._msg.visible else "no msg"))
-	press(sw, "Dọn quầy")
-	await frames()
-	check("ui: dọn quầy", not p.stall_open)
+	check("ui: mở quầy bị chặn và nhắc sang Chợ", not p.stall_open and ((sw._msg.get_child(0) as Label).text if sw._msg.visible else "").contains("Chợ Giao Thương"))
 	press(sw, "Mở giao dịch")
 	await frames()
 	check("ui: mở giao dịch", p.trade_open)
 	sw.close_requested.emit()
 	StallService.close_trade(p)
-
-	## Xem quầy giả + mua
-	var seller: MockPlayer = null
-	for m in SocialDirectory.players(p):
-		if m.stall_open and not StallService.browse(m).is_empty():
-			seller = m
-	check("ui: có quầy giả để xem", seller != null)
-	if seller != null:
-		var sb := StallBrowseWindow.open(self, hub, seller)
-		await frames()
-		var goods := StallService.browse(seller)
-		var n_before := p.inventory.size()
-		press(sb, "Mua")
-		await frames()
-		check("ui: mua đồ từ quầy giả", p.inventory.size() == n_before + 1 or goods.size() == StallService.browse(seller).size() + 1)
-		sb.close_requested.emit()
 
 	## Giao dịch: Đồng ý (khoá) → Xác nhận (chốt)
 	var partner := SocialDirectory.players(p)[0]

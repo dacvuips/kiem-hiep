@@ -27,7 +27,16 @@ func gold() -> int:
 
 func add_gold(amount: int) -> void:
 	if profile:
-		profile.gold += amount
+		if amount > 0:
+			var space_in_pocket := maxi(0, PlayerProfile.MAX_GOLD - profile.gold)
+			if amount <= space_in_pocket:
+				profile.gold += amount
+			else:
+				profile.gold = PlayerProfile.MAX_GOLD
+				var overflow := amount - space_in_pocket
+				profile.storage_gold = clampi(profile.storage_gold + overflow, 0, PlayerProfile.MAX_STORAGE_GOLD)
+		else:
+			profile.gold = maxi(0, profile.gold + amount)
 	else:
 		mock.gold += amount
 

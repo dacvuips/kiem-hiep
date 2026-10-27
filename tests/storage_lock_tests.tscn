@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dd0kychthy5cm"]
+
+[ext_resource type="Script" path="res://tests/storage_lock_tests.gd" id="1_test"]
+
+[node name="StorageLockTests" type="Node"]
+script = ExtResource("1_test")

@@ -98,6 +98,7 @@ func _make_custom_tooltip(_for_text: String) -> Object:
 	label.bbcode_enabled = true
 	label.fit_content = true
 	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	label.custom_minimum_size = Vector2(300, 0)
 	label.add_theme_font_size_override("normal_font_size", 13)
 	label.text = item_bbcode

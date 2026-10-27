@@ -15,14 +15,17 @@ const C_WHITE := "ffffff"
 const C_NAME_MAGIC := "6464ff"
 const C_NAME_PURPLE := "cc80ff"   ## đồ tím (ItemInstance.is_purple)
 const C_GOLD := "ffff00"
+const C_PURPLE := "cc80ff"
 const C_MAGIC := "6365ff"
 const C_MAGIC_HIDDEN := "6464ff"
+const C_PURPLE_HIDDEN := "cc80ff"
 const C_INACTIVE := "787878"
 const C_GOLD_INACTIVE := "7b7d5a"
 const C_RED := "ff0000"
 const C_SET_WORN := "f7c35a"
 const C_SET_OWNED := "00ff00"
 const C_SET_MISSING := "004b00"
+const C_ATTR_MAX := "1e90ff"       ## Chữ [Max] khi thuộc tính đạt mốc tối đa (Xanh đậm)
 ## Màu tên hệ (<color=Metal/Wood/Water/Fire/Earth> trong GameSetting.ini).
 const ELEMENT_COLORS := {0: "ffe65a", 1: "5ae63c", 2: "5aaaff", 3: "ff5032", 4: "e6963c"}
 ## [ActiveEquip] GameSetting.ini gốc: hệ cần để kích hoạt món hệ X (NeedSr), và tên 2 ô kích hoạt theo
@@ -43,6 +46,7 @@ const COLOR_NAME_MAP := {
 	"orange": "ff9600",
 	"white": "ffffff",
 	"gold": "ffff00",
+	"purple": "cc80ff",
 	"water": "5aaaff",
 	"metal": "ffe65a",
 	"wood": "5ae63c",
@@ -111,7 +115,7 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 	if item.is_purple():
 		intro = "Trang bị Huyền Tinh (đồ tím)"
 	if intro != "":
-		out.append(clean_vltk_tags(intro, C_WHITE))
+		out.append(clean_vltk_tags(intro, C_PURPLE if item.is_purple() else (C_GOLD if gold else C_WHITE)))
 	out.append("")
 
 	for entry in item.base_values:
@@ -120,7 +124,8 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 		else:
 			var text := format_attrib(entry[0], [int(entry[1]), 0, 0])
 			if text != "":
-				out.append(_c(C_WHITE, text))
+				var bracket := _format_bracket_base(item, entry[0], int(entry[1]))
+				out.append("%s%s" % [_c(C_WHITE, text), bracket])
 	var ctx := Equipment.get_requirement_context(profile) if profile else {}
 	for req in item.get_requirements():
 		if int(req[1]) <= 0 and req[0] in ["requirelevel", "requirestr", "requiredex", "requirevit", "requireeng"]:
@@ -132,6 +137,7 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 
 	var remaining := maxi(active, 0)
 	var all_active := true
+	var purple := item.is_purple()
 	for i in item.magic.size():
 		var line: Dictionary = item.magic[i]
 		if line["attrib"] == "":
@@ -139,15 +145,16 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 		var text := format_attrib(line["attrib"], line["value"])
 		if text == "":
 			continue
-		var color := C_GOLD if gold else C_MAGIC
+		var color := C_GOLD if gold else (C_PURPLE if purple else C_MAGIC)
 		if i % 2 == 1:
 			if remaining > 0:
 				remaining -= 1
-				color = C_GOLD if gold else C_MAGIC_HIDDEN
+				color = C_GOLD if gold else (C_PURPLE_HIDDEN if purple else C_MAGIC_HIDDEN)
 			else:
 				color = C_GOLD_INACTIVE if gold else C_INACTIVE
 				all_active = false
-		out.append(_c(color, text))
+		var bracket := _format_bracket_magic(item, line, i, false)
+		out.append("%s%s" % [_c(color, text), bracket])
 	## Đồ tím: các ô khảm còn trống (Compound — Khảm đồ tím, khoáng thuộc tính đúng thứ tự ô).
 	for k in item.sockets:
 		out.append(_c(C_INACTIVE, "◇ Ô khảm %d — còn trống" % (item.magic.size() + k + 1)))
@@ -157,21 +164,33 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 		var expand_active := Equipment.get_expand_active(item, worn) if active >= 0 else 0
 		for i in item.expand_magic.size():
 			var line: Dictionary = item.expand_magic[i]
-			out.append(_c(C_GOLD if i < expand_active else C_GOLD_INACTIVE, format_attrib(line["attrib"], line["value"])))
+			var text := format_attrib(line["attrib"], line["value"])
+			if text == "":
+				continue
+			var color := C_GOLD if i < expand_active else C_GOLD_INACTIVE
+			var bracket := _format_bracket_magic(item, line, i, true)
+			out.append("%s%s" % [_c(color, text), bracket])
 
 	if active >= 0 and not all_active and not item.magic.is_empty() and item.get_detail() < ItemDatabase.Detail.HORSE:
 		out.append("")
-		out.append(_c(C_GOLD, "Cần hệ %s của %s để kích hoạt thuộc tính ẩn" % [
+		var hint_color := C_PURPLE if purple else C_GOLD
+		out.append(_c(hint_color, "Cần hệ %s của %s để kích hoạt thuộc tính ẩn" % [
 			_element_name_colored(NEED_SERIES.get(item.series, 0)), _need_slots(item, part)]))
 	if gold:
 		_append_gold_set(out, item, profile)
+	if with_name:
+		if item.can_sell():
+			var sale_str := InventoryPopup.format_money(item.get_sale_price())
+			out.append(_c(C_GOLD, "Giá cả: %s Lượng" % sale_str))
+		elif item.is_locked():
+			out.append(_c(C_RED, "Vật phẩm đã khóa bảo hiểm"))
 	return "[center]%s[/center]" % "\n".join(out)
 
 ## Món có HỆ (Sát Thủ lệnh/giản, Nguyên thạch, khoáng thuộc tính ẩn...) — script gốc (killer_token/killer_sword.lua GetDesc) ghi
 ## "Thuộc tính ngũ hành".
 const MISC_WITH_SERIES := ["6_1_150", "6_1_152", "6_1_154", "6_1_399", "6_1_400", "6_1_201", "6_1_203", "6_1_205"]
-## Món có CẤP riêng: Huyền Tinh (xuanjing_kuangshi.lua: "Phẩm chất thuộc tính: <cấp>"), khoáng thuộc tính và lệnh bài Sát thủ.
-const MISC_WITH_LEVEL := ["6_1_147", "6_1_399", "6_1_400", "6_1_200", "6_1_201", "6_1_202", "6_1_203", "6_1_204", "6_1_205"]
+## Món có CẤP riêng trên tên: lệnh bài Sát thủ (killer_token.lua). Huyền Tinh & khoáng thạch dùng dòng "Phẩm chất thuộc tính: <cấp>".
+const MISC_WITH_LEVEL := ["6_1_399", "6_1_400"]
 
 ## Thuốc / khoáng thạch / lệnh bài: tên [Cấp], hệ, lời mô tả gốc, tác dụng thuốc (mỗi nửa giây × số frame / 18), số lượng.
 static func _build_misc(item: ItemInstance, with_name: bool) -> String:
@@ -187,8 +206,20 @@ static func _build_misc(item: ItemInstance, with_name: bool) -> String:
 	var intro := _misc_intro(str(base.get("intro", "")))
 	if intro != "":
 		out.append(intro)
-	if item.ore_magic > 0:   ## khoáng thuộc tính: thuộc tính sẽ khảm vào đồ tím
-		out.append(_c(C_MAGIC, "Thuộc tính: %s" % Compound.ore_magic_name(item.ore_magic)))
+	## Khoáng thuộc tính (prop_ore.lua): Thuộc tính, Phẩm chất thuộc tính, Loại trang bị có thể khảm nạm.
+	if item.ore_magic > 0 or item.misc_id in Compound.PROP_ORES:
+		out.append("")
+		if item.ore_magic > 0:
+			out.append(_c(C_NAME_MAGIC, "Thuộc tính: %s" % Compound.ore_magic_name(item.ore_magic)))
+		out.append("%s%s" % [_c(C_NAME_MAGIC, "Phẩm chất thuộc tính: "), _c(C_GOLD, str(item.get_level()))])
+		if item.ore_magic > 0:
+			var fit := Compound.ore_magic_fit_equip(item.ore_magic)
+			if fit != "":
+				out.append("%s%s" % [_c("ff9600", "Loại trang bị có thể khảm nạm: "), _c(C_GOLD, fit)])
+	## Huyền Tinh Khoáng Thạch (xuanjing_kuangshi.lua): Phẩm chất thuộc tính.
+	elif item.misc_id == Compound.XUANJING or item.misc_id == "6_1_147":
+		out.append("")
+		out.append("%s%s" % [_c(C_NAME_MAGIC, "Phẩm chất thuộc tính: "), _c(C_GOLD, str(item.get_level()))])
 	var effects: Array = base.get("effects", [])
 	if not effects.is_empty():
 		out.append("")
@@ -198,6 +229,12 @@ static func _build_misc(item: ItemInstance, with_name: bool) -> String:
 				out.append(_c(C_MAGIC, "%s (%d giây)" % [text, ceili(int(e[2]) / 18.0)]))
 	if item.count > 1:
 		out.append(_c(C_WHITE, "Số lượng: %d" % item.count))
+	if with_name:
+		if item.can_sell():
+			var sale_str := InventoryPopup.format_money(item.get_sale_price())
+			out.append(_c(C_GOLD, "Giá cả: %s Lượng" % sale_str))
+		elif item.is_locked():
+			out.append(_c(C_RED, "Vật phẩm đã khóa bảo hiểm"))
 	return "[center]%s[/center]" % "\n".join(out)
 
 ## Lời mô tả gốc có thẻ <color=yellow>...<color> và <enter> — đổi sang BBCode.
@@ -256,6 +293,60 @@ static func _append_gold_set(out: Array, item: ItemInstance, profile: PlayerProf
 		var name: String = item.get_base().get("name", "?") if detail == item.get_detail() else member.get("name", "?")
 		var color := C_SET_WORN if worn.has(detail) else (C_SET_OWNED if owned.has(detail) else C_SET_MISSING)
 		out.append(_c(color, name))
+
+## Định dạng phần [min - max] (trắng) hoặc [Max] (xanh đậm) ở cuối mỗi dòng thuộc tính trang bị.
+## target_max: mốc tối đa toàn game của thuộc tính. Chỉ khi val >= target_max mới hiển thị [Max].
+static func _format_bracket(val: int, lo: int, hi: int, target_max: int = -1) -> String:
+	if lo >= hi and target_max <= 0:
+		return ""
+	var max_cap := target_max if target_max > 0 else hi
+	if val >= max_cap:
+		return " " + _c(C_ATTR_MAX, "[lb]Max[rb]")
+	if lo < hi:
+		return " " + _c(C_WHITE, "[lb]%d - %d[rb]" % [lo, hi])
+	return ""
+
+static func _format_bracket_base(item: ItemInstance, attrib: String, val: int) -> String:
+	var base_rec := item.get_base()
+	var base_entries: Array = base_rec.get("base", [])
+	for b in base_entries:
+		if b[0] == attrib:
+			var lo := int(b[1])
+			var hi := int(b[2])
+			if lo < hi:
+				return " " + _c(C_WHITE, "[lb]%d - %d[rb]" % [lo, hi])
+			break
+	return ""
+
+static func _format_bracket_magic(item: ItemInstance, line: Dictionary, line_idx: int, is_expand: bool) -> String:
+	var attrib: String = str(line.get("attrib", ""))
+	if attrib == "":
+		return ""
+	var values: Array = line.get("value", [])
+	var val: int = int(values[0]) if not values.is_empty() else 0
+
+	var lo: int = 0
+	var hi: int = 0
+
+	if item.is_gold() and item.gold_index >= 0:
+		var gold_rec := ItemDatabase.get_gold(item.gold_index)
+		var g_lines: Array = gold_rec.get("magic", [])
+		var target_idx := (ItemInstance.MAX_MAGIC + line_idx) if is_expand else line_idx
+		if target_idx >= 0 and target_idx < g_lines.size() and g_lines[target_idx] != null:
+			var g_line = g_lines[target_idx]
+			if g_line is Dictionary:
+				var g_ranges: Array = g_line.get("range", [])
+				if not g_ranges.is_empty() and g_ranges[0].size() >= 2:
+					lo = int(g_ranges[0][0])
+					hi = int(g_ranges[0][1])
+
+	var global_r: Vector2i = ItemDatabase.get_magic_range(attrib, item.series)
+	if lo >= hi:
+		lo = global_r.x
+		hi = global_r.y
+
+	var target_max: int = global_r.y if global_r.y > 0 else hi
+	return _format_bracket(val, lo, hi, target_max)
 
 ## KMagicDesc::GetDesc gốc — thay giá trị vào mẫu câu MagicDesc.ini:
 ##   #<loại><chỉ số giá trị><kiểu dấu>: loại d số, s hệ, x giới tính, m môn phái, f frame->giây, l kỹ năng;

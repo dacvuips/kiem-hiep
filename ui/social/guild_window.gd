@@ -109,7 +109,7 @@ func _rebuild() -> void:
 		_tongda_btn.disabled = not _guild.in_guild()
 	if not _guild.in_guild():
 		set_subtitle("Chưa gia nhập bang hội nào")
-		GuildListWindow.fill(_content, _hub, _host(), true)
+		GuildListWindow.fill(_content, _hub, _host(), false)
 		SaveManager.save_profile(_profile)
 		return
 	set_subtitle("%s · %s" % [_guild.guild_name(), GuildRules.figure_name(_guild.local_figure())])
@@ -427,13 +427,23 @@ func _build_use() -> void:
 	fund[1].add_child(SocialUi.kv("Quỹ hiện có:", "%s lượng" % InventoryPopup.format_money(int(g["fund"])), SocialUi.LABEL_BLUE, SocialUi.GOLD))
 	var drow := HBoxContainer.new()
 	drow.add_theme_constant_override("separation", 8)
-	var amt := SocialUi.line_edit("Số tiền quyên góp")
+	var amt := SocialUi.line_edit("Số tiền quyên góp (tối đa 2 tỷ)")
+	amt.max_length = 10
+	amt.text_changed.connect(func(t: String) -> void:
+		var filtered := "".join(Array(t.split("")).filter(func(ch: String) -> bool: return ch.is_valid_int()))
+		if filtered != t:
+			amt.text = filtered
+			amt.caret_column = amt.text.length()
+		if filtered.is_valid_int() and int(filtered) > 2_000_000_000:
+			amt.text = "2000000000"
+			amt.caret_column = amt.text.length()
+	)
 	amt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	drow.add_child(amt)
 	var don := SocialUi.small_button("Quyên góp")
 	don.pressed.connect(func() -> void:
 		var t := amt.text.strip_edges()
-		_guild.donate(int(t) if t.is_valid_int() else 0))
+		_guild.donate(clampi(int(t) if t.is_valid_int() else 0, 0, 2_000_000_000)))
 	drow.add_child(don)
 	fund[1].add_child(drow)
 	_content.add_child(fund[0])
@@ -661,9 +671,9 @@ func _on_enter_tong_da() -> void:
 		return
 	var gname := _guild.guild_name()
 	var entry: Dictionary = {
-		"id": 921,
+		"id": 987,
 		"name": "Tổng Đà Bang Hội - %s" % gname,
-		"dir": "res://world/maps/map_921",
+		"dir": "res://world/maps/map_987",
 		"guild_map": true,
 		"guild_name": gname,
 	}
@@ -673,7 +683,7 @@ func _on_enter_tong_da() -> void:
 			var st: Dictionary = r.data
 			entry["field"] = {
 				"server": {"host": str(st.get("host", "127.0.0.1")), "port": int(st.get("port", 7807)), "ws_url": str(st.get("ws_url", "")), "name": "Tổng Đà Bang Hội"},
-				"action": {"op": "guild", "guild": gname, "map_id": 921}
+				"action": {"op": "guild", "guild": gname, "map_id": 987}
 			}
 	close_requested.emit()
 	enter_map_requested.emit(entry)

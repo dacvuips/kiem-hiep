@@ -30,7 +30,7 @@ const LOOP_BASE := SkillBarUI.LOOP_SLOT_BASE
 const WHEEL_LOOPS := [Vector2(-241, -51)]
 const WHEEL_LOOP_SIZE := 44.0
 const TOOL_BASE := -50
-const WHEEL_TOOLS := [["sit", "sit", Vector2(-445, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-269, -209), 56.0, "Nhảy"],
+const WHEEL_TOOLS := [["sit", "sit", Vector2(-383, -38), 52.0, "Ngồi"], ["jump", "jump", Vector2(-269, -209), 56.0, "Nhảy"],
 		["horse", "horse", Vector2(-315, -44), 64.0, "Ngựa"]]
 
 const MAIN_SLOT := SkillBarUI.MAIN_SLOT
@@ -84,6 +84,8 @@ func _init(profile: PlayerProfile, skills: Array[SkillDefinition]) -> void:
 	set_docked(true, true)
 	clip_contents = true
 	_profile = profile
+	if _profile == null and GameManager.local_profile != null:
+		_profile = GameManager.local_profile
 	_all_skills = skills
 	_skills = skills.filter(func(s: SkillDefinition) -> bool: return not s.is_hidden and not s.is_basic_attack)
 	# Bố cục ngang 3 cột chính trong body
@@ -170,6 +172,7 @@ func _build_col_skills(parent: HBoxContainer) -> void:
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		b.pressed.connect(_select.bind(skill))
 		# Cho phép kéo thả trực tiếp từ ô lưới kỹ năng
+		b.set_meta("draggable", true)
 		b.set_drag_forwarding(_get_grid_drag_data.bind(skill, b), Callable(), Callable())
 
 		var frame := Panel.new()
@@ -245,6 +248,7 @@ func _build_col_detail(parent: HBoxContainer) -> void:
 	_skill_icon_frame.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_skill_icon_frame.tooltip_text = "Kéo icon kỹ năng này thả vào ô để gắn"
 	# Cho phép kéo trực tiếp từ khung Icon to ở Cột 2
+	_skill_icon_frame.set_meta("draggable", true)
 	_skill_icon_frame.set_drag_forwarding(_get_detail_drag_data.bind(_skill_icon_frame), Callable(), Callable())
 
 	var icon_box := StyleBoxFlat.new()
@@ -476,6 +480,7 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 	holder.size = Vector2(diameter, diameter)
 	holder.mouse_filter = Control.MOUSE_FILTER_STOP
 	# Cho phép kéo thả vào các ô trên Wheel
+	holder.set_meta("draggable", true)
 	holder.set_drag_forwarding(_get_wheel_drag_data.bind(slot), _can_drop_wheel.bind(slot), _drop_wheel.bind(slot))
 	parent.add_child(holder)
 
@@ -761,11 +766,12 @@ func _bind_setting(parent: VBoxContainer, label_text: String, key: String, tip: 
 	check.add_theme_color_override("font_color", Color(0.92, 0.92, 0.88))
 	check.add_theme_color_override("font_pressed_color", Color(1, 0.95, 0.75))
 	check.add_theme_font_size_override("font_size", 12)
-	check.button_pressed = _profile.get_skill_setting(key)
+	check.button_pressed = _profile.get_skill_setting(key) if _profile != null else false
 	check.toggled.connect(func(on: bool) -> void:
-		_profile.skill_settings[key] = on
-		SaveManager.save_profile(_profile)
-		skill_changed.emit()
+		if _profile != null:
+			_profile.skill_settings[key] = on
+			SaveManager.save_profile(_profile)
+			skill_changed.emit()
 	)
 	parent.add_child(check)
 
@@ -798,7 +804,10 @@ func _select(skill: SkillDefinition) -> void:
 			_test_button.visible = false
 		return
 
-	var learned := _profile.get_skill_level(skill.id)
+	if _profile == null and GameManager.local_profile != null:
+		_profile = GameManager.local_profile
+
+	var learned := _profile.get_skill_level(skill.id) if _profile != null else 0
 	_skill_name_label.text = skill.skill_name
 	_skill_icon.texture = skill.icon
 	_skill_desc.text = skill.description
@@ -807,8 +816,9 @@ func _select(skill: SkillDefinition) -> void:
 
 	_add_line(_stat_box, "Đẳng cấp hiện thời: %d/%d" % [learned, skill.max_level], COLOR_CURRENT_LEVEL, 15)
 	if skill.req_level > 1:
+		var has_level := _profile != null and _profile.level >= skill.req_level
 		_add_line(_stat_box, "Yêu cầu cấp độ nhân vật: %d" % skill.req_level,
-				COLOR_STAT if _profile.level >= skill.req_level else COLOR_WARNING, 13)
+				COLOR_STAT if has_level else COLOR_WARNING, 13)
 
 	var weapon_text := skill.get_weapon_limit_bbcode()
 	if weapon_text != "":
@@ -885,14 +895,17 @@ func _after_skill_changed() -> void:
 	skill_changed.emit()
 
 func _refresh() -> void:
-	if _points_label and _profile:
-		_points_label.text = "Điểm kỹ năng: %d" % _profile.skill_points
+	if _profile == null and GameManager.local_profile != null:
+		_profile = GameManager.local_profile
+
+	if _points_label:
+		_points_label.text = "Điểm kỹ năng: %d" % (_profile.skill_points if _profile != null else 0)
 
 	for skill in _skills:
 		if not _slots.has(skill.id):
 			continue
 		var b: Button = _slots[skill.id]
-		var lv := _profile.get_skill_level(skill.id)
+		var lv := _profile.get_skill_level(skill.id) if _profile != null else 0
 		var label: Label = b.get_node_or_null("LevelLabel")
 		if label:
 			label.text = str(lv) if lv > 0 else "Chưa"

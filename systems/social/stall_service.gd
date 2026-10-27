@@ -30,20 +30,8 @@ static func priced_items(p: PlayerProfile) -> Array[ItemInstance]:
 			out.append(it)
 	return out
 
-static func open_stall(p: PlayerProfile, title: String, riding := false) -> String:
-	var blocked := SecurityLock.check(p, SecurityLock.A_OPEN_STALL)
-	if blocked != "":
-		return blocked
-	if riding:
-		return "Đang cưỡi ngựa, không bày bán được — hãy xuống ngựa trước."
-	if priced_items(p).is_empty():
-		return "Hãy đặt giá cho ít nhất một món đồ trước khi bày bán."
-	p.trade_open = false
-	p.stall_open = true
-	p.stall_title = title.strip_edges().left(40)
-	if p.stall_title == "":
-		p.stall_title = "Quầy của %s" % p.display_name   ## biển trên đầu luôn có chữ để người khác bấm vào
-	return ""
+static func open_stall(_p: PlayerProfile, _title: String, _riding := false) -> String:
+	return "Tính năng Bày Bán tại chỗ đã đóng — vui lòng sử dụng Chợ Giao Thương để treo bán vật phẩm."
 
 static func close_stall(p: PlayerProfile) -> void:
 	p.stall_open = false
@@ -52,8 +40,6 @@ static func open_trade(p: PlayerProfile) -> String:
 	var blocked := SecurityLock.check(p, SecurityLock.A_OPEN_STALL)
 	if blocked != "":
 		return blocked
-	if p.stall_open:
-		return "Đang bày bán — hãy dọn quầy trước."
 	p.trade_open = true
 	return ""
 
@@ -61,62 +47,13 @@ static func close_trade(p: PlayerProfile) -> void:
 	p.trade_open = false
 
 # ------------------------------------------------------------------ người mua
-## Hàng trên quầy của người chơi giả (món đã đặt giá, không khoá).
-static func browse(seller: MockPlayer) -> Array[ItemInstance]:
-	var out: Array[ItemInstance] = []
-	if not seller.stall_open:
-		return out
-	for it in seller.bag.inventory:
-		if it.trade_price > 0 and not SecurityLock.is_item_locked(it):
-			out.append(it)
-	return out
+## Hàng trên quầy: tính năng đã chuyển sang Chợ Giao Thương
+static func browse(_seller: MockPlayer) -> Array[ItemInstance]:
+	return []
 
-## Mua món `item` từ quầy `seller` (người bán là người chơi giả hoặc thật). `buyer_fighting` = đang chiến đấu (gốc cấm mua).
-## "" nếu thành công.
-static func buy(buyer: TradeParty, seller: TradeParty, item: ItemInstance, buyer_fighting := false, seller_stall_open := true) -> String:
-	if buyer.profile:
-		var blocked := SecurityLock.check(buyer.profile, SecurityLock.A_STALL_BUY)
-		if blocked != "":
-			return blocked
-	if buyer_fighting:
-		return "Đang ở chế độ chiến đấu, không mua được."
-	# Cho phép mua khi người bán offline / ủy thác bày bán
-	if not seller.owns(item) or item.trade_price <= 0 or SecurityLock.is_item_locked(item):
-		return "Món đồ đã được bán hoặc không còn trên quầy."
-	var price := item.trade_price
-	if buyer.gold() < price:
-		return "Không đủ tiền."
-	if not buyer.can_receive([item]):
-		return "Hành trang đã đầy."
-	seller.detach(item)
-	item.trade_price = 0
-	buyer.receive(item)
-	buyer.add_gold(-price)
-	seller.add_gold(price)
-	return ""
+static func buy(_buyer: TradeParty, _seller: TradeParty, _item: ItemInstance, _buyer_fighting := false, _seller_stall_open := true) -> String:
+	return "Tính năng Bày Bán tại chỗ đã đóng — vui lòng sử dụng Chợ Giao Thương để mua bán vật phẩm."
 
-## Người chơi giả mua từ QUẦY CỦA NGƯỜI CHƠI THẬT (khi chơi một mình để quầy có khách). Mỗi lần gọi (ví dụ mỗi vài giây) có xác suất
-## bán được 1 món; món rẻ hơn giá gợi ý bán chạy hơn. Trả về các giao dịch đã xảy ra [{buyer, item_name, price}].
-static func simulate_customers(p: PlayerProfile, rng: RandomNumberGenerator) -> Array[Dictionary]:
-	var sales: Array[Dictionary] = []
-	if not p.stall_open:
-		return sales
-	var goods := priced_items(p)
-	if goods.is_empty():
-		p.stall_open = false
-		return sales
-	var customers := SocialDirectory.players(p)
-	var pick: MockPlayer = customers[rng.randi() % customers.size()]
-	var item: ItemInstance = goods[rng.randi() % goods.size()]
-	var fair := float(MockPlayer.suggested_price(item))
-	var ratio := float(item.trade_price) / maxf(1.0, fair)       ## 1 = đúng giá gợi ý
-	var chance := clampf(1.3 - ratio * 0.6, 0.02, 0.9)           ## rẻ → dễ bán, đắt gấp 2 lần → gần như không bán
-	if rng.randf() > chance or pick.gold < item.trade_price:
-		return sales
-	var name_of := item.get_display_name()
-	var price := item.trade_price
-	if buy(TradeParty.of_mock(pick), TradeParty.of_profile(p), item) == "":
-		sales.append({"buyer": pick.name, "item_name": name_of, "price": price})
-	if priced_items(p).is_empty():
-		p.stall_open = false        ## hết hàng thì tự dọn quầy
-	return sales
+## Cấm tuyệt đối bot mua đồ — chỉ người chơi thật mới có quyền mua đồ qua Chợ.
+static func simulate_customers(_p: PlayerProfile, _rng: RandomNumberGenerator) -> Array[Dictionary]:
+	return []

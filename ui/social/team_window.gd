@@ -2,7 +2,7 @@ extends SocialWindow
 class_name TeamWindow
 ## LẬP NHÓM (tổ đội) — bố cục như màn "Lập nhóm" của VLTK gốc: bên trái "Nhóm của mình", giữa cột nút [Mời nhóm] [Trục xuất] [..] [Cập nhật]
 ## [Rời nhóm], bên phải "Người chơi" (người quanh đây + người xin vào đội); dưới là "Tài lãnh đạo" (cấp lãnh đạo), ô "Tìm kiếm", và hàng
-## [Lập nhóm ■] [Đóng]. Luật: TeamService (KPlayerTeam/KTeam gốc).
+## [Lập nhóm] [Đóng]. Luật: TeamService (KPlayerTeam/KTeam gốc).
 
 var _hub: SocialHub
 var _team: TeamService
@@ -19,7 +19,6 @@ var _refresh_btn: Button
 var _leave_btn: Button
 var _view_btn: Button
 var _create_btn: Button
-var _create_light: ColorRect
 var _pick: OptionButton
 var _msg: PanelContainer
 
@@ -89,17 +88,11 @@ func _init(hub: SocialHub = null) -> void:
 	_msg.visible = false
 	body.add_child(_msg)
 
-	## Thanh dưới: [Lập nhóm ■] [Đóng]
+	## Thanh dưới: [Lập nhóm] [Đóng]
 	var buttons := add_button_row()
 	_create_btn = SocialUi.stone_button("Lập nhóm")
 	_create_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_create_light = SocialUi.indicator(false)
-	var cb_row := HBoxContainer.new()
-	cb_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cb_row.add_theme_constant_override("separation", 6)
-	cb_row.add_child(_create_btn)
-	cb_row.add_child(_create_light)
-	buttons.add_child(cb_row)
+	buttons.add_child(_create_btn)
 	var close := SocialUi.stone_button("Đóng")
 	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buttons.add_child(close)
@@ -158,7 +151,6 @@ func _rebuild() -> void:
 		SocialUi.set_kv(_info_row, "chưa có (tối đa %d người theo cấp lãnh đạo)" % SocialRules.team_size(_profile.lead_level), SocialUi.MUTED)
 	_pick.select(_team.pick_mode)
 	_pick.disabled = not _team.is_captain()
-	SocialUi.set_indicator(_create_light, _team.in_team())
 	_create_btn.disabled = _team.in_team()
 	_toggle_btn.text = "Đóng nhóm" if _team.open else "Mở nhóm"
 	_update_buttons()

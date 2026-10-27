@@ -160,7 +160,9 @@ func _refresh() -> void:
 	_set_number(_rank_label, profile.world_rank if profile and profile.world_rank != "" else "?")
 	_set_bar("stamina", max_stamina, max_stamina)
 	_set_bar("life", _player.health, _player.max_health)
-	_set_bar("mana", max_mana, max_mana)
+	var cur_mana: float = _player.mana if "mana" in _player else float(max_mana)
+	var effective_max_mana: float = _player.max_mana if ("max_mana" in _player and _player.max_mana > 0.0) else float(max_mana)
+	_set_bar("mana", cur_mana, effective_max_mana)
 	var exp_ratio := 0.0
 	if profile != null and profile.get_exp_to_next_level() > 0:
 		exp_ratio = clampf(float(profile.current_exp) / float(profile.get_exp_to_next_level()), 0.0, 1.0)
@@ -168,7 +170,7 @@ func _refresh() -> void:
 
 	if _disguise_tag and profile:
 		var mask_item: ItemInstance = profile.equipment.get(Equipment.Part.MASK)
-		if mask_item:
+		if mask_item and profile.show_mask:
 			_disguise_tag.visible = true
 			var d_title: String = mask_item.get_display_name()
 			_disguise_tag_label.text = "🎭"

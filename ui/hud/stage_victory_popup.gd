@@ -5,11 +5,14 @@ const StageRewards = preload("res://systems/stage_rewards.gd")
 
 ## Bảng chúc mừng và trao phần thưởng khi đánh bại Boss vượt ải thành công.
 ## Hiển thị đầy đủ hình ảnh, cấp độ của Huyền Tinh, Trang bị, Ngân lượng và vật phẩm nhận được.
+## Cung cấp lựa chọn: Vượt tiếp ải tiếp theo, Về thành, hoặc Ở lại bản đồ.
 
 const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
+const GAME_SCENE_PATH := "res://Main.tscn"
 
 var _rewards: Dictionary = {}
 var _on_close: Callable
+var _is_transitioning: bool = false
 
 static func show_reward(host: Node, rewards: Dictionary, on_close: Callable = Callable()) -> StageVictoryPopup:
 	if host == null or not is_instance_valid(host):
@@ -27,6 +30,23 @@ func _init() -> void:
 	layer = 96
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
+func _get_next_stage() -> StageData:
+	var all_stages: Array[StageData] = []
+	if GameManager != null and GameManager.has_method("get_all_stages"):
+		all_stages = GameManager.get_all_stages()
+	if all_stages.is_empty():
+		return null
+
+	var idx := -1
+	if GameManager != null and GameManager.current_stage != null:
+		idx = GameManager.get_stage_index(GameManager.current_stage)
+	if idx < 0 and _rewards.has("tier"):
+		idx = int(_rewards["tier"]) - 1
+
+	if idx >= 0 and idx + 1 < all_stages.size():
+		return all_stages[idx + 1]
+	return null
+
 func _ready() -> void:
 	get_tree().paused = true
 	var dim := ColorRect.new()
@@ -40,7 +60,7 @@ func _ready() -> void:
 	dim.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
+	panel.custom_minimum_size = Vector2(580, 0)
 	var p_style := StyleBoxFlat.new()
 	p_style.bg_color = Color(0.06, 0.08, 0.07, 0.96)
 	p_style.border_color = Color(0.96, 0.78, 0.25)
@@ -161,15 +181,40 @@ func _ready() -> void:
 		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vbox.add_child(warn)
 
+	# Lấy thông tin ải tiếp theo (nếu có)
+	var next_stage := _get_next_stage()
+
+	# Dòng hỏi ý kiến người chơi: Vượt tiếp ải tiếp theo hay về thành?
+	var prompt_box := PanelContainer.new()
+	var pb_style := StyleBoxFlat.new()
+	pb_style.bg_color = Color(0.10, 0.12, 0.11, 0.8)
+	pb_style.border_color = Color(0.35, 0.38, 0.32)
+	pb_style.set_border_width_all(1)
+	pb_style.set_corner_radius_all(6)
+	pb_style.set_content_margin_all(8)
+	prompt_box.add_theme_stylebox_override("panel", pb_style)
+	vbox.add_child(prompt_box)
+
+	var prompt_lbl := Label.new()
+	if next_stage != null:
+		prompt_lbl.text = "Đại hiệp muốn vượt tiếp ải tiếp theo hay về thành dưỡng sức?"
+		prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	else:
+		prompt_lbl.text = "★ Chúc mừng đại hiệp đã xuất sắc vượt qua toàn bộ Thập Nhị Đại Vượt Ải! ★"
+		prompt_lbl.add_theme_color_override("font_color", Color(0.4, 0.95, 0.6))
+	prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt_lbl.add_theme_font_size_override("font_size", 13)
+	prompt_box.add_child(prompt_lbl)
+
 	# Nút bấm hành động
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 16)
+	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
 	var btn_stay := Button.new()
 	btn_stay.text = "Ở lại bản đồ"
-	btn_stay.custom_minimum_size = Vector2(160, 42)
+	btn_stay.custom_minimum_size = Vector2(130, 42)
 	btn_stay.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var stay_style := StyleBoxFlat.new()
 	stay_style.bg_color = Color(0.12, 0.15, 0.13)
@@ -181,18 +226,42 @@ func _ready() -> void:
 	btn_row.add_child(btn_stay)
 
 	var btn_home := Button.new()
-	btn_home.text = "Về Thành Dưỡng Sức"
-	btn_home.custom_minimum_size = Vector2(200, 42)
+	btn_home.text = "Về Thành"
+	btn_home.custom_minimum_size = Vector2(160, 42)
 	btn_home.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var home_style := StyleBoxFlat.new()
-	home_style.bg_color = Color(0.76, 0.68, 0.45)
-	home_style.border_color = Color(0.96, 0.85, 0.3)
-	home_style.set_border_width_all(2)
+	if next_stage != null:
+		home_style.bg_color = Color(0.22, 0.20, 0.16)
+		home_style.border_color = Color(0.65, 0.58, 0.35)
+		home_style.set_border_width_all(1)
+		btn_home.add_theme_color_override("font_color", Color(0.92, 0.88, 0.78))
+	else:
+		home_style.bg_color = Color(0.76, 0.68, 0.45)
+		home_style.border_color = Color(0.96, 0.85, 0.3)
+		home_style.set_border_width_all(2)
+		btn_home.add_theme_color_override("font_color", Color(0.12, 0.08, 0.03))
 	home_style.set_corner_radius_all(6)
 	btn_home.add_theme_stylebox_override("normal", home_style)
-	btn_home.add_theme_color_override("font_color", Color(0.12, 0.08, 0.03))
 	btn_home.pressed.connect(_on_home_pressed)
 	btn_row.add_child(btn_home)
+
+	if next_stage != null:
+		var btn_next := Button.new()
+		var next_idx := GameManager.get_stage_index(next_stage) if GameManager else -1
+		var next_num := (next_idx + 1) if next_idx >= 0 else (int(_rewards.get("tier", 1)) + 1)
+		btn_next.text = "Vượt Tiếp Ải %d" % next_num
+		btn_next.tooltip_text = "Tiến vào %s" % next_stage.stage_name
+		btn_next.custom_minimum_size = Vector2(190, 42)
+		btn_next.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var next_style := StyleBoxFlat.new()
+		next_style.bg_color = Color(0.76, 0.68, 0.45)
+		next_style.border_color = Color(0.96, 0.85, 0.3)
+		next_style.set_border_width_all(2)
+		next_style.set_corner_radius_all(6)
+		btn_next.add_theme_stylebox_override("normal", next_style)
+		btn_next.add_theme_color_override("font_color", Color(0.12, 0.08, 0.03))
+		btn_next.pressed.connect(_on_next_stage_pressed.bind(next_stage))
+		btn_row.add_child(btn_next)
 
 func _build_reward_row(icon_tex: Texture2D, title_text: String, desc_text: String, color: Color) -> Control:
 	var row := HBoxContainer.new()
@@ -239,6 +308,9 @@ func _build_reward_row(icon_tex: Texture2D, title_text: String, desc_text: Strin
 	return row
 
 func _on_stay_pressed() -> void:
+	if _is_transitioning:
+		return
+	_is_transitioning = true
 	PlayerStats.reset()
 	get_tree().paused = false
 	var cb := _on_close
@@ -247,7 +319,30 @@ func _on_stay_pressed() -> void:
 		cb.call()
 
 func _on_home_pressed() -> void:
+	if _is_transitioning:
+		return
+	_is_transitioning = true
 	PlayerStats.reset()
 	get_tree().paused = false
+	if GameManager and GameManager.local_profile != null:
+		SaveManager.save_profile(GameManager.local_profile)
+		await SaveManager.flush_online()
 	queue_free()
 	get_tree().change_scene_to_file(HUB_SCENE_PATH)
+
+func _on_next_stage_pressed(next_stage: StageData) -> void:
+	if _is_transitioning or next_stage == null:
+		return
+	_is_transitioning = true
+	PlayerStats.reset()
+	get_tree().paused = false
+	if GameManager:
+		GameManager.game_mode = GameManager.GameMode.STAGE
+		GameManager.field_map = {}
+		GameManager.current_stage = next_stage
+		GameManager.is_game_over = false
+		if GameManager.local_profile != null:
+			SaveManager.save_profile(GameManager.local_profile)
+			await SaveManager.flush_online()
+	queue_free()
+	get_tree().change_scene_to_file(GAME_SCENE_PATH)

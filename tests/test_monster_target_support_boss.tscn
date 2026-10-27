@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c8m3v1si0n002"]
+
+[ext_resource type="Script" path="res://tests/test_monster_target_support_boss.gd" id="1_test"]
+
+[node name="TestMonsterTargetSupportBoss" type="Node"]
+script = ExtResource("1_test")

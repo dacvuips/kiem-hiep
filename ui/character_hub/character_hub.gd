@@ -91,7 +91,8 @@ var _hub_avatar_upload_box: PanelContainer
 var _hub_avatar_delete_btn: Button
 
 func _ready() -> void:
-	PlayerStats.reset()
+	if PlayerStats.has_method("reset"):
+		PlayerStats.reset()
 	add_to_group("character_hub")
 	if "--capture-screenshot" in OS.get_cmdline_args() or "--test-open-popup" in OS.get_cmdline_args() or "--test-open-inventory" in OS.get_cmdline_args() or "--test-open-skills" in OS.get_cmdline_args() or "--test-equipment-red" in OS.get_cmdline_args() or "--test-open-events" in OS.get_cmdline_args():
 		_create_mock_profile()
@@ -516,7 +517,7 @@ func _create_mock_profile() -> void:
 	SaveManager.save_profile(_profile)
 
 func refresh() -> void:
-	if _profile == null:
+	if _profile == null or not is_inside_tree() or not has_node("%GoldValueLabel"):
 		return
 
 	# Thanh tiền tệ top
@@ -1597,7 +1598,7 @@ func _select_bag(bag_idx: int) -> void:
 	_refresh_inventory_view()
 
 func _refresh_inventory_view() -> void:
-	if _profile == null:
+	if _profile == null or not is_inside_tree() or not has_node("%BagTabs"):
 		return
 
 	var bags := %BagTabs.get_children()

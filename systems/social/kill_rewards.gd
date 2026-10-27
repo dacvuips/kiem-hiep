@@ -25,10 +25,16 @@ static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int)
 		SaveManager.save_profile(profile)
 		if player != null and player.has_method("refresh_combat_stats"):
 			player.refresh_combat_stats()
+		ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
 	return got
 
 static func on_monster_killed(monster: VltkMonster) -> void:
 	if not ENABLED or monster == null:
 		return
 	var base := MonsterData.stat_at_level(monster.data, "exp", monster.level)
-	grant_exp(GameManager.local_profile, base, monster.level)
+	if base <= 0:
+		base = int(monster.data.get("exp", 0))
+	var got := grant_exp(GameManager.local_profile, base, monster.level)
+	if got > 0:
+		var mname: String = str(monster.data.get("name", "Quái")) if monster.data else "Quái"
+		ChatBox.push_exp(mname, got)

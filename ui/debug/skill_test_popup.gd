@@ -478,7 +478,7 @@ func _spawn_dummies() -> void:
 		_status.text = "Không có quái số %d." % monster_id
 		return
 	_prune_dummies()
-	var radius_px := float(_skill.vltk_attack_radius) if _skill != null and _skill.vltk_attack_radius > 0 else 200.0
+	var radius_px := _skill.get_attack_radius_at_level(1) if _skill != null else 200.0
 	var distance := clampf(radius_px * 0.6, 110.0, 380.0)
 	var forward: Vector2 = player.last_direction.normalized()
 	var side := forward.orthogonal()

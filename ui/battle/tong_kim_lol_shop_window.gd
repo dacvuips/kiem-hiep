@@ -14,9 +14,18 @@ func _init() -> void:
 	_gold_label = SocialUi.label("", SocialUi.GOLD, 15)
 	body.add_child(_gold_label)
 
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.custom_minimum_size = Vector2(0, 380)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(scroll)
+
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 8)
-	body.add_child(list)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
 
 	for item in TongKimLolRules.SHOP_ITEMS:
 		var row := GameUi.panel(GameUi.PANEL)
@@ -92,11 +101,29 @@ static func load_item_icon(item: Dictionary) -> Texture2D:
 
 func _on_buy_pressed(item: Dictionary) -> void:
 	var state := TongKimLolState.instance()
-	if state and state.apply_shop_item(item):
-		_update_gold()
-		ChatBox.push_system("[color=#5cd882]Đã mua %s thành công![/color]" % str(item.get("name", "")))
-	else:
+	var cost: int = int(item.get("price", 0))
+	if state == null or state.match_gold < cost:
 		ChatBox.push_system("[color=#ff4444]Không đủ Vàng Tống Kim để mua vật phẩm này![/color]")
+		return
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var inst := ItemGenerator.generate_misc(str(item.get("id", "")))
+	if inst == null:
+		inst = ItemInstance.new()
+		inst.misc_id = str(item.get("id", ""))
+		inst.count = 1
+	if profile.add_item(inst):
+		state.spend_gold(cost)
+		_update_gold()
+		ChatBox.push_system("[color=#5cd882]Đã mua %s, vật phẩm đã vào hành trang![/color]" % str(item.get("name", "")))
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree:
+			for qb in tree.get_nodes_in_group("quick_item_bar"):
+				if qb.has_method("refresh"):
+					qb.refresh()
+	else:
+		ChatBox.push_system("[color=#ff4444]Hành trang đã đầy, không thể chứa thêm![/color]")
 
 func _update_gold() -> void:
 	var state := TongKimLolState.instance()

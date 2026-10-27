@@ -155,12 +155,13 @@ func _on_money() -> void:
 	if _session.local().locked:
 		_say("Bạn đã khoá giao dịch, không sửa được nữa.")
 		return
-	SocialWindow.prompt(get_tree().current_scene, "Số tiền đưa", "Số lượng (0 – %d)" % _profile.gold, func(text: String) -> void:
-		set_money_text(text), str(_session.local().money))
+	SocialWindow.prompt(get_tree().current_scene, "Số tiền đưa", "Số lượng (0 – %d)" % mini(_profile.gold, 2_000_000_000), func(text: String) -> void:
+		set_money_text(text), str(_session.local().money), false, 2_000_000_000)
 
 func set_money_text(text: String) -> void:
 	var t := text.strip_edges()
-	_say(_session.set_money(_session.local(), int(t) if t.is_valid_int() else 0))
+	var val := clampi(int(t) if t.is_valid_int() else 0, 0, 2_000_000_000)
+	_say(_session.set_money(_session.local(), val))
 
 func _process(delta: float) -> void:
 	if _session == null or _finished:

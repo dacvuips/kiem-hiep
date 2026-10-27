@@ -48,6 +48,7 @@ var _now := 0
 var _id_edit: LineEdit
 var _near_box: VBoxContainer
 var _items: Dictionary = {}      ## id listing -> ItemInstance (đọc từ listing.item)
+var _is_busy: bool = false       ## Chống spam click / debounce cho các thao tác Mua, Treo, Hủy
 
 static func open(host: Node, profile: PlayerProfile) -> MarketWindow:
 	return SocialWindow.present(host, MarketWindow.new(SocialHub.of(profile)), &"market") as MarketWindow
@@ -119,7 +120,11 @@ func _show_tab(t: int) -> void:
 			_refresh_nearby()
 
 func _refresh_money() -> void:
-	_money.text = "Lượng: %s   ·   KNB: %s" % [InventoryPopup.format_money(_profile.gold), InventoryPopup.format_money(_profile.jade)]
+	_money.text = "Lượng: %s   ·   Xu: %s   ·   KNB: %s" % [
+		InventoryPopup.format_money(_profile.gold),
+		InventoryPopup.format_money(_profile.xu),
+		InventoryPopup.format_money(_profile.jade)
+	]
 
 ## Gửi thao tác chợ: online lên server (trả lời về _on_market qua NetClient), offline hỏi OfflineMarket ngay.
 func _request(op: String, args := {}) -> void:
@@ -132,14 +137,17 @@ func _on_market(d: Dictionary) -> void:
 	_now = int(d.get("now", _now))
 	match str(d.get("op", "")):
 		"list":
+			_is_busy = false
 			_list_page = int(d.get("page", 0))
 			_list_pages = maxi(1, int(d.get("pages", 1)))
 			_fill_market(d.get("items", []))
 			_update_pager(int(d.get("total", (d.get("items", []) as Array).size())))
 		"mine":
+			_is_busy = false
 			_mine = d.get("items", [])
 			_fill_mine()
 		"done":
+			_is_busy = false
 			_say(str(d.get("msg", "")), bool(d.get("ok", false)))
 			_refresh_money()
 			if bool(d.get("ok", false)):
@@ -148,6 +156,9 @@ func _on_market(d: Dictionary) -> void:
 				elif _tab == Tab.MINE:
 					_request("mine")
 					_refresh_bag()
+			else:
+				if _tab == Tab.MINE:
+					_fill_mine()
 
 ## Online: hồ sơ chuẩn từ server (sau mua / treo / huỷ) đã chép vào _profile -> vẽ lại tiền + hành trang.
 func _on_profile(_data: Dictionary) -> void:
@@ -411,9 +422,20 @@ func _is_mine(l: Dictionary) -> bool:
 	return sid == OfflineMarket.SELF_SID
 
 func _confirm_buy(l: Dictionary, item: ItemInstance) -> void:
+	if _is_busy:
+		_say("Đang xử lý giao dịch, vui lòng chờ...", false)
+		return
+	if item != null and _profile.find_free_spot_any(item.get_size()).z < 0:
+		_say("Hành trang không đủ chỗ trống (cần vùng %dx%d ô). Hãy dọn bớt túi đồ trước khi mua!" % [item.get_size().x, item.get_size().y], false)
+		return
 	var cur := int(l.get("cur", 0))
 	SocialWindow.confirm(_host(), "Mua vật phẩm", "Mua %s với giá %s?" % [_short_name(item), MarketBook.price_text(int(l.get("price", 0)), cur)],
-		func() -> void: _request("buy", {"id": str(l.get("id", ""))}))
+		func() -> void:
+			if _is_busy:
+				_say("Đang xử lý giao dịch, vui lòng chờ...", false)
+				return
+			_is_busy = true
+			_request("buy", {"id": str(l.get("id", ""))}))
 
 # ================================================================ Của Tôi
 
@@ -473,7 +495,7 @@ func _build_mine() -> Control:
 	TouchScrollHelperScript.attach(bag_scroll, right[0] as Control)
 	right[1].add_child(bag_scroll)
 	right[1].add_child(SocialUi.label("Chạm vật phẩm để định giá bán", SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER))
-	right[1].add_child(SocialUi.label("Hệ thống sẽ thu thuế tự động %d%% khi bán thành công" % MarketBook.TAX_PERCENT,
+	right[1].add_child(SocialUi.label("Thuế đăng bán: 3%/ngày (trừ từ túi + rương). Hết tiền hoặc hết hạn tự hoàn trả về rương.",
 		SocialUi.LABEL_GREEN, 12, HORIZONTAL_ALIGNMENT_CENTER))
 	page.add_child(right[0])
 	return page
@@ -517,7 +539,15 @@ func _fill_mine() -> void:
 		if not sold:
 			var btn := SocialUi.small_button("Hủy treo" if live else "Nhận lại")
 			btn.custom_minimum_size = Vector2(92, 30)
-			btn.pressed.connect(func() -> void: _request("cancel", {"id": str(l.get("id", ""))}))
+			btn.pressed.connect(func() -> void:
+				if _is_busy:
+					_say("Đang xử lý giao dịch, vui lòng chờ...", false)
+					return
+				_is_busy = true
+				btn.disabled = true
+				btn.text = "Đang xử lý..."
+				_request("cancel", {"id": str(l.get("id", ""))})
+			)
 			right.add_child(btn)
 		row.add_child(right)
 		_mine_box.add_child(panel)
@@ -538,9 +568,13 @@ func _on_bag_item(item: ItemInstance) -> void:
 		cur_row.add_child(b)
 	win.body.add_child(cur_row)
 	var edit := SocialUi.line_edit("Giá bán")
+	edit.max_length = 10
 	win.body.add_child(edit)
 	var preview := SocialUi.label("", SocialUi.GOLD, 14, HORIZONTAL_ALIGNMENT_CENTER)
 	win.body.add_child(preview)
+	var tax_lbl := SocialUi.label("", SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	tax_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	win.body.add_child(tax_lbl)
 	## Nội dung rao (không bắt buộc): danh sách hiện 1 dòng, khung xem chi tiết hiện đầy đủ.
 	var note := SocialUi.line_edit("Nội dung rao (không bắt buộc)")
 	note.max_length = MarketBook.NOTE_MAX
@@ -548,18 +582,6 @@ func _on_bag_item(item: ItemInstance) -> void:
 	var note_count := SocialUi.label("0/%d" % MarketBook.NOTE_MAX, SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_RIGHT)
 	win.body.add_child(note_count)
 	note.text_changed.connect(func(t: String) -> void: note_count.text = "%d/%d" % [t.length(), MarketBook.NOTE_MAX])
-	var update := func() -> void:
-		GameUi.set_active(gold_b, cur[0] == MarketBook.CUR_GOLD)
-		GameUi.set_active(jade_b, cur[0] == MarketBook.CUR_JADE)
-		var v := int(edit.text) if edit.text.strip_edges().is_valid_int() else 0
-		preview.text = MarketBook.price_text(v, cur[0]) if v > 0 else ("Nhập số lượng (1 vạn = 10000)" if cur[0] == MarketBook.CUR_GOLD else "Nhập số KNB")
-	gold_b.pressed.connect(func() -> void:
-		cur[0] = MarketBook.CUR_GOLD
-		update.call())
-	jade_b.pressed.connect(func() -> void:
-		cur[0] = MarketBook.CUR_JADE
-		update.call())
-	edit.text_changed.connect(func(_t: String) -> void: update.call())
 	var row := win.add_button_row()
 	var ok := SocialUi.stone_button("Treo bán")
 	var cancel := SocialUi.stone_button("Huỷ")
@@ -567,8 +589,59 @@ func _on_bag_item(item: ItemInstance) -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(b)
 	SocialWindow.present(_host(), win, &"")
+	var update := func() -> void:
+		GameUi.set_active(gold_b, cur[0] == MarketBook.CUR_GOLD)
+		GameUi.set_active(jade_b, cur[0] == MarketBook.CUR_JADE)
+		var max_val: int = int(MarketBook.MAX_PRICE[cur[0]])
+		var raw := edit.text.strip_edges()
+		if raw.length() > 0 and not raw.is_valid_int():
+			edit.text = "".join(Array(raw.split("")).filter(func(ch: String) -> bool: return ch.is_valid_int()))
+			edit.caret_column = edit.text.length()
+			raw = edit.text
+		var v := int(raw) if raw.is_valid_int() else 0
+		if v > max_val:
+			v = max_val
+			edit.text = str(max_val)
+			edit.caret_column = edit.text.length()
+		preview.text = MarketBook.price_text(v, cur[0]) if v > 0 else ("Nhập số lượng (tối đa 2 tỷ)" if cur[0] == MarketBook.CUR_GOLD else "Nhập số KNB (tối đa 10 triệu)")
+		var fee := MarketBook.listing_fee(v, cur[0])
+		var total_avail: int = _profile.gold + _profile.storage_gold
+		if v > 0:
+			if total_avail >= fee:
+				tax_lbl.text = "Thuế đăng bán: 3%%/ngày (%s) — Đủ tiền đóng phí" % MarketBook.price_text(fee, MarketBook.CUR_GOLD)
+				tax_lbl.modulate = SocialUi.LABEL_GREEN
+				ok.disabled = false
+			else:
+				tax_lbl.text = "Thuế đăng bán: 3%%/ngày (%s) — Không đủ tiền (Túi+Rương: %s)!" % [
+					MarketBook.price_text(fee, MarketBook.CUR_GOLD),
+					MarketBook.price_text(total_avail, MarketBook.CUR_GOLD)
+				]
+				tax_lbl.modulate = SocialUi.LABEL_RED
+				ok.disabled = true
+		else:
+			tax_lbl.text = "Thuế đăng bán: 3%/ngày (trừ từ túi + rương)"
+			tax_lbl.modulate = SocialUi.MUTED
+			ok.disabled = false
+	gold_b.pressed.connect(func() -> void:
+		cur[0] = MarketBook.CUR_GOLD
+		update.call())
+	jade_b.pressed.connect(func() -> void:
+		cur[0] = MarketBook.CUR_JADE
+		update.call())
+	edit.text_changed.connect(func(_t: String) -> void: update.call())
 	var submit := func() -> void:
-		var price := int(edit.text) if edit.text.strip_edges().is_valid_int() else 0
+		if _is_busy:
+			_say("Đang xử lý giao dịch, vui lòng chờ...", false)
+			return
+		var max_val: int = int(MarketBook.MAX_PRICE[cur[0]])
+		var price := clampi(int(edit.text) if edit.text.strip_edges().is_valid_int() else 0, 0, max_val)
+		var fee := MarketBook.listing_fee(price, cur[0])
+		if not MarketBook.can_afford_tax(_profile, fee):
+			_say("Không đủ tiền đóng thuế đăng bán 3%% (cần %s). Tổng tiền túi và rương không đủ!" % MarketBook.price_text(fee, MarketBook.CUR_GOLD), false)
+			return
+		_is_busy = true
+		ok.disabled = true
+		ok.text = "Đang xử lý..."
 		win.close_requested.emit()
 		_request("sell", {"uid": item.uid, "price": price, "cur": cur[0], "note": MarketBook.clean_note(note.text)})
 	ok.pressed.connect(submit)
@@ -674,23 +747,16 @@ func _refresh_nearby() -> void:
 		var state := "Cấp %d · %s" % [m.level, m.sect_name]
 		if not NetClient.is_in_world():
 			state = "ID %d · " % m.id + state
-		if m.stall_open:
-			state += " · đang bày bán"
-		elif m.trade_open:
+		if m.trade_open:
 			state += " · mở giao dịch"
 		row.add_child(SocialUi.label(state, SocialUi.SUBTITLE, 12))
 		var eq := SocialUi.small_button("Xem trang bị")
 		eq.pressed.connect(func() -> void: _view_equip(m))
 		row.add_child(eq)
-		if m.stall_open:
-			var v := SocialUi.small_button("Xem quầy")
-			v.pressed.connect(func() -> void: StallBrowseWindow.open(_host(), _hub, m))
-			row.add_child(v)
-		else:
-			var t := SocialUi.small_button("Giao dịch")
-			t.disabled = not m.trade_open
-			t.pressed.connect(func() -> void: _trade_near(m))
-			row.add_child(t)
+		var t := SocialUi.small_button("Giao dịch")
+		t.disabled = not m.trade_open
+		t.pressed.connect(func() -> void: _trade_near(m))
+		row.add_child(t)
 		_near_box.add_child(row)
 
 func _view_equip(m: MockPlayer) -> void:

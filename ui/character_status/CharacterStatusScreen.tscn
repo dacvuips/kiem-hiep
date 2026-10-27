@@ -272,10 +272,10 @@ clip_text = true
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.072514
-anchor_top = 0.354512
-anchor_right = 0.234807
-anchor_bottom = 0.518416
+anchor_left = 0.076
+anchor_top = 0.348
+anchor_right = 0.227
+anchor_bottom = 0.517
 text = "Nhấp vào đây để
 chọn hình dáng"
 clip_text = true
@@ -284,15 +284,12 @@ clip_text = true
 unique_name_in_owner = true
 clip_contents = true
 layout_mode = 1
-anchor_left = 0.072514
-anchor_top = 0.354512
-anchor_right = 0.234807
-anchor_bottom = 0.518416
-offset_left = -16.61444
-offset_top = -21.248642
-offset_right = 32.58467
-offset_bottom = -9.248657
-tooltip_text = "Bấm để xoay nhân vật"
+anchors_preset = -1
+anchor_left = 0.076
+anchor_top = 0.348
+anchor_right = 0.227
+anchor_bottom = 0.517
+tooltip_text = "Nhấp để thay đổi ảnh đại diện"
 
 [node name="PortraitAvatar" type="Node2D" parent="Aspect/Frame/Board/PortraitBox" unique_id=1900000302]
 unique_name_in_owner = true
@@ -1273,6 +1270,25 @@ flat = true
 autowrap_mode = 3
 clip_text = true
 script = ExtResource("99_item_slot")
+
+[node name="MaskVisualCheck" type="Button" parent="Aspect/Frame/Board" unique_id=1950000099]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5794
+anchor_top = 0.2053
+anchor_right = 0.6008
+anchor_bottom = 0.2376
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBox_add_focus")
+theme_override_styles/hover = SubResource("StyleBox_add_focus")
+theme_override_styles/pressed = SubResource("StyleBox_add_focus")
+theme_override_styles/disabled = SubResource("StyleBox_add_focus")
+theme_override_styles/focus = SubResource("StyleBox_add_focus")
+toggle_mode = true
+flat = true
+expand_icon = true
 
 [node name="EquipSlot12" type="Button" parent="Aspect/Frame/Board" unique_id=1950000012]
 unique_name_in_owner = true

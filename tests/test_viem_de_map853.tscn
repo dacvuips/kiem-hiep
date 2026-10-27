@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cgfsfgud4a82u"]
+
+[ext_resource type="Script" path="res://tests/test_viem_de_map853.gd" id="1_test"]
+
+[node name="TestViemDeMap853" type="Node"]
+script = ExtResource("1_test")

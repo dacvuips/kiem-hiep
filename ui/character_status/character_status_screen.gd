@@ -26,6 +26,7 @@ const COLOR_MANA := Color(0.3, 0.55, 0.95)
 const COLOR_STAMINA := Color(0.35, 0.8, 0.35)
 const COLOR_POTENTIAL := Color(0.95, 0.25, 0.2)
 const COLOR_DIM := Color(0.65, 0.6, 0.5)
+const ICON_CHECK := preload("res://ui/login/icon_check.png")
 
 ## Phát khi chính panel này đổi profile (cộng điểm tiềm năng, tháo đồ) — map đánh quái nghe để áp
 ## chỉ số mới lên nhân vật đang đứng trong trận.
@@ -35,6 +36,9 @@ var _profile: PlayerProfile
 var _disguise_banner: PanelContainer
 var _disguise_label: Label
 var _disguise_icon: TextureRect
+var _custom_avatar_view: TextureRect
+var _avatar_upload_box: PanelContainer
+var _avatar_delete_btn: Button
 ## Ai mở Hành trang khi bấm nút "Hành trang"/ô trống. Rỗng = popup modal mặc định (màn Hub). Map đánh
 ## quái gán hàm riêng để mở khung Hành trang không modal, cùng lúc với khung Nhân vật.
 var inventory_opener: Callable
@@ -57,6 +61,7 @@ func _ready() -> void:
 	_style_base_stat_box()
 	_style_derived_box()
 	_style_equipment_slots()
+	_sync_world_rank.call_deferred()
 
 	## _profile chỉ được gán khi tạo qua attach() (xem character_hub.gd) — nếu scene này bị chạy
 	## trực tiếp trong editor (F6 "Run Current Scene") hoặc instantiate() mà không gọi attach(),
@@ -176,8 +181,11 @@ func refresh() -> void:
 	(%LevelValue as Label).text = str(_profile.level)
 	(%RankValue as Label).text = _profile.world_rank if not _profile.world_rank.is_empty() else "—"
 
-	(%LifeValue as Label).text = "%d/%d" % [s.max_hp, s.max_hp]
-	(%ManaValue as Label).text = "%d/%d" % [s.max_mana, s.max_mana]
+	var p_node := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	var cur_life := int(p_node.health) if (p_node and "health" in p_node) else s.max_hp
+	var cur_mana := int(p_node.mana) if (p_node and "mana" in p_node) else s.max_mana
+	(%LifeValue as Label).text = "%d/%d" % [cur_life, s.max_hp]
+	(%ManaValue as Label).text = "%d/%d" % [cur_mana, s.max_mana]
 	(%StaminaValue as Label).text = "%d/%d" % [_profile.stamina, _profile.max_stamina]
 	(%ElementValue as Label).text = ElementTypes.ELEMENT_NAME.get(_sect_element(), "—")
 
@@ -189,15 +197,10 @@ func refresh() -> void:
 		(get_node("%%BaseStatButton%d" % i) as Button).disabled = _profile.potential_points <= 0
 
 	## Gốc: Lực tay trái = damage skill chuột trái (ở đây: đòn chính), phải = đòn đánh cơ bản (vật lý 0%, tức damage tay/vũ khí).
-	var left_damage := Vector2i(s.unarmed_min_damage, s.unarmed_max_damage)
-	var left_uses_ar := true
 	var player := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
-	if player != null and "skill_controller" in player:
-		var main_skill: SkillDefinition = player.skill_controller.get_main_skill()
-		if main_skill != null:
-			left_damage = player.skill_controller.get_echo_damage(main_skill, player)
-			if main_skill.vltk_skill_id > 0:
-				left_uses_ar = int(VltkSkillData.skill(main_skill.vltk_skill_id, 1).get("use_ar", 1)) != 0
+	var left_info := SectSkillController.get_left_hand_info(_profile, player)
+	var left_damage: Vector2i = left_info.damage
+	var left_uses_ar: bool = left_info.use_ar
 	(%DamageLeftValue as Label).text = "%d/%d" % [left_damage.x, left_damage.y]
 	(%DamageRightValue as Label).text = "%d/%d" % [s.unarmed_min_damage, s.unarmed_max_damage]
 
@@ -234,24 +237,149 @@ var _portrait_timer: Timer
 func _setup_portrait() -> void:
 	var box: Control = %PortraitBox
 	box.resized.connect(_place_portrait)
-	box.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			_turn_portrait()
-			_portrait_timer.start())
+
+	# 1. TextureRect hiển thị ảnh đại diện tùy chỉnh (200x200 JPG) vừa vặn khung vuông
+	if _custom_avatar_view == null:
+		_custom_avatar_view = TextureRect.new()
+		_custom_avatar_view.name = "CustomAvatarView"
+		_custom_avatar_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_custom_avatar_view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_custom_avatar_view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_custom_avatar_view.mouse_filter = Control.MOUSE_FILTER_STOP
+		_custom_avatar_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		_custom_avatar_view.tooltip_text = "Nhấp để thay đổi ảnh đại diện (200×200)"
+		_custom_avatar_view.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_open_avatar_uploader()
+		)
+		box.add_child(_custom_avatar_view)
+
+	# 2. Khung nút "Tải ảnh lên" khi chưa có ảnh
+	if _avatar_upload_box == null:
+		_avatar_upload_box = PanelContainer.new()
+		_avatar_upload_box.name = "AvatarUploadBox"
+		_avatar_upload_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_avatar_upload_box.mouse_filter = Control.MOUSE_FILTER_STOP
+		_avatar_upload_box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.04, 0.06, 0.08, 0.88)
+		sb.border_width_left = 1
+		sb.border_width_top = 1
+		sb.border_width_right = 1
+		sb.border_width_bottom = 1
+		sb.border_color = Color(0.85, 0.7, 0.25, 0.6)
+		sb.corner_radius_top_left = 4
+		sb.corner_radius_top_right = 4
+		sb.corner_radius_bottom_right = 4
+		sb.corner_radius_bottom_left = 4
+		_avatar_upload_box.add_theme_stylebox_override("panel", sb)
+
+		var v_box := VBoxContainer.new()
+		v_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		v_box.add_theme_constant_override("separation", 4)
+		_avatar_upload_box.add_child(v_box)
+
+		var icon_lbl := Label.new()
+		icon_lbl.text = "📷"
+		icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		icon_lbl.add_theme_font_size_override("font_size", 22)
+		v_box.add_child(icon_lbl)
+
+		var upload_lbl := Label.new()
+		upload_lbl.text = "Tải ảnh lên"
+		upload_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		upload_lbl.add_theme_font_size_override("font_size", 13)
+		upload_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+		v_box.add_child(upload_lbl)
+
+		var sub_lbl := Label.new()
+		sub_lbl.text = "(200×200 px)"
+		sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub_lbl.add_theme_font_size_override("font_size", 10)
+		sub_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75))
+		v_box.add_child(sub_lbl)
+
+		_avatar_upload_box.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_open_avatar_uploader()
+		)
+		box.add_child(_avatar_upload_box)
+
+	# 3. Nút "X" góc trên để xóa ảnh đại diện khi đã có ảnh
+	if _avatar_delete_btn == null:
+		_avatar_delete_btn = Button.new()
+		_avatar_delete_btn.name = "AvatarDeleteBtn"
+		_avatar_delete_btn.text = "✕"
+		_avatar_delete_btn.custom_minimum_size = Vector2(22, 22)
+		_avatar_delete_btn.size = Vector2(22, 22)
+		_avatar_delete_btn.tooltip_text = "Xóa ảnh đại diện"
+		_avatar_delete_btn.focus_mode = Control.FOCUS_NONE
+		_avatar_delete_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		
+		var b_style := StyleBoxFlat.new()
+		b_style.bg_color = Color(0.85, 0.15, 0.15, 0.9)
+		b_style.corner_radius_top_left = 11
+		b_style.corner_radius_top_right = 11
+		b_style.corner_radius_bottom_right = 11
+		b_style.corner_radius_bottom_left = 11
+		_avatar_delete_btn.add_theme_stylebox_override("normal", b_style)
+		_avatar_delete_btn.add_theme_color_override("font_color", Color.WHITE)
+		_avatar_delete_btn.add_theme_font_size_override("font_size", 11)
+
+		_avatar_delete_btn.pressed.connect(_on_delete_avatar_pressed)
+		box.add_child(_avatar_delete_btn)
+
 	_portrait_timer = Timer.new()
 	_portrait_timer.wait_time = PORTRAIT_TURN_SECONDS
 	_portrait_timer.timeout.connect(_turn_portrait)
 	add_child(_portrait_timer)
-	_portrait_timer.start()
+
 	%PortraitHint.visible = false
 	_place_portrait()
+
+func _open_avatar_uploader() -> void:
+	CustomAvatarHelper.pick_image_file(self, func(img: Image) -> void:
+		if img == null:
+			SocialWindow.info(self, "Lỗi Tải Ảnh", "Không thể nạp tệp hình ảnh vừa chọn. Vui lòng thử chọn tệp khác (JPG, PNG, WEBP).")
+			return
+		AvatarCropPopup.open(self, img, func(jpg_bytes: PackedByteArray) -> void:
+			if jpg_bytes.is_empty():
+				return
+			if _profile:
+				_profile.set_custom_avatar_from_jpg(jpg_bytes)
+				CustomAvatarHelper.save_avatar_cache(_profile.display_name, SaveManager.online_character_id, jpg_bytes)
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+			if _custom_avatar_view:
+				var res_img := CustomAvatarHelper.load_image_from_bytes(jpg_bytes)
+				if res_img:
+					_custom_avatar_view.texture = ImageTexture.create_from_image(res_img)
+			_refresh_portrait()
+			SocialWindow.info(self, "Thành Công", "Đã cập nhật ảnh đại diện nhân vật (200×200 JPG) thành công!")
+		)
+	)
+
+func _on_delete_avatar_pressed() -> void:
+	SocialWindow.ask_yes_no(self, "Xóa Ảnh Đại Diện", "Bạn có chắc chắn muốn xóa ảnh đại diện này không?", func(yes: bool) -> void:
+		if yes:
+			if _profile:
+				_profile.clear_custom_avatar()
+				CustomAvatarHelper.delete_avatar_cache(_profile.display_name, SaveManager.online_character_id)
+				SaveManager.save_profile(_profile)
+				SaveManager.flush_online()
+			_refresh_portrait()
+	)
 
 ## Chân nhân vật ở giữa đáy ô (gốc CharacterAvatar = chân).
 func _place_portrait() -> void:
 	var box: Control = %PortraitBox
-	(%PortraitAvatar as Node2D).position = Vector2(box.size.x * 0.5, box.size.y - 8.0)
+	if has_node("%PortraitAvatar"):
+		(%PortraitAvatar as Node2D).position = Vector2(box.size.x * 0.5, box.size.y - 8.0)
 	if _disguise_icon:
 		_disguise_icon.position = Vector2(box.size.x - 24.0, 4.0)
+	if _avatar_delete_btn:
+		_avatar_delete_btn.position = Vector2(box.size.x - 26.0, 4.0)
 
 func _turn_portrait() -> void:
 	var avatar: CharacterAvatar = %PortraitAvatar
@@ -304,32 +432,62 @@ func _refresh_portrait() -> void:
 	if not has_node("%PortraitAvatar") or _profile == null:
 		return
 	_setup_disguise_ui()
-	var avatar: CharacterAvatar = %PortraitAvatar
-	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding)
-	avatar.set_gender(str(look.get("gender", gender_str)))
-	avatar.set_appearance(look["helm"], look["armor"], look["weapon"], look["horse"])
-	if look.has("modulate"):
-		avatar.modulate = look["modulate"]
-	else:
-		avatar.modulate = Color.WHITE
 
+	if not _profile.has_custom_avatar() and _profile.display_name != "":
+		var cached := CustomAvatarHelper.get_avatar_base64_cache(_profile.display_name, SaveManager.online_character_id)
+		if cached != "":
+			_profile.custom_avatar = cached
+
+	var has_custom: bool = _profile.has_custom_avatar()
+	if has_custom:
+		var tex: ImageTexture = _profile.get_custom_avatar_texture()
+		if tex and _custom_avatar_view:
+			_custom_avatar_view.texture = tex
+			_custom_avatar_view.visible = true
+			if _avatar_upload_box:
+				_avatar_upload_box.visible = false
+			if _avatar_delete_btn:
+				_avatar_delete_btn.visible = true
+				_avatar_delete_btn.move_to_front()
+			(%PortraitAvatar as Node2D).visible = false
+			if _portrait_timer and not _portrait_timer.is_stopped():
+				_portrait_timer.stop()
+	else:
+		# Chưa có ảnh -> hiển thị ô "Tải ảnh lên"
+		if _custom_avatar_view:
+			_custom_avatar_view.visible = false
+		if _avatar_upload_box:
+			_avatar_upload_box.visible = true
+			_avatar_upload_box.move_to_front()
+		if _avatar_delete_btn:
+			_avatar_delete_btn.visible = false
+		(%PortraitAvatar as Node2D).visible = false
+		if _portrait_timer and not _portrait_timer.is_stopped():
+			_portrait_timer.stop()
+
+	# Cập nhật hiển thị dịch dung (nếu có mặt nạ)
+	var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
+	var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding, _profile.show_mask)
 	var is_masked: bool = bool(look.get("is_masked", false))
 	if _disguise_banner:
 		_disguise_banner.visible = is_masked
 		if is_masked:
 			_disguise_label.text = "🎭 %s" % str(look.get("disguise_title", "Dịch Dung"))
+			_disguise_banner.move_to_front()
 	if _disguise_icon:
 		_disguise_icon.visible = is_masked
 		if is_masked:
 			_disguise_icon.texture = look.get("mask_icon")
 			_disguise_icon.tooltip_text = "Đang dịch dung: %s" % str(look.get("mask_name", ""))
+			_disguise_icon.move_to_front()
 
 # ---------------------------------------------------------------- trang bị
 
 ## 13 ô trang bị (%EquipSlot<Equipment.Part>) đặt sẵn trong scene đè lên ô vẽ trên khung ảnh, + nút
 ## bấm ô trống mở Hành trang (nút Hành trang riêng nằm ở menu "Trang Bị" màn Hub / nút "Hành trang" trong trận).
 func _style_equipment_slots() -> void:
+	if has_node("%MaskVisualCheck"):
+		%MaskVisualCheck.toggled.connect(_on_mask_visual_check_toggled)
 	for part in Equipment.Part.values():
 		var slot: Button = get_node_or_null("%%EquipSlot%d" % part)
 		if slot == null:
@@ -353,6 +511,32 @@ func _refresh_equipment_slots() -> void:
 		## Đồ đang mặc luôn có tác dụng (VLTK gốc) — không tô nền đỏ ở đây; nền đỏ chỉ ở Hành trang, nơi chặn
 		## mặc. Dòng yêu cầu chưa đạt vẫn đỏ trong tooltip.
 		slot.show_item(item, bbcode, Equipment.PART_NAMES.get(part, ""))
+	_refresh_mask_check()
+
+func _refresh_mask_check() -> void:
+	if not has_node("%MaskVisualCheck") or _profile == null:
+		return
+	var btn: Button = %MaskVisualCheck
+	var mask_item: ItemInstance = _profile.equipment.get(Equipment.Part.MASK)
+	if mask_item == null:
+		btn.disabled = true
+		btn.button_pressed = false
+		btn.icon = null
+		btn.tooltip_text = "Chưa đeo mặt nạ"
+	else:
+		btn.disabled = false
+		btn.set_pressed_no_signal(_profile.show_mask)
+		btn.icon = ICON_CHECK if _profile.show_mask else null
+		btn.tooltip_text = "Ngoại hình mặt nạ: Đang bật\n(Bấm để tắt hiển thị giao diện bên ngoài)" if _profile.show_mask else "Ngoại hình mặt nạ: Đang tắt\n(Bấm để mở hiển thị giao diện bên ngoài)"
+
+func _on_mask_visual_check_toggled(pressed: bool) -> void:
+	if _profile == null:
+		return
+	_profile.show_mask = pressed
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	refresh()
+	profile_changed.emit()
 
 func _host() -> Node:
 	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
@@ -425,3 +609,12 @@ static func _format_number(value: int) -> String:
 		result = "." + digits.substr(digits.length() - 3) + result
 		digits = digits.substr(0, digits.length() - 3)
 	return ("-" if value < 0 else "") + digits + result
+
+func _sync_world_rank() -> void:
+	if _profile == null:
+		return
+	var rank_str := await RankingWindow.fetch_my_rank(_profile)
+	if not rank_str.is_empty() and rank_str != "—":
+		_profile.world_rank = rank_str
+		if has_node("%RankValue"):
+			(%RankValue as Label).text = _profile.world_rank

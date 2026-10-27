@@ -40,6 +40,7 @@ static func snapshot_of_mock(m: MockPlayer) -> Dictionary:
 		"name": m.name, "level": m.level, "sect_name": m.sect_name, "sect_id": m.sect_id,
 		"series": int(sect.element) if sect else 0, "camp": m.camp, "female": m.female,
 		"guild": m.guild_name, "lead_level": m.lead_level, "equipment": copies,
+		"custom_avatar": str(m.custom_avatar) if "custom_avatar" in m else "",
 	}
 
 ## Online: bản chụp đi qua mạng (JSON) — ItemInstance đổi thành dữ liệu, khoá ô trang bị thành chuỗi.
@@ -50,12 +51,14 @@ static func snapshot_to_wire(snap: Dictionary) -> Dictionary:
 		var v: Variant = snap["equipment"][part]
 		eq[str(part)] = (v as ItemInstance).to_dict() if v is ItemInstance else v
 	out["equipment"] = eq
+	out["custom_avatar"] = str(snap.get("custom_avatar", ""))
 	return out
 
 ## Dựng lại bản chụp nhận từ server (ngược với snapshot_to_wire); bỏ món hỏng.
 static func snapshot_from_wire(d: Dictionary) -> Dictionary:
 	var out := d.duplicate()
 	out["equipment"] = normalize_equipment(d.get("equipment", {}))
+	out["custom_avatar"] = str(d.get("custom_avatar", ""))
 	for k in ["level", "series", "camp", "lead_level"]:
 		out[k] = int(out.get(k, 0))
 	return out
@@ -70,6 +73,7 @@ static func snapshot_of_profile(p: PlayerProfile) -> Dictionary:
 		"name": p.display_name, "level": p.level, "sect_name": p.sect_name, "sect_id": p.sect_id,
 		"series": int(p.get_element()), "camp": p.get_current_camp(), "female": p.gender == PlayerProfile.Gender.FEMALE,
 		"guild": str(p.guild.get("name", "")), "lead_level": p.lead_level, "equipment": copies,
+		"custom_avatar": str(p.custom_avatar),
 	}
 
 ## Chuẩn hóa dictionary trang bị từ cả bản chụp nội bộ ({int: ItemInstance}) lẫn gói tin JSON ({String: Dictionary})
