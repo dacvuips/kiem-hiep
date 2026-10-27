@@ -114,6 +114,8 @@ func _process(delta: float) -> void:
 		_poll_session()
 
 func _poll_session() -> void:
+	if not AccountApi.has_method("check_session"):
+		return
 	var chk: Dictionary = await AccountApi.check_session()
 	if not is_inside_tree():
 		return
@@ -378,7 +380,7 @@ func _on_enter_pressed() -> void:
 		return
 
 	# Kiểm tra xác thực phiên đăng nhập trước khi cho phép vào bên trong
-	if AccountApi.is_logged_in():
+	if AccountApi.is_logged_in() and AccountApi.has_method("check_session"):
 		_enter.disabled = true
 		var chk: Dictionary = await AccountApi.check_session()
 		if not is_inside_tree():

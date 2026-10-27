@@ -297,7 +297,7 @@ func _on_enter_pressed() -> void:
 		return
 
 	# Kiểm tra xác thực phiên trước khi vào Hub
-	if AccountApi.is_logged_in():
+	if AccountApi.is_logged_in() and AccountApi.has_method("check_session"):
 		var chk: Dictionary = await AccountApi.check_session()
 		if not is_inside_tree():
 			return
