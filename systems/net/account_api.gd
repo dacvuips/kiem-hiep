@@ -200,6 +200,28 @@ func delete_character(character_id: int, password: String) -> Dictionary:
 func check_session() -> Dictionary:
 	return await _authed(HTTPClient.METHOD_GET, "/v1/auth/session")
 
+# ---------------------------------------------------------------- nạp thẻ / ví xu
+
+## Cấu hình shop & nạp thẻ: {packs: [{amount_vnd, xu}], xu_per_10k, jade_per_xu, provider, sandbox}.
+func shop_config() -> Dictionary:
+	return await _request(HTTPClient.METHOD_GET, "/v1/shop/config")
+
+## Ví Xu của tài khoản: {xu, total_topup_vnd, ledger: [...], orders: [...]}.
+func shop_wallet() -> Dictionary:
+	return await _authed(HTTPClient.METHOD_GET, "/v1/shop/wallet")
+
+## Tạo đơn nạp thẻ: trả {order, pay_url}.
+func create_topup_order(amount_vnd: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_POST, "/v1/shop/orders", {"amount_vnd": amount_vnd})
+
+## Đổi Xu sang Kim Nguyên Bảo (Nguyên bảo) cho 1 nhân vật: trả {xu, jade, character}.
+func transfer_xu_to_jade(character_id: int, xu: int) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_POST, "/v1/shop/transfer", {"character_id": character_id, "xu": xu})
+
+## Cổng giả lập sandbox: thanh toán đơn của mình (khi SHOP_SANDBOX=true).
+func pay_sandbox_order(code: String) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_POST, "/v1/shop/sandbox/%s/pay" % code.to_upper())
+
 ## Access token hiện tại (còn hạn) — dùng khi kết nối game server. Rỗng nếu chưa đăng nhập / không làm mới được.
 func access_token() -> String:
 	if not await _ensure_access():
@@ -235,6 +257,8 @@ func _clear_session() -> void:
 
 ## Cửa sổ game này có được dùng file phiên không: chưa ai giữ / người giữ đã tắt -> nhận giữ; cửa sổ khác còn chạy -> không.
 func _own_session_file() -> bool:
+	if OS.has_feature("mobile") or OS.has_feature("web"):
+		return true
 	var me := OS.get_process_id()
 	var holder := 0
 	if FileAccess.file_exists(SESSION_LOCK_PATH):
@@ -258,7 +282,7 @@ const _SESSION_PREFIX_OBF: PackedByteArray = [49, 8, 13, 2, 30, 20, 225, 251, 19
 
 func _session_key() -> String:
 	## Không phải bí mật của server — chỉ gắn file phiên với máy này.
-	var id := OS.get_unique_id()
+	var id := "" if OS.has_feature("web") else OS.get_unique_id()
 	var prefix := Obfuscator.deobfuscate(_SESSION_PREFIX_OBF)
 	return (prefix + (id if id != "" else OS.get_name())).sha256_text()
 

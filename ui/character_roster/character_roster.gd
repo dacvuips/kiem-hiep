@@ -49,10 +49,11 @@ func _ready() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 	if AccountApi.is_logged_in():
-		AccountApi.session_invalidated.connect(func(reason: String) -> void:
-			AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
-			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
-		)
+		if AccountApi.has_signal("session_invalidated"):
+			AccountApi.session_invalidated.connect(func(reason: String) -> void:
+				AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+				get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
+			)
 		await _build_slots_online()
 	else:
 		_build_slots()
@@ -287,6 +288,9 @@ func _select(i: int) -> void:
 # ---------------------------------------------------------------- nút
 
 func _on_enter_pressed() -> void:
+	if _selected < 0 or _selected >= _slots.size():
+		_toast("Vui lòng chọn nhân vật")
+		return
 	var slot: Dictionary = _slots[_selected]
 	if not slot.has("profile"):
 		_toast("Ô này chưa có nhân vật — bấm \"Tạo nhân vật\"")

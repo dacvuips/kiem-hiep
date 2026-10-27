@@ -2,6 +2,7 @@
 
 [ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="font"]
 [ext_resource type="Texture2D" uid="uid://ba1nhwyn1mlnq" path="res://ui/login/bg.jpg" id="bg"]
+[ext_resource type="Texture2D" path="res://ui/server_select/btn_enter.png" id="be"]
 [ext_resource type="Shader" path="res://ui/server_select/vao_game_button.gdshader" id="vao_game_shader"]
 [ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
 [ext_resource type="Script" path="res://ui/server_select/server_select.gd" id="s"]
@@ -363,7 +364,7 @@ layout_mode = 2
 text = "Bảo trì"
 label_settings = SubResource("legend_setting")
 
-[node name="EnterButton" type="Button" parent="Stage"]
+[node name="EnterButton" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 material = SubResource("enter_btn_mat")
 layout_mode = 0
@@ -372,11 +373,9 @@ offset_top = 484.0
 offset_right = 775.0
 offset_bottom = 544.0
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("enter_btn_flat")
-theme_override_styles/hover = SubResource("enter_btn_flat")
-theme_override_styles/pressed = SubResource("enter_btn_flat")
-theme_override_styles/disabled = SubResource("enter_btn_flat")
-theme_override_styles/focus = SubResource("enter_btn_flat")
+texture_normal = ExtResource("be")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="EnterLabel" type="Label" parent="Stage/EnterButton"]
 layout_mode = 1

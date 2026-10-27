@@ -46,7 +46,7 @@ static var selected_server: Dictionary = {}
 
 @onready var _rows: VBoxContainer = %Rows
 @onready var _filter_box: VBoxContainer = %Filters
-@onready var _enter: Button = %EnterButton
+@onready var _enter: TextureButton = %EnterButton
 @onready var _message: Label = %Message
 @onready var _account_label: Label = %AccountLabel
 @onready var _back: Button = %BackButton
@@ -97,7 +97,8 @@ func _ready() -> void:
 
 	if AccountApi.is_logged_in():
 		_fetch_servers()
-		AccountApi.session_invalidated.connect(_on_session_invalidated)
+		if AccountApi.has_signal("session_invalidated"):
+			AccountApi.session_invalidated.connect(_on_session_invalidated)
 	else:
 		_refresh_rows()
 
