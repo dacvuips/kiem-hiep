@@ -147,7 +147,7 @@ if %errorlevel% neq 0 (
 )
 
 echo [*] Đang áp dụng cơ chế bộ đệm OPFS SSD Cache và vá In-App Browser...
-python tools/restore_clean_web.py
+python tools/patch_web_cache.py
 echo [OK] Xuất bản Web hoàn tất tại: build\web\
 
 :: ======================================================================

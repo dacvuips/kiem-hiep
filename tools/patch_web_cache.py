@@ -673,185 +673,22 @@ body {
 		</div>
 
 		<script>
-// He thong Cache sieu toc: Su dung Origin Private File System (OPFS) cho 1.17GB PCK va CacheStorage cho 38MB WASM
 window.__IS_FROM_SSD = false;
-
-window.forceClearCacheAndReload = async function () {
-	if (confirm('Xóa bộ nhớ đệm game trên máy và tải lại phiên bản mới nhất từ máy chủ?')) {
-		try {
-			if (navigator.storage && navigator.storage.getDirectory) {
-				const root = await navigator.storage.getDirectory();
-				for await (const name of root.keys()) {
-					await root.removeEntry(name).catch(() => {});
-				}
-			}
-			if ('caches' in window) {
-				const keys = await caches.keys();
-				for (const k of keys) await caches.delete(k);
-			}
-		} catch (e) {}
+window.forceClearCacheAndReload = function () {
+	if (confirm('Tải lại phiên bản mới nhất từ máy chủ?')) {
 		window.location.reload(true);
 	}
 };
-
-(function () {
-	const BUILD_VERSION = "__BUILD_VERSION__";
-	const WASM_VERSION = "__WASM_VERSION__";
-	const PCK_SIZE = __PCK_SIZE__;
-	const WASM_SIZE = __WASM_SIZE__;
-
-	if (navigator.storage && navigator.storage.persist) {
-		navigator.storage.persist().catch(() => {});
-	}
-
-	async function getCachedFile(fileName, expectedSize) {
-		if (!navigator.storage || !navigator.storage.getDirectory) return null;
-		try {
-			const root = await navigator.storage.getDirectory();
-			const handle = await root.getFileHandle(fileName, { create: false });
-			const file = await handle.getFile();
-			if (file && file.size === expectedSize) {
-				return file;
-			}
-		} catch (e) {}
-		return null;
-	}
-
-	async function streamAndSaveToOPFS(response, fileName) {
-		if (!navigator.storage || !navigator.storage.getDirectory || !response.body) {
-			return response;
-		}
-		try {
-			const root = await navigator.storage.getDirectory();
-			const handle = await root.getFileHandle(fileName, { create: true });
-			const writable = await handle.createWritable();
-			const reader = response.body.getReader();
-
-			const stream = new ReadableStream({
-				async start(controller) {
-					try {
-						while (true) {
-							const { done, value } = await reader.read();
-							if (done) {
-								await writable.close();
-								controller.close();
-								break;
-							}
-							await writable.write(value);
-							controller.enqueue(value);
-						}
-					} catch (err) {
-						try { await writable.abort(); } catch (_) {}
-						controller.error(err);
-					}
-				}
-			});
-
-			return new Response(stream, {
-				status: response.status,
-				statusText: response.statusText,
-				headers: response.headers
-			});
-		} catch (e) {
-			return response;
-		}
-	}
-
-	const origFetch = window.fetch;
-	window.fetch = async function (resource, init) {
-		const url = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
-
-		// 1. Kiem tra index.pck (1.17GB) bang OPFS SSD (Co Versioning)
-		if (url.includes('.pck')) {
-			const pckName = 'index_' + BUILD_VERSION + '.pck';
-			try {
-				const file = await getCachedFile(pckName, PCK_SIZE);
-				if (file) {
-					window.__IS_FROM_SSD = true;
-					const speedBadge = document.getElementById('progress-speed');
-					if (speedBadge) speedBadge.textContent = '⚡ SSD Cực nhanh';
-					const stateText = document.getElementById('progress-state');
-					if (stateText) stateText.textContent = '⚡ Đang nạp từ bộ nhớ SSD...';
-					const cacheTitle = document.getElementById('cache-title');
-					if (cacheTitle) cacheTitle.textContent = '⚡ ĐANG NẠP TỪ BỘ NHỚ SSD MÁY';
-					const cacheDesc = document.getElementById('cache-desc');
-					if (cacheDesc) cacheDesc.innerHTML = 'Dữ liệu đã được lưu trên máy của bạn. Tốc độ đọc dữ liệu đạt mức tối đa, <strong>không tốn thêm lưu lượng mạng!</strong>';
-
-					return new Response(file, {
-						status: 200,
-						statusText: 'OK',
-						headers: {
-							'Content-Type': 'application/octet-stream',
-							'Content-Length': String(file.size)
-						}
-					});
-				}
-			} catch (e) {}
-
-			// Tu dong don dep cac file pck phien ban cu trong OPFS de giai phong o dia
-			try {
-				if (navigator.storage && navigator.storage.getDirectory) {
-					const root = await navigator.storage.getDirectory();
-					for await (const name of root.keys()) {
-						if ((name.startsWith('index_') && name !== pckName) || name === 'index.pck') {
-							await root.removeEntry(name).catch(() => {});
-						}
-					}
-				}
-			} catch (e) {}
-
-			const speedBadge = document.getElementById('progress-speed');
-			if (speedBadge) speedBadge.textContent = '🌐 Đang tải bản mới';
-			const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'v=' + BUILD_VERSION;
-			const resp = await origFetch(fetchUrl, init);
-			if (resp && resp.ok) {
-				return streamAndSaveToOPFS(resp, pckName);
-			}
-			return resp;
-		}
-
-		// 2. Kiem tra index.wasm (38MB) bang CacheStorage (Co Versioning)
-		if (url.includes('.wasm')) {
-			const wasmCacheKey = 'godot-wasm-' + WASM_VERSION;
-			if ('caches' in window) {
-				try {
-					const cache = await caches.open(wasmCacheKey);
-					const match = await cache.match(resource);
-					if (match) {
-						return match;
-					}
-					// Don dep cac cache wasm cu
-					caches.keys().then((keys) => {
-						keys.forEach((k) => {
-							if (k.startsWith('godot-wasm-') && k !== wasmCacheKey) {
-								caches.delete(k);
-							}
-						});
-					});
-					const fetchUrl = url + (url.includes('?') ? '&' : '?') + 'v=' + WASM_VERSION;
-					const resp = await origFetch(fetchUrl, init);
-					if (resp && resp.ok) {
-						cache.put(resource, resp.clone()).catch(() => {});
-					}
-					return resp;
-				} catch (e) {}
-			}
-		}
-
-		return origFetch(resource, init);
-	};
-})();
 		</script>
 		<script src="index.js"></script>
 		<script>
-// Cau hinh Godot Engine & console muted
 const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
 	"emscriptenPoolSize": 8,
 	"ensureCrossOriginIsolationHeaders": true,
 	"executable": "index",
-	"experimentalVK": false,
+	"experimentalVK": true,
 	"fileSizes": {"index.pck": __PCK_SIZE__, "index.wasm": __WASM_SIZE__},
 	"focusCanvas": true,
 	"gdextensionLibs": [],
@@ -1090,18 +927,15 @@ with open(index_path, "w", encoding="utf-8") as f:
 print(f"[*] Da cap nhat Loading UI wuxia + OPFS Cache + Tat Console Logs cho {index_path} (PCK: {pck_size} B, WASM: {wasm_size} B)")
 
 
-# Tu dong patch index.js de chan GodotIME gay khoa ban phim tren mobile
+# Dong bo index.js on dinh chuan tu Godot official template
 js_file = os.path.join(web_dir, "index.js")
-if os.path.exists(js_file):
+zip_path = os.path.expandvars(r'%APPDATA%\Godot\export_templates\4.7.2.stable\web_release.zip')
+if os.path.exists(zip_path) and os.path.exists(js_file):
     try:
-        with open(js_file, "r", encoding="utf-8") as f:
-            js_data = f.read()
-        target_ime = "ime_active:function(active){"
-        replace_ime = "ime_active:function(active){if('ontouchstart' in window||navigator.maxTouchPoints>0||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))return;"
-        if target_ime in js_data and replace_ime not in js_data:
-            js_data = js_data.replace(target_ime, replace_ime, 1)
-            with open(js_file, "w", encoding="utf-8") as f:
-                f.write(js_data)
-            print("[*] Da tu dong patch index.js: vo hieu hoa GodotIME gay ket ban phim tren mobile.")
+        import zipfile
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            with open(js_file, 'wb') as f:
+                f.write(z.read('godot.js'))
+        print('[*] Da dong bo index.js chuan Godot Engine (khong bi patch hu hong).')
     except Exception as e:
-        print(f"[!] Khong the patch index.js: {e}")
+        print(f'[!] Khong the dong bo index.js: {e}')
