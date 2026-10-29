@@ -39,7 +39,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Toi uu tu dong co che CacheStorage, OPFS va phat hien In-App Browser cho file HTML
-python tools/patch_web_cache.py
+python tools/restore_clean_web.py
 
 echo.
 echo ========================================================
