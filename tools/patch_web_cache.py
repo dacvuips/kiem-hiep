@@ -674,13 +674,102 @@ body {
 
 		<script>
 window.__IS_FROM_SSD = false;
-window.forceClearCacheAndReload = function () {
-	if (confirm('Tải lại phiên bản mới nhất từ máy chủ?')) {
-		window.location.reload(true);
+
+// Tự động dọn dẹp các cache bị hỏng/dở dang từ các phiên bản cũ
+(async function cleanupStaleCaches() {
+	try {
+		if ('serviceWorker' in navigator) {
+			const regs = await navigator.serviceWorker.getRegistrations();
+			for (const r of regs) {
+				r.unregister().catch(() => {});
+			}
+		}
+		if (navigator.storage && navigator.storage.getDirectory) {
+			const root = await navigator.storage.getDirectory();
+			for await (const name of root.keys()) {
+				if (name.startsWith('index_') || name.endsWith('.pck') || name.endsWith('.wasm')) {
+					root.removeEntry(name, { recursive: true }).catch(() => {});
+				}
+			}
+		}
+	} catch (e) {}
+})();
+
+// Nút xóa sạch toàn bộ cache và tải lại game từ đầu
+window.forceClearCacheAndReload = async function () {
+	if (confirm('Xóa toàn bộ bộ nhớ đệm và tải lại game từ đầu?')) {
+		try {
+			if ('serviceWorker' in navigator) {
+				const regs = await navigator.serviceWorker.getRegistrations();
+				for (const r of regs) await r.unregister();
+			}
+			if (navigator.storage && navigator.storage.getDirectory) {
+				const root = await navigator.storage.getDirectory();
+				for await (const name of root.keys()) {
+					await root.removeEntry(name, { recursive: true }).catch(() => {});
+				}
+			}
+			if ('caches' in window) {
+				const keys = await caches.keys();
+				for (const k of keys) await caches.delete(k);
+			}
+			try {
+				localStorage.clear();
+				sessionStorage.clear();
+			} catch (e) {}
+		} catch (e) {}
+		window.location.href = window.location.pathname + '?nocache=' + Date.now();
 	}
 };
+
+// Hộp thoại nhập liệu Native cho Mobile Web (bàn phím ảo điện thoại gõ tiếng Việt mượt mà)
+window.openMobileInput = function (title, currentVal, isSecret) {
+	const modal = document.getElementById('mobile-input-modal');
+	const titleEl = document.getElementById('mobile-input-title');
+	const inputEl = document.getElementById('mobile-input-field');
+	if (!modal || !inputEl) return;
+	if (titleEl && title) titleEl.textContent = title;
+	inputEl.type = isSecret ? 'password' : 'text';
+	inputEl.value = currentVal || '';
+	modal.style.display = 'flex';
+	setTimeout(function () {
+		inputEl.focus();
+		if (inputEl.setSelectionRange) {
+			const len = inputEl.value.length;
+			inputEl.setSelectionRange(len, len);
+		}
+	}, 120);
+};
+
+window.confirmMobileInput = function () {
+	const modal = document.getElementById('mobile-input-modal');
+	const inputEl = document.getElementById('mobile-input-field');
+	if (!modal || !inputEl) return;
+	const val = inputEl.value;
+	modal.style.display = 'none';
+	if (window.__mobileInputCallback && typeof window.__mobileInputCallback === 'function') {
+		window.__mobileInputCallback(val);
+	}
+};
+
+window.cancelMobileInput = function () {
+	const modal = document.getElementById('mobile-input-modal');
+	if (modal) modal.style.display = 'none';
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+	const inputEl = document.getElementById('mobile-input-field');
+	if (inputEl) {
+		inputEl.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				window.confirmMobileInput();
+			}
+		});
+	}
+});
 		</script>
-		<script src="index.js"></script>
+		<script src="index.js?v=__BUILD_VERSION__"></script>
 		<script>
 const GODOT_CONFIG = {
 	"args": [],
@@ -689,15 +778,28 @@ const GODOT_CONFIG = {
 	"ensureCrossOriginIsolationHeaders": true,
 	"executable": "index",
 	"experimentalVK": true,
-	"fileSizes": {"index.pck": __PCK_SIZE__, "index.wasm": __WASM_SIZE__},
+	"fileSizes": {
+		"index.pck": __PCK_SIZE__,
+		"index.pck?v=__BUILD_VERSION__": __PCK_SIZE__,
+		"index.wasm": __WASM_SIZE__,
+		"index.wasm?v=__WASM_VERSION__": __WASM_SIZE__
+	},
 	"focusCanvas": true,
 	"gdextensionLibs": [],
 	"godotPoolSize": 4,
+	"mainPack": "index.pck",
 	"onPrint": function () {},
 	"onPrintError": function () {}
 };
 const GODOT_THREADS_ENABLED = true;
 const engine = new Engine(GODOT_CONFIG);
+
+// Wrapper preloadFile de nap file chinh xac phien ban bo qua cache hong
+const origPreloadFile = engine.preloadFile.bind(engine);
+engine.preloadFile = function (file, path) {
+	const versionedFile = file.includes('?') ? file : (file + '?v=__BUILD_VERSION__');
+	return origPreloadFile(versionedFile, path);
+};
 
 (function () {
 	// Danh sach meo choi ngau nhien
