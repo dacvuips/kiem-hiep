@@ -76,7 +76,7 @@ func spawn_boss(boss_entry: EnemySpawnEntry) -> void:
 		return
 	var boss := boss_entry.tier.enemy_scene.instantiate()
 	_entity_parent().add_child(boss)
-	boss.global_position = get_random_spawn_position()
+	boss.global_position = get_boss_spawn_position()
 	boss.setup(boss_entry)
 	GameManager.notify_boss_spawned()
 	if boss.has_signal("died"):
@@ -87,6 +87,35 @@ func spawn_boss(boss_entry: EnemySpawnEntry) -> void:
 		var p := tree.get_first_node_in_group("player")
 		if p and p.has_method("notify"):
 			p.notify("Thủ Quan [%s] đã xuất hiện! Hãy tiêu diệt để Vượt Ải!" % boss_entry.tier.tier_name)
+
+## Tìm vị trí thả Boss cách xa người chơi (ở trung tâm hoặc góc/rìa đối diện)
+func get_boss_spawn_position() -> Vector2:
+	var tree := get_tree()
+	var player := tree.get_first_node_in_group("player") as Node2D if tree else null
+	var ppos := player.global_position if player != null else Vector2.ZERO
+
+	# Nếu có đấu trường: ưu tiên thả Boss ở trung tâm đấu trường (nếu cách xa người chơi >= 600px)
+	if VltkWorld.has_arena():
+		var w := VltkWorld.current
+		if w != null and w.arena_rect.has_area():
+			var center := w.arena_rect.get_center()
+			if ppos == Vector2.ZERO or center.distance_to(ppos) >= 600.0:
+				var candidate := w._free_position_near(center)
+				if candidate != Vector2.ZERO:
+					return candidate
+
+	# Chọn vị trí rìa/góc xa người chơi nhất (>= 800px)
+	var best_pos := Vector2.ZERO
+	var best_dist := -1.0
+	for i in range(12):
+		var pos := get_random_spawn_position()
+		var dist := pos.distance_to(ppos) if ppos != Vector2.ZERO else 1000.0
+		if dist > best_dist:
+			best_dist = dist
+			best_pos = pos
+		if dist >= 800.0:
+			return pos
+	return best_pos if best_pos != Vector2.ZERO else get_random_spawn_position()
 
 func _on_boss_died(_boss: Node = null) -> void:
 	if not is_inside_tree():
@@ -146,6 +175,11 @@ func _on_boss_died(_boss: Node = null) -> void:
 	if p and p.has_method("refresh_combat_stats"):
 		p.refresh_combat_stats()
 	# 5. Hiển thị popup nhận thưởng trực quan
+	if rewards.is_empty() and cur_stage != null:
+		rewards = {
+			"stage_name": cur_stage.stage_name,
+			"tier": (idx + 1) if idx >= 0 else 1,
+		}
 	if not rewards.is_empty():
 		StageVictoryPopup.show_reward(self, rewards)
 

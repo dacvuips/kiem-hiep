@@ -567,6 +567,11 @@ static func _plan_dopho(r: Dictionary, items: Array, alts: Array) -> void:
 static func run(profile: PlayerProfile, op: int, uids: Array, alt_uids: Array = [], rng: RandomNumberGenerator = null) -> Dictionary:
 	if profile == null or op < 0 or op >= COST.size():
 		return {"ok": false, "success": false, "message": ERR_TEXT["lack"]}
+	if profile.stall_open:
+		return {"ok": false, "success": false, "message": "Đang bày bán quầy hàng, không thể chế tạo."}
+	var blocked := SecurityLock.check(profile, SecurityLock.A_OPEN_STALL)
+	if blocked != "":
+		return {"ok": false, "success": false, "message": blocked}
 	if rng == null:
 		rng = RandomNumberGenerator.new()
 		rng.randomize()
@@ -579,6 +584,11 @@ static func run(profile: PlayerProfile, op: int, uids: Array, alt_uids: Array = 
 	for u in need:
 		if not by_uid.has(u) or (by_uid[u] as ItemInstance).count < int(need[u]):
 			return {"ok": false, "success": false, "message": ERR_TEXT["lack"]}
+		var it: ItemInstance = by_uid[u]
+		if it.trade_price > 0:
+			return {"ok": false, "success": false, "message": "Vật phẩm đang đặt giá bán, không thể chế tạo."}
+		if SecurityLock.is_item_locked(it):
+			return {"ok": false, "success": false, "message": "Vật phẩm đang bị khóa bảo vệ, không thể chế tạo."}
 	var items := []
 	for u in uids:
 		items.append(by_uid.get(str(u)))
@@ -681,3 +691,24 @@ static func _take(profile: PlayerProfile, item: ItemInstance, n: int) -> void:
 static func ore_magic_name(magic_id: int) -> String:
 	var rs := ranges_of(magic_id)
 	return str(row(rs[0][0]).get("name", "")) if not rs.is_empty() else ""
+
+## Loại trang bị có thể khảm nạm theo MAGIC_ID (settings/item/004/magicattriblevel_index.txt gốc).
+const ORE_FIT_EQUIP := {
+	126: "Vũ khí", 166: "Vũ khí", 115: "Vũ khí", 58: "Vũ khí", 43: "Không thể khảm nạm",
+	150: "Không thể khảm nạm", 111: "Hài", 117: "Y phục", 113: "Y phục", 112: "Không thể khảm nạm",
+	139: "Nhẫn, Vũ khí", 114: "Dây chuyền", 136: "Vũ khí", 137: "Vũ khí", 85: "Tất cả các trang bị",
+	89: "Tất cả các trang bị", 93: "Tất cả các trang bị", 88: "Y phục, Hài, Yêu đái, Mão, Hộ uyển",
+	92: "Đai thắt", 96: "Nhẫn, Dây chuyền", 97: "Nhẫn, Dây chuyền, Đai thắt", 121: "Vũ khí",
+	125: "Vũ khí", 123: "Vũ khí", 122: "Vũ khí", 124: "Vũ khí", 134: "Y phục, Hài, Yêu đái, Mão, Hộ uyển",
+	104: "Y phục, Hài, Yêu đái, Mão, Hộ uyển", 101: "Tất cả các trang bị", 105: "Tất cả các trang bị",
+	102: "Tất cả các trang bị", 103: "Tất cả các trang bị", 99: "Tất cả các trang bị", 110: "Tất cả các trang bị",
+	135: "Nhẫn, Đai thắt, Dây chuyền", 106: "Tất cả các trang bị",
+	98: "Y phục, Hài, Yêu đái, Mão, Hộ uyển, Nhẫn, Dây chuyền, Đai thắt", 108: "Tất cả các trang bị",
+	140: "Không thể khảm nạm", 142: "Không thể khảm nạm", 141: "Không thể khảm nạm",
+	143: "Không thể khảm nạm", 144: "Không thể khảm nạm", 168: "Vũ khí", 169: "Vũ khí",
+	170: "Vũ khí", 171: "Vũ khí", 172: "Vũ khí",
+}
+
+## Loại trang bị có thể khảm nạm của khoáng thuộc tính (mã MAGIC_ID).
+static func ore_magic_fit_equip(magic_id: int) -> String:
+	return ORE_FIT_EQUIP.get(magic_id, "")

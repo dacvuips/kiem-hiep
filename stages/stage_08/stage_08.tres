@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="StageData" format=3]
+[gd_resource type="Resource" script_class="StageData" format=3 uid="uid://v5s8h44bq1a3"]
 
 [ext_resource type="Script" uid="uid://b71mckxmnthbu" path="res://stages/stage_data.gd" id="1_stage_data"]
 [ext_resource type="Script" uid="uid://b7h1uw2yrj4nj" path="res://stages/enemy_spawn_entry.gd" id="2_spawn_entry"]
@@ -9,13 +9,35 @@
 [ext_resource type="Resource" uid="uid://dh5078gdtvmvf" path="res://gems/pickup_heal.tres" id="7_pickup_heal"]
 [ext_resource type="Resource" uid="uid://bvw0sc0ypw1wc" path="res://gems/pickup_magnet.tres" id="8_pickup_magnet"]
 
+[sub_resource type="Resource" id="Tier_Boss"]
+script = ExtResource("3_tier_data")
+tier_name = "Thủ Quan · Bôn Lôi Tướng Quân"
+enemy_scene = ExtResource("5_elite_scene")
+vltk_monster_id = 588
+level = 85
+strength = 390
+dexterity = 205
+vitality = 855
+energy = 105
+speed = 100.5
+scale_override = 1.4
+contact_damage = 203.2
+exp_drop = 6800
+possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal"), ExtResource("8_pickup_magnet")])
+
+[sub_resource type="Resource" id="BossEntry"]
+script = ExtResource("2_spawn_entry")
+tier = SubResource("Tier_Boss")
+strength_multiplier = 1.25
+vitality_multiplier = 3.0
+spawn_weight = 1.0
+
 [sub_resource type="Resource" id="Tier_1"]
 script = ExtResource("3_tier_data")
 tier_name = "Bôn Lôi"
 enemy_scene = ExtResource("4_enemy_scene")
 vltk_monster_id = 588
 level = 80
-element = 0
 strength = 180
 dexterity = 188
 vitality = 265
@@ -28,9 +50,7 @@ possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal
 [sub_resource type="Resource" id="SpawnEntry_1"]
 script = ExtResource("2_spawn_entry")
 tier = SubResource("Tier_1")
-unlock_time = 0.0
 lock_time = 60.0
-spawn_weight = 10.0
 weight_change_per_second = -0.01
 
 [sub_resource type="Resource" id="Tier_2"]
@@ -54,42 +74,12 @@ script = ExtResource("2_spawn_entry")
 tier = SubResource("Tier_2")
 unlock_time = 60.0
 lock_time = 120.0
-strength_multiplier = 2.0
-dexterity_multiplier = 1.0
-vitality_multiplier = 2.0
-spawn_weight = 10.0
 weight_change_per_second = 0.02
-
-[sub_resource type="Resource" id="Tier_Boss"]
-script = ExtResource("3_tier_data")
-tier_name = "Thủ Quan · Bôn Lôi Tướng Quân"
-enemy_scene = ExtResource("5_elite_scene")
-vltk_monster_id = 588
-level = 85
-element = 0
-strength = 390
-dexterity = 205
-vitality = 855
-energy = 105
-speed = 100.5
-contact_damage = 203.2
-scale_override = 1.40
-exp_drop = 6800
-possible_drops = Array[ExtResource("6_pickup_data")]([ExtResource("7_pickup_heal"), ExtResource("8_pickup_magnet")])
-
-[sub_resource type="Resource" id="BossEntry"]
-script = ExtResource("2_spawn_entry")
-tier = SubResource("Tier_Boss")
-strength_multiplier = 3.0
-dexterity_multiplier = 1.0
-vitality_multiplier = 3.0
-spawn_weight = 1.0
 
 [resource]
 script = ExtResource("1_stage_data")
 stage_name = "Ải 8 · Lâm Du Quan (8x)"
-vltk_map_id = 319
-stage_duration = 180.0
-boss_spawn_time = 120.0
 enemy_tiers = Array[ExtResource("2_spawn_entry")]([SubResource("SpawnEntry_1"), SubResource("SpawnEntry_2")])
 boss_tier = SubResource("BossEntry")
+boss_spawn_time = 120.0
+vltk_map_id = 319

@@ -39,6 +39,11 @@ func targets() -> Array[Node]:
 		list.append_array(launcher.get_tree().get_nodes_in_group(&"enemies"))
 		list.append_array(launcher.get_tree().get_nodes_in_group(&"player"))
 		_cached_list = list
+	elif target_group == &"players_and_allies":
+		var list: Array[Node] = []
+		list.append_array(launcher.get_tree().get_nodes_in_group(&"player"))
+		list.append_array(launcher.get_tree().get_nodes_in_group(&"allies"))
+		_cached_list = list
 	else:
 		_cached_list = launcher.get_tree().get_nodes_in_group(target_group)
 	return _cached_list
@@ -60,3 +65,6 @@ func deal_damage(target: Node, skill: Dictionary = {}) -> void:
 		target.take_damage_from(attacker, low, maxi(low, high), damage_type, stats.element, mods)
 	elif target.has_method("take_damage"):
 		target.take_damage(stats.damage)
+
+	if launcher != null and is_instance_valid(launcher) and launcher.has_method("on_hit_target"):
+		launcher.on_hit_target(target, skill)

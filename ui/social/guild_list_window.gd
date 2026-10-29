@@ -16,7 +16,7 @@ func _init(hub: SocialHub = null) -> void:
 	box.add_theme_constant_override("separation", 8)
 	body.add_child(box)
 	GuildListWindow.fill(box, hub, null, false)
-	var close := SocialUi.stone_button("Đóng")
+	var close := SocialUi.stone_button(tr("Đóng"))
 	close.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close)
 
@@ -40,7 +40,7 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 		into.add_child(req[0])
 
 	var wait := guild.join_cooldown_left()
-	var sec := SocialUi.info_box("📜 Danh Sách Bang Hội")
+	var sec := SocialUi.info_box(TranslationServer.translate("📜 Danh Sách Bang Hội"))
 	if wait > 0:
 		sec[1].add_child(SocialUi.label("Mới rời bang — còn %d giờ nữa mới xin vào bang khác được." % int(ceil(wait / 3600.0)), SocialUi.WARN, 13))
 
@@ -48,11 +48,11 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 	var filter_bar := HBoxContainer.new()
 	filter_bar.add_theme_constant_override("separation", 10)
 	var filter_recruit := CheckBox.new()
-	filter_recruit.text = "🚩 Chỉ hiện bang đang cắm cờ tuyển người"
+	filter_recruit.text = TranslationServer.translate("🚩 Chỉ hiện bang đang cắm cờ tuyển người")
 	filter_recruit.add_theme_color_override("font_color", SocialUi.TEXT)
 	filter_bar.add_child(filter_recruit)
 
-	var refresh_btn := SocialUi.small_button("🔄 Làm mới")
+	var refresh_btn := SocialUi.small_button(TranslationServer.translate("🔄 Làm mới"))
 	filter_bar.add_child(refresh_btn)
 	sec[1].add_child(filter_bar)
 
@@ -143,11 +143,38 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 	into.add_child(sec[0])
 
 static func _build_guild_entry(parent: Control, g: Dictionary, is_recruiting: bool, wait: int, guild: GuildService, hub: SocialHub) -> void:
+	## Khung hộp đóng gói từng mục bang hội
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var card_sb := StyleBoxFlat.new()
+	card_sb.bg_color = Color(0.04, 0.065, 0.10, 0.85) if is_recruiting else Color(0.03, 0.045, 0.07, 0.65)
+	card_sb.set_border_width_all(1)
+	card_sb.border_color = Color(0.55, 0.45, 0.25, 0.75) if is_recruiting else Color(0.20, 0.25, 0.32, 0.60)
+	card_sb.set_corner_radius_all(6)
+	card_sb.content_margin_left = 12
+	card_sb.content_margin_right = 12
+	card_sb.content_margin_top = 8
+	card_sb.content_margin_bottom = 8
+	card_sb.shadow_color = Color(0, 0, 0, 0.35)
+	card_sb.shadow_size = 3
+	card_sb.shadow_offset = Vector2(0, 1)
+	card.add_theme_stylebox_override("panel", card_sb)
+
+	card.mouse_entered.connect(func() -> void:
+		card_sb.border_color = Color(0.85, 0.72, 0.35, 0.95) if is_recruiting else Color(0.35, 0.45, 0.55, 0.85)
+	)
+	card.mouse_exited.connect(func() -> void:
+		card_sb.border_color = Color(0.55, 0.45, 0.25, 0.75) if is_recruiting else Color(0.20, 0.25, 0.32, 0.60)
+	)
+
 	var item_box := VBoxContainer.new()
-	item_box.add_theme_constant_override("separation", 3)
+	item_box.add_theme_constant_override("separation", 4)
+	item_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
+	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	## 1. Cờ chiêu mộ: có cờ 🚩 nếu đang đăng tuyển, ⚐ nếu chưa cắm cờ
 	if is_recruiting:
@@ -167,13 +194,13 @@ static func _build_guild_entry(parent: Control, g: Dictionary, is_recruiting: bo
 	## 3. Số thành viên hiển thị rõ ràng: [members] / [cap] người
 	var mem_count := int(g.get("members", 0))
 	var mem_cap := int(g.get("cap", 40))
-	var members_l := SocialUi.label("👥 %d/%d thành viên" % [mem_count, mem_cap], SocialUi.LABEL_GREEN if is_recruiting else SocialUi.MUTED, 13)
+	var members_l := SocialUi.label("👥 %d/%d " % [mem_count, mem_cap] + TranslationServer.translate("thành viên"), SocialUi.LABEL_GREEN if is_recruiting else SocialUi.MUTED, 13)
 	head.add_child(members_l)
 
 	## 4. Nút Xin vào: CÓ CỜ MỚI CHO XIN VÀO, KHÔNG CỜ BỊ VÔ HIỆU HÓA
 	var b: Button
 	if is_recruiting:
-		b = SocialUi.small_button("Xin vào")
+		b = SocialUi.small_button(TranslationServer.translate("Xin vào"))
 		b.disabled = wait > 0 or guild.in_guild()
 		if wait > 0:
 			b.tooltip_text = "Mới rời bang — vui lòng chờ hết thời gian phạt"
@@ -208,15 +235,16 @@ static func _build_guild_entry(parent: Control, g: Dictionary, is_recruiting: bo
 	var acc_lvl := int(g.get("accept_level", 0))
 	if acc_lvl > 0:
 		sub_info += " · Cấp ≥ %d tự duyệt" % acc_lvl
-	var sub_l := SocialUi.label("   " + sub_info, SocialUi.SUBTITLE, 12)
+	var sub_l := SocialUi.label(sub_info, SocialUi.SUBTITLE, 12)
 	item_box.add_child(sub_l)
 
 	var extra_info := "Khuynh hướng: %s · Hoạt động: %s" % [g.get("tendency", "—"), g.get("activity", "—")]
 	var msg := str(g.get("recruit_msg", "")).strip_edges()
 	if msg != "":
 		extra_info += " — \"%s\"" % msg
-	var extra_l := SocialUi.label("   " + extra_info, SocialUi.TEXT, 12)
+	var extra_l := SocialUi.label(extra_info, SocialUi.TEXT, 12)
 	extra_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	item_box.add_child(extra_l)
 
-	parent.add_child(item_box)
+	card.add_child(item_box)
+	parent.add_child(card)

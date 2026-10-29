@@ -9,6 +9,8 @@ class_name ArenaClient
 ##   - Tự tìm quá 1 phút không có ai (server báo "no_match"): ngắt kết nối, đấu với bot cùng cấp như bản offline (PkMatch).
 
 const HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
+const PkRoomBadge = preload("res://ui/hud/pk_room_badge.gd")
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
 const GAME_SCENE := "res://Main.tscn"
 const LEAVE_DELAY := 3.0
 const STATE_NAMES := {"waiting": "Đang chờ đối thủ", "prepare": "Chuẩn bị", "fight": "Đang đấu", "ended": "Đã kết thúc"}
@@ -21,6 +23,7 @@ var _opponent_eid := 0
 var _enemy_eids: Array = []
 var _searching := -1.0
 var _done := false
+var _box: VBoxContainer
 var _title: Label
 var _clock: Label
 var _info: Label
@@ -37,8 +40,15 @@ static func create(pk_entry: Dictionary) -> ArenaClient:
 	return a
 
 func _ready() -> void:
+	add_to_group("arena_client")
 	layer = 20
 	_build_hud()
+	var action: Dictionary = pk.get("action", {})
+	var init_room := str(action.get("room", pk.get("room_id", "")))
+	var ui_node: Node = get_tree().root.get_node_or_null("Main/UI")
+	if ui_node == null:
+		ui_node = self
+	PkRoomBadge.attach(ui_node, init_room, mode)
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		player.suppress_death_popup = true
@@ -107,14 +117,21 @@ func _on_state(s: Dictionary) -> void:
 	if _done:
 		return   ## đã có kết quả: giữ dòng THẮNG / THUA, không ghi đè bằng trạng thái phòng
 	var format_str := (" [%s]" % PkRules.format_name(team_size)) if int(s.get("mode", mode)) == PkRules.Mode.THACH_DAU else ""
+	var rid := str(s.get("id", ""))
+	if rid != "" and rid != "?":
+		PkRoomBadge.update_id(rid)
 	_title.text = "%s%s · Phòng #%s%s" % [PkRules.MODE_NAMES.get(int(s.get("mode", mode)), ""), format_str, s.get("id", "?"),
 			" (xem)" if role == "spectator" else ""]
 	var left := int(s.get("left", 0))
-	_clock.text = STATE_NAMES.get(_state, _state) + ("" if _state == "waiting" else " · %02d:%02d" % [left / 60, left % 60])
+	if _state == "prepare":
+		CountdownOverlay.start(self)
+		_clock.text = "Chuẩn bị"
+	else:
+		_clock.text = STATE_NAMES.get(_state, _state) + ("" if _state == "waiting" else " · %02d:%02d" % [left / 60, left % 60])
 	if team_size > 1:
 		var count_a: int = (s.get("team_a", []) as Array).size()
 		var count_b: int = (s.get("team_b", []) as Array).size()
-		_info.text = "Phe 1: %d/%d người   vs   Phe 2: %d/%d người   ·   Khán giả %d" % [
+		_info.text = "Phe Xanh: %d/%d người   vs   Phe Đỏ: %d/%d người   ·   Khán giả %d" % [
 			count_a, team_size, count_b, team_size, int(s.get("spectators", 0))
 		]
 	else:
@@ -133,7 +150,26 @@ func _on_state(s: Dictionary) -> void:
 					_enemy_eids.append(int(e))
 		if not _enemy_eids.is_empty():
 			_opponent_eid = int(_enemy_eids[0])
+
+	# Cập nhật màu tên và tag phe [Phe Xanh] / [Phe Đỏ]
+	if team_size > 1 or mode == PkRules.Mode.THACH_DAU:
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if player and player.has_method("set_name_color"):
+			if my_team == "a":
+				player.set_name_color(Color(0.25, 0.70, 1.0), "[Phe Xanh]")
+			elif my_team == "b":
+				player.set_name_color(Color(1.0, 0.35, 0.35), "[Phe Đỏ]")
+		var sync := NetWorldSync.current
+		if sync:
+			for r in sync.remotes():
+				if is_instance_valid(r) and r.has_method("set_name_color"):
+					if team_a_eids.has(r.eid):
+						r.set_name_color(Color(0.25, 0.70, 1.0), "[Phe Xanh]")
+					elif team_b_eids.has(r.eid):
+						r.set_name_color(Color(1.0, 0.35, 0.35), "[Phe Đỏ]")
 	_set_enemies(_state == "fight" and role == "fighter")
+	if _box and mode == PkRules.Mode.TONG_KIM_LOL:
+		_box.visible = (_state == "waiting" or _done)
 	if _reject_button:
 		var my_name := GameManager.local_profile.display_name if GameManager.local_profile else ""
 		var is_host: bool = fighters.size() > 0 and str(fighters[0]) == my_name
@@ -178,6 +214,8 @@ func _on_reject_pressed() -> void:
 func _on_result(r: Dictionary) -> void:
 	_done = true
 	_set_enemies(false)
+	if _box and mode == PkRules.Mode.TONG_KIM_LOL:
+		_box.visible = (_state == "waiting" or _done)
 	if _reject_button:
 		_reject_button.visible = false
 	if _start_button:
@@ -220,7 +258,12 @@ func _play_bot() -> void:
 	GameManager.field_map = PkRules.arena_entry({"mode": mode, "opponent": bot.to_dict()})
 	get_tree().change_scene_to_file(GAME_SCENE)
 
+var _leaving: bool = false
+
 func _on_leave_pressed() -> void:
+	if _leaving:
+		return
+	_leaving = true
 	NetClient.send_arena(ArenaServer.OP_LEAVE)
 	_leave("Đã rời đấu trường.")
 
@@ -228,6 +271,7 @@ func _on_leave_pressed() -> void:
 func _leave(message: String) -> void:
 	if not is_inside_tree():
 		return
+	_leaving = true
 	set_process(false)
 	_clock.text = message
 	_leave_button.disabled = true
@@ -247,6 +291,7 @@ func _say(text: String) -> void:
 
 func _build_hud() -> void:
 	var box := VBoxContainer.new()
+	_box = box
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	box.position = Vector2(-200, 52)
 	box.custom_minimum_size = Vector2(400, 0)

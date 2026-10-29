@@ -206,11 +206,16 @@ class DamageContext:
 	var is_fatally_strike: bool = false
 	var defender_current_hp: int = 0  ## Cần cho fatally strike (% HP hiện tại, không phải HP tối đa)
 
+	## Khiên nội lực (Tọa Vọng Vô Ngã) — tỷ lệ % chuyển sát thương sang trừ mana và lượng mana hiện có.
+	var defender_mana_shield_p: int = 0
+	var defender_current_mana: int = 0
+
 ## Kết quả cuối 1 lần tính damage — tách struct riêng thay vì trả int trần, để chỗ gọi biết rõ
 ## đòn có trúng không (is_hit=false thì final_damage luôn 0, không phải "damage=0 do kháng hết").
 class DamageResult:
 	var is_hit: bool = true
 	var final_damage: int = 0
+	var mana_absorbed: int = 0
 
 ## Phần "phụ" của 1 đòn skill ngoài damage chính — lấy từ stat_lines VLTK của skill (xem
 ## SkillDefinition.get_combat_damage_at_level) và truyền tới take_damage_from() của mục tiêu:
@@ -238,6 +243,8 @@ class HitModifiers:
 	var poison_tick_damage: int = 0      ## lượng rút mỗi nhịp độc (0 = theo damage thực của đòn)
 	var stun_chance_p: int = 0           ## % tỷ lệ choáng (độc lập với damage)
 	var stun_frames: int = 0
+	## % bỏ qua né tránh/phòng thủ của mục tiêu (ignoredefense_p từ skill/đòn)
+	var ignore_defense_percent: int = 0
 	## Người đánh (node) — để phản đòn (damage return) và hút máu (steal life); null = bỏ qua 2 thứ đó.
 	var attacker_node: Node = null
 	## Đòn cận chiến (va chạm) hay tầm xa (đạn/skill bay) — chọn melee/range damage return của bên bị đánh.
@@ -264,9 +271,11 @@ class HitModifiers:
 ## Băng/Độc sát có "trúng" không (ReceiveDamage gốc chỉ làm chậm/trúng độc khi CalcDamage loại đó > 0).
 static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantStats, defender_hp: int,
 		parts: Dictionary, attacker_element: ElementTypes.ElementType, mods: HitModifiers = null,
-		out_dealt: Dictionary = {}) -> int:
+		out_dealt: Dictionary = {}, defender_mana: int = 0, out_mana_absorbed: Array = []) -> int:
 	var total := 0
 	var any_hit := false
+	var current_mana := defender_mana
+	var total_mana_absorbed := 0
 	for damage_type in parts:
 		var range_value: Vector2i = parts[damage_type]
 		if range_value.y <= 0:
@@ -287,17 +296,23 @@ static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantSt
 		ctx.defender_resist_percent = defender.get_capped_resist(damage_type)
 		ctx.defender_flat_armor = defender.flat_armor.get(damage_type, 0)
 		ctx.defender_current_hp = defender_hp
+		ctx.defender_mana_shield_p = defender.mana_shield_p
+		ctx.defender_current_mana = current_mana
 		var result := resolve_damage(ctx)
 		if result.is_hit:
 			any_hit = true
 			total += result.final_damage
 			out_dealt[damage_type] = result.final_damage
+			if result.mana_absorbed > 0:
+				current_mana = maxi(0, current_mana - result.mana_absorbed)
+				total_mana_absorbed += result.mana_absorbed
+	if not out_mana_absorbed.is_empty():
+		out_mana_absorbed[0] = total_mana_absorbed
 	return total if any_hit else -1
 
-## Tính damage cuối cùng — NGUYÊN VĂN pipeline 9 bước của KNpc::CalcDamage gốc (xem
-## docs/vltk_player_stats_reference.md mục 11.9 để đối chiếu). Hàm này KHÔNG tự roll hit/miss —
-## gọi roll_hit() riêng TRƯỚC khi gọi hàm này (đúng thứ tự code gốc: CheckHitTarget ở ngoài,
-## CalcDamage chỉ lo phần lượng damage sau khi đã xác định là trúng).
+## Tính damage cuối cùng — NGUYÊN VĂN pipeline các bước của KNpc::CalcDamage gốc (xem
+## docs/vltk_player_stats_reference.md mục 11.9 và CoreServer.dll @1000fa50 để đối chiếu).
+## Hàm này KHÔNG tự roll hit/miss — gọi roll_hit() riêng TRƯỚC khi gọi hàm này.
 static func resolve_damage(ctx: DamageContext) -> DamageResult:
 	var result := DamageResult.new()
 
@@ -342,15 +357,22 @@ static func resolve_damage(ctx: DamageContext) -> DamageResult:
 	if resist > MAX_RESIST:
 		resist = MAX_RESIST
 
-	## Bước 7 — (Mana Shield của game gốc CHƯA áp dụng ở đây — game này chưa có hệ thống khiên nội
-	## lực hấp thụ damage; khi thiết kế xong, chèn logic vào đây đúng vị trí gốc, KHÔNG chèn trước
-	## bước tương khắc hay sau bước trừ % kháng, để giữ đúng thứ tự pipeline VLTK.)
-
-	## Bước 8 — trừ % kháng cuối cùng.
+	## Bước 7 — trừ % kháng cuối cùng (KNpc::CalcDamage line 230).
 	damage -= int(damage * resist / float(MAX_PERCENT))
 
-	## Bước 9 — damage <= 0 coi như không gây sát thương (return FALSE trong code gốc).
-	if damage <= 0:
+	## Bước 8 — Mana Shield (Tọa Vọng Vô Ngã VLTK — CoreServer.dll @1000fa50 dòng 245-257):
+	## Sát thương Độc (DamageType.POISON) bỏ qua khiên mana (KNpc.cpp param_6 != 4).
+	## Nếu mục tiêu có khiên nội lực (> 0) và còn nội lực (> 0):
+	## Chuyển % sát thương tương ứng sang trừ nội lực thay vì sinh lực.
+	if ctx.damage_type != DamageType.POISON and ctx.defender_mana_shield_p > 0 and ctx.defender_current_mana > 0:
+		var shield_p := clampi(ctx.defender_mana_shield_p, 0, 85)
+		var absorb_target := int(damage * shield_p / float(MAX_PERCENT))
+		var actual_absorbed := mini(absorb_target, ctx.defender_current_mana)
+		damage -= actual_absorbed
+		result.mana_absorbed = actual_absorbed
+
+	## Bước 9 — damage <= 0 coi như không gây sát thương máu (return FALSE trong code gốc).
+	if damage <= 0 and result.mana_absorbed <= 0:
 		result.is_hit = false
 		return result
 

@@ -19,6 +19,7 @@ var _partner_action: Callable
 var _crafting_win: CompoundWindow = null
 var _style_tab_active: StyleBox = null
 var _style_tab_normal: StyleBox = null
+var _tt_btn: Button = null
 
 ## Phát sau mỗi thay đổi hành trang (để cửa sổ đi kèm như Rương vẽ lại).
 signal profile_changed
@@ -46,6 +47,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group(GROUP)
 	GameUi.apply()
+	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
+		if p == null or p == _profile or p == GameManager.local_profile:
+			refresh()
+	)
 	var dim: ColorRect = %Dim
 	dim.color = GameUi.DIM
 	dim.visible = _modal
@@ -55,10 +60,12 @@ func _ready() -> void:
 			queue_free())
 	%CloseButton.pressed.connect(queue_free)
 	%TitleBar.gui_input.connect(_on_title_input)
+	%SortButton.text = tr(%SortButton.text)
 	%SortButton.pressed.connect(_on_sort_pressed)
 
 	## Hiệu thuốc
 	if has_node("%ShopButton"):
+		%ShopButton.text = tr(%ShopButton.text)
 		%ShopButton.pressed.connect(func() -> void:
 			PotionShopWindow.open(_get_host(), func() -> void:
 				if is_instance_valid(self):
@@ -73,35 +80,16 @@ func _ready() -> void:
 		, _profile))
 		(%SortButton as Control).add_sibling(shop)
 
-	## Nút mở Tiệm Đổi Viêm Đế (không cần chạy tới NPC)
-	var vd_btn := GameUi.button("Đổi Viêm Đế")
-	vd_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
-	vd_btn.pressed.connect(func() -> void:
-		ViemDeWindow.open_reward_shop(_get_host(), _profile)
-	)
-	(%SortButton as Control).add_sibling(vd_btn)
-
 	## Nút mở Tiền Trang (Nạp / Đổi Tiền Xu & KNB)
-	var tt_btn := GameUi.button("Tiền Trang")
-	tt_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
-	tt_btn.pressed.connect(func() -> void:
+	_tt_btn = GameUi.button(tr("Tiền Trang"))
+	_tt_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
+	_tt_btn.pressed.connect(func() -> void:
 		TienTrangWindow.open(_get_host(), func() -> void:
 			if is_instance_valid(self):
 				_refresh()
 		, _profile)
 	)
-	(%SortButton as Control).add_sibling(tt_btn)
-
-	## Nút mở Kỳ Trân Các (Cửa hàng Tiền Xu)
-	var ktc_btn := GameUi.button("Kỳ Trân Các")
-	ktc_btn.custom_minimum_size = (%SortButton as Control).custom_minimum_size
-	ktc_btn.pressed.connect(func() -> void:
-		KyTranCacWindow.open(_get_host(), func() -> void:
-			if is_instance_valid(self):
-				_refresh()
-		, _profile)
-	)
-	(%SortButton as Control).add_sibling(ktc_btn)
+	(%SortButton as Control).add_sibling(_tt_btn)
 
 	# Gắn sự kiện click cho các nút cộng trong thanh tiền tệ
 	for frame_path in ["Frame/Root/BottomMoneyBar/FrameGold", "Frame/Root/BottomMoneyBar/FrameXu", "Frame/Root/BottomMoneyBar/FrameJade"]:
@@ -163,6 +151,7 @@ func _ready() -> void:
 			if has_node("%TestAddButton"):
 				%TestAddButton.pressed.connect(_on_test_items_pressed)
 			if has_node("%TestCreateButton"):
+				%TestCreateButton.text = tr(%TestCreateButton.text)
 				%TestCreateButton.pressed.connect(func() -> void: ItemCreatorPopup.open(self, _profile, _commit))
 			if has_node("%TestMaskButton"):
 				%TestMaskButton.pressed.connect(_on_test_mask_pressed)
@@ -176,6 +165,24 @@ func _ready() -> void:
 	var frame: Control = %Frame
 	frame.size = frame.get_combined_minimum_size()
 	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		if has_node("%SortButton"):
+			%SortButton.text = tr("Sắp Xếp")
+		if has_node("%ShopButton"):
+			%ShopButton.text = tr("Hiệu Thuốc")
+		if is_instance_valid(_tt_btn):
+			_tt_btn.text = tr("Tiền Trang")
+		if has_node("%TestCreateButton"):
+			%TestCreateButton.text = tr("Test Đồ (TEST)")
+		if has_node("%BagTabs"):
+			var bags := %BagTabs.get_children()
+			for i in bags.size():
+				bags[i].text = tr("Túi %d" % [i + 1])
+		var title_lbl := get_node_or_null("Frame/Root/TitleBar/TitleRow/Title") as Label
+		if title_lbl:
+			title_lbl.text = tr("Hành trang")
 
 func _get_host() -> Node:
 	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
@@ -393,7 +400,7 @@ func _use(index: int) -> void:
 	var item := _profile.inventory[index]
 	var res := ItemConsumer.use_item(_profile, item, player, _get_host())
 	if res.has("message") and str(res["message"]) != "":
-		_show_message(str(res["message"]))
+		_show_message(str(res["message"]), not res.get("ok", false))
 	if res.get("ok", false):
 		_commit()
 
@@ -474,8 +481,20 @@ func _on_test_mantle_pressed() -> void:
 	_show_message("Đã thêm %d Phi Phong vào hành trang!" % added)
 	_commit()
 
-func _show_message(text: String) -> void:
-	(%Message as Label).text = text
+func _show_message(text: String, is_error: bool = false) -> void:
+	var msg := %Message as Label
+	if msg:
+		msg.text = text
+		if not is_error:
+			var lower := text.to_lower()
+			for kw in ["cảnh giới", "không thể", "thất bại", "chưa đủ", "không đủ", "đã đầy", "chưa mở", "không chính xác", "đã tối đa", "lỗi"]:
+				if kw in lower:
+					is_error = true
+					break
+		if is_error:
+			msg.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		else:
+			msg.add_theme_color_override("font_color", Color(1, 0.75, 0.35, 1))
 
 func _commit() -> void:
 	SaveManager.save_profile(_profile)

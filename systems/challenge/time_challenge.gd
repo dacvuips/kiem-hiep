@@ -16,7 +16,8 @@ signal finished(success: bool, seconds: int)
 const DATA_PATH := "res://data/challenge/time_challenge.json"
 const RECORD_PATH := "user://time_challenge.json"
 const MAP_DIR := "res://world/maps/map_480"
-const PREPARE_SEC := 10.0          ## gốc: 5 phút chờ tổ đội tập trung; chơi một mình chỉ đếm 10 giây
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
+const PREPARE_SEC := 3.0
 const LEAVE_AFTER_SEC := 8.0       ## xong / hết giờ: về Character Hub sau chừng này giây
 const HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
 const ENTRY_ITEM_ID := "6_1_400"   ## Sát thủ giản
@@ -37,6 +38,10 @@ var _title: Label
 var _info: Label
 var _clock: Label
 var _leave_in := -1.0
+var _allies: Array[PkBot] = []
+var _team_members_data: Array = []
+var _is_team_mode := false
+var _team_ui_rows: Array[Dictionary] = []
 
 # ---------------------------------------------------------------- dữ liệu, điều kiện vào, lượt mỗi ngày
 
@@ -81,8 +86,11 @@ static func best_time(profile: PlayerProfile) -> int:
 
 ## "" = đủ điều kiện, ngược lại là lý do (như các câu Talk của Nhiếp Thí Trần).
 static func check_entry(profile: PlayerProfile) -> String:
-	if AccountApi.is_gm():
-		return ""
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root:
+		var api = tree.root.get_node_or_null("AccountApi")
+		if api != null and api.has_method("is_gm") and api.is_gm():
+			return ""
 	var r := rules()
 	if profile == null:
 		return "Chưa có nhân vật."
@@ -128,7 +136,28 @@ static func pay_entry(profile: PlayerProfile) -> bool:
 	rec[_key(profile)] = mine
 	_save_records(rec)
 	SaveManager.save_profile(profile)
+	SaveManager.flush_online()
 	return true
+
+## Càn quét nhanh (dành cho chế độ Idle sau khi đã hoàn thành ít nhất 1 lần):
+## Trừ chi phí tham gia và nhận thưởng tương đương vượt ải thành công mà không cần đánh tay 30 phút.
+static func sweep(profile: PlayerProfile) -> Dictionary:
+	if profile == null:
+		return {"ok": false, "reason": "Chưa có nhân vật."}
+	if best_time(profile) <= 0:
+		return {"ok": false, "reason": "Cần vượt qua 28 ải ít nhất 1 lần mới có thể sử dụng tính năng Càn Quét."}
+	var reason := check_entry(profile)
+	if reason != "":
+		return {"ok": false, "reason": reason}
+	if not pay_entry(profile):
+		return {"ok": false, "reason": "Thanh toán lệ phí thất bại."}
+
+	var levels := float(rules().get("reward_exp_levels", 0.5))
+	var exp_gain := int(float(profile.get_exp_to_next_level()) * levels)
+	profile.add_exp(exp_gain)
+	SaveManager.save_profile(profile)
+	SaveManager.flush_online()
+	return {"ok": true, "exp": exp_gain}
 
 static func _money(v: int) -> String:
 	@warning_ignore("integer_division")
@@ -142,15 +171,75 @@ static func format_time(sec: int) -> String:
 
 func _ready() -> void:
 	time_left = float(rules().get("time_limit_sec", 1800))
+	_is_team_mode = bool(GameManager.field_map.get("team_challenge", false))
+	_team_members_data = GameManager.field_map.get("team_members", [])
 	_build_hud()
 	_player = get_tree().get_first_node_in_group("player") as Node2D
 	_place_player_at_entry.call_deferred()
-	_say("Còn %d giây sẽ chính thức tính thời gian nhiệm vụ." % int(PREPARE_SEC))
+	if _is_team_mode and not _team_members_data.is_empty():
+		_spawn_team_allies.call_deferred()
+	_say("Chuẩn bị bắt đầu nhiệm vụ!")
+	CountdownOverlay.start(self, func() -> void:
+		if not running:
+			running = true
+			_release(1)
+	)
 
 func _place_player_at_entry() -> void:
 	var entry: Array = data().get("entry", [49920, 102912])
 	if _player:
 		_player.global_position = Vector2(float(entry[0]), float(entry[1]) * 0.5)
+
+func _spawn_team_allies() -> void:
+	if not _is_team_mode or _player == null:
+		return
+	var my_name := GameManager.local_profile.display_name if GameManager.local_profile else ""
+	var parent := VltkWorld.entity_parent()
+	if parent == null:
+		parent = get_parent()
+	if parent == null:
+		return
+
+	var idx := 0
+	for m_dict in _team_members_data:
+		if not (m_dict is Dictionary):
+			continue
+		var m_name := str(m_dict.get("name", ""))
+		if m_name == my_name:
+			continue # Player chính đã có sẵn node
+
+		var bot_prof: PlayerProfile = null
+		if m_dict.has("bot_data") and m_dict["bot_data"] is Dictionary:
+			bot_prof = PlayerProfile.from_dict(m_dict["bot_data"])
+		else:
+			var lvl: int = int(m_dict.get("level", 90))
+			var s_id: String = str(m_dict.get("sect_id", "vo_dang"))
+			bot_prof = PkBotProfile.create(lvl, s_id)
+			bot_prof.display_name = m_name
+
+		var ally := PkBot.new()
+		ally.is_match_fighter = true
+		ally.name = "TimeChallengeAlly_%d" % (idx + 1)
+		ally.setup(bot_prof)
+		# Xếp thành vòng cung quanh vị trí người chơi
+		var angle := float(idx) * 0.85 - 1.2
+		var offset := Vector2(cos(angle) * 70.0, sin(angle) * 45.0)
+		ally.position = _player.position + offset
+		ally.pk_enemy = false
+		ally.cast_target_group = &"enemies"
+		ally.remove_from_group("enemies")
+		ally.add_to_group("allies")
+		ally.add_to_group("player_team")
+		ally.active = true
+		ally.invulnerable = false
+		ally.set_name_color(Color(0.35, 0.95, 0.45), "[Đồng đội]")
+		parent.add_child(ally)
+		_allies.append(ally)
+		idx += 1
+
+	if not _allies.is_empty():
+		_say("Tổ đội gồm %d hiệp khách đã cùng tiến vào Vượt Ải!" % (_allies.size() + 1))
+		ChatBox.push_system("[color=#55ffff][Vượt Ải Tổ Đội][/color] %d đồng đội tổ đội đã xuất chiến cùng hiệp khách!" % _allies.size())
 
 func _process(delta: float) -> void:
 	if get_tree().paused:
@@ -164,9 +253,13 @@ func _process(delta: float) -> void:
 		return
 	if done:
 		return
+
+	_update_allies_ai()
+	_update_team_hud()
+
 	if not running:
 		_prepare -= delta
-		_clock.text = "Chuẩn bị %d" % ceili(maxf(_prepare, 0.0))
+		_clock.text = ""
 		if _prepare <= 0.0:
 			running = true
 			_release(1)
@@ -176,13 +269,48 @@ func _process(delta: float) -> void:
 	if time_left <= 0.0:
 		_finish(false)
 
+func _update_allies_ai() -> void:
+	if _allies.is_empty():
+		return
+	for ally in _allies:
+		if ally == null or not is_instance_valid(ally) or (ally.has_method("is_dead") and ally.is_dead()):
+			continue
+		var cur_tar: Variant = ally.target
+		var need_retarget: bool = cur_tar == null or not is_instance_valid(cur_tar) or (cur_tar.has_method("is_dead") and cur_tar.is_dead())
+		if not need_retarget and cur_tar == _player and not _alive.is_empty():
+			need_retarget = true
+
+		if need_retarget:
+			var nearest_enemy: Node2D = null
+			var min_dist := 1200.0
+			for mon in _alive:
+				if mon != null and is_instance_valid(mon) and not mon.is_dead():
+					var d := ally.position.distance_to(mon.position)
+					if d < min_dist:
+						min_dist = d
+						nearest_enemy = mon
+			if nearest_enemy != null:
+				ally.target = nearest_enemy
+			else:
+				ally.target = _player
+
+		# Nếu không có quái xung quanh và mục tiêu là người chơi, bám theo người chơi
+		if ally.target == _player and _player != null and is_instance_valid(_player):
+			var dist_to_player := ally.position.distance_to(_player.position)
+			if dist_to_player > 140.0:
+				ally.velocity = (_player.position - ally.position).normalized() * 160.0
+			else:
+				ally.velocity = Vector2.ZERO
+
 ## release_npcvuotai(nLevel): ải 1..27 = quái thường ở bộ toạ độ của ải (+ boss nếu có), ải 28 = đại boss.
 func _release(level: int) -> void:
 	wave = level
 	_alive.clear()
 	var d := data()
 	var hp: Dictionary = d.get("hp", {})
-	var scale := float(rules().get("solo_hp_scale", 0.25))
+	var solo_scale := float(rules().get("solo_hp_scale", 0.25))
+	var team_count: int = maxi(1, _allies.size() + 1)
+	var scale: float = lerpf(solo_scale, 1.0, float(clampi(team_count, 1, 8) - 1) / 7.0) if _is_team_mode else solo_scale
 	var lv := 100
 	if level >= int(d.get("final_boss", {}).get("wave", 28)):
 		var fb: Dictionary = d["final_boss"]
@@ -222,8 +350,6 @@ func _spawn(tpl: int, lvl: int, series: int, logic_pos: Vector2, hp: int, name_o
 	m.monster_id = tpl
 	m.data = base.duplicate()
 	m.data["series"] = series if series >= 0 and series <= 4 else randi() % 5     ## RANDOMC(0,1,2,3,4)
-	m.data["vision"] = 2400            ## đấu trường nhỏ: quái thấy người chơi ngay
-	m.data["active"] = 4000
 	if name_override != "":
 		m.data["name"] = name_override
 	m.level = lvl
@@ -263,8 +389,13 @@ func _finish(success: bool) -> void:
 			mine["best"] = used
 		rec[_key(profile)] = mine
 		_save_records(rec)
-		_say("Đã hoàn thành nhiệm vụ đúng thời gian: %d phút %d giây" % [int(used / 60.0), used % 60])
-		_title.text = "Vượt ải thành công!"
+		if _is_team_mode:
+			_say("Tổ đội đã hoàn thành xuất sắc 28 ải trong: %d phút %d giây!" % [int(used / 60.0), used % 60])
+			_title.text = "Tổ Đội Vượt Ải Thành Công!"
+			ChatBox.push_system("[color=#ffff00][Vượt Ải][/color] Tổ đội hiệp khách đã cùng nhau chinh phục toàn bộ 28 Ải Thách Thức Thời Gian!")
+		else:
+			_say("Đã hoàn thành nhiệm vụ đúng thời gian: %d phút %d giây" % [int(used / 60.0), used % 60])
+			_title.text = "Vượt ải thành công!"
 	else:
 		for m in _alive:
 			if is_instance_valid(m):
@@ -306,11 +437,118 @@ func _build_hud() -> void:
 	box.custom_minimum_size = Vector2(320, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(box)
-	_title = _hud_label("Thách Thức Thời Gian", 18, GameUi.GOLD)
+
+	var title_text := "Thách Thức Thời Gian (Tổ Đội %d/8)" % maxi(1, _team_members_data.size()) if _is_team_mode else "Thách Thức Thời Gian"
+	_title = _hud_label(title_text, 18, GameUi.GOLD)
 	_clock = _hud_label("", 26, Color(1, 1, 1))
 	_info = _hud_label("", 14, GameUi.TEXT)
 	for l in [_title, _clock, _info]:
 		box.add_child(l)
+
+	# Khung hiển thị danh sách tổ đội bên góc trái màn hình (Team Party Frame)
+	if _is_team_mode:
+		_build_team_panel()
+
+func _build_team_panel() -> void:
+	_team_ui_rows.clear()
+	var party_panel := PanelContainer.new()
+	party_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	party_panel.position = Vector2(16, 80)
+	party_panel.custom_minimum_size = Vector2(210, 0)
+	_hud.add_child(party_panel)
+
+	var p_box := VBoxContainer.new()
+	p_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p_box.add_theme_constant_override("separation", 4)
+	party_panel.add_child(p_box)
+
+	var p_header := Label.new()
+	p_header.text = "⚔️ TỔ ĐỘI (%d/8)" % maxi(1, _team_members_data.size())
+	p_header.add_theme_font_size_override("font_size", 13)
+	p_header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	p_box.add_child(p_header)
+
+	var my_name := GameManager.local_profile.display_name if GameManager.local_profile else "Hiệp Khách"
+	var p_row := _create_member_ui_row(my_name, true)
+	p_box.add_child(p_row["container"])
+	_team_ui_rows.append({"type": "player", "node": _player, "bar": p_row["bar"], "status": p_row["status"]})
+
+	for ally in _allies:
+		if is_instance_valid(ally):
+			var a_name: String = str(ally.profile.display_name if ally.profile else ally.name)
+			var a_row := _create_member_ui_row(a_name, false)
+			p_box.add_child(a_row["container"])
+			_team_ui_rows.append({"type": "ally", "node": ally, "bar": a_row["bar"], "status": a_row["status"]})
+
+func _create_member_ui_row(mem_name: String, is_player: bool) -> Dictionary:
+	var row := VBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 1)
+
+	var h_top := HBoxContainer.new()
+	h_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(h_top)
+
+	var lbl_name := Label.new()
+	lbl_name.text = ("👑 " if is_player else "👤 ") + mem_name
+	lbl_name.add_theme_font_size_override("font_size", 11)
+	lbl_name.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5) if is_player else Color.WHITE)
+	lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h_top.add_child(lbl_name)
+
+	var lbl_status := Label.new()
+	lbl_status.text = "100%"
+	lbl_status.add_theme_font_size_override("font_size", 10)
+	lbl_status.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45))
+	h_top.add_child(lbl_status)
+
+	var bar := ProgressBar.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.custom_minimum_size = Vector2(190, 6)
+	bar.max_value = 100.0
+	bar.value = 100.0
+	bar.show_percentage = false
+	row.add_child(bar)
+
+	return {"container": row, "bar": bar, "status": lbl_status}
+
+func _update_team_hud() -> void:
+	if not _is_team_mode or _team_ui_rows.is_empty():
+		return
+	for item in _team_ui_rows:
+		var node: Variant = item.get("node")
+		var bar: ProgressBar = item.get("bar")
+		var st_lbl: Label = item.get("status")
+		if node == null or not is_instance_valid(node):
+			if bar: bar.value = 0.0
+			if st_lbl:
+				st_lbl.text = "Trọng thương"
+				st_lbl.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+			continue
+
+		var cur_hp := 0.0
+		var max_hp := 1.0
+		var is_dead := false
+		if item["type"] == "player":
+			cur_hp = float(PlayerStats.health)
+			max_hp = float(PlayerStats.max_health)
+			is_dead = PlayerStats.is_dead if "is_dead" in PlayerStats else (cur_hp <= 0.0)
+		else:
+			cur_hp = float(node.health) if "health" in node else 0.0
+			max_hp = float(node.max_health) if "max_health" in node else 1.0
+			is_dead = node.is_dead() if node.has_method("is_dead") else (cur_hp <= 0.0)
+
+		if is_dead or cur_hp <= 0.0:
+			if bar: bar.value = 0.0
+			if st_lbl:
+				st_lbl.text = "Trọng thương"
+				st_lbl.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+		else:
+			var pct := clampf((cur_hp / maxf(1.0, max_hp)) * 100.0, 0.0, 100.0)
+			if bar: bar.value = pct
+			if st_lbl:
+				st_lbl.text = "%d%%" % int(pct)
+				st_lbl.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45) if pct > 30.0 else Color(1.0, 0.45, 0.35))
 
 func _hud_label(text: String, size: int, color: Color) -> Label:
 	var l := Label.new()

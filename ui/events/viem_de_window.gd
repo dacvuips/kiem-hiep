@@ -668,7 +668,7 @@ func _render_room_view(runs_today: int) -> void:
 			empty_txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			sr.add_child(empty_txt)
 
-			if is_host:
+			if is_host and GameModeManager.can_add_bot():
 				var btn_add_bot := SocialUi.small_button("➕ Thêm Trợ Thủ (Bot)")
 				btn_add_bot.pressed.connect(func() -> void:
 					ViemDeLobby.add_bot(_current_room_id)

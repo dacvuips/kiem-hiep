@@ -105,6 +105,8 @@ func _notify(text: String) -> void:
 		_player.notify(text)
 
 func _mock() -> MockPlayer:
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return null
 	return SocialDirectory.find_by_id(_profile(), _target.eid) if _profile() else null
 
 func _view_info() -> void:
@@ -130,6 +132,13 @@ func _chat() -> void:
 func _trade() -> void:
 	var p := _profile()
 	if p == null:
+		return
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		if NetClient.is_in_world():
+			NetClient.send_trade_request(_target.eid)
+			_notify("Đã gửi lời mời giao dịch — hãy chờ đối phương trả lời.")
+		else:
+			_notify("Chưa kết nối máy chủ game.")
 		return
 	var m := _mock()
 	if m == null:

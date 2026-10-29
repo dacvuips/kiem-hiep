@@ -1,9 +1,7 @@
 extends Button
 class_name SkillButton
-## 1 nút skill TRÒN viền trắng trong SkillBarUI — vẽ icon + overlay hồi chiêu dạng radial
-## (TextureProgressBar dùng texture hình tròn, fill ngược chiều kim đồng hồ, thu nhỏ dần khi hết
-## cooldown) + khoá xám khi skill phụ chưa học. Nút phụ có thể là ô TRỐNG (skill = null) khi người
-## chơi chưa gắn skill vào ô đó.
+## 1 nút skill TRÒN viền trắng trong SkillBarUI — vẽ icon + khoá xám khi skill phụ chưa học.
+## Nút phụ có thể là ô TRỐNG (skill = null) khi người chơi chưa gắn skill vào ô đó.
 
 const SLOT_BG := Color(0.1, 0.12, 0.16, 0.85)
 const SLOT_BG_HOVER := Color(0.18, 0.2, 0.26, 0.9)
@@ -12,7 +10,6 @@ const BORDER_WIDTH := 2
 const CIRCLE_MASK_SHADER := preload("res://ui/shaders/circle_mask.gdshader")
 
 @onready var _icon: TextureRect = %Icon
-@onready var _cooldown_overlay: TextureProgressBar = %CooldownOverlay
 @onready var _lock_overlay: Panel = %LockOverlay
 
 var skill: SkillDefinition
@@ -65,7 +62,6 @@ func setup(skill_def: SkillDefinition, main: bool) -> void:
 	text = skill_def.skill_name if skill_def.icon == null else ""
 
 ## learned = true nếu là skill chính (luôn dùng được) hoặc skill phụ đã học >=1 cấp.
-func refresh(cooldown_ratio: float, learned: bool) -> void:
-	_cooldown_overlay.value = cooldown_ratio * 100.0
+func refresh(_cooldown_ratio: float, learned: bool) -> void:
 	_lock_overlay.visible = not learned
 	disabled = not learned

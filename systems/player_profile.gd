@@ -8,8 +8,12 @@ class_name PlayerProfile
 
 enum Gender { MALE, FEMALE }
 
+## Phát ra khi trang bị thay đổi (mặc/tháo đồ) để các bên liên quan (Player runtime, UI...) đồng bộ ngay.
+signal equipment_changed()
+
 ## Cấp nhân vật cần đạt để mở từng ô gắn ngọc (ô i mở khi level >= GEM_SLOT_UNLOCK_LEVELS[i]).
 const GEM_SLOT_UNLOCK_LEVELS: Array[int] = [1, 10, 20, 30, 40, 50]
+const MAX_LEVEL := 200
 
 var display_name: String = ""
 var gender: Gender = Gender.MALE
@@ -78,14 +82,17 @@ func choose_element(e: ElementTypes.ElementType) -> void:
 		gender = need as Gender
 	apply_start_stats()
 
-## VLTK gốc: chưa gia nhập môn phái (cần cấp 10) thì thuộc phe Tân thủ — tên trắng, không cừu sát được. Game này gắn phái
-## ngay lúc tạo nhân vật nên coi "gia nhập" = đủ cấp NEWBIE_LEVEL; từ đó phe/màu tên theo phái (hoặc phe bang nếu có).
+## VLTK gốc (KPlayerFaction::GetGurFactionCamp):
+## - Chưa gia nhập môn phái (Vô Môn Phái) -> thuộc phe Tân thủ (Camp.Type.BEGIN — tên trắng, miễn nhiễm PK).
+## - Đã gia nhập môn phái -> phe mặc định theo môn phái (Chính phái: Thiếu Lâm, Cái Bang, Nga My, Võ Đang = Cam;
+##   Tà phái: Ngũ Độc, Thiên Nhẫn = Tím hồng; Trung lập: Thiên Vương, Đường Môn, Thúy Yên, Côn Lôn, Hoa Sơn = Xanh lục).
+## - Phe chỉ bị ghi đè khi có phe bang hội, sự kiện, hoặc bật PK Đồ sát (Camp.Type.FREE > 0).
 const NEWBIE_LEVEL := 10
 
 func get_current_camp() -> int:
-	if camp >= 0:
+	if camp > 0:
 		return camp
-	if level < NEWBIE_LEVEL or not has_sect():
+	if not has_sect():
 		return Camp.Type.BEGIN
 	return Camp.default_for_sect(SectRegistry.get_by_id(sect_id))
 
@@ -99,6 +106,24 @@ var strength: int = 35
 var dexterity: int = 25
 var vitality: int = 25
 var energy: int = 15
+
+## Alias tương thích ngược nếu có module gọi str_point / dex_point / vit_point / eng_point
+var str_point: int:
+	get: return strength
+	set(v): strength = v
+var dex_point: int:
+	get: return dexterity
+	set(v): dexterity = v
+var vit_point: int:
+	get: return vitality
+	set(v): vitality = v
+var eng_point: int:
+	get: return energy
+	set(v): energy = v
+
+## Thuộc tính tương thích cho Nội lực (Mana)
+var max_mana: int = 250
+var mana: int = 250
 ## Chỉ số khởi điểm cấp 1 THEO HỆ — settings/npc/player/NewPlayerIni<Hệ*2+Giới>.ini gốc (KPlayer.cpp: Series * 2 + Sex), cột
 ## ipower/iagility/iouter/iinside = Sức mạnh/Thân pháp/Sinh khí/Nội công; 2 giới cùng số. Thứ tự hệ = ElementTypes (Kim, Mộc, Thủy, Hỏa, Thổ).
 ## (NewPlayerBaseAttribute.ini gốc toàn 0 nên không có tác dụng.)
@@ -184,6 +209,8 @@ func set_layout_offset(key: String, offset: Vector2) -> void:
 ## Hào quang đang BẬT (skill is_aura — La Hán Trận, Thất Tinh Trận...): bấm skill để bật/tắt, chỉ 1 hào quang cùng
 ## lúc như chuột phải VLTK gốc. "" = không bật. Thuộc tính hào quang cộng vào chỉ số khi đang bật (CombatantBuild).
 var active_aura_id: String = ""
+## Hào quang đặc biệt do GM cấp (state_id trong states.json). 0 = không có.
+var gm_aura_state: int = 0
 ## Khung "Tùy chỉnh kỹ năng" (bảng Kỹ năng): no_target = không có quái gần vẫn ra chiêu về phía trước mặt;
 ## face_direction = luôn ra chiêu theo hướng nhân vật đang quay (không tự nhắm quái gần nhất); tap_release = nút skill
 ## ra chiêu khi NHẢ tay (tắt = ra chiêu ngay lúc chạm). Chế độ Auto vẫn tự nhắm quái.
@@ -225,22 +252,49 @@ var equipment: Dictionary = {}
 ## Đang cưỡi ngựa (m_bRideHorse gốc). Chỉ có nghĩa khi ô Ngựa có đồ: mặc ngựa -> tự lên ngựa, tháo ngựa -> xuống
 ## (KItemList::Equip/UnEquip). Chỉ số/dòng magic của ngựa CHỈ có hiệu lực khi đang cưỡi (KNpc::SwitchRideHorse).
 var riding: bool = true
+## Hiển thị ngoại hình mặt nạ (dịch dung). Cho phép khi đeo mặt nạ nhưng vẫn tắt/mở giao diện bên ngoài.
+var show_mask: bool = true
+## Ảnh đại diện tùy chỉnh (Custom Avatar) — chuỗi base64 của ảnh 200x200 JPG. Rỗng = chưa tải ảnh lên.
+var custom_avatar: String = ""
+
+func has_custom_avatar() -> bool:
+	return custom_avatar.strip_edges() != ""
+
+func get_custom_avatar_texture() -> ImageTexture:
+	if custom_avatar.strip_edges() == "":
+		return null
+	return CustomAvatarHelper.base64_to_texture(custom_avatar)
+
+func set_custom_avatar_from_jpg(jpg_bytes: PackedByteArray) -> void:
+	custom_avatar = CustomAvatarHelper.bytes_to_base64(jpg_bytes)
+	if display_name != "":
+		CustomAvatarHelper.save_avatar_cache(display_name, 0, jpg_bytes)
+
+func clear_custom_avatar() -> void:
+	custom_avatar = ""
+	if display_name != "":
+		CustomAvatarHelper.delete_avatar_cache(display_name, 0)
 ## HÀNH TRANG kiểu VLTK: lưới ROOM_WIDTH × ROOM_HEIGHT ô, mỗi món chiếm số ô rộng × cao riêng (ItemInstance.get_size) tại
 ## (room_x, room_y). Hết chỗ trống đủ lớn = túi đầy. 16 × 20 theo bản VLTK mở rộng trong ảnh mẫu của người dùng
 ## (source gốc GameDataDef.h: EQUIPMENT_ROOM_WIDTH/HEIGHT = 6 × 10) — đổi 2 hằng số này là đổi cỡ lưới, mọi thứ tự co theo.
 const ROOM_WIDTH := 10
 const ROOM_HEIGHT := 20
 ## Số túi (Túi 1..BAG_COUNT trên cột bên phải) và số túi ĐÃ MỞ — túi chưa mở bị khoá, mở thêm bằng cách tăng OPEN_BAGS.
-const BAG_COUNT := 6
+const BAG_COUNT := 5
 const OPEN_BAGS := 3
 const INVENTORY_CAPACITY := ROOM_WIDTH * ROOM_HEIGHT * OPEN_BAGS  ## tổng số ô của các túi đang mở
 
+const MAX_GOLD: int = 2_000_000_000
+const MAX_JADE: int = 10_000_000
+const MAX_STORAGE_GOLD: int = 2_000_000_000
+
 var gold: int = 0
+var xu: int = 0
 var jade: int = 0
 
 ## ---- Xã hội: rương, khoá bảo vệ, lãnh đạo, bang hội, bày bán (logic ở systems/social/*) ----
-## Rương chứa đồ (REPOSITORY gốc): 1 rương chính 6 x 10 + tối đa 5 rương mở rộng (storage_extra = số đã mở); tiền gửi riêng.
-var storage := ItemContainer.new(6, 10, 1)
+## Rương chứa đồ (REPOSITORY gốc): 1 rương chính 6 x 8 + tối đa 5 rương mở rộng (storage_extra = số đã mở); tiền gửi riêng.
+var storage := ItemContainer.new(6, 8, 1)
 var storage_extra: int = 0
 var storage_gold: int = 0
 ## Khoá bảo vệ: mật khẩu 1-16 ký tự (chỉ lưu mã băm); đang khoá thì chặn mở bày bán/giao dịch/mua bán NPC/gửi tiền/vứt đồ.
@@ -339,16 +393,23 @@ func set_sect(sect_def: SectDefinition) -> void:
 
 ## Cộng EXP nhân vật (lâu dài, khác PlayerStats.current_exp trong-trận) — lên level thì cấp thêm
 ## điểm kỹ năng để học/nâng skill phụ. Dùng while thay vì if để xử lý đúng khi cộng đủ EXP nhảy
-## nhiều level cùng lúc trong 1 lần gọi.
+## nhiều level cùng lúc trong 1 lần gọi. Giới hạn tối đa MAX_LEVEL (200).
 func add_exp(amount: int) -> void:
+	if level >= MAX_LEVEL:
+		current_exp = 0
+		return
 	current_exp += amount
-	while current_exp >= get_exp_to_next_level():
+	while level < MAX_LEVEL and current_exp >= get_exp_to_next_level():
 		current_exp -= get_exp_to_next_level()
 		level_up()
+	if level >= MAX_LEVEL:
+		current_exp = 0
 
 ## Lên 1 cấp + nhận điểm kỹ năng/tiềm năng tương ứng — dùng chung cho add_exp() và nút test lên cấp
 ## (DebugCheatPanel), để 2 đường lên cấp luôn cộng điểm giống hệt nhau.
 func level_up() -> void:
+	if level >= MAX_LEVEL:
+		return
 	level += 1
 	max_stamina = _stamina_for_level()
 	stamina = max_stamina
@@ -693,6 +754,8 @@ func equip_from_inventory(index: int) -> String:
 	if index < 0 or index >= inventory.size():
 		return "Không có món đồ này"
 	var item := inventory[index]
+	if item.trade_price > 0:
+		return "Vật phẩm đang được đặt giá bán, không thể mặc"
 	var parts: Array = Equipment.DETAIL_TO_PARTS.get(item.get_detail(), [])
 	if parts.is_empty():
 		return "Không mặc được món này"
@@ -723,6 +786,7 @@ func equip_from_inventory(index: int) -> String:
 	equipment[part] = item
 	if part == Equipment.Part.HORSE:
 		riding = true
+	equipment_changed.emit()
 	return ""
 
 ## Tháo đồ ở ô `part` về túi — false nếu ô trống hoặc túi đầy.
@@ -740,12 +804,13 @@ func unequip(part: int) -> bool:
 	equipment.erase(part)
 	if part == Equipment.Part.HORSE:
 		riding = false
+	equipment_changed.emit()
 	return true
 
 ## Trả về Dictionary ngoại hình theo trang bị, giới tính và trạng thái cưỡi ngựa (xem Equipment.get_appearance).
 func get_equipped_look() -> Dictionary:
 	var gender_key := "female" if gender == Gender.FEMALE else "male"
-	return Equipment.get_appearance(equipment, gender_key, riding)
+	return Equipment.get_appearance(equipment, gender_key, riding, show_mask)
 
 ## Gắn skill vào ô hotbar `index` — skill đã nằm ở ô khác thì chuyển sang ô mới (không cho 1 skill
 ## chiếm 2 ô). Việc kiểm tra skill có được phép gắn không (ACTIVE, đã học) do nơi gọi đảm nhận, xem
@@ -765,12 +830,22 @@ func set_hotbar_slot(index: int, skill_id: String) -> void:
 func set_loop_slot(index: int, skill_id: String) -> void:
 	if index < 0 or index >= LOOP_SLOT_COUNT:
 		return
+	var old_id := loop_skill_ids[index] if index < loop_skill_ids.size() else ""
 	if skill_id != "":
 		clear_hotbar_skill(skill_id)
 		clear_loop_skill(skill_id)
 		if main_skill_id == skill_id:
 			main_skill_id = ""
 	loop_skill_ids[index] = skill_id
+	if old_id != "" and active_aura_id == old_id and old_id != skill_id:
+		active_aura_id = ""
+	if skill_id != "":
+		var sect := SectRegistry.get_by_id(sect_id)
+		if sect:
+			for s in sect.skills:
+				if s.id == skill_id and s.is_aura:
+					active_aura_id = skill_id
+					break
 
 func clear_loop_skill(skill_id: String) -> void:
 	if skill_id == "":
@@ -778,6 +853,8 @@ func clear_loop_skill(skill_id: String) -> void:
 	for i in LOOP_SLOT_COUNT:
 		if loop_skill_ids[i] == skill_id:
 			loop_skill_ids[i] = ""
+			if active_aura_id == skill_id:
+				active_aura_id = ""
 
 ## Gắn skill vào nút chính — skill đang nằm ở nút phụ nào thì rời nút đó. "" = về đòn chính mặc định.
 func set_main_skill(skill_id: String) -> void:
@@ -866,6 +943,8 @@ func to_dict() -> Dictionary:
 		"sect_name": sect_name,
 		"element": element,
 		"camp": camp,
+		"show_mask": show_mask,
+		"custom_avatar": custom_avatar,
 		"inventory": inventory.map(func(it: ItemInstance) -> Dictionary: return it.to_dict()),
 		"equipment": _equipment_to_dict(),
 		"strength": strength,
@@ -876,6 +955,7 @@ func to_dict() -> Dictionary:
 		"skill_points": skill_points,
 		"skill_levels": skill_levels,
 		"gold": gold,
+		"xu": xu,
 		"jade": jade,
 		"stamina": stamina,
 		"max_stamina": max_stamina,
@@ -889,6 +969,7 @@ func to_dict() -> Dictionary:
 		"skill_slots": skill_slots.duplicate(true),
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
+		"gm_aura_state": gm_aura_state,
 		"skill_settings": skill_settings,
 		"auto": {"mode": auto_mode, "presets": auto_presets.map(func(a: AutoSettings) -> Dictionary: return a.to_dict()),
 			"log": auto_log},
@@ -915,8 +996,8 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var profile := PlayerProfile.new()
 	profile.display_name = str(data.get("name", ""))
 	profile.gender = int(data.get("gender", Gender.MALE)) as Gender
-	profile.level = int(data.get("level", 1))
-	profile.current_exp = int(data.get("exp", 0))
+	profile.level = clampi(int(data.get("level", 1)), 1, MAX_LEVEL)
+	profile.current_exp = 0 if profile.level >= MAX_LEVEL else int(data.get("exp", 0))
 	profile.title = str(data.get("title", ""))
 	profile.fuyuan = int(data.get("fuyuan", 0))
 	profile.prestige = int(data.get("prestige", 0))
@@ -940,8 +1021,14 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.sect_id = ""
 		profile.sect_name = NO_SECT_NAME
 	profile.camp = int(data.get("camp", -1))
+	if profile.camp == Camp.Type.BEGIN and profile.has_sect():
+		profile.camp = -1
 	profile.server_seen = int(data.get("server_seen", 0))
 	profile.starter_kit = int(data.get("starter_kit", 0))
+	profile.show_mask = bool(data.get("show_mask", true))
+	profile.custom_avatar = str(data.get("custom_avatar", ""))
+	if profile.custom_avatar.strip_edges() == "" and profile.display_name != "":
+		profile.custom_avatar = CustomAvatarHelper.get_avatar_base64_cache(profile.display_name)
 	for item_data in data.get("inventory", []):
 		profile.inventory.append(ItemInstance.from_dict(item_data))
 	profile._layout_inventory()
@@ -958,6 +1045,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	for skill_id in saved_skill_levels.keys():
 		profile.skill_levels[str(skill_id)] = int(saved_skill_levels[skill_id])
 	profile.gold = int(data.get("gold", 0))
+	profile.xu = int(data.get("xu", 0))
 	profile.jade = int(data.get("jade", 0))
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))
@@ -982,6 +1070,7 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	if saved_skill_slots is Dictionary:
 		profile.skill_slots = saved_skill_slots.duplicate(true)
 	profile.active_aura_id = str(data.get("active_aura_id", ""))
+	profile.gm_aura_state = int(data.get("gm_aura_state", 0))
 	profile.storage_extra = clampi(int(data.get("storage_extra", 0)), 0, 5)
 	profile.storage.bag_count = 1 + profile.storage_extra
 	profile.storage.load_array(data.get("storage", []))

@@ -43,12 +43,15 @@ var _arena: Dictionary = {}        ## GET /v1/arena: {open, host, port, ws_url, 
 var _poll := 0.0
 var _fetching := false
 
+var _opened_at: int = 0
+
 static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> PkWindow:
 	var win := PkWindow.new(profile, on_play)
 	return SocialWindow.present(host, win, &"pk") as PkWindow
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
 	super._init("PK", "Võ Lâm Minh Chủ triệu tập anh hùng thiên hạ so tài", 720.0)
+	_opened_at = Time.get_ticks_msec()
 	_profile = profile
 	_on_play = on_play
 	if subtitle_label:
@@ -198,7 +201,7 @@ func _show_lobby() -> void:
 	_content.add_child(filter_row)
 
 	var prev_search := _search_box.text if _search_box and is_instance_valid(_search_box) else ""
-	_search_box = SocialUi.line_edit("Tìm theo ID (#...) hoặc tên người chơi")
+	_search_box = SocialUi.line_edit(tr("Tìm theo ID (#...) hoặc tên người chơi"))
 	_search_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_search_box.text = prev_search
 	_search_box.text_changed.connect(func(_t: String) -> void: _refresh_lists())
@@ -208,7 +211,7 @@ func _show_lobby() -> void:
 	_mode_filter_btn.focus_mode = Control.FOCUS_NONE
 	_mode_filter_btn.custom_minimum_size = Vector2(145, 36)
 	var modes := [MODE_ALL, PkRules.Mode.DAI_HOI, PkRules.Mode.LIEN_DAU, PkRules.Mode.THACH_DAU, PkRules.Mode.LON_XON, PkRules.Mode.TONG_KIM_LOL, PkRules.Mode.VAN_TIEU]
-	var mode_titles := ["Tất cả chế độ", "Đại Hội Võ Lâm", "Võ Lâm Liên Đấu", "Thách Đấu", "Lộn Xộn", "Tống Kim LOL", "Vận Tiêu (Long Môn Tiêu Cục)"]
+	var mode_titles := [tr("Tất cả chế độ"), tr("Đại Hội Võ Lâm"), tr("Võ Lâm Liên Đấu"), tr("Thách Đấu"), tr("Lộn Xộn"), tr("Tống Kim LOL"), tr("Vận Tiêu (Long Môn Tiêu Cục)")]
 	var selected_m_idx := 0
 	for i in modes.size():
 		_mode_filter_btn.add_item(mode_titles[i], i)
@@ -224,9 +227,9 @@ func _show_lobby() -> void:
 	_state_filter_btn = OptionButton.new()
 	_state_filter_btn.focus_mode = Control.FOCUS_NONE
 	_state_filter_btn.custom_minimum_size = Vector2(135, 36)
-	_state_filter_btn.add_item("Tất cả trạng thái", 0)
-	_state_filter_btn.add_item("● Đang chờ", 1)
-	_state_filter_btn.add_item("⚔ Đang đánh", 2)
+	_state_filter_btn.add_item(tr("Tất cả trạng thái"), 0)
+	_state_filter_btn.add_item("● " + tr("Đang chờ đối thủ"), 1)
+	_state_filter_btn.add_item("⚔ " + tr("Đang thi đấu"), 2)
 	match _state_filter:
 		PkLobby.WAITING: _state_filter_btn.selected = 1
 		PkLobby.FIGHTING: _state_filter_btn.selected = 2
@@ -260,23 +263,23 @@ func _show_lobby() -> void:
 	th_box.offset_right = -10
 	th_panel.add_child(th_box)
 
-	var th_mode := SocialUi.label("Chế độ / ID", SocialUi.MUTED, 12)
+	var th_mode := SocialUi.label(tr("Chế độ / ID"), SocialUi.MUTED, 12)
 	th_mode.custom_minimum_size.x = 140
 	th_box.add_child(th_mode)
 
-	var th_info := SocialUi.label("Thông tin phòng / Đấu thủ", SocialUi.MUTED, 12)
+	var th_info := SocialUi.label(tr("Thông tin phòng / Đấu thủ"), SocialUi.MUTED, 12)
 	th_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	th_box.add_child(th_info)
 
-	var th_slots := SocialUi.label("Số người", SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	var th_slots := SocialUi.label(tr("Số người"), SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
 	th_slots.custom_minimum_size.x = 75
 	th_box.add_child(th_slots)
 
-	var th_status := SocialUi.label("Trạng thái", SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	var th_status := SocialUi.label(tr("Trạng thái"), SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
 	th_status.custom_minimum_size.x = 95
 	th_box.add_child(th_status)
 
-	var th_action := SocialUi.label("Thao tác", SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	var th_action := SocialUi.label(tr("Thao tác"), SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
 	th_action.custom_minimum_size.x = 75
 	th_box.add_child(th_action)
 
@@ -313,12 +316,12 @@ func _show_lobby() -> void:
 	row.add_theme_constant_override("separation", 16)
 	_content.add_child(row)
 
-	var create := SocialUi.stone_button("Tạo phòng", Vector2(180, 42))
+	var create := SocialUi.stone_button(tr("Tạo phòng"), Vector2(180, 42))
 	create.disabled = reason != ""
 	create.pressed.connect(_ask_create_room)
 	row.add_child(create)
 
-	var find := SocialUi.stone_button("Tự tìm đối thủ", Vector2(180, 42))
+	var find := SocialUi.stone_button(tr("Tự tìm đối thủ"), Vector2(180, 42))
 	find.disabled = reason != ""
 	find.pressed.connect(_start_search)
 	row.add_child(find)
@@ -366,13 +369,13 @@ func _refresh_lists() -> void:
 		_room_list.add_child(_room_row(r))
 
 	if rooms.is_empty():
-		var empty_text := "Hiện chưa có phòng nào trong danh sách.\nHãy bấm [Tạo phòng] để mở phòng mới hoặc [Tự tìm đối thủ] để hệ thống tự ghép trận!"
+		var empty_text := tr("Hiện chưa có phòng nào trong danh sách.\nHãy bấm [Tạo phòng] để mở phòng mới hoặc [Tự tìm đối thủ] để hệ thống tự ghép trận!")
 		if _fetching and _arena.is_empty():
-			empty_text = "Đang tải danh sách phòng đấu..."
+			empty_text = tr("Đang tải danh sách phòng đấu...")
 		elif query != "":
-			empty_text = "Không tìm thấy phòng nào phù hợp với '%s'." % query
+			empty_text = "%s '%s'." % [tr("Không tìm thấy phòng nào phù hợp với"), query]
 		elif _state_filter != "":
-			empty_text = "Không có phòng nào ở trạng thái '%s'." % ("Đang chờ" if _state_filter == PkLobby.WAITING else "Đang đánh")
+			empty_text = "%s '%s'." % [tr("Không có phòng nào ở trạng thái"), tr("Đang chờ") if _state_filter == PkLobby.WAITING else tr("Đang đánh")]
 		var empty := SocialUi.label(empty_text, SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_room_list.add_child(empty)
@@ -536,29 +539,40 @@ func _room_row(r: Dictionary) -> Control:
 
 	if is_my_room:
 		var btn := SocialUi.stone_button("Quản lý", Vector2(70, 32))
-		btn.pressed.connect(func() -> void: _show_room(r))
+		btn.pressed.connect(func() -> void:
+			if Time.get_ticks_msec() - _opened_at >= 250:
+				_show_room(r)
+		)
 		act_col.add_child(btn)
 	elif is_waiting:
 		var btn := SocialUi.stone_button("Vào", Vector2(70, 32))
-		btn.pressed.connect(_join_room.bind(r))
+		btn.pressed.connect(func() -> void:
+			if Time.get_ticks_msec() - _opened_at >= 250:
+				_join_room(r)
+		)
 		act_col.add_child(btn)
 	elif r_mode != PkRules.Mode.TONG_KIM_LOL and r_mode != PkRules.Mode.LON_XON:
 		var btn := SocialUi.small_button("Xem")
 		btn.custom_minimum_size = Vector2(70, 32)
-		btn.pressed.connect(_watch_room.bind(r))
+		btn.pressed.connect(func() -> void:
+			if Time.get_ticks_msec() - _opened_at >= 250:
+				_watch_room(r)
+		)
 		act_col.add_child(btn)
 	else:
 		var lbl := SocialUi.label("Đang đấu", SocialUi.MUTED, 11, HORIZONTAL_ALIGNMENT_CENTER)
 		act_col.add_child(lbl)
 
-	# Nhấp vào dòng để vào hoặc xem
+	# Nhấp vào dòng để xem thông tin phòng (không tự động vào trận)
 	row_panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	row_panel.gui_input.connect(func(ev: InputEvent) -> void:
-		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+		if ev is InputEventMouseButton and not ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			if Time.get_ticks_msec() - _opened_at < 250:
+				return
 			if is_my_room:
 				_show_room(r)
 			elif is_waiting:
-				_join_room(r)
+				_show_room(r)
 			elif r_mode != PkRules.Mode.TONG_KIM_LOL and r_mode != PkRules.Mode.LON_XON:
 				_watch_room(r)
 	)
@@ -628,15 +642,22 @@ func _join_room(r: Dictionary) -> void:
 		if str(r.get("password", "")) != "" and pw != str(r["password"]):
 			_flash("Sai mật khẩu phòng.")
 			return
-		# Vào thách đấu chủ phòng (bot đại diện nếu offline)
-		var bot := PkBotProfile.create(int(r.get("level", 90)), str(r.get("sect_id", "")))
-		bot.display_name = str(r.get("host", "Đấu Thủ"))
-		var entry := PkRules.arena_entry({
-			"mode": r_mode,
-			"opponent": bot.to_dict(),
-			"room_id": str(r.get("id", ""))
-		})
-		_enter(entry)
+		# Xác nhận trước khi vào thách đấu chủ phòng (tránh click nhầm hoặc click-through)
+		var host_name := str(r.get("host", "Đấu Thủ"))
+		var host_lv := int(r.get("level", 90))
+		var sect_name := str(r.get("sect_name", "Vô môn phái"))
+		var mode_name: String = PkRules.MODE_NAMES[r_mode] if r_mode in PkRules.MODE_NAMES else "PK"
+		var confirm_msg := "Bạn có muốn vào %s thách đấu với %s (Cấp %d - %s) không?" % [mode_name, host_name, host_lv, sect_name]
+		SocialWindow.confirm(self, "Xác Nhận Thách Đấu", confirm_msg, func() -> void:
+			var bot := PkBotProfile.create(host_lv, str(r.get("sect_id", "")))
+			bot.display_name = host_name
+			var entry := PkRules.arena_entry({
+				"mode": r_mode,
+				"opponent": bot.to_dict(),
+				"room_id": str(r.get("id", ""))
+			})
+			_enter(entry)
+		)
 	)
 
 func _watch_room(r: Dictionary) -> void:
@@ -1164,7 +1185,7 @@ func _show_room(room: Dictionary, keep_timer: bool = false) -> void:
 
 	var hint_text := "Đang chờ đối thủ…"
 	if is_brawl:
-		hint_text = "Tự do so tài võ nghệ. Bấm [Bắt đầu trận] để tự động điền Bot hoặc chia sẻ ID phòng."
+		hint_text = "Tự do so tài võ nghệ. Bấm [Bắt đầu trận] để tự động điền Bot hoặc chia sẻ ID phòng." if GameModeManager.allows_bot() else "Tự do so tài võ nghệ cùng người chơi thật. Hãy chia sẻ ID phòng để mọi người cùng vào!"
 	elif is_lol:
 		if not is_full:
 			hint_text = "Đang chờ đủ người chơi (%d/%d người). Phe Tống: %d/%d · Phe Kim: %d/%d.\nHãy chia sẻ ID phòng #%s để người chơi khác tham gia!" % [
@@ -1177,7 +1198,7 @@ func _show_room(room: Dictionary, keep_timer: bool = false) -> void:
 		else:
 			hint_text = "Phòng đã đủ người và tất cả đã sẵn sàng! Chủ phòng có thể bấm [Bắt đầu trận] để khai chiến!"
 	elif is_van_tieu:
-		hint_text = "Đấu trường Vận Tiêu Biện Kinh (5vs5 xen kẽ giữa Phe Xanh & Phe Đỏ). Bấm [Bắt đầu trận] để tự động điền Bot hoặc chia sẻ ID phòng #%s." % str(room.get("id", ""))
+		hint_text = ("Đấu trường Vận Tiêu Biện Kinh (5vs5 xen kẽ giữa Phe Xanh & Phe Đỏ). Bấm [Bắt đầu trận] để tự động điền Bot hoặc chia sẻ ID phòng #%s." if GameModeManager.allows_bot() else "Đấu trường Vận Tiêu Biện Kinh cùng người chơi thật (5vs5). Hãy chia sẻ ID phòng #%s.") % str(room.get("id", ""))
 	elif _mode == PkRules.Mode.THACH_DAU:
 		hint_text = "Chia sẻ ID phòng cho đồng đội / đối thủ để vào phòng."
 	var hint := SocialUi.label(hint_text, SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1204,7 +1225,7 @@ func _show_room(room: Dictionary, keep_timer: bool = false) -> void:
 		btn_start.pressed.connect(_start_room_match)
 		row.add_child(btn_start)
 
-		if not _online() or _mode == PkRules.Mode.THACH_DAU or _mode == PkRules.Mode.LON_XON or is_lol or is_van_tieu:
+		if GameModeManager.can_add_bot() and (not _online() or _mode == PkRules.Mode.THACH_DAU or _mode == PkRules.Mode.LON_XON or is_lol or is_van_tieu):
 			var btn_bot := SocialUi.stone_button("Thêm Bot", Vector2(120, 42))
 			btn_bot.pressed.connect(_add_bot_to_room)
 			if (is_lol or is_van_tieu) and is_full:
@@ -1420,11 +1441,14 @@ func _make_solo_panel(parent: Control, members: Array, is_host: bool) -> void:
 				)
 				slot_box.add_child(kick_b)
 		else:
-			var empty_l := SocialUi.label("Slot %d: (Tự động điền Bot)" % (i + 1), SocialUi.MUTED, 12)
+			var slot_text := "Slot %d: (Tự động điền Bot)" % (i + 1) if GameModeManager.allows_bot() else "Slot %d: (Đang chờ người chơi...)" % (i + 1)
+			var empty_l := SocialUi.label(slot_text, SocialUi.MUTED, 12)
 			empty_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			slot_box.add_child(empty_l)
 
 func _add_bot_to_room() -> void:
+	if not GameModeManager.can_add_bot():
+		return
 	if not _room.is_empty():
 		if _mode == PkRules.Mode.LON_XON and str(_room.get("brawl_type", "")) == "solo":
 			var solo_slots: Array = _room.get("solo_slots", [])
@@ -1459,18 +1483,23 @@ func _start_room_match() -> void:
 		var target_k: int = int(_room.get("target_kills", 20))
 		if b_type == "solo":
 			var solo_slots: Array = _room.get("solo_slots", []).duplicate(true)
-			while solo_slots.size() < 16:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				solo_slots.append({
-					"name": bot.display_name,
-					"level": bot.level,
-					"sect_id": bot.sect_id,
-					"sect_name": sect.sect_name if sect else "Vô môn phái",
-					"ready": true,
-					"is_bot": true,
-					"bot_data": bot.to_dict()
-				})
+			if not GameModeManager.allows_bot():
+				if solo_slots.size() < 2:
+					_flash("Chế độ Online cần ít nhất 2 người chơi thật để bắt đầu!")
+					return
+			else:
+				while solo_slots.size() < 16:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					solo_slots.append({
+						"name": bot.display_name,
+						"level": bot.level,
+						"sect_id": bot.sect_id,
+						"sect_name": sect.sect_name if sect else "Vô môn phái",
+						"ready": true,
+						"is_bot": true,
+						"bot_data": bot.to_dict()
+					})
 			var entry := PkRules.arena_entry({
 				"mode": _mode,
 				"brawl_type": "solo",
@@ -1485,16 +1514,21 @@ func _start_room_match() -> void:
 			var team_sz: int = PkRules.team_size_for(_room)
 			var team_a: Array = _room.get("team_a", []).duplicate(true)
 			var team_b: Array = _room.get("team_b", []).duplicate(true)
-			while team_a.size() < team_sz:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái",
-					"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
-			while team_b.size() < team_sz:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái",
-					"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+			if not GameModeManager.allows_bot():
+				if team_a.is_empty() or team_b.is_empty():
+					_flash("Chế độ Online cần người chơi thật ở cả hai phe!")
+					return
+			else:
+				while team_a.size() < team_sz:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái",
+						"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+				while team_b.size() < team_sz:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "Vô môn phái",
+						"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
 			var my_side := "song"
 			var p_name := _profile.display_name if _profile else ""
 			for m in team_b:
@@ -1547,23 +1581,28 @@ func _start_room_match() -> void:
 		var team_sz: int = 5
 		var team_a: Array = _room.get("team_a", []).duplicate(true)
 		var team_b: Array = _room.get("team_b", []).duplicate(true)
-		# Điền bot xen kẽ giữa Phe Xanh và Phe Đỏ
-		while team_a.size() < team_sz or team_b.size() < team_sz:
-			if team_a.size() <= team_b.size() and team_a.size() < team_sz:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
-					"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "defender"})
-			elif team_b.size() < team_sz:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
-					"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "bandit"})
-			elif team_a.size() < team_sz:
-				var bot := PkBotProfile.create(_profile.level if _profile else 90)
-				var sect := SectRegistry.get_by_id(bot.sect_id)
-				team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
-					"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "defender"})
+		if not GameModeManager.allows_bot():
+			if team_a.is_empty() or team_b.is_empty():
+				_flash("Chế độ Online yêu cầu người chơi thật ở cả Phe Xanh và Phe Đỏ!")
+				return
+		else:
+			# Điền bot xen kẽ giữa Phe Xanh và Phe Đỏ
+			while team_a.size() < team_sz or team_b.size() < team_sz:
+				if team_a.size() <= team_b.size() and team_a.size() < team_sz:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+						"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "defender"})
+				elif team_b.size() < team_sz:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+						"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "bandit"})
+				elif team_a.size() < team_sz:
+					var bot := PkBotProfile.create(_profile.level if _profile else 90)
+					var sect := SectRegistry.get_by_id(bot.sect_id)
+					team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+						"ready": true, "is_bot": true, "bot_data": bot.to_dict(), "role": "defender"})
 
 		var my_side := "defender"
 		var p_name := _profile.display_name if _profile else ""
@@ -1601,17 +1640,22 @@ func _start_room_match() -> void:
 	var team_size: int = PkRules.team_size_for(_room)
 	var team_a: Array = _room.get("team_a", []).duplicate(true)
 	var team_b: Array = _room.get("team_b", []).duplicate(true)
-	# Tự động điền bot vào các slot còn trống nếu chưa đủ
-	while team_a.size() < team_size:
-		var bot := PkBotProfile.create(_profile.level if _profile else 90)
-		var sect := SectRegistry.get_by_id(bot.sect_id)
-		team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
-			"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
-	while team_b.size() < team_size:
-		var bot := PkBotProfile.create(_profile.level if _profile else 90)
-		var sect := SectRegistry.get_by_id(bot.sect_id)
-		team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
-			"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+	if not GameModeManager.allows_bot():
+		if team_b.is_empty():
+			_flash("Chế độ Online đang chờ đối thủ thật vào phòng!")
+			return
+	else:
+		# Tự động điền bot vào các slot còn trống nếu chưa đủ
+		while team_a.size() < team_size:
+			var bot := PkBotProfile.create(_profile.level if _profile else 90)
+			var sect := SectRegistry.get_by_id(bot.sect_id)
+			team_a.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+				"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
+		while team_b.size() < team_size:
+			var bot := PkBotProfile.create(_profile.level if _profile else 90)
+			var sect := SectRegistry.get_by_id(bot.sect_id)
+			team_b.append({"name": bot.display_name, "level": bot.level, "sect_id": bot.sect_id, "sect_name": sect.sect_name if sect else "",
+				"ready": true, "is_bot": true, "bot_data": bot.to_dict()})
 	var opponent_profile: Dictionary = team_b[0].get("bot_data", {}) if not team_b.is_empty() and team_b[0].has("bot_data") else {}
 
 	var my_side := "song"
@@ -1732,7 +1776,11 @@ func _process(delta: float) -> void:
 				_match_found_room(room)
 				return
 			if _search_time >= PkRules.MATCH_WAIT_SEC:
-				_match_bot()
+				if GameModeManager.allows_bot():
+					_match_bot()
+				else:
+					_flash("Hết thời gian tìm kiếm. Không tìm thấy đối thủ trực tuyến phù hợp, vui lòng thử lại sau!")
+					_show_lobby()
 
 ## Ghép thành công với 1 phòng có sẵn trong sảnh
 func _match_found_room(room: Dictionary) -> void:
@@ -1749,18 +1797,19 @@ func _match_found_room(room: Dictionary) -> void:
 		var target_k: int = int(room.get("target_kills", 20))
 		if b_type == "solo":
 			var solo_slots: Array = (room.get("solo_slots", []) as Array).duplicate(true)
-			while solo_slots.size() < 16:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				solo_slots.append({
-					"name": b.display_name,
-					"level": b.level,
-					"sect_id": b.sect_id,
-					"sect_name": s.sect_name if s else "Vô môn phái",
-					"ready": true,
-					"is_bot": true,
-					"bot_data": b.to_dict()
-				})
+			if GameModeManager.allows_bot():
+				while solo_slots.size() < 16:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					solo_slots.append({
+						"name": b.display_name,
+						"level": b.level,
+						"sect_id": b.sect_id,
+						"sect_name": s.sect_name if s else "Vô môn phái",
+						"ready": true,
+						"is_bot": true,
+						"bot_data": b.to_dict()
+					})
 			_found_entry = PkRules.arena_entry({
 				"mode": r_mode,
 				"brawl_type": "solo",
@@ -1773,14 +1822,15 @@ func _match_found_room(room: Dictionary) -> void:
 			var team_sz: int = PkRules.team_size_for(room)
 			var team_a: Array = (room.get("team_a", []) as Array).duplicate(true)
 			var team_b: Array = (room.get("team_b", []) as Array).duplicate(true)
-			while team_a.size() < team_sz:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict()})
-			while team_b.size() < team_sz:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				team_b.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict()})
+			if GameModeManager.allows_bot():
+				while team_a.size() < team_sz:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict()})
+				while team_b.size() < team_sz:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					team_b.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict()})
 			_found_entry = PkRules.arena_entry({
 				"mode": r_mode,
 				"brawl_type": "team",
@@ -1796,19 +1846,20 @@ func _match_found_room(room: Dictionary) -> void:
 		var team_sz: int = PkRules.team_size_for(room)
 		var team_a: Array = (room.get("team_a", []) as Array).duplicate(true)
 		var team_b: Array = (room.get("team_b", []) as Array).duplicate(true)
-		while team_a.size() < team_sz or team_b.size() < team_sz:
-			if team_a.size() <= team_b.size() and team_a.size() < team_sz:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "defender"})
-			elif team_b.size() < team_sz:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				team_b.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "bandit"})
-			elif team_a.size() < team_sz:
-				var b := PkBotProfile.create(host_lv)
-				var s := SectRegistry.get_by_id(b.sect_id)
-				team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "defender"})
+		if GameModeManager.allows_bot():
+			while team_a.size() < team_sz or team_b.size() < team_sz:
+				if team_a.size() <= team_b.size() and team_a.size() < team_sz:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "defender"})
+				elif team_b.size() < team_sz:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					team_b.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "bandit"})
+				elif team_a.size() < team_sz:
+					var b := PkBotProfile.create(host_lv)
+					var s := SectRegistry.get_by_id(b.sect_id)
+					team_a.append({"name": b.display_name, "level": b.level, "sect_id": b.sect_id, "sect_name": s.sect_name if s else "", "ready": true, "is_bot": true, "bot_data": b.to_dict(), "role": "defender"})
 
 		var c_tier_id := str(room.get("cart_tier_id", "bronze"))
 		var c_cfg := {}
@@ -1872,8 +1923,12 @@ func _match_found_room(room: Dictionary) -> void:
 			SocialUi.GOLD, 18, HORIZONTAL_ALIGNMENT_CENTER))
 	_content.add_child(SocialUi.label("Đang tiến vào chiến trường…", SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER))
 
-## Hết thời gian chờ: bot cùng cấp — Đại hội võ lâm cùng phái, Liên đấu phái ngẫu nhiên, Lộn xộn loạn đả 16 người, Vận Tiêu 5v5.
+## Hết thời gian chờ: bot cùng cấp — Đại hội võ lâm cùng phái, Liên đấu phái ngẫu nhiên, Lộn xộn loạn đả 16 người, Vận Tiêu 5v5 (chỉ dùng cho Offline).
 func _match_bot() -> void:
+	if not GameModeManager.allows_bot():
+		_flash("Chế độ Online không sử dụng bot!")
+		_show_lobby()
+		return
 	if _mode == PkRules.Mode.VAN_TIEU:
 		var esc_win_script: GDScript = load("res://ui/events/escort_window.gd")
 		var suitable_tier: Dictionary = esc_win_script.CARTS[1]

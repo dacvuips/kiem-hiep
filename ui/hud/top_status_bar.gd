@@ -104,6 +104,26 @@ func _ready() -> void:
 	_disguise_tag.visible = false
 	add_child(_disguise_tag)
 
+	HudLayout.add_listener(apply_hud_layout)
+	apply_hud_layout()
+
+func _exit_tree() -> void:
+	HudLayout.remove_listener(apply_hud_layout)
+
+func apply_hud_layout() -> void:
+	var elem: Dictionary = HudLayout.get_element("top_bar")
+	var sc: float = float(elem.get("scale", 1.0))
+	var ox: float = float(elem.get("offset_x", 0.0))
+	var oy: float = float(elem.get("offset_y", 0.0))
+	var base_w := PANEL_SIZE.x * SCALE
+	var base_h := PANEL_SIZE.y * SCALE + 14.0
+	pivot_offset = Vector2(base_w * 0.5, 0.0)
+	scale = Vector2.ONE * sc
+	offset_left = -base_w * 0.5 + ox
+	offset_right = base_w * 0.5 + ox
+	offset_top = 2.0 + oy
+	offset_bottom = 2.0 + base_h + oy
+
 func _make_label(rect: Rect2, color: Color) -> Label:
 	var label := Label.new()
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -133,7 +153,6 @@ func _make_bar(key: String) -> Dictionary:
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bar)
 	return {"bar": bar}
-
 
 static func _bold_font() -> Font:
 	return GameUi.game_font_bold()   ## chữ đậm trong game: font chung GameUi

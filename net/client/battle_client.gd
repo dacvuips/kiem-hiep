@@ -1,5 +1,8 @@
 extends CanvasLayer
 class_name BattleClient
+
+const VsScoreBar := preload("res://ui/common/vs_score_bar.gd")
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
 ## Phía game của CHIẾN TRƯỜNG TỐNG KIM (BattleServer ở server): Main thêm node này khi vào trận từ màn "Vượt Ải" tab Ải.
 ##   - Kết nối xong -> gửi báo danh phe đã chọn; server từ chối (lệch quân, đổi phe, chưa đủ cấp...) -> báo lý do, về Character Hub.
 ##   - Bảng nhỏ giữa trên màn hình: giai đoạn + đếm ngược, số người / điểm 2 phe, điểm / hạ / chết của mình.
@@ -21,6 +24,7 @@ var _camps := {}                    ## khu "1" / "2" -> {home: Vector2, rect: Re
 var area := ""                      ## khu doanh trại phe mình trận này (server bốc thăm, gói "joined")
 var _joined := false
 var _phase := ""
+var _vs_bar: VsScoreBar
 var _phase_label: Label
 var _sides_label: Label
 var _me_label: Label
@@ -34,6 +38,7 @@ static func create(battle_side: String, battle_map_id: int) -> BattleClient:
 	return b
 
 func _ready() -> void:
+	add_to_group("battle_client")
 	layer = 20
 	_load_camps()
 	_build_hud()
@@ -61,17 +66,24 @@ func _build_hud() -> void:
 	anchor.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(anchor)
+
+	# Banner tỉ số VS chuẩn Tống - Kim
+	_vs_bar = VsScoreBar.new()
+	_vs_bar.set_sides("Tống", 0, 0, "Kim")
+	_vs_bar.position = Vector2(-230, 48)
+	anchor.add_child(_vs_bar)
+
 	var panel := GameUi.panel(GameUi.PANEL)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.position = Vector2(-210, 52)
-	panel.custom_minimum_size.x = 420
+	panel.position = Vector2(-230, 128)
+	panel.custom_minimum_size.x = 460
 	anchor.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
 	panel.add_child(box)
-	_phase_label = GameUi.label("Chiến Trường Tống Kim — đang báo danh phe %s…" % SIDE_NAMES.get(side, "?"), GameUi.TITLE, 15, HORIZONTAL_ALIGNMENT_CENTER)
-	_sides_label = GameUi.label("", GameUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER)
-	_me_label = GameUi.label("", GameUi.LABEL_GREEN, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	_phase_label = GameUi.label("Chiến Trường Tống Kim — đang báo danh phe %s…" % SIDE_NAMES.get(side, "?"), GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	_sides_label = GameUi.label("", GameUi.TEXT, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	_me_label = GameUi.label("", GameUi.LABEL_GREEN, 12, HORIZONTAL_ALIGNMENT_CENTER)
 	for l in [_phase_label, _sides_label, _me_label]:
 		box.add_child(l)
 	var right := Control.new()
@@ -144,7 +156,12 @@ func _on_message(msg: Dictionary) -> void:
 			var w := str(msg.get("winner", ""))
 			var me: Dictionary = msg.get("me", {})
 			_phase = "ended"
-			_phase_label.text = "Phe %s thắng!  %d : %d" % [SIDE_NAMES.get(w, "?"), int(msg.get("song_points", 0)), int(msg.get("jin_points", 0))]
+			var song_pts := int(msg.get("song_points", 0))
+			var jin_pts := int(msg.get("jin_points", 0))
+			if _vs_bar:
+				_vs_bar.set_scores(song_pts, jin_pts)
+				_vs_bar.set_timer("Kết thúc")
+			_phase_label.text = "Phe %s thắng!  %d : %d" % [SIDE_NAMES.get(w, "?"), song_pts, jin_pts]
 			_me_label.text = "Bạn: %d điểm · hạ %d · chết %d" % [int(me.get("points", 0)), int(me.get("kills", 0)), int(me.get("deaths", 0))]
 			var rw: Dictionary = msg.get("reward", {})
 			if not rw.is_empty():
@@ -156,9 +173,16 @@ func _on_message(msg: Dictionary) -> void:
 func _on_state(s: Dictionary) -> void:
 	_phase = str(s.get("phase", ""))
 	var left := int(s.get("left", 0))
+	if _phase == "signup" and left <= 3 and left > 0:
+		CountdownOverlay.start(self)
+	var song_pts := int(s.get("song_points", 0))
+	var jin_pts := int(s.get("jin_points", 0))
+	if _vs_bar:
+		_vs_bar.set_scores(song_pts, jin_pts)
+		_vs_bar.set_timer("%02d:%02d" % [left / 60, left % 60])
 	_phase_label.text = "%s · %02d:%02d" % [PHASE_NAMES.get(_phase, _phase), left / 60, left % 60]
-	_sides_label.text = "Tống %d người · %d điểm      Kim %d người · %d điểm" % [int(s.get("song", 0)), int(s.get("song_points", 0)),
-		int(s.get("jin", 0)), int(s.get("jin_points", 0))]
+	_sides_label.text = "Tống %d người · %d điểm      Kim %d người · %d điểm" % [int(s.get("song", 0)), song_pts,
+		int(s.get("jin", 0)), jin_pts]
 	var me: Dictionary = s.get("me", {})
 	_me_label.text = "Bạn (%s): %d điểm · hạ %d · chết %d" % [SIDE_NAMES.get(side, "?"), int(me.get("points", 0)), int(me.get("kills", 0)), int(me.get("deaths", 0))]
 	_confine(_phase == "signup")
@@ -189,8 +213,13 @@ func _on_disconnected(code: String, message: String) -> void:
 	if code in ["battle_end", "battle_no_side"]:
 		_leave(message)
 
+var _leaving: bool = false
+
 ## Báo lý do rồi về Character Hub.
 func _leave(message: String) -> void:
+	if not is_inside_tree() or _leaving:
+		return
+	_leaving = true
 	_phase_label.text = message
 	_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_sides_label.text = "Đang trở về…"

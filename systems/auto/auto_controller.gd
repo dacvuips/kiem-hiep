@@ -57,6 +57,9 @@ var _leader: Node2D = null
 var _leader_scan := 0.0
 var _replan := 0.0
 var _potion_ready_ms := 0
+var _mp_potion_ready_ms := 0
+var _team_tick := 0.0
+var _team_skip := {}         ## eid -> hết bỏ qua lúc (ms)
 
 func _init(owner_player: Node2D) -> void:
 	player = owner_player
@@ -86,6 +89,7 @@ func tick(delta: float, on: bool) -> void:
 	_rescore -= delta
 	_leader_scan -= delta
 	_replan -= delta
+	_team_tick -= delta
 	_think -= delta
 	if _think > 0.0:
 		return
@@ -93,6 +97,9 @@ func tick(delta: float, on: bool) -> void:
 	if Time.get_ticks_msec() < _paused_until_ms or player.is_dead():
 		return
 	var s := settings()
+	if _team_tick <= 0.0:
+		_team_tick = 2.5
+		_tick_team(s)
 	if _tick_recovery(s):
 		return
 	if _resting:
@@ -157,8 +164,10 @@ func _start() -> void:
 	_think = 0.0
 	_route_index = 0
 	_route_idle = 0.0
+	_team_tick = 0.0
 	_target_skip.clear()
 	_loot_skip.clear()
+	_team_skip.clear()
 	apply_settings()
 	player.notify("Bắt đầu auto — %s" % ("PK" if GameManager.local_profile and GameManager.local_profile.auto_mode == AutoSettings.Mode.PK else "Luyện công"))
 
@@ -182,17 +191,24 @@ func _drop_target() -> void:
 ## true = đang bận hồi phục (bỏ qua phần còn lại của lượt này).
 func _tick_recovery(s: AutoSettings) -> bool:
 	var hp_pct: float = player.health / maxf(player.max_health, 1.0) * 100.0
+	var profile := GameManager.local_profile
 	var reason := ""
 	if s.tdp_low_dura_on and _lowest_durability_pct() < s.tdp_low_dura:
 		reason = "Độ bền trang bị thấp"
 	elif s.tdp_bag_full and _bag_full():
 		reason = "Hành trang đầy"
+	elif s.tdp_no_hp_potion and s.hp_on and hp_pct < s.hp_lv1 and profile != null and not _has_potion(profile):
+		reason = "Hết bình sinh lực"
+	elif s.tdp_no_mp_potion and s.mp_on and ("mana" in player) and ("max_mana" in player) and profile != null and not _has_mp_potion(profile) and (player.mana / maxf(player.max_mana, 1.0) * 100.0 < s.mp_lv1):
+		reason = "Hết bình nội lực"
 	if reason != "":
 		_use_tdp(s, reason)
 		return true
 	## Máu dưới Mức 1: uống thuốc (không chiếm lượt — vẫn đánh tiếp); hết thuốc thì ngồi thiền (dưới) khi quanh mình không có địch.
 	if not _resting and s.hp_on and hp_pct < s.hp_lv1:
 		_try_potion(s)
+	if not _resting and s.mp_on:
+		_try_mp_potion(s)
 	if _resting:
 		if not player.is_sitting():
 			_resting = false        ## bị đánh -> đã đứng dậy, đánh trả
@@ -201,7 +217,7 @@ func _tick_recovery(s: AutoSettings) -> bool:
 			player.toggle_sit()
 			_resting = false
 		return true
-	if s.hp_on and hp_pct < s.hp_lv1 and not _has_potion(GameManager.local_profile) and _find_target(s, true) == null:
+	if s.hp_on and hp_pct < s.hp_lv1 and profile != null and not _has_potion(profile) and _find_target(s, true) == null:
 		_drop_target()
 		if not player.is_sitting():
 			player.toggle_sit()
@@ -250,6 +266,61 @@ func _drink_one(profile: PlayerProfile) -> bool:
 		var total := 0.0
 		for e in it.get_base().get("effects", []):
 			if str(e[0]) == "lifepotion_v":
+				total += float(e[1]) * float(e[2])
+		if best < 0 or total > best_total:
+			best = i
+			best_total = total
+	if best < 0:
+		return false
+	var item: ItemInstance = profile.inventory[best]
+	if item.count > 1:
+		item.count -= 1
+	else:
+		profile.inventory.remove_at(best)
+	PotionEffect.drink(player, item)
+	return true
+
+## Thuốc hồi nội lực trong túi: nội lực dưới Mức 1 -> 1 bình mỗi mp_ms1; dưới Mức 2 -> mp_count2 bình mỗi mp_ms2.
+func _try_mp_potion(s: AutoSettings) -> bool:
+	if not s.mp_on or not ("mana" in player) or not ("max_mana" in player):
+		return false
+	var profile := GameManager.local_profile
+	if profile == null:
+		return false
+	var now := Time.get_ticks_msec()
+	if now < _mp_potion_ready_ms:
+		return _has_mp_potion(profile)
+	var mp_pct: float = player.mana / maxf(player.max_mana, 1.0) * 100.0
+	if mp_pct >= s.mp_lv1:
+		return false
+	var urgent := mp_pct < s.mp_lv2
+	var used := 0
+	for i in (maxi(1, s.mp_count2) if urgent else 1):
+		if _drink_one_mp(profile):
+			used += 1
+	if used == 0:
+		return false
+	_mp_potion_ready_ms = now + (s.mp_ms2 if urgent else s.mp_ms1)
+	SaveManager.save_profile(profile)
+	return true
+
+func _has_mp_potion(profile: PlayerProfile) -> bool:
+	for it in profile.inventory:
+		if PotionEffect.restores_mana(it):
+			return true
+	return false
+
+## Uống 1 bình hồi nội lực tốt nhất trong túi
+func _drink_one_mp(profile: PlayerProfile) -> bool:
+	var best := -1
+	var best_total := 0.0
+	for i in profile.inventory.size():
+		var it: ItemInstance = profile.inventory[i]
+		if not PotionEffect.restores_mana(it):
+			continue
+		var total := 0.0
+		for e in it.get_base().get("effects", []):
+			if str(e[0]) == "manapotion_v" or str(e[0]) == "manareplenish_v":
 				total += float(e[1]) * float(e[2])
 		if best < 0 or total > best_total:
 			best = i
@@ -444,7 +515,10 @@ func _attack(s: AutoSettings) -> void:
 		return
 	var skill := _attack_skill(s)
 	var radius: float = player.get_skill_radius(skill)
-	if _logic_dist(target) <= radius:
+	var stop_dist := _stop_distance(s)
+	var dist := _logic_dist(target)
+	## Đã tới cự ly tiếp cận (hoặc trong tầm đánh nếu không bật truy đuổi) -> dừng chạy và ra chiêu
+	if dist <= stop_dist or (dist <= radius and not s.chase):
 		if _chasing and player.is_moving_to_target():
 			player.stop_walking()
 		_chasing = false
@@ -619,6 +693,59 @@ func _update_leader(s: AutoSettings) -> void:
 func _leader_far(s: AutoSettings) -> bool:
 	return _leader != null and is_instance_valid(_leader) and (_leader is Node2D) \
 			and _logic_dist(_leader) > float(s.follow_leader_dist)
+
+## Tự động tổ đội: quét mời người xung quanh (invite_mode) và tự duyệt/từ chối người xin vào (accept_mode)
+func _tick_team(s: AutoSettings) -> void:
+	if not s.team_on:
+		return
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var team := SocialHub.of(profile).team
+	## 1. Tự duyệt / từ chối người xin gia nhập đội (khi mình là đội trưởng)
+	if team.is_captain() and not team.applicants.is_empty():
+		for m in team.applicants.duplicate():
+			var should_accept := false
+			if s.accept_mode == 1:
+				should_accept = true
+			elif s.accept_mode == 2:
+				for n in s.team_list:
+					if str(n).strip_edges().to_lower() == m.name.strip_edges().to_lower():
+						should_accept = true
+						break
+			if should_accept:
+				team.accept_applicant(m)
+			elif s.accept_mode == 0:
+				team.reject_applicant(m)
+
+	## 2. Tự mời người chơi xung quanh (1 = Mời tất cả, 2 = Theo danh sách)
+	if s.invite_mode == 0 or not NetClient.is_in_world():
+		return
+	if team.in_team() and (not team.is_captain() or team.is_full()):
+		return
+	var now := Time.get_ticks_msec()
+	for node in get_tree().get_nodes_in_group("followable"):
+		if node == player or not (node is RemotePlayer):
+			continue
+		var rp := node as RemotePlayer
+		if rp.display_name == "" or team._in_team_name(rp.display_name):
+			continue
+		if _logic_dist(rp) > float(s.scan_range):
+			continue
+		var skip_until: int = _team_skip.get(rp.eid, 0)
+		if now < skip_until:
+			continue
+		var should_invite := false
+		if s.invite_mode == 1:
+			should_invite = true
+		elif s.invite_mode == 2:
+			for n in s.team_list:
+				if str(n).strip_edges().to_lower() == rp.display_name.strip_edges().to_lower():
+					should_invite = true
+					break
+		if should_invite:
+			_team_skip[rp.eid] = now + 30000   ## không spam mời cùng 1 người trong 30s
+			NetClient.send_team(SocialServer.TEAM_INVITE, rp.eid)
 
 # ------------------------------------------------------------------ tiện ích
 

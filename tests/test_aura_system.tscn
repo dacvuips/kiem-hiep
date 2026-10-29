@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://i5aehfoqsuew"]
+
+[ext_resource type="Script" path="res://tests/test_aura_system.gd" id="1_test"]
+
+[node name="TestAuraSystem" type="Node"]
+script = ExtResource("1_test")

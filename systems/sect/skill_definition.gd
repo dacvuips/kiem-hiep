@@ -147,6 +147,16 @@ func get_effect_radius_px() -> float:
 		return 0.0
 	return (vltk_damage_range / 2 + 0.5) * VLTK_CELL_PIXELS
 
+## Tầm thi triển hiệu dụng (pixel) tại cấp `level`:
+## Nếu skill có thuộc tính động "skill_attackradius" trong vltk_attribs (theo lua VLTK gốc),
+## tính theo cấp (eval_level_points). Nếu không có thì fallback sang vltk_attack_radius (tĩnh).
+func get_attack_radius_at_level(level: int = 1) -> float:
+	if vltk_attribs.has("skill_attackradius"):
+		var val := get_attrib("skill_attackradius", level).x
+		if val > 0:
+			return float(val)
+	return float(vltk_attack_radius)
+
 const VLTK_GAME_FPS := 18.0  ## GAME_FPS trong GameDataDef.h gốc
 
 ## Giá trị 3 thành phần của 1 thuộc tính tại `level` — Vector3i.ZERO nếu skill không có thuộc tính đó.
@@ -168,13 +178,18 @@ const HIT_ATTRIBS := ["attackrating_p", "attackrating_v", "ignoredefense_p", "ma
 	"physicsdamage_v", "colddamage_v", "firedamage_v", "lightingdamage_v", "poisondamage_v", "stun_p",
 	"ignorenegativestate_p", "randmove"]
 
-## Skill buff/bùa: chủ động, không phải hào quang, CHỈ có thuộc tính trạng thái (không gây damage).
-## target_enemy = bùa (bắn ra, trúng địch thì áp lên địch); còn lại = buff lên chính mình.
+## Skill buff/bùa: chủ động, không phải hào quang.
+## target_enemy = false: buff lên chính mình/đồng đội (kể cả buff tăng lực đánh, tương khắc ngũ hành...).
+## target_enemy = true: bùa chú (áp lên kẻ địch, không phải đòn đánh sát thương ngũ hành trực tiếp).
 func is_state_skill() -> bool:
-	if category != SkillCategory.ACTIVE or is_aura or vltk_attribs.is_empty():
+	if category != SkillCategory.ACTIVE or is_aura:
+		return false
+	if not target_enemy:
+		return true
+	if vltk_attribs.is_empty():
 		return false
 	for attrib_name in vltk_attribs:
-		if attrib_name in HIT_ATTRIBS:
+		if attrib_name in ["physicsdamage_v", "colddamage_v", "firedamage_v", "lightingdamage_v", "poisondamage_v"]:
 			return false
 	return true
 
@@ -187,7 +202,10 @@ func get_state_payload(level: int) -> Dictionary:
 		var v := get_attrib(attrib_name, level)
 		attribs[attrib_name] = Vector3i(v.x, 0, 0)
 		frames = maxi(frames, v.y)
-	return {"attribs": attribs, "seconds": frames_to_seconds(frames)}
+	var seconds := frames_to_seconds(frames)
+	if seconds <= 0.0:
+		seconds = 30.0  ## mặc định 30 giây cho buff chủ động không ghi rõ thời gian trong attribs
+	return {"attribs": attribs, "seconds": seconds}
 
 ## Mọi thuộc tính tại `level` — {tên: Vector3i} — để đưa vào MagicAttribTable/CombatantStats.build().
 func get_attribs_at_level(level: int) -> Dictionary:
@@ -244,6 +262,15 @@ func interpolate_at_level(value_at_level_1: float, value_at_max_level: float, at
 		return value_at_level_1
 	var t := clampf(float(at_level - 1) / float(max_level - 1), 0.0, 1.0)
 	return floorf(lerpf(value_at_level_1, value_at_max_level, t))
+
+## Tiêu hao nội lực tại cấp `at_level` — đọc từ stat_lines (dòng "Tiêu hao nội lực") hoặc mana_cost mô phỏng.
+func get_mana_cost_at_level(at_level: int) -> int:
+	for line in stat_lines:
+		if line and "tiêu hao nội lực" in line.label.to_lower():
+			return maxi(0, int(interpolate_at_level(line.value_at_level_1, line.value_at_max_level, at_level)))
+	if mana_cost > 0.0:
+		return int(mana_cost)
+	return 0
 
 ## Skill được phép gắn vào nút skill ngoài trận (nút chính lẫn 4 nút phụ): phải thi triển được
 ## (ACTIVE — kể cả skill buff), không phải skill con tự động/đang ẩn khỏi bảng. Đòn chính mặc định

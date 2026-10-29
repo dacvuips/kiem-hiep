@@ -253,7 +253,7 @@ func _init() -> void:
 	tab_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for i in TAB_TITLES.size():
 		var b := Button.new()
-		b.text = TAB_TITLES[i]
+		b.text = tr(TAB_TITLES[i])
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(0, 28)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -267,7 +267,7 @@ func _init() -> void:
 	# Popup Menu cho Tab Tinh Luyện
 	_refine_popup = PopupMenu.new()
 	for i in REFINE_SUB_NAMES.size():
-		_refine_popup.add_item(REFINE_SUB_NAMES[i], i)
+		_refine_popup.add_item(tr(REFINE_SUB_NAMES[i]), i)
 	_refine_popup.id_pressed.connect(_on_refine_sub_selected)
 	add_child(_refine_popup)
 
@@ -321,14 +321,14 @@ func _init() -> void:
 
 	var act_box := HBoxContainer.new()
 	act_box.alignment = BoxContainer.ALIGNMENT_END
-	_action_button = SocialUi.stone_button("Chế tạo")
+	_action_button = SocialUi.stone_button(tr("Chế tạo"))
 	_action_button.custom_minimum_size = Vector2(105, 30)
 	_action_button.pressed.connect(_make)
 	act_box.add_child(_action_button)
 	right_vbox.add_child(act_box)
 
 	# 3. Lưới chọn đồ từ Hành trang
-	_grid_title = SocialUi.label("Hành trang — chọn nguyên liệu:", SocialUi.LABEL_BLUE, 12)
+	_grid_title = SocialUi.label(tr("Hành trang — chọn nguyên liệu:"), SocialUi.LABEL_BLUE, 12)
 	_grid_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_grid_title)
 
@@ -337,7 +337,7 @@ func _init() -> void:
 	_grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_grid_scroll.set_drag_forwarding(Callable(), _can_drop_on_remove_zone, _drop_on_remove_zone)
 	body.add_child(_grid_scroll)
-	TouchScrollHelperScript.attach(_grid_scroll, _grid_scroll)
+	TouchScrollHelperScript.attach(_grid_scroll, body)
 
 	_grid = GridContainer.new()
 	_grid.columns = GRID_COLUMNS
@@ -354,12 +354,12 @@ func _init() -> void:
 	bottom_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	bottom_row.add_theme_constant_override("separation", 24)
 
-	var clear_btn := SocialUi.stone_button("Bỏ hết")
+	var clear_btn := SocialUi.stone_button(tr("Bỏ hết"))
 	clear_btn.custom_minimum_size = Vector2(85, 28)
 	clear_btn.pressed.connect(clear_all_slots)
 	bottom_row.add_child(clear_btn)
 
-	var close_btn := SocialUi.stone_button("Đóng")
+	var close_btn := SocialUi.stone_button(tr("Đóng"))
 	close_btn.custom_minimum_size = Vector2(120, 28)
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
 	bottom_row.add_child(close_btn)
@@ -390,7 +390,7 @@ func _switch_tab(tab_idx: int) -> void:
 	for i in _tab_buttons.size():
 		var b: Button = _tab_buttons[i]
 		if i == Tab.REFINE:
-			b.text = "Tinh luyện ▼"
+			b.text = tr("Tinh luyện ▼")
 		_style_tab_button(b, i == tab_idx)
 
 	var op := _current_op()
@@ -491,15 +491,15 @@ func _layout_refine_slots() -> void:
 	if _refine_sub == RefineSub.KILLER:
 		var start_x := 15.0
 		for i in 5:
-			var btn := _create_slot_btn(i, Vector2(start_x + i * 48.0, 120.0), Vector2(44, 44), "Lệnh\n%d" % (i + 1), true)
+			var btn := _create_slot_btn(i, Vector2(start_x + i * 48.0, 120.0), Vector2(44, 44), "%s\n%d" % [tr("Lệnh"), i + 1], true)
 			_slot_container.add_child(btn)
 		return
 
-	var labels := ["Nhẫn", "Ngọc bội", "Dây chuyền"]
+	var labels := [tr("Nhẫn"), tr("Ngọc bội"), tr("Dây chuyền")]
 	if _refine_sub == RefineSub.UPGRADE_XJ:
-		labels = ["Huyền Tinh 1", "Huyền Tinh 2", "Huyền Tinh 3"]
+		labels = ["%s 1" % tr("Huyền Tinh"), "%s 2" % tr("Huyền Tinh"), "%s 3" % tr("Huyền Tinh")]
 	elif _refine_sub == RefineSub.UPGRADE_PROP:
-		labels = ["Khoáng 1", "Khoáng 2", "Khoáng 3"]
+		labels = ["%s 1" % tr("Khoáng"), "%s 2" % tr("Khoáng"), "%s 3" % tr("Khoáng")]
 
 	var top_btn := _create_slot_btn(0, Vector2(108, 25), Vector2(46, 46), labels[0], true, Color(1.0, 0.55, 0.1, 0.7))
 	var left_btn := _create_slot_btn(1, Vector2(36, 172), Vector2(46, 46), labels[1], true, Color(0.2, 0.85, 0.35, 0.7))
@@ -509,29 +509,29 @@ func _layout_refine_slots() -> void:
 	_slot_container.add_child(right_btn)
 
 func _layout_distill_slots() -> void:
-	var equip_btn := _create_equip_btn(0, Vector2(12, 70), Vector2(72, 144), "Trang bị\nmàu xanh")
+	var equip_btn := _create_equip_btn(0, Vector2(12, 70), Vector2(72, 144), tr("Trang bị\nmàu xanh"))
 	_slot_container.add_child(equip_btn)
 
-	var xj_btn := _create_slot_btn(1, Vector2(98, 76), Vector2(42, 42), "Huyền Tinh", false)
-	var ore_btn := _create_slot_btn(2, Vector2(98, 150), Vector2(42, 42), "Nguyên\nkhoáng", false)
+	var xj_btn := _create_slot_btn(1, Vector2(98, 76), Vector2(42, 42), tr("Huyền Tinh"), false)
+	var ore_btn := _create_slot_btn(2, Vector2(98, 150), Vector2(42, 42), tr("Nguyên\nkhoáng"), false)
 	_slot_container.add_child(xj_btn)
 	_slot_container.add_child(ore_btn)
 
 	_add_alt_grid(Vector2(154, 70), 2, 3, 40.0, 4.0, 6)
 
 func _layout_forge_slots() -> void:
-	var equip_btn := _create_equip_btn(0, Vector2(85, 68), Vector2(76, 152), "Trang bị\nxanh/trắng")
+	var equip_btn := _create_equip_btn(0, Vector2(85, 68), Vector2(76, 152), tr("Trang bị\nxanh/trắng"))
 	_slot_container.add_child(equip_btn)
 
-	var xj_btn := _create_slot_btn(1, Vector2(174, 42), Vector2(44, 44), "Huyền Tinh", false)
+	var xj_btn := _create_slot_btn(1, Vector2(174, 42), Vector2(44, 44), tr("Huyền Tinh"), false)
 	_slot_container.add_child(xj_btn)
 
 func _layout_enchase_slots() -> void:
-	var equip_btn := _create_equip_btn(0, Vector2(12, 70), Vector2(72, 144), "Trang bị\nHuyền Tinh")
+	var equip_btn := _create_equip_btn(0, Vector2(12, 70), Vector2(72, 144), tr("Trang bị\nHuyền Tinh"))
 	_slot_container.add_child(equip_btn)
 
-	var xj_btn := _create_slot_btn(1, Vector2(98, 76), Vector2(42, 42), "Huyền Tinh", false)
-	var ore_btn := _create_slot_btn(2, Vector2(98, 150), Vector2(42, 42), "Khoáng\nthạch", false)
+	var xj_btn := _create_slot_btn(1, Vector2(98, 76), Vector2(42, 42), tr("Huyền Tinh"), false)
+	var ore_btn := _create_slot_btn(2, Vector2(98, 150), Vector2(42, 42), tr("Khoáng\nthạch"), false)
 	_slot_container.add_child(xj_btn)
 	_slot_container.add_child(ore_btn)
 
@@ -542,7 +542,7 @@ func _layout_dopho_slots() -> void:
 		Vector2(36, 26), Vector2(182, 26), Vector2(212, 125),
 		Vector2(182, 222), Vector2(36, 222), Vector2(6, 125)
 	]
-	var labels := ["Đồ phổ", "Khoáng 1", "Khoáng 2", "Bí kíp", "Khoáng 3", "Khoáng 4"]
+	var labels := [tr("Đồ phổ"), "%s 1" % tr("Khoáng"), "%s 2" % tr("Khoáng"), tr("Bí kíp"), "%s 3" % tr("Khoáng"), "%s 4" % tr("Khoáng")]
 	for i in 6:
 		var btn := _create_slot_btn(i, pos_list[i], Vector2(44, 44), labels[i], true, Color(0.95, 0.78, 0.25, 0.6))
 		_slot_container.add_child(btn)
@@ -551,7 +551,7 @@ func _layout_dopho_slots() -> void:
 
 func _add_alt_grid(origin: Vector2, cols: int, rows: int, cell_size: float, sep: float, max_count: int) -> void:
 	var wmark := Label.new()
-	wmark.text = "Có thể chọn\nnguyên liệu"
+	wmark.text = tr("Có thể chọn\nnguyên liệu")
 	wmark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	wmark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	wmark.position = origin
@@ -726,8 +726,8 @@ func _fill_candidate_grid() -> void:
 
 	var defs := _current_slot_defs()
 	var kind := "alt" if _target == ALT_TARGET else (str(defs[_target]["kind"]) if _target < defs.size() else "")
-	var label := "vật phẩm phụ" if _target == ALT_TARGET else (str(defs[_target]["label"]) if _target < defs.size() else "")
-	_grid_title.text = "Hành trang — chọn %s:" % label.to_lower()
+	var raw_label := "vật phẩm phụ" if _target == ALT_TARGET else (str(defs[_target]["label"]) if _target < defs.size() else "")
+	_grid_title.text = "%s — %s %s:" % [tr("Hành trang"), tr("chọn"), tr(raw_label).to_lower()]
 
 	if _profile == null or kind == "":
 		_grid_scroll.visible = false
@@ -744,7 +744,7 @@ func _fill_candidate_grid() -> void:
 		n += 1
 
 	if n == 0:
-		_grid_title.text = "Gợi ý: Nhấp hoặc kéo thả vật phẩm từ Hành trang để đặt vào ô."
+		_grid_title.text = tr("Gợi ý: Nhấp hoặc kéo thả vật phẩm từ Hành trang để đặt vào ô.")
 		_grid_title.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65))
 		_grid_scroll.visible = false
 	else:
@@ -770,7 +770,7 @@ func _create_bag_slot(item: ItemInstance) -> ItemSlotButton:
 	b.add_theme_stylebox_override("hover", GameUi.box(GameUi.BG_INNER, Color(1.0, 0.85, 0.25), 4, 2, 2))
 	b.add_theme_stylebox_override("pressed", GameUi.box(GameUi.ACTIVE_BG, Color(1.0, 0.85, 0.25), 4, 2, 2))
 	b.show_item(item, ItemText.build(item, _profile))
-	b.pressed.connect(_put.bind(item))
+	b.pressed.connect(_on_bag_item_clicked.bind(item))
 	b.set_drag_forwarding(_get_bag_slot_drag_data.bind(item, b), Callable(), Callable())
 	if item.is_misc() and item.item_level > 0:
 		var lv := SocialUi.label("C%d" % item.item_level, SocialUi.GOLD, 11)
@@ -780,6 +780,15 @@ func _create_bag_slot(item: ItemInstance) -> ItemSlotButton:
 		lv.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(lv)
 	return b
+
+func _on_bag_item_clicked(item: ItemInstance) -> void:
+	if item == null:
+		return
+	var host: Node = get_tree().current_scene if (get_tree() != null and get_tree().current_scene != null) else self
+	var actions := [
+		["Chọn", func() -> void: _put(item)]
+	]
+	ItemDetailPopup.open(host, ItemText.build(item, _profile, -1, -1, false), actions, item)
 
 func _put(item: ItemInstance) -> void:
 	if item == null:
@@ -1289,18 +1298,18 @@ func _show_toast(msg: String) -> void:
 
 func _render_info_and_preview() -> void:
 	var op := _current_op()
-	var act_text := "Chế tạo"
+	var act_text := tr("Chế tạo")
 	match _active_tab:
 		Tab.REFINE:
-			act_text = "Tinh luyện" if _refine_sub == RefineSub.XUANJING else ("Hợp thành" if _refine_sub == RefineSub.KILLER else "Thăng cấp")
+			act_text = tr("Tinh luyện") if _refine_sub == RefineSub.XUANJING else (tr("Hợp thành") if _refine_sub == RefineSub.KILLER else tr("Thăng cấp"))
 		Tab.DISTILL:
-			act_text = "Nâng cấp"
+			act_text = tr("Nâng cấp")
 		Tab.FORGE:
-			act_text = "Chế tạo"
+			act_text = tr("Chế tạo")
 		Tab.ENCHASE:
-			act_text = "Khảm nạm"
+			act_text = tr("Khảm nạm")
 		Tab.DOPHO:
-			act_text = "Kết hợp"
+			act_text = tr("Kết hợp")
 	_action_button.text = act_text
 
 	var lines := []
@@ -1308,30 +1317,30 @@ func _render_info_and_preview() -> void:
 	lines.append(desc)
 
 	var cost: int = Compound.COST[op]
-	lines.append("\n[color=#ffff77]Chi phí:[/color] %s" % ("miễn phí" if cost == 0 else "%s lượng" % InventoryPopup.format_money(cost)))
+	lines.append("\n[color=#ffff77]%s:[/color] %s" % [tr("Chi phí"), tr("miễn phí") if cost == 0 else "%s %s" % [InventoryPopup.format_money(cost), tr("lượng")]])
 
 	if _slots.has(null):
-		lines.append("\n[color=#888888]Chưa đủ nguyên liệu chính để tính toán kết quả.[/color]")
+		lines.append("\n[color=#888888]%s[/color]" % tr("Chưa đủ nguyên liệu chính để tính toán kết quả."))
 		_preview.text = "\n".join(lines)
 		_action_button.disabled = true
 		return
 
 	var p := Compound.plan(_profile, op, _slots, _alts)
 	if not p["ok"]:
-		lines.append("\n[color=#ff5555]Lỗi: %s[/color]" % p["error"])
+		lines.append("\n[color=#ff5555]%s: %s[/color]" % [tr("Lỗi"), p["error"]])
 		_preview.text = "\n".join(lines)
 		_action_button.disabled = true
 		return
 
 	if p.has("note"):
-		lines.append("\n[color=#ffd75a]Lưu ý:[/color] [color=#e8d9a8]%s[/color]" % p["note"])
+		lines.append("\n[color=#ffd75a]%s:[/color] [color=#e8d9a8]%s[/color]" % [tr("Lưu ý"), p["note"]])
 
-	lines.append("\n[color=#ffff77]Kết quả có thể nhận được:[/color]")
+	lines.append("\n[color=#ffff77]%s:[/color]" % tr("Kết quả có thể nhận được"))
 	for o in p["outcomes"]:
 		lines.append("[color=#ffd75a]%5.1f%%[/color]  [color=#55ff55]%s[/color]" % [float(o["prob"]) * 100.0, o["text"]])
 	if float(p["fail"]) > 0.0005:
-		var note := (" (%s)" % p["fail_note"]) if p.has("fail_note") else " (mất nguyên liệu)"
-		lines.append("[color=#ff7070]%5.1f%%  Thất bại%s[/color]" % [float(p["fail"]) * 100.0, note])
+		var note := (" (%s)" % p["fail_note"]) if p.has("fail_note") else (" (%s)" % tr("mất nguyên liệu"))
+		lines.append("[color=#ff7070]%5.1f%%  %s%s[/color]" % [float(p["fail"]) * 100.0, tr("Thất bại"), note])
 
 	_preview.text = "\n".join(lines)
 	_action_button.disabled = false
@@ -1341,21 +1350,45 @@ func _tab_rules_text() -> String:
 		Tab.REFINE:
 			match _refine_sub:
 				RefineSub.XUANJING:
-					return "[color=#55ff55]Nguyên liệu cần thiết:[/color] Giới chỉ một chiếc, Dây chuyền (Hộ thân phù) 1 sợi, Ngọc bội (Hương nang) 1 cái, 1.000 lượng.\n\n[color=#55ff55]Quy tắc:[/color] Đem những nguyên liệu cần thiết đặt vào 3 ô bên tay trái, nhấn Tinh luyện. Tổng giá trị của 3 trang sức quyết định cấp Huyền Tinh tạo thành (Cấp 1 - 10)."
+					return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+						tr("Nguyên liệu cần thiết:"), tr("Giới chỉ một chiếc, Dây chuyền (Hộ thân phù) 1 sợi, Ngọc bội (Hương nang) 1 cái, 1.000 lượng."),
+						tr("Quy tắc:"), tr("Đem những nguyên liệu cần thiết đặt vào 3 ô bên tay trái, nhấn Tinh luyện. Tổng giá trị của 3 trang sức quyết định cấp Huyền Tinh tạo thành (Cấp 1 - 10).")
+					]
 				RefineSub.UPGRADE_XJ:
-					return "[color=#55ff55]Nguyên liệu cần thiết:[/color] 3 viên Huyền Tinh khoáng thạch cùng cấp, 5.000 lượng.\n\n[color=#55ff55]Quy tắc:[/color] Đem 3 viên Huyền Tinh cùng cấp đặt vào 3 ô, nhấn Thăng cấp. Thành công nhận 1 viên cấp +1. Thất bại chỉ mất 1 viên đầu tiên."
+					return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+						tr("Nguyên liệu cần thiết:"), tr("3 viên Huyền Tinh khoáng thạch cùng cấp, 5.000 lượng."),
+						tr("Quy tắc:"), tr("Đem 3 viên Huyền Tinh cùng cấp đặt vào 3 ô, nhấn Thăng cấp. Thành công nhận 1 viên cấp +1. Thất bại chỉ mất 1 viên đầu tiên.")
+					]
 				RefineSub.UPGRADE_PROP:
-					return "[color=#55ff55]Nguyên liệu cần thiết:[/color] 3 viên khoáng thạch có cùng thuộc tính và cùng cấp, 5.000 lượng.\n\n[color=#55ff55]Quy tắc:[/color] Đem 3 viên khoáng thuộc tính cùng cấp đặt vào 3 ô. Nếu là dòng ẩn (dòng chẵn) phải cùng ngũ hành. Thất bại chỉ mất 1 viên đầu tiên."
+					return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+						tr("Nguyên liệu cần thiết:"), tr("3 viên khoáng thạch có cùng thuộc tính và cùng cấp, 5.000 lượng."),
+						tr("Quy tắc:"), tr("Đem 3 viên khoáng thuộc tính cùng cấp đặt vào 3 ô. Nếu là dòng ẩn (dòng chẵn) phải cùng ngũ hành. Thất bại chỉ mất 1 viên đầu tiên.")
+					]
 				RefineSub.KILLER:
-					return "[color=#55ff55]Nguyên liệu cần thiết:[/color] 5 Sát Thủ lệnh cùng cấp.\n\n[color=#55ff55]Quy tắc:[/color] Đem 5 Sát Thủ lệnh cùng cấp hợp thành 1 Sát thủ giản cùng cấp. Ngũ hành ngẫu nhiên theo 1 trong 5 lệnh. Không tốn tiền, không thất bại."
+					return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+						tr("Nguyên liệu cần thiết:"), tr("5 Sát Thủ lệnh cùng cấp."),
+						tr("Quy tắc:"), tr("Đem 5 Sát Thủ lệnh cùng cấp hợp thành 1 Sát thủ giản cùng cấp. Ngũ hành ngẫu nhiên theo 1 trong 5 lệnh. Không tốn tiền, không thất bại.")
+					]
 		Tab.DISTILL:
-			return "[color=#55ff55]Nguyên liệu cần thiết:[/color] Thuộc tính khoáng nguyên, nguyên thạch, trang bị màu xanh, huyền tinh khoáng thạch, 5.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu), Phúc duyên lộ (Có thể chọn nguyên liệu), thủy tinh (Có thể chọn nguyên liệu).\n\n[color=#55ff55]Quy tắc:[/color] Đem trang bị xanh và nguyên khoáng/nguyên thạch đặt vào ô. Nguyên khoáng hút dòng hiện (1, 3, 5); nguyên thạch hút dòng ẩn (2, 4, 6) và phải cùng hệ với trang bị. Sau khi hút, trang bị xanh sẽ biến mất."
+			return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+				tr("Nguyên liệu cần thiết:"), tr("Thuộc tính khoáng nguyên, nguyên thạch, trang bị màu xanh, huyền tinh khoáng thạch, 5.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu), Phúc duyên lộ (Có thể chọn nguyên liệu), thủy tinh (Có thể chọn nguyên liệu)."),
+				tr("Quy tắc:"), tr("Đem trang bị xanh và nguyên khoáng/nguyên thạch đặt vào ô. Nguyên khoáng hút dòng hiện (1, 3, 5); nguyên thạch hút dòng ẩn (2, 4, 6) và phải cùng hệ với trang bị. Sau khi hút, trang bị xanh sẽ biến mất.")
+			]
 		Tab.FORGE:
-			return "[color=#55ff55]Nguyên liệu cần thiết:[/color] Trang bị xanh hoặc trắng (Không phải đồ trang sức), huyền tinh khoáng thạch, 10.000 lượng.\n\n[color=#55ff55]Quy tắc:[/color] Đem tất cả nguyên liệu đặt vào ô bên tay trái, nhấn nút Chế tạo. Sau khi thành công sẽ có được một Trang bị Huyền Tinh (đồ tím) có từ 1 đến 5 ô khảm trống. Trang bị mất hết thuộc tính cũ."
+			return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+				tr("Nguyên liệu cần thiết:"), tr("Trang bị xanh hoặc trắng (Không phải đồ trang sức), huyền tinh khoáng thạch, 10.000 lượng."),
+				tr("Quy tắc:"), tr("Đem tất cả nguyên liệu đặt vào ô bên tay trái, nhấn nút Chế tạo. Sau khi thành công sẽ có được một Trang bị Huyền Tinh (đồ tím) có từ 1 đến 5 ô khảm trống. Trang bị mất hết thuộc tính cũ.")
+			]
 		Tab.ENCHASE:
-			return "[color=#55ff55]Nguyên liệu cần thiết:[/color] Trang bị Huyền Tinh, khoáng thạch có thuộc tính, huyền tinh khoáng thạch, 10.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu), phúc duyên lộ (Có thể chọn nguyên liệu), thủy tinh (Có thể chọn nguyên liệu).\n\n[color=#55ff55]Quy tắc:[/color] Đem trang bị tím, Huyền Tinh và khoáng thạch thuộc tính khảm tuần tự vào ô trống đầu tiên (ô 1: Huyền Thiết, ô 2: Khổng Tước, ô 3: Mật Ngân, ô 4: Phù Dung, ô 5: Chu Sa). Dòng chẵn phải cùng hệ với đồ. Thất bại vẫn giữ đồ tím."
+			return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+				tr("Nguyên liệu cần thiết:"), tr("Trang bị Huyền Tinh, khoáng thạch có thuộc tính, huyền tinh khoáng thạch, 10.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu), phúc duyên lộ (Có thể chọn nguyên liệu), thủy tinh (Có thể chọn nguyên liệu)."),
+				tr("Quy tắc:"), tr("Đem trang bị tím, Huyền Tinh và khoáng thạch thuộc tính khảm tuần tự vào ô trống đầu tiên (ô 1: Huyền Thiết, ô 2: Khổng Tước, ô 3: Mật Ngân, ô 4: Phù Dung, ô 5: Chu Sa). Dòng chẵn phải cùng hệ với đồ. Thất bại vẫn giữ đồ tím.")
+			]
 		Tab.DOPHO:
-			return "[color=#55ff55]Nguyên liệu cần thiết:[/color] Đồ phổ hoàng kim, khoáng thạch có thuộc tính (Số lượng chủng loại cần phải xem đồ phổ), sách kỹ năng, huyền tinh khoáng thạch, 100.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu)...\n\n[color=#55ff55]Quy tắc:[/color] Đem đồ phổ hoàng kim và các nguyên liệu yêu cầu đặt vào các ô tương ứng, nhấn Kết hợp để tạo trang bị Hoàng Kim môn phái."
+			return "[color=#55ff55]%s[/color] %s\n\n[color=#55ff55]%s[/color] %s" % [
+				tr("Nguyên liệu cần thiết:"), tr("Đồ phổ hoàng kim, khoáng thạch có thuộc tính (Số lượng chủng loại cần phải xem đồ phổ), sách kỹ năng, huyền tinh khoáng thạch, 100.000 lượng, khoáng thạch thần bí (Có thể chọn nguyên liệu)..."),
+				tr("Quy tắc:"), tr("Đem đồ phổ hoàng kim và các nguyên liệu yêu cầu đặt vào các ô tương ứng, nhấn Kết hợp để tạo trang bị Hoàng Kim môn phái.")
+			]
 	return ""
 
 # ---------------------------------------------------------------- Thao tác Chế tạo

@@ -108,6 +108,8 @@ func _is_in_character_hub() -> bool:
 	return false
 
 func _enter_tree() -> void:
+	if not is_docked:
+		visible = false
 	if is_docked:
 		set_draggable(false)
 
@@ -115,9 +117,12 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	if is_docked:
 		set_draggable(false)
+		visible = true
+		return
 	## Đặt giữa màn hình (lệch theo số khung đang mở để 2 khung không chồng khít nhau).
 	await get_tree().process_frame
 	if not is_inside_tree() or is_docked:
+		visible = true
 		return
 	## Dùng kích thước tối thiểu của nội dung — `size` có thể chưa được container cập nhật ở frame đầu.
 	size = get_combined_minimum_size()
@@ -128,6 +133,7 @@ func _ready() -> void:
 	var offset := Vector2(24, 24) * open_floating
 	position = ((get_viewport_rect().size - size) * 0.5 + offset).round()
 	_clamp_to_screen()
+	visible = true
 	bring_to_front()
 
 func _gui_input(event: InputEvent) -> void:

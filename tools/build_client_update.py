@@ -95,7 +95,7 @@ def fingerprint(name: str, preset: str, folders: list[str], engine: str, preset_
         files = walk(ROOT, skip)
     for f in files:
         rel = f.relative_to(ROOT).as_posix()
-        h.update(f"{rel}\0{file_sha256(f)}\n".encode())
+        h.update(f"{rel}\0{cached_sha256(f)}\n".encode())
     print(f"  {name}: {len(files)} file nguồn")
     return h.hexdigest()
 
@@ -185,12 +185,16 @@ def main() -> None:
 
     packs: list[dict] = []
     files_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="kh_packs_") as tmp:
+    tmp_dir = ROOT / "build" / "temp_packs"
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    try:
         for name, preset, src, changed in plan:
             if not changed:
                 packs.append(old_packs[name])
                 continue
-            dest = Path(tmp) / f"{name}.pck"
+            dest = tmp_dir / f"{name}.pck"
             export_pack(args.godot, preset, dest)
             sha = file_sha256(dest)
             file = f"{name}-{sha[:12]}.pck"
@@ -198,6 +202,8 @@ def main() -> None:
             packs.append({"name": name, "file": file, "size": (files_dir / file).stat().st_size,
                           "sha256": sha, "src": src})
             print(f"    -> {file} ({packs[-1]['size'] / 1048576:.1f} MB)")
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
     changed_any = [p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
     manifest = {

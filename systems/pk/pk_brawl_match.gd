@@ -1,5 +1,7 @@
 extends Node
 class_name PkBrawlMatch
+
+const VsScoreBar := preload("res://ui/common/vs_score_bar.gd")
 ## Trình điều phối Trận Đấu "Lộn Xộn" (Loạn đả 16 người hoặc Đấu đội 1vs1 -> 8vs8)
 ## - Đấu đơn (Solo): 16 người (1 người chơi + 15 bots), đụng là đánh (Free-For-All).
 ## - Đấu theo đội (Team): 2 phe Xanh vs Đỏ (1vs1 đến 8vs8), 2 màu riêng biệt.
@@ -9,7 +11,8 @@ class_name PkBrawlMatch
 ## - Điều kiện kết thúc: Đạt đủ số mạng chỉ định (10..200 mạng).
 
 const HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
-const PREPARE_SEC := 5.0
+const PREPARE_SEC := 3.0
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
 const RESPAWN_SEC := 3.0
 const LEAVE_AFTER_SEC := 8.0
 
@@ -32,6 +35,7 @@ var _team_kills: Dictionary = {"blue": 0, "red": 0}
 
 # HUD Controls
 var _hud: CanvasLayer
+var _vs_bar: VsScoreBar
 var _top_panel: PanelContainer
 var _score_title_lbl: Label
 var _main_score_lbl: Label
@@ -93,7 +97,12 @@ func _setup_combatants() -> void:
 	var center := Vector2.ZERO
 	if VltkWorld.current:
 		center = VltkWorld.current._default_center()
-	if center == Vector2.ZERO:
+		if VltkWorld.current.map:
+			VltkWorld.current.map.prepare_around(center)
+		var open_c := VltkWorld.current._open_position_near(center)
+		if open_c != Vector2.ZERO:
+			center = open_c
+	if center == Vector2.ZERO and _player != null:
 		center = _player.global_position
 
 	var field: Dictionary = GameManager.field_map
@@ -105,7 +114,10 @@ func _setup_combatants() -> void:
 	else:
 		_setup_team_match(parent, center, pk, p_profile)
 
-	_say("Trận Đấu Lộn Xộn: %d giây đếm ngược bắt đầu!" % int(PREPARE_SEC))
+	_say("Trận Đấu Lộn Xộn: chuẩn bị bắt đầu!")
+	if _player and "is_invincible" in _player:
+		_player.is_invincible = true
+	CountdownOverlay.start(self, _start_fight)
 	_update_hud()
 
 func _setup_solo_match(parent: Node, center: Vector2, pk: Dictionary, p_profile: PlayerProfile) -> void:
@@ -115,6 +127,12 @@ func _setup_solo_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 
 	var spawn_points := _generate_scattered_spawns(center, 16)
 	_player.global_position = spawn_points[0] - Vector2(0, PkBot.FEET_OFFSET)
+	if VltkWorld.current:
+		VltkWorld.current.respawn_point = spawn_points[0]
+		if VltkWorld.current.map:
+			VltkWorld.current.map.prepare_around(spawn_points[0])
+			if VltkWorld.current.map is VltkWorld.SortedMap:
+				(VltkWorld.current.map as VltkWorld.SortedMap).warm_up(_player.global_position)
 
 	# Đấu thủ 0 là Player
 	var p_data := {
@@ -147,6 +165,7 @@ func _setup_solo_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 
 		var sect := SectRegistry.get_by_id(bot_prof.sect_id)
 		var bot := PkBot.new()
+		bot.is_match_fighter = true
 		bot.name = "BrawlBot_%d" % i
 		bot.setup(bot_prof)
 		bot.position = spawn_points[i] - Vector2(0, PkBot.FEET_OFFSET)
@@ -189,12 +208,21 @@ func _setup_team_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 	# Thiết lập Player
 	if player_team == "blue":
 		_player.global_position = spawns_blue[0] - Vector2(0, PkBot.FEET_OFFSET)
+		if VltkWorld.current:
+			VltkWorld.current.respawn_point = spawns_blue[0]
 		_player.add_to_group("team_blue")
 		_player.set("cast_target_group", &"team_red")
 	else:
 		_player.global_position = spawns_red[0] - Vector2(0, PkBot.FEET_OFFSET)
+		if VltkWorld.current:
+			VltkWorld.current.respawn_point = spawns_red[0]
 		_player.add_to_group("team_red")
 		_player.set("cast_target_group", &"team_blue")
+
+	if VltkWorld.current and VltkWorld.current.map:
+		VltkWorld.current.map.prepare_around(_player.global_position + Vector2(0, PkBot.FEET_OFFSET))
+		if VltkWorld.current.map is VltkWorld.SortedMap:
+			(VltkWorld.current.map as VltkWorld.SortedMap).warm_up(_player.global_position)
 
 	var p_data := {
 		"id": 0,
@@ -227,6 +255,7 @@ func _setup_team_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 
 		var sect := SectRegistry.get_by_id(bot_prof.sect_id)
 		var bot := PkBot.new()
+		bot.is_match_fighter = true
 		bot.name = "BlueBot_%d" % i
 		bot.setup(bot_prof)
 		bot.position = spawns_blue[i] - Vector2(0, PkBot.FEET_OFFSET)
@@ -276,6 +305,7 @@ func _setup_team_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 
 		var sect := SectRegistry.get_by_id(bot_prof.sect_id)
 		var bot := PkBot.new()
+		bot.is_match_fighter = true
 		bot.name = "RedBot_%d" % i
 		bot.setup(bot_prof)
 		bot.position = spawns_red[i] - Vector2(0, PkBot.FEET_OFFSET)
@@ -315,22 +345,44 @@ func _setup_team_match(parent: Node, center: Vector2, pk: Dictionary, p_profile:
 
 func _generate_scattered_spawns(center: Vector2, count: int) -> Array[Vector2]:
 	var list: Array[Vector2] = []
+	var min_bound := center - Vector2(2000.0, 2000.0)
+	var max_bound := center + Vector2(2000.0, 2000.0)
+	if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.data:
+		var rect: Array = VltkWorld.current.map.data.get("rect", [])
+		if rect.size() >= 4:
+			min_bound = Vector2(float(rect[0]) * 512.0 + 80.0, float(rect[1]) * 512.0 + 80.0)
+			max_bound = Vector2((float(rect[2]) + 1.0) * 512.0 - 80.0, (float(rect[3]) + 1.0) * 512.0 - 80.0)
 	for i in count:
 		var angle := float(i) * TAU / float(count)
-		var dist := 220.0 + float(i % 3) * 110.0
+		var dist := 180.0 + float(i % 3) * 90.0
 		var pos := center + Vector2(cos(angle), sin(angle)) * dist
+		pos.x = clampf(pos.x, min_bound.x, max_bound.x)
+		pos.y = clampf(pos.y, min_bound.y, max_bound.y)
 		if VltkWorld.current:
+			if VltkWorld.current.map:
+				VltkWorld.current.map.prepare_around(pos)
 			pos = VltkWorld.current._open_position_near(pos)
 		list.append(pos)
 	return list
 
 func _generate_team_spawns(team_center: Vector2, count: int) -> Array[Vector2]:
 	var list: Array[Vector2] = []
+	var min_bound := team_center - Vector2(2000.0, 2000.0)
+	var max_bound := team_center + Vector2(2000.0, 2000.0)
+	if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.data:
+		var rect: Array = VltkWorld.current.map.data.get("rect", [])
+		if rect.size() >= 4:
+			min_bound = Vector2(float(rect[0]) * 512.0 + 80.0, float(rect[1]) * 512.0 + 80.0)
+			max_bound = Vector2((float(rect[2]) + 1.0) * 512.0 - 80.0, (float(rect[3]) + 1.0) * 512.0 - 80.0)
 	var spacing := 50.0
 	for i in count:
 		var y_off := (float(i) - float(count - 1) / 2.0) * spacing
 		var pos := team_center + Vector2(0, y_off)
+		pos.x = clampf(pos.x, min_bound.x, max_bound.x)
+		pos.y = clampf(pos.y, min_bound.y, max_bound.y)
 		if VltkWorld.current:
+			if VltkWorld.current.map:
+				VltkWorld.current.map.prepare_around(pos)
 			pos = VltkWorld.current._open_position_near(pos)
 		list.append(pos)
 	return list
@@ -341,6 +393,8 @@ func _process(delta: float) -> void:
 		_leave_in -= delta
 		if _clock_lbl:
 			_clock_lbl.text = "Trở về thành sau %d giây" % ceili(maxf(_leave_in, 0.0))
+		if _vs_bar:
+			_vs_bar.set_timer("Rời sau %ds" % ceili(maxf(_leave_in, 0.0)))
 		if _leave_in <= 0.0:
 			_leave_in = -1.0
 			_go_home()
@@ -353,14 +407,19 @@ func _process(delta: float) -> void:
 	if not running:
 		_prepare_time -= delta
 		if _clock_lbl:
-			_clock_lbl.text = "Chuẩn bị: %d" % ceili(maxf(_prepare_time, 0.0))
+			_clock_lbl.text = ""
+		if _vs_bar:
+			_vs_bar.set_timer("Sắp bắt đầu")
 		if _prepare_time <= 0.0:
 			_start_fight()
 		return
 
 	# Cập nhật đồng hồ trận
+	var time_str := "%02d:%02d" % [int(match_time) / 60, int(match_time) % 60]
 	if _clock_lbl:
-		_clock_lbl.text = "%02d:%02d" % [int(match_time) / 60, int(match_time) % 60]
+		_clock_lbl.text = time_str
+	if _vs_bar:
+		_vs_bar.set_timer(time_str)
 
 	# Xử lý hồi sinh các đấu thủ đã tử trận
 	for c in _combatants:
@@ -373,7 +432,11 @@ func _process(delta: float) -> void:
 	_retarget_all_bots()
 
 func _start_fight() -> void:
+	if running or done:
+		return
 	running = true
+	if _player and "is_invincible" in _player:
+		_player.is_invincible = false
 	_say("Trận đấu bắt đầu! Mục tiêu: %d mạng!" % target_kills)
 	for c in _combatants:
 		var node: Node2D = c.node
@@ -504,10 +567,17 @@ func _respawn_combatant(c: Dictionary) -> void:
 		var center := VltkWorld.current._default_center()
 		var rand_angle := randf() * TAU
 		var rand_dist := randf_range(200, 450)
-		spawn_pos = VltkWorld.current._open_position_near(center + Vector2(cos(rand_angle), sin(rand_angle)) * rand_dist)
+		var p := center + Vector2(cos(rand_angle), sin(rand_angle)) * rand_dist
+		if VltkWorld.current.map:
+			VltkWorld.current.map.prepare_around(p)
+		spawn_pos = VltkWorld.current._open_position_near(p)
 
 	if c.is_player and node.has_method("respawn_at"):
 		node.respawn_at(spawn_pos)
+		if VltkWorld.current:
+			VltkWorld.current.respawn_point = spawn_pos
+			if VltkWorld.current.map is VltkWorld.SortedMap:
+				(VltkWorld.current.map as VltkWorld.SortedMap).warm_up(node.global_position)
 		_say("Bạn đã hồi sinh! Tiếp tục chiến đấu!")
 	elif node is PkBot and node.has_method("respawn_at"):
 		node.respawn_at(spawn_pos)
@@ -578,49 +648,21 @@ func _build_hud() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(root)
 
-	# 1. Bảng điểm trung tâm trên đỉnh màn hình (hạ xuống y = 52 để lộ thanh máu/nội lực phía trên)
-	_top_panel = PanelContainer.new()
-	_top_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_top_panel.position = Vector2(-280, 52)
-	_top_panel.custom_minimum_size = Vector2(560, 72)
-	_top_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(_top_panel)
+	# 1. Bảng điểm trung tâm trên đỉnh màn hình: Banner tỷ số VS (căn giữa)
+	_vs_bar = VsScoreBar.new()
+	_vs_bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_vs_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_vs_bar.offset_left = -230.0
+	_vs_bar.offset_right = 230.0
+	_vs_bar.offset_top = 48.0
+	_vs_bar.offset_bottom = 112.0
+	if brawl_type == "solo":
+		_vs_bar.set_sides("Bạn", 0, 0, "Đối Thủ")
+	else:
+		_vs_bar.set_sides("Phe Xanh", 0, 0, "Phe Đỏ")
+	root.add_child(_vs_bar)
 
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.09, 0.12, 0.88)
-	sb.border_color = Color(0.85, 0.7, 0.25, 0.8)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(8)
-	_top_panel.add_theme_stylebox_override("panel", sb)
-
-	var top_vbox := VBoxContainer.new()
-	top_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_vbox.add_theme_constant_override("separation", 2)
-	_top_panel.add_child(top_vbox)
-
-	_score_title_lbl = _create_hud_label("LỘN XỘN - MỤC TIÊU: %d MẠNG" % target_kills, 13, Color(0.85, 0.75, 0.4))
-	_main_score_lbl = _create_hud_label("Chuẩn bị khai chiến", 20, Color.WHITE)
-	_sub_score_lbl = _create_hud_label("", 12, Color(0.7, 0.75, 0.85))
-	top_vbox.add_child(_score_title_lbl)
-	top_vbox.add_child(_main_score_lbl)
-	top_vbox.add_child(_sub_score_lbl)
-
-	# 2. Thanh trạng thái người chơi & Đồng hồ (dưới bảng trung tâm)
-	var status_box := HBoxContainer.new()
-	status_box.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	status_box.position = Vector2(-280, 128)
-	status_box.custom_minimum_size = Vector2(560, 24)
-	status_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	status_box.add_theme_constant_override("separation", 20)
-	status_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(status_box)
-
-	_clock_lbl = _create_hud_label("00:00", 14, Color.YELLOW)
-	_player_stats_lbl = _create_hud_label("Hạ gục: 0   ·   Tử trận: 0   ·   Liên trảm: 0   ·   Điểm: 0", 13, Color(0.3, 1.0, 0.4))
-	status_box.add_child(_clock_lbl)
-	status_box.add_child(_player_stats_lbl)
-
-	# 3. Kill Feed bên trái màn hình
+	# 2. Kill Feed bên trái màn hình
 	_kill_feed_box = VBoxContainer.new()
 	_kill_feed_box.position = Vector2(16, 120)
 	_kill_feed_box.custom_minimum_size = Vector2(240, 160)
@@ -628,7 +670,7 @@ func _build_hud() -> void:
 	_kill_feed_box.add_theme_constant_override("separation", 4)
 	root.add_child(_kill_feed_box)
 
-	# 4. Dải thông báo Marquee giữa màn hình
+	# 3. Dải thông báo Marquee giữa màn hình
 	_marquee_lbl = _create_hud_label("", 16, Color(1.0, 0.8, 0.2))
 	_marquee_lbl.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_marquee_lbl.position = Vector2(-300, 156)
@@ -636,29 +678,38 @@ func _build_hud() -> void:
 	_marquee_lbl.visible = false
 	root.add_child(_marquee_lbl)
 
-	# 5. Các nút chức năng trận đấu — đặt ngay dưới MiniMap (không đè lên SideMenu / MiniMap)
+	# 4. Các nút chức năng trận đấu — đặt trên chỗ để bình bơm máu (QuickItemBar)
 	var btn_row := HBoxContainer.new()
-	btn_row.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	btn_row.position = Vector2(-138, 160)
-	btn_row.custom_minimum_size = Vector2(130, 28)
-	btn_row.add_theme_constant_override("separation", 4)
+	btn_row.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	btn_row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	btn_row.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var bottom_margin := QuickItemBar.TOP_OFFSET + 8.0
+	var right_margin := QuickItemBar.RIGHT
+	var btn_height := 32.0
+	var btn_width := 123.0
+
+	btn_row.offset_right = -right_margin
+	btn_row.offset_left = -right_margin - (btn_width * 2 + 8)
+	btn_row.offset_bottom = -bottom_margin
+	btn_row.offset_top = -bottom_margin - btn_height
+	btn_row.add_theme_constant_override("separation", 8)
 	root.add_child(btn_row)
 
 	_btn_scoreboard = GameUi.button("BXH (Tab)")
-	_btn_scoreboard.custom_minimum_size = Vector2(63, 28)
-	_btn_scoreboard.add_theme_font_size_override("font_size", 11)
+	_btn_scoreboard.custom_minimum_size = Vector2(btn_width, btn_height)
+	_btn_scoreboard.add_theme_font_size_override("font_size", 13)
 	_btn_scoreboard.tooltip_text = "Xem bảng xếp hạng trận đấu (phím Tab)"
 	_btn_scoreboard.pressed.connect(_toggle_scoreboard)
 	btn_row.add_child(_btn_scoreboard)
 
 	_btn_leave = GameUi.button("Rời trận")
-	_btn_leave.custom_minimum_size = Vector2(63, 28)
-	_btn_leave.add_theme_font_size_override("font_size", 11)
+	_btn_leave.custom_minimum_size = Vector2(btn_width, btn_height)
+	_btn_leave.add_theme_font_size_override("font_size", 13)
 	_btn_leave.tooltip_text = "Rời khỏi trận đấu về thành"
 	_btn_leave.pressed.connect(_on_leave_clicked)
 	btn_row.add_child(_btn_leave)
 
-	# 6. Dựng trước Scoreboard modal
+	# 5. Dựng trước Scoreboard modal
 	_build_scoreboard_modal(root)
 
 func _create_hud_label(text: String, font_size: int, color: Color) -> Label:
@@ -673,31 +724,23 @@ func _create_hud_label(text: String, font_size: int, color: Color) -> Label:
 	return l
 
 func _update_hud() -> void:
-	if _main_score_lbl == null:
-		return
-
 	if brawl_type == "solo":
 		var leader := _get_leader()
 		var p_data: Dictionary = _combatants[0] if not _combatants.is_empty() else {}
 		var p_kills: int = int(p_data.get("kills", 0))
 
-		_main_score_lbl.text = "👑 %s: %d/%d Mạng" % [leader.name, leader.kills, target_kills]
-		_sub_score_lbl.text = "Bản đồ: %s   ·   Bạn: %d mạng (Điểm: %d)" % [
-			PkRules.get_brawl_map_info(map_id).name, p_kills, int(p_data.get("score", 0))
-		]
+		if _vs_bar:
+			_vs_bar.set_left("Bạn", p_kills)
+			_vs_bar.set_right(leader.name, leader.kills)
 	else:
 		var blue_k: int = int(_team_kills.get("blue", 0))
 		var red_k: int = int(_team_kills.get("red", 0))
-		_main_score_lbl.text = "XANH: %d   VS   ĐỎ: %d" % [blue_k, red_k]
-		_sub_score_lbl.text = "Mục tiêu: %d mạng   ·   Phe của bạn: %s" % [
-			target_kills, "Phe Xanh" if my_side == "song" else "Phe Đỏ"
-		]
+		if _vs_bar:
+			_vs_bar.set_left("Phe Xanh", blue_k)
+			_vs_bar.set_right("Phe Đỏ", red_k)
 
-	var p_data: Dictionary = _combatants[0] if not _combatants.is_empty() else {}
-	if _player_stats_lbl and not p_data.is_empty():
-		_player_stats_lbl.text = "Hạ gục: %d   ·   Tử trận: %d   ·   Liên trảm: %d   ·   Điểm: %d" % [
-			int(p_data.get("kills", 0)), int(p_data.get("deaths", 0)), int(p_data.get("streak", 0)), int(p_data.get("score", 0))
-		]
+	if _scoreboard_modal and _scoreboard_modal.visible:
+		_refresh_scoreboard_table()
 
 	if _scoreboard_modal and _scoreboard_modal.visible:
 		_refresh_scoreboard_table()

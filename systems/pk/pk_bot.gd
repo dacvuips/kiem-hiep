@@ -25,6 +25,8 @@ var profile: PlayerProfile
 var combat_stats: CombatantStats
 var max_health := 1.0
 var health := 1.0
+var max_mana := 1.0
+var mana := 1.0
 var camp: int = Camp.Type.FREE
 ## Luôn là địch của người chơi (CombatTargeting) — chiêu của người chơi trúng bot, bùa/buff của bot nhắm người chơi.
 var pk_enemy := true
@@ -44,6 +46,7 @@ var potions_left := POTION_COUNT
 var last_attacker: Node = null
 var last_attacker_name: String = ""
 var brawl_team: String = ""
+var is_match_fighter: bool = false
 var _name_label: Label = null
 
 var _dead := false
@@ -101,6 +104,7 @@ func _ready() -> void:
 
 	_refresh_stats()
 	health = max_health
+	mana = max_mana
 	_apply_look()
 	_build_name_plate()
 	_pick_skills(sect)
@@ -151,9 +155,12 @@ func _update_bar() -> void:
 
 func _refresh_stats() -> void:
 	var ratio := health / max_health if max_health > 0.0 else 1.0
+	var mana_ratio := mana / max_mana if max_mana > 0.0 else 1.0
 	combat_stats = profile.get_combat_stats(status_controller.get_state_attrib_sources())
 	max_health = maxf(1.0, float(combat_stats.max_hp))
 	health = max_health * ratio
+	max_mana = maxf(1.0, float(combat_stats.max_mana))
+	mana = max_mana * mana_ratio
 	_update_bar()
 
 ## Đòn chính = skill đánh mạnh nhất (PkBotProfile.best_attack_skill); buff bản thân và bùa đã học, bộ máy chiêu chạy được.
@@ -162,7 +169,8 @@ func _pick_skills(sect: SectDefinition) -> void:
 	if sect == null:
 		return
 	for s in sect.skills:
-		if profile.get_skill_level(s.id) <= 0 or s.category != SkillDefinition.SkillCategory.ACTIVE:
+		var s_lv: int = profile.get_skill_level(s.id) if profile != null else 0
+		if s_lv <= 0 or s.category != SkillDefinition.SkillCategory.ACTIVE:
 			continue
 		if SectSkillController.is_self_buff(s):
 			_buffs.append(s)
@@ -214,6 +222,10 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	avatar.play("attack" if physical else "cast", duration)
 	return avatar.get_action_duration() if duration <= 0.0 else duration
 
+func on_hit_target(target: Node, skill_info: Dictionary = {}) -> void:
+	if skill_controller != null and is_instance_valid(target) and target is Node2D:
+		skill_controller.trigger_auto_attack_skills(self, target as Node2D, skill_info)
+
 func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
 		damage_type: CombatFormulas.DamageType = CombatFormulas.DamageType.PHYSICS,
 		attacker_element: ElementTypes.ElementType = ElementTypes.ElementType.KIM,
@@ -255,8 +267,16 @@ func take_damage(amount: float) -> void:
 	a.attack_rating = 999
 	take_damage_from(a, int(amount), int(amount))
 
-func take_status_damage(amount: float, _effect_id: String) -> void:
+func take_status_damage(amount: float, _effect_id: String, source_node: Node = null) -> void:
 	if not _dead and not invulnerable:
+		if source_node != null:
+			last_attacker = source_node
+			if "profile" in last_attacker and last_attacker.profile:
+				last_attacker_name = str(last_attacker.profile.display_name)
+			elif "display_name" in last_attacker:
+				last_attacker_name = str(last_attacker.display_name)
+			elif last_attacker.is_in_group("player") and GameManager.local_profile:
+				last_attacker_name = str(GameManager.local_profile.display_name)
 		_lose(amount)
 
 func _lose(amount: float) -> void:
@@ -275,6 +295,19 @@ func _die() -> void:
 	avatar.play_event_sound("die")
 	avatar.play("sit")
 	avatar.modulate = Color(0.75, 0.4, 0.95, 1.0)
+	# Xử lý đồ sát / PK điểm nếu bị người chơi hạ gục ngoài chế độ thi đấu tournament
+	if not is_match_fighter and last_attacker != null and is_instance_valid(last_attacker) and last_attacker.is_in_group("player"):
+		var p_profile := GameManager.local_profile
+		var player_node = last_attacker
+		var pk_mode_val: int = player_node.get("pk_mode") if "pk_mode" in player_node else 0
+		if pk_mode_val == 2 and p_profile != null:
+			p_profile.pk_value = mini(10, p_profile.pk_value + 1)
+			SaveManager.save_profile(p_profile)
+			SaveManager.flush_online()
+			var victim_name := profile.display_name if profile and profile.display_name != "" else "người chơi"
+			var main_scene := get_tree().current_scene if get_tree() else null
+			if main_scene and main_scene.has_method("_notify_player"):
+				main_scene._notify_player("Bạn đã đồ sát %s! Trị PK tăng lên %d." % [victim_name, p_profile.pk_value])
 	died.emit(self)
 
 func _on_action_finished(finished: String) -> void:
@@ -372,8 +405,10 @@ func _tick_potion(delta: float) -> void:
 
 ## Tầm đòn chính (đơn vị logic VLTK như Player.get_skill_radius).
 func _attack_range() -> float:
-	if _main_skill != null and _main_skill.vltk_attack_radius > 0:
-		return float(_main_skill.vltk_attack_radius)
+	if _main_skill != null:
+		var r := _main_skill.get_attack_radius_at_level(1)
+		if r > 0.0:
+			return r
 	return 150.0
 
 func _logic_dist() -> float:

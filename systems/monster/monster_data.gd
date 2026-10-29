@@ -28,6 +28,16 @@ static var _list: Array = []
 static var _textures: Dictionary = {}
 static var _loaded := false
 
+static func reload() -> void:
+	_loaded = false
+	_monsters.clear()
+	_resources.clear()
+	_anims.clear()
+	_list.clear()
+	_textures.clear()
+	_level_max = 0
+	_ensure()
+
 static func _ensure() -> void:
 	if _loaded:
 		return
@@ -117,17 +127,21 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 	if not table.is_empty():
 		d["level_table"] = table
 
-	var is_boss_monster := bool(data.get("is_boss", false)) or is_boss(id) or str(data.get("boss_type", "")) != "" or "Boss" in str(data.get("name", ""))
+	var is_boss_monster := bool(data.get("is_boss", false)) or is_boss(id) or str(data.get("boss_type", "")) != "" or "Boss" in str(data.get("name", "")) or bool(data.get("keep_skills", false)) or (id >= 1289 and id <= 1320)
 
 	# Kiểm tra xem quái có phải quái tầm xa hay cận chiến
 	var base_skills: Array = data.get("skills", [])
 	var is_ranged_monster := false
 	var has_unique_animal_skill := false
+	var specific_ranged_id := 0
 
 	for sk in base_skills:
 		if sk is Array and sk.size() > 0:
 			var sid := int(sk[0])
-			if sid in [153, 424, 425, 426, 427, 428, 196, 201]:
+			if sid in [101, 53, 418, 419, 420, 421, 422, 423]:
+				# 101 là hỗ trợ/trị liệu; 418-423 là cận chiến chuẩn
+				continue
+			if sid in [424, 425, 426, 427, 428, 196, 201, 153]:
 				is_ranged_monster = true
 			elif sid in [197, 198, 200]:
 				has_unique_animal_skill = true
@@ -136,7 +150,8 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 				if not s_info.is_empty():
 					var is_melee := int(s_info.get("melee", 1)) == 1
 					var radius := float(s_info.get("attack_radius", 0))
-					if not is_melee and radius > 150.0:
+					var has_missile := int(s_info.get("child", 0)) > 0 or int(s_info.get("by_missle", 0)) == 1
+					if not is_melee and radius > 150.0 and has_missile:
 						is_ranged_monster = true
 
 	# Nếu không phải Boss: gán chiêu thức chuẩn ngũ hành (Kim, Mộc, Thủy, Hỏa, Thổ) theo đúng hệ của quái
@@ -147,9 +162,9 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 			if t_lv > 0:
 				slv = t_lv
 
-		if is_ranged_monster:
-			# Quái đánh xa (như Ngân Nha, Cung Thủ...): dùng chiêu ngũ hành tầm xa theo đúng hệ (Series)
-			# Hệ Kim (0): 424, Hệ Mộc (1): 425, Hệ Thủy (2): 426, Hệ Hỏa (3): 427, Hệ Thổ (4): 428
+		var is_pure_ranged := bool(data.get("pure_ranged", false)) or id == 635
+		if is_pure_ranged:
+			# Cung thủ thuần tầm xa (như Cung binh MOBA)
 			var ranged_skill: int = RANGED_SERIES_SKILLS[series]
 			d["skills"] = [
 				[ranged_skill, slv],
@@ -159,7 +174,26 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 			]
 			d["skill_levels_exact"] = true
 			d["ai_mode"] = 1
-			d["ai_params"] = [50, 25, 25, 25, 25, 25, 25, 0, 0]
+			d["ai_params"] = [50, 25, 25, 25, 25, 30, 50, 0, 0]
+		elif is_ranged_monster:
+			# Quái dã ngoại VLTK gốc (Bôn Lôi, Ngân Nha...): quái hệ nào thì dùng skill đánh xa ngũ hành theo đúng hệ đó
+			# Cấu hình 75% đứng xa đánh chiêu tầm xa, 25% áp sát đánh cận chiến (khi vào gần <= 75px thì 100% cận chiến):
+			# - Slot 0 (38%): Chiêu tầm xa ngũ hành (424-428 theo hệ của quái)
+			# - Slot 1 (12%): Chiêu cận chiến ngũ hành (419-423 theo hệ của quái, cự ly <= 75px)
+			# - Slot 2 (37%): Chiêu tầm xa ngũ hành (424-428 theo hệ của quái)
+			# - Slot 3 (13%): Đòn đánh thường vật lý cận chiến (418, cự ly <= 75px)
+			# => Tổng tỷ lệ khi ở xa: 75% đánh xa (Slot 0 + 2 = 75%), 25% đánh gần (Slot 1 + 3 = 25%)
+			var ranged_skill: int = RANGED_SERIES_SKILLS[series]
+			var melee_skill: int = MELEE_SERIES_SKILLS[series]
+			d["skills"] = [
+				[ranged_skill, slv],
+				[melee_skill, slv],
+				[ranged_skill, slv],
+				[418, slv]
+			]
+			d["skill_levels_exact"] = true
+			d["ai_mode"] = 1
+			d["ai_params"] = [50, 38, 12, 37, 13, 30, 50, 0, 0]
 		elif has_unique_animal_skill:
 			# Động vật có chiêu riêng (Hồ ly, Cóc...)
 			var skills := []
@@ -175,7 +209,7 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 			d["skills"] = [
 				[melee_skill, slv],
 				[melee_skill, slv],
-				[melee_skill, slv],
+				[418, slv],
 				[melee_skill, slv]
 			]
 			d["skill_levels_exact"] = true
@@ -266,14 +300,42 @@ static func thumb(res: String) -> Texture2D:
 ## AttackSpeed/CastSpeed trong Npcs.txt gốc) — hoạt ảnh được kéo giãn cho vừa đúng số frame này.
 static func action_frames(m: Dictionary, action_name: String) -> int:
 	var f: Dictionary = m.get("frames", {})
+	var count := 0
 	match action_name:
-		"stand": return maxi(1, int(f.get("stand", 16)))
-		"walk": return maxi(1, int(f.get("walk", 12)))
-		"run": return maxi(1, int(f.get("run", 12)))
-		"hurt": return maxi(1, int(f.get("hurt", 10)))
-		"die": return maxi(1, int(f.get("death", 20)))
-		"attack1", "attack2": return maxi(4, int(m.get("attack_speed", 18)))
-		"magic": return maxi(4, int(m.get("cast_speed", 18)))
+		"stand": count = int(f.get("stand", 0))
+		"walk": count = int(f.get("walk", 0))
+		"run": count = int(f.get("run", 0))
+		"hurt": count = int(f.get("hurt", 0))
+		"die": count = int(f.get("death", 0))
+		"attack1", "attack2":
+			var spd := int(m.get("attack_speed", 20))
+			if spd <= 0: spd = 20
+			return maxi(2, spd - (spd % 2))
+		"magic":
+			var spd := int(m.get("cast_speed", 20))
+			if spd <= 0: spd = 20
+			return maxi(2, spd - (spd % 2))
+
+	if count > 0:
+		return count
+
+	# Nếu trong monsters.json không ghi số frame (bằng 0 hoặc thiếu):
+	# Lấy trực tiếp từ số frame trên mỗi hướng của resource hình gốc (resources.json)
+	var res := str(m.get("res", ""))
+	if res != "":
+		var act := action(res, action_name)
+		if not act.is_empty():
+			var dirs := maxi(1, int(act.get("dirs", 1)))
+			var total_frames := int(act.get("frames", 0))
+			if total_frames > 0:
+				return maxi(1, total_frames / dirs)
+
+	# Fallback mặc định nếu resource cũng không có
+	match action_name:
+		"stand": return 16
+		"walk", "run": return 15
+		"hurt": return 10
+		"die": return 20
 	return 16
 
 ## Chỉ số gốc của quái theo cấp — công thức script gốc npclevelscript (data/monsters/monsters.json, "stats"):

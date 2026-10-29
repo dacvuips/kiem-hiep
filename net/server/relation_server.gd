@@ -149,7 +149,7 @@ const PK_BE_KILLED := -1       ## PKSet.ini BeKilled
 const PK_NO_FIGHT := 6         ## NotFightWhenHightPK
 const PK_NO_ENMITY_LOCKED := 3 ## PKNotSwitchPKWhenLock: PK >= 3 mà đang khoá bảo vệ thì không cừu sát được
 const PK_MAX := 10
-const KILL_CREDIT_SECONDS := 10.0   ## chết trong vòng này sau đòn của đối thủ thì tính là bị họ giết
+const KILL_CREDIT_SECONDS := 60.0   ## chết trong vòng này sau đòn của đối thủ thì tính là bị họ giết (kể cả độc rút)
 const MAX_PVP_HITS_PER_SEC := 15
 
 func on_enmity(c, eid: int) -> void:
@@ -239,7 +239,18 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	var t = gs.conn_of_eid(eid)
 	var battle_hit: bool = gs.battle != null and gs.battle.allows_hit(c, t)   ## chiến trường: 2 phe đánh nhau lúc khai chiến
 	var arena_hit: bool = t != null and gs.arena != null and gs.arena.allows_hit(c, t)   ## đấu trường PK: 2 người đấu cùng phòng
-	if not (_fighting(c, t) or battle_hit or arena_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
+	var field_boss_hit: bool = t != null and gs.field != null and gs.field.allows_boss_pvp(c, t)   ## bản đồ săn Boss: tự do PK
+	var pk_hit: bool = t != null and (
+		(c.entity.flags & NetProto.FLAG_PK) != 0 or
+		(t.entity.flags & NetProto.FLAG_PK) != 0
+	)
+	if not (_fighting(c, t) or battle_hit or arena_hit or pk_hit or field_boss_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
+		return
+	## Tân thủ (Camp.Type.BEGIN) được bảo vệ tuyệt đối theo luật VLTK gốc (KNpcSet::GetRelation)
+	if c.profile.get_current_camp() == Camp.Type.BEGIN or t.profile.get_current_camp() == Camp.Type.BEGIN:
+		return
+	## Cùng tổ đội không gây sát thương lên nhau
+	if c.team != null and t.team != null and c.team == t.team:
 		return
 	if not GameServer.near(t.entity, c.entity, GameServer.MAX_HIT_DISTANCE):
 		return
@@ -258,20 +269,34 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 
 ## Người chơi `c` vừa chết (cờ FLAG_DEAD bật).
 func on_died(c) -> void:
-	if int(c.enmity.get("state", ENMITY_NONE)) == ENMITY_NONE:
+	if int(c.enmity.get("state", ENMITY_NONE)) != ENMITY_NONE:
+		var killer = gs.conn_of_eid(int(c.enmity.get("other", 0)))
+		var by_enemy: bool = killer != null and c.last_pvp_from == killer.entity.eid and gs.now() - c.last_pvp_at <= KILL_CREDIT_SECONDS \
+			and _fighting(c, killer)
+		if by_enemy:
+			## Chỉ người KHỞI XƯỚNG giết được đối phương mới bị cộng PK (IsEnmityPKLauncher gốc).
+			if bool(killer.enmity.get("launcher", false)):
+				killer.profile.pk_value = mini(PK_MAX, killer.profile.pk_value + PK_ENMITY_KILL)
+				gs.notice(killer, "Bạn đã hạ %s. Trị PK tăng lên %d." % [c.entity.name, killer.profile.pk_value])
+				gs.profile_changed(killer)
+			else:
+				gs.notice(killer, "Bạn đã hạ %s." % c.entity.name)
+			c.profile.pk_value = maxi(0, c.profile.pk_value + PK_BE_KILLED)
+			gs.notice(c, "Bạn bị %s hạ trong cừu sát." % killer.entity.name)
+			gs.profile_changed(c)
+		end_enmity(c, "Cừu sát kết thúc.")
 		return
-	var killer = gs.conn_of_eid(int(c.enmity.get("other", 0)))
-	var by_enemy: bool = killer != null and c.last_pvp_from == killer.entity.eid and gs.now() - c.last_pvp_at <= KILL_CREDIT_SECONDS \
-		and _fighting(c, killer)
-	if by_enemy:
-		## Chỉ người KHỞI XƯỚNG giết được đối phương mới bị cộng PK (IsEnmityPKLauncher gốc).
-		if bool(killer.enmity.get("launcher", false)):
-			killer.profile.pk_value = mini(PK_MAX, killer.profile.pk_value + PK_ENMITY_KILL)
-			gs.notice(killer, "Bạn đã hạ %s. Trị PK tăng lên %d." % [c.entity.name, killer.profile.pk_value])
+
+	## Xử lý Đồ Sát (Murder PK) theo gốc VLTK (KNpc.cpp line 6306-6312)
+	var killer = gs.conn_of_eid(c.last_pvp_from)
+	if killer != null and gs.now() - c.last_pvp_at <= KILL_CREDIT_SECONDS:
+		var killer_is_murder: bool = (killer.entity.flags & NetProto.FLAG_PK) != 0
+		var victim_is_murder: bool = (c.entity.flags & NetProto.FLAG_PK) != 0
+		if killer_is_murder and not victim_is_murder:
+			killer.profile.pk_value = mini(PK_MAX, killer.profile.pk_value + 1)
+			gs.notice(killer, "Bạn đã đồ sát %s! Trị PK tăng lên %d." % [c.entity.name, killer.profile.pk_value])
 			gs.profile_changed(killer)
-		else:
-			gs.notice(killer, "Bạn đã hạ %s." % c.entity.name)
-		c.profile.pk_value = maxi(0, c.profile.pk_value + PK_BE_KILLED)
-		gs.notice(c, "Bạn bị %s hạ trong cừu sát." % killer.entity.name)
-		gs.profile_changed(c)
-	end_enmity(c, "Cừu sát kết thúc.")
+			gs.notice(c, "Bạn bị ác nhân %s đồ sát." % killer.entity.name)
+		elif not killer_is_murder and victim_is_murder:
+			gs.notice(killer, "Bạn đã trừ gian diệt bạo, hạ gục ác nhân %s!" % c.entity.name)
+			gs.notice(c, "Bạn bị %s hạ gục." % killer.entity.name)

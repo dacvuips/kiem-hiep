@@ -98,5 +98,5 @@ static func hell_entry(m: Dictionary, stars: int) -> Dictionary:
 	var tier := int(m.get("hell_tier", 11))
 	stars = clampi(stars, 1, HELL_MAX_STARS)
 	e["hell"] = {"tier": tier, "level": hell_level(tier), "stars": stars}
-	e["name"] = "%s · Địa Ngục %d★" % [str(m["name"]), stars]
+	e["name"] = "%s · Tinh Anh %d★" % [str(m["name"]), stars]
 	return e

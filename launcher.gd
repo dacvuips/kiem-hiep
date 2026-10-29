@@ -47,7 +47,7 @@ var _speed := 0.0
 
 func _ready() -> void:
 	if OS.has_feature("editor") or OS.has_feature("web"):
-		get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
+		get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
 		return
 	_base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
 	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
@@ -359,8 +359,8 @@ func _boot(installed: Dictionary) -> void:
 			return
 
 	await get_tree().process_frame
-	print("Launcher: Chuyển cảnh sang màn hình đăng nhập...")
-	get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
+	print("Launcher: Chuyển cảnh sang màn hình chọn chế độ chơi (Offline / Online)...")
+	get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
 
 func _restart_via_java() -> void:
 	pass

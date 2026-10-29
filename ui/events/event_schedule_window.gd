@@ -212,7 +212,7 @@ static func open(host: Node, profile: PlayerProfile = null, on_play: Callable = 
 	return SocialWindow.present(host, win, &"events") as EventScheduleWindow
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
-	super._init("Sự Kiện Võ Lâm", "", 1000.0)
+	super._init(tr("Sự Kiện Võ Lâm"), "", 1000.0)
 	_profile = profile
 	_on_play = on_play
 
@@ -221,14 +221,14 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	top_bar.add_theme_constant_override("separation", 16)
 	top_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	_clock_label = SocialUi.label("⏰ Giờ hệ thống: --:--:--", GameUi.GOLD, 14)
+	_clock_label = SocialUi.label("⏰ " + tr("Giờ hệ thống:") + " --:--:--", GameUi.GOLD, 14)
 	top_bar.add_child(_clock_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_bar.add_child(spacer)
 
-	_summary_label = SocialUi.label("Đang diễn ra: 0 · Sắp diễn ra: 0", GameUi.LABEL_GREEN, 13, HORIZONTAL_ALIGNMENT_RIGHT)
+	_summary_label = SocialUi.label(tr("Đang diễn ra:") + " 0 · " + tr("Sắp diễn ra:") + " 0", GameUi.LABEL_GREEN, 13, HORIZONTAL_ALIGNMENT_RIGHT)
 	top_bar.add_child(_summary_label)
 
 	body.add_child(top_bar)
@@ -239,7 +239,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	tabs_box.add_theme_constant_override("separation", 8)
 	tabs_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in TABS.size():
-		var b := GameUi.button(TABS[i], GameUi.TAB)
+		var b := GameUi.button(tr(TABS[i]), GameUi.TAB)
 		b.custom_minimum_size = Vector2(0, 36)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_select_tab.bind(i))
@@ -286,7 +286,7 @@ func _on_tick() -> void:
 func _update_clock() -> void:
 	var dt := Time.get_time_dict_from_system()
 	if _clock_label:
-		_clock_label.text = "⏰ Giờ hệ thống: %02d:%02d:%02d" % [dt.hour, dt.minute, dt.second]
+		_clock_label.text = "⏰ " + tr("Giờ hệ thống:") + " %02d:%02d:%02d" % [dt.hour, dt.minute, dt.second]
 
 func _select_tab(idx: int) -> void:
 	_tab = idx
@@ -328,7 +328,7 @@ func _rebuild_list() -> void:
 			sorted_events.append({"event": ev, "timing": timing})
 
 	if _summary_label:
-		_summary_label.text = "🟢 Đang diễn ra: %d  ·  🟡 Sắp diễn ra: %d" % [ongoing_count, upcoming_count]
+		_summary_label.text = "🟢 " + tr("Đang diễn ra:") + " %d  ·  🟡 " + tr("Sắp diễn ra:") + " %d" % [ongoing_count, upcoming_count]
 
 	# Sắp xếp theo mức độ ưu tiên thời gian (đang diễn ra -> sắp diễn ra -> sau này -> mở cả ngày)
 	sorted_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -500,13 +500,13 @@ func _build_event_card(event: Dictionary, timing: Dictionary) -> Control:
 	else:
 		times_text = ", ".join(times_arr)
 
-	var time_lbl := SocialUi.label("⏰ Lịch: %s" % times_text, GameUi.GOLD, 12)
+	var time_lbl := SocialUi.label("⏰ " + tr("Lịch:") + " %s" % times_text, GameUi.GOLD, 12)
 	time_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	time_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	time_lbl.custom_minimum_size.x = 1
 	meta_row.add_child(time_lbl)
 
-	var loc_lbl := SocialUi.label("📍 Vị trí: %s" % str(event.get("location", "")), SocialUi.SUBTITLE, 12)
+	var loc_lbl := SocialUi.label("📍 " + tr("Vị trí:") + " %s" % str(event.get("location", "")), SocialUi.SUBTITLE, 12)
 	loc_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	loc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	loc_lbl.custom_minimum_size.x = 1
@@ -523,7 +523,7 @@ func _build_event_card(event: Dictionary, timing: Dictionary) -> Control:
 	rew_row.add_theme_constant_override("separation", 6)
 	mid_col.add_child(rew_row)
 
-	var rew_tag := SocialUi.label("🎁 Thưởng:", Color(0.95, 0.78, 0.35), 12)
+	var rew_tag := SocialUi.label("🎁 " + tr("Thưởng:"), Color(0.95, 0.78, 0.35), 12)
 	rew_row.add_child(rew_tag)
 
 	var rew_val := SocialUi.label(str(event.get("rewards", "")), Color(0.72, 0.90, 0.85), 12)
@@ -566,7 +566,7 @@ func _build_event_card(event: Dictionary, timing: Dictionary) -> Control:
 		"event": event
 	}
 
-	var action_btn := GameUi.button(str(event.get("action_text", "Chi Tiết")), GameUi.PRIMARY)
+	var action_btn := GameUi.button(tr(str(event.get("action_text", "Chi Tiết"))), GameUi.PRIMARY)
 	action_btn.custom_minimum_size = Vector2(170, 34)
 	action_btn.pressed.connect(_on_card_action.bind(event))
 	right_col.add_child(action_btn)

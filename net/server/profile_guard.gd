@@ -28,6 +28,12 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	merged["admin_grants"] = server_data.get("admin_grants", []).duplicate(true)
 	## Chợ online nằm ở MarketServer — hàng treo offline trong hồ sơ không được mang lên server.
 	merged["market"] = []
+	## Giữ custom_avatar: nếu bản gửi lên rỗng mà server đã có ảnh -> giữ bản server (tránh bị xóa nhầm)
+	if str(merged.get("custom_avatar", "")).strip_edges() == "" and server_data.has("custom_avatar") and str(server_data["custom_avatar"]).strip_edges() != "":
+		merged["custom_avatar"] = server_data["custom_avatar"]
+	## Giữ gm_aura_state nếu server đã có mà bản client gửi lên là 0 / rỗng
+	if int(merged.get("gm_aura_state", 0)) == 0 and int(server_data.get("gm_aura_state", 0)) > 0:
+		merged["gm_aura_state"] = int(server_data["gm_aura_state"])
 	if trust:
 		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):
@@ -45,7 +51,7 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 			merged[k] = server_data[k]
 	## Chỉ số TEST (nút TEST, bản debug): máy chủ thật không bao giờ nhận từ người chơi thường.
 	merged["test_attribs"] = (server_data.get("test_attribs", {}) as Dictionary).duplicate() if server_data.get("test_attribs") is Dictionary else {}
-	var level := int(server_data.get("level", 1))
+	var level := clampi(int(server_data.get("level", 1)), 1, PlayerProfile.MAX_LEVEL)
 	merged.erase("nation")   ## bỏ phe Tống / Kim cố định (bản lưu cũ còn khoá này)
 	_guard_sect(server_data, merged, level)
 	var fresh := PlayerProfile.from_dict(merged)
@@ -57,8 +63,8 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 		for k in ["skill_levels", "skill_points"]:
 			if server_data.has(k):
 				merged[k] = server_data[k]
-	_guard_items(server_data, merged)
-	merged["_money_from_server"] = _guard_money(server_data, merged, pending_gold)
+	var sold_gold := _guard_items(server_data, merged)
+	merged["_money_from_server"] = _guard_money(server_data, merged, pending_gold, sold_gold)
 	return merged
 
 ## Môn phái + hệ: game chỉ được GIA NHẬP 1 lần (server thấy Vô Môn Phái + đủ PlayerProfile.NEWBIE_LEVEL + phái đúng hệ đã chọn
@@ -91,7 +97,8 @@ static func items_by_uid(data: Dictionary) -> Dictionary:
 	return out
 
 ## Giữ lại món server biết (lấy chỉ số từ bản server, chỉ nhận vị trí / khoá / giá từ game), bỏ món lạ / trùng uid.
-static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
+## Trả về tổng giá trị tiền Lượng bán được (sold_gold) từ những món hợp lệ đã bị người chơi bán/xóa khỏi túi.
+static func _guard_items(server_data: Dictionary, merged: Dictionary) -> int:
 	var known := items_by_uid(server_data)
 	var seen := {}
 	var fix := func(it: Variant) -> Variant:
@@ -128,6 +135,14 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> void:
 			if v != null:
 				list.append(v)
 		merged[key] = list
+	var sold_value := 0
+	for uid in known:
+		if not seen.has(uid):
+			var it_dict: Dictionary = known[uid]
+			var inst := ItemInstance.from_dict(it_dict)
+			if inst.can_sell():
+				sold_value += inst.get_sale_price()
+	return sold_value
 
 ## Khoá món đồ (KLockItem): khoá thì được ngay; mở khoá phải chờ đủ ITEM_UNLOCK_SECONDS rồi mới thành tự do; khoá vĩnh viễn /
 ## gắn nhân vật không đổi được. Game gửi chuyển trạng thái sai thì giữ trạng thái của server.
@@ -161,7 +176,7 @@ static func box_cost(from_extra: int, to_extra: int) -> int:
 		cost += StorageService.EXPAND_COST_BASE * (k + 1)
 	return cost
 
-static func _guard_money(server_data: Dictionary, merged: Dictionary, pending_gold: int) -> bool:
+static func _guard_money(server_data: Dictionary, merged: Dictionary, pending_gold: int, sold_gold: int = 0) -> bool:
 	var s_total := int(server_data.get("gold", 0)) + int(server_data.get("storage_gold", 0))
 	var gold := int(merged.get("gold", 0))
 	var bank := int(merged.get("storage_gold", 0))
@@ -171,16 +186,20 @@ static func _guard_money(server_data: Dictionary, merged: Dictionary, pending_go
 	var cost := box_cost(s_extra, c_extra) if c_extra > s_extra else 0
 	if c_extra < s_extra:
 		c_extra = s_extra   ## không tự bớt rương (đồ trong rương có thể mất chỗ)
-	if gold + bank > s_total - pending_gold - cost:
+	var max_allowed := s_total - pending_gold - cost + sold_gold
+	if gold + bank > max_allowed:
 		c_extra = s_extra
 		cost = 0
+		max_allowed = s_total - pending_gold + sold_gold
 	merged["storage_extra"] = c_extra
-	var rejected := gold < 0 or bank < 0 or gold + bank > s_total - pending_gold - cost
+	var rejected := gold < 0 or bank < 0 or gold > 2_000_000_000 or bank > 2_000_000_000 or gold + bank > max_allowed
 	if rejected:
 		merged["gold"] = server_data.get("gold", 0)
 		merged["storage_gold"] = server_data.get("storage_gold", 0)
-	if int(merged.get("jade", 0)) > int(server_data.get("jade", 0)) or int(merged.get("jade", 0)) < 0:
-		merged["jade"] = server_data.get("jade", 0)
+	if int(merged.get("jade", 0)) < 0:
+		merged["jade"] = 0
+	if int(merged.get("xu", 0)) < 0:
+		merged["xu"] = 0
 	return rejected
 
 ## Điểm tiềm năng hợp lệ: đã cộng + còn lại <= điểm khởi đầu + 5 x (cấp - 1), không âm.
@@ -224,6 +243,7 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 	fresh.camp = -1   ## phe do server tính (Tân thủ -> phái -> bang); không nhận phe game tự đặt lúc tạo nhân vật
 	fresh.riding = src.riding
 	fresh.skill_settings = src.skill_settings
+	fresh.gm_aura_state = src.gm_aura_state
 	fresh.server_seen = 1
 	return fresh.to_dict()
 

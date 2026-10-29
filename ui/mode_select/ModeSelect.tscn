@@ -1,0 +1,708 @@
+[gd_scene format=3 uid="uid://bv7m8x4w8701k"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="1_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/NotoSerif-Variable.ttf" id="2_serif"]
+[ext_resource type="Texture2D" uid="uid://ba1nhwyn1mlnq" path="res://ui/login/bg.jpg" id="3_bg"]
+[ext_resource type="Texture2D" uid="uid://mseupjdlo6l6" path="res://ui/login/logo.png" id="4_logo"]
+[ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="5_stage_fit"]
+[ext_resource type="Script" path="res://ui/mode_select/mode_select.gd" id="6_script"]
+
+[sub_resource type="StyleBoxFlat" id="card_offline_bg"]
+bg_color = Color(0.015, 0.08, 0.09, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.8, 0.6, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.05, 0.4, 0.3, 0.35)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="card_online_bg"]
+bg_color = Color(0.04, 0.07, 0.12, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.75, 0.28, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.5, 0.3, 0.05, 0.35)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="badge_offline"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.05, 0.25, 0.2, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.9, 0.7, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="badge_online"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.35, 0.18, 0.02, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.8, 0.35, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="btn_offline_normal"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.32, 0.25, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.95, 0.75, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_offline_hover"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.12, 0.45, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 1, 0.85, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.2, 0.85, 0.65, 0.5)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="btn_online_normal"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.65, 0.32, 0.05, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.45, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_online_hover"]
+content_margin_top = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.85, 0.45, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.65, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 0.65, 0.15, 0.5)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="btn_small_normal"]
+bg_color = Color(0.08, 0.14, 0.16, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7, 0.6, 0.4, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_small_hover"]
+bg_color = Color(0.12, 0.22, 0.26, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.98, 0.85, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="dialog_panel_bg"]
+bg_color = Color(0.04, 0.08, 0.11, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.75, 0.3, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 20
+
+[node name="ModeSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DarkVignette" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.38)
+
+[node name="Stage" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_stage_fit")
+design_size = Vector2(1280, 720)
+
+[node name="HeaderBar" type="Control" parent="Stage"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Logo" type="TextureRect" parent="Stage/HeaderBar"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 22.0
+offset_right = 230.0
+offset_bottom = 98.0
+mouse_filter = 2
+texture = ExtResource("4_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleBox" type="VBoxContainer" parent="Stage/HeaderBar"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 20.0
+offset_right = 300.0
+offset_bottom = 105.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Stage/HeaderBar/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.88, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 30
+text = "CHỌN CHẾ ĐỘ BÔN TẨU GIANG HỒ"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Stage/HeaderBar/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.82, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "Võ Lâm Truyền Kỳ • JX1 Idle Origin"
+horizontal_alignment = 1
+
+[node name="NetStatusBox" type="HBoxContainer" parent="Stage/HeaderBar"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 35.0
+offset_right = -45.0
+offset_bottom = 75.0
+grow_horizontal = 0
+alignment = 2
+
+[node name="NetworkIndicator" type="ColorRect" parent="Stage/HeaderBar/NetStatusBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.2, 0.85, 0.4, 1)
+
+[node name="NetworkStatusLabel" type="Label" parent="Stage/HeaderBar/NetStatusBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 13
+text = "Đang kiểm tra mạng..."
+
+[node name="CardsContainer" type="HBoxContainer" parent="Stage"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -530.0
+offset_top = -225.0
+offset_right = 530.0
+offset_bottom = 255.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="CardOffline" type="PanelContainer" parent="Stage/CardsContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 480)
+layout_mode = 2
+pivot_offset = Vector2(245, 240)
+theme_override_styles/panel = SubResource("card_offline_bg")
+
+[node name="Margin" type="MarginContainer" parent="Stage/CardsContainer/CardOffline"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 26
+
+[node name="Content" type="VBoxContainer" parent="Stage/CardsContainer/CardOffline/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BadgeBox" type="HBoxContainer" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+layout_mode = 2
+
+[node name="BadgeOffline" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content/BadgeBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 1, 0.8, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("badge_offline")
+text = "KHÔNG CẦN INTERNET"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Title" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.98, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.12, 0.08, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 28
+text = "CHẾ ĐỘ OFFLINE"
+
+[node name="Subtitle" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.88, 0.85, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "Độc Hành Giang Hồ • Luyện Võ Cùng Bot Giả Lập"
+
+[node name="HSeparator" type="HSeparator" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="FeaturesList" type="VBoxContainer" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Item1" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.92, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "🗡️  Chiến Đấu Cùng Bot AI Thông Minh
+     Đấu trường PK, tỉ võ, săn quái mượt mà không lo giật lag"
+autowrap_mode = 2
+
+[node name="Item2" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.92, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "📶  Chơi Mọi Lúc Mọi Nơi
+     Hoàn toàn không cần kết nối mạng hoặc khi mạng chập chờn"
+autowrap_mode = 2
+
+[node name="Item3" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.92, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "💾  Tiến Trình Lưu Trực Tiếp Trên Máy
+     Dữ liệu nhân vật, trang bị, bí kíp được lưu bảo mật trong thiết bị"
+autowrap_mode = 2
+
+[node name="Item4" type="Label" parent="Stage/CardsContainer/CardOffline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.92, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "🗺️  Tự Do Khám Phá & Luyện Công
+     Trải nghiệm trọn vẹn 10 môn phái, hệ thống kỹ năng & vượt ải"
+autowrap_mode = 2
+
+[node name="BtnOffline" type="Button" parent="Stage/CardsContainer/CardOffline/Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.15, 0.1, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_offline_normal")
+theme_override_styles/hover = SubResource("btn_offline_hover")
+theme_override_styles/pressed = SubResource("btn_offline_hover")
+text = "BẮT ĐẦU CHƠI OFFLINE"
+
+[node name="CardOnline" type="PanelContainer" parent="Stage/CardsContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 480)
+layout_mode = 2
+pivot_offset = Vector2(245, 240)
+theme_override_styles/panel = SubResource("card_online_bg")
+
+[node name="Margin" type="MarginContainer" parent="Stage/CardsContainer/CardOnline"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 26
+
+[node name="Content" type="VBoxContainer" parent="Stage/CardsContainer/CardOnline/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BadgeBox" type="HBoxContainer" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+layout_mode = 2
+
+[node name="BadgeOnline" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content/BadgeBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("badge_online")
+text = "CẦN KẾT NỐI MẠNG"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Title" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.08, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 28
+text = "CHẾ ĐỘ ONLINE"
+
+[node name="Subtitle" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.88, 0.78, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "Chiến Trường Giang Hồ • Tương Tác Người Chơi Thật"
+
+[node name="HSeparator" type="HSeparator" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="FeaturesList" type="VBoxContainer" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Item1" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "👥  Hội Tụ Hiệp Khách Bốn Phương
+     Giao lưu, kết nghĩa huynh đệ, bang hội cùng người chơi thật"
+autowrap_mode = 2
+
+[node name="Item2" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "🏰  Chiến Trường Tống Kim Rực Lửa
+     Đại chiến ngàn người, săn Boss Hoàng Kim, Lôi Đài thời gian thực"
+autowrap_mode = 2
+
+[node name="Item3" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "🏪  Giao Dịch Tự Do & Thương Hội
+     Bày bán trực tiếp, trao đổi bảo vật Kỳ Trân Các, đấu giá liên server"
+autowrap_mode = 2
+
+[node name="Item4" type="Label" parent="Stage/CardsContainer/CardOnline/Margin/Content/FeaturesList"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "☁️  Lưu Trữ Đám Mây Toàn Diện
+     Tài khoản và hồ sơ nhân vật được đồng bộ và bảo vệ an toàn"
+autowrap_mode = 2
+
+[node name="BtnOnline" type="Button" parent="Stage/CardsContainer/CardOnline/Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.08, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("btn_online_normal")
+theme_override_styles/hover = SubResource("btn_online_hover")
+theme_override_styles/pressed = SubResource("btn_online_hover")
+text = "ĐĂNG NHẬP CHƠI ONLINE"
+
+[node name="FooterBar" type="Control" parent="Stage"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="BtnQuit" type="Button" parent="Stage/FooterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 38)
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 60.0
+offset_top = -19.0
+offset_right = 190.0
+offset_bottom = 19.0
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("btn_small_normal")
+theme_override_styles/hover = SubResource("btn_small_hover")
+text = "Thoát Game"
+
+[node name="VersionLabel" type="Label" parent="Stage/FooterBar"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -12.0
+offset_right = 250.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 13
+text = "JX1 Idle Origin • Phiên bản 1.0.0 • Hỗ trợ Đa Nền Tảng"
+horizontal_alignment = 1
+
+[node name="DialogOverlay" type="ColorRect" parent="Stage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="DialogBox" type="PanelContainer" parent="Stage/DialogOverlay"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(520, 290)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -145.0
+offset_right = 260.0
+offset_bottom = 145.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("dialog_panel_bg")
+
+[node name="Margin" type="MarginContainer" parent="Stage/DialogOverlay/DialogBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="Stage/DialogOverlay/DialogBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="DialogTitle" type="Label" parent="Stage/DialogOverlay/DialogBox/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.08, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_serif")
+theme_override_font_sizes/font_size = 20
+text = "THÔNG BÁO KẾT NỐI MẠNG"
+horizontal_alignment = 1
+
+[node name="DialogMsg" type="Label" parent="Stage/DialogOverlay/DialogBox/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+text = "Không thể kết nối Internet hoặc Máy chủ Giang Hồ chưa phản hồi!
+
+Chế độ Online yêu cầu mạng để chơi cùng người khác. Bạn có muốn chuyển sang chơi Chế độ Offline cùng Bot để trải nghiệm ngay không?"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ActionButtons" type="HBoxContainer" parent="Stage/DialogOverlay/DialogBox/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="BtnDialogOffline" type="Button" parent="Stage/DialogOverlay/DialogBox/Margin/VBox/ActionButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 42)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("btn_offline_normal")
+theme_override_styles/hover = SubResource("btn_offline_hover")
+text = "Chơi Offline Luôn"
+
+[node name="BtnDialogRetry" type="Button" parent="Stage/DialogOverlay/DialogBox/Margin/VBox/ActionButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("btn_online_normal")
+theme_override_styles/hover = SubResource("btn_online_hover")
+text = "Thử Lại Mạng"
+
+[node name="BtnDialogClose" type="Button" parent="Stage/DialogOverlay/DialogBox/Margin/VBox/ActionButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 42)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("btn_small_normal")
+theme_override_styles/hover = SubResource("btn_small_hover")
+text = "Đóng"

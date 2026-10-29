@@ -163,6 +163,36 @@ func open_spawn_near(point: Vector2) -> Vector2:
 	var c := MapGrid.find_open_cell(world_to_cell(point), func(cell: Vector2i) -> bool: return (_value(cell) >> 4) == 0)
 	return cell_to_world(c) if c != Vector2i(-1, -1) else free_near(point)
 
+## Danh sách toạ độ xuất phát ở các góc (Tây Bắc, Đông Bắc, Tây Nam, Đông Nam) quanh `center`, cách xa Boss
+func corner_spawns_near(center: Vector2) -> Array[Vector2]:
+	var rect: Array = data.get("rect", [0, 0, 1, 1])
+	var span_x: float = (float(rect[2]) - float(rect[0]) + 1.0) * REGION
+	var span_y: float = (float(rect[3]) - float(rect[1]) + 1.0) * REGION
+	var dx: float = clampf(span_x * 0.35, 1200.0, 2000.0)
+	var dy: float = clampf(span_y * 0.35, 800.0, 1400.0)
+
+	var corner_offsets: Array[Vector2] = [
+		Vector2(-dx, -dy),  ## Góc Tây Bắc (trên-trái)
+		Vector2(dx, -dy),   ## Góc Đông Bắc (trên-phải)
+		Vector2(-dx, dy),   ## Góc Tây Nam (dưới-trái)
+		Vector2(dx, dy),    ## Góc Đông Nam (dưới-phải)
+	]
+
+	var res: Array[Vector2] = []
+	for off in corner_offsets:
+		var target := center + off
+		var pos := open_spawn_near(target)
+		if pos != Vector2.ZERO and pos.distance_to(center) >= 500.0:
+			res.append(pos)
+
+	if res.is_empty():
+		var fallback := open_spawn_near(center + Vector2(-dx, -dy))
+		if fallback != Vector2.ZERO:
+			res.append(fallback)
+		else:
+			res.append(center)
+	return res
+
 ## Đứng ở `point` có đi ra được vùng rộng không (false = kẹt trong "ốc đảo" bị vật cản bao kín).
 func is_open_area(point: Vector2) -> bool:
 	var c := world_to_cell(point)

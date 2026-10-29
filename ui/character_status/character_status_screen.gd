@@ -70,6 +70,11 @@ func _ready() -> void:
 		push_warning("CharacterStatusScreen: _profile chưa được gán — bỏ qua refresh(). Scene này phải tạo qua CharacterStatusScreen.attach(), không chạy trực tiếp.")
 		return
 
+	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
+		if p == null or p == _profile or p == GameManager.local_profile:
+			refresh()
+	)
+
 	refresh()
 
 ## Khối trên cùng: Tên/Xưng hiệu, Phúc duyên/Danh vọng, Đẳng cấp/Xếp hạng — giá trị màu TRẮNG/kem

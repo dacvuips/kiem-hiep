@@ -59,15 +59,8 @@ var _loading := false
 var _filter_buttons: Array[Button] = []
 
 func _ready() -> void:
-	if not AccountApi.is_logged_in():
-		if OS.has_feature("editor") or OS.is_debug_build():
-			_account_label.text = "Tài khoản: Khách (Thử nghiệm)"
-			_servers = MOCK_SERVERS.duplicate(true)
-		else:
-			get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
-			return
-	else:
-		_account_label.text = "Tài khoản: " + AccountApi.username()
+	MusicManager.play_title_music()
+	_update_account_label()
 
 	_back.pressed.connect(_on_back_pressed)
 	_back.mouse_entered.connect(func() -> void:
@@ -92,6 +85,15 @@ func _ready() -> void:
 	_enter.button_down.connect(_set_enter_pressed.bind(true))
 	_enter.button_up.connect(_set_enter_pressed.bind(false))
 
+	_update_locale_texts()
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(func(_l: String) -> void:
+			_update_locale_texts()
+			_build_filters()
+			_refresh_rows()
+		)
+
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 
@@ -101,6 +103,51 @@ func _ready() -> void:
 			AccountApi.session_invalidated.connect(_on_session_invalidated)
 	else:
 		_refresh_rows()
+
+func _update_account_label() -> void:
+	if not is_instance_valid(_account_label):
+		return
+	if not AccountApi.is_logged_in():
+		if OS.has_feature("editor") or OS.is_debug_build():
+			_account_label.text = tr("Tài khoản: Khách (Thử nghiệm)")
+			_servers = MOCK_SERVERS.duplicate(true)
+		else:
+			get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
+			return
+	else:
+		_account_label.text = tr("Tài khoản: ") + AccountApi.username()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		if is_inside_tree() and is_node_ready():
+			_update_locale_texts()
+			_build_filters()
+			_refresh_rows()
+
+func _update_locale_texts() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	_update_account_label()
+	var title_lbl: Label = get_node_or_null("Stage/Title")
+	if title_lbl:
+		title_lbl.text = tr("Chọn Server")
+	var l_green: Label = get_node_or_null("Stage/Legend/LegGreen/Lbl")
+	if l_green:
+		l_green.text = tr("Mượt")
+	var l_yellow: Label = get_node_or_null("Stage/Legend/LegYellow/Lbl")
+	if l_yellow:
+		l_yellow.text = tr("Đông")
+	var l_red: Label = get_node_or_null("Stage/Legend/LegRed/Lbl")
+	if l_red:
+		l_red.text = tr("Đầy")
+	var l_gray: Label = get_node_or_null("Stage/Legend/LegGray/Lbl")
+	if l_gray:
+		l_gray.text = tr("Bảo trì")
+	var enter_lbl: Label = get_node_or_null("Stage/EnterButton/EnterLabel")
+	if enter_lbl:
+		enter_lbl.text = tr("Vào Game")
+	if _back:
+		_back.text = tr("Đổi tài khoản")
 
 var _session_poll_timer := 0.0
 const SESSION_POLL_INTERVAL := 5.0
@@ -176,7 +223,7 @@ func _build_filters() -> void:
 
 	for f in FILTERS:
 		var b := Button.new()
-		b.text = f["label"]
+		b.text = tr(f["label"])
 		b.custom_minimum_size = Vector2(140, 48)
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -261,7 +308,7 @@ func _refresh_rows() -> void:
 		shown += 1
 	if shown == 0:
 		var l := Label.new()
-		l.text = "Đang tải danh sách server…" if _loading else "Không có server nào"
+		l.text = tr("Đang tải danh sách server…") if _loading else tr("Không có server nào")
 		l.add_theme_color_override("font_color", Color(0.6, 0.7, 0.68))
 		l.add_theme_font_size_override("font_size", 16)
 		l.custom_minimum_size = Vector2(440, 60)
@@ -329,7 +376,7 @@ func _make_row(s: Dictionary) -> Button:
 	# Bên phải: Huy hiệu [Mới] hoặc nhãn trạng thái (Đông, Đầy, ...)
 	if bool(s.get("is_new", false)):
 		var badge := Label.new()
-		badge.text = "Mới"
+		badge.text = tr("Mới")
 		badge.position = Vector2(360, 11)
 		badge.size = Vector2(56, 26)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -347,7 +394,7 @@ func _make_row(s: Dictionary) -> Button:
 		b.add_child(badge)
 	else:
 		var st_lbl := Label.new()
-		st_lbl.text = st["text"]
+		st_lbl.text = tr(st["text"])
 		st_lbl.position = Vector2(330, 0)
 		st_lbl.size = Vector2(90, ROW_HEIGHT)
 		st_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -376,10 +423,10 @@ func _on_enter_pressed() -> void:
 			server = s
 			break
 	if server.is_empty():
-		_toast("Hãy chọn một máy chủ")
+		_toast(tr("Hãy chọn một máy chủ"))
 		return
 	if str(server.get("status", "")) == "maintenance":
-		_toast("Máy chủ %s đang bảo trì, vui lòng chọn máy chủ khác" % server.get("name", ""))
+		_toast(tr("Máy chủ %s đang bảo trì, vui lòng chọn máy chủ khác") % server.get("name", ""))
 		return
 
 	# Kiểm tra xác thực phiên đăng nhập trước khi cho phép vào bên trong
@@ -390,7 +437,7 @@ func _on_enter_pressed() -> void:
 			return
 		if not chk.ok:
 			_enter.disabled = false
-			AccountScreen.next_login_message = chk.message if chk.message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+			AccountScreen.next_login_message = chk.message if chk.message != "" else tr("Tài khoản vừa đăng nhập ở thiết bị khác")
 			get_tree().change_scene_to_file(LOGIN_SCENE)
 			return
 

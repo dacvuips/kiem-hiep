@@ -11,8 +11,8 @@ class_name VltkSkillRunner
 ##   2. Tới 60% động tác (ATTACKACTION_EFFECT_PERCENT) mới bắn đạn — nhắm vị trí mục tiêu LÚC ĐÓ.
 
 const ATTACK_EFFECT_PERCENT := 0.6
-## Ảnh xuất chiêu của skill HỖ TRỢ chạy nhanh hơn gốc cho dễ thấy.
-const SUPPORT_ANIM_SPEED := 0.7   ## hệ số so với nhịp gốc (1.0 = đúng gốc); đã chỉnh 1.8 -> 0.36 -> 0.7
+## Hoạt ảnh xuất chiêu hỗ trợ: 1.0 = đúng chuẩn 100% nhịp gốc VLTK
+const SUPPORT_ANIM_SPEED := 1.0
 
 ## SkillStyle 1 = CẬN CHIẾN (SKILL_SS_Melee) — MisslesForm của nó là eMeleeForm gốc (SkillDef.h, đếm tiếp sau 8 đội hình đạn).
 const STYLE_MELEE := 1
@@ -53,7 +53,7 @@ static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, s
 	play_cast_sound(caster, skill.vltk_skill_id)
 	if is_melee_supported(s):
 		SfxManager.play_skill_cast(stats, caster.global_position)
-		_run_melee(ctx, caster, aim_node.get_instance_id() if aim_node != null else 0, aim_point, level, s, float(skill.vltk_attack_radius))
+		_run_melee(ctx, caster, aim_node.get_instance_id() if aim_node != null else 0, aim_point, level, s, skill.get_attack_radius_at_level(level))
 		return
 	var delay := 0.0
 	if caster.has_method("begin_skill_action"):

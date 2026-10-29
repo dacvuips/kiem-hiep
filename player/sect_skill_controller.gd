@@ -26,15 +26,19 @@ func _profile() -> PlayerProfile:
 	return owner_profile if owner_profile != null else GameManager.local_profile
 var _cooldowns: Dictionary = {}  ## skill_id (String) -> giây còn lại
 var _cooldown_totals: Dictionary = {}  ## skill_id (String) -> cooldown gốc (để tính % cho UI)
+var _auto_attack_cooldowns: Dictionary = {}  ## skill_id (String) -> giãn cách kích hoạt tự động
 
 func setup(sect_def: SectDefinition) -> void:
 	sect = sect_def
 	_cooldowns.clear()
 	_cooldown_totals.clear()
+	_auto_attack_cooldowns.clear()
 
 func tick(delta: float) -> void:
 	for id in _cooldowns.keys():
 		_cooldowns[id] = maxf(0.0, _cooldowns[id] - delta)
+	for id in _auto_attack_cooldowns.keys():
+		_auto_attack_cooldowns[id] = maxf(0.0, _auto_attack_cooldowns[id] - delta)
 
 ## 0.0 = sẵn sàng dùng, 1.0 = vừa thi triển — UI dùng để vẽ radial fill hồi chiêu.
 func get_cooldown_ratio(skill_id: String) -> float:
@@ -114,10 +118,10 @@ func try_cast_skill(index: int, caster: Node2D, target: Variant = null) -> bool:
 func try_cast_loop(skill: SkillDefinition, caster: Node2D, target: Variant = null) -> bool:
 	return _try_cast(skill, caster, target)
 
-## Buff hỗ trợ (skill trạng thái không nhắm địch, VD Thanh Phong phù) — tâm là người thi triển, không
+## Buff hỗ trợ (skill chủ động không nhắm địch, VD Thanh Phong phù, Skill 180...) — tâm là người thi triển, không
 ## cần mục tiêu.
 static func is_self_buff(skill: SkillDefinition) -> bool:
-	return skill != null and skill.is_state_skill() and not skill.target_enemy
+	return skill != null and not skill.target_enemy and not skill.is_aura
 
 ## Bùa xuất hiện NGAY tại mục tiêu / tại người thi triển (MisslesForm 6/7) — không bay, áp cả vùng luôn.
 static func is_instant_curse(skill: SkillDefinition) -> bool:
@@ -163,6 +167,16 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		return false
 	## Hào quang: bấm để BẬT/TẮT (chỉ 1 hào quang cùng lúc), không bắn gì — chỉ số dựng lại ngay.
 	if toggle_aura:
+		var turning_on := _profile() == null or _profile().active_aura_id != skill.id
+		if turning_on:
+			var cost := skill.get_mana_cost_at_level(_learned_level(skill))
+			if cost > 0 and not GameManager.is_free_mana_stage(caster):
+				if "mana" in caster:
+					if caster.mana < cost:
+						if caster.has_method("notify"):
+							caster.notify("Không đủ nội lực!")
+						return false
+					caster.mana -= cost
 		_toggle_aura(skill, caster)
 		if is_aura_active(skill) and USE_VLTK_SKILL_FX:
 			VltkSkillRunner.play_support(caster, null, skill, _learned_level(skill))
@@ -171,6 +185,17 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		_cooldown_totals[skill.id] = AURA_TOGGLE_DELAY
 		skill_cast.emit(skill.id)
 		return true
+
+	## Tiêu hao nội lực (chỉ ải Luyện và Tinh anh mới miễn phí nội lực; các ải khác và PK đều tiêu hao).
+	var mana_cost := skill.get_mana_cost_at_level(_learned_level(skill))
+	if mana_cost > 0 and not GameManager.is_free_mana_stage(caster):
+		if "mana" in caster:
+			if caster.mana < mana_cost:
+				if caster.has_method("notify"):
+					caster.notify("Không đủ nội lực!")
+				return false
+			caster.mana -= mana_cost
+
 	var stats := _resolve_stats(skill, caster)
 	var cooldown := DEBUG_COOLDOWN if DEBUG_NO_COOLDOWN else stats.cooldown
 	_cooldowns[skill.id] = cooldown
@@ -229,9 +254,7 @@ func _toggle_aura(skill: SkillDefinition, caster: Node2D) -> void:
 ## "vòng tròn gây sát thương" bán kính DmgRange quanh người, mỗi quái trong vòng dính độc. Hào quang không nhắm địch (Mộng Điệp,
 ## Phổ Độ Chúng Sinh...) thi triển cùng nhịp nhưng chỉ để vẽ (chỉ số của chúng đã tính khi bật, qua CombatantBuild).
 const AURA_TICK := 10.0 / 18.0
-const INNER_POISON_TIME_SCALE := 3.0     ## nhân thời gian dính độc nội công (1 = đúng bảng skill)
-const INNER_POISON_TICK_FRAMES := 50    ## nhịp rút độc nội công (nhịp game, 18/giây); nhỏ hơn = rút dày hơn
-const AURA_CASTS_PER_TICK := 2   ## số lần thi triển skill con của hào quang mỗi nhịp (server thật = 2)
+const AURA_CASTS_PER_TICK := 1   ## 1 lần mỗi 10 frame theo đúng KNpc.cpp:871 gốc
 var _aura_time: float = 0.0
 
 func tick_aura(caster: Node2D, delta: float) -> void:
@@ -299,9 +322,14 @@ func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D =
 		VltkSkillRunner.play_support(caster, target, skill, _learned_level(skill))
 
 func _learned_level(skill: SkillDefinition) -> int:
-	var base_lvl := maxi(1, _profile().get_skill_level(skill.id))
+	var prof := _profile()
+	var base_lvl := maxi(1, prof.get_skill_level(skill.id) if prof != null else 1)
 	if PlayerStats.level > 1:
 		base_lvl += int((PlayerStats.level - 1) / 2)
+	var caster := get_parent()
+	var c_stats: CombatantStats = caster.get("combat_stats") if caster else null
+	if c_stats != null:
+		base_lvl += c_stats.get_skill_bonus(int(skill.element) if "element" in skill else -1)
 	return maxi(1, base_lvl)
 
 ## Hiệu ứng trúng đòn — NGUYÊN VĂN KNpc::AppendSkillEffect gốc (giá trị skill đọc từ vltk_attribs):
@@ -325,42 +353,29 @@ func _resolve_hit_effects(stats: ResolvedSkillStats, skill: SkillDefinition, lev
 		freeze = maxi(freeze, MagicAttribTable.COLD_DAMAGE_TIME + attacker.cold_enhance_frames)
 	stats.freeze_frames = freeze
 
-	## Độc dạng {damage, thời gian, nhịp} như KMagicAttrib gốc — damage của skill đã nhân % hỗ trợ.
+	## Độc dạng {damage, thời gian, nhịp} như KMagicAttrib gốc (KNpc::AppendSkillEffect):
+	##   - nValue[0]: damage mỗi nhịp rút độc
+	##   - nValue[1]: thời gian dính độc (frame VLTK, 18/giây)
+	##   - nValue[2]: nhịp rút độc (frame VLTK) — giảm theo poison_enhance_p của người đánh
+	## Sau đó gộp với độc nội công/ngoại công của nhân vật bằng MixPoisonDamage gốc.
 	var poison := Vector3i.ZERO
 	if skill.has_attrib("poisondamage_v"):
 		var raw := skill.get_attrib("poisondamage_v", level)
 		var skill_poison: Vector2i = elements.get(poison_type, Vector2i(raw.x, raw.x))
-		@warning_ignore("integer_division")
-		poison = Vector3i(skill_poison.x, raw.y, maxi(1, raw.z * (100 - attacker.poison_enhance_p) / 100))
+		var tick_damage: int = skill_poison.x if skill_poison.x > 0 else raw.x
+		var duration_frames: int = raw.y if raw.y > 0 else 60
+		var interval_base: int = raw.z if raw.z > 0 else 10
+		var interval_frames: int = maxi(1, interval_base * (100 - attacker.poison_enhance_p) / 100) if attacker.poison_enhance_p > 0 else interval_base
+		poison = Vector3i(tick_damage, duration_frames, interval_frames)
 		if not is_physical and attacker.inner_element_damage.has(poison_type):
 			poison = _mix_poison(poison, _bonus_poison(attacker.inner_element_damage[poison_type]))
-		if not is_physical:
-			## Server THẬT (Coreserver.dll, KNpc::AppendSkillEffect @100110e0) khác mã nguồn C++: skill NỘI công gây độc —
-			## sau khi gộp (chỉ còn thời gian lấy từ phép gộp), damage và nhịp bị GHI ĐÈ bằng
-			##   (100 - %tăng nhịp độc) × giá trị skill / 100 + (damage vật lý nội công của nhân vật), rồi NHÂN ĐÔI cả hai (<< 1).
-			## Nên độc nội công (VD Vô Hình Độc) mạnh gấp đôi so với tính theo mã nguồn.
-			var keep := 100 - attacker.poison_enhance_p
-			poison.x = 2 * (raw.x * keep / 100)
-			## Giá trị CAO của khoảng roll: đo trên server thật (nhân vật doctuine, Vô Hình Độc cấp 1 và 2, ~25 số mất máu) khoảng
-			## đòn thường là [2·(5+cấp), 100] — trung bình 56, đòn chí mạng nhân đôi (120, 145) — tức nhịp/giá trị cao = 4 × 25,
-			## gấp đôi so với (<< 1) đọc được trong dll. Chưa tìm ra chỗ nhân đôi thứ hai trong dll nên hiệu chỉnh theo số đo.
-			poison.z = maxi(1, 4 * (raw.z * keep / 100))
-	if is_physical and attacker.outer_element_damage.has(poison_type):
-		poison = _mix_poison(poison, _bonus_poison(attacker.outer_element_damage[poison_type]))
+		elif is_physical and attacker.outer_element_damage.has(poison_type):
+			poison = _mix_poison(poison, _bonus_poison(attacker.outer_element_damage[poison_type]))
 	if poison.x > 0 and poison.z > 0:
-		## Sau khi gộp, lượng Độc sát của đòn = damage đã gộp (AppendSkillEffect ghi đè nValue[0]).
-		## KNpc::ReceiveDamage gốc gọi CalcDamage(nValue[0], nValue[2]) cho độc: cú đánh đầu roll giữa damage và NHỊP (nValue[2]);
-		## còn mỗi nhịp rút về sau là damage khai báo (poison_tick_damage).
-		elements[poison_type] = Vector2i(poison.x, poison.z)
+		elements[poison_type] = Vector2i(poison.x, poison.x)
 		stats.poison_tick_damage = poison.x
 		stats.poison_time_frames = poison.y
 		stats.poison_interval_frames = poison.z
-		## Độc NỘI công: nhịp rút máu tách khỏi giá trị roll đòn (poison.z = 100 quá dài, độc 20 nhịp chỉ rút đúng 1 lần ở cuối) —
-		## theo cảm nhận trên server thật là rút dày hơn, nên dùng nhịp rút ngắn hơn (chỉnh INNER_POISON_TICK_FRAMES).
-		if not is_physical:
-			stats.poison_interval_frames = mini(poison.z, INNER_POISON_TICK_FRAMES)
-			## Thời gian dính độc nội công dài hơn bảng skill (cảm nhận trên server thật): độc cộng dồn lâu hơn nên số rút to dần.
-			stats.poison_time_frames = roundi(poison.y * INNER_POISON_TIME_SCALE)
 
 	var stun := skill.get_attrib("stun_p", level)
 	stats.stun_chance_p = stun.x
@@ -400,9 +415,40 @@ static func _mix_poison(dest: Vector3i, src: Vector3i) -> Vector3i:
 			(t1 * d1 * c2 + t2 * d2 * c1) / (d1 * c2 + d2 * c1),
 			(c1 + c2) / 2)
 
+## Tính lực tay trái (damage của skill chính) và cờ use_ar cho nhân vật / profile.
+## Nhận player_node nếu có, nếu null thì tự suy từ profile.
+static func get_left_hand_info(profile: PlayerProfile, player_node: Node2D = null) -> Dictionary:
+	var s: CombatantStats = (player_node.combat_stats if (player_node and "combat_stats" in player_node and player_node.combat_stats != null) else (profile.get_combat_stats() if profile else CombatantStats.new()))
+	var left_damage := Vector2i(s.unarmed_min_damage, s.unarmed_max_damage)
+	var left_uses_ar := true
+	if profile == null and player_node == null:
+		return {"damage": left_damage, "use_ar": left_uses_ar}
+
+	var ctrl: SectSkillController = null
+	var should_free := false
+	if player_node != null and "skill_controller" in player_node and player_node.skill_controller != null:
+		ctrl = player_node.skill_controller
+	elif profile != null:
+		ctrl = SectSkillController.new()
+		ctrl.owner_profile = profile
+		if not profile.sect_id.is_empty():
+			ctrl.setup(SectRegistry.get_by_id(profile.sect_id))
+		should_free = true
+
+	if ctrl != null:
+		var main_skill: SkillDefinition = ctrl.get_main_skill()
+		if main_skill != null and not main_skill.is_basic_attack:
+			left_damage = ctrl.get_echo_damage(main_skill, player_node)
+			if main_skill.vltk_skill_id > 0:
+				left_uses_ar = int(VltkSkillData.skill(main_skill.vltk_skill_id, 1).get("use_ar", 1)) != 0
+		if should_free:
+			ctrl.free()
+
+	return {"damage": left_damage, "use_ar": left_uses_ar}
+
 ## "Lực tay trái/phải" của bảng nhân vật (KPlayer::GetEchoDamage gốc): khoảng damage của skill = vật lý (nhân % skill) + Băng/Hỏa/Lôi
 ## + ĐỘC TÍNH CẢ ĐỢT (damage × thời gian / nhịp) — không phải cú đánh đầu. Trả về Vector2i(min, max).
-func get_echo_damage(skill: SkillDefinition, caster: Node2D) -> Vector2i:
+func get_echo_damage(skill: SkillDefinition, caster: Node2D = null) -> Vector2i:
 	if skill == null:
 		return Vector2i.ZERO
 	var stats := _resolve_stats(skill, caster)
@@ -421,10 +467,10 @@ func get_echo_damage(skill: SkillDefinition, caster: Node2D) -> Vector2i:
 		hi += total
 	return Vector2i(int(lo), int(hi))
 
-func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStats:
+func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
 	var profile := _profile()
-	var learned_level: int = maxi(1, profile.get_skill_level(skill.id))
+	var learned_level: int = _learned_level(skill)
 	var real := skill.get_combat_damage_at_level(learned_level)
 	var enhance_percent: float = real["physics_enhance"]
 	var physics_flat: Vector2i = real["physics_flat"]
@@ -439,7 +485,13 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 	var add_damage_p := skill.get_support_percent_from_other_skills(sect_skills, profile)
 	var is_physical := skill.is_physical()
 
-	var combat_stats: CombatantStats = caster.combat_stats if "combat_stats" in caster else CombatantStats.new()
+	var combat_stats: CombatantStats
+	if caster != null and "combat_stats" in caster and caster.combat_stats != null:
+		combat_stats = caster.combat_stats
+	elif profile != null:
+		combat_stats = profile.get_combat_stats()
+	else:
+		combat_stats = CombatantStats.new()
 	## Damage tay không/vũ khí (m_PhysicsDamage gốc) — trung bình min/max vì `damage` của đòn là 1 số.
 	var base_unarmed_damage := (combat_stats.unarmed_min_damage + combat_stats.unarmed_max_damage) / 2
 
@@ -499,6 +551,8 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 	var deadly_strike: int = real["deadly_strike"] + (combat_stats.deadly_strike_enhance_p if is_physical else 0)
 	stats.crit_chance = clampf((deadly_strike / 100.0) + PlayerStats.crit_chance, 0.0, 1.0)
 	stats.five_elements_damage_p = real["five_elements_damage_p"]
+	if skill.has_attrib("ignoredefense_p"):
+		stats.ignore_defense_percent = skill.get_attrib("ignoredefense_p", learned_level).x
 	## Bùa (nhắm địch, chỉ trạng thái — VD Mê Tung ảo ảnh): đạn không gây damage, trúng thì áp trạng thái.
 	if skill.is_state_skill() and skill.target_enemy:
 		var payload := skill.get_state_payload(learned_level)
@@ -517,3 +571,46 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D) -> ResolvedSkillStat
 	stats.vfx_hit_name = skill.vfx_hit_name
 	stats.color = skill.color
 	return stats
+
+## Kích hoạt kỹ năng tự động khi tấn công trúng mục tiêu (autoattackskill trong VLTK gốc, VD: Sâm La Độc Hải nổ đầu lâu).
+func trigger_auto_attack_skills(caster: Node2D, target: Node2D, source_skill: Dictionary = {}) -> void:
+	if caster == null or not is_instance_valid(caster) or not caster.is_inside_tree():
+		return
+	if target == null or not is_instance_valid(target) or not target.is_inside_tree():
+		return
+	if target is Node and (target as Node).is_queued_for_deletion():
+		return
+	## Tránh kích hoạt lặp vô hạn từ chính chiêu nổ đầu lâu / chiêu auto-attack
+	if source_skill.get("is_auto_attack", false):
+		return
+	var src_child := int(source_skill.get("child", 0))
+	var src_id := int(source_skill.get("id", 0))
+	if src_child == 357 or src_id in [1232, 100357]:
+		return
+
+	## Sâm La Độc Hải (Ngũ Độc): tự động kích hoạt Hồn Ảnh Tùng Sanh (1232 - Missile 357 nổ đầu lâu)
+	var sam_la := _find_skill("ngu_doc_sam_la_doc_hai")
+	if sam_la != null and is_skill_usable(sam_la):
+		var cd: float = _auto_attack_cooldowns.get("ngu_doc_sam_la_doc_hai", 0.0)
+		if cd <= 0.0:
+			var lvl := _learned_level(sam_la)
+			var rate := 0.10 + 0.20 * clampf(float(lvl - 1) / 19.0, 0.0, 1.0)
+			if randf() < rate:
+				_auto_attack_cooldowns["ngu_doc_sam_la_doc_hai"] = 1.0  ## Giãn cách chuẩn 1 giây
+				_cast_auto_attack_missile(caster, target, 1232, lvl, sam_la)
+
+func _cast_auto_attack_missile(caster: Node2D, target: Node2D, child_skill_id: int, level: int, parent_skill: SkillDefinition) -> void:
+	if not USE_VLTK_SKILL_FX or not VltkSkillData.has_skill(child_skill_id):
+		return
+	var ctx := VltkCastContext.new()
+	ctx.launcher = caster
+	ctx.world = caster.get_parent()
+	ctx.stats = _resolve_stats(parent_skill, caster)
+	ctx.attacker_stats = caster.combat_stats if "combat_stats" in caster else null
+	if "cast_target_group" in caster:
+		ctx.target_group = caster.cast_target_group
+	var des := VltkMath.logic_of(target)
+	VltkSkillCaster.cast(ctx, child_skill_id, level, des, target)
+	if NetClient.is_in_world() and caster.is_in_group("player"):
+		var target_eid := int(target.net_eid) if "net_eid" in target else 0
+		NetClient.send_cast(child_skill_id, level, 0, target_eid, target.global_position)

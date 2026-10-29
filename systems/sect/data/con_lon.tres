@@ -36,21 +36,19 @@
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/con_lon_loi_dong_can_khon.png" id="vicon_con_lon_loi_dong_can_khon"]
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/con_lon_cuu_thien_cuong_phong.png" id="vicon_con_lon_cuu_thien_cuong_phong"]
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/con_lon_phong_minh_ngoc_toai.png" id="vicon_con_lon_phong_minh_ngoc_toai"]
-
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/con_lon_thien_cuong_khi_kinh.png" id="vicon_con_lon_thien_cuong_khi_kinh"]
 [sub_resource type="Resource" id="SubResource_1"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
 value_at_level_1 = 5.0
 value_at_max_level = 75.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_2"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 1.0
 value_at_max_level = 10.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_3"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -60,7 +58,6 @@ max_at_level_1 = 15.0
 min_at_max_level = 180.0
 max_at_max_level = 180.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_4"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Ngạo Tuyết Tiêu Phong)"
@@ -68,7 +65,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 100.0
 suffix = "%"
 target_skill_id = "con_lon_ngao_tuyet_tieu_phong"
-
 [sub_resource type="Resource" id="SubResource_5"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #2 (Cuồng Phong Sậu Điện)"
@@ -76,7 +72,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
 target_skill_id = "con_lon_cuong_phong_sau_dien"
-
 [sub_resource type="Resource" id="SubResource_6"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #3 (Cửu Thiên Cương Phong)"
@@ -84,13 +79,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 83.0
 suffix = "%"
 target_skill_id = "con_lon_cuu_thien_cuong_phong"
-
 [sub_resource type="Resource" id="SubResource_7"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 15.0
 value_at_max_level = 15.0
-
 [sub_resource type="Resource" id="SubResource_8"]
 script = ExtResource("2_skill")
 id = "con_lon_ho_phong_phap"
@@ -103,7 +96,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
-vltk_attack_radius = 300
+vltk_attack_radius = 320
 vltk_state_special_id = 0
 vltk_damage_range = 1
 vltk_range_damage = 0
@@ -111,7 +104,8 @@ vltk_hit_friend = 0
 vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 15, 0, 20, 180, 0), PackedFloat32Array(), PackedFloat32Array(1, 15, 0, 20, 180, 0)],
 "physicsenhance_p": [PackedFloat32Array(1, 5, 0, 20, 75, 0), PackedFloat32Array(), PackedFloat32Array()],
-"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
+"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 320, 0, 20, 384, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
 req_level = 10
 vltk_skill_id = 169
@@ -122,27 +116,24 @@ is_active = true
 category = 0
 base_damage = 24.0
 mana_cost = 0.0
-cooldown = 1.27
+cooldown = 0.40
 range = 400.0
 element = 4
 damage_growth_per_level = 2.88
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_1"), SubResource("SubResource_2"), SubResource("SubResource_3"), SubResource("SubResource_4"), SubResource("SubResource_5"), SubResource("SubResource_6"), SubResource("SubResource_7")])
 is_main_attack = true
-
 [sub_resource type="Resource" id="SubResource_9"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương vật lý (dùng đao)"
 value_at_level_1 = 35.0
 value_at_max_level = 215.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_10"]
 script = ExtResource("3_statline")
 label = "Tấn công chí mạng"
 value_at_level_1 = 6.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_11"]
 script = ExtResource("2_skill")
 id = "con_lon_dao_phap"
@@ -179,14 +170,12 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_9"), SubResource("SubResource_10")])
 passive_attack_bonus = 3.5
-
 [sub_resource type="Resource" id="SubResource_12"]
 script = ExtResource("3_statline")
 label = "Tăng công kích Lôi (dùng kiếm)"
 value_at_level_1 = 19.0
 value_at_max_level = 215.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_13"]
 script = ExtResource("2_skill")
 id = "con_lon_kiem_phap"
@@ -221,20 +210,17 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_12")])
 passive_attack_bonus = 1.9
-
 [sub_resource type="Resource" id="SubResource_14"]
 script = ExtResource("3_statline")
 label = "Tăng tốc độ di chuyển"
 value_at_level_1 = 22.0
 value_at_max_level = 60.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_15"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 40.0
 value_at_max_level = 40.0
-
 [sub_resource type="Resource" id="SubResource_16"]
 script = ExtResource("2_skill")
 id = "con_lon_thanh_phong_phu"
@@ -263,25 +249,22 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 8.0
+cooldown = 6.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_14"), SubResource("SubResource_15")])
-
 [sub_resource type="Resource" id="SubResource_17"]
 script = ExtResource("3_statline")
 label = "Giảm tốc độ di chuyển địch"
 value_at_level_1 = 22.0
 value_at_max_level = 52.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_18"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 60.0
 value_at_max_level = 60.0
-
 [sub_resource type="Resource" id="SubResource_19"]
 script = ExtResource("2_skill")
 id = "con_lon_ki_ban_phu"
@@ -310,32 +293,28 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 6.0
+cooldown = 3.00
 range = 300.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_17"), SubResource("SubResource_18")])
-
 [sub_resource type="Resource" id="SubResource_20"]
 script = ExtResource("3_statline")
 label = "Kháng Băng"
 value_at_level_1 = 13.0
 value_at_max_level = 32.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_21"]
 script = ExtResource("3_statline")
 label = "Kháng vật lý"
 value_at_level_1 = 9.0
 value_at_max_level = 28.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_22"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 12.0
 value_at_max_level = 50.0
-
 [sub_resource type="Resource" id="SubResource_23"]
 script = ExtResource("2_skill")
 id = "con_lon_bach_xuyen_nap_hai"
@@ -365,32 +344,28 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 10.0
+cooldown = 6.00
 range = 0.0
 element = 2
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_20"), SubResource("SubResource_21"), SubResource("SubResource_22")])
-
 [sub_resource type="Resource" id="SubResource_24"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương vật lý"
 value_at_level_1 = 35.0
 value_at_max_level = 215.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_25"]
 script = ExtResource("3_statline")
 label = "Tấn công chí mạng"
 value_at_level_1 = 16.0
 value_at_max_level = 35.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_26"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 80.0
 value_at_max_level = 80.0
-
 [sub_resource type="Resource" id="SubResource_27"]
 script = ExtResource("2_skill")
 id = "con_lon_nhat_khi_tam_thanh"
@@ -421,19 +396,17 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 12.0
+cooldown = 15.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_24"), SubResource("SubResource_25"), SubResource("SubResource_26")])
-
 [sub_resource type="Resource" id="SubResource_28"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 1.0
 value_at_max_level = 10.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_29"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -443,7 +416,6 @@ max_at_level_1 = 27.0
 min_at_max_level = 315.0
 max_at_max_level = 315.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_30"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Lôi Động Cửu Thiên)"
@@ -451,7 +423,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 60.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_cuu_thien"
-
 [sub_resource type="Resource" id="SubResource_31"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #2 (Ngũ Lôi Chánh Pháp)"
@@ -459,7 +430,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
 target_skill_id = "con_lon_ngu_loi_chanh_phap"
-
 [sub_resource type="Resource" id="SubResource_32"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #3 (Lôi Động Càn Khôn)"
@@ -467,13 +437,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 50.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_can_khon"
-
 [sub_resource type="Resource" id="SubResource_33"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 15.0
 value_at_max_level = 15.0
-
 [sub_resource type="Resource" id="SubResource_34"]
 script = ExtResource("2_skill")
 id = "con_lon_cuong_loi_chan_dia"
@@ -486,14 +454,15 @@ target_self = false
 is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
-vltk_attack_radius = 400
+vltk_attack_radius = 320
 vltk_state_special_id = 0
 vltk_damage_range = 2
 vltk_range_damage = 1
 vltk_hit_friend = 0
 vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 27, 0, 20, 315, 0), PackedFloat32Array(), PackedFloat32Array(1, 27, 0, 20, 315, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()]
+"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 10, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 320, 0, 20, 352, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
 req_level = 10
 vltk_skill_id = 179
@@ -504,46 +473,40 @@ is_active = true
 category = 0
 base_damage = 36.0
 mana_cost = 0.0
-cooldown = 1.47
+cooldown = 0.40
 range = 400.0
 element = 4
 damage_growth_per_level = 4.32
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_28"), SubResource("SubResource_29"), SubResource("SubResource_30"), SubResource("SubResource_31"), SubResource("SubResource_32"), SubResource("SubResource_33")])
-
 [sub_resource type="Resource" id="SubResource_35"]
 script = ExtResource("3_statline")
 label = "Kháng Lôi"
 value_at_level_1 = 13.0
 value_at_max_level = 32.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_36"]
 script = ExtResource("3_statline")
 label = "Kháng Hỏa"
 value_at_level_1 = 9.0
 value_at_max_level = 28.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_37"]
 script = ExtResource("3_statline")
 label = "Kháng Băng"
 value_at_level_1 = 13.0
 value_at_max_level = 32.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_38"]
 script = ExtResource("3_statline")
 label = "Kháng vật lý"
 value_at_level_1 = 9.0
 value_at_max_level = 28.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_39"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 12.0
 value_at_max_level = 90.0
-
 [sub_resource type="Resource" id="SubResource_40"]
 script = ExtResource("2_skill")
 id = "con_lon_thien_thanh_dia_troc"
@@ -575,25 +538,22 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 14.0
+cooldown = 15.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_35"), SubResource("SubResource_36"), SubResource("SubResource_37"), SubResource("SubResource_38"), SubResource("SubResource_39")])
-
 [sub_resource type="Resource" id="SubResource_41"]
 script = ExtResource("3_statline")
 label = "Làm choáng"
 value_at_level_1 = 16.0
 value_at_max_level = 35.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_42"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 100.0
 value_at_max_level = 100.0
-
 [sub_resource type="Resource" id="SubResource_43"]
 script = ExtResource("2_skill")
 id = "con_lon_khi_tam_phu"
@@ -622,12 +582,11 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 10.0
+cooldown = 3.00
 range = 300.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_41"), SubResource("SubResource_42")])
-
 [sub_resource type="Resource" id="SubResource_44"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -637,14 +596,12 @@ max_at_level_1 = 25.0
 min_at_max_level = 550.0
 max_at_max_level = 550.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_45"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 1.0
 value_at_max_level = 30.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_46"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Lôi Động Cửu Thiên)"
@@ -652,7 +609,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 65.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_cuu_thien"
-
 [sub_resource type="Resource" id="SubResource_47"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #2 (Lôi Động Càn Khôn)"
@@ -660,13 +616,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 54.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_can_khon"
-
 [sub_resource type="Resource" id="SubResource_48"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 15.0
 value_at_max_level = 35.0
-
 [sub_resource type="Resource" id="SubResource_49"]
 script = ExtResource("2_skill")
 id = "con_lon_thien_te_tan_loi"
@@ -680,14 +634,15 @@ target_self = false
 is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 1
-vltk_attack_radius = 360
+vltk_attack_radius = 384
 vltk_state_special_id = 0
 vltk_damage_range = 1
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 25, 0, 20, 550, 0), PackedFloat32Array(), PackedFloat32Array(1, 25, 0, 20, 550, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()]
+"seriesdamage_p": [PackedFloat32Array(1, 1, 0, 20, 30, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 384, 0, 20, 448, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
 req_level = 30
 vltk_skill_id = 172
@@ -698,26 +653,23 @@ is_active = true
 category = 0
 base_damage = 44.0
 mana_cost = 0.0
-cooldown = 1.6
+cooldown = 0.40
 range = 450.0
 element = 4
 damage_growth_per_level = 5.28
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_44"), SubResource("SubResource_45"), SubResource("SubResource_46"), SubResource("SubResource_47"), SubResource("SubResource_48")])
-
 [sub_resource type="Resource" id="SubResource_50"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 10.0
 value_at_max_level = 52.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_51"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
 value_at_level_1 = 55.0
 value_at_max_level = 386.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_52"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -727,14 +679,12 @@ max_at_level_1 = 45.0
 min_at_max_level = 532.0
 max_at_max_level = 532.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_53"]
 script = ExtResource("3_statline")
 label = "Làm choáng"
 value_at_level_1 = 5.0
 value_at_max_level = 15.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_54"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Khiếu Phong Tam Liên Kích)"
@@ -742,7 +692,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 126.0
 suffix = "%"
 target_skill_id = "con_lon_khieu_phong_tam_lien_kich"
-
 [sub_resource type="Resource" id="SubResource_55"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #2 (Phong Minh Ngọc Toái)"
@@ -750,13 +699,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 110.0
 suffix = "%"
 target_skill_id = "con_lon_phong_minh_ngoc_toai"
-
 [sub_resource type="Resource" id="SubResource_56"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 25.0
 value_at_max_level = 25.0
-
 [sub_resource type="Resource" id="SubResource_57"]
 script = ExtResource("2_skill")
 id = "con_lon_cuong_phong_sau_dien"
@@ -770,7 +717,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
-vltk_attack_radius = 180
+vltk_attack_radius = 448
 vltk_state_special_id = 0
 vltk_damage_range = 2
 vltk_range_damage = 1
@@ -779,6 +726,7 @@ vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 45, 0, 20, 532, 0), PackedFloat32Array(), PackedFloat32Array(1, 45, 0, 20, 532, 0)],
 "physicsenhance_p": [PackedFloat32Array(1, 55, 0, 20, 386, 0), PackedFloat32Array(), PackedFloat32Array()],
 "seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 448, 0, 20, 512, 0, 21, 512, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 5, 0, 20, 15, 0, 21, 15, 0), PackedFloat32Array(1, 1, 0, 20, 20, 0, 21, 20, 0), PackedFloat32Array()]
 }
 req_level = 50
@@ -790,20 +738,18 @@ is_active = true
 category = 0
 base_damage = 44.0
 mana_cost = 0.0
-cooldown = 1.6
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 5.28
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_50"), SubResource("SubResource_51"), SubResource("SubResource_52"), SubResource("SubResource_53"), SubResource("SubResource_54"), SubResource("SubResource_55"), SubResource("SubResource_56")])
 is_hotbar = true
-
 [sub_resource type="Resource" id="SubResource_58"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 10.0
 value_at_max_level = 52.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_59"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -813,7 +759,6 @@ max_at_level_1 = 25.0
 min_at_max_level = 937.0
 max_at_max_level = 937.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_60"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Lôi Động Cửu Thiên)"
@@ -821,7 +766,6 @@ value_at_level_1 = 1.0
 value_at_max_level = 70.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_cuu_thien"
-
 [sub_resource type="Resource" id="SubResource_61"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #2 (Lôi Động Càn Khôn)"
@@ -829,13 +773,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 58.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_can_khon"
-
 [sub_resource type="Resource" id="SubResource_62"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 50.0
 value_at_max_level = 90.0
-
 [sub_resource type="Resource" id="SubResource_63"]
 script = ExtResource("2_skill")
 id = "con_lon_ngu_loi_chanh_phap"
@@ -848,14 +790,15 @@ target_self = false
 is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
-vltk_attack_radius = 470
+vltk_attack_radius = 448
 vltk_state_special_id = 0
 vltk_damage_range = 2
 vltk_range_damage = 1
 vltk_hit_friend = 0
 vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 25, 0, 20, 937, 0), PackedFloat32Array(), PackedFloat32Array(1, 25, 0, 20, 937, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()]
+"seriesdamage_p": [PackedFloat32Array(1, 10, 0, 20, 50, 0, 21, 52, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 448, 0, 20, 480, 0, 21, 480, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
 req_level = 60
 vltk_skill_id = 182
@@ -866,40 +809,35 @@ is_active = true
 category = 0
 base_damage = 44.0
 mana_cost = 0.0
-cooldown = 1.6
+cooldown = 0.40
 range = 480.0
 element = 4
 damage_growth_per_level = 5.28
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_58"), SubResource("SubResource_59"), SubResource("SubResource_60"), SubResource("SubResource_61"), SubResource("SubResource_62")])
-
 [sub_resource type="Resource" id="SubResource_64"]
 script = ExtResource("3_statline")
 label = "Tấn công chí mạng"
 value_at_level_1 = 6.0
 value_at_max_level = 15.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_65"]
 script = ExtResource("3_statline")
 label = "Tăng tốc độ thi triển"
 value_at_level_1 = 25.0
 value_at_max_level = 65.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_66"]
 script = ExtResource("3_statline")
 label = "Tăng tốc độ xuất chiêu"
 value_at_level_1 = 25.0
 value_at_max_level = 65.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_67"]
 script = ExtResource("3_statline")
 label = "Tăng công kích Lôi"
 value_at_level_1 = 30.0
 value_at_max_level = 315.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_68"]
 script = ExtResource("2_skill")
 id = "con_lon_suong_ngao_con_lon"
@@ -938,20 +876,17 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_64"), SubResource("SubResource_65"), SubResource("SubResource_66"), SubResource("SubResource_67")])
 passive_attack_bonus = 3.0
-
 [sub_resource type="Resource" id="SubResource_69"]
 script = ExtResource("3_statline")
 label = "Giảm phản đòn tầm xa địch"
 value_at_level_1 = 5.0
 value_at_max_level = 35.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_70"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 30.0
 value_at_max_level = 40.0
-
 [sub_resource type="Resource" id="SubResource_71"]
 script = ExtResource("2_skill")
 id = "con_lon_thuc_phuoc_chu"
@@ -980,32 +915,28 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 10.0
+cooldown = 3.00
 range = 350.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_69"), SubResource("SubResource_70")])
-
 [sub_resource type="Resource" id="SubResource_72"]
 script = ExtResource("3_statline")
 label = "Hồi Sinh lực theo thời gian"
 value_at_level_1 = 1.0
 value_at_max_level = 15.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_73"]
 script = ExtResource("3_statline")
 label = "Hồi Nội lực theo thời gian"
 value_at_level_1 = 1.0
 value_at_max_level = 20.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_74"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 30.0
 value_at_max_level = 40.0
-
 [sub_resource type="Resource" id="SubResource_75"]
 script = ExtResource("2_skill")
 id = "con_lon_bac_minh_dao_hai"
@@ -1035,25 +966,22 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 12.0
+cooldown = 0.40
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_72"), SubResource("SubResource_73"), SubResource("SubResource_74")])
-
 [sub_resource type="Resource" id="SubResource_76"]
 script = ExtResource("3_statline")
 label = "Giảm tốc độ thi triển địch"
 value_at_level_1 = 6.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_77"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 30.0
 value_at_max_level = 40.0
-
 [sub_resource type="Resource" id="SubResource_78"]
 script = ExtResource("2_skill")
 id = "con_lon_khi_han_ngao_tuyet"
@@ -1082,32 +1010,28 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 12.0
+cooldown = 0.40
 range = 350.0
 element = 2
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_76"), SubResource("SubResource_77")])
-
 [sub_resource type="Resource" id="SubResource_79"]
 script = ExtResource("3_statline")
 label = "Giảm thời gian đóng băng (bản thân)"
 value_at_level_1 = 5.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_80"]
 script = ExtResource("3_statline")
 label = "Giảm thời gian choáng (bản thân)"
 value_at_level_1 = 5.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_81"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 30.0
 value_at_max_level = 40.0
-
 [sub_resource type="Resource" id="SubResource_82"]
 script = ExtResource("2_skill")
 id = "con_lon_me_tung_ao_anh"
@@ -1137,53 +1061,46 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 12.0
+cooldown = 3.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_79"), SubResource("SubResource_80"), SubResource("SubResource_81")])
-
 [sub_resource type="Resource" id="SubResource_83"]
 script = ExtResource("3_statline")
 label = "Giảm thời gian đóng băng (bản thân)"
 value_at_level_1 = 5.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_84"]
 script = ExtResource("3_statline")
 label = "Giảm thời gian choáng (bản thân)"
 value_at_level_1 = 5.0
 value_at_max_level = 50.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_85"]
 script = ExtResource("3_statline")
 label = "Hồi Sinh lực theo thời gian"
 value_at_level_1 = 1.0
 value_at_max_level = 15.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_86"]
 script = ExtResource("3_statline")
 label = "Hồi Nội lực theo thời gian"
 value_at_level_1 = 1.0
 value_at_max_level = 20.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_87"]
 script = ExtResource("3_statline")
 label = "Giảm phản đòn tầm xa địch"
 value_at_level_1 = 5.0
 value_at_max_level = 35.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_88"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 100.0
 value_at_max_level = 160.0
-
 [sub_resource type="Resource" id="SubResource_89"]
 script = ExtResource("2_skill")
 id = "con_lon_tuy_tien_ta_cot"
@@ -1216,19 +1133,17 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 16.0
+cooldown = 4.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_83"), SubResource("SubResource_84"), SubResource("SubResource_85"), SubResource("SubResource_86"), SubResource("SubResource_87"), SubResource("SubResource_88")])
-
 [sub_resource type="Resource" id="SubResource_90"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 20.0
 value_at_max_level = 60.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_91"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1238,13 +1153,11 @@ max_at_level_1 = 10.0
 min_at_max_level = 256.0
 max_at_max_level = 256.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_92"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 60.0
 value_at_max_level = 85.0
-
 [sub_resource type="Resource" id="SubResource_93"]
 script = ExtResource("2_skill")
 id = "con_lon_vu_toa_con_lon"
@@ -1263,7 +1176,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 6
-vltk_attack_radius = 400
+vltk_attack_radius = 448
 vltk_state_special_id = 0
 vltk_damage_range = 2
 vltk_range_damage = 1
@@ -1271,23 +1184,22 @@ vltk_hit_friend = 0
 vltk_attribs = {
 "addskillexp1": [PackedFloat32Array(1, 0, 0, 2, 0, 0), PackedFloat32Array(), PackedFloat32Array(1, 0, 0, 2, 0, 0)],
 "lightingdamage_v": [PackedFloat32Array(1, 10, 0, 20, 256, 0), PackedFloat32Array(), PackedFloat32Array(1, 10, 0, 20, 256, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0), PackedFloat32Array(), PackedFloat32Array()]
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 60, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 448, 0, 20, 480, 0), PackedFloat32Array(), PackedFloat32Array()]
 }
 base_damage = 44.0
 mana_cost = 0.0
-cooldown = 1.6
+cooldown = 0.40
 range = 480.0
 element = 4
 damage_growth_per_level = 5.28
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_90"), SubResource("SubResource_91"), SubResource("SubResource_92")])
-
 [sub_resource type="Resource" id="SubResource_94"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 20.0
 value_at_max_level = 62.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_95"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1297,7 +1209,6 @@ max_at_level_1 = 80.0
 min_at_max_level = 470.0
 max_at_max_level = 470.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_96"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Lôi Động Càn Khôn)"
@@ -1305,13 +1216,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
 target_skill_id = "con_lon_loi_dong_can_khon"
-
 [sub_resource type="Resource" id="SubResource_97"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 40.0
 value_at_max_level = 95.0
-
 [sub_resource type="Resource" id="SubResource_98"]
 script = ExtResource("2_skill")
 id = "con_lon_loi_dong_cuu_thien"
@@ -1344,20 +1253,18 @@ is_active = true
 category = 0
 base_damage = 60.0
 mana_cost = 0.0
-cooldown = 1.8
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_94"), SubResource("SubResource_95"), SubResource("SubResource_96"), SubResource("SubResource_97")])
 is_hotbar = true
-
 [sub_resource type="Resource" id="SubResource_99"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 20.0
 value_at_max_level = 62.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_100"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1367,7 +1274,6 @@ max_at_level_1 = 25.0
 min_at_max_level = 250.0
 max_at_max_level = 250.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_101"]
 script = ExtResource("2_skill")
 id = "con_lon_binh_dia_ham_loi"
@@ -1396,28 +1302,25 @@ vltk_attribs = {
 }
 base_damage = 60.0
 mana_cost = 0.0
-cooldown = 1.8
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_99"), SubResource("SubResource_100")])
 is_hidden = true
 parent_skill_id = "con_lon_loi_dong_cuu_thien"
-
 [sub_resource type="Resource" id="SubResource_102"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
 value_at_level_1 = 5.0
 value_at_max_level = 280.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_103"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 20.0
 value_at_max_level = 62.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_104"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1427,14 +1330,12 @@ max_at_level_1 = 39.0
 min_at_max_level = 673.0
 max_at_max_level = 673.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_105"]
 script = ExtResource("3_statline")
 label = "Làm choáng"
 value_at_level_1 = 5.0
 value_at_max_level = 25.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_106"]
 script = ExtResource("3_statline")
 label = "Tăng sát thương kỹ năng liên kết #1 (Cửu Thiên Cương Phong)"
@@ -1442,13 +1343,11 @@ value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
 target_skill_id = "con_lon_cuu_thien_cuong_phong"
-
 [sub_resource type="Resource" id="SubResource_107"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 25.0
 value_at_max_level = 45.0
-
 [sub_resource type="Resource" id="SubResource_108"]
 script = ExtResource("2_skill")
 id = "con_lon_ngao_tuyet_tieu_phong"
@@ -1463,7 +1362,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
-vltk_attack_radius = 400
+vltk_attack_radius = 448
 vltk_state_special_id = 0
 vltk_damage_range = 4
 vltk_range_damage = 1
@@ -1473,6 +1372,7 @@ vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 39, 0, 15, 200, 0, 20, 673, 0), PackedFloat32Array(), PackedFloat32Array(1, 39, 0, 15, 200, 0, 20, 673, 0)],
 "physicsenhance_p": [PackedFloat32Array(1, 5, 0, 15, 100, 0, 20, 280, 0), PackedFloat32Array(), PackedFloat32Array()],
 "seriesdamage_p": [PackedFloat32Array(1, 20, 0, 15, 20, 0, 20, 60, 0, 21, 62, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 448, 0, 20, 512, 0, 21, 512, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 5, 0, 20, 25, 0, 21, 25, 0), PackedFloat32Array(1, 1, 0, 20, 12, 0, 21, 12, 0), PackedFloat32Array()]
 }
 req_level = 80
@@ -1484,20 +1384,18 @@ is_active = true
 category = 0
 base_damage = 60.0
 mana_cost = 0.0
-cooldown = 1.8
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_102"), SubResource("SubResource_103"), SubResource("SubResource_104"), SubResource("SubResource_105"), SubResource("SubResource_106"), SubResource("SubResource_107")])
 is_hotbar = true
-
 [sub_resource type="Resource" id="SubResource_109"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
 value_at_level_1 = 28.0
 value_at_max_level = 282.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_110"]
 script = ExtResource("2_skill")
 id = "con_lon_ngu_phong_thuat"
@@ -1533,13 +1431,11 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_109")])
 passive_attack_bonus = 2.8
-
 [sub_resource type="Resource" id="SubResource_111"]
 script = ExtResource("3_statline")
 label = "Thời gian tồn tại đạn"
 value_at_level_1 = 6.0
 value_at_max_level = 24.0
-
 [sub_resource type="Resource" id="SubResource_112"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1549,7 +1445,6 @@ max_at_level_1 = 115.0
 min_at_max_level = 330.0
 max_at_max_level = 550.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_113"]
 script = ExtResource("2_skill")
 id = "con_lon_khieu_phong_tam_lien_kich"
@@ -1578,27 +1473,24 @@ vltk_attribs = {
 }
 base_damage = 60.0
 mana_cost = 0.0
-cooldown = 1.8
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_111"), SubResource("SubResource_112")])
 is_hidden = true
 parent_skill_id = "con_lon_cuong_phong_sau_dien"
-
 [sub_resource type="Resource" id="SubResource_114"]
 script = ExtResource("3_statline")
 label = "Khiên phép động"
 value_at_level_1 = 50.0
 value_at_max_level = 550.0
-
 [sub_resource type="Resource" id="SubResource_115"]
 script = ExtResource("3_statline")
 label = "Phản kháng"
 value_at_level_1 = 5.0
 value_at_max_level = 30.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_116"]
 script = ExtResource("2_skill")
 id = "con_lon_huyen_thien_vo_cuc"
@@ -1634,14 +1526,12 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_114"), SubResource("SubResource_115")])
 passive_defense_bonus = 5.0
-
 [sub_resource type="Resource" id="SubResource_117"]
 script = ExtResource("3_statline")
 label = "Xác suất kích hoạt tự cứu"
 value_at_level_1 = 1.0
 value_at_max_level = 20.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_118"]
 script = ExtResource("2_skill")
 id = "con_lon_luong_nghi_chan_khi"
@@ -1677,14 +1567,12 @@ element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_117")])
 passive_defense_bonus = 3.0
-
 [sub_resource type="Resource" id="SubResource_119"]
 script = ExtResource("3_statline")
 label = "Giảm sát thương phép"
 value_at_level_1 = 18.0
 value_at_max_level = 100.0
 suffix = " lần nội lực"
-
 [sub_resource type="Resource" id="SubResource_120"]
 script = ExtResource("2_skill")
 id = "con_lon_ma_phap_don"
@@ -1698,21 +1586,19 @@ req_level = 120
 max_level = 20
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 20.0
+cooldown = 15.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_119")])
 is_hidden = true
 parent_skill_id = "con_lon_luong_nghi_chan_khi"
-
 [sub_resource type="Resource" id="SubResource_121"]
 script = ExtResource("3_statline")
 label = "Tăng tốc độ di chuyển"
 value_at_level_1 = 5.0
 value_at_max_level = 35.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_122"]
 script = ExtResource("2_skill")
 id = "con_lon_gia_toc"
@@ -1733,21 +1619,18 @@ damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_121")])
 is_hidden = true
 parent_skill_id = "con_lon_luong_nghi_chan_khi"
-
 [sub_resource type="Resource" id="SubResource_123"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 40.0
 value_at_max_level = 82.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_124"]
 script = ExtResource("3_statline")
 label = "Làm choáng"
 value_at_level_1 = 16.0
 value_at_max_level = 44.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_125"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1757,13 +1640,11 @@ max_at_level_1 = 25.0
 min_at_max_level = 356.0
 max_at_max_level = 356.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_126"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 48.0
 value_at_max_level = 192.0
-
 [sub_resource type="Resource" id="SubResource_127"]
 script = ExtResource("2_skill")
 id = "con_lon_thien_loi_chan_nhac"
@@ -1796,20 +1677,18 @@ is_active = true
 category = 0
 base_damage = 80.0
 mana_cost = 0.0
-cooldown = 2.2
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 9.6
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_123"), SubResource("SubResource_124"), SubResource("SubResource_125"), SubResource("SubResource_126")])
 is_hotbar = true
-
 [sub_resource type="Resource" id="SubResource_128"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 40.0
 value_at_max_level = 82.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_129"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1819,7 +1698,6 @@ max_at_level_1 = 192.0
 min_at_max_level = 2040.0
 max_at_max_level = 2040.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_130"]
 script = ExtResource("2_skill")
 id = "con_lon_loi_dong_can_khon"
@@ -1848,28 +1726,25 @@ vltk_attribs = {
 }
 base_damage = 80.0
 mana_cost = 0.0
-cooldown = 2.2
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 9.6
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_128"), SubResource("SubResource_129")])
 is_hidden = true
 parent_skill_id = "con_lon_thien_loi_chan_nhac"
-
 [sub_resource type="Resource" id="SubResource_131"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
 value_at_level_1 = 6.0
 value_at_max_level = 722.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_132"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 40.0
 value_at_max_level = 82.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_133"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1879,20 +1754,17 @@ max_at_level_1 = 48.0
 min_at_max_level = 1824.0
 max_at_max_level = 1824.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_134"]
 script = ExtResource("3_statline")
 label = "Làm choáng"
 value_at_level_1 = 6.0
 value_at_max_level = 30.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_135"]
 script = ExtResource("3_statline")
 label = "Tiêu hao nội lực"
 value_at_level_1 = 30.0
 value_at_max_level = 55.0
-
 [sub_resource type="Resource" id="SubResource_136"]
 script = ExtResource("2_skill")
 id = "con_lon_cuu_thien_cuong_phong"
@@ -1907,7 +1779,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 1
 vltk_missle_form = 1
-vltk_attack_radius = 400
+vltk_attack_radius = 448
 vltk_state_special_id = 0
 vltk_damage_range = 4
 vltk_range_damage = 1
@@ -1916,6 +1788,7 @@ vltk_attribs = {
 "lightingdamage_v": [PackedFloat32Array(1, 48, 0, 15, 240, 0, 20, 806, 0, 23, 1485, 0, 26, 1824, 0), PackedFloat32Array(), PackedFloat32Array(1, 48, 0, 15, 240, 0, 20, 806, 0, 23, 1485, 0, 26, 1824, 0)],
 "physicsenhance_p": [PackedFloat32Array(1, 6, 0, 15, 120, 0, 20, 335, 0, 23, 593, 0, 26, 722, 0), PackedFloat32Array(), PackedFloat32Array()],
 "seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_attackradius": [PackedFloat32Array(1, 448, 0, 20, 512, 0, 21, 512, 0), PackedFloat32Array(), PackedFloat32Array()],
 "stun_p": [PackedFloat32Array(1, 6, 0, 20, 30, 0, 21, 30, 0), PackedFloat32Array(1, 1, 0, 20, 12, 0, 21, 12, 0), PackedFloat32Array()]
 }
 req_level = 150
@@ -1927,26 +1800,23 @@ is_active = true
 category = 0
 base_damage = 80.0
 mana_cost = 0.0
-cooldown = 2.2
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 9.6
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_131"), SubResource("SubResource_132"), SubResource("SubResource_133"), SubResource("SubResource_134"), SubResource("SubResource_135")])
 is_hotbar = true
-
 [sub_resource type="Resource" id="SubResource_137"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 40.0
 value_at_max_level = 82.0
 suffix = "%"
-
 [sub_resource type="Resource" id="SubResource_138"]
 script = ExtResource("3_statline")
 label = "Thời gian tồn tại đạn"
 value_at_level_1 = 6.0
 value_at_max_level = 24.0
-
 [sub_resource type="Resource" id="SubResource_139"]
 script = ExtResource("3_statline")
 label = "Lôi sát"
@@ -1956,7 +1826,6 @@ max_at_level_1 = 135.0
 min_at_max_level = 532.0
 max_at_max_level = 908.0
 suffix = " điểm"
-
 [sub_resource type="Resource" id="SubResource_140"]
 script = ExtResource("2_skill")
 id = "con_lon_phong_minh_ngoc_toai"
@@ -1985,13 +1854,79 @@ vltk_attribs = {
 }
 base_damage = 80.0
 mana_cost = 0.0
-cooldown = 2.2
+cooldown = 0.40
 range = 500.0
 element = 4
 damage_growth_per_level = 9.6
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_137"), SubResource("SubResource_138"), SubResource("SubResource_139")])
 is_hidden = true
 parent_skill_id = "con_lon_cuu_thien_cuong_phong"
+
+[sub_resource type="Resource" id="SubResource_141"]
+script = ExtResource("3_statline")
+label = "Bỏ qua kháng lôi đối thủ"
+value_at_level_1 = 5.0
+value_at_max_level = 15.0
+suffix = "%"
+[sub_resource type="Resource" id="SubResource_142"]
+script = ExtResource("3_statline")
+label = "Tăng tỷ lệ Lưỡng Nghi Chân Khí"
+value_at_level_1 = 3.0
+value_at_max_level = 15.0
+suffix = "%"
+[sub_resource type="Resource" id="SubResource_143"]
+script = ExtResource("3_statline")
+label = "Thời gian duy trì"
+value_at_level_1 = 5.0
+value_at_max_level = 15.0
+suffix = " giây"
+[sub_resource type="Resource" id="SubResource_144"]
+script = ExtResource("3_statline")
+label = "Tỷ lệ kích hoạt"
+value_at_level_1 = 3.0
+value_at_max_level = 5.0
+suffix = "%"
+[sub_resource type="Resource" id="SubResource_145"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 50.0
+suffix = "%"
+[sub_resource type="Resource" id="SubResource_146"]
+script = ExtResource("2_skill")
+id = "con_lon_thien_cuong_khi_kinh"
+skill_name = "Thiên Cương Khí Kính"
+practice_only = true
+max_level = 20
+target_enemy = false
+target_ally = false
+target_self = true
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"autoreplyskill": [PackedFloat32Array(1, 317185, 0, 20, 317204, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 138243, 0, 19, 92165, 0, 20, 92165, 0)]
+}
+req_level = 180
+vltk_skill_id = 1229
+icon = ExtResource("vicon_con_lon_thien_cuong_khi_kinh")
+description = "Kỹ năng thất truyền của phái Côn Lôn, mượn lôi đình thiên cương bảo hộ cơ thể, nâng cao Lưỡng Nghi Chân Khí và giảm lôi phòng đối phương."
+school_text = "Hỗ trợ chủ động (Thất truyền 180)"
+is_active = true
+category = 0
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 15.00
+range = 0.0
+element = 4
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_141"), SubResource("SubResource_142"), SubResource("SubResource_143"), SubResource("SubResource_144"), SubResource("SubResource_145")])
+is_hotbar = true
 
 [resource]
 script = ExtResource("1_sect")
@@ -2000,4 +1935,4 @@ sect_name = "Côn Lôn"
 element = 4
 alignment = 2
 description = "Môn phái ẩn mình trên núi tuyết, sở trường vận Lôi khí và Băng khí, kiếm/đao pháp lạnh lẽo sắc bén."
-skills = Array[ExtResource("2_skill")]([SubResource("SubResource_8"), SubResource("SubResource_34"), SubResource("SubResource_11"), SubResource("SubResource_13"), SubResource("SubResource_71"), SubResource("SubResource_16"), SubResource("SubResource_19"), SubResource("SubResource_27"), SubResource("SubResource_49"), SubResource("SubResource_75"), SubResource("SubResource_40"), SubResource("SubResource_78"), SubResource("SubResource_43"), SubResource("SubResource_57"), SubResource("SubResource_82"), SubResource("SubResource_63"), SubResource("SubResource_68"), SubResource("SubResource_116"), SubResource("SubResource_108"), SubResource("SubResource_98"), SubResource("SubResource_89"), SubResource("SubResource_118"), SubResource("SubResource_136"), SubResource("SubResource_127"), SubResource("SubResource_23"), SubResource("SubResource_93"), SubResource("SubResource_101"), SubResource("SubResource_110"), SubResource("SubResource_113"), SubResource("SubResource_120"), SubResource("SubResource_122"), SubResource("SubResource_130"), SubResource("SubResource_140")])
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_8"), SubResource("SubResource_34"), SubResource("SubResource_11"), SubResource("SubResource_13"), SubResource("SubResource_71"), SubResource("SubResource_16"), SubResource("SubResource_19"), SubResource("SubResource_27"), SubResource("SubResource_49"), SubResource("SubResource_75"), SubResource("SubResource_40"), SubResource("SubResource_78"), SubResource("SubResource_43"), SubResource("SubResource_57"), SubResource("SubResource_82"), SubResource("SubResource_63"), SubResource("SubResource_68"), SubResource("SubResource_116"), SubResource("SubResource_108"), SubResource("SubResource_98"), SubResource("SubResource_89"), SubResource("SubResource_118"), SubResource("SubResource_136"), SubResource("SubResource_127"), SubResource("SubResource_23"), SubResource("SubResource_93"), SubResource("SubResource_101"), SubResource("SubResource_110"), SubResource("SubResource_113"), SubResource("SubResource_120"), SubResource("SubResource_122"), SubResource("SubResource_130"), SubResource("SubResource_140"), SubResource("SubResource_146")])

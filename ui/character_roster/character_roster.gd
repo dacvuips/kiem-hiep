@@ -38,7 +38,12 @@ var _selected := 0
 var _tween: Tween
 var _create_ref: Node             ## bản dựng (không vào cây) của CharacterCreate để đọc chỉnh sửa từng nhân vật
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_update_locale_texts()
+
 func _ready() -> void:
+	MusicManager.play_title_music()
 	_create_ref = load(CREATE_SCENE).instantiate()
 	_enter_btn.pressed.connect(_on_enter_pressed)
 	_create_btn.pressed.connect(_on_create_pressed)
@@ -46,6 +51,9 @@ func _ready() -> void:
 	_quit_btn.pressed.connect(func() -> void: get_tree().quit())
 	for b: BaseButton in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
 		_style_pill_button(b)
+	_update_locale_texts()
+	if LocalizationManager.has_signal("locale_changed"):
+		LocalizationManager.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 	if AccountApi.is_logged_in():
@@ -63,8 +71,36 @@ func _ready() -> void:
 			first = i
 			break
 	_select(first)
+	_update_locale_texts()
 	if "--test-capture-roster" in OS.get_cmdline_args():
 		_capture_roster_and_quit()
+
+func _update_locale_texts() -> void:
+	if not is_inside_tree():
+		return
+	if is_instance_valid(_enter_btn):
+		var lbl: Label = _enter_btn.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("VÀO GAME")
+	if is_instance_valid(_create_btn):
+		var lbl: Label = _create_btn.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("TẠO NHÂN VẬT")
+	if is_instance_valid(_cancel_btn):
+		var lbl: Label = _cancel_btn.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("QUAY LẠI")
+	if is_instance_valid(_quit_btn):
+		var lbl: Label = _quit_btn.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("THOÁT GAME")
+	for slot in _slots:
+		if slot is Dictionary and slot.has("card"):
+			var card: Button = slot["card"]
+			if is_instance_valid(card):
+				var lbl: Label = card.get_node_or_null("TitleLabel")
+				if lbl and card.get_meta("is_empty", false):
+					lbl.text = tr("Ô trống")
 
 func _capture_roster_and_quit() -> void:
 	await get_tree().create_timer(0.6).timeout
@@ -157,7 +193,7 @@ func _on_create_pressed() -> void:
 			CharacterCreateScreen.target_slot = i
 			_go(CREATE_SCENE)
 			return
-	_toast("Đã đủ %d nhân vật trên máy chủ này" % SLOT_COUNT)
+	_toast(tr("Đã đủ %d nhân vật trên máy chủ này") % SLOT_COUNT)
 
 func _map_name() -> String:
 	if FileAccess.file_exists(MINIMAP_META):
@@ -245,7 +281,7 @@ func _make_card(i: int, profile: PlayerProfile) -> Button:
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	if profile == null:
-		lbl.text = "Ô trống"
+		lbl.text = tr("Ô trống")
 		lbl.add_theme_font_size_override("font_size", 24)
 		lbl.add_theme_color_override("font_color", Color(0.65, 0.62, 0.55, 0.65))
 		lbl.add_theme_constant_override("outline_size", 5)
@@ -263,6 +299,7 @@ func _style_card(card: Button, selected: bool) -> void:
 		return
 	var is_empty: bool = card.get_meta("is_empty", false)
 	if is_empty:
+		lbl.text = tr("Ô trống")
 		lbl.add_theme_color_override("font_color", Color(0.88, 0.85, 0.72) if selected else Color(0.55, 0.52, 0.45, 0.6))
 		lbl.add_theme_constant_override("outline_size", 6 if selected else 4)
 	else:
@@ -319,7 +356,7 @@ func _go(path: String) -> void:
 	t.tween_callback(get_tree().change_scene_to_file.bind(path))
 
 func _toast(text: String) -> void:
-	_message.text = text
+	_message.text = tr(text)
 	_message.modulate.a = 1.0
 	if _tween:
 		_tween.kill()

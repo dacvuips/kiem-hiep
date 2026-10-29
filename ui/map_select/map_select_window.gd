@@ -146,8 +146,8 @@ func _build_honor_defense(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("🛡️ Bảo Vệ Trụ Danh Dự — Công Thành Lâm An (#1001)", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var desc := SocialUi.label("Đài chiến trung tâm Lâm An đang bị 200 đợt quái giang hồ công phá từ 4 cổng! Cùng đồng đội tử thủ Long Trụ, chiêu mộ Danh Tướng viện binh.",
+	box.add_child(SocialUi.label("🛡️ " + tr("Bảo Vệ Trụ Danh Dự — Công Thành Lâm An (#1001)"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label(tr("Đài chiến trung tâm Lâm An đang bị 200 đợt quái giang hồ công phá từ 4 cổng! Cùng đồng đội tử thủ Long Trụ, chiêu mộ Danh Tướng viện binh."),
 			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(desc)
@@ -168,11 +168,11 @@ func _build_honor_defense(parent: Control) -> void:
 	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	middle.add_child(map_frame)
 
-	info.add_child(SocialUi.label("Quy mô: 200 đợt quái (cấp 1 - 200) · 20s/đợt · 20 quái/đợt · 4 cổng xuất kích.", SocialUi.GOLD, 14))
-	info.add_child(SocialUi.label("Cơ chế Boss: Mỗi 10 đợt xuất hiện 1 Đại Boss (máu tăng gấp 15 lần).", SocialUi.TEXT, 13))
-	info.add_child(SocialUi.label("Kỹ năng quái: Luân chuyển Ngũ Hành & kích hoạt trọn bộ kỹ năng Buff 15 môn phái.", SocialUi.TEXT, 13))
-	info.add_child(SocialUi.label("Viện binh: Dùng Điểm Thủ Trụ mua Boss Đồng Minh (Thiên Vương, Nga Mi, Võ Đang...).", SocialUi.LABEL_BLUE, 13))
-	info.add_child(SocialUi.label("Phần thưởng: EXP & Vàng nhân theo số ải vượt qua, Sát Thủ Giản, Lệnh Bài Phong Lăng Độ.", SocialUi.GOLD, 13))
+	info.add_child(SocialUi.label(tr("Quy mô: 200 đợt quái (cấp 1 - 200) · 20s/đợt · 20 quái/đợt · 4 cổng xuất kích."), SocialUi.GOLD, 14))
+	info.add_child(SocialUi.label(tr("Cơ chế Boss: Mỗi 10 đợt xuất hiện 1 Đại Boss (máu tăng gấp 15 lần)."), SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label(tr("Kỹ năng quái: Luân chuyển Ngũ Hành & kích hoạt trọn bộ kỹ năng Buff 15 môn phái."), SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label(tr("Viện binh: Dùng Điểm Thủ Trụ mua Boss Đồng Minh (Thiên Vương, Nga Mi, Võ Đang...)."), SocialUi.LABEL_BLUE, 13))
+	info.add_child(SocialUi.label(tr("Phần thưởng: EXP & Vàng nhân theo số ải vượt qua, Sát Thủ Giản, Lệnh Bài Phong Lăng Độ."), SocialUi.GOLD, 13))
 
 	box.add_child(SocialUi.divider())
 
@@ -181,7 +181,7 @@ func _build_honor_defense(parent: Control) -> void:
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
 
-	var play_btn := SocialUi.stone_button("Vào Khiêu Chiến (200 Đợt)", Vector2(240, 44))
+	var play_btn := SocialUi.stone_button(tr("Vào Khiêu Chiến (200 Đợt)"), Vector2(240, 44))
 	play_btn.pressed.connect(func() -> void:
 		_play(map_entry)
 	)
@@ -197,8 +197,8 @@ func _build_stages_challenge(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("Thập Nhị Đại Vượt Ải — Khiêu Chiến Sơn Môn (1x - 12x)", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var desc := SocialUi.label("Hành trình vượt qua 12 ải giang hồ liên hoàn (từ 1x đến 12x). Mỗi ải tương ứng với một bản đồ ngoài trời và hệ thống quái đặc trưng của bản đồ đó.", SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	box.add_child(SocialUi.label(tr("Thập Nhị Đại Vượt Ải — Khiêu Chiến Sơn Môn (1x - 12x)"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label(tr("Hành trình vượt qua 12 ải giang hồ liên hoàn (từ 1x đến 12x). Mỗi ải tương ứng với một bản đồ ngoài trời và hệ thống quái đặc trưng của bản đồ đó."), SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(desc)
 	box.add_child(SocialUi.divider())
@@ -222,10 +222,10 @@ func _build_stages_challenge(parent: Control) -> void:
 	var total_stages: int = stages_arr.size() if not stages_arr.is_empty() else 12
 	var current_stage_idx: int = clampi(_profile.stages_cleared if _profile else 0, 0, total_stages - 1)
 	var map_dir_current := "res://world/maps/map_20"
-	var preview_stage_name := "Màn %d (Đang mở khóa)" % (current_stage_idx + 1)
+	var preview_stage_name := tr("Màn %d (Đang mở khóa)") % (current_stage_idx + 1)
 	if current_stage_idx < stages_arr.size():
 		var st: StageData = stages_arr[current_stage_idx]
-		preview_stage_name = st.stage_name
+		preview_stage_name = tr(st.stage_name)
 		if st.vltk_map_id > 0:
 			map_dir_current = "res://world/maps/map_%d" % st.vltk_map_id
 
@@ -233,12 +233,12 @@ func _build_stages_challenge(parent: Control) -> void:
 	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	middle.add_child(map_frame)
 
-	info.add_child(SocialUi.label("Bàn hiện tại: %s" % preview_stage_name, SocialUi.GOLD, 15))
+	info.add_child(SocialUi.label(tr("Bàn hiện tại: %s") % preview_stage_name, SocialUi.GOLD, 15))
 	var cleared_cnt: int = _profile.stages_cleared if _profile else 0
-	info.add_child(SocialUi.label("Tiến độ: Đã vượt %d/%d bàn" % [cleared_cnt, total_stages], SocialUi.LABEL_BLUE, 14))
+	info.add_child(SocialUi.label(tr("Tiến độ: Đã vượt %d/%d bàn") % [cleared_cnt, total_stages], SocialUi.LABEL_BLUE, 14))
 	if AccountApi.is_gm():
-		info.add_child(SocialUi.label("✦ Quyền Admin: Mở khóa toàn bộ %d bàn chơi (chọn trong danh sách)" % total_stages, SocialUi.GOLD, 13))
-	info.add_child(SocialUi.label("Phần thưởng: Điểm kinh nghiệm, Trang bị, Huyền Tinh và mở khóa các bàn chơi mới.", SocialUi.TEXT, 13))
+		info.add_child(SocialUi.label(tr("✦ Quyền Admin: Mở khóa toàn bộ %d bàn chơi (chọn trong danh sách)") % total_stages, SocialUi.GOLD, 13))
+	info.add_child(SocialUi.label(tr("Phần thưởng: Điểm kinh nghiệm, Trang bị, Huyền Tinh và mở khóa các bàn chơi mới."), SocialUi.TEXT, 13))
 
 	box.add_child(SocialUi.divider())
 	var row := HBoxContainer.new()
@@ -246,7 +246,7 @@ func _build_stages_challenge(parent: Control) -> void:
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
 
-	var select_btn := SocialUi.stone_button("Chọn Bàn (Danh Sách Có Ảnh)", Vector2(230, 44))
+	var select_btn := SocialUi.stone_button(tr("Chọn Bàn (Danh Sách Có Ảnh)"), Vector2(230, 44))
 	select_btn.pressed.connect(func() -> void:
 		var parent_node := _get_hub()
 		var hub_stages: Array[StageData] = []
@@ -267,7 +267,7 @@ func _build_stages_challenge(parent: Control) -> void:
 	)
 	row.add_child(select_btn)
 
-	var next_btn := SocialUi.stone_button("Vào Bàn %d" % (current_stage_idx + 1), Vector2(170, 44))
+	var next_btn := SocialUi.stone_button(tr("Vào Bàn %d") % (current_stage_idx + 1), Vector2(170, 44))
 	next_btn.pressed.connect(func() -> void:
 		var parent_node := _get_hub()
 		var hub_stages: Array[StageData] = []
@@ -291,8 +291,8 @@ func _build_time_challenge(parent: Control) -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
-	box.add_child(SocialUi.label("Thách Thức Thời Gian", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var quote := SocialUi.label("Nhiếp Thí Trần: \"Hãy tiếp nhận nhiệm vụ thách thức thời gian để thể nghiệm sức mạnh đồng đội và khả năng sát thủ của mình.\"",
+	box.add_child(SocialUi.label(tr("Thách Thức Thời Gian"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var quote := SocialUi.label(tr("Nhiếp Thí Trần: \"Hãy tiếp nhận nhiệm vụ thách thức thời gian để thể nghiệm sức mạnh đồng đội và khả năng sát thủ của mình.\""),
 			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(quote)
@@ -309,20 +309,20 @@ func _build_time_challenge(parent: Control) -> void:
 	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	middle.add_child(map_frame)
 	var lines := [
-		"Vượt qua 28 ải trong %d phút: hết quái ải này mới ra ải sau; 12 ải có boss, ải 28 là đại boss Độc Cô Quỷ Kiếm." % int(int(r.get("time_limit_sec", 1800)) / 60.0),
-		"Điều kiện: cấp từ %d · phí %s lượng + 1 %s · mỗi ngày %d lượt." % [int(r.get("min_level", 80)), TimeChallenge._money(int(r.get("cost", 150000))), TimeChallenge.ENTRY_ITEM_NAME, int(r.get("runs_per_day", 2))],
-		"Hoàn thành: thưởng kinh nghiệm, ghi thời gian vượt ải.",
+		tr("Vượt qua 28 ải trong %d phút: hết quái ải này mới ra ải sau; 12 ải có boss, ải 28 là đại boss Độc Cô Quỷ Kiếm.") % int(int(r.get("time_limit_sec", 1800)) / 60.0),
+		tr("Điều kiện: cấp từ %d · phí %s lượng + 1 %s · mỗi ngày %d lượt.") % [int(r.get("min_level", 80)), TimeChallenge._money(int(r.get("cost", 150000))), tr(TimeChallenge.ENTRY_ITEM_NAME), int(r.get("runs_per_day", 2))],
+		tr("Hoàn thành: thưởng kinh nghiệm, ghi thời gian vượt ải."),
 	]
 	for t in lines:
 		var l := SocialUi.label(t, SocialUi.TEXT, 14)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info.add_child(l)
 	var best := TimeChallenge.best_time(_profile)
-	info.add_child(SocialUi.label("Kỷ lục của bạn: %s   ·   Hôm nay đã tham gia: %d/%d" % [
-			TimeChallenge.format_time(best) if best > 0 else "chưa có", TimeChallenge.runs_today(_profile), int(r.get("runs_per_day", 2))],
+	info.add_child(SocialUi.label(tr("Kỷ lục của bạn: %s   ·   Hôm nay đã tham gia: %d/%d") % [
+			TimeChallenge.format_time(best) if best > 0 else tr("chưa có"), TimeChallenge.runs_today(_profile), int(r.get("runs_per_day", 2))],
 			SocialUi.LABEL_BLUE, 14))
 	var reason := TimeChallenge.check_entry(_profile)
-	var status := SocialUi.label(reason if reason != "" else "Đủ điều kiện tham gia.", SocialUi.WARN if reason != "" else SocialUi.LABEL_BLUE, 14)
+	var status := SocialUi.label(tr(reason) if reason != "" else tr("Đủ điều kiện tham gia."), SocialUi.WARN if reason != "" else SocialUi.LABEL_BLUE, 14)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(status)
 	box.add_child(SocialUi.divider())
@@ -330,21 +330,21 @@ func _build_time_challenge(parent: Control) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
-	var solo := SocialUi.stone_button("Khiêu chiến một mình", Vector2(200, 44))
+	var solo := SocialUi.stone_button(tr("Khiêu chiến một mình"), Vector2(200, 44))
 	solo.disabled = reason != ""
 	solo.pressed.connect(_start_time_challenge)
 	row.add_child(solo)
 
 	if best > 0:
-		var sweep_btn := SocialUi.stone_button("⚡ Càn Quét Nhanh", Vector2(170, 44))
+		var sweep_btn := SocialUi.stone_button(tr("⚡ Càn Quét Nhanh"), Vector2(170, 44))
 		sweep_btn.disabled = reason != ""
-		sweep_btn.tooltip_text = "Nhận ngay phần thưởng vượt ải mà không cần đánh tay (đã hoàn thành trước đó)"
+		sweep_btn.tooltip_text = tr("Nhận ngay phần thưởng vượt ải mà không cần đánh tay (đã hoàn thành trước đó)")
 		sweep_btn.pressed.connect(_sweep_time_challenge)
 		row.add_child(sweep_btn)
 
-	var team := SocialUi.stone_button("Chờ tổ đội", Vector2(140, 44))
+	var team := SocialUi.stone_button(tr("Chờ tổ đội"), Vector2(140, 44))
 	team.disabled = false
-	team.tooltip_text = "Khiêu chiến cùng tổ đội tối đa 8 người (phòng chờ và danh sách phòng)"
+	team.tooltip_text = tr("Khiêu chiến cùng tổ đội tối đa 8 người (phòng chờ và danh sách phòng)")
 	team.pressed.connect(_open_time_challenge_party)
 	row.add_child(team)
 
@@ -394,8 +394,8 @@ func _build_phong_lang_do(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("Phong Lăng Độ — Bến Thuyền Vượt Sông", SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var quote := SocialUi.label("Thuyền Phu: \"Sóng to gió lớn, Thủy Tặc Hoàng Hà cực kỳ hung hãn. Đại hiệp đã chuẩn bị kỹ càng để vượt sông chưa?\"",
+	box.add_child(SocialUi.label(tr("Phong Lăng Độ — Bến Thuyền Vượt Sông"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var quote := SocialUi.label(tr("Thuyền Phu: \"Sóng to gió lớn, Thủy Tặc Hoàng Hà cực kỳ hung hãn. Đại hiệp đã chuẩn bị kỹ càng để vượt sông chưa?\""),
 			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(quote)
@@ -416,14 +416,14 @@ func _build_phong_lang_do(parent: Control) -> void:
 	middle.add_child(map_frame)
 
 	var lines := [
-		"Vượt sông Hoàng Hà trong 10 phút: tiêu diệt 3 đợt Thủy Tặc & Đại Boss Hoàng Kim Yên Hiểu Trái.",
-		"Điều kiện: Cấp từ %d · Phí: 1 %s (hoặc %s lượng) · Mỗi ngày %d lượt." % [
+		tr("Vượt sông Hoàng Hà trong 10 phút: tiêu diệt 3 đợt Thủy Tặc & Đại Boss Hoàng Kim Yên Hiểu Trái."),
+		tr("Điều kiện: Cấp từ %d · Phí: 1 %s (hoặc %s lượng) · Mỗi ngày %d lượt.") % [
 			PhongLangDoChallenge.MIN_LEVEL,
-			PhongLangDoChallenge.ENTRY_ITEM_NAME,
+			tr(PhongLangDoChallenge.ENTRY_ITEM_NAME),
 			PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE),
 			PhongLangDoChallenge.RUNS_PER_DAY
 		],
-		"Phần thưởng: Kinh nghiệm dồi dào, Phúc duyên, Danh vọng, Thủy Tinh, Huyền Tinh và Trang bị Hoàng Kim.",
+		tr("Phần thưởng: Kinh nghiệm dồi dào, Phúc duyên, Danh vọng, Thủy Tinh, Huyền Tinh và Trang bị Hoàng Kim."),
 	]
 	for t in lines:
 		var l := SocialUi.label(t, SocialUi.TEXT, 14)
@@ -431,18 +431,18 @@ func _build_phong_lang_do(parent: Control) -> void:
 		info.add_child(l)
 
 	var item_cnt := PhongLangDoChallenge.entry_item_count(_profile)
-	var fee_str := "1 Lệnh bài" if item_cnt > 0 else "%s lượng" % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
+	var fee_str := tr("1 Lệnh bài") if item_cnt > 0 else tr("%s lượng") % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
 	var best := PhongLangDoChallenge.best_time(_profile)
-	info.add_child(SocialUi.label("Lệnh bài hiện có: %d   ·   Hôm nay đã đi: %d/%d   ·   Kỷ lục: %s" % [
+	info.add_child(SocialUi.label(tr("Lệnh bài hiện có: %d   ·   Hôm nay đã đi: %d/%d   ·   Kỷ lục: %s") % [
 			item_cnt,
 			PhongLangDoChallenge.runs_today(_profile),
 			PhongLangDoChallenge.RUNS_PER_DAY,
-			PhongLangDoChallenge.format_time(best) if best > 0 else "chưa có"
+			PhongLangDoChallenge.format_time(best) if best > 0 else tr("chưa có")
 		],
 		SocialUi.LABEL_BLUE, 14))
 
 	var reason := PhongLangDoChallenge.check_entry(_profile)
-	var status_text := reason if reason != "" else "Đủ điều kiện lên thuyền (thủ tục: nộp %s)." % fee_str
+	var status_text := tr(reason) if reason != "" else tr("Đủ điều kiện lên thuyền (thủ tục: nộp %s).") % fee_str
 	var status := SocialUi.label(status_text, SocialUi.WARN if reason != "" else SocialUi.LABEL_BLUE, 14)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(status)
@@ -453,15 +453,15 @@ func _build_phong_lang_do(parent: Control) -> void:
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
 
-	var board_btn := SocialUi.stone_button("Lên thuyền xuất bến", Vector2(200, 44))
+	var board_btn := SocialUi.stone_button(tr("Lên thuyền xuất bến"), Vector2(200, 44))
 	board_btn.disabled = reason != ""
 	board_btn.pressed.connect(_start_phong_lang_do)
 	row.add_child(board_btn)
 
 	if best > 0:
-		var sweep_btn := SocialUi.stone_button("⚡ Ủy Thác Vượt Sông", Vector2(180, 44))
+		var sweep_btn := SocialUi.stone_button(tr("⚡ Ủy Thác Vượt Sông"), Vector2(180, 44))
 		sweep_btn.disabled = reason != ""
-		sweep_btn.tooltip_text = "Ủy thác thuyền vượt sông Hoàng Hà, nhận ngay phần thưởng mà không cần đánh tay"
+		sweep_btn.tooltip_text = tr("Ủy thác thuyền vượt sông Hoàng Hà, nhận ngay phần thưởng mà không cần đánh tay")
 		sweep_btn.pressed.connect(_sweep_phong_lang_do)
 		row.add_child(sweep_btn)
 
@@ -512,12 +512,12 @@ func _build_tong_kim_lol(parent: Control) -> void:
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
-	info.add_child(SocialUi.label("Ải Tống Kim LOL (MOBA 1v1 - 5v5)", SocialUi.TITLE, 18))
-	var desc := SocialUi.label("Chiến trường MOBA bảo vệ Tướng Soái, công phá cổng thành, diệt 3 đường lính và Boss Hoàng Kim. Tặng 100 điểm tiềm năng, mở full skill phái, thăng cấp 1-15 trong trận và thưởng x10 EXP thực tế!", SocialUi.MUTED, 13)
+	info.add_child(SocialUi.label(tr("Ải Tống Kim LOL (MOBA 1v1 - 5v5)"), SocialUi.TITLE, 18))
+	var desc := SocialUi.label(tr("Chiến trường MOBA bảo vệ Tướng Soái, công phá cổng thành, diệt 3 đường lính và Boss Hoàng Kim. Tặng 100 điểm tiềm năng, mở full skill phái, thăng cấp 1-15 trong trận và thưởng x10 EXP thực tế!"), SocialUi.MUTED, 13)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(desc)
 
-	var enter_btn := SocialUi.stone_button("Vào Sảnh Chờ Tống Kim LOL", Vector2(230, 40))
+	var enter_btn := SocialUi.stone_button(tr("Vào Sảnh Chờ Tống Kim LOL"), Vector2(230, 40))
 	enter_btn.pressed.connect(func() -> void:
 		var hub := _get_hub()
 		if hub:
@@ -543,11 +543,11 @@ func _build_battle(parent: Control) -> void:
 	info.add_theme_constant_override("separation", 4)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
-	info.add_child(SocialUi.label(BATTLE_NAME, SocialUi.TITLE, 18))
-	var rules := SocialUi.label("Chọn phe Tống hoặc Kim. Báo danh xong chờ trong doanh trại (chuẩn bị) tới giờ khai chiến mới được ra trận. Hạ người phe kia được điểm; chết về hậu doanh phe mình. Hết giờ phe nhiều điểm hơn thắng.", SocialUi.MUTED, 13)
+	info.add_child(SocialUi.label(tr(BATTLE_NAME), SocialUi.TITLE, 18))
+	var rules := SocialUi.label(tr("Chọn phe Tống hoặc Kim. Báo danh xong chờ trong doanh trại (chuẩn bị) tới giờ khai chiến mới được ra trận. Hạ người phe kia được điểm; chết về hậu doanh phe mình. Hết giờ phe nhiều điểm hơn thắng."), SocialUi.MUTED, 13)
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(rules)
-	_battle_status = SocialUi.label("Đang tải…", SocialUi.LABEL_BLUE, 14)
+	_battle_status = SocialUi.label(tr("Đang tải…"), SocialUi.LABEL_BLUE, 14)
 	info.add_child(_battle_status)
 	_battle_sides = SocialUi.label("", SocialUi.TEXT, 15)
 	info.add_child(_battle_sides)
@@ -558,13 +558,13 @@ func _build_battle(parent: Control) -> void:
 	buttons.add_theme_constant_override("separation", 12)
 	info.add_child(buttons)
 	for side in BattleServer.SIDES:
-		var b := SocialUi.stone_button("Vào phe %s" % BattleServer.SIDE_NAMES[side], Vector2(140, 40))
+		var b := SocialUi.stone_button(tr("Vào phe %s") % tr(BattleServer.SIDE_NAMES[side]), Vector2(140, 40))
 		b.pressed.connect(_join_battle.bind(side))
 		buttons.add_child(b)
 		_battle_buttons[side] = b
 
-	var skirmish_btn := SocialUi.stone_button("⚔️ Đấu Tập (Bot AI)", Vector2(170, 40))
-	skirmish_btn.tooltip_text = "Vào ngay chiến trường Tống Kim MOBA đánh với Bot AI tự động mọi lúc mọi nơi"
+	var skirmish_btn := SocialUi.stone_button(tr("⚔️ Đấu Tập (Bot AI)"), Vector2(170, 40))
+	skirmish_btn.tooltip_text = tr("Vào ngay chiến trường Tống Kim MOBA đánh với Bot AI tự động mọi lúc mọi nơi")
 	skirmish_btn.pressed.connect(func() -> void:
 		var hub := _get_hub()
 		if hub:
@@ -782,18 +782,18 @@ func _map_card(m: Dictionary) -> Control:
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
 	info.add_child(SocialUi.label(str(m["name"]), SocialUi.TITLE, 17))
-	info.add_child(SocialUi.label("Cấp quái: %d  ·  %d quái" % [int(m["level"]), int(m.get("monster_count", 0))], SocialUi.LABEL_BLUE, 13))
+	info.add_child(SocialUi.label("%s: %d  ·  %d %s" % [tr("Cấp quái"), int(m["level"]), int(m.get("monster_count", 0)), tr("quái")], SocialUi.LABEL_BLUE, 13))
 	var names: Array[String] = []
 	for mon in m.get("monsters", []):
 		names.append("%s (Lv%d)" % [mon["name"], int(mon["level"])])
-	var mons := SocialUi.label("Quái: " + ", ".join(names), SocialUi.TEXT, 13)
+	var mons := SocialUi.label(tr("Quái:") + " " + ", ".join(names), SocialUi.TEXT, 13)
 	mons.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(mons)
 
 	var playable := MapCatalog.is_playable(m)
-	var play := SocialUi.stone_button("Vào" if playable else "Chưa có", Vector2(96, 40))
+	var play := SocialUi.stone_button(tr("Vào") if playable else tr("Chưa có"), Vector2(96, 40))
 	play.disabled = not playable
-	play.tooltip_text = "" if playable else "Bản đồ này chưa được xuất (tools/export_training_maps.py)"
+	play.tooltip_text = "" if playable else tr("Bản đồ này chưa được xuất (tools/export_training_maps.py)")
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	play.pressed.connect(_enter_field.bind(m))
 	row.add_child(play)
@@ -859,12 +859,12 @@ func _hell_banner() -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	panel.add_child(v)
-	var title := SocialUi.label("⚔  TINH ANH  ⚔", Color(0.88, 0.50, 1.0), 26, HORIZONTAL_ALIGNMENT_CENTER)
+	var title := SocialUi.label(tr("⚔  TINH ANH  ⚔"), Color(0.88, 0.50, 1.0), 26, HORIZONTAL_ALIGNMENT_CENTER)
 	title.add_theme_color_override("font_outline_color", Color(0.30, 0.05, 0.45))
 	title.add_theme_constant_override("outline_size", 6)
 	v.add_child(title)
-	v.add_child(SocialUi.label("Màn chơi TINH ANH — độ khó cao dành cho cao thủ.", Color(0.85, 0.60, 1.0), 13, HORIZONTAL_ALIGNMENT_CENTER))
-	v.add_child(SocialUi.label("Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)",
+	v.add_child(SocialUi.label(tr("Màn chơi TINH ANH — độ khó cao dành cho cao thủ."), Color(0.85, 0.60, 1.0), 13, HORIZONTAL_ALIGNMENT_CENTER))
+	v.add_child(SocialUi.label(tr("Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)"),
 		HELL_TEXT, 12, HORIZONTAL_ALIGNMENT_CENTER))
 	return panel
 
@@ -885,7 +885,7 @@ func _select_hell_tier(t: int) -> void:
 	TouchScrollHelperScript.attach(scroll, scroll)
 	var maps := MapCatalog.hell_maps(t)
 	if maps.is_empty():
-		list.add_child(SocialUi.label("Chưa có bản đồ Tinh anh %dx." % t, HELL_DIM, 14))
+		list.add_child(SocialUi.label(tr("Chưa có bản đồ Tinh anh %dx.") % t, HELL_DIM, 14))
 		return
 	for m in maps:
 		list.add_child(_hell_card(m))
@@ -921,11 +921,11 @@ func _hell_card(m: Dictionary) -> Control:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
 	info.add_child(head)
-	head.add_child(SocialUi.label(str(m["name"]), HELL_TITLE, 18))
+	head.add_child(SocialUi.label(tr(str(m["name"])), HELL_TITLE, 18))
 	var rank := SocialUi.label("", HELL_HOT, 13)
 	rank.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(rank)
-	info.add_child(SocialUi.label("Quái cấp %d  ·  %d quái" % [int(m["level"]), int(m.get("monster_count", 0))], HELL_TEXT, 13))
+	info.add_child(SocialUi.label(tr("Quái cấp %d  ·  %d quái") % [int(m["level"]), int(m.get("monster_count", 0))], HELL_TEXT, 13))
 	var star_row := HBoxContainer.new()
 	star_row.add_theme_constant_override("separation", 2)
 	info.add_child(star_row)
@@ -937,16 +937,16 @@ func _hell_card(m: Dictionary) -> Control:
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(34, 32)
 		b.add_theme_font_size_override("font_size", 26)
-		b.tooltip_text = "%d sao — %s" % [k + 1, HELL_RANKS[k + 1]]
+		b.tooltip_text = tr("%d sao — %s") % [k + 1, tr(HELL_RANKS[k + 1])]
 		star_row.add_child(b)
 		star_buttons.append(b)
 	var effect := SocialUi.label("", HELL_TEXT, 13)
 	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(effect)
 	if _profile and _profile.level < int(m["level"]) - 10:
-		info.add_child(SocialUi.label("⚠ Cấp của bạn quá thấp — khuyến nghị cấp %d trở lên." % (int(m["level"]) - 10), HELL_HOT, 12))
+		info.add_child(SocialUi.label(tr("⚠ Cấp của bạn quá thấp — khuyến nghị cấp %d trở lên.") % (int(m["level"]) - 10), HELL_HOT, 12))
 
-	var play := _hell_button("Khiêu chiến", Vector2(120, 48), 16)
+	var play := _hell_button(tr("Khiêu chiến"), Vector2(120, 48), 16)
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	play.disabled = not MapCatalog.is_playable(m)
 	row.add_child(play)
@@ -957,9 +957,9 @@ func _hell_card(m: Dictionary) -> Control:
 			for st in ["font_color", "font_pressed_color", "font_focus_color"]:
 				star_buttons[k].add_theme_color_override(st, c)
 			star_buttons[k].add_theme_color_override("font_hover_color", c.lightened(0.25))
-		rank.text = "· %s" % HELL_RANKS[n]
+		rank.text = "· %s" % tr(HELL_RANKS[n])
 		rank.add_theme_color_override("font_color", HELL_RANK_COLORS[n])
-		effect.text = "Máu ×%d  ·  Sát thương ×%d  ·  Rơi đồ ×%d  ·  Đủ dòng %d%%" % [n, n, n, n * 20]
+		effect.text = tr("Máu ×%d  ·  Sát thương ×%d  ·  Rơi đồ ×%d  ·  Đủ dòng %d%%") % [n, n, n, n * 20]
 		style.bg_color = Color(0.10 + n * 0.035, 0.025, 0.025)
 		style.border_color = (HELL_RANK_COLORS[n] as Color).darkened(0.25)
 		@warning_ignore("integer_division")
@@ -1003,13 +1003,13 @@ func _build_join_row() -> void:
 	row.add_theme_constant_override("separation", 8)
 	_join_row = row
 	body.add_child(row)
-	row.add_child(SocialUi.label("ID phòng:", SocialUi.LABEL_BLUE, 14))
-	_join_edit = SocialUi.line_edit("6 số ID phòng của bạn bè")
+	row.add_child(SocialUi.label(tr("ID phòng:"), SocialUi.LABEL_BLUE, 14))
+	_join_edit = SocialUi.line_edit(tr("6 số ID phòng của bạn bè"))
 	_join_edit.max_length = 6
 	_join_edit.custom_minimum_size.x = 300
 	_join_edit.text_submitted.connect(func(_t: String) -> void: _join_by_id())
 	row.add_child(_join_edit)
-	_join_button = SocialUi.stone_button("Vào chơi chung", Vector2(160, 38))
+	_join_button = SocialUi.stone_button(tr("Vào chơi chung"), Vector2(160, 38))
 	_join_button.pressed.connect(_join_by_id)
 	row.add_child(_join_button)
 	_join_msg = SocialUi.label("", SocialUi.MUTED, 12)
@@ -1019,7 +1019,7 @@ func _build_join_row() -> void:
 	if not _online():
 		_join_edit.editable = false
 		_join_button.disabled = true
-		_join_msg.text = "Đăng nhập tài khoản để train chung (chơi một mình không có ID phòng)."
+		_join_msg.text = tr("Đăng nhập tài khoản để train chung (chơi một mình không có ID phòng).")
 
 ## Địa chỉ field server + danh sách phòng; {} nếu field server không chạy.
 func _fetch_field() -> Dictionary:
@@ -1126,7 +1126,7 @@ const BOSS_LIST := [
 	{"name": "Liễu Thanh Thanh", "id": 523, "res": "enemy173", "series": "Mộc", "series_idx": 1, "sect": "Thúy Yên", "level": 100, "map_id": 11, "map_name": "Thành Đô", "type": "small_gold"},
 	{"name": "Trương Tông Chính", "id": 511, "res": "enemy003", "series": "Thổ", "series_idx": 4, "sect": "Côn Lôn", "level": 100, "map_id": 9, "map_name": "Trường Giang Đầu Nguồn", "type": "small_gold"},
 	# --- Tuyệt Đỉnh Trấn Ải Boss ---
-	{"name": "Độc Cô Cầu Kiếm", "id": 1038, "res": "boss015", "series": "Kim", "series_idx": 0, "sect": "Vượt Ải", "level": 100, "map_id": 489, "map_name": "Thách Thức Ải 28", "type": "challenge"}
+	{"name": "Độc Cô Cầu Kiếm", "id": 1038, "res": "boss015", "series": "Kim", "series_idx": 0, "sect": "Vượt Ải", "level": 100, "map_id": 480, "map_name": "Thách Thức Ải 28", "type": "challenge"}
 ]
 
 const SERIES_COLORS := {
@@ -1161,8 +1161,8 @@ func _build_boss() -> void:
 	var b_vbox := VBoxContainer.new()
 	b_vbox.add_theme_constant_override("separation", 4)
 	banner.add_child(b_vbox)
-	b_vbox.add_child(SocialUi.label("Thập Đại Boss Hoàng Kim & Tiểu Boss Võ Lâm", SocialUi.TITLE, 18, HORIZONTAL_ALIGNMENT_CENTER))
-	var b_sub := SocialUi.label("Lịch chuẩn VLTK: Đại Boss (12:00, 19:30, 23:00) · Tiểu Boss (09:10, 17:10, 21:10, 23:10) · Đến giờ tự do bật PK tranh đoạt!", Color(1.0, 0.85, 0.35), 12, HORIZONTAL_ALIGNMENT_CENTER)
+	b_vbox.add_child(SocialUi.label(tr("Thập Đại Boss Hoàng Kim & Tiểu Boss Võ Lâm"), SocialUi.TITLE, 18, HORIZONTAL_ALIGNMENT_CENTER))
+	var b_sub := SocialUi.label(tr("Lịch chuẩn VLTK: Đại Boss (12:00, 19:30, 23:00) · Tiểu Boss (09:10, 17:10, 21:10, 23:10) · Đến giờ tự do bật PK tranh đoạt!"), Color(1.0, 0.85, 0.35), 12, HORIZONTAL_ALIGNMENT_CENTER)
 	b_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b_vbox.add_child(b_sub)
 	list.add_child(banner)
@@ -1225,11 +1225,11 @@ func _boss_card(boss: Dictionary) -> Control:
 	head.add_theme_constant_override("separation", 8)
 	info.add_child(head)
 
-	var name_lbl := SocialUi.label(str(boss["name"]), SocialUi.TITLE, 17)
+	var name_lbl := SocialUi.label(tr(str(boss["name"])), SocialUi.TITLE, 17)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.6))
 	head.add_child(name_lbl)
 
-	var series_badge := SocialUi.label("Hệ %s · %s" % [boss["series"], boss["sect"]], s_col, 13)
+	var series_badge := SocialUi.label(tr("Hệ %s · %s") % [tr(str(boss["series"])), tr(str(boss["sect"]))], s_col, 13)
 	series_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(series_badge)
 
@@ -1238,24 +1238,24 @@ func _boss_card(boss: Dictionary) -> Control:
 	timing_lbl.add_theme_font_size_override("font_size", 12)
 	head.add_child(timing_lbl)
 
-	info.add_child(SocialUi.label("Cấp độ: %d  ·  Bản đồ: %s" % [int(boss["level"]), boss["map_name"]], SocialUi.LABEL_BLUE, 13))
+	info.add_child(SocialUi.label(tr("Cấp độ: %d  ·  Bản đồ: %s") % [int(boss["level"]), tr(str(boss["map_name"]))], SocialUi.LABEL_BLUE, 13))
 
 	var drop_text := ""
 	match str(boss.get("type", "gold")):
 		"gold":
-			drop_text = "Vật phẩm rơi: Trang bị Hoàng Kim Môn Phái, Định Quốc, An Bang, Thủy Tinh, Tinh Hồng Bảo Thạch"
+			drop_text = tr("Vật phẩm rơi: Trang bị Hoàng Kim Môn Phái, Định Quốc, An Bang, Thủy Tinh, Tinh Hồng Bảo Thạch")
 		"small_gold":
-			drop_text = "Vật phẩm rơi: Thủy Tinh (Lam/Tử/Lục), Tinh Hồng Bảo Thạch, Tiên Thảo Lộ, Bí Kíp Môn Phái"
+			drop_text = tr("Vật phẩm rơi: Thủy Tinh (Lam/Tử/Lục), Tinh Hồng Bảo Thạch, Tiên Thảo Lộ, Bí Kíp Môn Phái")
 		"challenge":
-			drop_text = "Vật phẩm rơi: Sát Thủ Bí Bảo, Huyết Lệ Chi Thư, Rương Vượt Ải Cực Phẩm, Exp"
+			drop_text = tr("Vật phẩm rơi: Sát Thủ Bí Bảo, Huyết Lệ Chi Thư, Rương Vượt Ải Cực Phẩm, Exp")
 		_:
-			drop_text = "Vật phẩm rơi: Huyền Tinh, Thủy Tinh, Mật Tịch, Tẩy Tủy Kinh, Bí Kíp 90, Trang bị cực phẩm"
+			drop_text = tr("Vật phẩm rơi: Huyền Tinh, Thủy Tinh, Mật Tịch, Tẩy Tủy Kinh, Bí Kíp 90, Trang bị cực phẩm")
 	var drop_lbl := SocialUi.label(drop_text, SocialUi.TEXT, 12)
 	drop_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(drop_lbl)
 
 	# 4. Nút hành động (Vào map tìm Boss)
-	var play := SocialUi.stone_button("Khiêu chiến" if playable else "Chưa mở", Vector2(115, 42))
+	var play := SocialUi.stone_button(tr("Khiêu chiến") if playable else tr("Chưa mở"), Vector2(115, 42))
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	if playable:
@@ -1275,7 +1275,7 @@ func _boss_card(boss: Dictionary) -> Control:
 		)
 	else:
 		play.disabled = true
-		play.tooltip_text = "Bản đồ %s chưa sẵn sàng" % boss["map_name"]
+		play.tooltip_text = tr("Bản đồ %s chưa sẵn sàng") % tr(str(boss["map_name"]))
 	row.add_child(play)
 
 	_boss_card_views.append({
@@ -1303,22 +1303,22 @@ func _tick_boss_timers() -> void:
 			badge.add_theme_color_override("font_color", Color(0.25, 0.95, 0.45))
 			if playable:
 				play.disabled = false
-				play.text = "Vào Săn Boss"
-				play.tooltip_text = "Boss đang xuất hiện tại %s! Vào khiêu chiến ngay (Phòng chung, hỗ trợ PK)." % boss["map_name"]
+				play.text = tr("Vào Săn Boss")
+				play.tooltip_text = tr("Boss đang xuất hiện tại %s! Vào khiêu chiến ngay (Phòng chung, hỗ trợ PK).") % tr(str(boss["map_name"]))
 		elif not _online() or AccountApi.is_gm():
-			badge.text = "⏱ Lịch: %s (Có thể test)" % timing.next_time
+			badge.text = tr("⏱ Lịch: %s (Có thể test)") % timing.next_time
 			badge.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 			if playable:
 				play.disabled = false
-				play.text = "Khiêu Chiến"
-				play.tooltip_text = "Vào khiêu chiến Boss ngay (Bản đồ 60 vùng)."
+				play.text = tr("Khiêu chiến")
+				play.tooltip_text = tr("Vào khiêu chiến Boss ngay (Bản đồ 60 vùng).")
 		else:
 			badge.text = timing.status_text
 			badge.add_theme_color_override("font_color", Color(1.0, 0.75, 0.3))
 			if playable:
 				play.disabled = true
-				play.text = "Chưa đến giờ"
-				play.tooltip_text = "Boss chưa xuất hiện. Hãy quay lại lúc %s!" % timing.next_time
+				play.text = tr("Chưa đến giờ")
+				play.tooltip_text = tr("Boss chưa xuất hiện. Hãy quay lại lúc %s!") % timing.next_time
 
 func _enter_boss_field(m: Dictionary, boss: Dictionary) -> void:
 	if not _online():
@@ -1384,7 +1384,7 @@ static func compute_boss_timing(boss: Dictionary) -> Dictionary:
 			return {
 				"is_open": true,
 				"remaining_sec": remaining,
-				"status_text": "🟢 ĐANG XUẤT HIỆN (Còn %02d:%02d)" % [remaining / 60, remaining % 60],
+				"status_text": TranslationServer.translate("🟢 ĐANG XUẤT HIỆN (Còn %02d:%02d)") % [remaining / 60, remaining % 60],
 				"next_time": t_str
 			}
 
@@ -1405,7 +1405,7 @@ static func compute_boss_timing(boss: Dictionary) -> Dictionary:
 	return {
 		"is_open": false,
 		"diff_sec": min_diff,
-		"status_text": "⏳ Sắp xuất hiện: %s (Còn %02d:%02d)" % [next_t_str, min_diff / 60, min_diff % 60],
+		"status_text": TranslationServer.translate("⏳ Sắp xuất hiện: %s (Còn %02d:%02d)") % [next_t_str, min_diff / 60, min_diff % 60],
 		"next_time": next_t_str
 	}
 

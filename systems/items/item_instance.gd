@@ -7,7 +7,7 @@ class_name ItemInstance
 
 ## Phiên bản dữ liệu đồ (data/items) mà base_index/gold_index trỏ vào — 2 = nhập lại từ bản 15 phái. Save cũ không có
 ## "dv" được đổi chỉ số qua ItemDatabase.remap_index (= DATA_VERSION trong tools/import_vltk_items.py).
-const DATA_VERSION := 2
+const DATA_VERSION := 3
 const MAX_MAGIC := 6  ## MAX_ITEM_NORMAL_MAGICATTRIB gốc (2 dòng mở rộng 7-8 là của hoàng kim, chưa có)
 
 var base_index: int = -1
@@ -44,6 +44,37 @@ const LOCK_LOCKED := -1
 const LOCK_NORMAL := 0
 const LOCK_UNLOCKING := 1
 var lock_state: int = LOCK_NORMAL
+
+## Tỉ lệ giá bán lại cho tiệm / NPC theo source C++ VLTK gốc (KBuySell.h: BUY_SELL_SCALE = 4, tức 25% giá gốc).
+const BUY_SELL_SCALE := 4
+
+## Kiểm tra món đồ có bị khoá không (khoá bảo hiểm / khoá giao dịch)
+func is_locked() -> bool:
+	return lock_state != LOCK_NORMAL or SecurityLock.is_item_locked(self)
+
+## Lấy giá mua gốc của vật phẩm (Lượng)
+func get_base_price() -> int:
+	return int(get_base().get("price", 0))
+
+## Lấy giá bán lại của 1 đơn vị vật phẩm (đúng chuẩn KItem::GetSalePrice VLTK: price / BUY_SELL_SCALE)
+func get_unit_sale_price() -> int:
+	if is_locked():
+		return 0
+	var bp := get_base_price()
+	if bp <= 0:
+		return 0
+	return maxi(1, int(bp / BUY_SELL_SCALE))
+
+## Lấy tổng giá bán lại của vật phẩm (đơn giá x số lượng)
+func get_sale_price() -> int:
+	var unit := get_unit_sale_price()
+	if unit <= 0:
+		return 0
+	return unit * maxi(1, count if is_misc() else 1)
+
+## Kiểm tra vật phẩm có thể bán được không
+func can_sell() -> bool:
+	return get_sale_price() > 0 and not is_locked()
 ## ---- Đồ tím (Trang bị Huyền Tinh — Compound: Chế đồ tím / Khảm) ----
 ## Phẩm chất gốc (GetItemQuality): 0 = trắng/xanh, 2 = đồ tím (có ô khảm). Hoàng kim nhận biết qua gold_index.
 const QUALITY_PURPLE := 2

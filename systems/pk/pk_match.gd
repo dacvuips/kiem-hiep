@@ -1,5 +1,9 @@
 extends Node
 class_name PkMatch
+
+const VsScoreBar := preload("res://ui/common/vs_score_bar.gd")
+const PkStakeSession = preload("res://systems/pk/pk_stake_session.gd")
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
 ## 1 TRẬN PK trên đấu trường (map 397) — tạo bởi main.gd khi GameManager.field_map có "pk" (PkRules.arena_entry):
 ##   chuẩn bị PkRules.PREPARE_SEC giây (2 bên đứng yên, chưa nhận sát thương) -> đấu tối đa PkRules.FIGHT_SEC giây ->
 ##   1 bên trọng thương là thua; hết giờ thì bên còn nhiều % sinh lực hơn thắng -> ghi thắng/thua -> về Character Hub.
@@ -26,16 +30,19 @@ var _bot: PkBot
 var _allies: Array[PkBot] = []
 var _enemies: Array[PkBot] = []
 var _hud: CanvasLayer
+var _vs_bar: VsScoreBar
 var _title: Label
 var _clock: Label
 var _info: Label
 var _reject_button: Button
 var _arena_cells := {}                   ## ô (Vector2i) của sân đấu đang dùng — đặt người chỉ trong vùng này
+var _stake_session: PkStakeSession = null
 
 func _ready() -> void:
 	var pk: Dictionary = GameManager.field_map.get("pk", {})
 	mode = int(pk.get("mode", PkRules.Mode.LIEN_DAU)) as PkRules.Mode
 	team_size = clampi(int(pk.get("team_size", 1)), 1, 8)
+	_stake_session = pk.get("stake_session")
 	_build_hud()
 	_player = get_tree().get_first_node_in_group("player") as Node2D
 	if _player:
@@ -43,10 +50,25 @@ func _ready() -> void:
 			_player.suppress_death_popup = true
 		if "hurt_invincible" in _player:
 			_player.hurt_invincible = false
+		if "is_invincible" in _player:
+			_player.is_invincible = true
 		if _player.has_signal("died"):
 			_player.died.connect(_on_player_died)
 	_spawn_bot.call_deferred(pk.get("opponent", {}))
-	_say("%s [%s]: còn %d giây nữa bắt đầu." % [PkRules.MODE_NAMES[mode], PkRules.format_name(team_size), int(PkRules.PREPARE_SEC)])
+	if _stake_session != null and _stake_session.has_any_stake():
+		var total_g := _stake_session.side_a.gold + _stake_session.side_b.gold
+		var total_x := _stake_session.side_a.xu + _stake_session.side_b.xu
+		var total_j := _stake_session.side_a.jade + _stake_session.side_b.jade
+		var total_items := _stake_session.side_a.room.inventory.size() + _stake_session.side_b.room.inventory.size()
+		var parts: Array[String] = []
+		if total_g > 0: parts.append("%s lượng" % InventoryPopup.format_money(total_g))
+		if total_x > 0: parts.append("%d Xu" % total_x)
+		if total_j > 0: parts.append("%d KNB" % total_j)
+		if total_items > 0: parts.append("%d vật phẩm" % total_items)
+		_say("TRẬN ĐẤU CÓ ĐẶT CƯỢC: Tổng giải thưởng %s!" % " · ".join(parts))
+	else:
+		_say("%s [%s]: chuẩn bị bắt đầu!" % [PkRules.MODE_NAMES[mode], PkRules.format_name(team_size)])
+	CountdownOverlay.start(self, _start_fight)
 
 func _spawn_bot(opponent: Dictionary) -> void:
 	var pk: Dictionary = GameManager.field_map.get("pk", {})
@@ -75,6 +97,7 @@ func _spawn_bot(opponent: Dictionary) -> void:
 		else:
 			bot_p = PkBotProfile.create(GameManager.local_profile.level)
 		var ally := PkBot.new()
+		ally.is_match_fighter = true
 		ally.name = "PkAlly%d" % i
 		ally.setup(bot_p)
 		ally.position = _free_near(slots_a[i]) - feet
@@ -100,6 +123,7 @@ func _spawn_bot(opponent: Dictionary) -> void:
 			var sect_id := GameManager.local_profile.sect_id if mode == PkRules.Mode.DAI_HOI else ""
 			bot_p = PkBotProfile.create(GameManager.local_profile.level, sect_id)
 		var enemy := PkBot.new()
+		enemy.is_match_fighter = true
 		enemy.name = "PkBot%d" % i
 		enemy.setup(bot_p)
 		enemy.position = _free_near(slots_b[i]) - feet
@@ -112,6 +136,29 @@ func _spawn_bot(opponent: Dictionary) -> void:
 
 	if not _enemies.is_empty():
 		_bot = _enemies[0]
+
+	# Đổi màu tên và tiền tố phe cho nhân vật và bot (Xanh Dương vs Đỏ)
+	const COLOR_BLUE := Color(0.25, 0.70, 1.0)
+	const COLOR_RED := Color(1.0, 0.35, 0.35)
+	const TAG_BLUE := "[Phe Xanh]"
+	const TAG_RED := "[Phe Đỏ]"
+
+	var side_str: String = str(pk.get("side", pk.get("my_side", "a")))
+	var is_team_b: bool = (side_str == "b" or side_str == "jin")
+
+	var player_col := COLOR_RED if is_team_b else COLOR_BLUE
+	var player_tag := TAG_RED if is_team_b else TAG_BLUE
+	var enemy_col := COLOR_BLUE if is_team_b else COLOR_RED
+	var enemy_tag := TAG_BLUE if is_team_b else TAG_RED
+
+	if mode == PkRules.Mode.THACH_DAU or mode == PkRules.Mode.LON_XON:
+		if _player and _player.has_method("set_name_color"):
+			_player.set_name_color(player_col, player_tag)
+		for ally in _allies:
+			ally.set_name_color(player_col, player_tag)
+		for enemy in _enemies:
+			enemy.set_name_color(enemy_col, enemy_tag)
+
 	_update_info()
 
 ## Tâm vùng trống liền lớn nhất quanh `around` (toạ độ map). Không có dữ liệu vật cản thì trả nguyên `around`.
@@ -184,7 +231,10 @@ func _free_near(p: Vector2) -> Vector2:
 func _process(delta: float) -> void:
 	if _leave_in >= 0.0:
 		_leave_in -= delta
-		_clock.text = "Rời đấu trường sau %d giây" % ceili(maxf(_leave_in, 0.0))
+		var leave_str := "Rời sau %ds" % ceili(maxf(_leave_in, 0.0))
+		_clock.text = leave_str
+		if _vs_bar:
+			_vs_bar.set_timer(leave_str)
 		if _leave_in <= 0.0:
 			_leave_in = -1.0
 			_go_home()
@@ -194,12 +244,17 @@ func _process(delta: float) -> void:
 	_update_info()
 	if not running:
 		_prepare -= delta
-		_clock.text = "Chuẩn bị %d" % ceili(maxf(_prepare, 0.0))
+		_clock.text = ""
+		if _vs_bar:
+			_vs_bar.set_timer("Sắp bắt đầu")
 		if _prepare <= 0.0:
 			_start_fight()
 		return
 	time_left -= delta
-	_clock.text = TimeChallenge.format_time(maxi(0, ceili(time_left)))
+	var time_str := TimeChallenge.format_time(maxi(0, ceili(time_left)))
+	_clock.text = time_str
+	if _vs_bar:
+		_vs_bar.set_timer(time_str)
 	if time_left <= 0.0:
 		var alive_a := _alive_count(_allies) + (1 if _player_alive() else 0)
 		var alive_b := _alive_count(_enemies)
@@ -211,7 +266,11 @@ func _process(delta: float) -> void:
 			_finish(hp_a >= hp_b, "Hết giờ — %s còn nhiều sinh lực hơn." % ("bạn" if hp_a >= hp_b else "đối thủ"))
 
 func _start_fight() -> void:
+	if running or done:
+		return
 	running = true
+	if _player and "is_invincible" in _player:
+		_player.is_invincible = false
 	if _reject_button:
 		_reject_button.visible = false
 	for a in _allies:
@@ -264,6 +323,9 @@ func _on_reject_opponent() -> void:
 		return
 	done = true
 	running = false
+	var overlay := get_node_or_null("CountdownOverlay")
+	if overlay and overlay.has_method("cancel"):
+		overlay.cancel()
 	if _reject_button:
 		_reject_button.visible = false
 	for e in _enemies:
@@ -277,10 +339,14 @@ func _on_reject_opponent() -> void:
 			a.queue_free()
 	_allies.clear()
 	_bot = null
+	if _stake_session != null and GameManager.local_profile != null:
+		var side_str: String = str(GameManager.field_map.get("pk", {}).get("side", "a"))
+		var my_team_code := "b" if (side_str == "b" or side_str == "jin") else "a"
+		_stake_session.refund_all(GameManager.local_profile, my_team_code)
 	_title.text = "TỪ CHỐI ĐỐI THỦ"
 	_title.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2))
 	_clock.text = "Trận đấu không bắt đầu"
-	_say("Đã từ chối đối thủ. Trận đấu không bắt đầu.")
+	_say("Đã từ chối đối thủ. Toàn bộ cược đã hoàn trả về hành trang.")
 	_leave_in = 3.0
 
 func _on_fighter_died(_fighter: PkBot, _is_enemy: bool) -> void:
@@ -328,13 +394,33 @@ func _finish(win: bool, why: String) -> void:
 		pts_text = " (+%d điểm)" % delta if delta > 0 else " (%d điểm)" % delta
 	_title.text = ("THẮNG" if win else "THUA") + pts_text
 	_title.add_theme_color_override("font_color", GameUi.GOLD if win else Color(1.0, 0.4, 0.4))
+	if _vs_bar:
+		_vs_bar.set_title("CHIẾN THẮNG!" if win else "THẤT BẠI!")
 	var say_text := why
 	if delta != 0 and GameManager.local_profile:
 		say_text += " (Điểm BXH: %d)" % GameManager.local_profile.pk_points
+	if _stake_session != null and _stake_session.has_any_stake():
+		var side_str: String = str(GameManager.field_map.get("pk", {}).get("side", "a"))
+		var my_team_code := "b" if (side_str == "b" or side_str == "jin") else "a"
+		var winner_team := my_team_code if win else ("b" if my_team_code == "a" else "a")
+		var stake_res := _stake_session.payout_to_winner(winner_team, GameManager.local_profile, my_team_code)
+		if stake_res.is_winner:
+			var parts: Array[String] = []
+			if stake_res.total_gold > 0: parts.append("+%s lượng" % InventoryPopup.format_money(stake_res.total_gold))
+			if stake_res.total_xu > 0: parts.append("+%d Xu" % stake_res.total_xu)
+			if stake_res.total_jade > 0: parts.append("+%d KNB" % stake_res.total_jade)
+			if stake_res.items_count > 0: parts.append("%d vật phẩm" % stake_res.items_count)
+			say_text += " | 🏆 Nhận thưởng cược: %s" % " · ".join(parts)
+		else:
+			say_text += " | 💀 Toàn bộ tiền, xu, KNB và vật phẩm cược đã chuyển cho trưởng nhóm đối phương."
+		if GameManager.local_profile:
+			SaveManager.save_profile(GameManager.local_profile)
 	_say(say_text)
 	_leave_in = PkRules.LEAVE_AFTER_SEC
 
 func _go_home() -> void:
+	if _player and _player.has_method("reset_name_color"):
+		_player.reset_name_color()
 	GameManager.field_map = {}
 	GameManager.is_game_over = false
 	get_tree().change_scene_to_file(HUB_SCENE)
@@ -402,16 +488,43 @@ func _build_hud() -> void:
 	_hud = CanvasLayer.new()
 	_hud.layer = 20
 	add_child(_hud)
+
+	var anchor := Control.new()
+	anchor.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud.add_child(anchor)
+
+	_vs_bar = VsScoreBar.new()
+	var p_name := GameManager.local_profile.display_name if GameManager.local_profile else "Phe Ta"
+	var e_name := "Đối Thủ"
+	if mode == PkRules.Mode.THACH_DAU:
+		var s_left := "Phe Xanh"
+		var s_right := "Phe Đỏ"
+		if team_size > 1:
+			_vs_bar.set_sides(s_left, team_size, team_size, s_right)
+		else:
+			_vs_bar.set_sides(s_left, "100%", "100%", s_right)
+		_vs_bar.set_name_colors(Color(0.25, 0.70, 1.0), Color(1.0, 0.35, 0.35))
+	elif team_size > 1:
+		_vs_bar.set_sides("Phe Ta", team_size, team_size, "Phe Địch")
+	else:
+		_vs_bar.set_sides(p_name, "100%", "100%", e_name)
+	_vs_bar.position = Vector2(-230, 48)
+	var title_text: String = ("%s [%s]" % [str(PkRules.MODE_NAMES.get(mode, "")), PkRules.format_name(team_size)]) if mode == PkRules.Mode.THACH_DAU else str(PkRules.MODE_NAMES.get(mode, ""))
+	_vs_bar.set_title(title_text)
+	anchor.add_child(_vs_bar)
+
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.position = Vector2(-220, 52)
+	box.position = Vector2(-220, 130)
 	box.custom_minimum_size = Vector2(440, 0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud.add_child(box)
-	var title_text: String = ("%s [%s]" % [str(PkRules.MODE_NAMES.get(mode, "")), PkRules.format_name(team_size)]) if mode == PkRules.Mode.THACH_DAU else str(PkRules.MODE_NAMES.get(mode, ""))
-	_title = _hud_label(title_text, 18, GameUi.GOLD)
-	_clock = _hud_label("", 26, Color(1, 1, 1))
-	_info = _hud_label("", 14, GameUi.TEXT)
+	_title = _hud_label("", 16, GameUi.GOLD)
+	_title.visible = false
+	_clock = _hud_label("", 24, Color(1, 1, 1))
+	_clock.visible = false
+	_info = _hud_label("", 13, GameUi.TEXT)
 	for l in [_title, _clock, _info]:
 		box.add_child(l)
 	if PkRules.can_kick(mode):
@@ -437,13 +550,33 @@ func _update_info() -> void:
 	if team_size > 1:
 		var alive_a := _alive_count(_allies) + (1 if _player_alive() else 0)
 		var alive_b := _alive_count(_enemies)
-		_info.text = "Thể thức: %s   ·   Phe ta: %d/%d sống   vs   Phe địch: %d/%d sống" % [
-			PkRules.format_name(team_size), alive_a, team_size, alive_b, team_size
-		]
+		if _vs_bar:
+			_vs_bar.set_scores(alive_a, alive_b)
+		if mode == PkRules.Mode.THACH_DAU:
+			_info.text = "Thể thức: %s   ·   Phe Xanh: %d/%d sống   vs   Phe Đỏ: %d/%d sống" % [
+				PkRules.format_name(team_size), alive_a, team_size, alive_b, team_size
+			]
+		else:
+			_info.text = "Thể thức: %s   ·   Phe ta: %d/%d sống   vs   Phe địch: %d/%d sống" % [
+				PkRules.format_name(team_size), alive_a, team_size, alive_b, team_size
+			]
 	elif _bot and _bot.profile:
 		var sect := SectRegistry.get_by_id(_bot.profile.sect_id)
-		_info.text = "Đối thủ: %s · Cấp %d · %s   ·   Sinh lực %d%%   ·   Thuốc %d" % [_bot.profile.display_name, _bot.profile.level,
-				sect.sect_name if sect else "?", roundi(_hp_ratio(_bot) * 100.0), _bot.potions_left]
+		var bot_hp_pct := roundi(_hp_ratio(_bot) * 100.0)
+		var player_hp_pct := 100
+		if _player and "stats" in _player and _player.stats and _player.stats.max_health > 0:
+			player_hp_pct = roundi(clampf(float(_player.stats.current_health) / float(_player.stats.max_health), 0.0, 1.0) * 100.0)
+		if _vs_bar:
+			if mode == PkRules.Mode.THACH_DAU:
+				_vs_bar.set_scores("%d%%" % player_hp_pct, "%d%%" % bot_hp_pct)
+			else:
+				_vs_bar.set_left(GameManager.local_profile.display_name if GameManager.local_profile else "Bạn", "%d%%" % player_hp_pct)
+				_vs_bar.set_right(_bot.profile.display_name, "%d%%" % bot_hp_pct)
+		if mode == PkRules.Mode.THACH_DAU:
+			_info.text = "Phe Xanh: %d%% máu   vs   Phe Đỏ: %d%% máu   ·   Thuốc đối thủ: %d" % [player_hp_pct, bot_hp_pct, _bot.potions_left]
+		else:
+			_info.text = "Đối thủ: %s · Cấp %d · %s   ·   Sinh lực %d%%   ·   Thuốc %d" % [_bot.profile.display_name, _bot.profile.level,
+					sect.sect_name if sect else "?", bot_hp_pct, _bot.potions_left]
 
 func _say(text: String) -> void:
 	if _player and _player.has_method("notify"):

@@ -42,9 +42,10 @@ func _sync_state_sprites() -> void:
 		if id > 0:
 			wanted[id] = true
 	for id in wanted:
-		if not _state_sprites.has(id):
+		if not _state_sprites.has(id) or _state_sprites[id] == null or not is_instance_valid(_state_sprites[id]):
 			var node := VltkStateSprite.attach(get_parent() as Node2D, id)
-			_state_sprites[id] = node  ## null = chưa có hình, đừng thử lại mỗi frame
+			if node != null:
+				_state_sprites[id] = node
 	for id in _state_sprites.keys():
 		if not wanted.has(id):
 			var node: VltkStateSprite = _state_sprites[id]

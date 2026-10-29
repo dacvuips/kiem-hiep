@@ -12,8 +12,17 @@ const MAP_DIR := "res://world/maps/map_378"
 const MATCH_DURATION_SEC := 2400.0   ## 40 phút tối đa, quá giờ xem như Hoà
 const PREPARE_SEC := 10.0             ## 10 giây chuẩn bị
 const WAVE_INTERVAL_SEC := 20.0       ## 20 giây xuất 1 đợt lính (3 tốp cho 3 cổng)
-const CREEP_BUFF_INTERVAL_SEC := 300.0 ## Cứ 5 phút quái x2 máu và sát thương
+const CREEP_BUFF_INTERVAL_SEC := 300.0 ## Cứ 5 phút quái tăng x1.3 máu và sát thương
+const CREEP_BUFF_RATE := 1.3           ## Mỗi 5 phút tăng 30% (x1.3) sức mạnh
 const BOSS_INTERVAL_SEC := 600.0      ## Cứ 10 phút xuất 1 Boss Hoàng Kim (stats x20)
+const SUPER_MINION_INTERVAL_SEC := 600.0 ## Cứ 10 phút xuất 1 Siêu Lính (máu x8, dame như cũ)
+const SUPER_MINION_HP_MULT := 8.0     ## Máu Siêu Lính gấp 8 lần lính thường
+
+## Trụ Trung Tâm & Boss Thượng Cổ phút 15
+const PILLAR_SPAWN_TIME_SEC := 900.0  ## Phút thứ 15 xuất hiện Trụ Trung Tâm
+const PILLAR_HP := 80000.0            ## Lượng máu của Long Trụ Trung Tâm
+const ANCIENT_BOSS_HP_MULT := 10.0    ## Máu Boss Thượng Cổ gấp 10 lần Boss Hoàng Kim
+const ANCIENT_BOSS_DAMAGE_MULT := 6.0 ## Sát thương Boss Thượng Cổ bằng x6 lính thường
 
 ## Cấp độ trong trận (Cấp ảo, reset khi rời trận)
 const MIN_MATCH_LEVEL := 1
@@ -57,24 +66,62 @@ const GATES_JIN := [
 ## Số lượng quái đánh xa trấn thủ trước mỗi cổng ban đầu (giảm xuống 4 để tránh quá tải/lag giật)
 const GATE_GUARDIAN_COUNT := 4
 
-## Điểm mốc trên 3 đường từ cổng Tống tới cổng Kim (để lính hành quân)
+## Điểm mốc trên 3 đường từ cổng Tống tới cổng Kim (đã đo chuẩn theo đồ thị đường đi thực tế để quái không va vào góc tường/vật cản)
 const LANE_TOP_POINTS: Array[Vector2] = [
 	Vector2(41728.0, 54640.0), ## Cổng Tống Top
-	Vector2(44600.0, 52400.0),
-	Vector2(47600.0, 51400.0),
+	Vector2(42128.0, 54296.0),
+	Vector2(42704.0, 53880.0),
+	Vector2(43248.0, 53496.0),
+	Vector2(43760.0, 53368.0),
+	Vector2(44336.0, 53464.0),
+	Vector2(44816.0, 53496.0),
+	Vector2(45296.0, 53464.0),
+	Vector2(45840.0, 53496.0),
+	Vector2(46320.0, 53496.0),
+	Vector2(46832.0, 53432.0),
+	Vector2(46864.0, 52984.0),
+	Vector2(46832.0, 52472.0),
+	Vector2(46864.0, 51976.0),
+	Vector2(46928.0, 51560.0),
+	Vector2(47344.0, 51432.0),
+	Vector2(47728.0, 51288.0),
+	Vector2(48368.0, 50792.0),
+	Vector2(48912.0, 50408.0),
 	Vector2(49344.0, 50640.0)  ## Cổng Kim Top
 ]
 
 const LANE_MID_POINTS: Array[Vector2] = [
 	Vector2(43456.0, 54528.0), ## Cổng Tống Mid
+	Vector2(44112.0, 54392.0),
+	Vector2(44272.0, 53992.0),
+	Vector2(44784.0, 53912.0),
+	Vector2(45328.0, 54024.0),
+	Vector2(45776.0, 53960.0),
 	Vector2(46448.0, 53120.0), ## Trung tâm Map
+	Vector2(47376.0, 53464.0),
+	Vector2(47856.0, 52984.0),
+	Vector2(48432.0, 52120.0),
 	Vector2(48896.0, 51920.0)  ## Cổng Kim Mid
 ]
 
 const LANE_BOT_POINTS: Array[Vector2] = [
 	Vector2(43104.0, 55680.0), ## Cổng Tống Bot
-	Vector2(46200.0, 55200.0),
-	Vector2(49600.0, 53600.0),
+	Vector2(43792.0, 55592.0),
+	Vector2(44272.0, 55512.0),
+	Vector2(44688.0, 55384.0),
+	Vector2(45232.0, 54888.0),
+	Vector2(45616.0, 54408.0),
+	Vector2(46192.0, 53832.0),
+	Vector2(46832.0, 53432.0),
+	Vector2(47376.0, 53464.0),
+	Vector2(47856.0, 53432.0),
+	Vector2(48400.0, 53480.0),
+	Vector2(48816.0, 53384.0),
+	Vector2(49328.0, 53288.0),
+	Vector2(49904.0, 52952.0),
+	Vector2(50448.0, 52504.0),
+	Vector2(50992.0, 52104.0),
+	Vector2(51472.0, 51992.0),
 	Vector2(51488.0, 51680.0)  ## Cổng Kim Bot
 ]
 

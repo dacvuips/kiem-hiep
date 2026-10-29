@@ -124,6 +124,10 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.life_replenish += v.x
 		"lifereplenish_p":
 			s.life_replenish_p += v.x
+		"manareplenish_v":
+			s.mana_replenish += v.x
+		"manareplenish_p":
+			s.mana_replenish_p += v.x
 		"meleedamagereturn_p":
 			s.melee_damage_return_p += v.x
 		"meleedamagereturn_v":
@@ -138,6 +142,8 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.attack_speed += v.x
 		"castspeed_v", "castspeed_yan_v":
 			s.cast_speed += v.x
+		"fasthitrecover_v", "fasthitrecover_yan_v":
+			s.hit_recover += v.x
 		"five_elements_enhance_v":
 			s.five_elements_enhance += v.x
 		"five_elements_resist_v":
@@ -146,6 +152,33 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.exp_enhance_p += v.x
 		"lucky_v":
 			s.lucky_v += v.x
+		"manashield_p":
+			if v.x > 0:
+				s.mana_shield_p = clampi(maxi(s.mana_shield_p, v.x), 0, 85)
+		"allskill_v", "allskills_v":
+			s.all_skills_bonus += v.x
+		"metalskill_v":
+			s.element_skills_bonus[ElementTypes.ElementType.KIM] = s.element_skills_bonus.get(ElementTypes.ElementType.KIM, 0) + v.x
+		"woodskill_v":
+			s.element_skills_bonus[ElementTypes.ElementType.MOC] = s.element_skills_bonus.get(ElementTypes.ElementType.MOC, 0) + v.x
+		"waterskill_v":
+			s.element_skills_bonus[ElementTypes.ElementType.THUY] = s.element_skills_bonus.get(ElementTypes.ElementType.THUY, 0) + v.x
+		"fireskill_v":
+			s.element_skills_bonus[ElementTypes.ElementType.HOA] = s.element_skills_bonus.get(ElementTypes.ElementType.HOA, 0) + v.x
+		"earthskill_v":
+			s.element_skills_bonus[ElementTypes.ElementType.THO] = s.element_skills_bonus.get(ElementTypes.ElementType.THO, 0) + v.x
+		"ignoredefense_p":
+			s.ignore_defense_p += v.x
+		"damage2addmana_p":
+			s.damage_to_mana_p += v.x
+		"indestructible_b":
+			s.indestructible = true
+		"staminamax_v":
+			s.max_stamina += v.x
+		"staminareplenish_v":
+			s.stamina_replenish += v.x
+		"stealmana_p", "stealmanaenhance_p", "visionradius_p":
+			pass
 		_:
 			return false
 	return true
@@ -157,8 +190,8 @@ static func _add_element(pool: Dictionary, damage_type: int, value: int) -> void
 ## Thuộc tính GỐC có nhưng bảng CHƯA áp (game chưa có hệ thống tương ứng) — ghi lại để khỏi tưởng
 ## là bị sót: nội lực/thể lực (game không dùng mana), khiên nội lực, hồi phục khi bị đánh, vật phẩm,
 ## ẩn thân, đổi phe, tự động thi triển skill khác (auto*skill), cộng cấp skill...
-const UNSUPPORTED := ["mana_v", "manareplenish_v", "stamina_v", "staminamax_v", "staminamax_p",
-	"staminareplenish_v", "stealmana_p", "stealmanaenhance_p", "stealstamina_p", "manashield_p",
+const UNSUPPORTED := ["mana_v", "stamina_v", "staminamax_v", "staminamax_p",
+	"staminareplenish_v", "stealmana_p", "stealmanaenhance_p", "stealstamina_p",
 	"staticmagicshield_p", "dynamicmagicshield_v", "fasthitrecover_v", "fasthitrecover_yan_v",
 	"lifepotion_v", "manapotion_v", "hide", "changecamp_b", "allskill_v",
 	"autoattackskill", "autodeathskill", "autoreplyskill", "autorescueskill", "ignoreskill_p",

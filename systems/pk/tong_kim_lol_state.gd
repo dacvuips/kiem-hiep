@@ -171,5 +171,21 @@ func finish_and_reward() -> int:
 		# Trao thưởng EXP thực tế (x10 EXP trong trận)
 		profile.add_exp(real_exp_reward)
 
+	cleanup_tk_items()
 	current = null
 	return real_exp_reward
+
+## Thu dọn toàn bộ thuốc Quân Nhu Tống Kim trong hành trang khi kết thúc trận
+static func cleanup_tk_items() -> void:
+	var profile := GameManager.local_profile
+	if profile:
+		var kept: Array[ItemInstance] = []
+		for it in profile.inventory:
+			if it != null and (it.misc_id.begins_with("tk_") or bool(it.get_base().get("songjin_only", false))):
+				continue
+			kept.append(it)
+		profile.inventory = kept
+		for i in profile.quick_items.size():
+			if profile.quick_items[i].begins_with("tk_"):
+				profile.quick_items[i] = ""
+		SaveManager.save_profile(profile)

@@ -79,17 +79,20 @@ static func _learn_skills(p: PlayerProfile, sect: SectDefinition) -> void:
 	if main != null:
 		p.main_skill_id = main.id
 	for s in order:
-		if s.is_aura and p.get_skill_level(s.id) > 0:
+		if p != null and s.is_aura and p.get_skill_level(s.id) > 0:
 			p.active_aura_id = s.id
 			break
 
 ## Skill đánh mạnh nhất đã học mà bộ máy chiêu VLTK chạy được (cấp yêu cầu cao nhất).
 static func best_attack_skill(p: PlayerProfile, sect: SectDefinition) -> SkillDefinition:
 	var best: SkillDefinition = null
+	if p == null or sect == null:
+		return null
 	for s in sect.skills:
-		if not is_attack_skill(s) or (p.get_skill_level(s.id) <= 0 and not s.is_main_attack):
+		var s_lv: int = p.get_skill_level(s.id) if p != null else 0
+		if not is_attack_skill(s) or (s_lv <= 0 and not s.is_main_attack):
 			continue
-		if not VltkSkillRunner.supports(s, maxi(1, p.get_skill_level(s.id))):
+		if not VltkSkillRunner.supports(s, maxi(1, s_lv)):
 			continue
 		if best == null or s.req_level > best.req_level:
 			best = s

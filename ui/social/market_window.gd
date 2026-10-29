@@ -28,7 +28,6 @@ var _pager_label: Label
 var _prev_btn: Button
 var _next_btn: Button
 var _msg: PanelContainer
-var _money: Label
 ## Giao Thương
 var _f_cat: OptionButton
 var _f_series: OptionButton
@@ -63,17 +62,12 @@ func _init(hub: SocialHub = null) -> void:
 	tabs.add_theme_constant_override("separation", 6)
 	body.add_child(tabs)
 	for t in [["Giao Thương", Tab.MARKET], ["Của Tôi", Tab.MINE], ["Giao Dịch", Tab.TRADE]]:
-		var b := GameUi.button(str(t[0]), GameUi.TAB)
+		var b := GameUi.button(tr(str(t[0])), GameUi.TAB)
 		b.custom_minimum_size = Vector2(0, 36)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_show_tab.bind(int(t[1])))
 		tabs.add_child(b)
 		_tab_buttons.append(b)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.add_child(spacer)
-	_money = SocialUi.label("", SocialUi.GOLD, 13)
-	tabs.add_child(_money)
 	_pages = [_build_market(), _build_mine(), _build_trade()]
 	for p in _pages:
 		body.add_child(p)
@@ -108,7 +102,9 @@ func _show_tab(t: int) -> void:
 		GameUi.set_active(_tab_buttons[i], i == t)
 	_msg.visible = false
 	if is_docked:
-		size.y = 585.0
+		var target_w: float = 1000.0 if is_full_width else (docked_width if docked_width > 0.0 else 500.0)
+		size = Vector2(target_w, 585.0)
+		custom_minimum_size = Vector2(target_w, 585.0)
 	_refresh_money()
 	match t:
 		Tab.MARKET:
@@ -120,18 +116,24 @@ func _show_tab(t: int) -> void:
 			_refresh_nearby()
 
 func _refresh_money() -> void:
-	_money.text = "Lượng: %s   ·   Xu: %s   ·   KNB: %s" % [
-		InventoryPopup.format_money(_profile.gold),
-		InventoryPopup.format_money(_profile.xu),
-		InventoryPopup.format_money(_profile.jade)
-	]
+	pass
 
 ## Gửi thao tác chợ: online lên server (trả lời về _on_market qua NetClient), offline hỏi OfflineMarket ngay.
 func _request(op: String, args := {}) -> void:
-	if NetClient.is_in_world():
-		NetClient.send_market(op, args)
-	else:
-		_on_market(OfflineMarket.handle(_profile, op, args))
+	if NetWorldSync.is_online_mode():
+		if NetClient.is_in_world():
+			NetClient.send_market(op, args)
+		else:
+			_is_busy = false
+			_say(tr("Chưa kết nối tới máy chủ game (hoặc đang kết nối lại)..."), false)
+			if op == "list":
+				_fill_market([])
+				_update_pager(0)
+			elif op == "mine":
+				_mine = []
+				_fill_mine()
+		return
+	_on_market(OfflineMarket.handle(_profile, op, args))
 
 func _on_market(d: Dictionary) -> void:
 	_now = int(d.get("now", _now))
@@ -198,14 +200,14 @@ func _build_market() -> Control:
 	var row1 := HBoxContainer.new()
 	row1.add_theme_constant_override("separation", 4)
 	filter_box.add_child(row1)
-	_f_cat = _option(row1, "Loại", MarketBook.CATEGORIES.map(func(c: Array) -> String: return str(c[1])))
-	_f_series = _option(row1, "Hệ", ["Toàn bộ"] + ELEMENT_NAMES)
-	var levels := ["Toàn bộ"]
+	_f_cat = _option(row1, "Loại", MarketBook.CATEGORIES.map(func(c: Array) -> String: return tr(str(c[1]))))
+	_f_series = _option(row1, "Hệ", [tr("Toàn bộ")] + ELEMENT_NAMES.map(func(e: String) -> String: return tr(e)))
+	var levels := [tr("Toàn bộ")]
 	for i in range(1, 11):
-		levels.append("Cấp %d" % i)
+		levels.append("%s %d" % [tr("Cấp"), i])
 	_f_level = _option(row1, "Cấp", levels)
-	_f_attrib = _option(row1, "Thuộc Tính", ["Toàn bộ"] + MarketBook.attrib_options().keys())
-	_f_cur = _option(row1, "Tiền", ["Toàn bộ", "Lượng", "KNB"])
+	_f_attrib = _option(row1, "Thuộc Tính", [tr("Toàn bộ")] + MarketBook.attrib_options().keys().map(func(a: String) -> String: return tr(a)))
+	_f_cur = _option(row1, "Tiền", [tr("Toàn bộ"), tr("Lượng"), tr("KNB")])
 
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 6)
@@ -214,7 +216,7 @@ func _build_market() -> Control:
 	_f_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_f_name.text_submitted.connect(func(_t: String) -> void: _search())
 	row2.add_child(_f_name)
-	var find := SocialUi.stone_button("Tìm", Vector2(76, 36))
+	var find := SocialUi.stone_button(tr("Tìm"), Vector2(76, 36))
 	find.pressed.connect(_search)
 	row2.add_child(find)
 
@@ -232,20 +234,20 @@ func _build_market() -> Control:
 	var pager := HBoxContainer.new()
 	pager.alignment = BoxContainer.ALIGNMENT_CENTER
 	pager.add_theme_constant_override("separation", 12)
-	_prev_btn = SocialUi.small_button("« Trước")
+	_prev_btn = SocialUi.small_button(tr("« Trước"))
 	_prev_btn.pressed.connect(func() -> void: _load_page(_list_page - 1))
 	pager.add_child(_prev_btn)
 	_pager_label = SocialUi.label("", SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	_pager_label.custom_minimum_size.x = 200
 	pager.add_child(_pager_label)
-	_next_btn = SocialUi.small_button("Sau »")
+	_next_btn = SocialUi.small_button(tr("Sau »"))
 	_next_btn.pressed.connect(func() -> void: _load_page(_list_page + 1))
 	pager.add_child(_next_btn)
 	page.add_child(pager)
 	return page
 
 func _update_pager(total: int) -> void:
-	_pager_label.text = "Trang %d / %d  ·  %d vật phẩm" % [_list_page + 1, _list_pages, total]
+	_pager_label.text = "%s %d / %d  ·  %d %s" % [tr("Trang"), _list_page + 1, _list_pages, total, tr("vật phẩm")]
 	_prev_btn.disabled = _list_page <= 0
 	_next_btn.disabled = _list_page >= _list_pages - 1
 
@@ -257,11 +259,12 @@ func _option(parent: Control, label: String, entries: Array) -> OptionButton:
 	o.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	o.fit_to_longest_item = false
 	o.clip_text = true
+	var tr_label := tr(label)
 	for i in entries.size():
-		o.add_item(label if i == 0 else str(entries[i]), i)
+		o.add_item(tr_label if i == 0 else str(entries[i]), i)
 	## Mục đầu: trên nút hiện tên bộ lọc, trong danh sách xổ xuống hiện "Toàn bộ".
 	o.get_popup().about_to_popup.connect(func() -> void: o.set_item_text(0, str(entries[0])))
-	o.get_popup().popup_hide.connect(func() -> void: o.set_item_text(0, label))
+	o.get_popup().popup_hide.connect(func() -> void: o.set_item_text(0, tr_label))
 	o.item_selected.connect(func(_i: int) -> void: _search())
 	parent.add_child(o)
 	return o
@@ -447,9 +450,8 @@ func _build_mine() -> Control:
 	var left := SocialUi.section()
 	left[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
-	left[0].size_flags_stretch_ratio = 1.3
 	var head := HBoxContainer.new()
-	var title := SocialUi.label("Vật phẩm đang treo", SocialUi.LABEL_GREEN, 15)
+	var title := SocialUi.label(tr("Vật phẩm đang treo"), SocialUi.LABEL_GREEN, 15)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	_slots = SocialUi.label("", SocialUi.LABEL_RED, 13)
@@ -467,16 +469,16 @@ func _build_mine() -> Control:
 	left[1].add_child(scroll)
 	page.add_child(left[0])
 
-	var right := SocialUi.info_box("Hành trang")
-	right[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var right := SocialUi.info_box(tr("Hành trang"))
+	right[0].custom_minimum_size = Vector2(280, 0)
+	right[0].size_flags_horizontal = Control.SIZE_FILL
 	right[0].size_flags_vertical = Control.SIZE_EXPAND_FILL
-	right[0].size_flags_stretch_ratio = 1.0
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 6)
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right[1].add_child(tabs)
 	for i in PlayerProfile.OPEN_BAGS:
-		var b := GameUi.button("Túi %d" % (i + 1), GameUi.TAB)
+		var b := GameUi.button("%s %d" % [tr("Túi"), i + 1], GameUi.TAB)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(func() -> void:
 			_bag_view.bag = i
@@ -494,9 +496,13 @@ func _build_mine() -> Control:
 	bag_scroll.add_child(_bag_view)
 	TouchScrollHelperScript.attach(bag_scroll, right[0] as Control)
 	right[1].add_child(bag_scroll)
-	right[1].add_child(SocialUi.label("Chạm vật phẩm để định giá bán", SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER))
-	right[1].add_child(SocialUi.label("Thuế đăng bán: 3%/ngày (trừ từ túi + rương). Hết tiền hoặc hết hạn tự hoàn trả về rương.",
-		SocialUi.LABEL_GREEN, 12, HORIZONTAL_ALIGNMENT_CENTER))
+	var tip_lbl := SocialUi.label(tr("Chạm vật phẩm để định giá bán"), SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	tip_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right[1].add_child(tip_lbl)
+	var tax_lbl := SocialUi.label(tr("Thuế đăng bán: 3%/ngày (trừ từ túi + rương).\nHết tiền hoặc hết hạn tự hoàn trả về rương."),
+		SocialUi.LABEL_GREEN, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	tax_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right[1].add_child(tax_lbl)
 	page.add_child(right[0])
 	return page
 
@@ -509,9 +515,11 @@ func _fill_mine() -> void:
 	for c in _mine_box.get_children():
 		c.queue_free()
 	_items.clear()
-	_slots.text = "Slot %d/%d" % [_mine.size(), MarketBook.MAX_SLOTS]
+	_slots.text = "%s %d/%d" % [tr("Ô"), _mine.size(), MarketBook.MAX_SLOTS]
 	if _mine.is_empty():
-		_mine_box.add_child(SocialUi.label("Chưa treo món nào — chạm vật phẩm trong hành trang để định giá bán.", SocialUi.MUTED, 13))
+		var empty_lbl := SocialUi.label(tr("Chưa treo món nào — chạm vật phẩm trong hành trang để định giá bán."), SocialUi.MUTED, 13)
+		empty_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_mine_box.add_child(empty_lbl)
 		return
 	for l in _mine:
 		var item := _item_of(l)
@@ -533,11 +541,11 @@ func _fill_mine() -> void:
 		var live := MarketBook.is_live(l, _now)
 		var right := VBoxContainer.new()
 		right.alignment = BoxContainer.ALIGNMENT_CENTER
-		var left_t := "Đã bán" if sold else MarketBook.remaining_text(int(l.get("until", 0)), _now)
+		var left_t := tr("Đã bán") if sold else MarketBook.remaining_text(int(l.get("until", 0)), _now)
 		right.add_child(SocialUi.label(left_t, SocialUi.LABEL_GREEN if sold else (SocialUi.MUTED if live else SocialUi.LABEL_RED), 12,
 			HORIZONTAL_ALIGNMENT_RIGHT))
 		if not sold:
-			var btn := SocialUi.small_button("Hủy treo" if live else "Nhận lại")
+			var btn := SocialUi.small_button(tr("Hủy treo") if live else tr("Nhận lại"))
 			btn.custom_minimum_size = Vector2(92, 30)
 			btn.pressed.connect(func() -> void:
 				if _is_busy:
@@ -661,15 +669,15 @@ func _build_trade() -> Control:
 	box[1].add_child(_my_id_row())
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	_id_edit = SocialUi.line_edit("Nhập ID người cần giao dịch")
+	_id_edit = SocialUi.line_edit(tr("Nhập ID người cần giao dịch"))
 	_id_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_id_edit.text_submitted.connect(func(_t: String) -> void: _trade_by_id())
 	row.add_child(_id_edit)
-	var send := SocialUi.stone_button("Mời giao dịch", Vector2(150, 38))
+	var send := SocialUi.stone_button(tr("Mời giao dịch"), Vector2(150, 38))
 	send.pressed.connect(_trade_by_id)
 	row.add_child(send)
 	box[1].add_child(row)
-	var hint := SocialUi.label("Bên kia sẽ nhận hộp hỏi có đồng ý giao dịch không — đồng ý thì cửa sổ giao dịch mở ra như bình thường.",
+	var hint := SocialUi.label(tr("Bên kia sẽ nhận hộp hỏi có đồng ý giao dịch không — đồng ý thì cửa sổ giao dịch mở ra như bình thường."),
 		SocialUi.SUBTITLE, 12)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box[1].add_child(hint)
@@ -696,35 +704,36 @@ func _my_id_row() -> Control:
 	var my_id := SaveManager.online_character_id
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	var key := SocialUi.label("ID của bạn:", SocialUi.LABEL_BLUE, 15)
+	var key := SocialUi.label(tr("ID của bạn:"), SocialUi.LABEL_BLUE, 15)
 	key.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(key)
 	if my_id <= 0:
-		var none := SocialUi.label("— chơi một mình chưa có ID (đăng nhập tài khoản để có)", SocialUi.MUTED, 13)
+		var none := SocialUi.label(tr("— chơi một mình chưa có ID (đăng nhập tài khoản để có)"), SocialUi.MUTED, 13)
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		none.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(none)
 		return row
 	var id_label := SocialUi.label(str(my_id), SocialUi.GOLD, 24)
 	id_label.name = "MyId"
 	id_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	id_label.tooltip_text = "Đưa số này cho người muốn giao dịch với bạn"
+	id_label.tooltip_text = tr("Đưa số này cho người muốn giao dịch với bạn")
 	row.add_child(id_label)
-	var copy := SocialUi.small_button("Sao chép")
+	var copy := SocialUi.small_button(tr("Sao chép"))
 	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	copy.pressed.connect(func() -> void:
 		DisplayServer.clipboard_set(str(my_id))
-		_say("Đã sao chép ID %d." % my_id, true))
+		_say(tr("Đã sao chép ID %d.") % my_id, true))
 	row.add_child(copy)
 	return row
 
 func _trade_by_id() -> void:
 	var text := _id_edit.text.strip_edges()
 	if not text.is_valid_int():
-		_say("Hãy nhập ID là số.", false)
+		_say(tr("Hãy nhập ID là số."), false)
 		return
 	var err := _hub.start_trade_by_id(int(text))
 	if err == "online":
-		_say("Đã gửi lời mời giao dịch tới ID %s — chờ đối phương đồng ý." % text, true)
+		_say(tr("Đã gửi lời mời giao dịch tới ID %s — chờ đối phương đồng ý.") % text, true)
 		return
 	if err != "":
 		_say(err, false)
@@ -735,25 +744,52 @@ func _trade_by_id() -> void:
 func _refresh_nearby() -> void:
 	for c in _near_box.get_children():
 		c.queue_free()
+	if NetWorldSync.is_online_mode():
+		if not NetClient.is_in_world():
+			_near_box.add_child(SocialUi.label(tr("Chưa kết nối máy chủ game."), SocialUi.MUTED, 13))
+			return
+		var players := NetWorldSync.current.nearby_players() if NetWorldSync.current != null else []
+		if players.is_empty():
+			_near_box.add_child(SocialUi.label(tr("Không có ai ở gần."), SocialUi.MUTED, 13))
+			return
+		for m in players:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			var l := SocialUi.label(m.name, Camp.get_color(m.camp), 14)
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(l)
+			var state := "%s %d · %s" % [tr("Cấp"), m.level, tr(m.sect_name)]
+			if m.trade_open:
+				state += " · %s" % tr("mở giao dịch")
+			row.add_child(SocialUi.label(state, SocialUi.SUBTITLE, 12))
+			var eq := SocialUi.small_button(tr("Xem trang bị"))
+			eq.pressed.connect(func() -> void: _view_equip(m))
+			row.add_child(eq)
+			var t := SocialUi.small_button(tr("Giao dịch"))
+			t.disabled = not m.trade_open
+			t.pressed.connect(func() -> void: _trade_near(m))
+			row.add_child(t)
+			_near_box.add_child(row)
+		return
 	var players := SocialDirectory.players(_profile)
 	if players.is_empty():
-		_near_box.add_child(SocialUi.label("Không có ai ở gần.", SocialUi.MUTED, 13))
+		_near_box.add_child(SocialUi.label(tr("Không có ai ở gần."), SocialUi.MUTED, 13))
 	for m in players:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		var l := SocialUi.label(m.name, Camp.get_color(m.camp), 14)
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
-		var state := "Cấp %d · %s" % [m.level, m.sect_name]
+		var state := "%s %d · %s" % [tr("Cấp"), m.level, tr(m.sect_name)]
 		if not NetClient.is_in_world():
 			state = "ID %d · " % m.id + state
 		if m.trade_open:
-			state += " · mở giao dịch"
+			state += " · %s" % tr("mở giao dịch")
 		row.add_child(SocialUi.label(state, SocialUi.SUBTITLE, 12))
-		var eq := SocialUi.small_button("Xem trang bị")
+		var eq := SocialUi.small_button(tr("Xem trang bị"))
 		eq.pressed.connect(func() -> void: _view_equip(m))
 		row.add_child(eq)
-		var t := SocialUi.small_button("Giao dịch")
+		var t := SocialUi.small_button(tr("Giao dịch"))
 		t.disabled = not m.trade_open
 		t.pressed.connect(func() -> void: _trade_near(m))
 		row.add_child(t)

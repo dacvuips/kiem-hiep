@@ -8,6 +8,14 @@ class_name Camp
 
 enum Type { BEGIN, JUSTICE, EVIL, BALANCE, FREE, ANIMAL, EVENT, AUDIENCE, TONGWAR }
 
+## 4 chế độ PK gốc VLTK (GameDataDef.h line 1358: enumPKNormal=0, enumPKWar=1, enumPKMurder=2, enumPKTongWar=3)
+enum PKMode {
+	NORMAL = 0,    ## Luyện công (Hòa bình - mặc định)
+	WAR = 1,       ## Chiến đấu (Phe: Chính / Tà / Trung lập)
+	MURDER = 2,    ## Đồ sát (Tên đỏ, chém giết tự do ngoại trừ tân thủ & đồng đội)
+	TONG_WAR = 3,  ## Bang chiến
+}
+
 const NAMES := {
 	Type.BEGIN: "Tân thủ", Type.JUSTICE: "Chính phái", Type.EVIL: "Tà phái", Type.BALANCE: "Trung lập",
 	Type.FREE: "Sát thủ", Type.ANIMAL: "Quái", Type.EVENT: "Sự kiện", Type.AUDIENCE: "Khán giả",

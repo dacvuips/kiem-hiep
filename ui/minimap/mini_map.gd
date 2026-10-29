@@ -1,499 +1,916 @@
 extends Control
+
 class_name MiniMap
+
 ## Khung MINI MAP góc phải trên, dựng theo UiMiniMapSmall.ini của VLTK gốc (khung 130x145: tên map ở trên, vùng bản đồ
+
 ## 129x128, hàng dưới là toạ độ + các nút 14x14 lấy từ spr gốc), phóng to UI_SCALE lần cho dễ nhìn.
+
 ##   - Ảnh bản đồ là ảnh mini map gốc của map chính (world/minimap/minimap.jpg — tools/import_vltk_minimap.py), đã có sẵn
+
 ##     chấm vàng + tên địa điểm; cuộn theo nhân vật, chấm VÀNG ở giữa = người chơi.
+
 ##   - Hệ toạ độ như game gốc (UiMiniMap::UpdateSceneTimeInfo): X/Y = pixel map / 256 (hiển thị "194/202").
+
 ##   - Bấm vào dòng toạ độ (hoặc nút cờ) để NHẬP toạ độ "X/Y" rồi Enter -> nhân vật tự đi tới đó (đường vòng vật cản, trong ô
+
 ##     màn chơi). Bấm lên bản đồ để mở bản đồ lớn (MapPanel).
+
 ##   - Nút "bản đồ thế giới" = xem toàn bộ map (hiện luôn ô vuông màn chơi viền vàng).
 
 const BASE_SIZE := Vector2(140, 140)
+
 const MAP_RECT := Rect2(1, 1, 138, 138)
+
 const NAME_BAR_HEIGHT := 17.0
+
 const POS_BAR := Rect2(16, 114, 108, 20)
+
 const UI_SCALE := 1.0   ## 1.5 cũ thu nhỏ 1/3 (khung thật 130x145)
+
 const SCREEN_MARGIN := 8.0
+
 const COORD_UNIT := 256.0               ## 1 đơn vị toạ độ hiển thị = 256 pixel map (gốc: logic/32/8)
+
 const ZOOMS := [0.75, 1.0, 1.5, 2.5]
+
 const META_PATH := "res://world/minimap/minimap.json"
+
 const BTN_DIR := "res://ui/minimap/"
+
 const NPC_FONT_SIZE := 8                ## tên NPC trên khung mini map nhỏ
+
 const ROUTE_DOT_GAP := 7.0           ## khoảng cách giữa các chấm lộ trình (pixel khung mini map)
+
 const GREEN := Color(0.0, 1.0, 0.0)
+
 const GOLD := Color(0.95, 0.78, 0.3)
 
 var _tex: Texture2D
+
 var _origin := Vector2.ZERO          ## pixel map của góc trên-trái ảnh
+
 var _img_scale := 16.0               ## 1 pixel ảnh = _img_scale pixel map
+
 var _zoom_index := 1
+
 var _show_world := false
+
 var _title := ""
+
 var _dest := Vector2.ZERO            ## đích đang tự đi tới (pixel map, chân)
+
 var _has_dest := false
+
 var _notice := ""
+
 var _notice_time := 0.0
 
 var _player: Node2D
+
 var _view: Control
+
 var _pos_label: Label
+
 var _pos_input: LineEdit
+
 var _notice_label: Label
 
 func setup(player: Node2D) -> void:
+
 	_player = player
+
 	_load_assets()
+
 	custom_minimum_size = BASE_SIZE
+
 	size = BASE_SIZE
+
 	scale = Vector2.ONE * UI_SCALE
+
 	mouse_filter = Control.MOUSE_FILTER_STOP
+
 	_build()
+
 	get_viewport().size_changed.connect(_place)
+
+	HudLayout.add_listener(_place)
+
 	_place()
 
+func _exit_tree() -> void:
+
+	HudLayout.remove_listener(_place)
+
 ## Đặt sát góc phải-trên màn hình (scale làm kích thước thật = BASE_SIZE * UI_SCALE).
+
 func _place() -> void:
+
 	var vp := get_viewport().get_visible_rect().size
-	position = Vector2(vp.x - BASE_SIZE.x * UI_SCALE - SCREEN_MARGIN, SCREEN_MARGIN)
+
+	var elem: Dictionary = HudLayout.get_element("minimap")
+
+	var sc: float = float(elem.get("scale", 1.0))
+
+	var ox: float = float(elem.get("offset_x", 0.0))
+
+	var oy: float = float(elem.get("offset_y", 0.0))
+
+	var total_scale := UI_SCALE * sc
+
+	scale = Vector2.ONE * total_scale
+
+	position = Vector2(vp.x - BASE_SIZE.x * total_scale - SCREEN_MARGIN + ox, SCREEN_MARGIN + oy)
 
 func _load_assets() -> void:
+
 	if FileAccess.file_exists(META_PATH):
+
 		var meta: Variant = JSON.parse_string(FileAccess.get_file_as_string(META_PATH))
+
 		if meta is Dictionary:
+
 			_title = str(meta.get("title", ""))
+
 	if not GameManager.field_map.is_empty():
+
 		_title = str(GameManager.field_map.get("name", ""))
+
 	## Ảnh + toạ độ lấy từ chính map chính: map.json["minimap"] do tool map xuất (file, px_per_region, min_x, min_y).
+
 	var world := VltkWorld.current
+
 	if world == null or world.map == null:
+
 		return
+
 	var info: Variant = world.map.data.get("minimap")
+
 	if info is Dictionary:
+
 		_tex = world.map.get_minimap_texture()
+
 		_origin = Vector2(float(info["min_x"]), float(info["min_y"])) * 512.0
+
 		_img_scale = 512.0 / float(info["px_per_region"])   ## 1 pixel ảnh = (512 / px_per_region) pixel map
 
 ## NPC hội thoại của map (kind 3: dược điếm, tạp hoá, xa phu, thợ rèn...) — [{name, world}] để vẽ tên lên mini map / bản đồ lớn.
+
 ## Bỏ số thứ tự cuối tên gốc ("Thư Sinh 3" -> "Thư Sinh"). Quái (kind 0) không vẽ.
+
 const NPC_KIND_TALK := 3
+
 var _npc_labels: Array = []
+
 var _npc_labels_built := false
 
 func npc_labels() -> Array:
+
 	if _npc_labels_built:
+
 		return _npc_labels
+
 	var world := VltkWorld.current
+
 	if world == null or world.map == null:
+
 		return _npc_labels
+
 	_npc_labels_built = true
+
 	var trailing_number := RegEx.create_from_string("\\s+\\d+$")
+
 	for n in world.map.npcs:
+
 		if int(n.get("kind", 0)) != NPC_KIND_TALK:
+
 			continue
+
 		var npc_name := trailing_number.sub(str(n.get("name_vi", n.get("name", ""))).strip_edges(), "")
+
 		if npc_name == "":
+
 			continue
+
 		_npc_labels.append({"name": npc_name, "world": Vector2(float(n.get("px", n.get("x", 0))), float(n.get("py", n.get("y", 0))))})
+
 	return _npc_labels
 
 ## Vẽ chấm + tên NPC trong khung `box` (toạ độ của `canvas`). `to_view` đổi toạ độ map -> khung. Tên đè lên tên đã vẽ thì bỏ (chỉ chấm).
+
 static func draw_npc_labels(canvas: Control, labels: Array, to_view: Callable, box: Rect2, font_size: int, dot_radius: float) -> void:
+
 	var font: Font = canvas.get_theme_default_font()
+
 	var taken: Array[Rect2] = []
+
 	for npc in labels:
+
 		var p: Vector2 = to_view.call(npc.world)
+
 		if not box.has_point(p):
+
 			continue
+
 		canvas.draw_circle(p, dot_radius + 0.8, Color(0, 0, 0, 0.8))
+
 		canvas.draw_circle(p, dot_radius, Color(0.45, 0.9, 1.0))
+
 		var text: String = npc.name
+
 		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+
 		var at := Vector2(p.x - w * 0.5, p.y - dot_radius - 2.0)
+
 		var r := Rect2(at.x, at.y - font_size, w, font_size + 2)
+
 		if not box.encloses(r):
+
 			at.x = clampf(at.x, box.position.x, box.end.x - w)
+
 			r.position.x = at.x
+
 		var clash := false
+
 		for t in taken:
+
 			if t.intersects(r):
+
 				clash = true
+
 				break
+
 		if clash:
+
 			continue
+
 		taken.append(r)
+
 		canvas.draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 3, Color(0, 0, 0, 0.85))
+
 		canvas.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.75, 0.95, 1.0))
 
 func _build() -> void:
+
 	var frame := Panel.new()
+
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	frame.size = BASE_SIZE
+
 	var sb := StyleBoxFlat.new()
+
 	sb.bg_color = Color(0.06, 0.045, 0.03, 0.92)
+
 	sb.set_border_width_all(1)
+
 	sb.border_color = Color(0.55, 0.42, 0.22)
+
 	frame.add_theme_stylebox_override("panel", sb)
+
 	add_child(frame)
 
 	_view = Control.new()
+
 	_view.position = MAP_RECT.position
+
 	_view.size = MAP_RECT.size
+
 	_view.clip_contents = true
+
 	_view.mouse_filter = Control.MOUSE_FILTER_STOP
+
 	_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
 	_view.tooltip_text = "Nhấp để mở bản đồ lớn"
+
 	_view.draw.connect(_draw_view)
+
 	_view.gui_input.connect(_on_view_input)
+
 	add_child(_view)
 
 	## Dải tên map (NameShadow trong ini gốc: nền nâu sẫm trong suốt) + tên màu xanh lá.
+
 	var bar := ColorRect.new()
+
 	bar.color = Color(38 / 255.0, 25 / 255.0, 13 / 255.0, 120 / 255.0)
+
 	bar.position = Vector2.ZERO
+
 	bar.size = Vector2(BASE_SIZE.x, NAME_BAR_HEIGHT)
+
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	add_child(bar)
+
 	var name_label := _make_label(_title if _title != "" else "Bản đồ", 12)
+
 	name_label.position = Vector2(2, 1)
+
 	name_label.size = Vector2(BASE_SIZE.x - 4, 16)
+
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	add_child(name_label)
 
 	## Hàng dưới: toạ độ font_size = 16 nằm bên trong bản đồ, nhấp vào để sửa trực tiếp và tự tìm đường.
+
 	var pos_bg := Panel.new()
+
 	var pos_sb := StyleBoxFlat.new()
+
 	pos_sb.bg_color = Color(0.04, 0.03, 0.02, 0.65)
+
 	pos_sb.set_border_width_all(0)
+
 	pos_sb.set_corner_radius_all(3)
+
 	pos_bg.add_theme_stylebox_override("panel", pos_sb)
+
 	pos_bg.position = POS_BAR.position
+
 	pos_bg.size = POS_BAR.size
+
 	pos_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	add_child(pos_bg)
 
 	_pos_label = _make_label("", 16)
+
 	_pos_label.position = POS_BAR.position
+
 	_pos_label.size = POS_BAR.size
+
 	_pos_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	_pos_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
 	_pos_label.mouse_filter = Control.MOUSE_FILTER_STOP
+
 	_pos_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
 	_pos_label.tooltip_text = "Nhấp để sửa toạ độ và tự tìm đường"
+
 	_pos_label.gui_input.connect(func(e: InputEvent) -> void:
+
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+
 			_open_input())
+
 	add_child(_pos_label)
 
 	_pos_input = LineEdit.new()
+
 	_pos_input.position = POS_BAR.position
+
 	_pos_input.size = POS_BAR.size
+
 	_pos_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	_pos_input.add_theme_font_size_override("font_size", 16)
+
 	_pos_input.add_theme_color_override("font_color", GREEN)
+
 	_pos_input.add_theme_color_override("caret_color", GREEN)
+
 	var edit_sb := StyleBoxFlat.new()
+
 	edit_sb.bg_color = Color(0.04, 0.03, 0.02, 0.85)
+
 	edit_sb.set_border_width_all(0)
+
 	edit_sb.set_corner_radius_all(3)
+
 	edit_sb.content_margin_left = 2
+
 	edit_sb.content_margin_top = 0
+
 	edit_sb.content_margin_bottom = 0
+
 	_pos_input.add_theme_stylebox_override("normal", edit_sb)
+
 	_pos_input.add_theme_stylebox_override("focus", edit_sb)
+
 	_pos_input.placeholder_text = "X/Y"
+
 	_pos_input.max_length = 12
+
 	_pos_input.visible = false
+
 	_pos_input.text_submitted.connect(_on_input_submitted)
+
 	_pos_input.focus_exited.connect(func() -> void:
+
 		if _pos_input.visible:
+
 			if _pos_input.text.strip_edges() != "" and _pos_input.text.strip_edges() != _pos_label.text:
+
 				_on_input_submitted(_pos_input.text)
+
 			else:
+
 				_close_input()
+
 	)
+
 	_pos_input.gui_input.connect(func(e: InputEvent) -> void:
+
 		if e is InputEventKey and e.pressed and e.keycode == KEY_ESCAPE:
+
 			_close_input()
+
 			_pos_input.release_focus()
+
 	)
+
 	add_child(_pos_input)
 
 	_notice_label = _make_label("", 12)
+
 	_notice_label.position = Vector2(2, 20)
+
 	_notice_label.size = Vector2(BASE_SIZE.x - 4, 30)
+
 	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	_notice_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+
 	_notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
 	_notice_label.visible = false
+
 	add_child(_notice_label)
 
 func _make_label(text: String, font_size: int = 12) -> Label:
+
 	var l := Label.new()
+
 	l.text = text
+
 	l.add_theme_font_size_override("font_size", font_size)
+
 	l.add_theme_color_override("font_color", GREEN)
+
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
+
 	l.add_theme_constant_override("outline_size", 4 if font_size > 20 else 2)
+
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	return l
 
 func _btn_tex(key: String, frame: int) -> Texture2D:
+
 	var path := "%sbtn_%s_%d.png" % [BTN_DIR, key, frame]
+
 	return load(path) if ResourceLoader.exists(path) else null
 
 # ---------------------------------------------------------------- toạ độ
 
 func _feet() -> Vector2:
+
 	return _player.global_position + Vector2(0, VltkWorld.FEET_OFFSET)
 
 func _to_coord(world: Vector2) -> Vector2i:
+
 	return Vector2i(floori(world.x / COORD_UNIT), floori(world.y / COORD_UNIT))
 
 func _coord_to_world(c: Vector2i) -> Vector2:
+
 	return (Vector2(c) + Vector2(0.5, 0.5)) * COORD_UNIT
 
 func _process(delta: float) -> void:
+
 	if _player == null or not is_instance_valid(_player):
+
 		return
+
 	var c := _to_coord(_feet())
+
 	var coord_text := "%d/%d" % [c.x, c.y]
+
 	if _pos_label.text != coord_text:
+
 		_pos_label.text = coord_text
+
 	if _has_dest and not _player.is_moving_to_target():
+
 		_has_dest = false
+
 	if _notice_time > 0.0:
+
 		_notice_time -= delta
+
 		if _notice_time <= 0.0:
+
 			_notice_label.visible = false
+
 	_redraw_time -= delta
+
 	if _redraw_time <= 0.0:   ## vẽ lại mini map ~20 lần/giây, không cần mỗi khung hình
+
 		_redraw_time = 0.05
+
 		_view.queue_redraw()
 
 var _redraw_time := 0.0
 
 func _open_input() -> void:
+
 	_pos_input.text = _pos_label.text
+
 	_pos_input.visible = true
+
 	_pos_label.visible = false
+
 	_pos_input.grab_focus()
+
 	_pos_input.select_all()
 
 func _close_input() -> void:
+
 	_pos_input.visible = false
+
 	_pos_label.visible = true
 
 func _on_input_submitted(text: String) -> void:
+
 	var parsed := _parse_coord(text)
+
 	_close_input()
+
 	_pos_input.release_focus()
+
 	if parsed.x < 0:
+
 		_show_notice("Toạ độ không hợp lệ. Nhập dạng X/Y (ví dụ 194/202)")
+
 		return
+
 	var target := _coord_to_world(Vector2i(parsed.x, parsed.y))
+
 	var msg := walk_to_feet(target)
+
 	if msg != "":
+
 		_show_notice(msg)
+
 	else:
+
 		_show_notice("Đang tìm đường tới %d/%d..." % [parsed.x, parsed.y])
 
 ## "194/202", "194 202", "194,202" -> (x, y); (-1, -1) nếu sai.
+
 func _parse_coord(text: String) -> Vector2i:
+
 	var parts := text.strip_edges().replace(",", " ").replace("/", " ").replace(";", " ").split(" ", false)
+
 	if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
+
 		return Vector2i(-1, -1)
+
 	return Vector2i(int(parts[0]), int(parts[1]))
 
 func _walk_to(target_feet: Vector2) -> void:
+
 	var msg := walk_to_feet(target_feet)
+
 	if msg != "":
+
 		_show_notice(msg)
 
 ## Tự đi tới điểm CHÂN `target_feet` (kéo vào trong ô màn chơi nếu có). Trả về thông báo cho người chơi ("" = ổn).
+
 ## Dùng chung cho mini map nhỏ và bảng bản đồ lớn (MapPanel).
+
 func walk_to_feet(target_feet: Vector2) -> String:
+
 	var msg := ""
+
 	var inside := VltkWorld.clamp_to_arena(target_feet)
+
 	if inside != target_feet:
+
 		msg = "Ngoài khu màn chơi — đi tới mép gần nhất"
+
 	if not _player.walk_to_feet(inside):
+
 		return "Không có đường tới đó"
+
 	if VltkWorld.last_path_partial:
+
 		msg = "Có vật cản (sông/tường) chắn đường — đi tới điểm gần nhất"
+
 	## Đích hiển thị = điểm CUỐI của lộ trình (nơi nhân vật thật sự sẽ dừng): đích bị nhà/sông chắn thì khác toạ độ đã nhập,
+
 	## ghi rõ toạ độ thực để người chơi không tưởng toạ độ bị sai.
+
 	var route: PackedVector2Array = _player.get_route_feet()
+
 	_dest = route[route.size() - 1] if not route.is_empty() else inside
+
 	_has_dest = true
+
 	var wanted := _to_coord(inside)
+
 	var actual := _to_coord(_dest)
+
 	if absi(wanted.x - actual.x) + absi(wanted.y - actual.y) > 0:
+
 		msg = "Đích bị chắn — đi tới %d/%d (gần %d/%d nhất)" % [actual.x, actual.y, wanted.x, wanted.y]
+
 	return msg
 
 func has_destination() -> bool:
+
 	return _has_dest
 
 func destination_feet() -> Vector2:
+
 	return _dest
 
 func get_map_texture() -> Texture2D:
+
 	return _tex
 
 func get_title() -> String:
+
 	return _title
 
 ## Pixel ảnh mini map <-> pixel map (cùng hệ toạ độ với phần vẽ mini map nhỏ).
+
 func world_to_image(world: Vector2) -> Vector2:
+
 	return (world - _origin) / _img_scale
 
 func image_to_world(p: Vector2) -> Vector2:
+
 	return p * _img_scale + _origin
 
 func feet_to_coord(feet: Vector2) -> Vector2i:
+
 	return _to_coord(feet)
 
 func coord_to_feet(c: Vector2i) -> Vector2:
+
 	return _coord_to_world(c)
 
 func player_feet() -> Vector2:
+
 	return _feet()
 
 func _open_map_panel() -> void:
+
 	var existing := get_tree().root.get_node_or_null("MapPanel")
+
 	if existing != null:
+
 		existing.queue_free()
+
 		return
+
 	var panel := MapPanel.new()
+
 	panel.name = "MapPanel"
+
 	get_tree().root.add_child(panel)
+
 	panel.setup(self, _player)
 
 func _show_notice(text: String) -> void:
+
 	_notice_label.text = text
+
 	_notice_label.visible = true
+
 	_notice_time = 2.5
 
 # ---------------------------------------------------------------- bản đồ
 
 func _zoom() -> float:
+
 	if _show_world and _tex != null:
+
 		return minf(MAP_RECT.size.x / float(_tex.get_width()), MAP_RECT.size.y / float(_tex.get_height()))
+
 	return ZOOMS[_zoom_index]
 
 func _cycle_zoom() -> void:
+
 	_show_world = false
+
 	_zoom_index = (_zoom_index + 1) % ZOOMS.size()
 
 func _toggle_world() -> void:
+
 	_show_world = not _show_world
 
 ## Góc trên-trái của vùng ảnh đang xem (pixel ảnh): giữa là nhân vật, kẹp trong ảnh.
+
 func _src_origin(zoom: float) -> Vector2:
+
 	var view_img := MAP_RECT.size / zoom
+
 	if _tex == null:
+
 		return Vector2.ZERO
+
 	var tex_size := Vector2(_tex.get_size())
+
 	if _show_world or view_img.x >= tex_size.x:
+
 		return (tex_size - view_img) * 0.5 if view_img.x >= tex_size.x else Vector2.ZERO
+
 	var centre := (_feet() - _origin) / _img_scale
+
 	return Vector2(
+
 		clampf(centre.x - view_img.x * 0.5, 0.0, tex_size.x - view_img.x),
+
 		clampf(centre.y - view_img.y * 0.5, 0.0, tex_size.y - view_img.y))
 
 func _world_to_view(world: Vector2, zoom: float, src: Vector2) -> Vector2:
+
 	return ((world - _origin) / _img_scale - src) * zoom
 
 func _view_to_world(point: Vector2, zoom: float, src: Vector2) -> Vector2:
+
 	return (point / zoom + src) * _img_scale + _origin
 
 func _draw_view() -> void:
+
 	var zoom := _zoom()
+
 	var src := _src_origin(zoom)
+
 	if _tex != null:
+
 		var view_img := MAP_RECT.size / zoom
+
 		var tex_size := Vector2(_tex.get_size())
+
 		var draw_size := Vector2(minf(view_img.x, tex_size.x), minf(view_img.y, tex_size.y))
+
 		## src có thể ÂM (ảnh nhỏ hơn khung, được căn giữa): khi đó ảnh phải vẽ lùi vào đúng phần âm đó, nếu không chấm/đích lệch khỏi ảnh.
+
 		var pad := Vector2(maxf(-src.x, 0.0), maxf(-src.y, 0.0)) * zoom
+
 		_view.draw_texture_rect_region(_tex, Rect2(pad, draw_size * zoom), Rect2(Vector2(maxf(src.x, 0.0), maxf(src.y, 0.0)), draw_size))
+
 	else:
+
 		_view.draw_rect(Rect2(Vector2.ZERO, MAP_RECT.size), Color(0.12, 0.14, 0.1))
+
 	## Ô vuông màn chơi.
+
 	if VltkWorld.has_arena():
+
 		var r := VltkWorld.current.arena_rect
+
 		var a := _world_to_view(r.position, zoom, src)
+
 		var b := _world_to_view(r.end, zoom, src)
+
 		_view.draw_rect(Rect2(a, b - a), Color(GOLD, 0.9), false, 1.0)
+
 	## NPC hội thoại: chấm xanh + tên.
+
 	draw_npc_labels(_view, npc_labels(), func(w: Vector2) -> Vector2: return _world_to_view(w, zoom, src),
+
 			Rect2(Vector2.ZERO, MAP_RECT.size), NPC_FONT_SIZE, 1.3)
+
 	## Đích đang đi tới.
+
 	if _has_dest and _player != null and is_instance_valid(_player) and _player.is_moving_to_target():
+
 		## Lộ trình còn lại: chấm vàng từ nhân vật theo các điểm tới đích, rồi cờ đỏ nhỏ ở đích.
+
 		var pts: PackedVector2Array = [_world_to_view(_feet(), zoom, src)]
+
 		for w in _player.get_route_feet():
+
 			pts.append(_world_to_view(w, zoom, src))
+
 		var carry := 0.0
+
 		var box := Rect2(Vector2.ZERO, _view.size).grow(2.0)   ## đường dài: chỉ vẽ phần trong khung mini map
+
 		for i in range(pts.size() - 1):
+
 			var a := pts[i]
+
 			var b := pts[i + 1]
+
 			var length := a.distance_to(b)
+
 			if length < 0.01:
+
 				continue
+
 			var dir := (b - a) / length
+
 			var dist := ROUTE_DOT_GAP - carry
+
 			if box.intersects(Rect2(a, Vector2.ZERO).expand(b)):
+
 				while dist <= length:
+
 					var q := a + dir * dist
+
 					if box.has_point(q):
+
 						_view.draw_circle(q, 1.3, Color(1.0, 0.9, 0.15))
+
 					dist += ROUTE_DOT_GAP
+
 			else:
+
 				dist += floorf((length - dist) / ROUTE_DOT_GAP + 1.0) * ROUTE_DOT_GAP if dist <= length else 0.0
+
 			carry = maxf(length - (dist - ROUTE_DOT_GAP), 0.0)
+
 		var d := _world_to_view(_dest, zoom, src)
+
 		_view.draw_line(d, d + Vector2(0, -9), Color(0.95, 0.95, 0.95), 1.2)
+
 		_view.draw_colored_polygon(PackedVector2Array([d + Vector2(0, -9), d + Vector2(6, -7), d + Vector2(0, -4)]), Color(0.9, 0.12, 0.1))
+
 	## Tiêu Xa & Lộ trình Vận Tiêu trên MiniMap
+
 	var escort_cart := _view.get_tree().get_first_node_in_group("escort_carts") as CharacterBody2D
+
 	if escort_cart != null and is_instance_valid(escort_cart):
+
 		var wps: Array = escort_cart.get("waypoints") if escort_cart.get("waypoints") != null else []
+
 		var c_pts: PackedVector2Array = [_world_to_view(escort_cart.global_position, zoom, src)]
+
 		var cur_w_idx: int = int(escort_cart.get("current_waypoint_idx"))
+
 		for idx in range(cur_w_idx, wps.size()):
+
 			c_pts.append(_world_to_view(wps[idx], zoom, src))
+
 		if c_pts.size() >= 2:
+
 			var box := Rect2(Vector2.ZERO, _view.size).grow(2.0)
+
 			for i in range(c_pts.size() - 1):
+
 				var a := c_pts[i]
+
 				var b := c_pts[i + 1]
+
 				var length := a.distance_to(b)
+
 				if length < 0.01:
+
 					continue
+
 				var dir := (b - a) / length
+
 				var d := 0.0
+
 				while d <= length:
+
 					var q := a + dir * d
+
 					if box.has_point(q):
+
 						_view.draw_circle(q, 1.5, Color(0.2, 0.85, 1.0))
+
 					d += ROUTE_DOT_GAP
+
 		if not wps.is_empty():
+
 			var dp := _world_to_view(wps[-1], zoom, src)
+
 			_view.draw_circle(dp, 3.2, Color(1.0, 0.25, 0.25))
+
 		var cp := _world_to_view(escort_cart.global_position, zoom, src)
+
 		_view.draw_circle(cp, 5.0, Color(0.0, 0.0, 0.0, 0.85))
+
 		_view.draw_circle(cp, 4.0, Color(1.0, 0.8, 0.2))
+
 		_view.draw_circle(cp, 2.2, Color(0.2, 0.9, 1.0))
+
 	## Người chơi = chấm VÀNG.
+
 	if _player != null and is_instance_valid(_player):
+
 		var p := _world_to_view(_feet(), zoom, src)
+
 		_view.draw_circle(p, 3.6, Color.BLACK)
+
 		_view.draw_circle(p, 2.6, Color(1.0, 0.86, 0.0))
 
 func _on_view_input(event: InputEvent) -> void:
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+
 		_open_map_panel()
+
 		accept_event()
+

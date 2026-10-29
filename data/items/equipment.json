@@ -30772,7 +30772,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Liệt mã, đánh thế nào cũng chạy không nhanh.",
+  "intro": "\"Liệt mã, đánh thế nào cũng chạy không nhanh.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30799,7 +30799,7 @@
   "require": [
    [
     "requirelevel",
-    20
+    10
    ]
   ]
  },
@@ -30812,7 +30812,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Liệt mã, đánh thế nào cũng chạy không nhanh.",
+  "intro": "\"Liệt mã, đánh thế nào cũng chạy không nhanh.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30839,7 +30839,7 @@
   "require": [
    [
     "requirelevel",
-    25
+    10
    ]
   ]
  },
@@ -30852,7 +30852,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa lông màu hơi xanh tía, hành trình rất kém.",
+  "intro": "\"Loại ngựa lông màu hơi xanh tía, hành trình rất kém.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30879,7 +30879,7 @@
   "require": [
    [
     "requirelevel",
-    30
+    10
    ]
   ]
  },
@@ -30892,7 +30892,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa lông màu hơi xanh tía, hành trình rất kém.",
+  "intro": "\"Loại ngựa lông màu hơi xanh tía, hành trình rất kém.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30919,7 +30919,7 @@
   "require": [
    [
     "requirelevel",
-    35
+    10
    ]
   ]
  },
@@ -30932,7 +30932,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa lông vàng tương đối quý, ngày đi trăm dặm",
+  "intro": "\"Loại ngựa lông vàng tương đối quý, ngày đi trăm dặm\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30959,7 +30959,7 @@
   "require": [
    [
     "requirelevel",
-    40
+    10
    ]
   ]
  },
@@ -30972,7 +30972,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa lông vàng tương đối quý, ngày đi trăm dặm",
+  "intro": "\"Loại ngựa lông vàng tương đối quý, ngày đi trăm dặm\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -30999,7 +30999,7 @@
   "require": [
    [
     "requirelevel",
-    45
+    10
    ]
   ]
  },
@@ -31012,7 +31012,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Tuấn mã hiếm thấy, nghìn vàng khó mua",
+  "intro": "\"Loại Tuấn mã hiếm thấy, nghìn vàng khó mua\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -31039,7 +31039,7 @@
   "require": [
    [
     "requirelevel",
-    50
+    10
    ]
   ]
  },
@@ -31052,7 +31052,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Tuấn mã hiếm thấy, nghìn vàng khó mua",
+  "intro": "\"Loại Tuấn mã hiếm thấy, nghìn vàng khó mua\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -31079,7 +31079,7 @@
   "require": [
    [
     "requirelevel",
-    55
+    10
    ]
   ]
  },
@@ -31092,7 +31092,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con danh mã của Chu Mục Vương, ngày đi nghìn dặm",
+  "intro": "\"Một trong tám con danh mã của Chu Mục Vương, ngày đi nghìn dặm\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -31119,7 +31119,7 @@
   "require": [
    [
     "requirelevel",
-    60
+    10
    ]
   ]
  },
@@ -31132,7 +31132,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con danh mã của Chu Mục Vương, ngày đi nghìn dặm",
+  "intro": "\"Một trong tám con danh mã của Chu Mục Vương, ngày đi nghìn dặm\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -31159,7 +31159,7 @@
   "require": [
    [
     "requirelevel",
-    72
+    10
    ]
   ]
  },
@@ -31172,7 +31172,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa hạ đẳng, lông màu xanh nhạt",
+  "intro": "\"Loại ngựa hạ đẳng, lông màu xanh nhạt\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31199,7 +31199,7 @@
   "require": [
    [
     "requirelevel",
-    20
+    10
    ]
   ]
  },
@@ -31212,7 +31212,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa hạ đẳng, lông màu xanh nhạt",
+  "intro": "\"Loại ngựa hạ đẳng, lông màu xanh nhạt\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31239,7 +31239,7 @@
   "require": [
    [
     "requirelevel",
-    25
+    10
    ]
   ]
  },
@@ -31252,7 +31252,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa lông trắng xám thông thường,hành trình rất kém.",
+  "intro": "\"Một loại ngựa lông trắng xám thông thường,hành trình rất kém.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31279,7 +31279,7 @@
   "require": [
    [
     "requirelevel",
-    30
+    10
    ]
   ]
  },
@@ -31292,7 +31292,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa lông trắng xám thông thường,hành trình rất kém.",
+  "intro": "\"Một loại ngựa lông trắng xám thông thường,hành trình rất kém.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31319,7 +31319,7 @@
   "require": [
    [
     "requirelevel",
-    35
+    10
    ]
   ]
  },
@@ -31332,7 +31332,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loài ngựa quân đội thường dùng, đi xa rất tốt.",
+  "intro": "\"Loài ngựa quân đội thường dùng, đi xa rất tốt.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31359,7 +31359,7 @@
   "require": [
    [
     "requirelevel",
-    40
+    10
    ]
   ]
  },
@@ -31372,7 +31372,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loài ngựa quân đội thường dùng, đi xa rất tốt.",
+  "intro": "\"Loài ngựa quân đội thường dùng, đi xa rất tốt.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31399,7 +31399,7 @@
   "require": [
    [
     "requirelevel",
-    45
+    10
    ]
   ]
  },
@@ -31412,7 +31412,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa quý, lông trắng xám, mắt như ngọc",
+  "intro": "\"Một loại ngựa quý, lông trắng xám, mắt như ngọc \"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31439,7 +31439,7 @@
   "require": [
    [
     "requirelevel",
-    50
+    10
    ]
   ]
  },
@@ -31452,7 +31452,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa quý, lông trắng xám, mắt như ngọc",
+  "intro": "\"Một loại ngựa quý, lông trắng xám, mắt như ngọc \"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31479,7 +31479,7 @@
   "require": [
    [
     "requirelevel",
-    55
+    10
    ]
   ]
  },
@@ -31492,7 +31492,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Màu đỏ rực như lửa, một trong tám con danh mã của Chu Mục Vương.",
+  "intro": "\"Màu đỏ rực như lửa, một trong tám con danh mã của Chu Mục Vương.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31519,7 +31519,7 @@
   "require": [
    [
     "requirelevel",
-    60
+    10
    ]
   ]
  },
@@ -31532,7 +31532,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Màu đỏ rực như lửa, một trong tám con danh mã của Chu Mục Vương.",
+  "intro": "\"Màu đỏ rực như lửa, một trong tám con danh mã của Chu Mục Vương.\"",
   "image": "\\spr\\item\\equip\\horse\\horse001.spr",
   "base": [
    [
@@ -31559,7 +31559,7 @@
   "require": [
    [
     "requirelevel",
-    72
+    10
    ]
   ]
  },
@@ -31572,7 +31572,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông trắng, không đáng giá.",
+  "intro": "\"Một loại ngựa thường lông trắng, không đáng giá.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31599,7 +31599,7 @@
   "require": [
    [
     "requirelevel",
-    20
+    10
    ]
   ]
  },
@@ -31612,7 +31612,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông trắng, không đáng giá.",
+  "intro": "\"Một loại ngựa thường lông trắng, không đáng giá.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31639,7 +31639,7 @@
   "require": [
    [
     "requirelevel",
-    25
+    10
    ]
   ]
  },
@@ -31652,7 +31652,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông trắng, ở đâu cũng thấy.",
+  "intro": "\"Một loại ngựa thường lông trắng, ở đâu cũng thấy.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31679,7 +31679,7 @@
   "require": [
    [
     "requirelevel",
-    30
+    10
    ]
   ]
  },
@@ -31692,7 +31692,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông trắng, ở đâu cũng thấy.",
+  "intro": "\"Một loại ngựa thường lông trắng, ở đâu cũng thấy.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31719,7 +31719,7 @@
   "require": [
    [
     "requirelevel",
-    35
+    10
    ]
   ]
  },
@@ -31732,7 +31732,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Truyền thuyết nói đây là một loài Thiên Mã, thực tế chỉ là Đại Uyển Mã.",
+  "intro": "\"Truyền thuyết nói đây là một loài Thiên Mã, thực tế chỉ là Đại Uyển Mã.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31759,7 +31759,7 @@
   "require": [
    [
     "requirelevel",
-    40
+    10
    ]
   ]
  },
@@ -31772,7 +31772,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Truyền thuyết nói đây là một loài Thiên Mã, thực tế chỉ là Đại Uyển Mã.",
+  "intro": "\"Truyền thuyết nói đây là một loài Thiên Mã, thực tế chỉ là Đại Uyển Mã.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31799,7 +31799,7 @@
   "require": [
    [
     "requirelevel",
-    45
+    10
    ]
   ]
  },
@@ -31812,7 +31812,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong những loại Đại Uyển Danh mã,màu trắng như tuyết, hành trình cực nhanh.",
+  "intro": "\"Một trong những loại Đại Uyển Danh mã,màu trắng như tuyết, hành trình cực nhanh.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31839,7 +31839,7 @@
   "require": [
    [
     "requirelevel",
-    50
+    10
    ]
   ]
  },
@@ -31852,7 +31852,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong những loại Đại Uyển Danh mã,màu trắng như tuyết, hành trình cực nhanh.",
+  "intro": "\"Một trong những loại Đại Uyển Danh mã,màu trắng như tuyết, hành trình cực nhanh.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31879,7 +31879,7 @@
   "require": [
    [
     "requirelevel",
-    55
+    10
    ]
   ]
  },
@@ -31892,7 +31892,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Thiên Lý Mã thuần túy, lông trắng như tuyết, thế gian hiếm thấy.",
+  "intro": "\"Loại Thiên Lý Mã thuần túy, lông trắng như tuyết, thế gian hiếm thấy.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31919,7 +31919,7 @@
   "require": [
    [
     "requirelevel",
-    60
+    10
    ]
   ]
  },
@@ -31932,7 +31932,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Thiên Lý Mã thuần túy, lông trắng như tuyết, thế gian hiếm thấy.",
+  "intro": "\"Loại Thiên Lý Mã thuần túy, lông trắng như tuyết, thế gian hiếm thấy.\"",
   "image": "\\spr\\item\\equip\\horse\\horse007.spr",
   "base": [
    [
@@ -31959,7 +31959,7 @@
   "require": [
    [
     "requirelevel",
-    72
+    10
    ]
   ]
  },
@@ -31972,7 +31972,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông đen,giá trị không cao.",
+  "intro": "\"Một loại ngựa thường lông đen,giá trị không cao.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -31999,7 +31999,7 @@
   "require": [
    [
     "requirelevel",
-    20
+    10
    ]
   ]
  },
@@ -32012,7 +32012,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông đen,giá trị không cao.",
+  "intro": "\"Một loại ngựa thường lông đen,giá trị không cao.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32039,7 +32039,7 @@
   "require": [
    [
     "requirelevel",
-    25
+    10
    ]
   ]
  },
@@ -32052,7 +32052,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa thường thấy, ai cũng có thể mua được.",
+  "intro": "\"Loại ngựa thường thấy, ai cũng có thể mua được.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32079,7 +32079,7 @@
   "require": [
    [
     "requirelevel",
-    30
+    10
    ]
   ]
  },
@@ -32092,7 +32092,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa thường thấy, ai cũng có thể mua được.",
+  "intro": "\"Loại ngựa thường thấy, ai cũng có thể mua được.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32119,7 +32119,7 @@
   "require": [
    [
     "requirelevel",
-    35
+    10
    ]
   ]
  },
@@ -32132,7 +32132,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa chuyên dùng trong quân đội, các chiến binh rất thích cỡi.",
+  "intro": "\"Loại ngựa chuyên dùng trong quân đội, các chiến binh rất thích cỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32159,7 +32159,7 @@
   "require": [
    [
     "requirelevel",
-    40
+    10
    ]
   ]
  },
@@ -32172,7 +32172,7 @@
   "price": 10000,
   "width": 2,
   "height": 3,
-  "intro": "Loại ngựa chuyên dùng trong quân đội, các chiến binh rất thích cỡi.",
+  "intro": "\"Loại ngựa chuyên dùng trong quân đội, các chiến binh rất thích cỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32199,7 +32199,7 @@
   "require": [
    [
     "requirelevel",
-    45
+    10
    ]
   ]
  },
@@ -32212,7 +32212,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong những loại Đại Uyển Danh mã, thể lực và hành trình khó loại nào sánh kịp.",
+  "intro": "\"Một trong những loại Đại Uyển Danh mã, thể lực và hành trình khó loại nào sánh kịp.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32239,7 +32239,7 @@
   "require": [
    [
     "requirelevel",
-    50
+    10
    ]
   ]
  },
@@ -32252,7 +32252,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong những loại Đại Uyển Danh mã, thể lực và hành trình khó loại nào sánh kịp.",
+  "intro": "\"Một trong những loại Đại Uyển Danh mã, thể lực và hành trình khó loại nào sánh kịp.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32279,7 +32279,7 @@
   "require": [
    [
     "requirelevel",
-    55
+    10
    ]
   ]
  },
@@ -32292,7 +32292,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Sở Bá Vương từng cỡi, là loại \"Thiên Lý Danh Mã\".",
+  "intro": "\"Sở Bá Vương từng cỡi, là loại \"\"Thiên Lý Danh Mã\"\".\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32319,7 +32319,7 @@
   "require": [
    [
     "requirelevel",
-    60
+    10
    ]
   ]
  },
@@ -32332,7 +32332,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Sở Bá Vương từng cỡi, là loại \"Thiên Lý Danh Mã\".",
+  "intro": "\"Sở Bá Vương từng cỡi, là loại \"\"Thiên Lý Danh Mã\"\".\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -32359,7 +32359,7 @@
   "require": [
    [
     "requirelevel",
-    72
+    10
    ]
   ]
  },
@@ -32372,7 +32372,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Ngựa lông xám tầm thường, rất khó bán.",
+  "intro": "\"Ngựa lông xám tầm thường, rất khó bán.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32399,7 +32399,7 @@
   "require": [
    [
     "requirelevel",
-    20
+    10
    ]
   ]
  },
@@ -32412,7 +32412,7 @@
   "price": 2500,
   "width": 2,
   "height": 3,
-  "intro": "Ngựa lông xám tầm thường, rất khó bán.",
+  "intro": "\"Ngựa lông xám tầm thường, rất khó bán.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32439,7 +32439,7 @@
   "require": [
    [
     "requirelevel",
-    25
+    10
    ]
   ]
  },
@@ -32452,7 +32452,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông xám, chỉ dùng để đi gần.",
+  "intro": "\"Một loại ngựa thường lông xám, chỉ dùng để đi gần.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32479,7 +32479,7 @@
   "require": [
    [
     "requirelevel",
-    30
+    10
    ]
   ]
  },
@@ -32492,7 +32492,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Một loại ngựa thường lông xám, chỉ dùng để đi gần.",
+  "intro": "\"Một loại ngựa thường lông xám, chỉ dùng để đi gần.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32519,7 +32519,7 @@
   "require": [
    [
     "requirelevel",
-    35
+    10
    ]
   ]
  },
@@ -32559,7 +32559,7 @@
   "require": [
    [
     "requirelevel",
-    40
+    10
    ]
   ]
  },
@@ -32599,7 +32599,7 @@
   "require": [
    [
     "requirelevel",
-    45
+    10
    ]
   ]
  },
@@ -32612,7 +32612,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Đại Uyển danh mã cực quý hiếm,nghìn vàng khó mua.",
+  "intro": "\"Loại Đại Uyển danh mã cực quý hiếm,nghìn vàng khó mua.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32639,7 +32639,7 @@
   "require": [
    [
     "requirelevel",
-    50
+    10
    ]
   ]
  },
@@ -32652,7 +32652,7 @@
   "price": 25000,
   "width": 2,
   "height": 3,
-  "intro": "Loại Đại Uyển danh mã cực quý hiếm,nghìn vàng khó mua.",
+  "intro": "\"Loại Đại Uyển danh mã cực quý hiếm,nghìn vàng khó mua.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32679,7 +32679,7 @@
   "require": [
    [
     "requirelevel",
-    55
+    10
    ]
   ]
  },
@@ -32692,7 +32692,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Cũng chính là Kỳ Ký,một trong tám con danh mã của Chu Mục Vương.",
+  "intro": "\"Cũng chính là Kỳ Ký,một trong tám con danh mã của Chu Mục Vương.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32719,7 +32719,7 @@
   "require": [
    [
     "requirelevel",
-    60
+    10
    ]
   ]
  },
@@ -32732,7 +32732,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Cũng chính là Kỳ Ký,một trong tám con danh mã của Chu Mục Vương.",
+  "intro": "\"Cũng chính là Kỳ Ký,một trong tám con danh mã của Chu Mục Vương.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -32759,7 +32759,7 @@
   "require": [
    [
     "requirelevel",
-    72
+    10
    ]
   ]
  },
@@ -32772,7 +32772,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, chỉ những bậc vương giả mới có thể mua.",
+  "intro": "\"Tuyệt thế danh mã, chỉ những bậc vương giả mới có thể mua.\"",
   "image": "\\spr\\item\\equip\\horse\\horse010.spr",
   "base": [
    [
@@ -32799,7 +32799,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -32812,7 +32812,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Cũng được xếp vào hàng \"Thiên hạ đệ nhất mã\".",
+  "intro": "\"Cũng được xếp vào hàng \"\"Thiên hạ đệ nhất mã\"\".\"",
   "image": "\\spr\\item\\equip\\horse\\horse011.spr",
   "base": [
    [
@@ -32839,7 +32839,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -32852,7 +32852,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, sung mãn bá khí, Tào Tháo đã từng cỡi.",
+  "intro": "\"Tuyệt thế danh mã, sung mãn bá khí, Tào Tháo đã từng cỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse005.spr",
   "base": [
    [
@@ -32879,7 +32879,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -32892,7 +32892,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, truy phong hoán vũ, ngày đi nghìn dặm.",
+  "intro": "\"Tuyệt thế danh mã, truy phong hoán vũ, ngày đi nghìn dặm.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -32919,7 +32919,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -32932,13 +32932,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Là loại \"Thần câu\" có sức mạnh phi thường, cưỡi mây đạp gió.",
+  "intro": "\"Là loại \"\"Thần câu\"\" có sức mạnh phi thường, cưỡi mây đạp gió.\"",
   "image": "\\spr\\item\\equip\\horse\\horse012.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
+    80,
+    80
    ],
    [
     "staminamax_v",
@@ -32959,7 +32959,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -32972,13 +32972,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, chỉ những bậc vương giả mới có thể mua.",
+  "intro": "\"Tuyệt thế danh mã, chỉ những bậc vương giả mới có thể mua.\"",
   "image": "\\spr\\item\\equip\\horse\\horse010.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
+    70,
+    70
    ],
    [
     "staminamax_v",
@@ -32999,7 +32999,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -33012,13 +33012,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Cũng được xếp vào hàng \"Thiên hạ đệ nhất mã\".",
+  "intro": "\"Cũng được xếp vào hàng \"\"Thiên hạ đệ nhất mã\"\".\"",
   "image": "\\spr\\item\\equip\\horse\\horse011.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
+    70,
+    70
    ],
    [
     "staminamax_v",
@@ -33039,7 +33039,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -33052,13 +33052,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, sung mãn bá khí, Tào Tháo đã từng cỡi.",
+  "intro": "\"Tuyệt thế danh mã, sung mãn bá khí, Tào Tháo đã từng cỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse005.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
+    70,
+    70
    ],
    [
     "staminamax_v",
@@ -33079,7 +33079,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -33092,13 +33092,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Tuyệt thế danh mã, truy phong hoán vũ, ngày đi nghìn dặm.",
+  "intro": "\"Tuyệt thế danh mã, truy phong hoán vũ, ngày đi nghìn dặm.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
+    70,
+    70
    ],
    [
     "staminamax_v",
@@ -33119,7 +33119,7 @@
   "require": [
    [
     "requirelevel",
-    80
+    10
    ]
   ]
  },
@@ -33132,34 +33132,34 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Là loại \"Thần câu\" có sức mạnh phi thường, cưỡi mây đạp gió.",
+  "intro": "\"Là loại \"\"Thần câu\"\" có sức mạnh phi thường, cưỡi mây đạp gió.\"",
   "image": "\\spr\\item\\equip\\horse\\horse012.spr",
   "base": [
    [
     "fastwalkrun_p",
-    60,
-    60
-   ],
-   [
-    "staminamax_v",
-    1000,
-    1000
-   ],
-   [
-    "lifemax_v",
-    200,
-    200
-   ],
-   [
-    "adddefense_v",
-    200,
-    200
-   ]
-  ],
-  "require": [
-   [
-    "requirelevel",
+    80,
     80
+   ],
+   [
+    "staminamax_v",
+    1000,
+    1000
+   ],
+   [
+    "lifemax_v",
+    200,
+    200
+   ],
+   [
+    "adddefense_v",
+    200,
+    200
+   ]
+  ],
+  "require": [
+   [
+    "requirelevel",
+    10
    ]
   ]
  },
@@ -33204,7 +33204,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33249,7 +33249,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33294,7 +33294,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33339,7 +33339,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33384,7 +33384,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33429,7 +33429,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33474,7 +33474,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33519,7 +33519,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33564,7 +33564,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33609,7 +33609,7 @@
   "require": [
    [
     "requirelevel",
-    120
+    10
    ]
   ]
  },
@@ -33664,7 +33664,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33719,7 +33719,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33774,7 +33774,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33829,7 +33829,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33884,7 +33884,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33939,7 +33939,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -33994,7 +33994,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -34049,7 +34049,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -34104,7 +34104,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -34159,7 +34159,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -34172,7 +34172,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34199,7 +34199,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34212,7 +34212,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34239,7 +34239,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34252,7 +34252,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34279,7 +34279,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34292,7 +34292,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34319,7 +34319,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34332,7 +34332,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34359,7 +34359,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34372,7 +34372,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34399,7 +34399,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34412,7 +34412,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34439,7 +34439,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34452,7 +34452,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34479,7 +34479,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34492,7 +34492,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34519,7 +34519,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34532,7 +34532,7 @@
   "price": 50000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió",
+  "intro": "\"Một trong tám con tuấn mã của Chu Mục Vương, cưỡi mây đạp gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse004.spr",
   "base": [
    [
@@ -34559,7 +34559,7 @@
   "require": [
    [
     "requirelevel",
-    100
+    10
    ]
   ]
  },
@@ -34614,11 +34614,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34673,11 +34669,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34732,11 +34724,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34791,11 +34779,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34850,11 +34834,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34909,11 +34889,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -34968,11 +34944,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35027,11 +34999,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35086,11 +35054,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35103,13 +35067,13 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong những thần mã đi mây về gió",
+  "intro": "<color=yellow>Anh Em Hội Tụ<color>",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
     "fastwalkrun_p",
-    100,
-    100
+    120,
+    120
    ],
    [
     "staminamax_v",
@@ -35118,38 +35082,24 @@
    ],
    [
     "lifemax_v",
-    700,
-    700
+    800,
+    800
    ],
    [
     "adddefense_v",
-    700,
-    700
+    800,
+    800
    ],
    [
     "allres_p",
-    10,
-    10
-   ],
-   [
-    "lifemax_yan_p",
-    700,
-    700
-   ],
-   [
-    "me2earthdamage_p",
-    10,
-    10
+    12,
+    12
    ]
   ],
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35162,7 +35112,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35194,7 +35144,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35207,7 +35157,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35239,7 +35189,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35252,7 +35202,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35284,7 +35234,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35297,7 +35247,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35329,7 +35279,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35342,7 +35292,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35374,7 +35324,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35387,7 +35337,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35419,7 +35369,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35432,7 +35382,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35464,7 +35414,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35477,7 +35427,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35509,7 +35459,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35522,7 +35472,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35554,7 +35504,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35567,7 +35517,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, chân không chạm đất.\"",
   "image": "\\spr\\item\\equip\\horse\\horse009.spr",
   "base": [
    [
@@ -35599,7 +35549,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -35612,7 +35562,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35649,11 +35599,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35666,7 +35612,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35703,11 +35649,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35720,7 +35662,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35757,11 +35699,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35774,7 +35712,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35811,11 +35749,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35828,7 +35762,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35865,11 +35799,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35882,7 +35812,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35919,11 +35849,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35936,7 +35862,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -35973,11 +35899,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -35990,7 +35912,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -36027,11 +35949,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -36044,7 +35962,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -36081,11 +35999,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -36098,7 +36012,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, màu sắc sặc sỡ.\"",
   "image": "\\spr\\item\\equip\\horse\\horse002.spr",
   "base": [
    [
@@ -36135,11 +36049,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -36152,7 +36062,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36184,7 +36094,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36197,7 +36107,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36229,7 +36139,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36242,7 +36152,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36274,7 +36184,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36287,7 +36197,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36319,7 +36229,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36332,7 +36242,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36364,7 +36274,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36377,7 +36287,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36409,7 +36319,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36422,7 +36332,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36454,7 +36364,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36467,7 +36377,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36499,7 +36409,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36512,7 +36422,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36544,7 +36454,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36557,7 +36467,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, đi mây về gió",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, đi mây về gió\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -36589,7 +36499,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36602,7 +36512,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36644,7 +36554,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36657,7 +36567,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36699,7 +36609,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36712,7 +36622,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36754,7 +36664,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36767,7 +36677,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36809,7 +36719,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36822,7 +36732,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36864,7 +36774,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36877,7 +36787,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36919,7 +36829,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36932,7 +36842,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -36974,7 +36884,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -36987,7 +36897,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -37029,7 +36939,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37042,7 +36952,7 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -37084,7 +36994,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37097,49 +37007,39 @@
   "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "<color=yellow>Anh Em Hội Tụ<color>",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
     "fastwalkrun_p",
-    100,
-    100
+    120,
+    120
    ],
    [
     "staminamax_v",
+    1200,
+    1200
+   ],
+   [
+    "lifemax_v",
     1000,
     1000
    ],
    [
-    "lifemax_v",
-    500,
-    500
-   ],
-   [
     "adddefense_v",
-    500,
-    500
+    1000,
+    1000
    ],
    [
     "allres_p",
-    10,
-    10
-   ],
-   [
-    "lifemax_yan_p",
-    500,
-    500
-   ],
-   [
-    "me2earthdamage_p",
-    10,
-    10
+    15,
+    15
    ]
   ],
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37184,7 +37084,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37229,7 +37129,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37274,7 +37174,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37319,7 +37219,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37364,7 +37264,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37409,7 +37309,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37454,7 +37354,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37499,7 +37399,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37544,7 +37444,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37589,7 +37489,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37602,7 +37502,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37639,7 +37539,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37652,7 +37552,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37689,7 +37589,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37702,7 +37602,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37739,7 +37639,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37752,7 +37652,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37789,7 +37689,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37802,7 +37702,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37839,7 +37739,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37852,7 +37752,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37889,7 +37789,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37902,7 +37802,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37939,7 +37839,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -37952,7 +37852,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -37989,7 +37889,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38002,7 +37902,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -38039,7 +37939,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38052,7 +37952,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa",
+  "intro": "\"Hổ vương toàn thân vàng óng, đổi mắt như hai đốm lửa\"",
   "image": "\\spr\\item\\equip\\horse\\horse032.spr",
   "base": [
    [
@@ -38089,7 +37989,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38139,7 +38039,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38189,7 +38089,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38239,7 +38139,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38289,7 +38189,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38339,7 +38239,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38389,7 +38289,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38439,7 +38339,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38489,7 +38389,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38539,7 +38439,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38589,7 +38489,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -38602,7 +38502,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38639,7 +38539,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38652,7 +38552,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38689,7 +38589,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38702,7 +38602,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38739,7 +38639,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38752,7 +38652,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38789,7 +38689,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38802,7 +38702,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38839,7 +38739,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38852,7 +38752,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38889,7 +38789,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38902,7 +38802,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38939,7 +38839,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -38952,7 +38852,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -38989,7 +38889,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -39002,7 +38902,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -39039,7 +38939,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -39052,7 +38952,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse031.spr",
   "base": [
    [
@@ -39089,7 +38989,7 @@
   "require": [
    [
     "requirelevel",
-    180
+    10
    ]
   ]
  },
@@ -39102,7 +39002,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39134,7 +39034,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39147,7 +39047,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39179,7 +39079,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39192,7 +39092,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39224,7 +39124,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39237,7 +39137,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39269,7 +39169,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39282,7 +39182,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39314,7 +39214,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39327,7 +39227,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39359,7 +39259,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39372,7 +39272,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39404,7 +39304,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39417,7 +39317,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39449,7 +39349,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39462,7 +39362,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "\"Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.\"",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
@@ -39494,7 +39394,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39504,16 +39404,16 @@
   "particular": 18,
   "level": 10,
   "series": 5,
-  "price": 500000,
+  "price": 250000,
   "width": 2,
   "height": 3,
-  "intro": "Uy phong lẫm liệt, chỉ có bậc vương giả mới đủ năng lực cưỡi.",
+  "intro": "<color=yellow>Võ Lâm Minh Chủ<color>",
   "image": "\\spr\\item\\equip\\horse\\horse008.spr",
   "base": [
    [
     "fastwalkrun_p",
-    120,
-    120
+    150,
+    150
    ],
    [
     "staminamax_v",
@@ -39521,14 +39421,24 @@
     1500
    ],
    [
-    "lifemax_yan_p",
+    "lifemax_v",
     1500,
     1500
    ],
    [
     "adddefense_v",
-    700,
-    700
+    1500,
+    1500
+   ],
+   [
+    "allres_p",
+    20,
+    20
+   ],
+   [
+    "lifemax_yan_p",
+    1500,
+    1500
    ],
    [
     "me2earthdamage_p",
@@ -39539,7 +39449,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -39594,11 +39504,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39653,11 +39559,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39712,11 +39614,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39771,11 +39669,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39830,11 +39724,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39889,11 +39779,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -39948,11 +39834,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40007,11 +39889,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40066,11 +39944,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40125,11 +39999,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40184,11 +40054,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40243,11 +40109,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40302,11 +40164,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40361,11 +40219,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40420,11 +40274,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40479,11 +40329,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40538,11 +40384,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40597,11 +40439,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40656,11 +40494,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40715,11 +40549,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40774,11 +40604,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40833,11 +40659,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40892,11 +40714,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -40951,11 +40769,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41010,11 +40824,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41069,11 +40879,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41128,11 +40934,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41187,11 +40989,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41246,11 +41044,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41305,11 +41099,7 @@
   "require": [
    [
     "requirelevel",
-    150
-   ],
-   [
-    "require_translife",
-    3
+    10
    ]
   ]
  },
@@ -41354,7 +41144,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41399,7 +41189,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41444,7 +41234,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41489,7 +41279,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41534,7 +41324,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41579,7 +41369,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41624,7 +41414,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41669,7 +41459,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41714,7 +41504,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41759,7 +41549,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41804,7 +41594,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41849,7 +41639,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41894,7 +41684,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41939,7 +41729,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -41984,7 +41774,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42029,7 +41819,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42074,7 +41864,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42119,7 +41909,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42164,7 +41954,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42209,7 +41999,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42254,7 +42044,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42299,7 +42089,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42344,7 +42134,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42389,7 +42179,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42434,7 +42224,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42479,7 +42269,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42524,7 +42314,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42569,7 +42359,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42614,7 +42404,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42659,7 +42449,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42704,7 +42494,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42749,7 +42539,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42794,7 +42584,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42839,7 +42629,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42884,7 +42674,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42929,7 +42719,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -42974,7 +42764,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43019,7 +42809,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43064,7 +42854,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43109,12 +42899,12 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
  {
-  "name": "Dương Sa",
+  "name": "[Tân Thủ]ưDương Sa",
   "detail": 10,
   "particular": 26,
   "level": 1,
@@ -43122,39 +42912,39 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
     "fastwalkrun_p",
-    120,
-    120
+    80,
+    80
    ],
    [
     "staminamax_v",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "lifemax_yan_p",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "adddefense_v",
-    700,
-    700
+    200,
+    200
    ],
    [
     "me2earthdamage_p",
-    20,
-    20
+    10,
+    10
    ]
   ],
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43167,7 +42957,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43207,7 +42997,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43239,7 +43029,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43252,7 +43042,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43284,7 +43074,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43297,7 +43087,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43329,7 +43119,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43342,7 +43132,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43374,7 +43164,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43387,7 +43177,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43419,7 +43209,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43432,7 +43222,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43464,7 +43254,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43477,7 +43267,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43509,7 +43299,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43522,7 +43312,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi đến đâu là móng vuốt của nó làm bụi bay mù trời, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse039.spr",
   "base": [
    [
@@ -43554,12 +43344,12 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
  {
-  "name": "Ngự Phong",
+  "name": "[Tân Thủ]ưNgự Phong",
   "detail": 10,
   "particular": 27,
   "level": 1,
@@ -43567,39 +43357,39 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
     "fastwalkrun_p",
-    120,
-    120
+    80,
+    80
    ],
    [
     "staminamax_v",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "lifemax_yan_p",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "adddefense_v",
-    700,
-    700
+    200,
+    200
    ],
    [
     "me2earthdamage_p",
-    20,
-    20
+    10,
+    10
    ]
   ],
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43612,7 +43402,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43644,7 +43434,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43657,7 +43447,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43689,7 +43479,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43702,7 +43492,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43734,7 +43524,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43747,7 +43537,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43779,7 +43569,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43792,7 +43582,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43824,7 +43614,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43837,7 +43627,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43869,7 +43659,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43882,7 +43672,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43914,7 +43704,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43927,7 +43717,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -43959,7 +43749,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -43972,7 +43762,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên",
+  "intro": "\"Phong khởi lâu lan thất vạn lý, hồ già noãn trướng lưỡng trọng thiên\"",
   "image": "\\spr\\item\\equip\\horse\\horse040.spr",
   "base": [
    [
@@ -44004,12 +43794,12 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
  {
-  "name": "Truy điện",
+  "name": "[Tân Thủ]ưTruy điện",
   "detail": 10,
   "particular": 28,
   "level": 1,
@@ -44017,39 +43807,39 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
     "fastwalkrun_p",
-    120,
-    120
+    80,
+    80
    ],
    [
     "staminamax_v",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "lifemax_yan_p",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "adddefense_v",
-    700,
-    700
+    200,
+    200
    ],
    [
     "me2earthdamage_p",
-    20,
-    20
+    10,
+    10
    ]
   ],
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44062,7 +43852,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44094,7 +43884,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44107,7 +43897,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44139,7 +43929,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44152,7 +43942,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44184,7 +43974,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44197,7 +43987,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44229,7 +44019,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44242,7 +44032,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44274,7 +44064,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44287,7 +44077,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44319,7 +44109,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44332,7 +44122,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44364,7 +44154,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44377,7 +44167,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44409,7 +44199,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44422,7 +44212,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng",
+  "intro": "\"Điện quang thiểm, đề linh hưởng, lôi thanh chấn, thiên lý dĩ thành thân hậu  mộng\"",
   "image": "\\spr\\item\\equip\\horse\\horse041.spr",
   "base": [
    [
@@ -44454,12 +44244,12 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
  {
-  "name": "Lưu Tinh",
+  "name": "[Tân Thủ]ưLưu Tinh",
   "detail": 10,
   "particular": 29,
   "level": 1,
@@ -44467,39 +44257,39 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
     "fastwalkrun_p",
-    120,
-    120
+    80,
+    80
    ],
    [
     "staminamax_v",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "lifemax_yan_p",
-    1500,
-    1500
+    300,
+    300
    ],
    [
     "adddefense_v",
-    700,
-    700
+    200,
+    200
    ],
    [
     "me2earthdamage_p",
-    20,
-    20
+    10,
+    10
    ]
   ],
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44512,7 +44302,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44544,7 +44334,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44557,7 +44347,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44589,7 +44379,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44602,7 +44392,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44634,7 +44424,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44647,7 +44437,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44679,7 +44469,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44692,7 +44482,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44724,7 +44514,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44737,7 +44527,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44769,7 +44559,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44782,7 +44572,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44814,7 +44604,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44827,7 +44617,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44859,7 +44649,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44872,7 +44662,7 @@
   "price": 5000,
   "width": 2,
   "height": 3,
-  "intro": "Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này",
+  "intro": "\"Trong truyền thuyết, ngựa thần ở Tây vực phi nhanh như lưu tinh, từ đó có tên này\"",
   "image": "\\spr\\item\\equip\\horse\\horse042.spr",
   "base": [
    [
@@ -44904,7 +44694,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44949,7 +44739,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -44994,7 +44784,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45039,7 +44829,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45084,7 +44874,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45129,7 +44919,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45174,7 +44964,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45219,7 +45009,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45264,7 +45054,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45309,7 +45099,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45354,7 +45144,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45399,11 +45189,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45448,11 +45234,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45497,11 +45279,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45546,11 +45324,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45595,11 +45369,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45644,11 +45414,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45693,11 +45459,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45742,11 +45504,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45791,11 +45549,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45840,11 +45594,7 @@
   "require": [
    [
     "requirelevel",
-    130
-   ],
-   [
-    "require_translife",
-    1
+    10
    ]
   ]
  },
@@ -45857,7 +45607,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -45889,7 +45639,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45902,7 +45652,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -45934,7 +45684,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45947,7 +45697,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -45979,7 +45729,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -45992,7 +45742,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46024,7 +45774,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46037,7 +45787,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46069,7 +45819,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46082,7 +45832,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46114,7 +45864,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46127,7 +45877,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46159,7 +45909,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46172,7 +45922,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46204,7 +45954,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46217,7 +45967,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46249,7 +45999,7 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
    ]
   ]
  },
@@ -46262,7 +46012,7 @@
   "price": 500000,
   "width": 2,
   "height": 3,
-  "intro": "Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.",
+  "intro": "\"Một trong bát tuấn của Chu Mục Vương, thoắt ẩn thoắt hiện.\"",
   "image": "\\spr\\item\\equip\\horse\\horse003.spr",
   "base": [
    [
@@ -46294,7 +46044,97 @@
   "require": [
    [
     "requirelevel",
-    150
+    10
+   ]
+  ]
+ },
+ {
+  "name": "Phong Than ssx06",
+  "detail": 10,
+  "particular": 33,
+  "level": 10,
+  "series": 5,
+  "price": 500000,
+  "width": 2,
+  "height": 3,
+  "intro": "Thu cuoi Phong Than - ban thu nghiem",
+  "image": "\\spr\\item\\equip\\horse\\horse030.spr",
+  "base": [
+   [
+    "fastwalkrun_p",
+    100,
+    100
+   ],
+   [
+    "staminamax_v",
+    1000,
+    1000
+   ],
+   [
+    "lifemax_v",
+    500,
+    500
+   ],
+   [
+    "adddefense_v",
+    500,
+    500
+   ],
+   [
+    "allres_p",
+    10,
+    10
+   ]
+  ],
+  "require": [
+   [
+    "requirelevel",
+    10
+   ]
+  ]
+ },
+ {
+  "name": "Kỳ Lân",
+  "detail": 10,
+  "particular": 79,
+  "level": 10,
+  "series": 5,
+  "price": 500000,
+  "width": 2,
+  "height": 3,
+  "intro": "Ky Lan - than thu",
+  "image": "\\spr\\item\\equip\\horse\\horse030.spr",
+  "base": [
+   [
+    "fastwalkrun_p",
+    100,
+    100
+   ],
+   [
+    "staminamax_v",
+    1000,
+    1000
+   ],
+   [
+    "lifemax_v",
+    500,
+    500
+   ],
+   [
+    "adddefense_v",
+    500,
+    500
+   ],
+   [
+    "allres_p",
+    10,
+    10
+   ]
+  ],
+  "require": [
+   [
+    "requirelevel",
+    10
    ]
   ]
  },

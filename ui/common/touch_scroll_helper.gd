@@ -20,6 +20,7 @@ var body_control: Control
 
 var _is_touching: bool = false
 var _is_dragging: bool = false
+var _is_touch_gesture: bool = false
 var _touch_index: int = -1
 var _start_pos: Vector2 = Vector2.ZERO
 var _last_pos: Vector2 = Vector2.ZERO
@@ -52,6 +53,7 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	_is_touching = false
 	_is_dragging = false
+	_is_touch_gesture = false
 	_velocity_v = 0.0
 	_velocity_h = 0.0
 
@@ -64,9 +66,12 @@ func can_scroll_v() -> bool:
 	var total_ch: float = 0.0
 	for c in scroll_container.get_children():
 		if c is Control and not (c is VScrollBar or c is HScrollBar):
-			var ch: float = (c as Control).size.y
+			var ctrl := c as Control
+			if not ctrl.visible:
+				continue
+			var ch: float = ctrl.size.y
 			if ch <= 0.0:
-				ch = (c as Control).get_combined_minimum_size().y
+				ch = ctrl.get_combined_minimum_size().y
 			total_ch = maxf(total_ch, ch)
 	var sc_height := scroll_container.size.y
 	if sc_height <= 0.0:
@@ -158,11 +163,25 @@ func _is_scroll_visible() -> bool:
 		p = p.get_parent()
 	return true
 
+func _control_contains_point(ctrl: Control, p_pos: Vector2) -> bool:
+	if ctrl == null or not is_instance_valid(ctrl):
+		return false
+	var is_vis: bool = ctrl.visible if DisplayServer.get_name() == "headless" else ctrl.is_visible_in_tree()
+	if not is_vis:
+		return false
+	var local: Vector2 = ctrl.get_global_transform_with_canvas().affine_inverse() * p_pos
+	if Rect2(Vector2.ZERO, ctrl.size).has_point(local):
+		return true
+	if ctrl.get_global_rect().has_point(p_pos):
+		return true
+	return false
+
 func _input(event: InputEvent) -> void:
 	if not _is_scroll_visible():
 		if _is_touching:
 			_is_touching = false
 			_is_dragging = false
+			_is_touch_gesture = false
 		return
 
 	# Bỏ qua con lăn chuột để Godot cuộn mặc định
@@ -175,8 +194,16 @@ func _input(event: InputEvent) -> void:
 	if vp != null and vp.gui_is_dragging():
 		_is_touching = false
 		_is_dragging = false
+		_is_touch_gesture = false
 		_velocity_v = 0.0
 		_velocity_h = 0.0
+		return
+
+	var is_mobile_device := DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	var is_touch_event := (event is InputEventScreenTouch or event is InputEventScreenDrag)
+
+	# Bỏ qua sự kiện chuột giả lập từ cảm ứng khi đang trong cử chỉ chạm/vuốt
+	if _is_touching and _is_touch_gesture and not is_touch_event:
 		return
 
 	var is_press := false
@@ -184,58 +211,61 @@ func _input(event: InputEvent) -> void:
 	var pos := Vector2.ZERO
 	var idx := -1
 
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		is_press = event.pressed
-		is_release = not event.pressed
-		pos = event.position
-		idx = -1
-	elif event is InputEventScreenTouch:
+	if event is InputEventScreenTouch:
 		is_press = event.pressed
 		is_release = not event.pressed
 		pos = event.position
 		idx = event.index
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		is_press = event.pressed
+		is_release = not event.pressed
+		pos = event.position
+		idx = -1
 
 	if is_press:
 		if not can_scroll_v() and not can_scroll_h():
 			return
-		if _is_draggable_at(pos):
+
+		var is_touch := is_touch_event or is_mobile_device
+
+		# Trên PC dùng chuột trái: nếu nhấp vào ô vật phẩm có thể kéo thả (drag & drop)
+		# thì nhường cho hệ thống drag & drop của Godot di chuyển vật phẩm.
+		# Trên điện thoại / cảm ứng: luôn cho phép chạm kéo cuộn (drag scroll).
+		if not is_touch and _is_draggable_at(pos):
 			return
 
-		# Nếu bấm vào header_panel của cửa sổ thì để người dùng kéo cửa sổ
+		# Nếu bấm vào header_panel / title bar của cửa sổ thì để người dùng kéo cửa sổ
 		if body_control != null and is_instance_valid(body_control):
-			var hdr = body_control.get("header_panel")
-			if hdr is Control and is_instance_valid(hdr) and (hdr as Control).visible:
-				var local_hdr = (hdr as Control).get_global_transform_with_canvas().affine_inverse() * pos
-				if Rect2(Vector2.ZERO, (hdr as Control).size).has_point(local_hdr):
+			for hdr_name in ["header_panel", "TitleBar", "title_bar", "Header"]:
+				var hdr: Variant = body_control.get(hdr_name)
+				if hdr == null and body_control.has_node(hdr_name):
+					hdr = body_control.get_node(hdr_name)
+				if hdr is Control and _control_contains_point(hdr as Control, pos):
 					return
 
-		# Kiểm tra xem chạm có nằm trong ScrollContainer hoặc Body của khung không
-		var in_scroll := false
-		if scroll_container != null and is_instance_valid(scroll_container):
-			var local_pos = scroll_container.get_global_transform_with_canvas().affine_inverse() * pos
-			in_scroll = Rect2(Vector2.ZERO, scroll_container.size).has_point(local_pos)
+			# Kiểm tra cả cửa sổ cha nếu có header_panel
+			var win_root: Node = body_control
+			while win_root != null and not (win_root is Window or win_root is CanvasLayer):
+				if win_root is Control and win_root.get("header_panel") is Control:
+					var hdr_win = win_root.get("header_panel") as Control
+					if _control_contains_point(hdr_win, pos):
+						return
+				win_root = win_root.get_parent()
 
-		var in_body := false
-		if body_control != null and is_instance_valid(body_control):
-			var body_visible = body_control.visible if DisplayServer.get_name() == "headless" else body_control.is_visible_in_tree()
-			if body_visible:
-				var local_body_pos = body_control.get_global_transform_with_canvas().affine_inverse() * pos
-				in_body = Rect2(Vector2.ZERO, body_control.size).has_point(local_body_pos)
+		# Kiểm tra xem chạm có nằm trong ScrollContainer hoặc Body của khung không
+		var in_scroll := _control_contains_point(scroll_container, pos)
+		var in_body := _control_contains_point(body_control, pos)
 
 		if not in_scroll and not in_body:
 			return
 
 		# Nếu bấm trực tiếp vào thanh cuộn thì để thanh cuộn tự xử lý
 		var v_bar := scroll_container.get_v_scroll_bar()
-		if v_bar != null and v_bar.visible:
-			var local_vbar = v_bar.get_global_transform_with_canvas().affine_inverse() * pos
-			if Rect2(Vector2.ZERO, v_bar.size).has_point(local_vbar):
-				return
+		if v_bar != null and v_bar.visible and _control_contains_point(v_bar, pos):
+			return
 		var h_bar := scroll_container.get_h_scroll_bar()
-		if h_bar != null and h_bar.visible:
-			var local_hbar = h_bar.get_global_transform_with_canvas().affine_inverse() * pos
-			if Rect2(Vector2.ZERO, h_bar.size).has_point(local_hbar):
-				return
+		if h_bar != null and h_bar.visible and _control_contains_point(h_bar, pos):
+			return
 
 		# Bỏ qua nếu bị che bởi CanvasLayer cao hơn (Popup, modal...)
 		if _is_covered_by_higher_layer(pos):
@@ -243,6 +273,7 @@ func _input(event: InputEvent) -> void:
 
 		_is_touching = true
 		_is_dragging = false
+		_is_touch_gesture = is_touch
 		_touch_index = idx
 		_start_pos = pos
 		_last_pos = pos
@@ -254,7 +285,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if is_release:
-		if _is_touching and (_touch_index == -1 or idx == _touch_index):
+		if _is_touching and (_touch_index == -1 or idx == _touch_index or not _is_touch_gesture):
 			var now := Time.get_ticks_msec()
 			var dt := (now - _last_time_msec) / 1000.0
 			if dt > 0.08:
@@ -271,14 +302,15 @@ func _input(event: InputEvent) -> void:
 
 			_is_touching = false
 			_is_dragging = false
+			_is_touch_gesture = false
 		return
 
 	# Kéo di chuyển
 	var is_motion := false
-	if event is InputEventMouseMotion and _is_touching and _touch_index == -1:
+	if event is InputEventMouseMotion and _is_touching and (_touch_index == -1 or not _is_touch_gesture):
 		is_motion = true
 		pos = event.position
-	elif event is InputEventScreenDrag and _is_touching and event.index == _touch_index:
+	elif event is InputEventScreenDrag and _is_touching and (_touch_index == -1 or event.index == _touch_index):
 		is_motion = true
 		pos = event.position
 

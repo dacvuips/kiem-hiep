@@ -50,6 +50,7 @@ var resolved_stats: ResolvedSkillStats = null
 var attacker_stats: CombatantStats = null
 ## Phần phụ của đòn skill gửi kèm khi trúng — dựng lại mỗi lần setup_from_resolved() (per-instance).
 var _hit_mods: CombatFormulas.HitModifiers = null
+var _caster_node: Node = null
 var _pierced_targets: Array = []
 var _pierce_remaining: int = 0
 var _chain_remaining: int = 0
@@ -149,6 +150,7 @@ func setup(_direction: Vector2, stone: StoneData, damage_multiplier: float = 1.0
 ## AttackRating cao, xem attacker_stats ở trên).
 ## caster_node: người bắn (để bên bị trúng phản đòn / người bắn hút máu) — null nếu không cần.
 func setup_from_resolved(_direction: Vector2, stats: ResolvedSkillStats, target: Node2D = null, caster_stats: CombatantStats = null, caster_node: Node = null) -> void:
+	_caster_node = caster_node
 	direction = _direction.normalized()
 	speed = stats.projectile_speed
 	damage = stats.damage
@@ -252,7 +254,24 @@ func _on_area_entered(area: Area2D) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	_hit(body)
 
+func _can_hit_target(target: Node) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	if "battle_side" in target:
+		var target_side: String = str(target.get("battle_side"))
+		if target_side != "":
+			var my_side: String = ""
+			if _caster_node != null and "battle_side" in _caster_node and str(_caster_node.get("battle_side")) != "":
+				my_side = str(_caster_node.get("battle_side"))
+			elif TongKimLolState.current != null:
+				my_side = TongKimLolState.current.team_side
+			if my_side != "" and target_side == my_side:
+				return false
+	return true
+
 func _hit(target: Node) -> void:
+	if not _can_hit_target(target):
+		return
 	if resolved_stats != null:
 		_hit_with_resolved_stats(target)
 		return
@@ -320,6 +339,9 @@ func _deal_damage_to(target: Node, amount: float) -> void:
 	elif target.has_method("take_damage"):
 		target.take_damage(amount)
 
+	if _caster_node != null and is_instance_valid(_caster_node) and _caster_node.has_method("on_hit_target"):
+		_caster_node.on_hit_target(target, {})
+
 ## Chưa có caster_stats (VD skill cũ chưa truyền, hoặc caster không phải Player/Enemy) — dùng
 ## AttackRating cao để giữ đúng cảm giác "bắn trúng gần như chắc chắn" của bullet-heaven hiện tại,
 ## khớp cùng fallback trong Player.take_damage()/Enemy tương lai.
@@ -338,9 +360,9 @@ func _combat_damage_type_for_element(element: ElementTypes.ElementType) -> Comba
 		ElementTypes.ElementType.THUY:
 			return CombatFormulas.DamageType.COLD
 		ElementTypes.ElementType.THO:
-			return CombatFormulas.DamageType.POISON
-		ElementTypes.ElementType.MOC:
 			return CombatFormulas.DamageType.LIGHT
+		ElementTypes.ElementType.MOC:
+			return CombatFormulas.DamageType.POISON
 		_:
 			return CombatFormulas.DamageType.PHYSICS
 

@@ -56,6 +56,7 @@ func _ready() -> void:
 			get_tree().change_scene_to_file.call_deferred(HUB_SCENE_PATH)
 			return
 
+	MusicManager.play_title_music()
 	_build_element_grid()
 	_male_card.pressed.connect(_select_gender.bind(PlayerProfile.Gender.MALE))
 	_female_card.pressed.connect(_select_gender.bind(PlayerProfile.Gender.FEMALE))
@@ -127,9 +128,8 @@ func _on_element_selected(element: ElementTypes.ElementType) -> void:
 	_go_to_step(1)
 
 func _on_quit_pressed() -> void:
-	## Chưa có màn Menu chính nên tạm thoát game — khi có Menu, đổi thành change_scene_to_file()
-	## về màn đó.
-	get_tree().quit()
+	## Quay lại màn hình chọn chế độ chơi
+	get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
 
 # ---------------------------------------------------------------- Bước 2: Môn Phái
 

@@ -128,7 +128,7 @@ func _build_col_skills(parent: HBoxContainer) -> void:
 	box.add_child(top_bar)
 
 	var title_lbl := Label.new()
-	title_lbl.text = "Võ Công Môn Phái"
+	title_lbl.text = tr("Võ Công Môn Phái")
 	title_lbl.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
 	title_lbl.add_theme_font_size_override("font_size", 15)
 	top_bar.add_child(title_lbl)
@@ -138,14 +138,14 @@ func _build_col_skills(parent: HBoxContainer) -> void:
 	top_bar.add_child(spacer)
 
 	_points_label = Label.new()
-	_points_label.text = "Điểm kỹ năng: 0"
+	_points_label.text = tr("Điểm kỹ năng:") + " 0"
 	_points_label.add_theme_color_override("font_color", COLOR_GOLD)
 	_points_label.add_theme_font_size_override("font_size", 14)
 	top_bar.add_child(_points_label)
 
 	# Hướng dẫn kéo thả
 	var tip_lbl := Label.new()
-	tip_lbl.text = "Kéo kỹ năng thả vào ô bên phải để gắn"
+	tip_lbl.text = tr("Kéo kỹ năng thả vào ô bên phải để gắn")
 	tip_lbl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.72))
 	tip_lbl.add_theme_font_size_override("font_size", 12)
 	box.add_child(tip_lbl)
@@ -339,7 +339,7 @@ func _build_col_right(parent: HBoxContainer) -> void:
 
 	# 1. Tùy chỉnh kỹ năng
 	var sec_title := Label.new()
-	sec_title.text = "Tùy chỉnh kỹ năng"
+	sec_title.text = tr("Tùy chỉnh kỹ năng")
 	sec_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sec_title.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
 	sec_title.add_theme_font_size_override("font_size", 14)
@@ -349,11 +349,11 @@ func _build_col_right(parent: HBoxContainer) -> void:
 	settings_box.add_theme_constant_override("separation", 2)
 	box.add_child(settings_box)
 
-	_bind_setting(settings_box, "Tự ra chiêu khi không mục tiêu", "no_target",
+	_bind_setting(settings_box, tr("Tự ra chiêu khi không mục tiêu"), "no_target",
 			"Không có quái gần vẫn ra chiêu, bắn về phía trước mặt")
-	_bind_setting(settings_box, "Đánh theo hướng trước mặt", "face_direction",
+	_bind_setting(settings_box, tr("Đánh theo hướng trước mặt"), "face_direction",
 			"Luôn ra chiêu theo hướng nhân vật đang quay, không tự nhắm quái gần nhất")
-	_bind_setting(settings_box, "Chạm nhả chiêu thức", "tap_release",
+	_bind_setting(settings_box, tr("Chạm nhả chiêu thức"), "tap_release",
 			"Nút skill ra chiêu khi nhả tay (tắt: ra chiêu ngay lúc chạm)")
 
 	# Phân cách nhẹ
@@ -367,7 +367,7 @@ func _build_col_right(parent: HBoxContainer) -> void:
 	box.add_child(wheel_title_row)
 
 	var wheel_title := Label.new()
-	wheel_title.text = "Bố cục phím trong trận (Kéo thả)"
+	wheel_title.text = tr("Bố cục phím trong trận (Kéo thả)")
 	wheel_title.tooltip_text = "Kéo kỹ năng vào nút để gắn · Kéo ra ngoài để gỡ"
 	wheel_title.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
 	wheel_title.add_theme_font_size_override("font_size", 13)
@@ -383,7 +383,7 @@ func _build_col_right(parent: HBoxContainer) -> void:
 	arrange_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_slot_label = GameUi.label("", GameUi.MUTED, 11)
 	arrange_row.add_child(_slot_label)
-	_slot_toggle = GameUi.button("Ẩn ô")
+	_slot_toggle = GameUi.button(tr("Ẩn ô"))
 	_slot_toggle.custom_minimum_size = Vector2(58, 22)
 	_slot_toggle.pressed.connect(_toggle_selected_slot)
 	arrange_row.add_child(_slot_toggle)
@@ -460,14 +460,14 @@ func _build_wheel() -> void:
 	_wheel.add_child(_wheel_swap)
 
 	# Nút bật sắp xếp
-	_arrange_button = GameUi.button("Sắp xếp", GameUi.TAB)
+	_arrange_button = GameUi.button(tr("Sắp xếp"), GameUi.TAB)
 	_arrange_button.tooltip_text = "Sắp xếp vị trí: bật rồi KÉO các nút để đổi chỗ"
 	_arrange_button.position = Vector2(2, 2)
 	_arrange_button.custom_minimum_size = Vector2(74, 22)
 	_arrange_button.toggled.connect(_set_arranging)
 	_wheel.add_child(_arrange_button)
 
-	var reset := GameUi.button("Mặc định")
+	var reset := GameUi.button(tr("Mặc định"))
 	reset.tooltip_text = "Đưa mọi nút về vị trí ban đầu"
 	reset.position = Vector2(2, 26)
 	reset.custom_minimum_size = Vector2(74, 22)
@@ -814,10 +814,10 @@ func _select(skill: SkillDefinition) -> void:
 	_skill_school_label.text = skill.school_text
 	_stat_scroll.scroll_vertical = 0
 
-	_add_line(_stat_box, "Đẳng cấp hiện thời: %d/%d" % [learned, skill.max_level], COLOR_CURRENT_LEVEL, 15)
+	_add_line(_stat_box, tr("Đẳng cấp hiện thời:") + " %d/%d" % [learned, skill.max_level], COLOR_CURRENT_LEVEL, 15)
 	if skill.req_level > 1:
 		var has_level := _profile != null and _profile.level >= skill.req_level
-		_add_line(_stat_box, "Yêu cầu cấp độ nhân vật: %d" % skill.req_level,
+		_add_line(_stat_box, tr("Yêu cầu cấp độ nhân vật:") + " %d" % skill.req_level,
 				COLOR_STAT if has_level else COLOR_WARNING, 13)
 
 	var weapon_text := skill.get_weapon_limit_bbcode()
@@ -831,13 +831,13 @@ func _select(skill: SkillDefinition) -> void:
 		_stat_box.add_child(rich)
 
 	if skill.horse_limit == 1:
-		_add_line(_stat_box, "Trong lúc cưỡi ngựa không thể thi triển", COLOR_WARNING, 13)
+		_add_line(_stat_box, tr("Trong lúc cưỡi ngựa không thể thi triển"), COLOR_WARNING, 13)
 	elif skill.horse_limit == 2:
-		_add_line(_stat_box, "Chỉ thi triển được khi cưỡi ngựa", COLOR_WARNING, 13)
+		_add_line(_stat_box, tr("Chỉ thi triển được khi cưỡi ngựa"), COLOR_WARNING, 13)
 
 	var support := skill.get_support_percent_from_other_skills(_all_skills, _profile)
 	if support > 0.0:
-		_add_line(_stat_box, "Hỗ trợ từ các kỹ năng khác: %d%%" % int(support), COLOR_STAT, 13)
+		_add_line(_stat_box, tr("Hỗ trợ từ các kỹ năng khác:") + " %d%%" % int(support), COLOR_STAT, 13)
 
 	if skill.practice_only:
 		_add_line(_stat_box, "Kỹ năng cao cấp: tăng cấp bằng luyện tập", COLOR_WARNING, 13)
@@ -862,18 +862,18 @@ func _update_buttons(skill: SkillDefinition, learned: int) -> void:
 	_learn_button.visible = true
 	_learn_button.disabled = true
 	if learned >= skill.max_level:
-		_learn_button.text = "Đã đạt cấp tối đa"
+		_learn_button.text = tr("Đã đạt cấp tối đa")
 	elif skill.practice_only and learned > 0:
-		_learn_button.text = "Tăng cấp bằng luyện tập"
+		_learn_button.text = tr("Tăng cấp bằng luyện tập")
 	elif _profile.level < skill.req_level:
-		_learn_button.text = "Cần đạt cấp %d" % skill.req_level
+		_learn_button.text = tr("Cần đạt cấp %d") % skill.req_level
 	elif skill.practice_only:
-		_learn_button.text = "Lĩnh hội (cấp 1)"
+		_learn_button.text = tr("Lĩnh hội (cấp 1)")
 		_learn_button.disabled = false
 	elif _profile.skill_points <= 0:
-		_learn_button.text = "Hết điểm kỹ năng"
+		_learn_button.text = tr("Hết điểm kỹ năng")
 	else:
-		_learn_button.text = "Học / Nâng cấp (+1)"
+		_learn_button.text = tr("Học / Nâng cấp (+1)")
 		_learn_button.disabled = false
 
 	if _test_button:
@@ -965,7 +965,14 @@ func _find_skill(skill_id: String) -> SkillDefinition:
 			return s
 	return null
 
-func _show_toast(message: String) -> void:
+func _show_toast(message: String, is_error: bool = false) -> void:
+	if not is_error:
+		var lower := message.to_lower()
+		for kw in ["không thể", "thất bại", "chưa đủ", "không đủ", "chưa mở", "chưa học", "lỗi", "bị động", "tối đa"]:
+			if kw in lower:
+				is_error = true
+				break
+
 	if _toast == null:
 		_toast = Label.new()
 		_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -974,9 +981,17 @@ func _show_toast(message: String) -> void:
 		_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_toast.add_theme_font_size_override("font_size", 14)
-		_toast.add_theme_color_override("font_color", GameUi.GOLD)
-		_toast.add_theme_stylebox_override("normal", GameUi.box(GameUi.BAD_BG, GameUi.BAD_BORDER, 6, 1, 10))
+		_toast.add_theme_color_override("font_outline_color", Color(0.05, 0.0, 0.0, 1.0))
+		_toast.add_theme_constant_override("outline_size", 4)
 		add_child(_toast)
+
+	if is_error:
+		_toast.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38, 1.0))
+		_toast.add_theme_stylebox_override("normal", GameUi.box(Color(0.42, 0.07, 0.07, 0.94), Color(0.92, 0.28, 0.28, 0.98), 6, 1, 10))
+	else:
+		_toast.add_theme_color_override("font_color", GameUi.GOLD)
+		_toast.add_theme_stylebox_override("normal", GameUi.box(GameUi.BG, GameUi.BORDER, 6, 1, 10))
+
 	_toast.text = message
 	_toast.visible = true
 	_toast.modulate.a = 1.0

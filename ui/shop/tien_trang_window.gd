@@ -49,6 +49,10 @@ func _init() -> void:
 	super._init("Chủ Tiền Trang", "Quản lý Tiền Xu tài khoản & Quy đổi Kim Nguyên Bảo", 480.0)
 	_build_ui()
 	_load_data()
+	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
+		if p == null or p == _profile or p == GameManager.local_profile:
+			_refresh_display()
+	)
 
 func _build_ui() -> void:
 	# Khung tóm tắt 3 loại tiền tệ
@@ -134,7 +138,7 @@ func _build_currency_card(title_text: String, icon_path: String, val_color: Colo
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		header_h.add_child(icon)
 
-	var t_lbl := SocialUi.label(title_text, SocialUi.MUTED, 12)
+	var t_lbl := SocialUi.label(tr(title_text), SocialUi.MUTED, 12)
 	header_h.add_child(t_lbl)
 
 	var v_lbl := SocialUi.label("0", val_color, 14, HORIZONTAL_ALIGNMENT_CENTER)
@@ -154,7 +158,7 @@ func _build_transfer_tab() -> void:
 	var input_lbl := SocialUi.label("Số Xu muốn đổi:", SocialUi.LABEL_BLUE, 14)
 	input_row.add_child(input_lbl)
 
-	_xu_input = GameUi.line_edit("Nhập số Xu...")
+	_xu_input = GameUi.line_edit(tr("Nhập số Xu..."))
 	_xu_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_xu_input.text_changed.connect(_on_xu_input_changed)
 	input_row.add_child(_xu_input)
@@ -171,7 +175,7 @@ func _build_transfer_tab() -> void:
 		btn.pressed.connect(_add_xu_input.bind(val))
 		quick_row.add_child(btn)
 
-	var all_btn := GameUi.button("Tất Cả", GameUi.BUTTON)
+	var all_btn := GameUi.button(tr("Tất Cả"), GameUi.BUTTON)
 	all_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	all_btn.custom_minimum_size.y = 30
 	all_btn.pressed.connect(func() -> void:
@@ -183,7 +187,7 @@ func _build_transfer_tab() -> void:
 	_transfer_preview = SocialUi.label("Nhận được: 0 KNB", SocialUi.GOLD, 14, HORIZONTAL_ALIGNMENT_CENTER)
 	_transfer_panel.add_child(_transfer_preview)
 
-	_transfer_btn = SocialUi.stone_button("XÁC NHẬN ĐỔI SANG KNB", Vector2(0, 42))
+	_transfer_btn = SocialUi.stone_button(tr("XÁC NHẬN ĐỔI SANG KNB"), Vector2(0, 42))
 	_transfer_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_transfer_btn.pressed.connect(_on_confirm_transfer)
 	_transfer_panel.add_child(_transfer_btn)
@@ -263,11 +267,11 @@ func _refresh_display() -> void:
 	if _profile == null:
 		return
 	if _gold_label:
-		_gold_label.text = InventoryPopup.format_money(_profile.gold) + " Lượng"
+		_gold_label.text = InventoryPopup.format_money(_profile.gold) + " " + tr("Lượng")
 	if _xu_label:
-		_xu_label.text = InventoryPopup.format_money(_get_current_xu()) + " Xu"
+		_xu_label.text = InventoryPopup.format_money(_get_current_xu()) + " " + tr("Xu")
 	if _jade_label:
-		_jade_label.text = InventoryPopup.format_money(_profile.jade) + " KNB"
+		_jade_label.text = InventoryPopup.format_money(_profile.jade) + " " + tr("KNB")
 	_on_xu_input_changed(_xu_input.text if _xu_input else "")
 
 func _get_current_xu() -> int:
@@ -280,7 +284,7 @@ func _on_xu_input_changed(text: String) -> void:
 			cleaned += c
 	var amount := cleaned.to_int()
 	if _transfer_preview:
-		_transfer_preview.text = "Nhận được: %s Kim Nguyên Bảo" % InventoryPopup.format_money(amount * _jade_per_xu)
+		_transfer_preview.text = "%s: %s %s" % [tr("Nhận được"), InventoryPopup.format_money(amount * _jade_per_xu), tr("Kim Nguyên Bảo")]
 
 func _add_xu_input(amount: int) -> void:
 	var cur := _xu_input.text.to_int()

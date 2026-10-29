@@ -16,6 +16,7 @@ var source_element: ElementTypes.ElementType = ElementTypes.ElementType.THO
 var magnitude: float = 0.0
 
 var visual_effect_name: String = ""
+var attacker_node: Node = null
 
 func _init(p_effect_id: String = "", p_duration: float = 0.0, p_damage_per_tick: float = 0.0, p_tick_rate: float = 1.0, p_magnitude: float = 0.0) -> void:
 	effect_id = p_effect_id
@@ -43,9 +44,22 @@ func tick(delta: float, target: Node) -> bool:
 		time_since_last_tick += delta
 		if time_since_last_tick >= tick_rate:
 			time_since_last_tick -= tick_rate
-			if target and target.has_method("take_status_damage"):
-				target.take_status_damage(damage_per_tick, effect_id)
+			_apply_tick_damage(target)
 	return time_remaining <= 0.0
+
+func _apply_tick_damage(target: Node) -> void:
+	if not target or not target.has_method("take_status_damage"):
+		return
+	if attacker_node != null:
+		var count: int = -1
+		for m in target.get_method_list():
+			if m.name == "take_status_damage":
+				count = m.get("args", []).size()
+				break
+		if count >= 3 or count == -1:
+			target.take_status_damage(damage_per_tick, effect_id, attacker_node)
+			return
+	target.take_status_damage(damage_per_tick, effect_id)
 
 ## Refresh — khi trúng thêm 1 lần effect cùng loại, kéo dài lại duration thay vì cộng dồn stack
 ## (mặc định đơn giản, đủ cho scope hiện tại; stack riêng có thể mở rộng sau nếu cần).
@@ -60,7 +74,7 @@ func _tick_frames(delta: float, target: Node) -> bool:
 	while _frame_acc >= 1.0 and frames_left > 0:
 		_frame_acc -= 1.0
 		frames_left -= 1
-		if frames_left % maxi(1, interval_frames) == 0 and damage_per_tick > 0.0 and target and target.has_method("take_status_damage"):
-			target.take_status_damage(damage_per_tick, effect_id)
+		if frames_left % maxi(1, interval_frames) == 0 and damage_per_tick > 0.0:
+			_apply_tick_damage(target)
 	time_remaining = float(frames_left) / FRAME_FPS
 	return frames_left <= 0

@@ -2,12 +2,14 @@ extends PanelContainer
 class_name PkRoomBadge
 
 ## HUY HIỆU HIỂN THỊ ID PHÒNG THI ĐẤU PK ĐẶT CẠNH ICON 18+ Ở GÓC TRÊN BÊN TRÁI
-## Tự động căn sát lề phải của AgeRatingBadge (Vector2(18, 10), kích thước 44x44) -> bắt đầu tại X=68, Y=10.
+## Tự động căn sát lề phải của AgeRatingBadge (Vector2(14, 8), kích thước 96x58) -> bắt đầu tại X=118, Y=8.
 
 static var current: PkRoomBadge = null
+const MapChatHelper = preload("res://systems/map_chat_helper.gd")
 
 var _id_label: Label
 var _copy_btn: Button
+var _share_btn: Button
 var _room_id: String = ""
 var _mode_name: String = ""
 
@@ -29,8 +31,8 @@ func _init(initial_id: String = "", mode_idx: int = -1) -> void:
 	current = self
 	name = "PkRoomBadge"
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	offset_left = 68.0
-	offset_top = 10.0
+	offset_left = 118.0
+	offset_top = 8.0
 	offset_bottom = 48.0
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
@@ -62,9 +64,22 @@ func _init(initial_id: String = "", mode_idx: int = -1) -> void:
 	_copy_btn.pressed.connect(_on_copy)
 	hbox.add_child(_copy_btn)
 
+	_share_btn = SocialUi.small_button("Gắn chat")
+	_share_btn.tooltip_text = "Gắn ID phòng vào khung chat để rủ bạn bè"
+	_share_btn.custom_minimum_size = Vector2(58, 24)
+	_share_btn.pressed.connect(_on_share)
+	hbox.add_child(_share_btn)
+
 	if mode_idx >= 0:
 		set_mode(mode_idx)
 	set_room_id(initial_id)
+
+func _ready() -> void:
+	var p := get_parent()
+	if p != null:
+		var age_badge := p.get_node_or_null("AgeRatingBadge") as Control
+		if age_badge != null:
+			offset_left = age_badge.position.x + age_badge.size.x + 8.0
 
 func set_mode(mode_idx: int) -> void:
 	_mode_name = str(PkRules.MODE_NAMES.get(mode_idx, ""))
@@ -81,11 +96,20 @@ func _update_label() -> void:
 		_id_label.text = "⚔️ Đang tạo phòng…"
 		if _copy_btn:
 			_copy_btn.visible = false
+		if _share_btn:
+			_share_btn.visible = false
 	else:
 		_id_label.text = "⚔️ Phòng: #%s" % _room_id
 		if _copy_btn:
 			_copy_btn.visible = true
+		if _share_btn:
+			_share_btn.visible = true
 	tooltip_text = ("Chế độ: %s\nID Phòng: %s (Bấm Sao chép để chia sẻ)" % [_mode_name, _room_id]) if not _mode_name.is_empty() else ("ID Phòng PK: %s" % _room_id)
+
+func _on_share() -> void:
+	if _room_id.is_empty():
+		return
+	MapChatHelper.share_room_to_chat(_room_id, self)
 
 func _on_copy() -> void:
 	if _room_id.is_empty():

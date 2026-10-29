@@ -42,13 +42,19 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	if player != null and _want_pickup:
-		if _player_feet(player).distance_to(global_position) <= REACH:
-			_want_pickup = false
+	if player != null:
+		var dist := _player_feet(player).distance_to(global_position)
+		# Đi ngang qua là có thể nhặt tiền tự động
+		if amount > 0 and dist <= REACH + 25.0:
 			_pick_up(player)
 			return
-		if player.has_method("is_moving_to_target") and not player.is_moving_to_target():
-			_want_pickup = false      ## người chơi đã đổi ý / bị chặn đường
+		if _want_pickup:
+			if dist <= REACH:
+				_want_pickup = false
+				_pick_up(player)
+				return
+			if player.has_method("is_moving_to_target") and not player.is_moving_to_target():
+				_want_pickup = false
 	_hover = get_global_mouse_position().distance_to(global_position + Vector2(0, -12)) <= CLICK_RADIUS
 	queue_redraw()
 
@@ -97,8 +103,14 @@ func _pick_up(player: Node) -> void:
 		_notice(player, "Theo luật nhặt đồ của tổ đội, chưa tới lượt bạn nhặt.")
 		return
 	if amount > 0:
-		profile.gold += amount
-		_notice(player, "Nhặt được %d lượng" % amount)
+		if bool(GameManager.field_map.get("tong_kim_lol", false)):
+			var s := TongKimLolState.instance()
+			if s:
+				s.add_gold(amount)
+				_notice(player, "Nhặt được %d Vàng Tống Kim" % amount)
+		else:
+			profile.gold += amount
+			_notice(player, "Nhặt được %d lượng" % amount)
 	elif item != null:
 		if not profile.add_item(item):
 			_notice(player, "Hành trang đã đầy")
@@ -139,9 +151,17 @@ static func spawn_drops(parent: Node, at: Vector2, drops: Array) -> void:
 	for i in drops.size():
 		var d: Dictionary = drops[i]
 		var g := GroundDrop.new()
-		if str(d["type"]) == "money":
-			g.setup_money(int(d["amount"]))
+		var drop_type: String = str(d.get("type", ""))
+		if drop_type == "money" or d.has("money") or (d.has("amount") and not d.has("item")):
+			var amt: int = int(d.get("amount", d.get("money", 0)))
+			g.setup_money(amt)
+		elif drop_type == "item" or d.has("item"):
+			var it = d.get("item", null)
+			if it is ItemInstance:
+				g.setup_item(it)
+			else:
+				continue
 		else:
-			g.setup_item(d["item"])
+			continue
 		g.position = at + Vector2(randf_range(-22, 22), randf_range(-8, 8)) * (1 if drops.size() > 1 else 0.4)
 		parent.add_child(g)

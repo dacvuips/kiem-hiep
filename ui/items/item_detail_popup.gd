@@ -2,10 +2,13 @@ extends CanvasLayer
 class_name ItemDetailPopup
 
 const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
+const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
 ## Khung xem chi tiết 1 món đồ kiểu VLTK mobile: tên (màu theo phẩm chất) trên cùng, ô ảnh vật phẩm + Cấp / loại đồ, phần mô tả thuộc tính (cuộn được nếu dài), cột nút hành động lớn bên phải (VD Trang bị, Vứt bỏ, Tháo).
 ## Bấm ra ngoài để tắt. Bố cục nằm trong ItemDetailPopup.tscn, khung/nút lấy từ GameUi (chỉ tên món giữ màu theo phẩm chất).
 
 const SCENE_PATH := "res://ui/items/ItemDetailPopup.tscn"
+## Chiều rộng chuẩn tối thiểu của khung popup (giữ khung ngang cân đối).
+const POPUP_WIDTH := 430.0
 ## Chiều cao tối đa phần mô tả — dài hơn thì cuộn.
 const BODY_MAX_HEIGHT := 380.0
 
@@ -48,12 +51,27 @@ func _ready() -> void:
 			cb.call()
 			queue_free())
 		%Actions.add_child(b)
-	## Mô tả ngắn thì khung vừa nội dung, dài thì cuộn trong BODY_MAX_HEIGHT.
-	await get_tree().process_frame
+
+	## Nút gắn liên kết vật phẩm vào khung chat
+	if _item != null:
+		var chat_b: Button = template.duplicate()
+		chat_b.visible = true
+		chat_b.text = "Gắn vào chat"
+		chat_b.tooltip_text = "Gắn liên kết vật phẩm vào khung chat để người khác xem"
+		chat_b.pressed.connect(func() -> void:
+			ItemChatHelper.attach_to_chat(_item, get_tree().root)
+			queue_free())
+		%Actions.add_child(chat_b)
+	## Không tự động xuống hàng (autowrap) để các dòng thuộc tính luôn nằm trọn trên 1 dòng chuẩn VLTK.
+	## Chiều ngang popup tự động co giãn theo dòng dài nhất (tối thiểu POPUP_WIDTH).
 	var body: RichTextLabel = %Body
 	var scroll: ScrollContainer = %BodyScroll
-	scroll.custom_minimum_size.x = maxf(430.0, body.get_content_width() + 12.0)
-	scroll.custom_minimum_size.y = minf(body.get_content_height() + 4.0, BODY_MAX_HEIGHT)
+	body.autowrap_mode = TextServer.AUTOWRAP_OFF
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	await get_tree().process_frame
+	var content_w: float = body.get_content_width()
+	scroll.custom_minimum_size.x = maxf(POPUP_WIDTH, content_w + 32.0)
+	scroll.custom_minimum_size.y = minf(maxf(body.get_content_height() + 8.0, 60.0), BODY_MAX_HEIGHT)
 	TouchScrollHelperScript.attach(scroll, $Center/Row/Card as Control)
 
 func _fill_header() -> void:

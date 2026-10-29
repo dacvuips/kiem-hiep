@@ -76,37 +76,41 @@ func apply_vltk_hit(mods: CombatFormulas.HitModifiers, dealt: Dictionary, defend
 
 	var poison_damage: int = dealt.get(CombatFormulas.DamageType.POISON, 0)
 	if poison_damage > 0 and mods.poison_time_frames > 0:
-		## Lượng rút mỗi lần không nhân chí mạng (CalcDamage lúc tick độc gốc truyền bIsDS = FALSE).
-		if mods.poison_tick_damage > 0:
-			poison_damage = mods.poison_tick_damage   ## gốc: m_PoisonState.nValue[0] = damage khai báo của skill
-		elif mods.is_deadly_strike:
+		## Lượng rút mỗi lần lấy theo damage thực tế sau khi đã trừ Kháng Độc và Tương Khắc Ngũ Hành.
+		## Không nhân chí mạng ở nhịp rút (KNpc::Activate tick độc gốc gọi CalcDamage với bIsDS = FALSE).
+		if mods.is_deadly_strike:
 			poison_damage = maxi(1, int(poison_damage / CombatFormulas.DEADLY_STRIKE_MULTIPLIER))
 		var time_frames := _reduce_frames(mods.poison_time_frames, defender.poison_time_reduce_p)
 		if time_frames > 0:
-			_apply_vltk_poison(poison_damage, time_frames, maxi(1, mods.poison_interval_frames))
+			_apply_vltk_poison(poison_damage, time_frames, maxi(1, mods.poison_interval_frames), mods.attacker_node)
 
 	if mods.stun_chance_p > 0 and mods.stun_frames > 0 and not is_stunned and randi_range(1, 100) <= mods.stun_chance_p:
 		var stun_frames := _reduce_frames(mods.stun_frames, defender.stun_time_reduce_p)
 		if stun_frames > 0:
-			apply_effect(StatusEffect.new("stun", SkillDefinition.frames_to_seconds(stun_frames)))
+			var stun_sec := SkillDefinition.frames_to_seconds(stun_frames)
+			apply_effect(StatusEffect.new("stun", stun_sec))
+			apply_state("debuff_stun", {}, stun_sec, {"state_id": 50, "name": "Choáng", "is_debuff": true})
 
 static func _reduce_frames(frames: int, reduce_p: int) -> int:
 	## Gốc: `if (nRdc >= MAX_PERCENT) nRdc = MAX_RESIST;` — giảm tối đa MAX_RESIST %, âm thì kéo dài.
 	var rdc := CombatFormulas.MAX_RESIST if reduce_p >= 100 else reduce_p
 	return frames - frames * rdc / 100
 
-func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int) -> void:
+func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int, attacker_node: Node = null) -> void:
 	var fps := SkillDefinition.VLTK_GAME_FPS
 	if not _active_effects.has("poison"):
 		var effect := StatusEffect.new("poison", time_frames / fps, float(damage), interval_frames / fps)
 		effect.frame_mode = true
 		effect.frames_left = time_frames
 		effect.interval_frames = interval_frames
+		effect.attacker_node = attacker_node
 		apply_effect(effect)
 		return
 	## Gộp 2 lớp độc — KNpc::ReceiveDamage (nhánh m_PoisonState.nTime > 0):
 	##   d = ((c1+c2)·d1/c1 + (c1+c2)·d2/c2) / 2;  t = (t1·d1·c2 + t2·d2·c1) / (d1·c2 + d2·c1);  c = (c1+c2)/2
 	var existing: StatusEffect = _active_effects["poison"]
+	if attacker_node != null:
+		existing.attacker_node = attacker_node
 	var d1 := int(existing.damage_per_tick)
 	var t1 := existing.frames_left
 	var c1 := existing.interval_frames
@@ -115,7 +119,7 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int) -> 
 	var c2 := interval_frames
 	if c1 <= 0 or d1 <= 0:
 		_active_effects.erase("poison")
-		_apply_vltk_poison(damage, time_frames, interval_frames)
+		_apply_vltk_poison(damage, time_frames, interval_frames, attacker_node)
 		return
 	existing.damage_per_tick = float(((c1 + c2) * d1 / c1 + (c1 + c2) * d2 / c2) / 2)
 	existing.frames_left = (t1 * d1 * c2 + t2 * d2 * c1) / (d1 * c2 + d2 * c1)
@@ -125,9 +129,9 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int) -> 
 	existing.tick_rate = float(existing.interval_frames) / fps
 
 ## Áp 1 bộ trạng thái thuộc tính (buff lên mình / bùa lên địch) trong `seconds` giây.
-## `meta` cho phần hiển thị (StateVisuals): {"icon": Texture2D, "name": String, "is_debuff": bool}.
+## `meta` cho phần hiển thị (StateVisuals): {"icon": Texture2D, "name": String, "is_debuff": bool, "state_id": int}.
 func apply_state(source_id: String, attribs: Dictionary, seconds: float, meta: Dictionary = {}) -> void:
-	if attribs.is_empty() or seconds <= 0.0:
+	if (attribs.is_empty() and int(meta.get("state_id", 0)) <= 0) or seconds <= 0.0:
 		return
 	_states[source_id] = {"attribs": attribs, "time": seconds, "duration": seconds, "meta": meta}
 	_ensure_visuals()
@@ -180,22 +184,30 @@ func _tick_replenish(delta: float) -> void:
 	if owner_node == null or not ("combat_stats" in owner_node) or owner_node.combat_stats == null:
 		return
 	var stats: CombatantStats = owner_node.combat_stats
-	if stats.life_replenish == 0:
+	if stats.life_replenish == 0 and stats.mana_replenish == 0:
 		return
 	_replenish_timer += delta
 	while _replenish_timer >= REPLENISH_INTERVAL:
 		_replenish_timer -= REPLENISH_INTERVAL
 		if is_stunned:
 			continue
-		var amount := stats.life_replenish + stats.life_replenish * stats.life_replenish_p / 100.0
-		## Hồi máu ÂM (bùa rút máu, VD Bắc Minh Đáo Hải) đi đường nhận damage để còn chết được.
-		if amount < 0.0 and owner_node.has_method("take_status_damage"):
-			owner_node.take_status_damage(-amount, "life_drain")
-		elif amount > 0.0 and owner_node.has_method("heal"):
-			owner_node.heal(amount)
+		if stats.life_replenish != 0:
+			var amount := stats.life_replenish + stats.life_replenish * stats.life_replenish_p / 100.0
+			## Hồi máu ÂM (bùa rút máu, VD Bắc Minh Đáo Hải) đi đường nhận damage để còn chết được.
+			if amount < 0.0 and owner_node.has_method("take_status_damage"):
+				owner_node.take_status_damage(-amount, "life_drain")
+			elif amount > 0.0 and owner_node.has_method("heal"):
+				owner_node.heal(amount)
+		if stats.mana_replenish != 0:
+			var m_amount := stats.mana_replenish + stats.mana_replenish * stats.mana_replenish_p / 100.0
+			if m_amount > 0.0 and owner_node.has_method("restore_mana"):
+				owner_node.restore_mana(m_amount)
 
 func has_effect(effect_id: String) -> bool:
 	return _active_effects.has(effect_id)
+
+func get_effect(effect_id: String) -> StatusEffect:
+	return _active_effects.get(effect_id)
 
 func clear_all() -> void:
 	_active_effects.clear()
@@ -208,9 +220,9 @@ func clear_all() -> void:
 ## Hình báo trạng thái trúng đòn (giống VLTK gốc, dùng chung người chơi/quái/NPC):
 ##   - Độc sát (poison)    : nhân vật nhuộm XANH LÁ ĐẬM suốt lúc còn độc.
 ##   - Băng sát (freeze)   : nhân vật nhuộm VÀNG (và bị làm chậm).
-##   - Lôi sát (stun)      : VÒNG TRÒN quay trên đầu (StunRing), đứng yên tại chỗ — không nhuộm màu.
+##   - Lôi sát (stun)      : VÒNG SAO XOAY trên đầu (Status 50: mag_spe_眩晕) — không nhuộm màu.
 ## Nhuộm bằng `modulate` của node hình ảnh chủ (Avatar / MonsterSprite / Sprite) rồi giữ lại mỗi frame (không đè lúc nhấp nháy đỏ khi bị đánh).
-const TINT_FREEZE := Color(1.0, 0.92, 0.3)
+const TINT_FREEZE := Color(1.0, 0.9, 0.35)
 const TINT_POISON := Color(0.3, 0.72, 0.3)
 
 var _tint_target: CanvasItem

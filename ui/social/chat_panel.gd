@@ -1,5 +1,7 @@
 extends CanvasLayer
 class_name ChatPanel
+const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
+const MapChatHelper = preload("res://systems/map_chat_helper.gd")
 ## KHUNG TÁN GẪU LỚN trượt ra từ mép TRÁI màn hình (dài từ lề dưới cho tới lề trên):
 ## Các kênh: Thế giới, Bang hội, Mật (bỏ kênh Gần).
 ## Giao diện phong cách VLTK theo ảnh tham khảo: Tab kênh dạng pill, thanh thông báo ghim,
@@ -40,6 +42,7 @@ var _current_channel: int = ChatServer.WORLD
 var _style_tab_active: StyleBoxFlat
 var _style_tab_normal: StyleBoxFlat
 var _style_tab_hover: StyleBoxFlat
+var _attached_items: Dictionary = {} # "[Tên Món]" -> "{item:BASE64}"
 
 ## Bắt đầu ghi lịch sử tin từ server (gọi 1 lần khi có kết nối — NetSocial._ready). Gọi lại không sao.
 static func ensure_listening() -> void:
@@ -67,7 +70,9 @@ static func open(host: Node, channel := ChatServer.WORLD, to := "") -> ChatPanel
 	var panel: ChatPanel = _open_panel if _open_panel != null and is_instance_valid(_open_panel) else null
 	if panel == null:
 		panel = ChatPanel.new()
-		host.get_tree().root.add_child(panel)
+		var tree := host.get_tree()
+		if tree and tree.root:
+			tree.root.add_child.call_deferred(panel)
 	panel.set_channel(channel, to)
 	return panel
 
@@ -131,7 +136,7 @@ func _ready() -> void:
 	for ch in CHANNELS:
 		var tab_name: String = CHANNEL_NAMES_MAP.get(ch, "Kênh")
 		var b := Button.new()
-		b.text = tab_name
+		b.text = tr(tab_name)
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		b.custom_minimum_size = Vector2(110, 34)
@@ -145,7 +150,7 @@ func _ready() -> void:
 	close_btn.focus_mode = Control.FOCUS_NONE
 	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	close_btn.custom_minimum_size = Vector2(32, 32)
-	close_btn.tooltip_text = "Đóng tán gẫu"
+	close_btn.tooltip_text = tr("Đóng tán gẫu")
 	var close_sb := _make_pill_style(Color(0.18, 0.08, 0.08, 0.9), Color(0.65, 0.25, 0.25, 0.8), 8)
 	close_btn.add_theme_stylebox_override("normal", close_sb)
 	close_btn.add_theme_color_override("font_color", Color(1.0, 0.75, 0.75))
@@ -176,7 +181,7 @@ func _ready() -> void:
 	notice_lbl.bbcode_enabled = true
 	notice_lbl.fit_content = true
 	notice_lbl.scroll_active = false
-	notice_lbl.text = "[color=#FFD54F]📌 Quản trị:[/color] [color=#DDD4C0]Chào mừng hiệp khách! Tán gẫu văn minh, hảo hữu bốn phương tụ hội.[/color]"
+	notice_lbl.text = "[color=#FFD54F]%s:[/color] [color=#DDD4C0]%s[/color]" % [tr("📌 Quản trị"), tr("Chào mừng hiệp khách! Tán gẫu văn minh, hảo hữu bốn phương tụ hội.")]
 	notice_lbl.add_theme_font_size_override("normal_font_size", 12)
 	notice_box.add_child(notice_lbl)
 
@@ -186,6 +191,7 @@ func _ready() -> void:
 	_log.scroll_following = true
 	_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log.add_theme_font_size_override("normal_font_size", FONT_SIZE)
+	_log.meta_clicked.connect(_on_meta_clicked)
 	var log_sb := StyleBoxFlat.new()
 	log_sb.bg_color = Color(0.03, 0.04, 0.05, 0.75)
 	log_sb.border_width_left = 1
@@ -210,13 +216,13 @@ func _ready() -> void:
 	main_vbox.add_child(_to_row)
 
 	var to_lbl := Label.new()
-	to_lbl.text = "Gửi đến:"
+	to_lbl.text = tr("Gửi đến:")
 	to_lbl.add_theme_color_override("font_color", Color(1.0, 0.75, 0.9))
 	to_lbl.add_theme_font_size_override("font_size", 13)
 	_to_row.add_child(to_lbl)
 
 	_to = LineEdit.new()
-	_to.placeholder_text = "Nhập tên nhân vật nhận..."
+	_to.placeholder_text = tr("Nhập tên nhân vật nhận...")
 	_to.max_length = 32
 	_to.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_style_line_edit(_to)
@@ -230,7 +236,7 @@ func _ready() -> void:
 
 	var emoji_btn := Button.new()
 	emoji_btn.text = "😊"
-	emoji_btn.tooltip_text = "Biểu cảm nhanh"
+	emoji_btn.tooltip_text = tr("Biểu cảm nhanh")
 	emoji_btn.focus_mode = Control.FOCUS_NONE
 	emoji_btn.custom_minimum_size = Vector2(38, 38)
 	var emo_sb := _make_pill_style(Color(0.12, 0.16, 0.18, 0.9), Color(0.72, 0.58, 0.28, 0.8), 6)
@@ -238,8 +244,18 @@ func _ready() -> void:
 	emoji_btn.pressed.connect(_on_emoji_pressed)
 	input_row.add_child(emoji_btn)
 
+	var map_btn := Button.new()
+	map_btn.text = "🗺️"
+	map_btn.tooltip_text = tr("Chia sẻ ID phòng / bản đồ hiện tại vào khung chat")
+	map_btn.focus_mode = Control.FOCUS_NONE
+	map_btn.custom_minimum_size = Vector2(38, 38)
+	var map_sb := _make_pill_style(Color(0.12, 0.16, 0.18, 0.9), Color(0.28, 0.65, 0.82, 0.8), 6)
+	map_btn.add_theme_stylebox_override("normal", map_sb)
+	map_btn.pressed.connect(_on_map_share_pressed)
+	input_row.add_child(map_btn)
+
 	_input = LineEdit.new()
-	_input.placeholder_text = "Nhập nội dung tán gẫu... (Enter để gửi)"
+	_input.placeholder_text = tr("Nhập nội dung tán gẫu... (Enter để gửi)")
 	_input.max_length = ChatServer.MAX_LEN
 	_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_input.custom_minimum_size = Vector2(0, 38)
@@ -248,7 +264,7 @@ func _ready() -> void:
 	input_row.add_child(_input)
 
 	var send_btn := Button.new()
-	send_btn.text = "Gửi"
+	send_btn.text = tr("Gửi")
 	send_btn.focus_mode = Control.FOCUS_NONE
 	send_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	send_btn.custom_minimum_size = Vector2(72, 38)
@@ -264,9 +280,12 @@ func _ready() -> void:
 
 	# Khởi tạo tin mẫu phong phú nếu chưa có lịch sử
 	if history.is_empty():
-		_push(ChatServer.WORLD, "Lệnh Hồ Xung", "", "Hôm nay ai cùng ta tỉ thí kiếm pháp tại Hoa Sơn?")
-		_push(ChatServer.WORLD, "Tiểu Long Nữ", "", "Cổ Mộ phái chiêu mộ đệ tử, hoan nghênh chư vị đồng đạo.")
-		_push(ChatServer.GUILD, "Bang Chủ", "", "Tối nay 20h anh em tập hợp đánh Boss bang nhé!")
+		_push(ChatServer.WORLD, tr("Lệnh Hồ Xung"), "", tr("Hôm nay ai cùng ta tỉ thí kiếm pháp tại Hoa Sơn?"))
+		_push(ChatServer.WORLD, tr("Tiểu Long Nữ"), "", tr("Cổ Mộ phái chiêu mộ đệ tử, hoan nghênh chư vị đồng đạo."))
+		var demo_sword := ItemGenerator.generate_gold(0) if ItemDatabase.get_gold(0).size() > 0 else null
+		if demo_sword:
+			_push(ChatServer.WORLD, tr("Độc Cô Cầu Bại"), "", tr("Cần nhượng lại bảo kiếm %s cho cao thủ hữu duyên!") % ItemChatHelper.create_token(demo_sword))
+		_push(ChatServer.GUILD, tr("Bang Chủ"), "", tr("Tối nay 20h anh em tập hợp đánh Boss bang nhé!"))
 
 	# Hiệu ứng trượt ra mượt mà từ mép trái màn hình
 	var tween := create_tween().set_parallel(true)
@@ -365,7 +384,7 @@ func _on_tab(channel: int) -> void:
 
 	var ch_name: String = CHANNEL_NAMES_MAP.get(channel, "kênh")
 	if _input != null:
-		_input.placeholder_text = "Tán gẫu %s... (Enter để gửi)" % ch_name
+		_input.placeholder_text = "%s %s... (Enter %s)" % [tr("Tán gẫu"), tr(ch_name), tr("để gửi")]
 
 	_render()
 
@@ -382,7 +401,7 @@ func _render() -> void:
 			continue
 
 		var color: Color = CHANNEL_COLORS.get(ch, Color.WHITE)
-		var ch_label: String = CHANNEL_NAMES_MAP.get(ch, "Kênh")
+		var ch_label: String = tr(CHANNEL_NAMES_MAP.get(ch, "Kênh"))
 		var time_str: String = str(m.get("time", "12:00"))
 		var who := _esc(str(m.get("from", "Đại Hiệp")))
 
@@ -393,13 +412,51 @@ func _render() -> void:
 		else:
 			header_part = "[color=#%s][%s][/color] [color=#FFE082]%s:[/color]" % [color.to_html(false), ch_label, who]
 
-		lines.append("[color=#757D84]%s[/color] %s [color=#ECEFF1]%s[/color]" % [time_str, header_part, _esc(str(m.get("text", "")))])
+		var body_bbcode := ItemChatHelper.format_chat_bbcode(str(m.get("text", "")))
+		body_bbcode = MapChatHelper.format_chat_map_bbcode(body_bbcode)
+		lines.append("[color=#757D84]%s[/color] %s [color=#ECEFF1]%s[/color]" % [time_str, header_part, body_bbcode])
 
 	if lines.is_empty():
-		var ch_name: String = CHANNEL_NAMES_MAP.get(_current_channel, "này")
-		_log.text = "\n[center][color=#606870]— Chưa có tin nhắn trong kênh %s —[/color][/center]" % ch_name
+		var ch_name: String = tr(CHANNEL_NAMES_MAP.get(_current_channel, "này"))
+		_log.text = "\n[center][color=#606870]— %s %s —[/color][/center]" % [tr("Chưa có tin nhắn trong kênh"), ch_name]
 	else:
 		_log.text = "\n".join(lines)
+
+## Gắn liên kết vật phẩm vào ô gõ tin nhắn
+func insert_item(item: ItemInstance) -> void:
+	if item == null:
+		return
+	var item_name := str(item.get_base().get("name", "Vật phẩm"))
+	var tag := "[%s]" % item_name
+	var token := ItemChatHelper.create_token(item)
+	_attached_items[tag] = token
+	insert_text(tag)
+
+## Chèn chuỗi văn bản (link map, tag...) vào ô gõ tin nhắn
+func insert_text(text_to_insert: String) -> void:
+	if not is_node_ready():
+		await ready
+
+	if _input != null:
+		var cur := _input.text.strip_edges()
+		if cur.is_empty():
+			_input.text = text_to_insert + " "
+		else:
+			_input.text = cur + " " + text_to_insert + " "
+		_input.grab_focus()
+		_input.caret_column = _input.text.length()
+
+## Khi người dùng nhấp vào link trong khung chat
+func _on_meta_clicked(meta: Variant) -> void:
+	var meta_str := str(meta)
+	if meta_str.begins_with("item:"):
+		var raw_data := meta_str.substr(5)
+		var item := ItemChatHelper.decode_item(raw_data)
+		if item != null:
+			ItemDetailPopup.open(get_tree().root, ItemText.build(item, GameManager.local_profile, -1, -1, false), [], item)
+	elif meta_str.begins_with("map:"):
+		var map_id := meta_str.substr(4)
+		MapChatHelper.confirm_and_teleport(map_id, self)
 
 func _send() -> void:
 	if _input == null:
@@ -410,8 +467,14 @@ func _send() -> void:
 	var ch := _current_channel
 	var to := _to.text.strip_edges() if _to != null else ""
 	if ch == ChatServer.PRIVATE and to.is_empty():
-		_note("Hãy nhập tên người nhận trong kênh Mật.")
+		_note(tr("Hãy nhập tên người nhận trong kênh Mật."))
 		return
+
+	# Thay thế các tag [Tên Món] đã gắn bằng token {item:BASE64}
+	for tag in _attached_items:
+		if text.contains(tag):
+			text = text.replace(tag, _attached_items[tag])
+	_attached_items.clear()
 
 	if NetClient.is_in_world():
 		NetClient.send_chat(ch, to, text)
@@ -434,6 +497,9 @@ func _on_emoji_pressed() -> void:
 	_input.text += (" " if not _input.text.is_empty() and not _input.text.ends_with(" ") else "") + pick
 	_input.grab_focus()
 	_input.caret_column = _input.text.length()
+
+func _on_map_share_pressed() -> void:
+	MapChatHelper.share_current_room_to_chat(self)
 
 func close() -> void:
 	var t := create_tween().set_parallel(true)

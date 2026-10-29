@@ -4,8 +4,8 @@ class_name AgeRatingBadge
 ## BIỂU TƯỢNG PHÂN LOẠI ĐỘ TUỔI 18+ THEO QUY ĐỊNH PHÁP LUẬT VIỆT NAM (Thông tư 24/2014 & Nghị định 147/2024)
 ## Hiển thị liên tục ở góc trên bên trái màn hình trong suốt thời gian chơi game.
 
-const BADGE_SIZE := Vector2(44.0, 44.0)
-const BADGE_POS := Vector2(18.0, 10.0)
+const BADGE_SIZE := Vector2(96.0, 58.0)
+const BADGE_POS := Vector2(14.0, 8.0)
 const BADGE_PATH := "res://assets/ui/badge_18.png"
 
 var _tex_rect: TextureRect
@@ -25,15 +25,15 @@ func _init() -> void:
 	_tex_rect.mouse_filter = Control.MOUSE_FILTER_PASS
 	_tex_rect.tooltip_text = "Trò chơi dành cho người chơi từ 18 tuổi trở lên (18+)\nChơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khỏe"
 
-	# Load texture: thử ResourceLoader trước, nếu chưa import thì load trực tiếp từ file PNG
+	# Load texture: ưu tiên nạp trực tiếp từ file PNG để giữ trọn vẹn chi tiết và độ sắc nét
 	var tex: Texture2D = null
-	if ResourceLoader.exists(BADGE_PATH):
-		tex = load(BADGE_PATH) as Texture2D
-	if tex == null:
-		var global_p := ProjectSettings.globalize_path(BADGE_PATH)
+	var global_p := ProjectSettings.globalize_path(BADGE_PATH)
+	if FileAccess.file_exists(global_p):
 		var img := Image.load_from_file(global_p)
 		if img != null:
 			tex = ImageTexture.create_from_image(img)
+	if tex == null and ResourceLoader.exists(BADGE_PATH):
+		tex = load(BADGE_PATH) as Texture2D
 	_tex_rect.texture = tex
 	add_child(_tex_rect)
 

@@ -35,7 +35,7 @@ func _init(profile: PlayerProfile = null) -> void:
 	tabs.add_theme_constant_override("separation", 8)
 	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in TABS.size():
-		var b := GameUi.button(TABS[i], GameUi.TAB)
+		var b := GameUi.button(tr(TABS[i]), GameUi.TAB)
 		b.custom_minimum_size = Vector2(0, 36)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_select_tab.bind(i))
@@ -57,10 +57,10 @@ func _ready() -> void:
 
 func _load() -> void:
 	if not AccountApi.is_logged_in():
-		_status.text = "Bảng xếp hạng Đấu Trường Võ Lâm (Chế độ cục bộ)"
+		_status.text = tr("Bảng xếp hạng Đấu Trường Võ Lâm (Chế độ cục bộ)")
 		_select_tab(_tab)
 		return
-	_status.text = "Đang tải..."
+	_status.text = tr("Đang tải...")
 	var r: Dictionary = await AccountApi.rankings(ServerSelectScreen.selected_server_id)
 	if not is_inside_tree():
 		return
@@ -68,7 +68,7 @@ func _load() -> void:
 		_status.text = str(r.message)
 		return
 	_data = r.data if r.data is Dictionary else {}
-	_status.text = "Máy chủ %s · cập nhật mỗi %d giây" % [str(ServerSelectScreen.selected_server.get("name", ServerSelectScreen.selected_server_id)), int(_data.get("ttl_seconds", 60))]
+	_status.text = "%s %s · %s %d %s" % [tr("Máy chủ"), str(ServerSelectScreen.selected_server.get("name", ServerSelectScreen.selected_server_id)), tr("cập nhật mỗi"), int(_data.get("ttl_seconds", 60)), tr("giây")]
 	_update_profile_rank()
 	_select_tab(_tab)
 
@@ -146,14 +146,14 @@ func _select_tab(i: int) -> void:
 	match i:
 		0:
 			if _data.is_empty():
-				_content.add_child(_board("Cao thủ toàn máy chủ", [], "level"))
+				_content.add_child(_board(tr("Cao thủ toàn máy chủ"), [], "level"))
 			else:
-				_content.add_child(_board("Cao thủ toàn máy chủ", _data.get("level", []), "level"))
+				_content.add_child(_board(tr("Cao thủ toàn máy chủ"), _data.get("level", []), "level"))
 		1:
 			if _data.is_empty():
-				_content.add_child(_board("Phú hộ toàn máy chủ", [], "money"))
+				_content.add_child(_board(tr("Phú hộ toàn máy chủ"), [], "money"))
 			else:
-				_content.add_child(_board("Phú hộ toàn máy chủ", _data.get("money", []), "money"))
+				_content.add_child(_board(tr("Phú hộ toàn máy chủ"), _data.get("money", []), "money"))
 		2:
 			_content.add_child(_pk_board())
 		3:
@@ -213,7 +213,7 @@ func _pk_board() -> Control:
 				"level": int(e.get("level", 1)),
 				"pk_points": int(e.get("pk_points", 0))
 			})
-	return _board("Bảng Xếp Hạng Đấu Trường Võ Lâm (Thắng +10, Thua -2)", list, "pk")
+	return _board(tr("Bảng Xếp Hạng Đấu Trường Võ Lâm (Thắng +10, Thua -2)"), list, "pk")
 
 # ---------------------------------------------------------------- tab Môn Phái
 
@@ -226,7 +226,7 @@ func _build_sects() -> void:
 	var opt_row := HBoxContainer.new()
 	opt_row.add_theme_constant_override("separation", 8)
 	sect_box.add_child(opt_row)
-	opt_row.add_child(SocialUi.label("Chọn môn phái:", SocialUi.TEXT, 14))
+	opt_row.add_child(SocialUi.label(tr("Chọn môn phái:"), SocialUi.TEXT, 14))
 
 	var opt := OptionButton.new()
 	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -241,8 +241,8 @@ func _build_sects() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	cols.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(_board("Cao thủ %s" % _sect_name(_sect), (_data.get("sect_level", {}) as Dictionary).get(_sect, []), "level", true))
-	cols.add_child(_board("Phú hộ %s" % _sect_name(_sect), (_data.get("sect_money", {}) as Dictionary).get(_sect, []), "money", true))
+	cols.add_child(_board("%s %s" % [tr("Cao thủ"), _sect_name(_sect)], (_data.get("sect_level", {}) as Dictionary).get(_sect, []), "level", true))
+	cols.add_child(_board("%s %s" % [tr("Phú hộ"), _sect_name(_sect)], (_data.get("sect_money", {}) as Dictionary).get(_sect, []), "money", true))
 	sect_box.add_child(cols)
 
 # ---------------------------------------------------------------- bảng
@@ -263,7 +263,7 @@ func _board(header: String, rows: Array, value_type: String, compact := false) -
 	sec[1].add_child(scroll)
 	TouchScrollHelperScript.attach(scroll, panel)
 	if rows.is_empty():
-		list.add_child(SocialUi.label("Chưa có ai.", SocialUi.MUTED, 13))
+		list.add_child(SocialUi.label(tr("Chưa có ai."), SocialUi.MUTED, 13))
 		return panel
 	var me := _profile.display_name if _profile else ""
 	for e in rows:
@@ -287,10 +287,10 @@ func _board(header: String, rows: Array, value_type: String, compact := false) -
 			value = InventoryPopup.format_money(int(e["money"]))
 			color = SocialUi.LABEL_GREEN
 		elif value_type == "pk":
-			value = "%d điểm" % int(e.get("pk_points", e.get("points", 0)))
+			value = "%d %s" % [int(e.get("pk_points", e.get("points", 0))), tr("điểm")]
 			color = SocialUi.GOLD
 		else:
-			value = "Cấp %d" % int(e["level"])
+			value = "%s %d" % [tr("Cấp"), int(e["level"])]
 			color = SocialUi.LABEL_BLUE
 		var value_l := SocialUi.label(value, color, 13, HORIZONTAL_ALIGNMENT_RIGHT)
 		value_l.custom_minimum_size.x = 110 if value_type in ["money", "pk"] else 70
@@ -300,6 +300,6 @@ func _board(header: String, rows: Array, value_type: String, compact := false) -
 
 static func _sect_name(id: String) -> String:
 	if id == "":
-		return "Vô môn phái"
+		return TranslationServer.translate("Vô môn phái")
 	var sect := SectRegistry.get_by_id(id)
-	return sect.sect_name if sect else id
+	return TranslationServer.translate(sect.sect_name) if sect else id

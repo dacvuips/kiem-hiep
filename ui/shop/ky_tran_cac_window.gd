@@ -51,6 +51,10 @@ func _init() -> void:
 	custom_minimum_size = Vector2(716, 545)
 	_build_ui()
 	_refresh_ui()
+	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
+		if p == null or p == _profile or p == GameManager.local_profile:
+			_refresh_ui()
+	)
 
 func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 6)
@@ -60,10 +64,10 @@ func _build_ui() -> void:
 	tab_row.add_theme_constant_override("separation", 6)
 	body.add_child(tab_row)
 
-	_tab_vat_pham = _create_tab_button("Vật Phẩm", 0)
+	_tab_vat_pham = _create_tab_button(tr("Vật Phẩm"), 0)
 	tab_row.add_child(_tab_vat_pham)
 
-	_tab_tinh_nang = _create_tab_button("Tính Năng", 1)
+	_tab_tinh_nang = _create_tab_button(tr("Tính Năng"), 1)
 	tab_row.add_child(_tab_tinh_nang)
 
 	var tab_spacer := Control.new()
@@ -75,7 +79,7 @@ func _build_ui() -> void:
 	control_bar.add_theme_constant_override("separation", 8)
 	body.add_child(control_bar)
 
-	_btn_nap = _create_action_button("Nạp", Vector2(72, 28))
+	_btn_nap = _create_action_button(tr("Nạp"), Vector2(72, 28))
 	_btn_nap.pressed.connect(_on_nap_pressed)
 	control_bar.add_child(_btn_nap)
 
@@ -89,7 +93,7 @@ func _build_ui() -> void:
 	_xu_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	control_bar.add_child(_xu_label)
 
-	_btn_prev = _create_action_button("Trước", Vector2(62, 28))
+	_btn_prev = _create_action_button(tr("Trước"), Vector2(62, 28))
 	_btn_prev.pressed.connect(_on_prev_page)
 	control_bar.add_child(_btn_prev)
 
@@ -102,11 +106,11 @@ func _build_ui() -> void:
 	_page_label.add_theme_font_size_override("font_size", 13)
 	control_bar.add_child(_page_label)
 
-	_btn_next = _create_action_button("Trang kế", Vector2(72, 28))
+	_btn_next = _create_action_button(tr("Trang kế"), Vector2(72, 28))
 	_btn_next.pressed.connect(_on_next_page)
 	control_bar.add_child(_btn_next)
 
-	_btn_cart = _create_action_button("Giỏ Hàng", Vector2(80, 28))
+	_btn_cart = _create_action_button(tr("Giỏ Hàng"), Vector2(80, 28))
 	_btn_cart.pressed.connect(_open_cart_dialog)
 	control_bar.add_child(_btn_cart)
 
@@ -288,7 +292,7 @@ func _refresh_ui() -> void:
 	_update_tab_styles()
 	var p := _get_active_profile()
 	var xu_val: int = p.xu if p else 0
-	_xu_label.text = "Tiền Xu: %d Xu" % xu_val
+	_xu_label.text = "%s: %d %s" % [tr("Tiền Xu"), xu_val, tr("Xu")]
 
 	var total_pages := KyTranCacShop.get_page_count(_active_tab)
 	_current_page = clampi(_current_page, 0, maxi(0, total_pages - 1))
@@ -297,7 +301,12 @@ func _refresh_ui() -> void:
 	_btn_next.disabled = (_current_page >= total_pages - 1)
 
 	var cart_cnt := KyTranCacShop.get_cart_count()
-	_btn_cart.text = "Giỏ Hàng (%d)" % cart_cnt if cart_cnt > 0 else "Giỏ Hàng"
+	_btn_cart.text = ("%s (%d)" % [tr("Giỏ Hàng"), cart_cnt]) if cart_cnt > 0 else tr("Giỏ Hàng")
+	_btn_prev.text = tr("Trước")
+	_btn_next.text = tr("Trang kế")
+	_btn_nap.text = tr("Nạp")
+	_tab_vat_pham.text = tr("Vật Phẩm")
+	_tab_tinh_nang.text = tr("Tính Năng")
 
 	_build_grid_items()
 
@@ -393,13 +402,13 @@ func _create_item_card(it_data: Dictionary) -> PanelContainer:
 	var price_orig_row := HBoxContainer.new()
 	price_orig_row.add_theme_constant_override("separation", 4)
 	var lbl_po := Label.new()
-	lbl_po.text = "Giá gốc:"
+	lbl_po.text = tr("Giá gốc:")
 	lbl_po.add_theme_font_size_override("font_size", 11)
 	lbl_po.add_theme_color_override("font_color", Color(0.65, 0.65, 0.62))
 	price_orig_row.add_child(lbl_po)
 
 	var val_po := Label.new()
-	val_po.text = "%d Xu" % price_orig
+	val_po.text = "%d %s" % [price_orig, tr("Xu")]
 	val_po.add_theme_font_size_override("font_size", 11)
 	val_po.add_theme_color_override("font_color", Color(0.45, 0.82, 0.95))
 	price_orig_row.add_child(val_po)
@@ -409,13 +418,13 @@ func _create_item_card(it_data: Dictionary) -> PanelContainer:
 	var price_real_row := HBoxContainer.new()
 	price_real_row.add_theme_constant_override("separation", 4)
 	var lbl_pr := Label.new()
-	lbl_pr.text = "Giá thực:"
+	lbl_pr.text = tr("Giá thực:")
 	lbl_pr.add_theme_font_size_override("font_size", 11)
 	lbl_pr.add_theme_color_override("font_color", Color(0.65, 0.65, 0.62))
 	price_real_row.add_child(lbl_pr)
 
 	var val_pr := Label.new()
-	val_pr.text = "%d Xu" % price_real
+	val_pr.text = "%d %s" % [price_real, tr("Xu")]
 	val_pr.add_theme_font_size_override("font_size", 11)
 	val_pr.add_theme_color_override("font_color", Color(0.45, 0.95, 0.55))
 	price_real_row.add_child(val_pr)
@@ -424,7 +433,7 @@ func _create_item_card(it_data: Dictionary) -> PanelContainer:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	price_real_row.add_child(spacer)
 
-	var buy_btn := _create_action_button("Mua", Vector2(48, 22))
+	var buy_btn := _create_action_button(tr("Mua"), Vector2(48, 22))
 	buy_btn.add_theme_font_size_override("font_size", 12)
 	buy_btn.pressed.connect(_open_buy_dialog.bind(it_data))
 	price_real_row.add_child(buy_btn)
@@ -482,7 +491,7 @@ func _create_empty_card() -> PanelContainer:
 	placeholder.text = ""
 	vbox.add_child(placeholder)
 
-	var btn_ghost := _create_action_button("Mua", Vector2(48, 22))
+	var btn_ghost := _create_action_button(tr("Mua"), Vector2(48, 22))
 	btn_ghost.disabled = true
 	btn_ghost.size_flags_horizontal = Control.SIZE_SHRINK_END
 	btn_ghost.modulate = Color(0.5, 0.5, 0.5, 0.3)
@@ -497,7 +506,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 	var price_real: int = int(it_data.get("price", 0))
 
 	var item_rec := ItemDatabase.get_misc(item_id)
-	var win := SocialWindow.new("Mua: %s" % item_name, "", 380.0)
+	var win := SocialWindow.new("%s: %s" % [tr("Mua"), item_name], "", 380.0)
 
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 10)
@@ -532,14 +541,14 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 
 	var info_h := HBoxContainer.new()
 	var price_lbl := Label.new()
-	price_lbl.text = "Đơn giá: %d Xu" % price_real
+	price_lbl.text = "%s: %d %s" % [tr("Đơn giá"), price_real, tr("Xu")]
 	price_lbl.add_theme_color_override("font_color", Color(0.35, 0.9, 0.5))
 	price_lbl.add_theme_font_size_override("font_size", 13)
 	price_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info_h.add_child(price_lbl)
 
 	var have_lbl := Label.new()
-	have_lbl.text = "Hiện có: %d Xu" % cur_xu
+	have_lbl.text = "%s: %d %s" % [tr("Hiện có"), cur_xu, tr("Xu")]
 	have_lbl.add_theme_color_override("font_color", Color(0.35, 0.85, 1.0))
 	have_lbl.add_theme_font_size_override("font_size", 13)
 	info_h.add_child(have_lbl)
@@ -551,7 +560,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 6)
 
 	var count_title := Label.new()
-	count_title.text = "Số lượng:"
+	count_title.text = tr("Số lượng:")
 	count_title.add_theme_font_size_override("font_size", 13)
 	row.add_child(count_title)
 
@@ -585,7 +594,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 		)
 		quick_row.add_child(q_btn)
 
-	var max_btn := SocialUi.small_button("Tối đa")
+	var max_btn := SocialUi.small_button(tr("Tối đa"))
 	max_btn.pressed.connect(func() -> void:
 		var max_affordable := cur_xu / maxi(1, price_real)
 		qty_input.text = str(clampi(max_affordable, 1, 99))
@@ -611,9 +620,9 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 		var t := qty_input.text.strip_edges()
 		var n: int = clampi(int(t) if t.is_valid_int() else 1, 1, 99)
 		var tot: int = n * price_real
-		total_lbl.text = "Tổng thanh toán: %d Xu" % tot
+		total_lbl.text = "%s: %d %s" % [tr("Tổng thanh toán"), tot, tr("Xu")]
 		if tot > cur_xu:
-			err_label.text = "Không đủ Tiền Xu (thiếu %d Xu). Nhấn 'Nạp' để nạp thêm." % [tot - cur_xu]
+			err_label.text = "%s (%s %d %s). %s" % [tr("Không đủ Tiền Xu"), tr("thiếu"), tot - cur_xu, tr("Xu"), tr("Nhấn 'Nạp' để nạp thêm.")]
 		else:
 			err_label.text = ""
 
@@ -635,7 +644,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 	# Hàng nút thao tác: "Mua ngay" | "Thêm vào giỏ" | "Huỷ"
 	var btn_row := win.add_button_row()
 
-	var buy_btn := SocialUi.stone_button("Mua ngay")
+	var buy_btn := SocialUi.stone_button(tr("Mua ngay"))
 	buy_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buy_btn.pressed.connect(func() -> void:
 		var t := qty_input.text.strip_edges()
@@ -655,7 +664,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 	)
 	btn_row.add_child(buy_btn)
 
-	var cart_btn := SocialUi.stone_button("Thêm vào giỏ")
+	var cart_btn := SocialUi.stone_button(tr("Thêm vào giỏ"))
 	cart_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cart_btn.pressed.connect(func() -> void:
 		var t := qty_input.text.strip_edges()
@@ -667,7 +676,7 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 	)
 	btn_row.add_child(cart_btn)
 
-	var cancel_btn := SocialUi.stone_button("Huỷ")
+	var cancel_btn := SocialUi.stone_button(tr("Huỷ"))
 	cancel_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cancel_btn.pressed.connect(func() -> void: win.close_requested.emit())
 	btn_row.add_child(cancel_btn)
@@ -676,12 +685,12 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 
 # ================= HỘP GIỎ HÀNG (CART DIALOG) =================
 func _open_cart_dialog() -> void:
-	var win := SocialWindow.new("Giỏ Hàng Kỳ Trân Các", "", 460.0)
+	var win := SocialWindow.new(tr("Giỏ Hàng Kỳ Trân Các"), "", 460.0)
 
 	var cart := KyTranCacShop.get_cart()
 	if cart.is_empty():
-		win.body.add_child(SocialUi.label("Giỏ hàng của bạn đang trống.", SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER))
-		var close_btn := SocialUi.stone_button("Đóng")
+		win.body.add_child(SocialUi.label(tr("Giỏ hàng của bạn đang trống."), SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER))
+		var close_btn := SocialUi.stone_button(tr("Đóng"))
 		close_btn.pressed.connect(func() -> void: win.close_requested.emit())
 		win.body.add_child(close_btn)
 		SocialWindow.present(self, win, &"ky_tran_cac_cart")
@@ -717,7 +726,7 @@ func _open_cart_dialog() -> void:
 
 	var btn_row := win.add_button_row()
 
-	var checkout_btn := SocialUi.stone_button("Thanh toán tất cả")
+	var checkout_btn := SocialUi.stone_button(tr("Thanh toán tất cả"))
 	checkout_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	checkout_btn.pressed.connect(func() -> void:
 		var res: Dictionary = KyTranCacShop.buy_cart(_get_active_profile())
@@ -735,7 +744,7 @@ func _open_cart_dialog() -> void:
 	)
 	btn_row.add_child(checkout_btn)
 
-	var clear_btn := SocialUi.stone_button("Xóa giỏ")
+	var clear_btn := SocialUi.stone_button(tr("Xóa giỏ"))
 	clear_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	clear_btn.pressed.connect(func() -> void:
 		KyTranCacShop.clear_cart()
@@ -745,7 +754,12 @@ func _open_cart_dialog() -> void:
 	)
 	btn_row.add_child(clear_btn)
 
-	var close_btn := SocialUi.stone_button("Đóng")
+	var close_btn := SocialUi.stone_button(tr("Đóng"))
+	close_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	close_btn.pressed.connect(func() -> void: win.close_requested.emit())
+	btn_row.add_child(close_btn)
+
+	SocialWindow.present(self, win, &"ky_tran_cac_cart")
 	close_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close_btn.pressed.connect(func() -> void: win.close_requested.emit())
 	btn_row.add_child(close_btn)

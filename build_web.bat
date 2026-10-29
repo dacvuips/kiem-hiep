@@ -38,6 +38,9 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+:: Toi uu tu dong co che CacheStorage, OPFS va phat hien In-App Browser cho file HTML
+python tools/patch_web_cache.py
+
 echo.
 echo ========================================================
 echo [OK] XUAT BAN THANH CONG!

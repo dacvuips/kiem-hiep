@@ -11,6 +11,9 @@ var _fallback_server: Node = null
 
 
 func _enter_tree() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+
 	# add autoload if not present
 	var setting := "autoload/" + AUTOLOAD_NAME
 	if not ProjectSettings.has_setting(setting):

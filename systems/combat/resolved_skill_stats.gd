@@ -67,6 +67,7 @@ var poison_interval_frames: int = 0
 var poison_tick_damage: int = 0
 var stun_chance_p: int = 0
 var stun_frames: int = 0
+var ignore_defense_percent: int = 0
 ## Bùa (skill nhắm địch chỉ mang trạng thái): đạn trúng thì áp trạng thái này lên mục tiêu, không damage.
 var is_state_only: bool = false
 var state_source_id: String = ""
@@ -100,6 +101,7 @@ func make_hit_mods(attacker_node: Node, is_melee: bool = false) -> CombatFormula
 	mods.poison_tick_damage = poison_tick_damage
 	mods.stun_chance_p = stun_chance_p
 	mods.stun_frames = stun_frames
+	mods.ignore_defense_percent = ignore_defense_percent
 	mods.is_state_only = is_state_only
 	mods.state_source_id = state_source_id
 	mods.state_attribs = state_attribs

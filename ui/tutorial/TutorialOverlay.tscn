@@ -1,0 +1,643 @@
+[gd_scene format=3 uid="uid://c6tutoria10verlay"]
+
+[ext_resource type="Script" path="res://ui/tutorial/tutorial_overlay.gd" id="1_script"]
+[ext_resource type="FontFile" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="2_font"]
+
+[sub_resource type="StyleBoxFlat" id="panel_wuxia_dialog"]
+content_margin_left = 24.0
+content_margin_top = 22.0
+content_margin_right = 24.0
+content_margin_bottom = 22.0
+bg_color = Color(0.02, 0.08, 0.1, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.78, 0.42, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="panel_callout"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(0.015, 0.07, 0.09, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.82, 0.42, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 10
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="btn_gold_normal"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.92, 0.72, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.92, 0.55, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 3
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="btn_gold_hover"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 0.82, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.96, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.95, 0.75, 0.2, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_gold_pressed"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.78, 0.58, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.68, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_dark_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.06, 0.18, 0.2, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.42, 0.24, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_dark_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.1, 0.26, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.38, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="btn_dark_pressed"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.04, 0.12, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.32, 0.18, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxEmpty" id="style_empty"]
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_gold_normal"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.92, 0.72, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.92, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_gold_hover"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(1, 0.82, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.96, 0.7, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_gold_pressed"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.78, 0.58, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.68, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_dark_normal"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.06, 0.18, 0.2, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.42, 0.24, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_dark_hover"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.1, 0.26, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.72, 0.38, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_dark_pressed"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.04, 0.12, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.32, 0.18, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="btn_nav_dark_disabled"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.03, 0.08, 0.1, 0.5)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.22, 0.18, 0.3)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="TutorialOverlay" type="CanvasLayer"]
+layer = 125
+script = ExtResource("1_script")
+
+[node name="DimControl" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="WelcomeDialog" type="PanelContainer" parent="DimControl"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -175.0
+offset_right = 270.0
+offset_bottom = 175.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("panel_wuxia_dialog")
+
+[node name="VBox" type="VBoxContainer" parent="DimControl/WelcomeDialog"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleBox" type="HBoxContainer" parent="DimControl/WelcomeDialog/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="DimControl/WelcomeDialog/VBox/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "❖ HƯỚNG DẪN TÂN THỦ ❖"
+horizontal_alignment = 1
+
+[node name="Sep1" type="HSeparator" parent="DimControl/WelcomeDialog/VBox"]
+layout_mode = 2
+
+[node name="IntroDesc" type="Label" parent="DimControl/WelcomeDialog/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.92, 0.92, 1)
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Chào mừng Đại Hiệp bước chân vào chốn Võ Lâm Giang Hồ!
+Để hành trình bôn tẩu thuận buồm xuôi gió, bổn trang xin phép hướng dẫn từng tính năng trọng yếu:
+  • Bảng Thuộc Tính & Điểm Tiềm Năng
+  • Rương Hành Trang & 12 Ô Trang Bị
+  • Tuyệt Kỹ Võ Công Môn Phái Ngũ Hành
+  • Lịch Trình Hoạt Động & Sự Kiện Lớn
+  • Kỳ Trân Các & Dự Trữ Dược Phẩm
+  • Khiêu Chiến Vượt Ải Bôn Tẩu Xuất Chinh
+
+Đại hiệp có muốn bắt đầu tìm hiểu ngay bây giờ không?"
+autowrap_mode = 2
+
+[node name="Sep2" type="HSeparator" parent="DimControl/WelcomeDialog/VBox"]
+layout_mode = 2
+
+[node name="ButtonBox" type="HBoxContainer" parent="DimControl/WelcomeDialog/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="BtnStartIntro" type="Button" parent="DimControl/WelcomeDialog/VBox/ButtonBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.15, 0.08, 0.01, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.04, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_gold_normal")
+theme_override_styles/hover = SubResource("btn_gold_hover")
+theme_override_styles/pressed = SubResource("btn_gold_pressed")
+text = "⚔️ BẮT ĐẦU HƯỚNG DẪN"
+
+[node name="BtnSkipIntro" type="Button" parent="DimControl/WelcomeDialog/VBox/ButtonBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_dark_normal")
+theme_override_styles/hover = SubResource("btn_dark_hover")
+theme_override_styles/pressed = SubResource("btn_dark_pressed")
+text = "✕ TÔI ĐÃ HIỂU RỒI"
+
+[node name="CalloutBox" type="PanelContainer" parent="DimControl"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_top = 80.0
+offset_right = 440.0
+offset_bottom = 340.0
+theme_override_styles/panel = SubResource("panel_callout")
+
+[node name="VBox" type="VBoxContainer" parent="DimControl/CalloutBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderBox" type="HBoxContainer" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="IconDeco" type="Label" parent="DimControl/CalloutBox/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.82, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "❖"
+
+[node name="TitleLabel" type="Label" parent="DimControl/CalloutBox/VBox/HeaderBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.92, 0.5, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 15
+text = "HÀNH TRANG & TRANG BỊ"
+
+[node name="StepLabel" type="Label" parent="DimControl/CalloutBox/VBox/HeaderBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.78, 0.6, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+text = "Bước 1/6"
+
+[node name="BtnCloseStep" type="Button" parent="DimControl/CalloutBox/VBox/HeaderBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.8, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("style_empty")
+theme_override_styles/hover = SubResource("style_empty")
+theme_override_styles/pressed = SubResource("style_empty")
+theme_override_styles/focus = SubResource("style_empty")
+text = "✕ Bỏ qua"
+
+[node name="Sep" type="HSeparator" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+
+[node name="SectionWhat" type="VBoxContainer" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TagWhat" type="Label" parent="DimControl/CalloutBox/VBox/SectionWhat"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.85, 0.92, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+text = "【CÁI NÀY LÀ CÁI GÌ】"
+
+[node name="WhatLabel" type="Label" parent="DimControl/CalloutBox/VBox/SectionWhat"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+text = "Khu vực chứa trang bị và rương hành trang của nhân vật."
+autowrap_mode = 2
+
+[node name="SectionTodo" type="VBoxContainer" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TagTodo" type="Label" parent="DimControl/CalloutBox/VBox/SectionTodo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.82, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+text = "【LÀM GÌ】"
+
+[node name="TodoLabel" type="Label" parent="DimControl/CalloutBox/VBox/SectionTodo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.9, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+text = "Nhấp vào nút [Trang Bị] để mở rương đồ."
+autowrap_mode = 2
+
+[node name="SectionWhere" type="VBoxContainer" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TagWhere" type="Label" parent="DimControl/CalloutBox/VBox/SectionWhere"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+text = "【ĐI ĐÂU】"
+
+[node name="WhereLabel" type="Label" parent="DimControl/CalloutBox/VBox/SectionWhere"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.88, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+text = "Mặc và cường hoá trang bị giúp tăng mạnh Lực Chiến."
+autowrap_mode = 2
+
+[node name="SepFooter" type="HSeparator" parent="DimControl/CalloutBox/VBox"]
+layout_mode = 2
+
+[node name="HintFooter" type="Label" parent="DimControl/CalloutBox/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+text = "👉 Bắt buộc nhấp vào vùng sáng để trải nghiệm!"
+horizontal_alignment = 1
+
+[node name="NavControlBox" type="HBoxContainer" parent="DimControl/CalloutBox/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BtnPrevStep" type="Button" parent="DimControl/CalloutBox/VBox/NavControlBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.85, 1)
+theme_override_colors/font_disabled_color = Color(0.45, 0.42, 0.38, 0.6)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("btn_nav_dark_normal")
+theme_override_styles/hover = SubResource("btn_nav_dark_hover")
+theme_override_styles/pressed = SubResource("btn_nav_dark_pressed")
+theme_override_styles/disabled = SubResource("btn_nav_dark_disabled")
+text = "◀ Trước"
+
+[node name="BtnNextStep" type="Button" parent="DimControl/CalloutBox/VBox/NavControlBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.15, 0.08, 0.01, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.04, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("btn_nav_gold_normal")
+theme_override_styles/hover = SubResource("btn_nav_gold_hover")
+theme_override_styles/pressed = SubResource("btn_nav_gold_pressed")
+text = "Tiếp theo ▶"
+
+[node name="BtnDismiss" type="Button" parent="DimControl/CalloutBox/VBox/NavControlBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.75, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("btn_nav_dark_normal")
+theme_override_styles/hover = SubResource("btn_nav_dark_hover")
+theme_override_styles/pressed = SubResource("btn_nav_dark_pressed")
+text = "✕ Đóng"
+
+[node name="PointerArrow" type="Control" parent="DimControl"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 0
+offset_right = 24.0
+offset_bottom = 24.0
+mouse_filter = 2
+
+[node name="ArrowLabel" type="Label" parent="DimControl/PointerArrow"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -12.0
+offset_top = -14.0
+offset_right = 12.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "➔"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CompletionDialog" type="PanelContainer" parent="DimControl"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -140.0
+offset_right = 250.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("panel_wuxia_dialog")
+
+[node name="VBox" type="VBoxContainer" parent="DimControl/CompletionDialog"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleBox" type="HBoxContainer" parent="DimControl/CompletionDialog/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="DimControl/CompletionDialog/VBox/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.85, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "❖ CHÚC MỪNG ĐẠI HIỆP ❖"
+horizontal_alignment = 1
+
+[node name="Sep1" type="HSeparator" parent="DimControl/CompletionDialog/VBox"]
+layout_mode = 2
+
+[node name="CompDesc" type="Label" parent="DimControl/CompletionDialog/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_constants/line_spacing = 4
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Đại Hiệp đã nắm vững toàn bộ các tính năng cơ bản của JX1 Idle Origin!
+
+Giang hồ hiểm nguy nhưng đầy vinh quang đang chờ đón bước chân của Đại Hiệp. Hãy cầm kiếm lên và xuất chinh!
+
+(Đại hiệp có thể mở lại hướng dẫn bất cứ lúc nào qua nút 'Hướng Dẫn' ở góc dưới màn hình)."
+autowrap_mode = 2
+
+[node name="Sep2" type="HSeparator" parent="DimControl/CompletionDialog/VBox"]
+layout_mode = 2
+
+[node name="BtnFinish" type="Button" parent="DimControl/CompletionDialog/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.15, 0.08, 0.01, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.04, 0, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("btn_gold_normal")
+theme_override_styles/hover = SubResource("btn_gold_hover")
+theme_override_styles/pressed = SubResource("btn_gold_pressed")
+text = "⚔️ BẮT ĐẦU BÔN TẨU GIANG HỒ"

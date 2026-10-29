@@ -271,18 +271,18 @@ static func get_mask_appearance_info(mask_particular: int, default_gender: Strin
 			info["modulate"] = Color(0.88, 0.90, 0.98, 1.0)
 	return info
 
-static func get_appearance(equipped: Dictionary, gender: String = "male", riding: bool = true) -> Dictionary:
+static func get_appearance(equipped: Dictionary, gender: String = "male", riding: bool = true, show_mask: bool = true) -> Dictionary:
 	var mask_item: ItemInstance = equipped.get(Part.MASK)
-	var is_masked: bool = (mask_item != null)
+	var is_masked: bool = (mask_item != null) and show_mask
 	var mask_particular := -1
 	if is_masked:
 		var m_base := mask_item.get_base()
 		mask_particular = int(m_base.get("particular", 0))
 
 	var mask_info := get_mask_appearance_info(mask_particular, gender)
-	var disguise_title: String = mask_info["disguise_title"]
-	var target_gender: String = mask_info["gender"]
-	var mask_modulate: Color = mask_info["modulate"]
+	var disguise_title: String = mask_info["disguise_title"] if is_masked else ""
+	var target_gender: String = mask_info["gender"] if is_masked else gender
+	var mask_modulate: Color = mask_info["modulate"] if is_masked else Color.WHITE
 
 	var data := AvatarData.get_for(target_gender)
 	var result := {
@@ -295,8 +295,8 @@ static func get_appearance(equipped: Dictionary, gender: String = "male", riding
 		"disguise_title": disguise_title,
 		"modulate": mask_modulate,
 		"mask_particular": mask_particular,
-		"mask_name": mask_item.get_display_name() if mask_item else "",
-		"mask_icon": mask_item.get_icon() if mask_item else null,
+		"mask_name": mask_item.get_display_name() if (mask_item and is_masked) else "",
+		"mask_icon": mask_item.get_icon() if (mask_item and is_masked) else null,
 	}
 
 	for part in [Part.HEAD, Part.BODY, Part.WEAPON, Part.HORSE]:

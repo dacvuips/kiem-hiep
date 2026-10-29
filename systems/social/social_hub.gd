@@ -63,6 +63,8 @@ func start_trade_by_id(player_id: int) -> String:
 			return "Không thể giao dịch với chính mình."
 		NetClient.send_trade_request_id(player_id)
 		return "online"
+	if NetWorldSync.is_online_mode():
+		return "Chưa kết nối máy chủ thế giới (hoặc đang kết nối lại)."
 	var partner := SocialDirectory.find_by_id(profile, player_id)
 	if partner == null:
 		return "Không tìm thấy người chơi có ID %d (hoặc đang không trực tuyến)." % player_id
@@ -73,8 +75,8 @@ func start_trade_by_id(player_id: int) -> String:
 func tick(delta: float) -> void:
 	if trade != null and trade.active:
 		trade.tick(delta)
-	if NetClient.is_in_world():
-		return   ## online: khách mua hàng / người xin vào là người thật (server báo) — không giả lập
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return   ## online: khách mua hàng / người xin vào là người thật (server báo) — tuyệt đối không giả lập
 	if team.is_captain():
 		_team_clock += delta
 		if _team_clock >= 9.0:

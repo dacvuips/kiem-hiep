@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b5x8k2a27361"]
+
+[ext_resource type="Script" path="res://tests/test_all_boss_maps.gd" id="1_test"]
+
+[node name="TestAllBossMaps" type="Node"]
+script = ExtResource("1_test")

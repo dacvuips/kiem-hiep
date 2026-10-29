@@ -10,9 +10,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	# Switch to Trang Bị (Inventory view)
-	if hub.has_node("%NavButton1"):
-		var nav1: Button = hub.get_node("%NavButton1")
-		nav1.pressed.emit()
+	if hub.has_method("_set_view"):
+		hub._set_view("equipment")
 		for i in 3:
 			await get_tree().process_frame
 

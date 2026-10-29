@@ -57,13 +57,20 @@ func _ready() -> void:
 	assert(GmManager.banned_players.has(target_p["id"]), "Người chơi phải có trong danh sách khóa nick")
 	print("PASS: Đổi tên, cấm chat và khóa nick hoạt động tốt")
 
-	# 6. Kiểm tra cấp đồ & tiền
+	# 6. Kiểm tra cấp đồ & tiền và phát tín hiệu cập nhật tức thì (profile_modified)
 	var initial_gold: int = GameManager.local_profile.gold
 	var initial_xu: int = GameManager.local_profile.xu
+	var signal_emitted := [false]
+	var signal_cb := func(p: PlayerProfile) -> void:
+		if p == GameManager.local_profile:
+			signal_emitted[0] = true
+	GmManager.profile_modified.connect(signal_cb)
 	GmManager.give_resources(GameManager.local_profile, 5000000, 1000, 100, 100, 5000)
 	assert(GameManager.local_profile.gold == initial_gold + 5000000, "Cấp tiền phải cộng chính xác")
 	assert(GameManager.local_profile.xu == initial_xu + 5000, "Cấp Tiền Xu phải cộng chính xác")
 	assert(GameManager.local_profile.jade >= 1000, "Cấp KNB phải cộng chính xác")
+	assert(signal_emitted[0] == true, "profile_modified signal phải được phát để UI cập nhật ngay lập tức")
+	GmManager.profile_modified.disconnect(signal_cb)
 
 	var test_item := ItemGenerator.generate(ItemDatabase.Detail.MELEE, 0, 5, 0, [5, 5])
 	var give_ok := GmManager.give_item(GameManager.local_profile, test_item)

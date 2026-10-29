@@ -21,7 +21,7 @@ static func reset() -> void:
 	_owner_key = ""
 
 static func players(profile: PlayerProfile) -> Array[MockPlayer]:
-	if NetClient.is_in_world():   ## online: người thật trong tầm nhìn; ở sảnh Hub (không đứng trên map) thì không có ai
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
 		var none: Array[MockPlayer] = []
 		return NetWorldSync.current.nearby_players() if NetWorldSync.current != null else none
 	var key := "%s|%d" % [profile.display_name, profile.level / 10]
@@ -40,6 +40,9 @@ static func find_by_id(profile: PlayerProfile, player_id: int) -> MockPlayer:
 	for p in players(profile):
 		if p.id == player_id:
 			return p
+	# Chế độ Online: Tuyệt đối KHÔNG sinh người chơi giả / vật phẩm ảo
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return null
 	# Nếu người chơi không nằm trong danh sách quanh đây (offline / vắng mặt):
 	# Vẫn tạo/tìm thấy người chơi theo ID để cho phép giao dịch/mua bán kể cả khi offline
 	if player_id > 0:
@@ -78,6 +81,8 @@ static func guild_members(profile: PlayerProfile, guild_name: String) -> Array[M
 	return out
 
 static func _generate(profile: PlayerProfile) -> Array[MockPlayer]:
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(profile.display_name) ^ 0x5EED
 	var sects := SectRegistry.load_all()

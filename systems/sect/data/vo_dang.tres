@@ -28,6 +28,7 @@
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/vo_dang_kiem_vu_dieu_nguyet.png" id="vicon_vo_dang_kiem_vu_dieu_nguyet"]
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/vo_dang_tao_hoa_thai_thanh_va_cham.png" id="vicon_vo_dang_tao_hoa_thai_thanh_va_cham"]
 [ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/vo_dang_xuat_u_bat_nhiem_hieu_ung.png" id="vicon_vo_dang_xuat_u_bat_nhiem_hieu_ung"]
+[ext_resource type="Texture2D" path="res://assets/skill_icons/vltk/vo_dang_chan_vo_that_tiet.png" id="vicon_vo_dang_chan_vo_that_tiet"]
 
 [sub_resource type="Resource" id="SubResource_1"]
 script = ExtResource("3_statline")
@@ -45,24 +46,30 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_3"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Thiên Địa Vô Cực"
 value_at_level_1 = 1.0
 value_at_max_level = 110.0
 suffix = "%"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
 
 [sub_resource type="Resource" id="SubResource_4"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Vô Ngã Vô Kiếm"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
+target_skill_id = "vo_dang_vo_nga_vo_kiem"
+target_skill_id = "vo_dang_vo_nga_vo_kiem"
 
 [sub_resource type="Resource" id="SubResource_5"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #3"
+label = "Tăng sát thương Tạo Hóa Thái Thanh"
 value_at_level_1 = 1.0
 value_at_max_level = 92.0
 suffix = "%"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
 
 [sub_resource type="Resource" id="SubResource_6"]
 script = ExtResource("3_statline")
@@ -237,24 +244,30 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_18"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Nhân Kiếm Hợp Nhất"
 value_at_level_1 = 1.0
 value_at_max_level = 60.0
 suffix = "%"
+target_skill_id = "vo_dang_nhan_kiem_hop_nhat"
+target_skill_id = "vo_dang_nhan_kiem_hop_nhat"
 
 [sub_resource type="Resource" id="SubResource_19"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Tam Hoàn Thao Nguyệt"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
+target_skill_id = "vo_dang_tam_hoan_thao_nguyet"
+target_skill_id = "vo_dang_tam_hoan_thao_nguyet"
 
 [sub_resource type="Resource" id="SubResource_20"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #3"
+label = "Tăng sát thương Kiếm Thùy Tinh Hà"
 value_at_level_1 = 1.0
 value_at_max_level = 52.0
 suffix = "%"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
 
 [sub_resource type="Resource" id="SubResource_21"]
 script = ExtResource("3_statline")
@@ -370,17 +383,23 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_29"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Huyền Nhất Vô Tượng"
 value_at_level_1 = 3.0
 value_at_max_level = 268.0
 suffix = "%"
+target_skill_id = "vo_dang_huyen_nhat_vo_tuong"
+target_skill_id = "vo_dang_huyen_nhat_vo_tuong"
+vltk_skill_id = 162
 
 [sub_resource type="Resource" id="SubResource_30"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Kiếm Minh Thương Khung"
 value_at_level_1 = 1.0
 value_at_max_level = 220.0
 suffix = "%"
+target_skill_id = "vo_dang_kiem_minh_thuong_khung"
+target_skill_id = "vo_dang_kiem_minh_thuong_khung"
+vltk_skill_id = 1107
 
 [sub_resource type="Resource" id="SubResource_31"]
 script = ExtResource("3_statline")
@@ -538,17 +557,21 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_41"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Thiên Địa Vô Cực"
 value_at_level_1 = 1.0
 value_at_max_level = 120.0
 suffix = "%"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
 
 [sub_resource type="Resource" id="SubResource_42"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Tạo Hóa Thái Thanh"
 value_at_level_1 = 1.0
 value_at_max_level = 100.0
 suffix = "%"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
 
 [sub_resource type="Resource" id="SubResource_43"]
 script = ExtResource("3_statline")
@@ -616,17 +639,21 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_48"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Thiên Địa Vô Cực"
 value_at_level_1 = 3.0
 value_at_max_level = 130.0
 suffix = "%"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
+target_skill_id = "vo_dang_thien_dia_vo_cuc"
 
 [sub_resource type="Resource" id="SubResource_49"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Tạo Hóa Thái Thanh"
 value_at_level_1 = 1.0
 value_at_max_level = 108.0
 suffix = "%"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
 
 [sub_resource type="Resource" id="SubResource_50"]
 script = ExtResource("3_statline")
@@ -782,17 +809,21 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_63"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Nhân Kiếm Hợp Nhất"
 value_at_level_1 = 1.0
 value_at_max_level = 125.0
 suffix = "%"
+target_skill_id = "vo_dang_nhan_kiem_hop_nhat"
+target_skill_id = "vo_dang_nhan_kiem_hop_nhat"
 
 [sub_resource type="Resource" id="SubResource_64"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #2"
+label = "Tăng sát thương Kiếm Thùy Tinh Hà"
 value_at_level_1 = 1.0
 value_at_max_level = 105.0
 suffix = "%"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
 
 [sub_resource type="Resource" id="SubResource_65"]
 script = ExtResource("3_statline")
@@ -858,10 +889,12 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_69"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Tạo Hóa Thái Thanh"
 value_at_level_1 = 1.0
 value_at_max_level = 60.0
 suffix = "%"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
+target_skill_id = "vo_dang_tao_hoa_thai_thanh"
 
 [sub_resource type="Resource" id="SubResource_70"]
 script = ExtResource("3_statline")
@@ -932,6 +965,7 @@ suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_75"]
 script = ExtResource("2_skill")
 id = "vo_dang_kiem_khi_tung_hoanh"
+vltk_skill_id = 367
 skill_name = "Kiếm Khí Tung Hoành"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_kiem_khi_tung_hoanh")
@@ -981,6 +1015,7 @@ suffix = "%"
 [sub_resource type="Resource" id="SubResource_78"]
 script = ExtResource("2_skill")
 id = "vo_dang_thai_cuc_vo_y"
+vltk_skill_id = 366
 skill_name = "Thái Cực Vô Ý"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_thai_cuc_vo_y")
@@ -1030,6 +1065,7 @@ suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_81"]
 script = ExtResource("2_skill")
 id = "vo_dang_no_loi_lien_hoan_kich"
+vltk_skill_id = 377
 skill_name = "Nộ Lôi Liên Hoàn Kích"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_no_loi_lien_hoan_kich")
@@ -1106,10 +1142,12 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_88"]
 script = ExtResource("3_statline")
-label = "Tăng sát thương kỹ năng liên kết #1"
+label = "Tăng sát thương Kiếm Thùy Tinh Hà"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
 suffix = "%"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
+target_skill_id = "vo_dang_kiem_thuy_tinh_ha"
 
 [sub_resource type="Resource" id="SubResource_89"]
 script = ExtResource("3_statline")
@@ -1178,6 +1216,7 @@ suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_93"]
 script = ExtResource("2_skill")
 id = "vo_dang_huyen_nhat_vo_tuong"
+vltk_skill_id = 162
 skill_name = "Huyền Nhất Vô Tượng"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_huyen_nhat_vo_tuong")
@@ -1219,6 +1258,7 @@ suffix = "%"
 [sub_resource type="Resource" id="SubResource_95"]
 script = ExtResource("2_skill")
 id = "vo_dang_thai_cuc_kiem_y"
+vltk_skill_id = 371
 skill_name = "Thái Cực Kiếm Ý"
 is_hidden = true
 description = "Chiêu thức phụ trợ tăng 2 kiếm, kiếm ý thái cực gây choáng."
@@ -1477,6 +1517,7 @@ suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_115"]
 script = ExtResource("2_skill")
 id = "vo_dang_kiem_minh_thuong_khung"
+vltk_skill_id = 1107
 skill_name = "Kiếm Minh Thương Khung"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_kiem_minh_thuong_khung")
@@ -1548,6 +1589,7 @@ suffix = "%"
 [sub_resource type="Resource" id="SubResource_121"]
 script = ExtResource("2_skill")
 id = "vo_dang_kiem_vu_dieu_nguyet"
+vltk_skill_id = 1105
 skill_name = "Kiếm Vũ Diệu Nguyệt"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_kiem_vu_dieu_nguyet")
@@ -1586,6 +1628,7 @@ stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_116"), S
 [sub_resource type="Resource" id="SubResource_122"]
 script = ExtResource("2_skill")
 id = "vo_dang_tao_hoa_thai_thanh_va_cham"
+vltk_skill_id = 1087
 skill_name = "Tạo Hóa Thái Thanh (Va Chạm)"
 icon = ExtResource("vicon_vo_dang_tao_hoa_thai_thanh_va_cham")
 description = "Hiệu ứng va chạm phụ của Tạo Hóa Thái Thanh khi kiếm khí chạm mục tiêu. Chưa rõ công thức đầy đủ từ tài liệu gốc (chỉ có cờ sự kiện, không có block số liệu riêng), cần cân bằng lại."
@@ -1644,6 +1687,7 @@ suffix = " giây"
 [sub_resource type="Resource" id="SubResource_126"]
 script = ExtResource("2_skill")
 id = "vo_dang_xuat_u_bat_nhiem_hieu_ung"
+vltk_skill_id = 738
 skill_name = "Xuất Ứ Bất Nhiễm (Hiệu Ứng Miễn Nhiễm)"
 icon = ExtResource("vicon_vo_dang_xuat_u_bat_nhiem_hieu_ung")
 description = "Hiệu ứng phụ của Xuất Ứ Bất Nhiễm, miễn trạng thái bất lợi và giảm thời gian hồi chiêu."
@@ -1676,6 +1720,73 @@ element = 2
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_123"), SubResource("SubResource_124"), SubResource("SubResource_125")])
 
+
+[sub_resource type="Resource" id="SubResource_127"]
+script = ExtResource("3_statline")
+label = "Sát thương chuyển hóa thành nội lực"
+value_at_level_1 = 50.0
+value_at_max_level = 200.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_128"]
+script = ExtResource("3_statline")
+label = "Thời gian duy trì"
+value_at_level_1 = 5.0
+value_at_max_level = 15.0
+suffix = " giây"
+
+[sub_resource type="Resource" id="SubResource_129"]
+script = ExtResource("3_statline")
+label = "Tỷ lệ kích hoạt"
+value_at_level_1 = 3.0
+value_at_max_level = 10.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_130"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 20.0
+value_at_max_level = 50.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_131"]
+script = ExtResource("2_skill")
+id = "vo_dang_chan_vo_that_tiet"
+skill_name = "Chân Võ Thất Tiết"
+practice_only = true
+max_level = 20
+target_enemy = false
+target_ally = false
+target_self = true
+is_aura = false
+vltk_is_physical = 0
+vltk_missle_form = 7
+vltk_attack_radius = 0
+vltk_state_special_id = 0
+vltk_damage_range = 0
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"damage2addmana_p": [PackedFloat32Array(1, 50, 0, 20, 200, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)],
+"autoreplyskill": [PackedFloat32Array(1, 316929, 0, 20, 316948, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 50, 0)]
+}
+req_level = 180
+vltk_skill_id = 1228
+icon = ExtResource("vicon_vo_dang_chan_vo_that_tiet")
+description = "Kỹ năng thất truyền của phái Võ Đang, dùng Thái Cực chuyển hóa sát thương gánh chịu thành nội lực bảo hộ bản thân."
+school_text = "Hỗ trợ chủ động (Thất truyền 180)"
+is_active = true
+category = 0
+base_damage = 0.0
+mana_cost = 0.0
+cooldown = 20.0
+range = 0.0
+element = 4
+damage_growth_per_level = 0.0
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_127"), SubResource("SubResource_128"), SubResource("SubResource_129"), SubResource("SubResource_130")])
+is_hotbar = true
+
 [resource]
 script = ExtResource("1_sect")
 id = "vo_dang"
@@ -1683,4 +1794,4 @@ sect_name = "Võ Đang"
 element = 4
 alignment = 0
 description = "Danh môn chính phái trên núi Võ Đang, đạo gia tu luyện lấy nhu khắc cương, tinh thông kiếm pháp, chỉ pháp và nội công Thái Cực dẫn động sấm sét."
-skills = Array[ExtResource("2_skill")]([SubResource("SubResource_7"), SubResource("SubResource_22"), SubResource("SubResource_14"), SubResource("SubResource_11"), SubResource("SubResource_35"), SubResource("SubResource_44"), SubResource("SubResource_32"), SubResource("SubResource_37"), SubResource("SubResource_25"), SubResource("SubResource_51"), SubResource("SubResource_66"), SubResource("SubResource_56"), SubResource("SubResource_72"), SubResource("SubResource_90"), SubResource("SubResource_98"), SubResource("SubResource_103"), SubResource("SubResource_111"), SubResource("SubResource_75"), SubResource("SubResource_78"), SubResource("SubResource_81"), SubResource("SubResource_93"), SubResource("SubResource_95"), SubResource("SubResource_115"), SubResource("SubResource_121"), SubResource("SubResource_126"), SubResource("SubResource_122")])
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_7"), SubResource("SubResource_22"), SubResource("SubResource_14"), SubResource("SubResource_11"), SubResource("SubResource_35"), SubResource("SubResource_44"), SubResource("SubResource_32"), SubResource("SubResource_37"), SubResource("SubResource_25"), SubResource("SubResource_51"), SubResource("SubResource_66"), SubResource("SubResource_56"), SubResource("SubResource_72"), SubResource("SubResource_90"), SubResource("SubResource_98"), SubResource("SubResource_103"), SubResource("SubResource_111"), SubResource("SubResource_75"), SubResource("SubResource_78"), SubResource("SubResource_81"), SubResource("SubResource_93"), SubResource("SubResource_95"), SubResource("SubResource_115"), SubResource("SubResource_121"), SubResource("SubResource_126"), SubResource("SubResource_122"), SubResource("SubResource_131")])

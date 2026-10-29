@@ -5,7 +5,6 @@
 [ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
 [ext_resource type="Script" path="res://ui/character_hub/character_hub.gd" id="hub_script"]
 [ext_resource type="Script" path="res://systems/avatar/character_avatar.gd" id="avatar_script"]
-[ext_resource type="PackedScene" path="res://ui/debug/DebugCheatPanel.tscn" id="debug_cheat"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/xu_vang_va_nut_cong.png" id="cur_gold"]
 [ext_resource type="Texture2D" uid="uid://hy2t28lduct7" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/dong_tien_vang_va_nut_cong.png" id="cur_coin_gold"]
@@ -32,7 +31,6 @@
 
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut_pk.png" id="btn_pk_tex"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut-vuot-ai.png" id="btn_va_tex"]
-[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/nut_bam/nut_lv1.png" id="btn_lv_tex"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_nhan_vat.png" id="ico_nv"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/menu/icon_nhiem_vu.png" id="ico_nv_quest"]
@@ -55,10 +53,6 @@
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/giay.png" id="eq_giay"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/vu_khi.png" id="eq_vk"]
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/vat_pham.png" id="eq_vp"]
-[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/khung_tai_nguyen.png" id="khung_tai_nguyen"]
-[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_vang.png" id="ico_vang"]
-[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_ngoc.png" id="ico_ngoc"]
-[ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/btn_cong.png" id="btn_cong"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_chat_msg.png" id="ico_chat_msg"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
 
@@ -380,6 +374,30 @@ shadow_size = 4
 shadow_color = Color(0.85, 0.5, 0.05, 0.6)
 shadow_size = 10
 
+[sub_resource type="StyleBoxFlat" id="gm_btn_normal"]
+bg_color = Color(0.14, 0.11, 0.04, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.25, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="gm_btn_hover"]
+bg_color = Color(0.24, 0.18, 0.06, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.4, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [sub_resource type="StyleBoxFlat" id="nav_btn_normal"]
 content_margin_left = 12.0
 content_margin_right = 8.0
@@ -518,22 +536,23 @@ expand_horizontal = true
 [node name="TopBar" type="Control" parent="Stage"]
 anchors_preset = 0
 offset_right = 1280.0
-offset_bottom = 60.0
+offset_bottom = 64.0
 mouse_filter = 2
 
 [node name="PlayButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
-offset_top = 14.0
-offset_right = 148.0
-offset_bottom = 54.0
+offset_top = 2.0
+offset_right = 158.0
+offset_bottom = 62.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pk_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="PlayLabel" type="Label" parent="Stage/TopBar/PlayButton"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -550,22 +569,23 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 17
-text = "PK"
+text = ""
 vertical_alignment = 1
 
 [node name="ChallengeButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 158.0
-offset_top = 14.0
-offset_right = 288.0
-offset_bottom = 54.0
+offset_left = 168.0
+offset_top = 2.0
+offset_right = 308.0
+offset_bottom = 62.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_va_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="ChallengeLabel" type="Label" parent="Stage/TopBar/ChallengeButton"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -582,7 +602,7 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 17
-text = "Vượt Ải"
+text = ""
 vertical_alignment = 1
 
 [node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
@@ -1532,7 +1552,7 @@ layout_mode = 0
 offset_left = 12.0
 offset_top = 36.0
 offset_right = 515.0
-offset_bottom = 530.0
+offset_bottom = 574.0
 theme_override_constants/separation = 10
 
 [node name="GridFrame" type="PanelContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body"]
@@ -1691,162 +1711,7 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Tạo Đồ (TEST)"
 
-[node name="TestAddButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 27)
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("inv_btn_wuxia")
-theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "+10 Đồ (TEST)"
 
-[node name="TestMaskButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 27)
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("inv_btn_wuxia")
-theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "+Mặt Nạ (TEST)"
-
-[node name="TestMantleButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 27)
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("inv_btn_wuxia")
-theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "+Phi Phong (TEST)"
-
-
-[node name="BottomMoneyBar" type="HBoxContainer" parent="Stage/LeftPanel/InventoryView/InvBox"]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 536.0
-offset_right = 515.0
-offset_bottom = 574.0
-theme_override_constants/separation = 16
-
-[node name="FrameGold" type="NinePatchRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar"]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("khung_tai_nguyen")
-patch_margin_left = 10
-patch_margin_top = 10
-patch_margin_right = 10
-patch_margin_bottom = 10
-
-[node name="GoldIcon" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 6.0
-offset_top = -14.0
-offset_right = 34.0
-offset_bottom = 14.0
-grow_vertical = 2
-texture = ExtResource("ico_vang")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PlusBtn" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -30.0
-offset_top = -13.0
-offset_right = -8.0
-offset_bottom = 13.0
-grow_horizontal = 0
-grow_vertical = 2
-texture = ExtResource("btn_cong")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="InvGoldLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameGold"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 34.0
-offset_right = -30.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "0 Lượng"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="FrameJade" type="NinePatchRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar"]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-size_flags_horizontal = 3
-texture = ExtResource("khung_tai_nguyen")
-patch_margin_left = 10
-patch_margin_top = 10
-patch_margin_right = 10
-patch_margin_bottom = 10
-
-[node name="JadeIcon" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 8.0
-offset_top = -13.0
-offset_right = 32.0
-offset_bottom = 13.0
-grow_vertical = 2
-texture = ExtResource("ico_ngoc")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PlusBtn" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -30.0
-offset_top = -13.0
-offset_right = -8.0
-offset_bottom = 13.0
-grow_horizontal = 0
-grow_vertical = 2
-texture = ExtResource("btn_cong")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="InvJadeLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/BottomMoneyBar/FrameJade"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 34.0
-offset_right = -30.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "0"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="CenterPanel" type="Control" parent="Stage"]
 unique_name_in_owner = true
@@ -1857,6 +1722,7 @@ offset_bottom = 720.0
 mouse_filter = 2
 
 [node name="EquipBox" type="Panel" parent="Stage/CenterPanel"]
+unique_name_in_owner = true
 layout_mode = 0
 offset_top = 68.0
 offset_right = 475.0
@@ -2436,8 +2302,8 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("nav_btn_normal")
 theme_override_styles/hover = SubResource("nav_btn_hover")
 theme_override_styles/pressed = SubResource("nav_btn_hover")
-text = "Sự Kiện"
-icon = ExtResource("ico_nv_quest")
+text = "Trang Bị"
+icon = ExtResource("ico_tb")
 alignment = 0
 expand_icon = true
 
@@ -2455,8 +2321,8 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("nav_btn_normal")
 theme_override_styles/hover = SubResource("nav_btn_hover")
 theme_override_styles/pressed = SubResource("nav_btn_hover")
-text = "Trang Bị"
-icon = ExtResource("ico_tb")
+text = "Kỹ Năng"
+icon = ExtResource("ico_kn")
 alignment = 0
 expand_icon = true
 
@@ -2474,8 +2340,8 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("nav_btn_normal")
 theme_override_styles/hover = SubResource("nav_btn_hover")
 theme_override_styles/pressed = SubResource("nav_btn_hover")
-text = "Kỹ Năng"
-icon = ExtResource("ico_kn")
+text = "Sự Kiện"
+icon = ExtResource("ico_nv_quest")
 alignment = 0
 expand_icon = true
 
@@ -2581,13 +2447,24 @@ offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
 
-[node name="DebugCheatPanel" parent="Stage/BottomBar" instance=ExtResource("debug_cheat")]
+[node name="GmButton" type="Button" parent="Stage/BottomBar"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
 offset_top = 6.0
 offset_right = 108.0
 offset_bottom = 48.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Trung tâm điều hành Game Master (Phím F12)"
+theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.5, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("gm_btn_normal")
+theme_override_styles/hover = SubResource("gm_btn_hover")
+theme_override_styles/pressed = SubResource("gm_btn_hover")
+text = "GM"
 
 [node name="ChatButton" type="Button" parent="Stage/BottomBar"]
 unique_name_in_owner = true
@@ -2623,20 +2500,29 @@ icon = ExtResource("ico_social")
 icon_alignment = 1
 expand_icon = true
 
-[node name="LevelTag" type="TextureRect" parent="Stage/BottomBar"]
+[node name="GuideButton" type="Button" parent="Stage/BottomBar"]
+unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1135.0
-offset_top = 8.0
-offset_right = 1262.0
-offset_bottom = 46.0
-mouse_filter = 2
-texture = ExtResource("btn_lv_tex")
-expand_mode = 1
-stretch_mode = 5
+offset_left = 220.0
+offset_top = 6.0
+offset_right = 330.0
+offset_bottom = 48.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Mở Hướng Dẫn Tân Thủ"
+theme_override_colors/font_color = Color(0.95, 0.85, 0.5, 1)
+theme_override_colors/font_hover_color = Color(1, 0.95, 0.7, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
+text = "📖 Hướng Dẫn"
 
 [node name="ToastLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true
 visible = false
+z_index = 50
 layout_mode = 0
 offset_left = 400.0
 offset_top = 550.0

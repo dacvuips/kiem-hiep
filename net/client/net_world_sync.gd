@@ -7,9 +7,12 @@ class_name NetWorldSync
 ##   - bị server kéo về (đi quá nhanh / xuyên vật cản) thì đặt lại vị trí.
 
 const RECONNECT_DELAY := 5.0
-## Lỗi này thì không tự kết nối lại (phải xử lý ở màn trước).
-const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "character_not_found", "service_key",
-	"battle_end", "battle_no_side", "arena_end"]
+const HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
+const CountdownOverlay = preload("res://ui/common/countdown_overlay.gd")
+## Các mã kết thúc phòng / trận đấu: trở về Character Hub, KHÔNG tự kết nối lại và KHÔNG đăng xuất tài khoản.
+const RETURN_TO_HUB := ["battle_end", "battle_no_side", "arena_end", "field_end"]
+## Lỗi tài khoản nghiêm trọng: đăng xuất và chuyển về màn hình đăng nhập.
+const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "character_not_found", "service_key"]
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
@@ -22,6 +25,7 @@ var _heartbeat := 0.0
 var _last_sent := {}
 var _last_look := {}
 var _reconnect_in := -1.0
+var _last_killed_monster_name: String = ""
 
 ## Đang chạy trong map (để SocialDirectory lấy người chơi thật ở gần).
 static var current: NetWorldSync
@@ -115,7 +119,8 @@ func _notify(text: String) -> void:
 func _on_connected(_eid: int, feet: Vector2, _name: String) -> void:
 	NetClient.send_guild(GuildServer.G_LIST)
 	_notify("Đã vào %s" % _server().get("name", ""))
-	_teleport(feet)
+	if not GameManager.field_map.has("field") and not VltkWorld.is_brawl() and not VltkWorld.is_tong_kim_lol():
+		_teleport(feet)
 	_last_sent = {}
 	_last_look = {}
 
@@ -128,6 +133,8 @@ func _on_profile_applied() -> void:
 	profile_synced = true
 	if player and is_instance_valid(player):
 		player.refresh_combat_stats()
+		if player.has_method("_refresh_aura_sprite"):
+			player._refresh_aura_sprite()
 
 func _on_drops(list: Array) -> void:
 	for d in list:
@@ -203,6 +210,12 @@ var enmity: Dictionary = {}
 func _on_enmity(state: int, other_eid: int, other_name: String, launcher: bool) -> void:
 	var old := int(enmity.get("eid", 0))
 	enmity = {"state": state, "eid": other_eid, "name": other_name, "launcher": launcher} if state != RelationServer.ENMITY_NONE else {}
+	if state == RelationServer.ENMITY_WAIT:
+		CountdownOverlay.start(self)
+	elif state == RelationServer.ENMITY_NONE:
+		var overlay := get_node_or_null("CountdownOverlay")
+		if overlay and overlay.has_method("cancel"):
+			overlay.cancel()
 	if old != 0 and old != other_eid and remote_of(old) != null:
 		remote_of(old).set_pk_enemy(false)
 	_apply_enmity(other_eid)
@@ -252,10 +265,15 @@ func _on_progress(gained: int, level: int, current_exp: int) -> void:
 		return
 	var before := profile.level
 	profile.add_exp(gained)
-	profile.level = level
-	profile.current_exp = current_exp
+	profile.level = clampi(level, 1, PlayerProfile.MAX_LEVEL)
+	profile.current_exp = 0 if profile.level >= PlayerProfile.MAX_LEVEL else current_exp
+	if gained > 0:
+		var mname := _last_killed_monster_name if _last_killed_monster_name != "" else "Quái"
+		ChatBox.push_exp(mname, gained)
+		_last_killed_monster_name = ""
 	if profile.level != before and player and is_instance_valid(player):
 		player.refresh_combat_stats()
+		ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
 		_notify("Lên cấp %d!" % profile.level)
 
 func _on_disconnected(code: String, message: String) -> void:
@@ -268,6 +286,19 @@ func _on_disconnected(code: String, message: String) -> void:
 			m.queue_free()
 	_monsters.clear()
 	_notify(message)
+	if code in RETURN_TO_HUB:
+		_reconnect_in = -1.0
+		var client_handler: Node = null
+		if is_inside_tree() and get_tree() != null:
+			client_handler = get_tree().get_first_node_in_group("arena_client")
+			if client_handler == null:
+				client_handler = get_tree().get_first_node_in_group("battle_client")
+			if client_handler == null:
+				client_handler = get_tree().get_first_node_in_group("field_client")
+		if client_handler == null and is_inside_tree():
+			GameManager.field_map = {}
+			get_tree().change_scene_to_file.call_deferred(HUB_SCENE)
+		return
 	if code not in FATAL:
 		_reconnect_in = RECONNECT_DELAY
 	else:
@@ -278,10 +309,28 @@ func _on_disconnected(code: String, message: String) -> void:
 func _teleport(feet: Vector2) -> void:
 	if player == null:
 		return
+	if VltkWorld.is_brawl() or VltkWorld.is_tong_kim_lol():
+		if feet.distance_to(PkRules.ARENA_CENTER) < 500.0:
+			return
+		if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.grid:
+			var grid = VltkWorld.current.map.grid
+			if not grid.in_bounds(feet) or grid.is_blocked(feet):
+				return
 	player.global_position = feet - Vector2(0, RemotePlayer.FEET_OFFSET)
 	player.velocity = Vector2.ZERO
+	if VltkWorld.current and VltkWorld.current.map:
+		VltkWorld.current.map.prepare_around(feet)
+		if VltkWorld.current.map is VltkWorld.SortedMap:
+			(VltkWorld.current.map as VltkWorld.SortedMap).warm_up(player.global_position)
 
 func _on_corrected(feet: Vector2) -> void:
+	if VltkWorld.is_brawl() or VltkWorld.is_tong_kim_lol():
+		if feet.distance_to(PkRules.ARENA_CENTER) < 500.0:
+			return
+		if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.grid:
+			var grid = VltkWorld.current.map.grid
+			if not grid.in_bounds(feet) or grid.is_blocked(feet):
+				return
 	_teleport(feet)
 
 func _parent() -> Node:
@@ -350,6 +399,12 @@ func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int
 
 func _on_monster_killed(k: Dictionary) -> void:
 	var m: VltkMonster = _monster_of(int(k.eid))
+	if m and is_instance_valid(m) and m.data:
+		_last_killed_monster_name = str(m.data.get("name", "Quái"))
+	else:
+		var rec: Dictionary = MonsterData.monster(int(k.get("monster_id", 0)))
+		if not rec.is_empty():
+			_last_killed_monster_name = str(rec.get("name", "Quái"))
 	if m == null or not is_instance_valid(m):
 		return
 	m.grant_rewards(bool(k.last_hit))
@@ -407,6 +462,8 @@ func _process(delta: float) -> void:
 		flags |= NetProto.FLAG_DEAD
 	if z > 0.5:
 		flags |= NetProto.FLAG_JUMPING
+	if player.get("pk_mode") == 2:  ## Đồ Sát (PK Murder gốc VLTK)
+		flags |= NetProto.FLAG_PK
 	var cur := {"feet": player.get_ground_position().round(), "dir": av.direction, "action": av.action, "z": int(z), "flags": flags}
 	if cur == _last_sent and _heartbeat > 0.0:
 		return

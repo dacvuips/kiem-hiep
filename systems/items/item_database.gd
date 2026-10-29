@@ -28,6 +28,7 @@ static var _equipment: Array = []
 static var _magic: Array = []
 static var _gold: Array = []
 static var _desc: Dictionary = {}
+static var _magic_ranges: Dictionary = {}
 ## Bộ hoàng kim (Group) -> chỉ số các món trong bộ.
 static var _gold_groups: Dictionary = {}
 ## detail -> particular -> level -> chỉ số trong _equipment
@@ -136,6 +137,10 @@ static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
 	var image: String = base.get("image", "")
 	## Vật phẩm khác (misc_items.json) có sẵn tên ảnh "icon" (tên ảnh gốc chữ Hán / trùng tên đã đổi sang ASCII).
 	var key: String = base.get("icon", "")
+	if key.begins_with("res://"):
+		if not _icons.has(key):
+			_icons[key] = load(key) if ResourceLoader.exists(key) else null
+		return _icons[key]
 	if key == "" and image != "":
 		key = image.replace("\\", "/").get_file().get_basename().to_lower()
 	if key == "avatar_player" or (key == "" and int(base.get("detail", -1)) == Detail.MASK):
@@ -144,7 +149,14 @@ static func get_icon(base: Dictionary, small: bool = false) -> Texture2D:
 		return null
 	var path := (ICON_SMALL_DIR if small else ICON_DIR) + key + ".png"
 	if not _icons.has(path):
-		_icons[path] = load(path) if ResourceLoader.exists(path) else null
+		var tex: Texture2D = null
+		if ResourceLoader.exists(path):
+			tex = load(path)
+		elif FileAccess.file_exists(path):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			if img and not img.is_empty():
+				tex = ImageTexture.create_from_image(img)
+		_icons[path] = tex
 	return _icons[path]
 
 ## Kích thước món trong hành trang tính bằng Ô (rộng × cao) — cột Width/Height của bảng đồ gốc. Đồ hoàng kim không có
@@ -212,6 +224,80 @@ static func get_misc(misc_id: String) -> Dictionary:
 			rec["width"] = 1
 			rec["height"] = 1
 			_misc[str(m["id"])] = rec
+		for it in TongKimLolRules.SHOP_ITEMS:
+			var sid: String = str(it.get("id"))
+			var effs: Array = []
+			match str(it.get("type", "")):
+				"speed":
+					effs = [["fastwalkrun_p", 40, int(float(it.get("duration", 20.0)) * 18.0)]]
+				"heal_instant":
+					effs = [["heal_v", int(it.get("value", 1500)), 0]]
+				"heal_hot":
+					var dur: float = float(it.get("duration", 10.0))
+					var val_per_tick: int = int(float(it.get("value", 3000)) / maxf(1.0, dur * 1.8))
+					effs = [["lifepotion_v", val_per_tick, int(dur * 18.0)]]
+				"damage_buff":
+					effs = [["addphysicsdamage_p", 25, int(float(it.get("duration", 30.0)) * 18.0)]]
+				"armor_buff":
+					effs = [["allres_p", 25, int(float(it.get("duration", 30.0)) * 18.0)]]
+			_misc[sid] = {
+				"id": sid,
+				"name": it.get("name", ""),
+				"intro": it.get("desc", ""),
+				"desc": it.get("desc", ""),
+				"price": int(it.get("price", 0)),
+				"icon": it.get("icon", ""),
+				"source": "songjin",
+				"songjin_only": true,
+				"stack": 50,
+				"width": 1,
+				"height": 1,
+				"effects": effs
+			}
+		var custom_ky_items: Array[Dictionary] = [
+			{
+				"id": "ky_datau_hoanthanh",
+				"name": "Lệnh Bài Hoàn Thành Dã Tẩu",
+				"intro": "Lệnh bài thần kỳ giúp lập tức hoàn thành một nhiệm vụ Dã Tẩu.",
+				"icon": "wulinlingpai",
+				"price": 20000,
+				"stack": 100,
+				"width": 1,
+				"height": 1,
+			},
+			{
+				"id": "ky_tui_thuoc_lac",
+				"name": "Túi Thuốc Lắc",
+				"intro": "Túi gấm chứa đan dược quý, hỗ trợ gia tăng thuộc tính khi giao chiến.",
+				"icon": "yiyaobao",
+				"price": 50000,
+				"stack": 50,
+				"width": 1,
+				"height": 1,
+			},
+			{
+				"id": "ky_thien_nien_tran_lo",
+				"name": "Thiên Niên Trần Lộ",
+				"intro": "Tiên sương ngàn năm, uống vào nâng cao công lực và tu vi.",
+				"icon": "zhenlu_avd1",
+				"price": 20000,
+				"stack": 100,
+				"width": 1,
+				"height": 1,
+			},
+			{
+				"id": "ky_tui_lenh_bai_datau",
+				"name": "Túi Lệnh Bài Dã Tẩu",
+				"intro": "Rương bạc chứa lệnh bài Dã Tẩu, hỗ trợ chuỗi nhiệm vụ giang hồ.",
+				"icon": "item_silverbox",
+				"price": 150000,
+				"stack": 10,
+				"width": 1,
+				"height": 1,
+			}
+		]
+		for c_it in custom_ky_items:
+			_misc[str(c_it["id"])] = c_it
 	return _misc.get(misc_id, {})
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
@@ -248,6 +334,44 @@ static func get_particular_label(detail: int, particular: int) -> String:
 static func get_magic_records() -> Array:
 	_ensure_loaded()
 	return _magic
+
+## Khoảng giá trị [min, max] của 1 thuộc tính magic theo magic_attribs.json.
+static func get_magic_range(attrib_name: String, series: int = -1) -> Vector2i:
+	_ensure_loaded()
+	if _magic_ranges.is_empty():
+		_build_magic_ranges()
+	if series >= 0:
+		var key_series := "%s_%d" % [attrib_name, series]
+		if _magic_ranges.has(key_series):
+			return _magic_ranges[key_series]
+	return _magic_ranges.get(attrib_name, Vector2i.ZERO)
+
+static func _build_magic_ranges() -> void:
+	_magic_ranges.clear()
+	for rec in _magic:
+		if not (rec is Dictionary):
+			continue
+		var attrib: String = str(rec.get("attrib", ""))
+		if attrib == "":
+			continue
+		var ranges: Array = rec.get("range", [])
+		if ranges.is_empty() or ranges[0].size() < 2:
+			continue
+		var lo := int(ranges[0][0])
+		var hi := int(ranges[0][1])
+		if lo == -1 and hi == -1:
+			continue
+		var s := int(rec.get("series", -1))
+		_update_range_entry(attrib, lo, hi)
+		if s >= 0:
+			_update_range_entry("%s_%d" % [attrib, s], lo, hi)
+
+static func _update_range_entry(key: String, lo: int, hi: int) -> void:
+	if not _magic_ranges.has(key):
+		_magic_ranges[key] = Vector2i(lo, hi)
+	else:
+		var cur: Vector2i = _magic_ranges[key]
+		_magic_ranges[key] = Vector2i(mini(cur.x, lo), maxi(cur.y, hi))
 
 ## Chỉ số hoàng kim khớp bộ lọc. `menpai`: -2 = tất cả, -1 = không môn phái, 0-14 = MENPAI_ORDER.
 static func find_gold(detail: int, menpai: int = -2, particular: int = -1) -> Array[int]:

@@ -41,6 +41,8 @@ const SPECIAL_ITEM_EFFECTS := {
 
 var _value := 0.0       ## sinh lực mỗi nhịp
 var _frames := 0        ## frame còn lại
+var _mana_value := 0.0   ## nội lực mỗi nhịp
+var _mana_frames := 0    ## frame còn lại
 var _acc := 0.0
 
 ## Hiệu ứng thuốc của nhân vật `player` (tạo khi cần).
@@ -98,7 +100,7 @@ static func usable(item: ItemInstance) -> bool:
 		return true
 	for e in effects_of(item):
 		var attr := str(e[0])
-		if TICK_ATTRIBS.has(attr) or _known(attr):
+		if TICK_ATTRIBS.has(attr) or attr == "heal_v" or _known(attr):
 			return true
 	return false
 
@@ -111,6 +113,16 @@ static func heals(item: ItemInstance) -> bool:
 			return true
 	return false
 
+## Món này có hồi nội lực không (thuốc hồi mana — auto đánh dùng để tự uống).
+static func restores_mana(item: ItemInstance) -> bool:
+	if item == null or not item.is_misc():
+		return false
+	for e in item.get_base().get("effects", []):
+		var attr := str(e[0])
+		if attr == "manapotion_v" or attr == "manareplenish_v":
+			return true
+	return false
+
 ## Uống 1 món: hồi sinh lực theo nhịp + buff thuộc tính có thời hạn. Trả false nếu món không dùng được.
 static func drink(player: Node, item: ItemInstance) -> bool:
 	if not usable(item):
@@ -119,8 +131,13 @@ static func drink(player: Node, item: ItemInstance) -> bool:
 	var seconds := 0.0
 	for e in effects_of(item):
 		var attrib := str(e[0])
-		if attrib == "lifepotion_v":
+		if attrib == "heal_v":
+			if player.has_method("heal"):
+				player.heal(float(e[1]))
+		elif attrib == "lifepotion_v":
 			PotionEffect.of(player).add(float(e[1]), int(e[2]))
+		elif attrib == "manapotion_v" or attrib == "manareplenish_v":
+			PotionEffect.of(player).add_mana(float(e[1]), int(e[2]))
 		elif not TICK_ATTRIBS.has(attrib) and _known(attrib):
 			buff[attrib] = Vector3i(int(e[1]), 0, 0)
 			seconds = maxf(seconds, float(e[2]) / GAME_FPS)
@@ -145,7 +162,8 @@ static func block_reason(item: ItemInstance) -> String:
 	if item == null or not item.is_misc():
 		return ""
 	if bool(item.get_base().get("songjin_only", false)) \
-			and (GameManager.field_map.get("battle", {}) as Dictionary).is_empty():
+			and (GameManager.field_map.get("battle", {}) as Dictionary).is_empty() \
+			and not bool(GameManager.field_map.get("tong_kim_lol", false)):
 		return "%s chỉ dùng được trong Chiến trường Tống Kim." % item.get_display_name()
 	var loop := Engine.get_main_loop()
 	var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
@@ -215,19 +233,32 @@ func add(value: float, frames: int) -> void:
 	_value = (_value * _frames + value * frames) / float(new_frames)
 	_frames = new_frames
 
+func add_mana(value: float, frames: int) -> void:
+	if frames <= 0:
+		return
+	var new_frames := maxi(_mana_frames, frames)
+	_mana_value = (_mana_value * _mana_frames + value * frames) / float(new_frames)
+	_mana_frames = new_frames
+
 func is_active() -> bool:
-	return _frames > 0
+	return _frames > 0 or _mana_frames > 0
 
 func _process(delta: float) -> void:
-	if _frames <= 0:
+	if _frames <= 0 and _mana_frames <= 0:
 		return
 	var parent := get_parent()
 	if parent == null or (parent.has_method("is_dead") and parent.call("is_dead")):
 		_frames = 0
+		_mana_frames = 0
 		return
 	_acc += delta * GAME_FPS
-	while _acc >= 1.0 and _frames > 0:
+	while _acc >= 1.0 and (_frames > 0 or _mana_frames > 0):
 		_acc -= 1.0
-		_frames -= 1
-		if _frames % UPDATE_FRAMES == 0 and parent.has_method("heal"):
-			parent.heal(_value)
+		if _frames > 0:
+			_frames -= 1
+			if _frames % UPDATE_FRAMES == 0 and parent.has_method("heal"):
+				parent.heal(_value)
+		if _mana_frames > 0:
+			_mana_frames -= 1
+			if _mana_frames % UPDATE_FRAMES == 0 and parent.has_method("restore_mana"):
+				parent.restore_mana(_mana_value)

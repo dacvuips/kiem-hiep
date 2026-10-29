@@ -58,10 +58,10 @@ func _init(hub: SocialHub = null) -> void:
 	body.add_child(_msg)
 	## Thanh dưới: Tạo mới | Vào Tổng Đà | Xem tin Bang khác | Đóng
 	var buttons := add_button_row()
-	_create_btn = SocialUi.stone_button("Tạo mới")
-	_tongda_btn = SocialUi.stone_button("Vào Tổng Đà")
-	var others := SocialUi.stone_button("Xem tin Bang khác")
-	var close := SocialUi.stone_button("Đóng")
+	_create_btn = SocialUi.stone_button(tr("Tạo mới"))
+	_tongda_btn = SocialUi.stone_button(tr("Vào Tổng Đà"))
+	var others := SocialUi.stone_button(tr("Xem tin Bang khác"))
+	var close := SocialUi.stone_button(tr("Đóng"))
 	for b in [_create_btn, _tongda_btn, others, close]:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		buttons.add_child(b)
@@ -88,7 +88,7 @@ func _host() -> Node:
 func _process(_delta: float) -> void:
 	if _online_label != null:
 		var mins := (Time.get_ticks_msec() - _opened_ms) / 60000
-		_online_label.text = "Bạn đã Online %d h %02d phút" % [mins / 60, mins % 60]
+		_online_label.text = "%s %d %s %02d %s" % [tr("Bạn đã Online"), mins / 60, tr("giờ"), mins % 60, tr("phút")]
 
 func _on_message(text: String, good: bool) -> void:
 	SocialUi.set_banner(_msg, text, good)

@@ -9,7 +9,7 @@ const SAVE_PATH := "user://savegame.json"
 const _KEY_PREFIX_OBF: PackedByteArray = [48, 25, 89, 66, 5, 28, 242, 238, 191, 234, 197, 196, 219, 199, 213, 183, 179, 235]
 
 static func _save_key() -> String:
-	var id := OS.get_unique_id()
+	var id := "" if OS.has_feature("web") else OS.get_unique_id()
 	var prefix := Obfuscator.deobfuscate(_KEY_PREFIX_OBF)
 	return (prefix + (id if id != "" else OS.get_name())).sha256_text()
 
@@ -140,7 +140,8 @@ func flush_online() -> void:
 	_pending_profile = null
 	if NetClient.is_in_world():
 		NetClient.send_profile(profile.to_dict())
-		return
+		if not NetClient.is_hub:
+			return
 	if _version_unknown:
 		await _refresh_version()
 	_online_saving = true

@@ -26,7 +26,12 @@ static func view(viewer: PlayerProfile, target: MockPlayer, now_ms: int = -1) ->
 		return {"error": "Không thấy người chơi này."}
 	if target.name == viewer.display_name:
 		return {"error": "Không thể xem trang bị của chính mình ở đây."}
-	if SocialDirectory.find_by_id(viewer, target.id) == null:
+	var nearby := false
+	for p in SocialDirectory.players(viewer):
+		if p.id == target.id:
+			nearby = true
+			break
+	if not nearby:
 		return {"error": "%s không ở gần bạn." % target.name}
 	return {"error": "", "snapshot": snapshot_of_mock(target)}
 

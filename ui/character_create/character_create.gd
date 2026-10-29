@@ -66,6 +66,10 @@ var _gender: PlayerProfile.Gender = PlayerProfile.Gender.MALE
 var _message_tween: Tween
 var _auras: Dictionary = {}  ## AnimatedPortrait -> AuraRing nằm sau lưng nhân vật (node có sẵn trong scene)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_update_locale_texts()
+
 func _ready() -> void:
 	_meta = _load_meta()
 
@@ -86,6 +90,9 @@ func _ready() -> void:
 		b.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	for b: BaseButton in [_create_button, _enter_button, _back_button]:
 		_style_pill_button(b)
+	_update_locale_texts()
+	if LocalizationManager.has_signal("locale_changed"):
+		LocalizationManager.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	_dice_button.pressed.connect(_on_dice_pressed)
 	_dice_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_create_button.pressed.connect(_on_create_pressed)
@@ -93,6 +100,7 @@ func _ready() -> void:
 	_back_button.pressed.connect(_on_back_pressed)
 	_back_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_name_input.text_submitted.connect(func(_t: String) -> void: _on_enter_pressed())
+	AccountScreen.setup_mobile_web_input(_name_input, "Nhập tên nhân vật:")
 
 	for b in _side_buttons:
 		if b.name == "AccountButton":
@@ -113,6 +121,28 @@ func _ready() -> void:
 
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+
+func _update_locale_texts() -> void:
+	if not is_inside_tree():
+		return
+	if is_instance_valid(_create_button):
+		var lbl: Label = _create_button.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("TẠO NHÂN VẬT")
+	if is_instance_valid(_enter_button):
+		var lbl: Label = _enter_button.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("VÀO GAME")
+	if is_instance_valid(_back_button):
+		var lbl: Label = _back_button.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("‹ QUAY LẠI")
+	if is_instance_valid(_name_input):
+		_name_input.placeholder_text = tr("Nhập tên nhân vật")
+	if is_instance_valid(_male_missing):
+		_male_missing.text = tr("Sắp ra mắt")
+	if is_instance_valid(_female_missing):
+		_female_missing.text = tr("Sắp ra mắt")
 
 func _style_pill_button(b: BaseButton) -> void:
 	b.focus_mode = Control.FOCUS_NONE
@@ -165,7 +195,7 @@ func _select_element(element: ElementTypes.ElementType) -> void:
 	var has_female := _setup_portrait(_female_portrait, "nu")
 	_male_missing.visible = not has_male
 	_female_missing.visible = not has_female
-	var hint := "Sắp ra mắt"
+	var hint := tr("Sắp ra mắt")
 	_male_missing.text = hint
 	_female_missing.text = hint
 	## Giới tính đang chọn không có sheet ở hệ này -> chuyển sang giới tính còn lại.
@@ -235,13 +265,13 @@ func _submit_character(enter_game_directly: bool) -> void:
 	var player_name := _name_input.text.strip_edges()
 	if player_name.length() < NAME_MIN_LENGTH:
 		_play_ui(VltkSound.UI_POPUP)
-		_show_message("Tên cần ít nhất %d ký tự" % NAME_MIN_LENGTH)
+		_show_message(tr("Tên cần ít nhất %d ký tự") % NAME_MIN_LENGTH)
 		_name_input.grab_focus()
 		return
 	var sects := SectRegistry.get_by_element(_element)
 	if sects.is_empty():
 		_play_ui(VltkSound.UI_POPUP)
-		_show_message("Hệ này chưa có môn phái")
+		_show_message(tr("Hệ này chưa có môn phái"))
 		return
 
 	if AccountApi.is_logged_in():
@@ -263,7 +293,7 @@ func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 		StarterKit.apply(profile)   ## quà tân thủ: cấp 10 + đồ trong túi (vào game là phải chọn phái)
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
-	_show_message("Đã tạo nhân vật %s — %s" % [player_name, profile.sect_name])
+	_show_message(tr("Đã tạo nhân vật %s — %s") % [player_name, profile.sect_name])
 
 	if enter_game_directly:
 		_enter_hub()
@@ -291,7 +321,7 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 
 	_create_button.disabled = true
 	_enter_button.disabled = true
-	_show_message("Đang tạo nhân vật…")
+	_show_message(tr("Đang tạo nhân vật…"))
 	var r: Dictionary = await AccountApi.create_character(ServerSelectScreen.selected_server_id, target_slot, player_name, profile.to_dict())
 	_create_button.disabled = false
 	_enter_button.disabled = false
@@ -304,7 +334,7 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 	var c: Dictionary = r.data
 	GameManager.local_profile = PlayerProfile.from_dict(c["data"])
 	SaveManager.set_online_character(int(c["id"]), int(c["version"]))
-	_show_message("Đã tạo nhân vật %s — %s" % [c["name"], profile.sect_name])
+	_show_message(tr("Đã tạo nhân vật %s — %s") % [c["name"], profile.sect_name])
 
 	if enter_game_directly:
 		_enter_hub()
@@ -338,7 +368,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_on_back_pressed()
 
 func _show_message(text: String) -> void:
-	_message.text = text
+	_message.text = tr(text)
 	_message.modulate.a = 1.0
 	if _message_tween:
 		_message_tween.kill()

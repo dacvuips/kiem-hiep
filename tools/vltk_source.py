@@ -13,6 +13,12 @@ import sys
 import tarfile
 from pathlib import Path
 
+# Ensure Git usr/bin (iconv) is in PATH on Windows
+if sys.platform == "win32":
+    git_usr_bin = r"C:\Program Files\Git\usr\bin"
+    if os.path.exists(git_usr_bin) and git_usr_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = git_usr_bin + os.pathsep + os.environ.get("PATH", "")
+
 ROOT = Path(os.environ.get("JX15_ROOT", r"E:/game/VL/jxTP15phai_WSL/jxTP15phai_WSL"))
 CLIENT = ROOT / "Client_jxTP_15phai" / "Client"
 PACKAGE_INI = "package1.ini"

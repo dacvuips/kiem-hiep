@@ -20,9 +20,9 @@ const MIN_COLLISION_Z := 0
 const MAX_COLLISION_Z := 20
 ## Interupt_EndOldMissleLifeWhenMove: người thi triển di chuyển thì đạn biến mất.
 const INTERRUPT_END_WHEN_MOVE := 1
-## Đạn Follow (bám mục tiêu) chỉnh hướng sau mỗi FOLLOW_REAIM_TICKS nhịp. KMissle.cpp gốc dùng 8 (đạn bay thẳng ~8 nhịp giữa các lần
-## chỉnh nên nhìn như không đuổi theo quái đang chạy) — đặt 0 = chỉnh MỖI nhịp cho đạn đuổi sát. Muốn đúng gốc thì đặt lại 8.
-const FOLLOW_REAIM_TICKS := 0
+## Đạn Follow (bám mục tiêu) chỉnh hướng sau mỗi FOLLOW_REAIM_TICKS nhịp. KMissle.cpp gốc dùng 8 nhịp (lượn cung).
+## Đặt 4 để đường đạn vừa bám sát mục tiêu vừa lượn vòng cung mượt mà chuẩn VLTK.
+const FOLLOW_REAIM_TICKS := 4
 const DRAW_Z := 1
 ## Đạn Follow mất mục tiêu (quái đã chết giữa chừng / chưa có mục tiêu) thì đuổi quái gần nhất trong tầm này (toạ độ logic) thay vì
 ## bay thẳng luôn; quét lại mỗi RETARGET_TICKS nhịp cho rẻ. (Bản gốc bay thẳng — đây là chỉnh theo yêu cầu "đạn dí theo".)
@@ -117,11 +117,15 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	_phases = data.get("anims", [])
 	_variant_b = false
 	if int(data.get("multi_show", 0)) and randi() % 2 == 1:
-		_phases = data.get("anims_b", _phases)
-		_variant_b = true
+		var anims_b: Array = data.get("anims_b", [])
+		if not anims_b.is_empty() and anims_b.size() > Phase.FLY and anims_b[Phase.FLY] != null:
+			_phases = anims_b
+			_variant_b = true
 	if _move_kind in [MoveKind.LINE, MoveKind.ROLLBACK, MoveKind.FOLLOW]:
 		set_factors(VltkMath.dir_cos(dir), VltkMath.dir_sin(dir))
 	z_index = DRAW_Z
+	if _sprite == null:
+		_sprite = $Sprite
 	_sprite.visible = false
 	_sprite.centered = false
 	_sprite.region_enabled = true

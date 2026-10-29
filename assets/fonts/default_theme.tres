@@ -6,10 +6,11 @@
 
 [sub_resource type="SystemFont" id="SystemFont_vltk"]
 fallbacks = Array[Font]([ExtResource("1_font"), ExtResource("3_sym")])
-font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI")
+font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI", "sans-serif")
 
 [resource]
 default_font = SubResource("SystemFont_vltk")
 default_font_size = 16
+CheckButton/colors/button_checked_color = Color(0.96, 0.78, 0.22, 1)
 LineEdit/fonts/font = ExtResource("2_input")
 TextEdit/fonts/font = ExtResource("2_input")

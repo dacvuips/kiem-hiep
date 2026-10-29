@@ -27,9 +27,15 @@ const PolicyDialog = preload("res://ui/policy/policy_dialog.gd")
 
 func _ready() -> void:
 	_setup_screen()
+	_update_locale_texts()
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	_login.pressed.connect(_on_login_pressed)
 	_user.text_submitted.connect(func(_t: String) -> void: _password.grab_focus())
 	_password.text_submitted.connect(func(_t: String) -> void: _on_login_pressed())
+	AccountScreen.setup_mobile_web_input(_user, "Nhập tên tài khoản:")
+	AccountScreen.setup_mobile_web_input(_password, "Nhập mật khẩu:")
 	_bind_eye(_eye, [_password])
 	_forgot.pressed.connect(func() -> void:
 		AccountScreen.next_login_username = _user.text.strip_edges().to_lower()
@@ -37,6 +43,10 @@ func _ready() -> void:
 	_create.pressed.connect(_go.bind(REGISTER_SCENE))
 	if _register_link:
 		_register_link.pressed.connect(_go.bind(REGISTER_SCENE))
+	var back_mode: BaseButton = get_node_or_null("%BackModeButton")
+	if back_mode:
+		back_mode.pressed.connect(func() -> void: _go(MODE_SELECT_SCENE))
+		_bind_hover(back_mode)
 	_google.pressed.connect(_on_google_pressed)
 	if _facebook:
 		_facebook.pressed.connect(func() -> void:
@@ -59,7 +69,7 @@ func _ready() -> void:
 	if AccountScreen.next_login_message != "":
 		_toast(_message, AccountScreen.next_login_message, 4.0)
 		AccountScreen.next_login_message = ""
-	if not OS.has_feature("mobile"):
+	if not AccountScreen.is_touch_or_mobile():
 		(_password if _user.text != "" else _user).grab_focus()
 
 	for arg in OS.get_cmdline_args():
@@ -74,7 +84,7 @@ func _ready() -> void:
 			dlg.accepted_done.connect(func() -> void:
 				if AccountApi.has_saved_session():
 					_resume()
-				elif not OS.has_feature("mobile"):
+				elif not AccountScreen.is_touch_or_mobile():
 					(_password if _user.text != "" else _user).grab_focus()
 			)
 			return
@@ -159,3 +169,27 @@ func _on_login_pressed() -> void:
 	cfg.set_value("login", "name", name_text if _remember.button_pressed else "")
 	cfg.save(CFG_PATH)
 	_go(AFTER_LOGIN_SCENE)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		if is_inside_tree() and is_node_ready():
+			_update_locale_texts()
+
+func _update_locale_texts() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	if _user:
+		_user.placeholder_text = tr("Tài khoản")
+	if _password:
+		_password.placeholder_text = tr("Mật khẩu")
+	if _remember:
+		_remember.text = tr("Lưu tài khoản")
+	if _register_link:
+		_register_link.text = tr("Đăng ký")
+	if _forgot:
+		_forgot.text = tr("Quên mật khẩu?")
+	if _create:
+		_create.text = tr("Chưa có tài khoản? Đăng ký ngay")
+	var back_mode: BaseButton = get_node_or_null("%BackModeButton")
+	if back_mode:
+		back_mode.text = tr("‹ Đổi Chế Độ Chơi")

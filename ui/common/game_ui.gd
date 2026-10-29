@@ -274,6 +274,8 @@ static func _build_theme() -> Theme:
 	line.color = Color(0.30, 0.30, 0.26)
 	line.thickness = 1
 	t.set_stylebox(&"separator", SEPARATOR, line)
+	## Nút gạt CheckButton: bật = vàng, tắt = mặc định
+	t.set_color(&"button_checked_color", &"CheckButton", Color(0.96, 0.78, 0.22))
 	return t
 
 static func _panel(t: Theme, name: StringName, style: StyleBox) -> void:
@@ -309,7 +311,7 @@ static func _button(t: Theme, name: StringName, font_size: int, normal: StyleBox
 static func button(text: String, kind: StringName = BUTTON) -> Button:
 	apply()
 	var b := Button.new()
-	b.text = text
+	b.text = TranslationServer.translate(text)
 	b.focus_mode = Control.FOCUS_NONE
 	b.theme_type_variation = kind
 	if kind == PRIMARY:
@@ -359,7 +361,7 @@ static func style_buttons(root: Node) -> void:
 
 static func label(text: String, color: Color = TEXT, size := FONT_TEXT, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = TranslationServer.translate(text)
 	l.horizontal_alignment = align
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_font_size_override("font_size", size)
@@ -368,7 +370,7 @@ static func label(text: String, color: Color = TEXT, size := FONT_TEXT, align: H
 static func title(text: String) -> Label:
 	apply()
 	var l := Label.new()
-	l.text = text
+	l.text = TranslationServer.translate(text)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.theme_type_variation = TITLE_LABEL
 	return l
@@ -376,7 +378,7 @@ static func title(text: String) -> Label:
 static func subtitle(text: String) -> Label:
 	apply()
 	var l := Label.new()
-	l.text = text
+	l.text = TranslationServer.translate(text)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.theme_type_variation = SUBTITLE_LABEL
@@ -397,7 +399,7 @@ static func divider() -> HSeparator:
 static func line_edit(placeholder := "", secret := false) -> LineEdit:
 	apply()
 	var e := LineEdit.new()
-	e.placeholder_text = placeholder
+	e.placeholder_text = TranslationServer.translate(placeholder)
 	e.secret = secret
 	e.theme_type_variation = INPUT
 	return e

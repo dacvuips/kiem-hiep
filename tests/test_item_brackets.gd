@@ -58,4 +58,13 @@ func _ready() -> void:
 		check("Kim Phong sinh lực 80 hiển thị biên độ [60 - 80]", plain_kp.contains("[60 - 80]"))
 		check("Kim Phong kháng lôi 18 hiển thị biên độ [6 - 18]", plain_kp.contains("[6 - 18]"))
 
+	# 6. Kiểm tra ItemDetailPopup: không autowrap để các dòng thuộc tính không xuống hàng
+	var popup: ItemDetailPopup = ItemDetailPopup.open(self, bbcode1, [], item1)
+	var body: RichTextLabel = popup.get_node("%Body")
+	var scroll: ScrollContainer = popup.get_node("%BodyScroll")
+	check("ItemDetailPopup body autowrap_mode là AUTOWRAP_OFF (0)", body.autowrap_mode == TextServer.AUTOWRAP_OFF)
+	await get_tree().process_frame
+	check("ItemDetailPopup scroll width >= 430", scroll.custom_minimum_size.x >= 430.0)
+	popup.queue_free()
+
 	print("--- HOÀN TẤT TEST: %d PASS, %d FAIL ---\n" % [_passes, _fails])

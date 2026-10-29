@@ -12,6 +12,25 @@ static var current: NetSocial
 ## Danh sách bang (S_GUILD_LIST) — GuildListWindow đọc.
 var guild_list: Array = []
 signal guild_list_updated(list: Array)
+## Danh sách người chơi online xung quanh (trả về danh sách RemotePlayer nếu đang trong thế giới)
+var players: Array:
+	get:
+		if NetWorldSync.current != null:
+			var out: Array = []
+			for r in NetWorldSync.current._remotes.values():
+				if is_instance_valid(r):
+					out.append({
+						"id": str(r.eid),
+						"name": r.display_name,
+						"level": r.level,
+						"camp": r.camp,
+						"sect": "Võ Lâm Cao Thủ",
+						"map": VltkWorld.current.map_dir.get_file() if VltkWorld.current else "Map chung",
+						"x": r.global_position.x,
+						"y": r.global_position.y
+					})
+			return out
+		return []
 ## Hiện 1 dòng thông báo cho người chơi.
 var notify: Callable = func(_text: String) -> void: pass
 
@@ -48,7 +67,13 @@ func _on_profile(data: Dictionary) -> void:
 	var profile := GameManager.local_profile
 	if profile == null:
 		return
+	var old_avatar := profile.custom_avatar
+	var old_gm_aura := profile.gm_aura_state
 	profile.copy_from(PlayerProfile.from_dict(data))
+	if profile.custom_avatar.strip_edges() == "" and old_avatar.strip_edges() != "":
+		profile.custom_avatar = old_avatar
+	if profile.gm_aura_state == 0 and old_gm_aura > 0:
+		profile.gm_aura_state = old_gm_aura
 	profile_applied.emit()
 
 func _hub() -> SocialHub:
@@ -104,5 +129,24 @@ func _on_team_state(st: Dictionary) -> void:
 		hub.team.apply_net_state(st)
 
 func _on_team_invite(captain_eid: int, captain_name: String) -> void:
+	var p := GameManager.local_profile
+	if p != null:
+		var s := p.get_auto_settings()
+		if s.team_on:
+			match s.accept_mode:
+				0:
+					NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 0)
+					return
+				1:
+					NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1)
+					return
+				2:
+					var ok := false
+					for n in s.team_list:
+						if str(n).strip_edges().to_lower() == captain_name.strip_edges().to_lower():
+							ok = true
+							break
+					NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0)
+					return
 	_ask("Tổ đội", "%s mời bạn vào tổ đội." % captain_name, func(ok: bool) -> void:
 		NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0))

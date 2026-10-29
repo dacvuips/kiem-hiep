@@ -24,7 +24,11 @@ func _ready() -> void:
 	for i in order.size() - 1:
 		order[i].text_submitted.connect(func(_t: String) -> void: order[i + 1].grab_focus())
 	_password2.text_submitted.connect(func(_t: String) -> void: _on_create_pressed())
-	if not OS.has_feature("mobile"):
+	AccountScreen.setup_mobile_web_input(_user, "Nhập tên tài khoản:")
+	AccountScreen.setup_mobile_web_input(_email, "Nhập địa chỉ email:")
+	AccountScreen.setup_mobile_web_input(_password, "Nhập mật khẩu:")
+	AccountScreen.setup_mobile_web_input(_password2, "Nhập lại mật khẩu:")
+	if not AccountScreen.is_touch_or_mobile():
 		_user.grab_focus()
 
 func _on_create_pressed() -> void:

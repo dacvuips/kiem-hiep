@@ -21,7 +21,15 @@
           "count": 346
         }
       ],
-      "dir": "res://world/maps/map_2"
+      "dir": "res://world/maps/map_2",
+      "arena_center": [
+        77400,
+        60500
+      ],
+      "start": [
+        151,
+        118
+      ]
     },
     {
       "id": 9,
@@ -1163,6 +1171,23 @@
         }
       ],
       "dir": "res://world/maps/map_340"
+    },
+    {
+      "id": 480,
+      "name": "Thách Thức Ải 28",
+      "kind": "Cave",
+      "level": 100,
+      "monster_count": 0,
+      "monsters": [],
+      "dir": "res://world/maps/map_480",
+      "arena_center": [
+        50944,
+        51968
+      ],
+      "start": [
+        99,
+        101
+      ]
     }
   ]
 }

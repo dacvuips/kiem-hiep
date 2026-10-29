@@ -14,6 +14,9 @@ class_name EnemySpawnEntry
 @export var tier: EnemyTierData
 
 @export_group("Hệ số nhân riêng cho map này (1.0 = giữ nguyên gốc)")
+## Hệ số sát thương thực tế gây ra riêng cho màn chơi này (1.0 = giữ nguyên sát thương).
+## Cho phép điều chỉnh riêng theo từng ải mà không làm thay đổi chỉ số gốc.
+@export var damage_multiplier: float = 1.0
 ## Nhân vào Strength gốc — tăng để quái đánh đau hơn Ở MAP NÀY, không ảnh hưởng map khác dùng
 ## cùng `tier`.
 @export var strength_multiplier: float = 1.0

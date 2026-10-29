@@ -73,6 +73,12 @@ func _card(sect: SectDefinition) -> PanelContainer:
 		panel.modulate = LOCKED_TINT.lightened(0.4)
 		return panel
 	var b := SocialUi.stone_button("Gia nhập %s" % sect.sect_name)
+	if sect.id == "minh_giao":
+		b.disabled = true
+		b.tooltip_text = "Môn phái Minh Giáo đang tạm thời đóng gia nhập"
+		v.add_child(b)
+		panel.modulate = LOCKED_TINT.lightened(0.4)
+		return panel
 	b.pressed.connect(func() -> void:
 		SocialWindow.confirm(get_parent(), "Xác nhận gia nhập",
 			"Gia nhập %s?\nSau khi gia nhập sẽ KHÔNG thể đổi môn phái." % sect.sect_name,
@@ -108,7 +114,7 @@ func _skill_tile(skill: SkillDefinition) -> Control:
 	return tile
 
 func _choose(sect: SectDefinition) -> void:
-	if _done or _profile == null:
+	if _done or _profile == null or sect.id == "minh_giao":
 		return
 	if not _profile.join_sect(sect):
 		var why := "Đã gia nhập môn phái rồi." if _profile.has_sect() \

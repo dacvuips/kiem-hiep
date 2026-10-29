@@ -10,6 +10,8 @@ var header_panel: Panel
 var title_label: Label
 var is_full_width: bool = false
 var docked_width: float = 0.0
+var _window_title_key: String = ""
+var _window_subtitle_key: String = ""
 
 func _init(window_title: String = "", sub: String = "", min_width := 420.0) -> void:
 	super._init(window_title, true)             ## frameless: không vẽ thanh tiêu đề mặc định, ta tự vẽ
@@ -35,7 +37,8 @@ func _init(window_title: String = "", sub: String = "", min_width := 420.0) -> v
 		header_panel.add_child(h_box)
 
 		title_label = Label.new()
-		title_label.text = window_title
+		_window_title_key = window_title
+		title_label.text = TranslationServer.translate(window_title)
 		title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		title_label.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
@@ -74,9 +77,17 @@ func _init(window_title: String = "", sub: String = "", min_width := 420.0) -> v
 		root.add_child(body_margin)
 
 	body.add_theme_constant_override("separation", 6)
+	_window_subtitle_key = sub
 	subtitle_label = SocialUi.subtitle(sub)
 	subtitle_label.visible = sub != ""
 	body.add_child(subtitle_label)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		if title_label and not _window_title_key.is_empty():
+			title_label.text = TranslationServer.translate(_window_title_key)
+		if subtitle_label and not _window_subtitle_key.is_empty():
+			subtitle_label.text = TranslationServer.translate(_window_subtitle_key)
 
 var docked_pos: Vector2 = Vector2(18, 68)
 
@@ -99,6 +110,8 @@ func setup_touch_scroll() -> void:
 	else:
 		for s in scrolls:
 			var parent_control := s.get_parent() as Control
+			if parent_control != null and parent_control.get_parent() is Control and not (parent_control.get_parent() is DraggableWindow):
+				parent_control = parent_control.get_parent() as Control
 			TouchScrollHelperScript.attach(s, parent_control if parent_control != null else s)
 
 func _collect_scrolls(node: Node, out: Array[ScrollContainer]) -> void:
@@ -186,6 +199,8 @@ func get_host() -> Node:
 	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
 	return tree.current_scene if tree != null else null
 
+const MAJOR_HUBS: Array[StringName] = [&"pk", &"map_select", &"ranking", &"events", &"guild", &"storage", &"ky_tran_cac", &"settings", &"sect_choice", &"tien_trang", &"compound"]
+
 static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
 	if window_kind != &"" and tree != null:
@@ -194,6 +209,10 @@ static func present(host: Node, win: SocialWindow, window_kind: StringName = &""
 				(w as SocialWindow).bring_to_front()
 				win.queue_free()
 				return w
+		if window_kind in MAJOR_HUBS:
+			for w in tree.get_nodes_in_group("social_windows"):
+				if w is SocialWindow and is_instance_valid(w) and w != win and not w.is_docked and w.kind in MAJOR_HUBS:
+					w.close_requested.emit()
 	win.kind = window_kind
 	win.add_to_group("social_windows")
 	var layer := CanvasLayer.new()
@@ -226,9 +245,9 @@ static func prompt(host: Node, window_title: String, hint: String, on_ok: Callab
 	edit.text = default_text
 	win.body.add_child(edit)
 	var row := win.add_button_row()
-	var ok := SocialUi.stone_button("Đồng ý")
+	var ok := SocialUi.stone_button(TranslationServer.translate("Đồng ý"))
 	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var cancel := SocialUi.stone_button("Huỷ")
+	var cancel := SocialUi.stone_button(TranslationServer.translate("Huỷ"))
 	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(ok)
 	row.add_child(cancel)
@@ -255,9 +274,9 @@ static func ask_yes_no(host: Node, window_title: String, question: String, on_an
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	win.body.add_child(l)
 	var row := win.add_button_row()
-	var yes := SocialUi.stone_button(yes_text)
+	var yes := SocialUi.stone_button(TranslationServer.translate(yes_text))
 	yes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var no := SocialUi.stone_button(no_text)
+	var no := SocialUi.stone_button(TranslationServer.translate(no_text))
 	no.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(yes)
 	row.add_child(no)
@@ -281,7 +300,7 @@ static func info(host: Node, window_title: String, message: String, on_ok: Calla
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	win.body.add_child(l)
 	var row := win.add_button_row()
-	var ok := SocialUi.stone_button("Đồng ý")
+	var ok := SocialUi.stone_button(TranslationServer.translate("Đồng ý"))
 	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(ok)
 	present(host, win, &"")

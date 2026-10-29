@@ -695,7 +695,14 @@ func _save_hotbar() -> void:
 
 # ---------------------------------------------------------------- khác
 
-func _show_toast(message: String) -> void:
+func _show_toast(message: String, is_error: bool = false) -> void:
+	if not is_error:
+		var lower := message.to_lower()
+		for kw in ["không thể", "thất bại", "chưa đủ", "không đủ", "chưa mở", "chưa học", "lỗi", "nội tại", "tối đa"]:
+			if kw in lower:
+				is_error = true
+				break
+
 	if _toast == null:
 		_toast = Label.new()
 		_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -704,10 +711,17 @@ func _show_toast(message: String) -> void:
 		_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_toast.add_theme_font_size_override("font_size", 16)
-		_toast.add_theme_color_override("font_color", GameUi.GOLD)
-		## Label không nhận biến thể PanelContainer → dựng hộp báo lỗi bằng đúng màu của GameUi.BANNER_BAD.
-		_toast.add_theme_stylebox_override("normal", GameUi.box(GameUi.BAD_BG, GameUi.BAD_BORDER, 8, 1, 12))
+		_toast.add_theme_color_override("font_outline_color", Color(0.05, 0.0, 0.0, 1.0))
+		_toast.add_theme_constant_override("outline_size", 4)
 		add_child(_toast)
+
+	if is_error:
+		_toast.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38, 1.0))
+		_toast.add_theme_stylebox_override("normal", GameUi.box(Color(0.42, 0.07, 0.07, 0.94), Color(0.92, 0.28, 0.28, 0.98), 8, 1, 12))
+	else:
+		_toast.add_theme_color_override("font_color", GameUi.GOLD)
+		_toast.add_theme_stylebox_override("normal", GameUi.box(GameUi.BG, GameUi.BORDER, 8, 1, 12))
+
 	_toast.text = message
 	_toast.visible = true
 	_toast.modulate.a = 1.0

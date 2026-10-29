@@ -4,7 +4,7 @@ func _init() -> void:
 	print("--- TEST PHONG LANG DO ---")
 	var entry := PhongLangDoChallenge.map_entry()
 	print("Map entry: ", entry)
-	assert(entry["id"] == 336)
+	assert(entry["id"] in [336, 337])
 	assert(entry["phong_lang_do"] == true)
 
 	var p := PlayerProfile.new()

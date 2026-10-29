@@ -15,9 +15,9 @@ const COLOR_OUTLINE := Color("120c06")
 const COLOR_POTENTIAL := Color(0.95, 0.25, 0.2)
 
 const NAV_ITEMS := [
-	["events", "Sự Kiện"],
 	["equipment", "Trang Bị"],
 	["skills", "Kỹ Năng"],
+	["events", "Sự Kiện"],
 	["guild", "Bang Hội"],
 	["social", "Giao Dịch"],
 	["crafting", "Chế Tạo"],
@@ -91,10 +91,11 @@ var _hub_avatar_upload_box: PanelContainer
 var _hub_avatar_delete_btn: Button
 
 func _ready() -> void:
+	MusicManager.stop(0.5)
 	if PlayerStats.has_method("reset"):
 		PlayerStats.reset()
 	add_to_group("character_hub")
-	if "--capture-screenshot" in OS.get_cmdline_args() or "--test-open-popup" in OS.get_cmdline_args() or "--test-open-inventory" in OS.get_cmdline_args() or "--test-open-skills" in OS.get_cmdline_args() or "--test-equipment-red" in OS.get_cmdline_args() or "--test-open-events" in OS.get_cmdline_args():
+	if "--capture-screenshot" in OS.get_cmdline_args() or "--test-open-popup" in OS.get_cmdline_args() or "--test-open-inventory" in OS.get_cmdline_args() or "--test-open-skills" in OS.get_cmdline_args() or "--test-equipment-red" in OS.get_cmdline_args() or "--test-open-events" in OS.get_cmdline_args() or "--test-tutorial-welcome" in OS.get_cmdline_args() or "--test-tutorial-spotlight" in OS.get_cmdline_args() or "--test-tutorial-mode1" in OS.get_cmdline_args() or "--test-tutorial-mode2" in OS.get_cmdline_args():
 		_create_mock_profile()
 	else:
 		_profile = GameManager.local_profile
@@ -167,13 +168,19 @@ func _ready() -> void:
 	%BaseStatButton2.pressed.connect(_add_stat.bind(2)) # Sinh khí
 	%BaseStatButton3.pressed.connect(_add_stat.bind(3)) # Nội công
 
-	if has_node("%DebugCheatPanel"):
-		%DebugCheatPanel.profile_changed.connect(func() -> void:
-			_profile = GameManager.local_profile
-			refresh()
-			_refresh_inventory_view()
-			_refresh_equipment_display()
-		)
+	if has_node("%GmButton"):
+		var is_gm := AccountApi.is_gm()
+		%GmButton.visible = is_gm
+		if is_gm:
+			%GmButton.pressed.connect(_toggle_gm_window)
+		else:
+			%GmButton.queue_free()
+
+	GmManager.profile_modified.connect(_on_gm_profile_modified)
+	GmManager.gm_state_changed.connect(func() -> void:
+		_refresh_portrait()
+		_refresh_mask_check()
+	)
 
 	if has_node("%ChatButton"):
 		%ChatButton.pressed.connect(func() -> void:
@@ -183,6 +190,11 @@ func _ready() -> void:
 	if has_node("%SocialButton"):
 		%SocialButton.pressed.connect(func() -> void:
 			TelegramCommunityPopup.open(self)
+		)
+
+	if has_node("%GuideButton"):
+		%GuideButton.pressed.connect(func() -> void:
+			TutorialManager.start_explore_tutorial(self)
 		)
 
 	_style_nav_active = %CharacterButton.get_theme_stylebox("normal")
@@ -207,13 +219,17 @@ func _ready() -> void:
 	refresh()
 	_sync_world_rank.call_deferred()
 
+	if LocalizationManager != null and LocalizationManager.has_signal("locale_changed"):
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
+	_retranslate_tree(self)
+
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 	_ask_sect_if_needed.call_deferred()
 
 	HubSession.attach(self)
 
-	for arg in OS.get_cmdline_args():
+	for arg in (OS.get_cmdline_args() + OS.get_cmdline_user_args()):
 		if arg == "--capture-screenshot":
 			_capture_and_quit.call_deferred()
 			break
@@ -250,6 +266,83 @@ func _ready() -> void:
 		if arg == "--test-open-social":
 			_test_open_social_and_quit.call_deferred()
 			break
+		if arg == "--test-tutorial-welcome":
+			_test_tutorial_welcome_and_quit.call_deferred()
+			break
+		if arg == "--test-tutorial-spotlight" or arg == "--test-tutorial-mode1":
+			_test_tutorial_spotlight_and_quit.call_deferred()
+			break
+		if arg == "--test-tutorial-mode2":
+			_test_tutorial_mode2_and_quit.call_deferred()
+			break
+
+	# Chức năng Introduce / Hướng dẫn tân thủ khi người dùng vào game
+	if TutorialManager.should_show_intro():
+		get_tree().create_timer(0.4).timeout.connect(func() -> void:
+			if is_inside_tree() and TutorialManager.should_show_intro():
+				TutorialManager.start_initial_tutorial(self)
+		)
+
+func _test_tutorial_welcome_and_quit() -> void:
+	await get_tree().create_timer(0.4).timeout
+	TutorialManager.start_explore_tutorial(self)
+	await get_tree().create_timer(0.6).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode2_step1.png")
+		print("TUTORIAL_MODE2_STEP1_CAPTURE_SUCCESS")
+	get_tree().quit()
+
+func _test_tutorial_spotlight_and_quit() -> void:
+	await get_tree().create_timer(0.4).timeout
+	TutorialManager.start_initial_tutorial(self) # Dạng 1: Đầu game
+	await get_tree().create_timer(0.8).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode1_step1.png")
+		print("TUTORIAL_MODE1_STEP1_CAPTURE_SUCCESS")
+	
+	# Thử nghiệm click vào vùng sáng để tự động chuyển sang Bước 2 (Trang Bị)
+	if is_instance_valid(TutorialManager._active_overlay):
+		TutorialManager._active_overlay._handle_target_click()
+	await get_tree().create_timer(0.8).timeout
+	var img2 := get_viewport().get_texture().get_image()
+	if img2:
+		img2.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode1_step2.png")
+		print("TUTORIAL_MODE1_STEP2_CAPTURE_SUCCESS")
+
+	get_tree().quit()
+
+func _test_tutorial_mode2_and_quit() -> void:
+	await get_tree().create_timer(0.4).timeout
+	TutorialManager.start_explore_tutorial(self) # Dạng 2: Khám phá toàn bộ nút
+	await get_tree().create_timer(0.8).timeout
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode2_tour_step1.png")
+		print("TUTORIAL_MODE2_STEP1_CAPTURE_SUCCESS")
+
+	# Test bấm nút Next
+	if is_instance_valid(TutorialManager._active_overlay):
+		TutorialManager._active_overlay._on_next_step_pressed()
+	await get_tree().create_timer(0.8).timeout
+	var img2 := get_viewport().get_texture().get_image()
+	if img2:
+		img2.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode2_tour_step2.png")
+		print("TUTORIAL_MODE2_STEP2_CAPTURE_SUCCESS")
+
+	# Test bấm tiếp để xem 1 nút khác (nút Kỹ Năng)
+	if is_instance_valid(TutorialManager._active_overlay):
+		TutorialManager._active_overlay._on_next_step_pressed() # sang step 3: CharacterButton
+		TutorialManager._active_overlay._on_next_step_pressed() # sang step 4: NavButton0
+		TutorialManager._active_overlay._on_next_step_pressed() # sang step 5: NavButton1
+	await get_tree().create_timer(0.8).timeout
+	var img3 := get_viewport().get_texture().get_image()
+	if img3:
+		img3.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/00e47e0c-5398-4269-a7db-2fbd05431d77/tutorial_mode2_tour_skills.png")
+		print("TUTORIAL_MODE2_SKILLS_CAPTURE_SUCCESS")
+
+	get_tree().quit()
 
 func _test_open_social_and_quit() -> void:
 	await get_tree().create_timer(0.4).timeout
@@ -400,7 +493,7 @@ func _capture_and_quit() -> void:
 	await get_tree().create_timer(0.5).timeout
 	var img := get_viewport().get_texture().get_image()
 	if img:
-		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/1f8e86b8-a82c-4738-a2e3-475668d696c0/character_hub_rendered.png")
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/71930568-ecf3-412d-924b-1c1d4144f4a7/character_hub_rendered.png")
 		print("CAPTURE_SUCCESS")
 	get_tree().quit()
 
@@ -515,6 +608,23 @@ func _create_mock_profile() -> void:
 				_profile.add_item(it)
 	GameManager.local_profile = _profile
 	SaveManager.save_profile(_profile)
+
+func _on_gm_profile_modified(target_profile: PlayerProfile) -> void:
+	if target_profile == null or target_profile == _profile or target_profile == GameManager.local_profile:
+		_profile = GameManager.local_profile
+		refresh()
+		_refresh_inventory_view()
+		_refresh_equipment_display()
+		_refresh_pk_label()
+		_refresh_portrait()
+		_refresh_mask_check()
+		if _skills_view and is_instance_valid(_skills_view) and _skills_view.visible:
+			_skills_view._profile = _profile
+			if _skills_view.has_method("_refresh"):
+				_skills_view._refresh()
+		if _market_view and is_instance_valid(_market_view) and _market_view.visible:
+			if _market_view.has_method("_refresh_money"):
+				_market_view._refresh_money()
 
 func refresh() -> void:
 	if _profile == null or not is_inside_tree() or not has_node("%GoldValueLabel"):
@@ -902,7 +1012,7 @@ func _sect_element() -> ElementTypes.ElementType:
 
 func _add_stat(idx: int) -> void:
 	if _profile == null or _profile.potential_points <= 0:
-		_show_toast("Không còn điểm tiềm năng")
+		_show_toast("Không còn điểm tiềm năng", true)
 		return
 	PotentialPointPopup.open(self, _profile, idx, func(added: int) -> void:
 		if added > 0:
@@ -913,7 +1023,7 @@ func _add_stat(idx: int) -> void:
 
 func _setup_inventory_view() -> void:
 	if %InvGrid:
-		%InvGrid.visible = false
+		%InvGrid.queue_free()
 	if _room == null:
 		_room = ItemRoomView.new()
 		_room.cell = 37
@@ -947,7 +1057,8 @@ func _setup_inventory_view() -> void:
 		%InvScroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		%InvScroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		%InvScroll.add_child(_room)
-		TouchScrollHelperScript.attach(%InvScroll, %InvScroll)
+		var inv_body := get_node_or_null("Stage/LeftPanel/InventoryView/InvBox/Body") as Control
+		TouchScrollHelperScript.attach(%InvScroll, inv_body if inv_body != null else %InvScroll)
 
 	if _profile and _profile.storage and not _profile.storage.changed.is_connected(_on_storage_changed):
 		_profile.storage.changed.connect(_on_storage_changed)
@@ -959,58 +1070,26 @@ func _setup_inventory_view() -> void:
 			btn.pressed.connect(_select_bag.bind(i))
 			btn.set_drag_forwarding(Callable(), _can_drop_on_tab.bind(i), _drop_on_tab.bind(i))
 
+	%SortButton.text = tr(%SortButton.text)
 	%SortButton.pressed.connect(_on_sort_pressed)
-	%ShopButton.pressed.connect(func() -> void:
-		PotionShopWindow.open(self, func() -> void:
-			refresh()
-			_refresh_inventory_view()
-		, _profile)
-	)
-	if %ShopButton != null and %ShopButton.get_parent() != null:
-		var parent_box = %ShopButton.get_parent()
-		var btn_vd := Button.new()
-		btn_vd.name = "ViemDeShopButton"
-		btn_vd.custom_minimum_size = Vector2(0, 30)
-		btn_vd.text = "Đổi Viêm Đế"
-		btn_vd.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn_vd.focus_mode = Control.FOCUS_NONE
-		btn_vd.add_theme_font_override("font", %ShopButton.get_theme_font("font"))
-		btn_vd.add_theme_font_size_override("font_size", 13)
-		if %ShopButton.has_theme_stylebox_override("normal"):
-			btn_vd.add_theme_stylebox_override("normal", %ShopButton.get_theme_stylebox("normal"))
-		if %ShopButton.has_theme_stylebox_override("hover"):
-			btn_vd.add_theme_stylebox_override("hover", %ShopButton.get_theme_stylebox("hover"))
-		btn_vd.pressed.connect(func() -> void:
-			ViemDeWindow.open_reward_shop(self, _profile)
-		)
-		parent_box.add_child(btn_vd)
-
-		var btn_ktc := Button.new()
-		btn_ktc.name = "KyTranCacButton"
-		btn_ktc.custom_minimum_size = Vector2(0, 30)
-		btn_ktc.text = "Kỳ Trân Các"
-		btn_ktc.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn_ktc.focus_mode = Control.FOCUS_NONE
-		btn_ktc.add_theme_font_override("font", %ShopButton.get_theme_font("font"))
-		btn_ktc.add_theme_font_size_override("font_size", 13)
-		if %ShopButton.has_theme_stylebox_override("normal"):
-			btn_ktc.add_theme_stylebox_override("normal", %ShopButton.get_theme_stylebox("normal"))
-		if %ShopButton.has_theme_stylebox_override("hover"):
-			btn_ktc.add_theme_stylebox_override("hover", %ShopButton.get_theme_stylebox("hover"))
-		btn_ktc.pressed.connect(func() -> void:
-			KyTranCacWindow.open(self, func() -> void:
+	if has_node("%ShopButton"):
+		%ShopButton.text = tr(%ShopButton.text)
+		%ShopButton.pressed.connect(func() -> void:
+			PotionShopWindow.open(self, func() -> void:
 				refresh()
 				_refresh_inventory_view()
 			, _profile)
 		)
-		parent_box.add_child(btn_ktc)
 	if has_node("%CraftButton"):
+		%CraftButton.text = tr(%CraftButton.text)
 		%CraftButton.pressed.connect(func() -> void:
 			_set_view("crafting")
 		)
 	if has_node("%StorageButton"):
+		%StorageButton.text = tr(%StorageButton.text)
 		%StorageButton.pressed.connect(_toggle_storage_window)
 	if has_node("%SecurityButton"):
+		%SecurityButton.text = tr(%SecurityButton.text)
 		%SecurityButton.pressed.connect(func() -> void:
 			if not SecurityLock.has_password(_profile):
 				SecurityWindow.open(self, _profile)
@@ -1020,7 +1099,7 @@ func _setup_inventory_view() -> void:
 					if err == "":
 						_show_toast("Giải mã khóa bảo vệ thành công!")
 					else:
-						_show_toast("Mật mã kiểm chứng không chính xác!")
+						_show_toast("Mật mã kiểm chứng không chính xác!", true)
 					refresh()
 				)
 			else:
@@ -1029,45 +1108,15 @@ func _setup_inventory_view() -> void:
 				refresh()
 		)
 	var is_gm := AccountApi.is_gm()
-	for btn_name in ["%TestCreateButton", "%TestAddButton", "%TestMaskButton", "%TestMantleButton"]:
-		if has_node(btn_name):
-			var btn: Button = get_node(btn_name)
-			btn.visible = is_gm
-			if not is_gm:
-				btn.queue_free()
+	if has_node("%TestCreateButton"):
+		var btn: Button = get_node("%TestCreateButton")
+		btn.visible = is_gm
+		if not is_gm:
+			btn.queue_free()
 
 	if is_gm:
-		var top_bar := get_node_or_null("Stage/TopBar")
-		if top_bar and not top_bar.has_node("GmTopButton"):
-			var gm_btn := Button.new()
-			gm_btn.name = "GmTopButton"
-			gm_btn.text = "★ GM (F12) ★"
-			gm_btn.tooltip_text = "Mở Trung tâm điều hành Game Master (Phím F12)"
-			gm_btn.position = Vector2(298, 14)
-			gm_btn.size = Vector2(110, 40)
-			gm_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			var st_normal := StyleBoxFlat.new()
-			st_normal.bg_color = Color(0.14, 0.11, 0.04, 0.92)
-			st_normal.border_color = Color(1.0, 0.85, 0.25, 0.95)
-			st_normal.set_border_width_all(2)
-			st_normal.set_corner_radius_all(6)
-			gm_btn.add_theme_stylebox_override("normal", st_normal)
-			var st_hover := StyleBoxFlat.new()
-			st_hover.bg_color = Color(0.24, 0.18, 0.06, 0.98)
-			st_hover.border_color = Color(1.0, 0.95, 0.4, 1.0)
-			st_hover.set_border_width_all(2)
-			st_hover.set_corner_radius_all(6)
-			gm_btn.add_theme_stylebox_override("hover", st_hover)
-			gm_btn.add_theme_color_override("font_color", Color(1.0, 0.9, 0.35))
-			gm_btn.add_theme_font_size_override("font_size", 13)
-			gm_btn.pressed.connect(func() -> void:
-				var gm_script: GDScript = load("res://ui/gm/gm_control_window.gd")
-				if gm_script:
-					gm_script.open(self)
-			)
-			top_bar.add_child(gm_btn)
-
 		if has_node("%TestCreateButton"):
+			%TestCreateButton.text = tr(%TestCreateButton.text)
 			%TestCreateButton.pressed.connect(func() -> void:
 				ItemCreatorPopup.open(self, _profile, func() -> void:
 					SaveManager.save_profile(_profile)
@@ -1075,48 +1124,6 @@ func _setup_inventory_view() -> void:
 					refresh()
 					_refresh_inventory_view()
 				)
-			)
-		if has_node("%TestAddButton"):
-			%TestAddButton.pressed.connect(func() -> void:
-				if _profile == null:
-					return
-				for i in 10:
-					_profile.add_item(ItemGenerator.random_equipment(_profile.level))
-				SaveManager.save_profile(_profile)
-				SaveManager.flush_online()
-				refresh()
-				_refresh_inventory_view()
-				_show_toast("Đã thêm 10 trang bị ngẫu nhiên")
-			)
-		if has_node("%TestMaskButton"):
-			%TestMaskButton.pressed.connect(func() -> void:
-				if _profile == null:
-					return
-				var added := 0
-				for p in 5:
-					var mask_item := ItemGenerator.generate(ItemDatabase.Detail.MASK, p, 1, int(_profile.get_element()), [5, 5, 5, 5, 5, 5])
-					if mask_item and _profile.add_item(mask_item):
-						added += 1
-				SaveManager.save_profile(_profile)
-				SaveManager.flush_online()
-				refresh()
-				_refresh_inventory_view()
-				_show_toast("Đã thêm %d Mặt Nạ vào hành trang!" % added)
-			)
-		if has_node("%TestMantleButton"):
-			%TestMantleButton.pressed.connect(func() -> void:
-				if _profile == null:
-					return
-				var added := 0
-				for lv in [1, 3, 5, 6, 7]:
-					var mantle_item := ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, lv, int(_profile.get_element()), [6, 6, 6, 6, 6, 6])
-					if mantle_item and _profile.add_item(mantle_item):
-						added += 1
-				SaveManager.save_profile(_profile)
-				SaveManager.flush_online()
-				refresh()
-				_refresh_inventory_view()
-				_show_toast("Đã thêm %d Phi Phong vào hành trang!" % added)
 			)
 	if has_node("%CloseInvBtn"):
 		%CloseInvBtn.pressed.connect(func() -> void:
@@ -1134,7 +1141,7 @@ func _drop_on_tab(_at: Vector2, data: Variant, bag: int) -> void:
 		SaveManager.save_profile(_profile)
 		_select_bag(bag)
 	else:
-		_show_toast("Túi %d đã đầy chỗ cho món này" % (bag + 1))
+		_show_toast("Túi %d đã đầy chỗ cho món này" % (bag + 1), true)
 
 func _setup_equipment_slots() -> void:
 	if has_node("%MaskVisualCheck"):
@@ -1369,7 +1376,7 @@ func _unequip_item(part: int, item: ItemInstance) -> void:
 		refresh()
 		_refresh_inventory_view()
 	else:
-		_show_toast("Hành trang đã đầy, không thể tháo đồ!")
+		_show_toast("Hành trang đã đầy, không thể tháo đồ!", true)
 
 func _set_view(view: String) -> void:
 	_current_view = view
@@ -1461,7 +1468,7 @@ func _show_skills_view() -> void:
 		if _profile != null and _profile.needs_sect():
 			_ask_sect_if_needed()
 		else:
-			_show_toast("Chưa gia nhập môn phái — đạt cấp %d để chọn phái" % PlayerProfile.NEWBIE_LEVEL)
+			_show_toast("Chưa gia nhập môn phái — đạt cấp %d để chọn phái" % PlayerProfile.NEWBIE_LEVEL, true)
 		_set_view("character")
 		return
 	if _skills_view == null:
@@ -1590,7 +1597,7 @@ func _setup_nav_buttons() -> void:
 
 func _select_bag(bag_idx: int) -> void:
 	if bag_idx >= PlayerProfile.OPEN_BAGS:
-		_show_toast("Túi %d chưa mở" % (bag_idx + 1))
+		_show_toast("Túi %d chưa mở" % (bag_idx + 1), true)
 		return
 	_current_bag = bag_idx
 	if _room:
@@ -1617,13 +1624,6 @@ func _refresh_inventory_view() -> void:
 		else:
 			_room.slotted_counts = {}
 		_room.setup(_profile)
-
-	if has_node("%InvGoldLabel"):
-		%InvGoldLabel.text = InventoryPopup.format_money(_profile.gold) + " Lượng"
-	if has_node("%InvXuLabel"):
-		%InvXuLabel.text = InventoryPopup.format_money(_profile.xu) + " Xu"
-	if has_node("%InvJadeLabel"):
-		%InvJadeLabel.text = InventoryPopup.format_money(_profile.jade)
 
 func _toggle_storage_window() -> void:
 	for w in get_tree().get_nodes_in_group("social_windows"):
@@ -1672,7 +1672,7 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 		actions.insert(0, ["Cất vào rương", func() -> void:
 			var err := StorageService.store_item(_profile, item, storage_win._box)
 			if err != "":
-				_show_toast(err)
+				_show_toast(err, true)
 			else:
 				_show_toast("Đã cất %s vào rương." % item.get_display_name())
 				SaveManager.save_profile(_profile)
@@ -1691,7 +1691,7 @@ func _equip_item_from_inv(index: int) -> void:
 	var item_name: String = str(item.get_display_name())
 	var err := _profile.equip_from_inventory(index)
 	if err != "":
-		_show_toast(err)
+		_show_toast(err, true)
 	else:
 		_show_toast("Đã trang bị %s!" % item_name)
 		SaveManager.save_profile(_profile)
@@ -1706,7 +1706,7 @@ func _drop_item_from_inv(index: int) -> void:
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
 	if blocked != "":
-		_show_toast(blocked)
+		_show_toast(blocked, true)
 		return
 	_profile.inventory.remove_at(index)
 	_show_toast("Đã vứt %s" % item.get_display_name())
@@ -1722,10 +1722,10 @@ func _sell_item_from_inv(index: int) -> void:
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không thể bán."
 	if blocked != "":
-		_show_toast(blocked)
+		_show_toast(blocked, true)
 		return
 	if not item.can_sell():
-		_show_toast("Vật phẩm này không thể bán.")
+		_show_toast("Vật phẩm này không thể bán.", true)
 		return
 
 	var sale_price: int = int(item.get_sale_price())
@@ -1768,7 +1768,7 @@ func _use_item_from_inv(index: int) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	var res := ItemConsumer.use_item(_profile, item, player, self)
 	if res.has("message") and str(res["message"]) != "":
-		_show_toast(str(res["message"]))
+		_show_toast(str(res["message"]), not res.get("ok", false))
 	if res.get("ok", false):
 		SaveManager.save_profile(_profile)
 		SaveManager.flush_online()
@@ -1825,7 +1825,7 @@ func _craft_viem_de_totem_hub(_index: int) -> void:
 	if _profile == null:
 		return
 	var res: Dictionary = ViemDeWindow.craft_totem_quick(_profile)
-	_show_toast(str(res.get("message", "")))
+	_show_toast(str(res.get("message", "")), not res.get("ok", false))
 	refresh()
 	_refresh_inventory_view()
 
@@ -1893,15 +1893,96 @@ func _enter_field_map(entry: Dictionary) -> void:
 	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tween.tween_callback(get_tree().change_scene_to_file.bind(GAME_SCENE_PATH))
 
-func _show_toast(message: String) -> void:
+func _show_toast(message: String, is_error: bool = false) -> void:
 	var toast: Label = %ToastLabel
+	if toast == null:
+		return
+
+	# Tự động nhận diện thông báo lỗi nếu chưa gán is_error rõ ràng
+	if not is_error:
+		var lower := message.to_lower()
+		for kw in [
+			"cảnh giới", "không thể", "thất bại", "chưa đủ", "không đủ",
+			"đã đầy", "chưa mở", "không chính xác", "không còn", "đã tối đa",
+			"bị khóa", "chưa gia nhập", "không hợp lệ", "lỗi", "chưa học"
+		]:
+			if kw in lower:
+				is_error = true
+				break
+
 	toast.text = message
 	toast.visible = true
 	toast.modulate.a = 1.0
+
+	# Thiết lập kiểu dáng (StyleBox + Màu chữ)
+	if is_error:
+		# Nền đỏ cho lỗi
+		var box_err := StyleBoxFlat.new()
+		box_err.bg_color = Color(0.42, 0.07, 0.07, 0.94)  ## Nền đỏ đô/đỏ sẫm rõ ràng
+		box_err.border_color = Color(0.92, 0.28, 0.28, 0.98)  ## Viền đỏ tươi nổi bật
+		box_err.set_border_width_all(1)
+		box_err.set_corner_radius_all(6)
+		box_err.content_margin_left = 22.0
+		box_err.content_margin_right = 22.0
+		box_err.content_margin_top = 8.0
+		box_err.content_margin_bottom = 8.0
+		box_err.shadow_color = Color(0, 0, 0, 0.6)
+		box_err.shadow_size = 5
+		toast.add_theme_stylebox_override("normal", box_err)
+
+		# Chữ hơi đỏ đậm xíu (viền outline đen sắc nét bảo đảm độ tương phản tối đa)
+		toast.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38, 1.0))
+		toast.add_theme_color_override("font_outline_color", Color(0.05, 0.0, 0.0, 1.0))
+		toast.add_theme_constant_override("outline_size", 4)
+	else:
+		# Toast thông thường (thành công / thông tin)
+		var box_ok := StyleBoxFlat.new()
+		box_ok.bg_color = Color(0.08, 0.08, 0.07, 0.94)  ## Nền tối kiếm hiệp
+		box_ok.border_color = Color(0.78, 0.62, 0.28, 0.9)  ## Viền vàng kim
+		box_ok.set_border_width_all(1)
+		box_ok.set_corner_radius_all(6)
+		box_ok.content_margin_left = 22.0
+		box_ok.content_margin_right = 22.0
+		box_ok.content_margin_top = 8.0
+		box_ok.content_margin_bottom = 8.0
+		box_ok.shadow_color = Color(0, 0, 0, 0.6)
+		box_ok.shadow_size = 5
+		toast.add_theme_stylebox_override("normal", box_ok)
+
+		toast.add_theme_color_override("font_color", Color(1.0, 0.95, 0.75, 1.0))
+		toast.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+		toast.add_theme_constant_override("outline_size", 4)
+
+	# Tính toán kích thước tự động vừa vặn nội dung và căn giữa
+	var font := toast.get_theme_font("font")
+	var font_size := toast.get_theme_font_size("font_size")
+	if font_size <= 0:
+		font_size = 18
+	var text_w := 0.0
+	if font:
+		text_w = font.get_string_size(message, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size).x
+	else:
+		text_w = float(message.length() * 11)
+
+	var vw := get_viewport_rect().size.x
+	if vw <= 0:
+		vw = 1280.0
+	var toast_w := clampf(text_w + 48.0, 260.0, minf(vw - 60.0, 960.0))
+	toast.size.x = toast_w
+	toast.offset_left = (vw - toast_w) * 0.5
+	toast.offset_right = toast.offset_left + toast_w
+
+	# Tự động giãn chiều cao nếu thông báo có nhiều dòng
+	var lines := message.split("\n")
+	var toast_h := maxf(40.0, float(lines.size() * 24 + 16))
+	toast.size.y = toast_h
+	toast.offset_top = 550.0 - (toast_h - 40.0) * 0.5
+	toast.offset_bottom = toast.offset_top + toast_h
+
 	if _toast_tween:
 		_toast_tween.kill()
 	_toast_tween = create_tween()
-	_toast_tween.tween_interval(1.8)
+	_toast_tween.tween_interval(2.0)
 	_toast_tween.tween_property(toast, "modulate:a", 0.0, 0.4)
 	_toast_tween.tween_callback(toast.hide)
 
@@ -1922,13 +2003,16 @@ func _ask_sect_if_needed() -> void:
 		refresh()
 	)
 
-static func _format_number(value: int) -> String:
+static func format_number(value: int) -> String:
 	var digits := str(absi(value))
 	var result := ""
 	while digits.length() > 3:
 		result = "." + digits.substr(digits.length() - 3) + result
 		digits = digits.substr(0, digits.length() - 3)
 	return ("-" if value < 0 else "") + digits + result
+
+static func _format_number(value: int) -> String:
+	return format_number(value)
 
 # ================================================================ Thích ứng màn hình dài (Full 2 bên / Responsive)
 func _on_stage_layout_adapted(virtual_w: float, _virtual_h: float, extra_w: float) -> void:
@@ -1982,19 +2066,15 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 		right_panel.offset_left = 1060.0 + extra_w
 		right_panel.offset_right = 1262.0 + extra_w
 
-	# 3. BottomBar & LevelTag bám sát mép phải
+	# 3. BottomBar
 	var bot_bar := stage.get_node_or_null("BottomBar") as Control
 	if bot_bar:
 		bot_bar.size.x = vw
-		var lvl := bot_bar.get_node_or_null("LevelTag") as Control
-		if lvl:
-			lvl.offset_left = 1135.0 + extra_w
-			lvl.offset_right = 1262.0 + extra_w
 
 	# 4. ToastLabel căn giữa màn hình
 	var toast := stage.get_node_or_null("%ToastLabel") as Control
 	if toast:
-		var toast_w := 480.0
+		var toast_w := toast.size.x if toast.size.x > 0.0 else 480.0
 		toast.offset_left = (vw - toast_w) * 0.5
 		toast.offset_right = toast.offset_left + toast_w
 
@@ -2003,10 +2083,10 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	var center_panel := stage.get_node_or_null("%CenterPanel") as Control
 	var shift_center := extra_w * 0.5
 	if left_panel and center_panel:
-		left_panel.offset_left = shift_center * 0.35
-		left_panel.offset_right = 545.0 + shift_center * 0.35
-		center_panel.offset_left = 565.0 + shift_center * 0.35
-		center_panel.offset_right = 1040.0 + shift_center * 0.35
+		left_panel.offset_left = shift_center
+		left_panel.offset_right = 545.0 + shift_center
+		center_panel.offset_left = 565.0 + shift_center
+		center_panel.offset_right = 1040.0 + shift_center
 
 	# 6. Căn giữa các cửa sổ docked đang mở (Sự kiện, Kỹ năng, Bang hội...)
 	for win in [_skills_view, _guild_view, _market_view, _ranking_view, _settings_view, _events_view]:
@@ -2020,6 +2100,96 @@ func _reposition_docked_window(win: Control, _vw: float, extra_w: float) -> void
 	var left_p_offset := left_p.offset_left if left_p else 0.0
 	var right_boundary := 1060.0 + extra_w
 	var avail_w := right_boundary - 18.0
-	var win_w := win.size.x if win.size.x > 0 else 1000.0
-	var desired_x := 18.0 + maxf(0.0, (avail_w - win_w) * 0.5)
+	var target_w := 1000.0 if (win is SocialWindow and (win as SocialWindow).is_full_width) else (win.size.x if win.size.x > 0 else 1000.0)
+	win.size = Vector2(target_w, 585.0)
+	var desired_x := 18.0 + maxf(0.0, (avail_w - target_w) * 0.5)
 	win.position.x = desired_x - left_p_offset
+
+func _on_locale_changed(_code: String) -> void:
+	_retranslate_tree(self)
+
+	# Làm mới các tab túi nếu có
+	if has_node("%BagTabs"):
+		var bags := %BagTabs.get_children()
+		for i in bags.size():
+			var btn := bags[i] as Button
+			if btn:
+				btn.text = tr("Túi %d" % (i + 1))
+
+	# Làm mới các cửa sổ docked đang mở để tải lại bằng ngôn ngữ mới
+	if _skills_view != null and is_instance_valid(_skills_view):
+		var was_vis := _skills_view.visible
+		_skills_view.queue_free()
+		_skills_view = null
+		if was_vis:
+			_show_skills_view()
+	if _events_view != null and is_instance_valid(_events_view):
+		var was_vis := _events_view.visible
+		_events_view.queue_free()
+		_events_view = null
+		if was_vis:
+			_show_events_view()
+	if _guild_view != null and is_instance_valid(_guild_view):
+		var was_vis := _guild_view.visible
+		_guild_view.queue_free()
+		_guild_view = null
+		if was_vis:
+			_show_guild_view()
+	if _ranking_view != null and is_instance_valid(_ranking_view):
+		var was_vis := _ranking_view.visible
+		_ranking_view.queue_free()
+		_ranking_view = null
+		if was_vis:
+			_show_ranking_view()
+	if _crafting_view != null and is_instance_valid(_crafting_view):
+		var was_vis := _crafting_view.visible
+		_crafting_view.queue_free()
+		_crafting_view = null
+		if was_vis:
+			_show_crafting_view()
+	if _market_view != null and is_instance_valid(_market_view):
+		var was_vis := _market_view.visible
+		_market_view.queue_free()
+		_market_view = null
+		if was_vis:
+			_show_social_view()
+
+	refresh()
+
+func _retranslate_tree(node: Node) -> void:
+	if node is Button:
+		var btn := node as Button
+		if not btn.text.is_empty():
+			var key: String = btn.get_meta(&"orig_text", btn.text)
+			btn.set_meta(&"orig_text", key)
+			btn.text = tr(key)
+		if not btn.tooltip_text.is_empty():
+			var t_key: String = btn.get_meta(&"orig_tooltip", btn.tooltip_text)
+			btn.set_meta(&"orig_tooltip", t_key)
+			btn.tooltip_text = tr(t_key)
+	elif node is Label:
+		var lbl := node as Label
+		if not lbl.text.is_empty():
+			var key: String = lbl.get_meta(&"orig_text", lbl.text)
+			lbl.set_meta(&"orig_text", key)
+			if LocalizationManager != null and LocalizationManager.TRANSLATIONS.has(key):
+				lbl.text = tr(key)
+	for child in node.get_children():
+		_retranslate_tree(child)
+
+func _toggle_gm_window() -> void:
+	if not AccountApi.is_gm():
+		return
+	var existing := get_tree().current_scene.find_child("GmControlWindow", true, false)
+	if existing:
+		existing.queue_free()
+	else:
+		var gm_script: GDScript = load("res://ui/gm/gm_control_window.gd")
+		if gm_script:
+			gm_script.open(self)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F12 and AccountApi.is_gm():
+			_toggle_gm_window()
+			get_viewport().set_input_as_handled()

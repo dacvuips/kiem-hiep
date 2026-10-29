@@ -118,7 +118,8 @@ const FLAG_JUMPING := 8
 ## Cờ do SERVER đặt (game không gửi được): đang bày bán / đang mở giao dịch.
 const FLAG_STALL := 16
 const FLAG_TRADE_OPEN := 32
-const CLIENT_FLAGS := 0x0f
+const FLAG_PK := 64
+const CLIENT_FLAGS := 0x4f
 
 static func action_index(action: String) -> int:
 	var i := ACTIONS.find(action)

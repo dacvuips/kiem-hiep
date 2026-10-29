@@ -15,11 +15,17 @@ Ghi xong thì chạy tiếp tools/import_vltk_hit_effects.py (vltk_attribs + c�
 tools/import_vltk_skill_fx.py <phái> (hiệu ứng chiêu).
 """
 import json
+import os
 import re
 import subprocess
 import sys
 import unicodedata
 from pathlib import Path
+
+if sys.platform == "win32":
+    git_usr_bin = r"C:\Program Files\Git\usr\bin"
+    if os.path.exists(git_usr_bin) and git_usr_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = git_usr_bin + os.pathsep + os.environ.get("PATH", "")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import vltk_source  # noqa: E402

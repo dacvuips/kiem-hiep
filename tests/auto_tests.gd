@@ -104,6 +104,20 @@ func test_targeting(player: Node2D, profile: PlayerProfile) -> void:
 	far.queue_free()
 	await get_tree().process_frame
 
+	## Thử tự động dùng TDP khi hết bình sinh lực
+	player.health = 40.0
+	player.is_auto_mode = true
+	auto.running = true
+	s.tdp_no_hp_potion = true
+	check("phù khi hết bình máu", auto._tick_recovery(s))
+	check("tự dừng auto sau khi phù", not player.is_auto_mode and not auto.running)
+	player.health = 100.0
+
+	## Thử khoảng cách tiếp cận
+	s.approach = 200
+	var stop_d := auto._stop_distance(s)
+	check("tính cự ly tiếp cận hợp lệ", stop_d > 0.0 and stop_d <= 200.0)
+
 func test_loot(player: Node2D, profile: PlayerProfile) -> void:
 	var s := profile.get_auto_settings()
 	var drop := GroundDrop.new()

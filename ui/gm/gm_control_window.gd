@@ -1,17 +1,22 @@
 extends SocialWindow
 class_name GmControlWindow
 
+const AuraDatabase = preload("res://systems/auras/aura_database.gd")
+
 ## TRUNG TÂM ĐIỀU HÀNH GAME MASTER (GM CONTROL CENTER)
 ## Giao diện trực quan tích hợp toàn diện các công cụ hỗ trợ GM quản lý thế giới, người chơi, boss, cấp phát vật phẩm.
 
-enum Tab { PLAYER, SELF, DISPENSER, BOSS, POSSESS, AUDIT }
-const TAB_NAMES := ["1. Người Chơi", "2. Bản Thân", "3. Cấp Đồ & Tiền", "4. Boss & Rớt Đồ", "5. Chiếm Quyền", "6. Nhật Ký GM"]
+enum Tab { PLAYER, SELF, DISPENSER, BOSS, POSSESS, AUDIT, AURA }
+const TAB_NAMES := ["1. Người Chơi", "2. Bản Thân", "3. Cấp Đồ & Tiền", "4. Boss & Rớt Đồ", "5. Chiếm Quyền", "6. Nhật Ký GM", "7. Hào Quang Aura"]
 
 var _current_tab: int = Tab.PLAYER
 var _tab_bar: HBoxContainer
 var _content_area: VBoxContainer
 var _status_footer: HBoxContainer
 var _selected_player: Dictionary = {}
+var _dispenser_res_label: Label = null
+var _aura_filter_category: String = "Tất Cả"
+var _aura_search_keyword: String = ""
 
 static func open(host: Node) -> SocialWindow:
 	if not AccountApi.is_gm():
@@ -60,6 +65,14 @@ func _init() -> void:
 
 	GmManager.gm_state_changed.connect(_refresh_footer)
 	GmManager.possession_changed.connect(func(_p: bool, _t: String) -> void: _refresh_footer())
+	GmManager.profile_modified.connect(_on_gm_profile_modified)
+
+func _on_gm_profile_modified(_p: PlayerProfile) -> void:
+	_refresh_footer()
+	if _current_tab == Tab.DISPENSER:
+		_update_dispenser_summary()
+	elif _current_tab == Tab.PLAYER:
+		_render_tab()
 
 func _ready() -> void:
 	super._ready()
@@ -120,6 +133,8 @@ func _render_tab() -> void:
 			_build_possess_tab()
 		Tab.AUDIT:
 			_build_audit_tab()
+		Tab.AURA:
+			_build_aura_tab()
 
 # ==============================================================================
 # TAB 1: QUẢN TRỊ NGƯỜI CHƠI
@@ -558,12 +573,45 @@ func _build_self_tab() -> void:
 # TAB 3: CẤP ĐỒ, TIỀN & VẬT PHẨM
 # ==============================================================================
 
+func _update_dispenser_summary() -> void:
+	if _dispenser_res_label == null or not is_instance_valid(_dispenser_res_label):
+		return
+	var p: PlayerProfile = _selected_profile()
+	if p == null:
+		_dispenser_res_label.text = "Chưa có thông tin tài nguyên."
+		return
+	_dispenser_res_label.text = "💰 Ngân lượng: %s  ·  🪙 Tiền Xu: %s  ·  💎 KNB: %s  ·  Danh vọng: %s  ·  Phúc duyên: %s" % [
+		CharacterHubScreen.format_number(p.gold),
+		CharacterHubScreen.format_number(p.xu),
+		CharacterHubScreen.format_number(p.jade),
+		CharacterHubScreen.format_number(p.prestige),
+		CharacterHubScreen.format_number(p.fuyuan)
+	]
+
 func _build_dispenser_tab() -> void:
 	var target_name: String = _selected_player.get("name", "Bản Thân")
 	var target_p: PlayerProfile = _selected_player.get("profile") if _selected_player.get("profile") else GameManager.local_profile
 
 	var info_sec := SocialUi.info_box("🎁 Mục Tiêu Nhận Quà: %s" % target_name)
 	info_sec[1].add_child(SocialUi.label("Bạn có thể đổi mục tiêu nhận quà tại Tab [1. Người Chơi].", SocialUi.MUTED, 12))
+
+	var res_box := PanelContainer.new()
+	var res_sb := StyleBoxFlat.new()
+	res_sb.bg_color = Color(0.08, 0.12, 0.18, 0.85)
+	res_sb.border_color = Color(0.85, 0.72, 0.25, 0.8)
+	res_sb.set_border_width_all(1)
+	res_sb.set_corner_radius_all(4)
+	res_sb.content_margin_left = 12
+	res_sb.content_margin_right = 12
+	res_sb.content_margin_top = 6
+	res_sb.content_margin_bottom = 6
+	res_box.add_theme_stylebox_override("panel", res_sb)
+
+	_dispenser_res_label = SocialUi.label("", SocialUi.GOLD, 13)
+	res_box.add_child(_dispenser_res_label)
+	info_sec[1].add_child(res_box)
+	_update_dispenser_summary()
+
 	_content_area.add_child(info_sec[0])
 
 	var money_sec := SocialUi.info_box("💰 Cấp Ngân Lượng, Tiền Xu & Kim Nguyên Bảo")
@@ -628,6 +676,8 @@ func _build_dispenser_tab() -> void:
 	open_creator_btn.pressed.connect(func() -> void:
 		ItemCreatorPopup.open(get_tree().current_scene, target_p, func() -> void:
 			SaveManager.save_profile(target_p)
+			SaveManager.flush_online.call_deferred()
+			GmManager.profile_modified.emit(target_p)
 			_show_toast("Đã thêm trang bị tùy chọn vào túi đồ của %s!" % target_name)
 		)
 	)
@@ -635,6 +685,8 @@ func _build_dispenser_tab() -> void:
 		for i in 10:
 			target_p.add_item(ItemGenerator.random_equipment(target_p.level))
 		SaveManager.save_profile(target_p)
+		SaveManager.flush_online.call_deferred()
+		GmManager.profile_modified.emit(target_p)
 		_show_toast("Đã cấp 10 trang bị ngẫu nhiên cho %s" % target_name)
 	)
 	add_xj_10.pressed.connect(func() -> void:
@@ -642,6 +694,8 @@ func _build_dispenser_tab() -> void:
 			var xj := ItemGenerator.generate_misc(Compound.XUANJING, 10, 0, 1)
 			target_p.add_item(xj)
 		SaveManager.save_profile(target_p)
+		SaveManager.flush_online.call_deferred()
+		GmManager.profile_modified.emit(target_p)
 		_show_toast("Đã cấp 3 viên Huyền Tinh Cấp 10 cho %s" % target_name)
 	)
 
@@ -942,3 +996,182 @@ func _show_toast(msg: String) -> void:
 		if is_instance_valid(toast):
 			toast.queue_free()
 	)
+
+# ==============================================================================
+# TAB 7: QUẢN LÝ HÀO QUANG (AURA GRID & CẤP PHÁT)
+# ==============================================================================
+
+func _build_aura_tab() -> void:
+	# 1. Khung chọn mục tiêu & điều khiển nhanh
+	var target_sec := SocialUi.info_box("✨ Mục Tiêu Áp Dụng Hào Quang (Aura)")
+	var target_row := HBoxContainer.new()
+	target_row.add_theme_constant_override("separation", 10)
+
+	var player_list := GmManager.get_player_list()
+	var opt_target := OptionButton.new()
+	opt_target.custom_minimum_size = Vector2(280, 34)
+	var current_idx := 0
+	for i in player_list.size():
+		var p: Dictionary = player_list[i]
+		var label_str: String = ("★ [Bản Thân] %s" % str(p.get("name", "?"))) if p.get("is_self", false) else ("👤 [Khác] %s (Cấp %d)" % [str(p.get("name", "?")), int(p.get("level", 1))])
+		opt_target.add_item(label_str, i)
+		if not _selected_player.is_empty() and _selected_player.get("id") == p.get("id"):
+			current_idx = i
+
+	if not player_list.is_empty():
+		opt_target.selected = current_idx
+		_selected_player = player_list[current_idx]
+
+	opt_target.item_selected.connect(func(idx: int) -> void:
+		if idx >= 0 and idx < player_list.size():
+			_selected_player = player_list[idx]
+			_render_tab()
+	)
+	target_row.add_child(SocialUi.label("Mục tiêu áp dụng:", SocialUi.LABEL_BLUE, 13))
+	target_row.add_child(opt_target)
+
+	var clear_btn := SocialUi.small_button("❌ Tháo Hào Quang Hiện Tại")
+	clear_btn.pressed.connect(func() -> void:
+		GmManager.clear_player_aura(_selected_player)
+		_show_toast("Đã tháo hào quang của %s" % _selected_player.get("name", "Mục tiêu"))
+		_render_tab()
+	)
+	target_row.add_child(clear_btn)
+	target_sec[1].add_child(target_row)
+
+	var cur_aura_id := 0
+	if _selected_player.get("is_self", false) or _selected_player.get("profile") == GameManager.local_profile:
+		cur_aura_id = GameManager.local_profile.gm_aura_state if GameManager.local_profile else 0
+	elif _selected_player.get("profile") != null:
+		cur_aura_id = _selected_player["profile"].gm_aura_state
+	elif _selected_player.get("remote_node") != null:
+		var r = _selected_player["remote_node"]
+		cur_aura_id = int(r._aura_sprite_state) if "_aura_sprite_state" in r else 0
+
+	var cur_aura_info := AuraDatabase.get_by_state(cur_aura_id)
+	var cur_name: String = str(cur_aura_info.get("name", "Chưa trang bị" if cur_aura_id == 0 else "State #%d" % cur_aura_id))
+	var status_lbl := SocialUi.label("Hào quang đang mang: %s" % cur_name, SocialUi.LABEL_GREEN if cur_aura_id > 0 else SocialUi.MUTED, 12)
+	target_sec[1].add_child(status_lbl)
+	_content_area.add_child(target_sec[0])
+
+	# 2. Bộ lọc danh mục & Tìm kiếm
+	var filter_sec := SocialUi.info_box("🏷 Bộ Lọc & Tìm Kiếm Hào Quang")
+	var cat_row := HBoxContainer.new()
+	cat_row.add_theme_constant_override("separation", 6)
+	var categories := AuraDatabase.get_categories()
+	for cat in categories:
+		var btn := SocialUi.small_button(cat)
+		if cat == _aura_filter_category:
+			GameUi.set_active(btn, true)
+		btn.pressed.connect(func() -> void:
+			_aura_filter_category = cat
+			_render_tab()
+		)
+		cat_row.add_child(btn)
+	filter_sec[1].add_child(cat_row)
+
+	var search_row := HBoxContainer.new()
+	search_row.add_theme_constant_override("separation", 8)
+	var search_input := SocialUi.line_edit("Tìm theo tên hoặc từ khóa hào quang...")
+	search_input.text = _aura_search_keyword
+	search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	search_input.text_changed.connect(func(new_text: String) -> void:
+		_aura_search_keyword = new_text.strip_edges()
+	)
+	var apply_search_btn := SocialUi.small_button("🔍 Lọc Danh Sách")
+	apply_search_btn.pressed.connect(func() -> void:
+		_render_tab()
+	)
+	search_row.add_child(search_input)
+	search_row.add_child(apply_search_btn)
+	filter_sec[1].add_child(search_row)
+	_content_area.add_child(filter_sec[0])
+
+	# 3. Lưới hiển thị danh sách Hào Quang (Grid)
+	var grid_sec := SocialUi.info_box("🌟 Danh Sách Hào Quang Võ Lâm (Grid View - %s)" % _aura_filter_category)
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var all_auras := AuraDatabase.get_all()
+	var kw := _aura_search_keyword.to_lower()
+	var shown_count := 0
+
+	for item in all_auras:
+		var cat: String = str(item.get("category", "Khác"))
+		var a_name: String = str(item.get("name", ""))
+		var state_id: int = int(item.get("state_id", 0))
+
+		if _aura_filter_category != "Tất Cả" and cat != _aura_filter_category:
+			continue
+		if kw != "" and not a_name.to_lower().contains(kw) and not str(state_id).contains(kw):
+			continue
+
+		shown_count += 1
+		var card := _build_aura_card(item, cur_aura_id == state_id)
+		grid.add_child(card)
+
+	if shown_count == 0:
+		var empty_lbl := SocialUi.label("Không tìm thấy hào quang nào phù hợp với bộ lọc.", SocialUi.MUTED, 13)
+		grid_sec[1].add_child(empty_lbl)
+	else:
+		grid_sec[1].add_child(grid)
+	_content_area.add_child(grid_sec[0])
+
+func _build_aura_card(item: Dictionary, is_active: bool) -> Control:
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(185, 175)
+	var border_color := GameUi.GOLD if is_active else Color(0.25, 0.3, 0.4, 0.6)
+	var bg_color := Color(0.18, 0.22, 0.15, 0.95) if is_active else Color(0.12, 0.16, 0.22, 0.85)
+	card.add_theme_stylebox_override("panel", GameUi.box(bg_color, border_color, 6, 2 if is_active else 1, 6))
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	# Thumbnail image (72x72)
+	var thumb_rect := TextureRect.new()
+	thumb_rect.custom_minimum_size = Vector2(72, 72)
+	thumb_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var tex := AuraDatabase.get_thumb(str(item.get("thumb", "")))
+	if tex != null:
+		thumb_rect.texture = tex
+	vb.add_child(thumb_rect)
+
+	# Name label
+	var name_lbl := Label.new()
+	name_lbl.text = str(item.get("name", "Aura"))
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.add_theme_color_override("font_color", GameUi.GOLD if is_active else GameUi.TEXT)
+	name_lbl.custom_minimum_size = Vector2(170, 28)
+	vb.add_child(name_lbl)
+
+	# Category badge
+	var cat_lbl := Label.new()
+	cat_lbl.text = "[%s]" % str(item.get("category", "Khác"))
+	cat_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cat_lbl.add_theme_font_size_override("font_size", 9)
+	cat_lbl.add_theme_color_override("font_color", GameUi.MUTED)
+	vb.add_child(cat_lbl)
+
+	# Action button
+	var btn_text := "✔ Đang Mang" if is_active else "Gắn Hào Quang"
+	var btn := SocialUi.small_button(btn_text)
+	btn.custom_minimum_size = Vector2(150, 26)
+	if is_active:
+		GameUi.set_active(btn, true)
+	var sid: int = int(item.get("state_id", 0))
+	btn.pressed.connect(func() -> void:
+		GmManager.set_player_aura(_selected_player, sid)
+		_show_toast("Đã gắn %s cho %s!" % [item.get("name"), _selected_player.get("name", "mục tiêu")])
+		_render_tab()
+	)
+	vb.add_child(btn)
+
+	card.add_child(vb)
+	return card

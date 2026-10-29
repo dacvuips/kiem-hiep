@@ -19,11 +19,12 @@ boot_splash/stretch_mode=0
 boot_splash/image="res://art/logo.png"
 config/icon="res://icon.png"
 boot_splash/minimum_display_time=1200
-run/main_scene.web="res://ui/login/Login.tscn"
+run/main_scene.web="res://ui/mode_select/ModeSelect.tscn"
 
 [autoload]
 
 GameUiBoot="*res://ui/common/game_ui_boot.gd"
+LocalizationManager="*res://systems/localization_manager.gd"
 PlayerStats="*res://systems/player_stats.gd"
 VfxManager="*res://systems/vfx_manager.gd"
 SfxManager="*res://systems/sfx_manager.gd"
@@ -34,6 +35,8 @@ MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
 NetClient="*res://net/client/net_client.gd"
 ContentPacks="*res://systems/boot/content_packs.gd"
+GmManager="*res://systems/gm/gm_manager.gd"
+TutorialManager="*res://ui/tutorial/tutorial_manager.gd"
 PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
 
 [display]
@@ -44,6 +47,7 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation=5
 
 [editor_plugins]
 

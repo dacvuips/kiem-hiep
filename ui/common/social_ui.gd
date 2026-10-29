@@ -73,7 +73,7 @@ static func section(header: String = "", _accent: Color = SECTION_ACCENT, bg: Co
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
 	if header != "":
-		v.add_child(label(header, LABEL_GREEN, 14))
+		v.add_child(label(TranslationServer.translate(header), LABEL_GREEN, 14))
 	return [panel, v]
 
 ## Hộp xanh dương đậm ("Được hỗ trợ từ…"). Trả về [PanelContainer, VBoxContainer].
@@ -83,7 +83,7 @@ static func info_box(header: String = "") -> Array:
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
 	if header != "":
-		v.add_child(label(header, LABEL_BLUE, 14))
+		v.add_child(label(TranslationServer.translate(header), LABEL_BLUE, 14))
 	return [panel, v]
 
 ## Thanh thông báo (xanh lá = tốt, đỏ = lỗi).

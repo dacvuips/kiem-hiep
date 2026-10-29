@@ -42,7 +42,8 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## Gói được phép từ kết nối SẢNH — mọi gói "trong map" khác (di chuyển, ra chiêu, sát thương, nhặt / vứt đồ, PK, cừu sát, xem trang bị
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
-	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING]
+	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT]
 
 class Conn:
 	var key := ""
@@ -454,6 +455,8 @@ func _on_peer_disconnected(id: int, p: MultiplayerPeer) -> void:
 		_drop(c)
 
 func _drop(c: Conn) -> void:
+	if not c.pending_profile.is_empty():
+		_apply_profile(c, c.pending_profile, c.pending_ack)
 	if c.entity:
 		social.on_leave(c)
 		relation.on_leave(c)
@@ -463,6 +466,8 @@ func _drop(c: Conn) -> void:
 			arena.on_leave(c)
 		if field:
 			field.on_leave(c)
+		if market:
+			market.on_leave(c)
 	_conns.erase(c.key)
 	if c.entity and c.character_id != 0:
 		c.dirty = true   ## vị trí lúc thoát luôn phải lưu
@@ -617,6 +622,12 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 				notice(c, str(r["message"]))
 		NetProto.C_CRAFT:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				if c.trade != null:
+					notice(c, "Đang giao dịch, không thể chế tạo.")
+					return
+				if c.profile != null and c.profile.stall_open:
+					notice(c, "Đang bày bán, không thể chế tạo.")
+					return
 				var a = JSON.parse_string(NetProto.get_str(b, 2048))
 				if a is Dictionary:
 					var r := Compound.run(c.profile, int(a.get("op", -1)), _str_list(a.get("uids", []), 6),
@@ -712,6 +723,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		else:
 			data = ProfileGuard.sanitize_new(data)
 	c.profile = PlayerProfile.from_dict(data)
+	if acc.has("xu"):
+		c.profile.xu = int(acc.get("xu", c.profile.xu))
 	## Nhân vật mới: quà tân thủ (cấp khởi đầu + đồ) do server sinh -> uid đồ là của server, qua được ProfileGuard.
 	var starter_items := 0
 	if new_character and not c.is_gm:
@@ -797,12 +810,14 @@ func saved_pos(data: Dictionary) -> Vector2:
 static func look_from_profile(data: Dictionary) -> Dictionary:
 	var profile := PlayerProfile.from_dict(data)
 	var gender_key := "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male"
-	var look := Equipment.get_appearance(profile.equipment, gender_key, profile.riding)
+	var look := Equipment.get_appearance(profile.equipment, gender_key, profile.riding, profile.show_mask)
 	var final_gender: String = str(look.get("gender", gender_key))
 	look["gender"] = 1 if final_gender == "female" else 0
 	look["mask_particular"] = int(look.get("mask_particular", -1))
 	var state_id := 0
-	if profile.active_aura_id != "":
+	if profile.gm_aura_state > 0:
+		state_id = profile.gm_aura_state
+	elif profile.active_aura_id != "":
 		var sect := SectRegistry.get_by_id(profile.sect_id)
 		if sect:
 			for skill in sect.skills:
@@ -855,9 +870,13 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 		e.dir = dir
 		e.action = action
 		e.z = z
+		var old_pk := (e.flags & NetProto.FLAG_PK) != 0
+		var new_pk := (flags & NetProto.FLAG_PK) != 0
 		e.flags = flags
 		e.touch()
 		aoi.update(e)
+		if old_pk != new_pk:
+			refresh_camp(c)
 		if battle:
 			battle.on_moved(c, p)   ## ô cổng doanh trại chiến trường
 
@@ -977,7 +996,15 @@ func _on_monster_killed(m: ServerMonster) -> void:
 			_grant_exp(c, m, share)
 	## Rớt đồ: server tung xúc xắc theo bảng gốc, đồ thuộc người hạ đòn cuối (DROP_OWNER_SECONDS giây đầu).
 	var rolls: Array
-	if m.hell_stars > 0:   ## quái phòng Địa Ngục
+	if m.is_boss or bool(m.data.get("is_boss", false)):
+		var bt := str(m.data.get("boss_type", "gold"))
+		if bt == "small_gold":
+			rolls = DropTable.roll_small_gold_boss(m.level, m.series)
+		elif bt == "killer":
+			rolls = DropTable.roll_killer_boss(m.level, m.series)
+		else:
+			rolls = DropTable.roll_gold_boss(m.level, m.series)
+	elif m.hell_stars > 0:   ## quái phòng Địa Ngục
 		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
 	else:
 		rolls = DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
@@ -1000,7 +1027,7 @@ func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	_give_exp(c, ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share))
 
 func _give_exp(c: Conn, got: int) -> void:
-	if got <= 0 or c.profile == null:
+	if got <= 0 or c.profile == null or c.profile.level >= PlayerProfile.MAX_LEVEL:
 		return
 	got = int(got * exp_mult)
 	var before := c.profile.level
@@ -1075,6 +1102,13 @@ func _apply_profile(c: Conn, client: Dictionary, ack: int) -> void:
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.max_speed = ProfileGuard.max_speed(c.profile)
 	c.dirty = true
+	if c.entity:
+		var new_look := look_from_profile(c.data)
+		if new_look != c.entity.look:
+			c.entity.look = new_look
+			c.entity.look_dirty = true
+			if not _look_dirty.has(c.entity):
+				_look_dirty.append(c.entity)
 	refresh_camp(c)
 	if weapon != null:
 		send_profile(c)
@@ -1208,7 +1242,8 @@ func _on_discard(c: Conn, uid: String) -> void:
 func refresh_camp(c: Conn) -> void:
 	if c.entity == null or c.profile == null:
 		return
-	var nc := c.profile.get_current_camp()
+	var is_murder := (c.entity.flags & NetProto.FLAG_PK) != 0
+	var nc := Camp.Type.FREE if is_murder else c.profile.get_current_camp()
 	var nation := battle.nation_of(c) if battle else Nation.Type.NONE   ## phe Tống / Kim chỉ có trong trận chiến trường
 	if nc == c.entity.camp and nation == c.entity.nation:
 		return
@@ -1233,6 +1268,13 @@ func profile_changed(c: Conn) -> void:
 	c.dirty = true
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.max_speed = ProfileGuard.max_speed(c.profile)
+	if c.entity:
+		var new_look := look_from_profile(c.data)
+		if new_look != c.entity.look:
+			c.entity.look = new_look
+			c.entity.look_dirty = true
+			if not _look_dirty.has(c.entity):
+				_look_dirty.append(c.entity)
 	if _conns.has(c.key) and c.state == ConnState.IN_WORLD:
 		send_profile(c)
 		refresh_camp(c)
@@ -1355,18 +1397,27 @@ func _apply_web_grants(c: Conn, list: Variant) -> void:
 	if not list is Array or c.profile == null:
 		return
 	var got := 0
+	var got_xu := 0
 	for g in list:
 		var id := int(g.get("id", 0))
 		var jade := int(g.get("jade", 0))
-		if id <= 0 or jade <= 0 or c.seen_web_grants.has(id):
+		var xu := int(g.get("xu", 0))
+		if id <= 0 or (jade <= 0 and xu <= 0) or c.seen_web_grants.has(id):
 			continue
 		c.seen_web_grants[id] = true
 		c.unsaved_web_grants.append(id)
-		c.profile.jade += jade
-		got += jade
-	if got > 0:
+		if jade > 0:
+			c.profile.jade += jade
+			got += jade
+		if xu > 0:
+			c.profile.xu += xu
+			got_xu += xu
+	if got > 0 or got_xu > 0:
 		profile_changed(c)
-		notice(c, "Nhận %d Nguyên bảo từ Ví Xu." % got)
+		if got > 0:
+			notice(c, "Nhận %d Nguyên bảo từ Ví Xu." % got)
+		if got_xu > 0:
+			notice(c, "Nhận %d Tiền Xu vào nhân vật." % got_xu)
 		_save(c)
 
 func send(c: Conn, b: StreamPeerBuffer) -> void:
@@ -1435,6 +1486,12 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	else:
 		look["mask_particular"] = int(e.look.get("mask_particular", -1))
 		look["aura_state"] = int(e.look.get("aura_state", 0))
+	if look.has("aura_state") and c.profile:
+		var aura_st := int(look.get("aura_state", 0))
+		if c.profile.gm_aura_state != aura_st or int(c.data.get("gm_aura_state", 0)) != aura_st:
+			c.profile.gm_aura_state = aura_st
+			c.data["gm_aura_state"] = aura_st
+			c.dirty = true
 	if look != e.look:
 		e.look = look
 		e.touch()
@@ -1646,8 +1703,12 @@ func can_see(viewer: Conn, e: ServerEntity) -> bool:
 		return viewer.entity.room_id != 0 and viewer.entity.room_id == e.room_id
 	return arena == null or arena.can_see(viewer, e)
 
-## Bản đồ vật cản nơi thực thể đứng: map phòng train chung của nó, không thì map của tiến trình.
+## Bản đồ vật cản nơi thực thể đứng: map phòng PK/train chung của nó, không thì map của tiến trình.
 func grid_of(e: ServerEntity) -> MapGrid:
+	if arena:
+		var ag: MapGrid = arena.grid_of(e)
+		if ag != null:
+			return ag
 	return field.grid_of_room(e.room_id) if field and e.room_id != 0 else grid
 
 ## 2 thực thể cùng chỗ (cùng phòng train chung) và cách nhau không quá `dist` px — dùng cho mọi kiểm tra "đứng gần".

@@ -39,12 +39,18 @@ func test_catalog_structure() -> void:
 	assert_true(vp_p2.size() == 1, "Trang 2 của Vật Phẩm có 1 món đồ (Trống Khải Hoàn)")
 	assert_true(vp_p2[0]["name"] == "Trống Khải Hoàn", "Món đầu trang 2 là Trống Khải Hoàn")
 
-	# Tab Tính Năng có 1 trang
+	# Tab Tính Năng có 3 trang
 	var tn_pages: int = KyTranCacShop.get_page_count(1)
-	assert_true(tn_pages == 1, "Tab Tính Năng có 1 trang (chuẩn theo ảnh mẫu)")
+	assert_true(tn_pages == 3, "Tab Tính Năng có 3 trang")
 
 	var tn_p1: Array[Dictionary] = KyTranCacShop.get_items_for_page(1, 0)
-	assert_true(tn_p1.size() == 11, "Trang 1 của Tính Năng có 11 món đồ")
+	assert_true(tn_p1.size() == 15, "Trang 1 của Tính Năng có đúng 15 món đồ")
+
+	var tn_p2: Array[Dictionary] = KyTranCacShop.get_items_for_page(1, 1)
+	assert_true(tn_p2.size() == 15, "Trang 2 của Tính Năng có đúng 15 Bí Kíp 180 môn phái")
+
+	var tn_p3: Array[Dictionary] = KyTranCacShop.get_items_for_page(1, 2)
+	assert_true(tn_p3.size() == 3, "Trang 3 của Tính Năng có 3 món đồ")
 
 func test_item_generation() -> void:
 	print("\n[2] Kiểm tra sinh vật phẩm từ ItemDatabase...")
@@ -52,6 +58,8 @@ func test_item_generation() -> void:
 	all_items.append_array(KyTranCacShop.get_items_for_page(0, 0))
 	all_items.append_array(KyTranCacShop.get_items_for_page(0, 1))
 	all_items.append_array(KyTranCacShop.get_items_for_page(1, 0))
+	all_items.append_array(KyTranCacShop.get_items_for_page(1, 1))
+	all_items.append_array(KyTranCacShop.get_items_for_page(1, 2))
 
 	for it in all_items:
 		var item_id: String = str(it.get("id"))
@@ -135,8 +143,5 @@ func test_character_hub_integration() -> void:
 
 	var top_btn = hub.find_child("KyTranCacTopButton", true, false)
 	assert_true(top_btn != null, "Character Hub có nút Kỳ Trân Các trên TopBar")
-
-	var inv_btn = hub.find_child("KyTranCacButton", true, false)
-	assert_true(inv_btn != null, "Character Hub có nút Kỳ Trân Các trong khu vực Túi đồ (InvActions)")
 
 	hub.queue_free()

@@ -32,6 +32,8 @@ var arena_border: ArenaBorder
 var respawn_point := Vector2.INF
 var _nav: AStarGrid2D   ## lưới tìm đường CHỈ trong ô vuông (sao từ lưới vật cản của map)
 var _graph: NavGraph    ## map chính chia khối: tìm đường dài toàn map (tầng thô), null = không có
+var sky_node: Node2D
+var sky_sprite: Sprite2D
 
 ## VltkMap của game: bản gốc (world/VltkMap.gd, do tool map xuất — bị ghi đè mỗi lần cập nhật map) cộng thêm 3 việc, đặt ở ĐÂY
 ## để không mất khi cập nhật map:
@@ -445,10 +447,14 @@ class NpcShadow extends Node2D:
 
 func _ready() -> void:
 	current = self
+	_update_sky_background()
 
 func _exit_tree() -> void:
 	if current == self:
 		current = null
+
+func _process(_delta: float) -> void:
+	_update_sky_position()
 
 ## Dựng map (lần đầu) + đặt ô vuông của màn `stage` + đưa nhân vật vào giữa ô. Gọi 1 lần lúc vào màn.
 func setup_stage(stage: StageData) -> void:
@@ -464,7 +470,10 @@ func setup_stage(stage: StageData) -> void:
 	arena_border.setup(stage.arena_size, stage.arena_color)
 	_build_nav()
 	if player != null:
-		player.global_position = _free_position_near(center) - Vector2(0, FEET_OFFSET)
+		var corners := get_corner_spawn_positions(center)
+		var spawn_pos: Vector2 = corners.pick_random() if not corners.is_empty() else _free_position_near(center)
+		player.global_position = spawn_pos - Vector2(0, FEET_OFFSET)
+		respawn_point = spawn_pos
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
 
@@ -512,11 +521,12 @@ func _nav_free_cell(c: Vector2i) -> Vector2i:
 
 ## Đường đi (các điểm CHÂN, toạ độ pixel map) từ `from_feet` tới `to_feet`, vòng qua vật cản, ở trong ô vuông màn chơi.
 ## Đích nằm ngoài ô / trong vật cản thì dịch về ô trống gần nhất. Mảng rỗng nếu không có đường.
-static func find_path(from_feet: Vector2, to_feet: Vector2) -> PackedVector2Array:
+static func find_path(from_feet: Vector2, to_feet: Vector2, update_intent: bool = false) -> PackedVector2Array:
 	var w := current
 	if w == null or w._nav == null:
 		return PackedVector2Array([to_feet])
-	(w.map as SortedMap).set_intent(to_feet)     ## nạp trước các vùng dọc đường tới đích
+	if update_intent and w.map is SortedMap:
+		(w.map as SortedMap).set_intent(to_feet)     ## nạp trước các vùng dọc đường tới đích
 	last_path_continues = false
 	last_route_ahead = PackedVector2Array()
 	var a := w._nav_free_cell(w.map.world_to_cell(from_feet))
@@ -694,6 +704,11 @@ static func is_brawl() -> bool:
 	var f: Dictionary = GameManager.field_map
 	return bool(f.get("brawl", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
 
+## Có đang trong chế độ Ải Tống Kim LOL không.
+static func is_tong_kim_lol() -> bool:
+	var f: Dictionary = GameManager.field_map
+	return bool(f.get("tong_kim_lol", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL
+
 ## Dọn sạch toàn bộ quái trên map hiện tại.
 func clear_all_monsters() -> void:
 	if map != null and map.has_method("clear_map_monsters"):
@@ -712,25 +727,133 @@ func setup_main_map() -> void:
 		_graph = NavGraph.load_for(map_dir, map.cell)   ## đường dài toàn map (dựng ở luồng phụ)
 	## Tìm kiểu "nhảy cóc" (JPS): lưới gần ~225 nghìn ô, nhanh hơn ~3 lần, đường gần như y hệt (đã bó thẳng sau đó).
 	_nav.jumping_enabled = true
-	map.prepare_around(_default_center())   ## map chia khối: nạp khối + lưới tìm đường ở chỗ xuất hiện trước khi tìm ô trống
+
+	var is_lol := VltkWorld.is_tong_kim_lol()
+	var is_br := VltkWorld.is_brawl()
+
+	var center := _default_center()
+	var safe_pos := Vector2.ZERO
+
+	if is_lol:
+		var f: Dictionary = GameManager.field_map
+		var pk: Dictionary = f.get("pk", {})
+		var my_side: String = str(pk.get("side", pk.get("action", {}).get("team", f.get("room", {}).get("side", f.get("side", "song")))))
+		if my_side == "b":
+			my_side = "jin"
+		elif my_side == "a" or my_side == "":
+			my_side = "song"
+		var home_target: Vector2 = TongKimLolRules.HOME_SONG_POS if my_side == "song" else TongKimLolRules.HOME_JIN_POS
+		center = home_target
+		map.prepare_around(center)
+		safe_pos = _open_position_near(center)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = center
+	elif is_br:
+		var f: Dictionary = GameManager.field_map
+		var pk: Dictionary = f.get("pk", {})
+		var brawl_type: String = str(pk.get("brawl_type", pk.get("action", {}).get("brawl_type", "solo")))
+		var center_raw := _default_center()
+		map.prepare_around(center_raw)
+		var safe_c := _open_position_near(center_raw)
+		if safe_c == Vector2.ZERO:
+			safe_c = center_raw
+
+		if brawl_type == "team":
+			var my_side: String = str(pk.get("side", pk.get("action", {}).get("team", f.get("side", "song"))))
+			if my_side == "b":
+				my_side = "jin"
+			elif my_side == "a" or my_side == "":
+				my_side = "song"
+			var target_pos := safe_c + Vector2(-360.0, 0.0) if my_side == "song" else safe_c + Vector2(360.0, 0.0)
+			map.prepare_around(target_pos)
+			safe_pos = _open_position_near(target_pos)
+			if safe_pos == Vector2.ZERO:
+				safe_pos = target_pos
+		else:
+			# Solo brawl: slot 0 của player nằm cách tâm 180px
+			var target_pos := safe_c + Vector2(180.0, 0.0)
+			map.prepare_around(target_pos)
+			safe_pos = _open_position_near(target_pos)
+			if safe_pos == Vector2.ZERO:
+				safe_pos = safe_c
+		center = safe_c
+	else:
+		if GameManager.field_map.has("boss"):
+			# Người chơi xuất hiện ở góc/rìa map để an toàn, không bị Boss đánh khi vừa vào
+			var corners := get_corner_spawn_positions(center)
+			var pick: Vector2 = corners.pick_random() if not corners.is_empty() else (center + Vector2(-1600.0, -1000.0))
+			map.prepare_around(pick)
+			safe_pos = _open_position_near(pick)
+			if safe_pos == Vector2.ZERO:
+				safe_pos = pick
+		else:
+			map.prepare_around(center)
+			safe_pos = _open_position_near(center)
+			if safe_pos == Vector2.ZERO:
+				safe_pos = center
+
+	var player_spawn: Vector2 = safe_pos - Vector2(0, FEET_OFFSET)
+	respawn_point = safe_pos
+
+	map.prepare_around(player_spawn + Vector2(0, FEET_OFFSET))   ## map chia khối: nạp khối + lưới tìm đường ở chỗ xuất hiện trước khi tìm ô trống
 	if player != null:
-		player.global_position = _open_position_near(_default_center()) - Vector2(0, FEET_OFFSET)
+		player.global_position = player_spawn
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
-	if VltkWorld.is_brawl():
+	if is_br or is_lol:
 		clear_all_monsters()
-	_spawn_boss_if_requested(player)
+	_spawn_boss_if_requested(player, center)
+
+## Danh sách toạ độ ở các góc (Tây Bắc, Đông Bắc, Tây Nam, Đông Nam) quanh `center`, cách xa Boss
+func get_corner_spawn_positions(center: Vector2) -> Array[Vector2]:
+	var dx := 1400.0
+	var dy := 900.0
+	if arena_rect.has_area():
+		dx = arena_rect.size.x * 0.4
+		dy = arena_rect.size.y * 0.4
+	elif map != null and map.data != null:
+		var rect: Array = map.data.get("rect", [0, 0, 1, 1])
+		var span_x: float = (float(rect[2]) - float(rect[0]) + 1.0) * 512.0
+		var span_y: float = (float(rect[3]) - float(rect[1]) + 1.0) * 512.0
+		dx = clampf(span_x * 0.38, 1500.0, 2200.0)
+		dy = clampf(span_y * 0.38, 1000.0, 1600.0)
+
+	var corner_offsets: Array[Vector2] = [
+		Vector2(-dx, -dy),  ## Góc Tây Bắc (trên-trái)
+		Vector2(dx, -dy),   ## Góc Đông Bắc (trên-phải)
+		Vector2(-dx, dy),   ## Góc Tây Nam (dưới-trái)
+		Vector2(dx, dy),    ## Góc Đông Nam (dưới-phải)
+	]
+
+	var res: Array[Vector2] = []
+	for off in corner_offsets:
+		var target := center + off
+		var pos: Vector2 = _free_position_near(target) if arena_rect.has_area() else _open_position_near(target)
+		if pos != Vector2.ZERO and pos.distance_to(center) >= 500.0:
+			res.append(pos)
+
+	if res.is_empty():
+		var fallback: Vector2 = _free_position_near(center + Vector2(-dx, -dy)) if arena_rect.has_area() else _open_position_near(center + Vector2(-dx, -dy))
+		if fallback != Vector2.ZERO:
+			res.append(fallback)
+		else:
+			res.append(center)
+	return res
 
 ## Thả Boss Hoàng Kim / Tiểu Hoàng Kim khi khiêu chiến từ tab Boss
-func _spawn_boss_if_requested(player: Node2D) -> void:
+func _spawn_boss_if_requested(player: Node2D, center_override := Vector2.ZERO) -> void:
+	if VltkWorld.net_monsters:
+		return
 	var boss_data: Dictionary = GameManager.field_map.get("boss", {})
 	if boss_data.is_empty():
 		return
 
-	var base_center := player.global_position if player != null else _default_center()
-	var spawn_pos := _open_position_near(base_center + Vector2(280.0, 180.0))
+	# Boss được sinh ở tâm bản đồ (giữa 60 vùng), cách xa vị trí rìa của người chơi
+	var center := center_override if center_override != Vector2.ZERO else _default_center()
+	map.prepare_around(center)
+	var spawn_pos := _open_position_near(center)
 	if spawn_pos == Vector2.ZERO:
-		spawn_pos = base_center + Vector2(250.0, 120.0)
+		spawn_pos = center
 
 	var m := VltkMonster.new()
 	m.monster_id = int(boss_data.get("id", 740))
@@ -812,6 +935,80 @@ func _ensure_map(player: Node2D) -> void:
 	map.map_dir = map_dir
 	map.focus = player
 	add_child(map)  ## _ready của VltkMap nạp map.json + dựng lưới vật cản; vùng hiển thị nạp theo `focus` ở _process
+	_update_sky_background()
+
+## Nền bầu trời (sky / parallax background) đặt dưới bản đồ (z_index = -200, Ground có z_index = -100).
+func _update_sky_background() -> void:
+	var sky_file := map_dir.path_join("sky.jpg")
+	var tex := _load_sky_tex(sky_file)
+	if tex == null:
+		if sky_node != null:
+			sky_node.visible = false
+		return
+
+	if sky_node == null:
+		sky_node = Node2D.new()
+		sky_node.name = "SkyBackground"
+		sky_node.z_index = -200
+		sky_node.z_as_relative = false  # Đảm bảo tuyệt đối luôn nằm SAU TOÀN BỘ map (Ground z_index = -100)
+		sky_sprite = Sprite2D.new()
+		sky_sprite.name = "SkySprite"
+		sky_sprite.centered = false
+		sky_node.add_child(sky_sprite)
+		add_child(sky_node)
+
+	sky_node.visible = true
+	sky_sprite.texture = tex
+	_update_sky_position()
+
+func _load_sky_tex(path: String) -> Texture2D:
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res is Texture2D:
+			return res
+	var global_path := ProjectSettings.globalize_path(path)
+	var check_path := global_path if FileAccess.file_exists(global_path) else (path if FileAccess.file_exists(path) else "")
+	if check_path != "":
+		var im: Image = Image.load_from_file(check_path)
+		if im != null:
+			return ImageTexture.create_from_image(im)
+	return null
+
+## Cập nhật vị trí ảnh bầu trời: mặt trăng ở góc phải phía trên, nằm sau map, di chuyển theo camera player
+func _update_sky_position() -> void:
+	if sky_node == null or not sky_node.visible or sky_sprite == null or sky_sprite.texture == null:
+		return
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var cam := vp.get_camera_2d()
+	var cam_pos := cam.get_screen_center_position() if cam else Vector2.ZERO
+	var zoom := cam.zoom if cam else Vector2.ONE
+	var view_size := vp.get_visible_rect().size / zoom
+	var tex_size := Vector2(sky_sprite.texture.get_size())
+	if tex_size.x <= 0 or tex_size.y <= 0:
+		return
+
+	# Phủ kín khung nhìn camera với biên margin vừa đủ để parallax di chuyển mượt mà
+	var margin := 60.0
+	var target_w := view_size.x + margin * 2.0
+	var target_h := view_size.y + margin * 2.0
+	var s := maxf(target_w / tex_size.x, target_h / tex_size.y)
+	sky_sprite.scale = Vector2(s, s)
+
+	# Góc trên bên phải của khung nhìn camera
+	var top_right := cam_pos + Vector2(view_size.x * 0.5, -view_size.y * 0.5)
+
+	# Đặt ảnh sao cho góc phải phía trên của ảnh (chứa mặt trăng) nằm ở góc phải phía trên khung nhìn
+	var base_pos := Vector2(top_right.x - tex_size.x * s + margin * 0.5, top_right.y - margin * 0.5)
+
+	# Parallax nhẹ theo người chơi (trôi chậm tạo chiều sâu)
+	var center := arena_rect.get_center() if arena_rect.size != Vector2.ZERO else _default_center()
+	var raw_parallax := (cam_pos - center) * 0.04
+	var max_shift := margin * 0.4
+	var parallax := Vector2(clampf(raw_parallax.x, -max_shift, max_shift), clampf(raw_parallax.y, -max_shift, max_shift))
+	sky_node.global_position = base_pos - parallax
+	sky_sprite.position = Vector2.ZERO
 
 ## Đưa 1 thực thể (Player/quái) vào lớp vật thể của map để sắp độ sâu cùng nhà/cây.
 func _adopt(node: Node2D) -> void:
@@ -852,6 +1049,8 @@ func _default_center() -> Vector2:
 			return ac
 		if ac is Array and (ac as Array).size() >= 2:
 			return Vector2(float(ac[0]), float(ac[1]))
+	if map == null or map.data == null:
+		return Vector2.ZERO
 	var data := map.data
 	if data.has("arena_center"):
 		var ac = data["arena_center"]
@@ -877,6 +1076,12 @@ func _default_center() -> Vector2:
 
 ## Ô trống (xung quanh 2 ô cũng trống) gần `point` nhất, duyệt xoắn ốc — vị trí CHÂN nhân vật.
 func _free_position_near(point: Vector2) -> Vector2:
+	if map == null:
+		return point
+	if map.chunk_mode:
+		map.prepare_around(point)
+	if map.grid == null:
+		return point
 	var start := map.world_to_cell(point)
 	for radius in SPAWN_SEARCH_RADIUS:
 		for dx in range(-radius, radius + 1):
@@ -891,6 +1096,12 @@ func _free_position_near(point: Vector2) -> Vector2:
 ## Như _free_position_near nhưng chỉ nhận ô thông ra vùng rộng (MapGrid.find_open_cell) — không đặt nhân vật vào "ốc đảo" bị vật cản
 ## bao kín giữa map (VD khối đá giữa Đại Lý phủ).
 func _open_position_near(point: Vector2) -> Vector2:
+	if map == null:
+		return point
+	if map.chunk_mode:
+		map.prepare_around(point)
+	if map.grid == null:
+		return point
 	var g: AStarGrid2D = map.grid
 	var c := MapGrid.find_open_cell(map.world_to_cell(point), func(cell: Vector2i) -> bool:
 		return g.is_in_boundsv(cell) and not g.is_point_solid(cell))

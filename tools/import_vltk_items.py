@@ -41,8 +41,9 @@ MAGIC_ATTRIB_H = Path("D:/game/source_vo-lam-truyen-ky/VS2022/Source-VS2022-2026
 ## Bản cũ (server Anh Việt): GoldEquip.txt cũ còn ghi NeedToActive1/2 cho bộ 1-82 — bản 15 phái bỏ 2 cột này và
 ## suite_activate_count.txt chỉ có từ bộ 83, nên số món kích hoạt của bộ cũ lấy từ đây (không có file thì = 0).
 OLD_GOLD_FILE = Path("D:/game/source_vo-lam-truyen-ky/anh-viet/Server + client full-001/server/settings/item/GoldEquip.txt")
+CLIENT_SETTINGS_ITEM = Path("D:/game/source_vo-lam-truyen-ky/Client_VLTK/Client_VLTK/settings/item")
 ## Phiên bản dữ liệu đồ — tăng khi chỉ số món đổi (ItemInstance.DATA_VERSION phải bằng số này).
-DATA_VERSION = 2
+DATA_VERSION = 3
 ## file -> EQUIPDETAILTYPE gốc (GameDataDef.h)
 EQUIP_FILES = {"meleeweapon": 0, "rangeweapon": 1, "armor": 2, "ring": 3, "amulet": 4, "boot": 5,
                "belt": 6, "helm": 7, "cuff": 8, "pendant": 9, "horse": 10}
@@ -115,8 +116,13 @@ def load_attrib_enum() -> dict[int, str]:
 
 
 def item_file(name: str) -> Path:
-    """File trong settings/item (không phân biệt hoa thường: GoldEquip.txt / goldequip.txt)."""
-    return vltk_source.settings_file("item/" + name)
+    """File trong settings/item: ưu tiên Client_VLTK nếu file lớn hơn (chứa đầy đủ các set 15 phái)."""
+    p_client = CLIENT_SETTINGS_ITEM / name
+    p_server = vltk_source.settings_file("item/" + name)
+    if p_client.exists():
+        if not p_server.exists() or p_client.stat().st_size > p_server.stat().st_size:
+            return p_client
+    return p_server
 
 
 def attrib_columns(path: Path) -> tuple[int, int]:
@@ -143,6 +149,13 @@ def import_equipment(enum: dict[int, str]) -> list[dict]:
                 "height": to_int(r[7], 1), "intro": clean_text(r[8].strip()), "image": r[4].strip(),
                 "base": base, "require": req,
             })
+    # Giữ lại các món Mặt nạ (detail 11) và Phi phong (detail 12) đã có trong equipment.json
+    eq_file = OUT_DIR / "equipment.json"
+    if eq_file.exists():
+        import json as _json
+        for it in _json.loads(eq_file.read_text(encoding="utf-8")):
+            if it.get("detail") in (11, 12):
+                items.append(it)
     return items
 
 
@@ -189,6 +202,209 @@ def old_gold_needs() -> dict[int, tuple[int, int]]:
             out.setdefault(int(r[col["Group"]]), (to_int(r[col["NeedToActive1"]], 1), to_int(r[col["NeedToActive2"]], 0)))
     return out
 
+
+
+def build_duong_gia_bow_set(start_row: int = 7136) -> list[dict]:
+    """Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (Group 674) - 10 món chuẩn hệ Kim."""
+    req = [["requirelevel", 120], ["requiremenpai", 13]]
+    group = 674
+    ext = 724
+    need1 = 4
+    need2 = 7
+    menpai = 13
+    return [
+        {
+            "name": "Anh Hào Xạ Nhật Hạng Liên",
+            "detail": 4, "particular": 1, "level": 10, "series": 4, "price": 99999,
+            "image": r"\spr\item\equip\nick\obj-neck109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (1)",
+            "base": [], "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "allres_yan_p", "name": "Kháng tất cả", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "anti_physicsres_yan_p", "name": "Bỏ qua kháng vật lý", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "damage2mana_p", "name": "Chuyển hóa sát thương thành nội lực", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 1, "ext": ext, "row": start_row
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Quán",
+            "detail": 7, "particular": 4, "level": 10, "series": 0, "price": 99999,
+            "image": r"\spr\item\equip\cap\obj-ma-cap120.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (2)",
+            "base": [["armordefense_v", 360, 360], ["durability_v", 85, 85]],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "poisonres_yan_p", "name": "Kháng độc", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "manareplenish_v", "name": "Hồi phục nội lực", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "stunduration_p", "name": "Giảm thời gian choáng", "range": [[40, 50], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 2, "ext": ext, "row": start_row + 1
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Thượng Giới",
+            "detail": 3, "particular": 0, "level": 10, "series": 4, "price": 99999,
+            "image": r"\spr\item\equip\ring\obj-ring109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (3)",
+            "base": [], "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "allres_yan_p", "name": "Kháng tất cả", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "fastwalkrun_p", "name": "Tốc độ di chuyển", "range": [[20, 25], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[300, 400], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "attackrating_v", "name": "Độ chính xác", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "deadlystrike_p", "name": "Chí mạng", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 3, "ext": ext, "row": start_row + 2
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Hộ Oản",
+            "detail": 8, "particular": 1, "level": 10, "series": 0, "price": 99999,
+            "image": r"\spr\item\equip\bangle\obj-bangle109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (4)",
+            "base": [["armordefense_v", 135, 135], ["durability_v", 80, 80]],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "attackspeed_v", "name": "Tốc độ xuất chiêu", "range": [[20, 30], [-1, -1], [0, 0]]},
+                {"attrib": "fireres_yan_p", "name": "Kháng hỏa", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[300, 400], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "anti_physicsres_yan_p", "name": "Bỏ qua kháng vật lý", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "block_rate", "name": "Tỷ lệ né tránh", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 4, "ext": ext, "row": start_row + 3
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Yêu Đới",
+            "detail": 6, "particular": 0, "level": 10, "series": 4, "price": 99999,
+            "image": r"\spr\item\equip\sash\obj-sash109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (5)",
+            "base": [["armordefense_v", 160, 160], ["durability_v", 80, 80]],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "allres_yan_p", "name": "Kháng tất cả", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "stunduration_p", "name": "Giảm thời gian choáng", "range": [[40, 50], [-1, -1], [0, 0]]},
+                {"attrib": "block_rate", "name": "Tỷ lệ né tránh", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 5, "ext": ext, "row": start_row + 4
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Giáp Y",
+            "detail": 2, "particular": 4, "level": 10, "series": 0, "price": 99999,
+            "image": r"\spr\item\equip\armor\obj-ma-cloth120.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (6)",
+            "base": [["armordefense_v", 720, 720], ["durability_v", 90, 90]],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "physicsres_p", "name": "Kháng vật lý", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "fireres_yan_p", "name": "Kháng hỏa", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[600, 800], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "fastrecovery_v", "name": "Thời gian phục hồi", "range": [[40, 50], [-1, -1], [0, 0]]},
+                {"attrib": "block_rate", "name": "Tỷ lệ né tránh", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 6, "ext": ext, "row": start_row + 5
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Cung",
+            "detail": 1, "particular": 4, "level": 10, "series": 0, "price": 99999,
+            "image": r"\spr\item\equip\weapon\obj-bow01.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (7)",
+            "base": [
+                ["weapondamagemin_v", 46, 46],
+                ["weapondamagemax_v", 86, 86],
+                ["attackratingenhance_p", 30, 30],
+                ["durability_v", 99, 99]
+            ],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "attackspeed_v", "name": "Tốc độ xuất chiêu", "range": [[30, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[105, 110], [-1, -1], [0, 0]]},
+                {"attrib": "addphysicsdamage_v", "name": "Tăng sát thương Vật lý", "range": [[180, 190], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "addphysicsdamage_p", "name": "Tăng sát thương vật lý %", "range": [[80, 95], [-1, -1], [0, 0]]},
+                {"attrib": "anti_block_rate", "name": "Bỏ qua né tránh", "range": [[80, 90], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 7, "ext": ext, "row": start_row + 6
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Ngoa",
+            "detail": 5, "particular": 0, "level": 10, "series": 0, "price": 99999,
+            "image": r"\spr\item\equip\boots\obj-shoes120.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (8)",
+            "base": [["armordefense_v", 160, 160], ["durability_v", 80, 80]],
+            "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "fastwalkrun_p", "name": "Tốc độ di chuyển", "range": [[40, 50], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "stunduration_p", "name": "Giảm thời gian choáng", "range": [[40, 50], [-1, -1], [0, 0]]},
+                {"attrib": "block_rate", "name": "Tỷ lệ né tránh", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 8, "ext": ext, "row": start_row + 7
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Yêu Trụy",
+            "detail": 9, "particular": 1, "level": 10, "series": 4, "price": 99999,
+            "image": r"\spr\item\equip\waist\obj-waist109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (9)",
+            "base": [], "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "allres_yan_p", "name": "Kháng tất cả", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "lightingres_yan_p", "name": "Kháng lôi", "range": [[25, 30], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "deadlystrike_p", "name": "Chí mạng", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "anti_physicsres_yan_p", "name": "Bỏ qua kháng vật lý", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 9, "ext": ext, "row": start_row + 8
+        },
+        {
+            "name": "Anh Hào Xạ Nhật Hạ Giới",
+            "detail": 3, "particular": 0, "level": 10, "series": 4, "price": 99999,
+            "image": r"\spr\item\equip\ring\obj-ring109.spr",
+            "intro": "Bộ trang bị Dương Môn Cung Pháp cấp Anh Hào (10)",
+            "base": [], "require": req, "menpai": menpai,
+            "magic": [
+                {"attrib": "allres_yan_p", "name": "Kháng tất cả", "range": [[15, 20], [-1, -1], [0, 0]]},
+                {"attrib": "fastwalkrun_p", "name": "Tốc độ di chuyển", "range": [[20, 25], [-1, -1], [0, 0]]},
+                {"attrib": "lifemax_v", "name": "Sinh lực tối đa", "range": [[300, 400], [-1, -1], [0, 0]]},
+                {"attrib": "pk_punish_enhance", "name": "Cường hóa PK", "range": [[105, 115], [-1, -1], [0, 0]]},
+                {"attrib": "attackrating_v", "name": "Độ chính xác", "range": [[350, 450], [-1, -1], [0, 0]]},
+                {"attrib": "damage2mana_p", "name": "Chuyển hóa sát thương thành nội lực", "range": [[10, 15], [-1, -1], [0, 0]]},
+                {"attrib": "frozen_action", "name": "Hạn chế động tác", "range": [[13, 13], [-1, -1], [0, 0]]},
+                {"attrib": "allskill_v", "name": "Tăng tất cả kỹ năng", "range": [[1, 1], [-1, -1], [0, 0]]}
+            ],
+            "group": group, "need1": need1, "need2": need2, "set_id": 10, "ext": ext, "row": start_row + 9
+        }
+    ]
 
 def import_gold(enum: dict[int, str], vi_names: dict) -> list[dict]:
     """goldequip.txt (KItemGenerator::Gen_GoldEquipment): 6 chỉ số dòng magic (DefMagic1-6) + 2 dòng ẩn của bộ mở
@@ -252,6 +468,9 @@ def import_gold(enum: dict[int, str], vi_names: dict) -> list[dict]:
             ## Số hàng dữ liệu gốc trong goldequip.txt (Item.GetRow) — bảng hình GoldEquipRes tra theo row + 1.
             "row": row,
         })
+    # Bổ sung bộ Hoàng Kim Dương Gia Cung (Group 674) nếu chưa có
+    if not any(g.get("group") == 674 for g in out):
+        out.extend(build_duong_gia_bow_set(len(gold_rows) + 1))
     return out
 
 

@@ -497,7 +497,7 @@ func _render_room_view() -> void:
 			empty_txt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			sr.add_child(empty_txt)
 
-			if is_host:
+			if is_host and GameModeManager.can_add_bot():
 				var btn_add_bot := SocialUi.small_button("➕ Thêm Bot")
 				btn_add_bot.custom_minimum_size = Vector2(85, 28)
 				btn_add_bot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -507,8 +507,8 @@ func _render_room_view() -> void:
 				)
 				sr.add_child(btn_add_bot)
 
-	# 4. Tiện ích cho chủ phòng (Điền Bot / Xóa Bot)
-	if is_host:
+	# 4. Tiện ích cho chủ phòng (Điền Bot / Xóa Bot - chỉ cho Offline)
+	if is_host and GameModeManager.can_add_bot():
 		var bot_row := HBoxContainer.new()
 		bot_row.alignment = BoxContainer.ALIGNMENT_CENTER
 		bot_row.add_theme_constant_override("separation", 10)

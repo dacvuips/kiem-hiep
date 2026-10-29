@@ -8,11 +8,17 @@ SKILL90_ARRAY, SKILL120AR (danh sách id trơn), SKILL150_ARRAY. Skill game <-> 
 (cùng cách chuẩn hoá + so gần đúng như tools/import_vltk_skill_icons.py). Skill không ghép được tên nào giữ nguyên.
 Chỉ ĐẶT is_hidden = true (không bao giờ bỏ ẩn skill đang ẩn); dữ liệu skill giữ nguyên vì skill khác có thể gọi tới.
 """
+import os
 import re
 import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+if sys.platform == "win32":
+    git_usr_bin = r"C:\Program Files\Git\usr\bin"
+    if os.path.exists(git_usr_bin) and git_usr_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = git_usr_bin + os.pathsep + os.environ.get("PATH", "")
 
 sys.path.insert(0, str(Path(__file__).parent))
 from import_vltk_skill_icons import norm, FUZZY_CUTOFF, SKILLS_TXT, TRES_DIR  # noqa: E402

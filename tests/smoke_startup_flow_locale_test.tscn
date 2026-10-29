@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ci1c30x7r2e3q"]
+
+[ext_resource type="Script" path="res://tests/smoke_startup_flow_locale_test.gd" id="1_test"]
+
+[node name="SmokeStartupFlowLocaleTest" type="Node"]
+script = ExtResource("1_test")

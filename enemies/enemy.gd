@@ -237,16 +237,21 @@ func _physics_process(delta: float) -> void:
 	if _vltk_sprite != null:
 		_atk_cooldown = maxf(0.0, _atk_cooldown - delta)
 		var to_player := target.global_position - global_position
+		var dist_to_player := to_player.length()
 		if _atk_time >= 0.0:
 			_tick_vltk_attack(delta)
 			return
-		if _atk_cooldown <= 0.0 and to_player.length() <= _attack_radius:
+		if _atk_cooldown <= 0.0 and dist_to_player <= _attack_radius:
 			_begin_vltk_attack(to_player)
 			return
-		## Quái đánh tầm xa giữ cự ly bắn thay vì luôn lao sát vào người chơi
-		if _active_skill_id > 0 and _attack_radius > ATTACK_RANGE and to_player.length() <= _attack_radius * 0.8:
+		## Giữ cự ly dừng hợp lý, không lao xuyên tâm người chơi gây giật lắc qua lại
+		var stop_dist := maxf(28.0, _attack_radius * 0.75) if _attack_radius <= ATTACK_RANGE else _attack_radius * 0.8
+		if dist_to_player <= stop_dist:
 			velocity = Vector2.ZERO
 			move_and_slide()
+			var d := VltkMath.dir_between(Vector2.ZERO, VltkMath.to_logic(to_player))
+			if d >= 0:
+				_vltk_dir64 = d
 			_update_vltk_pose(Vector2.ZERO, delta)
 			return
 	var direction := (target.global_position - global_position).normalized()
@@ -331,14 +336,18 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var series_p := VltkSkillData.hit_attrib(skill_id, "seriesdamage_p", lv)
 	if not series_p.is_empty():
 		stats.five_elements_damage_p = int(series_p[0])
+	var ignore_def := VltkSkillData.hit_attrib(skill_id, "ignoredefense_p", lv)
+	if not ignore_def.is_empty():
+		stats.ignore_defense_percent = int(ignore_def[0])
 
 	var is_physical := int(skill_info.get("physical", 1)) == 1
 	var flat := VltkSkillData.hit_attrib(skill_id, "physicsdamage_v", lv)
 	var enhance := VltkSkillData.hit_attrib(skill_id, "physicsenhance_p", lv)
 
+	var stage_dmg_scale := _get_stage_damage_scale()
 	if not _vltk_data.is_empty():
 		var dmg := MonsterData.melee_damage(_vltk_data, level, skill_id, skill_level)
-		var mult := _entry.strength_multiplier if _entry != null else 1.0
+		var mult := (_entry.strength_multiplier if _entry != null else 1.0) * stage_dmg_scale
 		if dmg.x >= 0 and is_physical:
 			stats.damage_min = float(dmg.x) * mult
 			stats.damage_max = float(dmg.y) * mult
@@ -360,7 +369,7 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 			stats.damage = 0.0
 	else:
 		# Fallback cho Enemy thuần roguelite không có dữ liệu VLTK gốc
-		var base_dmg := contact_damage
+		var base_dmg := contact_damage * stage_dmg_scale
 		if not enhance.is_empty():
 			stats.damage = base_dmg * (100.0 + float(enhance[0])) / 100.0
 		elif not flat.is_empty():
@@ -376,10 +385,11 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 			stats.damage_min = 0.0
 			stats.damage_max = 0.0
 
-	if _entry != null and _entry.strength_multiplier != 1.0:
+	var elem_mult := (_entry.strength_multiplier if _entry != null else 1.0) * stage_dmg_scale
+	if elem_mult != 1.0:
 		for t in elements:
 			var rg: Vector2i = elements[t]
-			elements[t] = Vector2i(int(rg.x * _entry.strength_multiplier), int(rg.y * _entry.strength_multiplier))
+			elements[t] = Vector2i(int(rg.x * elem_mult), int(rg.y * elem_mult))
 
 	var extra: Dictionary = combat_stats.outer_element_damage if is_physical else combat_stats.inner_element_damage
 	for t in extra:
@@ -431,7 +441,7 @@ func spawn_miss_number() -> void:
 
 ## Gọi bởi StatusEffectController khi 1 DOT effect (burn/poison/bleed) tick — tách riêng khỏi
 ## take_damage() thường để không spam hit-punch animation mỗi tick.
-func take_status_damage(amount: float, _effect_id: String) -> void:
+func take_status_damage(amount: float, _effect_id: String, _source_node: Node = null) -> void:
 	health -= amount
 	health_bar.set_health(health)
 	_accumulate_damage(amount)
@@ -446,8 +456,18 @@ func _play_vltk_sound(action: String) -> void:
 	if stream != null:
 		SfxManager.play(stream, global_position)
 
+func _interrupt_attack() -> void:
+	if _atk_time >= 0.0:
+		_atk_time = -1.0
+		_atk_hit = true
+		_atk_cooldown = maxf(_atk_cooldown, 0.35)
+		if _vltk_sprite != null:
+			var hurt_frames := MonsterData.action_frames(_vltk_data, "hurt")
+			_vltk_sprite.set_pose("hurt" if hurt_frames > 0 else "stand", _vltk_dir64, 0.0)
+
 func play_hit_punch() -> void:
 	_play_vltk_sound("hurt")
+	_interrupt_attack()
 	var look: Node2D = _vltk_sprite if _vltk_sprite != null else sprite
 	var base_scale := look.get_meta("base_scale", look.scale) as Vector2
 	look.set_meta("base_scale", base_scale)
@@ -569,16 +589,26 @@ func _on_hit_area_body_entered(body: Node) -> void:
 		return  ## hình VLTK đánh bằng động tác đánh (xem _tick_vltk_attack), không sát thương lúc chạm
 	_deal_contact_damage(body)
 
+func _get_stage_damage_scale() -> float:
+	var scale := 1.0
+	if _entry != null:
+		scale *= _entry.damage_multiplier
+	var st: StageData = GameManager.current_stage if GameManager else null
+	if st != null:
+		scale *= st.stage_monster_damage_multiplier
+	return scale
+
 func _deal_contact_damage(body: Node) -> void:
 	## Ưu tiên take_damage_from() (pipeline CombatFormulas đầy đủ — roll trúng/né, tương khắc Ngũ
 	## Hành, % kháng) khi target hỗ trợ (Player). Fallback take_damage() cho các body khác (VD test
 	## scene chưa có take_damage_from) để không phá vỡ tương thích.
+	var scale := _get_stage_damage_scale()
 	if body.has_method("take_damage_from") and combat_stats:
-		var min_dmg := int(contact_damage)
+		var min_dmg := int(contact_damage * scale)
 		var max_dmg := min_dmg
 		if _vltk_damage.x >= 0:
-			min_dmg = _vltk_damage.x
-			max_dmg = _vltk_damage.y
+			min_dmg = int(_vltk_damage.x * scale)
+			max_dmg = int(_vltk_damage.y * scale)
 		## Va chạm = đòn cận chiến -> bên bị đánh phản melee damage return về quái này.
 		var mods := CombatFormulas.HitModifiers.new()
 		mods.attacker_node = self
@@ -587,4 +617,4 @@ func _deal_contact_damage(body: Node) -> void:
 			mods.extra_damages = combat_stats.outer_element_damage.duplicate()
 		body.take_damage_from(combat_stats, min_dmg, max_dmg, CombatFormulas.DamageType.PHYSICS, combat_stats.element, mods)
 	elif body.has_method("take_damage"):
-		body.take_damage(contact_damage)
+		body.take_damage(contact_damage * scale)

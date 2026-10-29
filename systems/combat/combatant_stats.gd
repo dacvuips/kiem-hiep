@@ -80,6 +80,8 @@ var add_physics_magic: int = 0        ## m_CurrentAddPhysicsMagic — + damage v
 var move_speed_p: int = 0             ## fastwalkrun_p — % tốc chạy
 var life_replenish: int = 0           ## lifereplenish_v — máu hồi mỗi GAME_UPDATE_TIME (10 frame)
 var life_replenish_p: int = 0         ## lifereplenish_p — % cộng thêm vào lượng hồi trên
+var mana_replenish: int = 0           ## manareplenish_v — nội lực hồi mỗi GAME_UPDATE_TIME (10 frame)
+var mana_replenish_p: int = 0         ## manareplenish_p — % cộng thêm vào lượng hồi trên
 var melee_damage_return_p: int = 0    ## phản % damage cận chiến về người đánh
 var melee_damage_return: int = 0
 var range_damage_return_p: int = 0    ## phản % damage tầm xa (đạn/skill bay) về người đánh
@@ -87,8 +89,23 @@ var range_damage_return: int = 0
 var steal_life_p: int = 0             ## % damage vật lý gây ra hút thành máu
 var attack_speed: int = 0             ## attackspeed_v / castspeed_v — gốc giảm số frame ra đòn (chưa áp)
 var cast_speed: int = 0
+var hit_recover: int = 0              ## fasthitrecover_v / fasthitrecover_yan_v — thời gian phục hồi khi trúng đòn
 var exp_enhance_p: int = 0            ## expenhance_p — % tăng kinh nghiệm đánh quái (Tiên Thảo Lộ)
 var lucky_v: int = 0                  ## lucky_v — điểm may mắn tăng tỉ lệ & phẩm chất rớt đồ (Thiên Sơn Bảo Lộ)
+var mana_shield_p: int = 0            ## manashield_p — % sát thương chuyển hóa thành trừ nội lực (Tọa Vọng Vô Ngã)
+
+var all_skills_bonus: int = 0             ## allskill_v / allskills_v — + cấp tất cả kỹ năng
+var element_skills_bonus: Dictionary = {} ## metalskill_v / ... — ElementType -> int (+ cấp kỹ năng theo hệ)
+var ignore_defense_p: int = 0             ## ignoredefense_p — % bỏ qua phòng thủ đối phương khi đánh
+var damage_to_mana_p: int = 0             ## damage2addmana_p — % sát thương nhận chuyển hóa thành nội lực
+var indestructible: bool = false          ## indestructible_b — không thể phá hủy / không mất độ bền
+var stamina_replenish: int = 0            ## staminareplenish_v — hồi phục thể lực
+
+func get_skill_bonus(element_type: int = -1) -> int:
+	var bonus := all_skills_bonus
+	if element_type >= 0 and element_skills_bonus.has(element_type):
+		bonus += int(element_skills_bonus[element_type])
+	return bonus
 
 ## Giá trị TRƯỚC khi cộng thuộc tính — cho các thuộc tính % (lifemax_p = % của máu gốc, đúng
 ## m_LifeMax gốc; attackrating_p = % của m_AttackRating gốc).

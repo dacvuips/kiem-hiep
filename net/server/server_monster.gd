@@ -16,6 +16,9 @@ var monster_id := 0
 var data: Dictionary = {}
 var series := 0
 var blue_boss := false
+var is_boss := false
+var gold_boss := false
+var small_gold_boss := false
 var spawn_entry: Dictionary = {}
 var max_hp := 1.0
 var cur_hp := 1.0
@@ -32,8 +35,9 @@ var _state_len := 1.0
 var _origin_logic := Vector2.ZERO
 var _cur_active := 400.0
 var _walk_dest := Vector2.ZERO
-var _ai_time := 0.0
+var _next_ai_time := 0.0
 var _game_time := 0.0
+var _active_slot := 0
 var _skill_ready: Array[float] = [0.0, 0.0, 0.0, 0.0]
 var _max_radius := -1.0
 var _target_eid := 0
@@ -89,10 +93,8 @@ func _cache_params() -> void:
 	_ai_mode = int(data.get("ai_mode", 0))
 	_ai_max_time = float(maxi(1, int(data.get("ai_max_time", 10))))
 	_walk_speed = float(data.get("walk_speed", 6))
-	var base_vis := float(data.get("vision", 400))
-	_vision = maxf(base_vis * 1.6, 750.0)
-	var base_act := float(data.get("active", 400))
-	_active = maxf(base_act * 2.0, 1500.0)
+	_vision = float(data.get("vision", 400))
+	_active = float(data.get("active", 700))
 	_ai_p = data.get("ai_params", [30, 25, 25, 25, 25, 25, 25, 0, 0]) if int(data.get("ai_mode", 1)) == 1 else [30, 25, 25, 25, 25, 25, 25, 0, 0]
 
 ## (Hồi) sinh: đủ máu, về chỗ gốc, 2% thành boss xanh như script Revive gốc.
@@ -102,15 +104,25 @@ func reset() -> void:
 	if life < 0:
 		life = int((20 + level * 6) * float(data.get("life_param", 100)) / 100.0) * 10
 	max_hp = maxf(1.0, float(life)) * maxi(1, hell_stars)
+	if is_boss or data.get("is_boss", false):
+		blue_boss = false
+		var bt := str(data.get("boss_type", "gold"))
+		if bt == "small_gold":
+			max_hp = maxf(max_hp, float(data.get("life", 15000000)))
+		elif bt == "killer":
+			max_hp = maxf(max_hp, float(data.get("life", 500000)))
+		else:
+			max_hp = maxf(max_hp, float(data.get("life", 18000000)))
 	cur_hp = max_hp
 	pos = VltkMath.to_world(_origin_logic)
-	_cur_active = float(data.get("active", 400))
+	_cur_active = _active
 	dir = randi() % VltkMath.MAX_DIR
 	contributors.clear()
 	last_hitter = 0
 	hidden = false
 	flags = 0
 	_skill_ready = [0.0, 0.0, 0.0, 0.0]
+	_next_ai_time = 0.0
 	_enter(State.IDLE, "stand")
 	hp = 100
 	touch()
@@ -147,13 +159,18 @@ func tick(gs: GameServer, frames := 1) -> void:
 		State.ATTACK:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
+				if _target_eid != 0 and _has_melee_skill():
+					var target_conn = gs.conn_of_eid(_target_eid)
+					if target_conn != null and target_conn.entity != null:
+						var t_dist := VltkMath.to_logic(pos).distance_to(VltkMath.to_logic(target_conn.entity.pos))
+						if t_dist > 65.0:
+							_walk_to(VltkMath.to_logic(target_conn.entity.pos))
 		State.HURT:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
 	if state == State.IDLE or state == State.WALK:
-		_ai_time += frames
-		if _ai_time >= _ai_max_time:
-			_ai_time = 0.0
+		if _game_time >= _next_ai_time:
+			_next_ai_time = _game_time + _ai_max_time
 			_ai_think(gs)
 
 func _tick_walk(gs: GameServer, frames := 1) -> void:
@@ -168,13 +185,24 @@ func _tick_walk(gs: GameServer, frames := 1) -> void:
 		var target_conn = gs.conn_of_eid(_target_eid)
 		if target_conn != null and target_conn.entity != null:
 			var target_logic := VltkMath.to_logic(target_conn.entity.pos)
+			var stop_rad := 65.0 if _has_melee_skill() else (_skill_radius(_active_slot) * 0.85)
+			if here.distance_to(target_logic) <= stop_rad:
+				_enter(State.IDLE, "stand")
+				var d := VltkMath.dir_between(here, target_logic)
+				if d >= 0:
+					dir = d
+				return
 			if _walk_dest.distance_to(target_logic) > 45.0:
 				_walk_dest = target_logic
 				to_dest = _walk_dest - here
+			# Không bao giờ cho to_dest đi ngược hướng với mục tiêu
+			var to_enemy := target_logic - here
+			if to_dest.dot(to_enemy) < 0.0:
+				to_dest = to_enemy
 	if to_dest.length() <= maxf(step, 4.0):
 		_enter(State.IDLE, "stand")
 		return
-	var d := VltkMath.dir_between(here, _walk_dest)
+	var d := VltkMath.dir_between(Vector2.ZERO, to_dest)
 	if d >= 0 and d != dir:
 		dir = d
 	var next := VltkMath.to_world(here + to_dest.normalized() * step)
@@ -196,6 +224,9 @@ func _tick_walk(gs: GameServer, frames := 1) -> void:
 
 func _walk_to(dest_logic: Vector2) -> void:
 	_walk_dest = dest_logic
+	var d := VltkMath.dir_between(VltkMath.to_logic(pos), dest_logic)
+	if d >= 0:
+		dir = d
 	if state != State.WALK:
 		_enter(State.WALK, "walk")
 
@@ -207,7 +238,14 @@ func _skill_data(slot: int) -> Dictionary:
 
 func _skill_radius(slot: int) -> float:
 	var s := _skill_data(slot)
-	return float(s.get("attack_radius", DEFAULT_ATTACK_RADIUS)) if not s.is_empty() else DEFAULT_ATTACK_RADIUS
+	var rad := float(s.get("attack_radius", DEFAULT_ATTACK_RADIUS)) if not s.is_empty() else DEFAULT_ATTACK_RADIUS
+	var is_melee_skill := int(s.get("melee", 0)) == 1
+	var anim_id := int(s.get("char_anim", 9))
+	var is_melee_anim := anim_id in [9, 10]
+	var has_missile := int(s.get("child", 0)) > 0 or int(s.get("by_missle", 0)) == 1
+	if is_melee_skill or is_melee_anim or not has_missile:
+		rad = minf(rad, 75.0)
+	return rad
 
 func _max_skill_radius() -> float:
 	if _max_radius < 0.0:
@@ -219,20 +257,29 @@ func _max_skill_radius() -> float:
 			_max_radius = DEFAULT_ATTACK_RADIUS
 	return _max_radius
 
+func _has_melee_skill() -> bool:
+	for slot in 4:
+		if int(data["skills"][slot][0]) > 0 and _skill_radius(slot) <= 75.0:
+			return true
+	return false
+
 func _ai_think(gs: GameServer) -> void:
-	if _ai_mode <= 0:
+	if _ai_mode <= 0 or _vision <= 0.0:
 		return
 	var p := _ai_p
 	var here := VltkMath.to_logic(pos)
 	var active := _active
 	var from_origin := here.distance_to(_origin_logic)
-	if active < from_origin:
+	var max_active := active * 2.0 if _target_eid != 0 else active
+	if max_active < from_origin:
 		_cur_active = active * 0.5
 	if _cur_active < from_origin:
+		_target_eid = 0
 		_walk_to(_origin_logic)
 		return
 	_cur_active = active
-	var enemy := gs.nearest_player(pos, _vision, battle_side, cell_base)
+	var search_vis := _vision * 1.5 if _target_eid != 0 else _vision
+	var enemy := gs.nearest_player(pos, search_vis, battle_side, cell_base)
 	if enemy == null:
 		_target_eid = 0
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):
@@ -244,9 +291,19 @@ func _ai_think(gs: GameServer) -> void:
 	if dist > _max_skill_radius():
 		_walk_to(there)
 		return
+	## Khi quái đã đứng gần người chơi (cự ly cận chiến <= 85px): không sử dụng skill tầm xa nữa, chỉ dùng đòn cận chiến/đánh thường.
+	var is_close_range := dist <= 85.0
+	var has_melee_skill := false
+	for i in 4:
+		if int(data["skills"][i][0]) > 0 and _skill_radius(i) <= 75.0:
+			has_melee_skill = true
+			break
+
 	var total_weight := 0
 	for i in 4:
 		if int(data["skills"][i][0]) > 0:
+			if is_close_range and has_melee_skill and _skill_radius(i) > 75.0:
+				continue
 			total_weight += maxi(0, int(p[i + 1]))
 	if total_weight <= 0:
 		total_weight = 100
@@ -256,13 +313,23 @@ func _ai_think(gs: GameServer) -> void:
 	for i in 4:
 		if int(data["skills"][i][0]) <= 0:
 			continue
+		if is_close_range and has_melee_skill and _skill_radius(i) > 75.0:
+			continue
 		acc += maxi(0, int(p[i + 1]))
 		if roll < acc:
 			slot = i
 			break
 	if slot < 0:
 		return
+	_active_slot = slot
 	if int(data["skills"][slot][0]) <= 0 or _game_time < _skill_ready[slot]:
+		var stop_rad := 65.0 if has_melee_skill else (_skill_radius(slot) * 0.85)
+		if dist <= stop_rad:
+			_enter(State.IDLE, "stand")
+			var d := VltkMath.dir_between(here, there)
+			if d >= 0:
+				dir = d
+			return
 		_walk_to(there)
 		return
 	if dist <= _skill_radius(slot):
@@ -278,6 +345,10 @@ func _patrol() -> void:
 	_walk_to(_origin_logic + off)
 
 func _begin_attack(gs: GameServer, slot: int, enemy: ServerEntity) -> void:
+	var target_dist := VltkMath.to_logic(pos).distance_to(VltkMath.to_logic(enemy.pos))
+	if target_dist > _skill_radius(slot):
+		_walk_to(VltkMath.to_logic(enemy.pos))
+		return
 	var s := _skill_data(slot)
 	var action_name := "attack1"
 	match int(s.get("char_anim", 9)):

@@ -1,0 +1,3525 @@
+{
+  "total_waves": 200,
+  "waves": [
+    {
+      "wave": 1,
+      "level": 1,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 11,
+      "monster_name": "Heo rừng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Kim Cang Hộ Thể",
+        "desc": "Tăng 50% toàn bộ kháng tính và phòng ngự",
+        "type": "resist",
+        "value": 50
+      }
+    },
+    {
+      "wave": 2,
+      "level": 2,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 43,
+      "monster_name": "Heo trắng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Bất Động Minh Vương",
+        "desc": "Miễn dịch mọi trạng thái khống chế (choáng, chậm)",
+        "type": "immune_cc",
+        "value": 1
+      }
+    },
+    {
+      "wave": 3,
+      "level": 3,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 42,
+      "monster_name": "Hươu đốm",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "La Hán Trận",
+        "desc": "Phản đòn 35% sát thương cận chiến",
+        "type": "reflect",
+        "value": 35
+      }
+    },
+    {
+      "wave": 4,
+      "level": 4,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 12,
+      "monster_name": "Nhím",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Hỗn Nguyên Nhất Khí Công",
+        "desc": "Tăng 30% sinh lực tối đa",
+        "type": "max_hp",
+        "value": 30
+      }
+    },
+    {
+      "wave": 5,
+      "level": 5,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 31,
+      "monster_name": "Kim Miêu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Kim Chung Tráo",
+        "desc": "Giảm 40% sát thương phải chịu",
+        "type": "dmg_reduce",
+        "value": 40
+      }
+    },
+    {
+      "wave": 6,
+      "level": 6,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 34,
+      "monster_name": "Linh Miêu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Đoạn Hồn Thích",
+        "desc": "Tăng 60% tốc độ di chuyển xông thẳng vào trụ",
+        "type": "speed",
+        "value": 60
+      }
+    },
+    {
+      "wave": 7,
+      "level": 7,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 33,
+      "monster_name": "Hoán hùng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Tĩnh Tâm Quyết",
+        "desc": "Hồi phục 3% máu tối đa mỗi giây",
+        "type": "regen_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 8,
+      "level": 8,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 36,
+      "monster_name": "Khỉ xám",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Bất Khuất Thần Công",
+        "desc": "Khi dưới 30% máu nhận khiên hộ thể bất tử 3 giây",
+        "type": "shield_low_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 9,
+      "level": 9,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 5,
+      "monster_name": "Sói xám",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Mê Ảnh Tung",
+        "desc": "Tăng 50% tốc độ chạy và 40% tỉ lệ né tránh",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 10,
+      "level": 10,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 6,
+      "monster_name": "Sói đỏ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Vô Ảnh Tiêu",
+        "desc": "Tăng 25% tốc độ tấn công đánh trụ",
+        "type": "atk_speed",
+        "value": 25
+      },
+      "boss": {
+        "monster_id": 1006,
+        "name": "Thủ Lĩnh Dã Thú",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 11,
+      "level": 11,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 7,
+      "monster_name": "Sói xanh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Tâm Nhãn",
+        "desc": "Tăng 100% độ chính xác, không thể bị né tránh",
+        "type": "accuracy",
+        "value": 100
+      }
+    },
+    {
+      "wave": 12,
+      "level": 12,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 8,
+      "monster_name": "Sói tuyết",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Bẫy Độn Giáp Hộ Thể",
+        "desc": "Kháng độc 80% và giảm sát thương bẫy",
+        "type": "resist_poison",
+        "value": 80
+      }
+    },
+    {
+      "wave": 13,
+      "level": 13,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 0,
+      "monster_name": "Đông Bắc hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vô Hình Độc",
+        "desc": "Tỏa ra khí độc rút 2% máu mỗi giây cho kẻ địch quanh quái",
+        "type": "aura_poison",
+        "value": 2
+      }
+    },
+    {
+      "wave": 14,
+      "level": 14,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1,
+      "monster_name": "Hoa Nam hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Bách Độc Xuyên Tâm",
+        "desc": "Đòn đánh làm giảm 30% phòng ngự của mục tiêu",
+        "type": "armor_shred",
+        "value": 30
+      }
+    },
+    {
+      "wave": 15,
+      "level": 15,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 2,
+      "monster_name": "Bạch Hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vạn Cổ Khô Vinh",
+        "desc": "Kháng toàn bộ độc tính và hiệu ứng suy yếu",
+        "type": "immune_poison",
+        "value": 1
+      }
+    },
+    {
+      "wave": 16,
+      "level": 16,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 3,
+      "monster_name": "Kim Tiền báo",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Chu Cáp Thanh Phổ",
+        "desc": "Tăng 40% kháng Lôi và kháng Thủy",
+        "type": "resist_dual",
+        "value": 40
+      }
+    },
+    {
+      "wave": 17,
+      "level": 17,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 4,
+      "monster_name": "Báo trắng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Từ Hàng Phổ Độ",
+        "desc": "Hào quang hồi 4% máu mỗi 2 giây cho toàn bộ quái cùng đợt",
+        "type": "heal_aura",
+        "value": 4
+      }
+    },
+    {
+      "wave": 18,
+      "level": 18,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 15,
+      "monster_name": "Gấu nâu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Mộng Điệp",
+        "desc": "Hồi phục liên tục nội lực và miễn dịch hút mana",
+        "type": "regen_mana",
+        "value": 10
+      }
+    },
+    {
+      "wave": 19,
+      "level": 19,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 16,
+      "monster_name": "Gấu đen",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Lưu Thủy",
+        "desc": "Tăng 45% tốc độ di chuyển uyển chuyển",
+        "type": "speed",
+        "value": 45
+      }
+    },
+    {
+      "wave": 20,
+      "level": 20,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 21,
+      "monster_name": "Rắn xanh",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Phật Tâm Từ Hữu",
+        "desc": "Tăng 25% sinh lực và 25% kháng tất cả",
+        "type": "all_res_hp",
+        "value": 25
+      },
+      "boss": {
+        "monster_id": 1011,
+        "name": "Thủy Quỷ Vương",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 21,
+      "level": 21,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 11,
+      "monster_name": "Heo rừng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Hộ Thể Hàn Băng",
+        "desc": "Đóng băng người tấn công trong 1.5 giây nếu chạm vào",
+        "type": "freeze_attacker",
+        "value": 1.5
+      }
+    },
+    {
+      "wave": 22,
+      "level": 22,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 43,
+      "monster_name": "Heo trắng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Phù Vân Lược Ảnh",
+        "desc": "Tăng 55% tốc độ di chuyển và tàng hình trong 3 giây đầu",
+        "type": "speed_stealth",
+        "value": 55
+      }
+    },
+    {
+      "wave": 23,
+      "level": 23,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 42,
+      "monster_name": "Hươu đốm",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Tâm Tiên Tử",
+        "desc": "Giảm 50% thời gian chịu hiệu ứng khống chế",
+        "type": "cc_reduction",
+        "value": 50
+      }
+    },
+    {
+      "wave": 24,
+      "level": 24,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 12,
+      "monster_name": "Nhím",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Cốt Tuyết Cơ",
+        "desc": "Tăng 60% kháng Băng và hấp thụ sát thương Băng",
+        "type": "resist_cold",
+        "value": 60
+      }
+    },
+    {
+      "wave": 25,
+      "level": 25,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 31,
+      "monster_name": "Kim Miêu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Tiêu Dao Du",
+        "desc": "Tăng 60% tốc độ di chuyển và 50% tỉ lệ né tránh đòn",
+        "type": "speed_dodge",
+        "value": 60
+      }
+    },
+    {
+      "wave": 26,
+      "level": 26,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 34,
+      "monster_name": "Linh Miêu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hoạt Bất Lưu Thủ",
+        "desc": "Né tránh đòn tấn công vật lý tăng vọt 65%",
+        "type": "dodge",
+        "value": 65
+      }
+    },
+    {
+      "wave": 27,
+      "level": 27,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 33,
+      "monster_name": "Hoán hùng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Túy Điệp Cuồng Vũ",
+        "desc": "Kháng chí mạng và tăng 35% sát thương lên trụ",
+        "type": "crit_res",
+        "value": 35
+      }
+    },
+    {
+      "wave": 28,
+      "level": 28,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 36,
+      "monster_name": "Khỉ xám",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hóa Hiểm Vi Di",
+        "desc": "Khi bị khống chế tự giải phóng và tăng tốc chạy",
+        "type": "cleanse_speed",
+        "value": 1
+      }
+    },
+    {
+      "wave": 29,
+      "level": 29,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 5,
+      "monster_name": "Sói xám",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Ma Diễm Thao Thiên",
+        "desc": "Quái bốc cháy, kẻ địch đứng gần bị thiêu đốt 3% máu/s",
+        "type": "burn_aura",
+        "value": 3
+      }
+    },
+    {
+      "wave": 30,
+      "level": 30,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 6,
+      "monster_name": "Sói đỏ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Đạp Tuyết Vô Ngân",
+        "desc": "Tăng 50% tốc độ chạy và kháng làm chậm 100%",
+        "type": "immune_slow",
+        "value": 50
+      },
+      "boss": {
+        "monster_id": 1020,
+        "name": "Hắc Phong Trại Chủ",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 31,
+      "level": 31,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 7,
+      "monster_name": "Sói xanh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Bi Tô Thanh Phong",
+        "desc": "Hào quang làm giảm 25% kháng tính của người chơi",
+        "type": "debuff_res",
+        "value": 25
+      }
+    },
+    {
+      "wave": 32,
+      "level": 32,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 8,
+      "monster_name": "Sói tuyết",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Hấp Tinh Trận",
+        "desc": "Đòn đánh hút 10% sát thương gây ra thành máu cho quái",
+        "type": "lifesteal",
+        "value": 10
+      }
+    },
+    {
+      "wave": 33,
+      "level": 33,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 0,
+      "monster_name": "Đông Bắc hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thọa Khí Quyết",
+        "desc": "Tăng 45% tốc độ chạy và tăng tốc hồi phục",
+        "type": "speed_regen",
+        "value": 45
+      }
+    },
+    {
+      "wave": 34,
+      "level": 34,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1,
+      "monster_name": "Hoa Nam hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Bác Cấp Nhi Phục",
+        "desc": "Khiên Chân Khí chặn 40% sát thương nhận vào",
+        "type": "mana_shield",
+        "value": 40
+      }
+    },
+    {
+      "wave": 35,
+      "level": 35,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 2,
+      "monster_name": "Bạch Hổ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thái Cực Thần Công",
+        "desc": "Tăng 40% phòng ngự nội công và kháng Lôi",
+        "type": "resist_light",
+        "value": 40
+      }
+    },
+    {
+      "wave": 36,
+      "level": 36,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 3,
+      "monster_name": "Kim Tiền báo",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thê Vân Tung",
+        "desc": "Tăng 50% tốc độ di chuyển lướt gió",
+        "type": "speed",
+        "value": 50
+      }
+    },
+    {
+      "wave": 37,
+      "level": 37,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 4,
+      "monster_name": "Báo trắng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Sương Ngạo Côn Lôn",
+        "desc": "Tăng 50% tốc độ chạy và 45% né đòn",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 38,
+      "level": 38,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 15,
+      "monster_name": "Gấu nâu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thiên Thanh Địa Trọc",
+        "desc": "Khi chết quái phát nổ làm choáng xung quanh 1 giây",
+        "type": "death_stun",
+        "value": 1
+      }
+    },
+    {
+      "wave": 39,
+      "level": 39,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 16,
+      "monster_name": "Gấu đen",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thanh Phong Phù",
+        "desc": "Tăng 50% tốc độ đánh và giảm thời gian trúng bùa",
+        "type": "cleanse_buff",
+        "value": 50
+      }
+    },
+    {
+      "wave": 40,
+      "level": 40,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 21,
+      "monster_name": "Rắn xanh",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Khí Diệt Thần Trọng",
+        "desc": "Hào quang rút mana của mục tiêu khi đánh cận chiến",
+        "type": "mana_burn",
+        "value": 15
+      },
+      "boss": {
+        "monster_id": 1030,
+        "name": "Lâm Tặc Đầu Mục",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 41,
+      "level": 41,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 10,
+      "monster_name": "Hỏa Hồ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Tử Hà Thần Công",
+        "desc": "Tăng 30% kháng tất cả và giảm 25% sát thương nhận",
+        "type": "resist_all",
+        "value": 30
+      }
+    },
+    {
+      "wave": 42,
+      "level": 42,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1007,
+      "monster_name": "Sương Đao",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Bạch Lộc Di Thân",
+        "desc": "Lướt nhanh tăng 55% tốc chạy",
+        "type": "speed",
+        "value": 55
+      }
+    },
+    {
+      "wave": 43,
+      "level": 43,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1008,
+      "monster_name": "Phi Sa",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Càn Khôn Đại Na Di",
+        "desc": "Chuyển hóa 30% sát thương gánh chịu thành hồi máu",
+        "type": "absorb_heal",
+        "value": 30
+      }
+    },
+    {
+      "wave": 44,
+      "level": 44,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1009,
+      "monster_name": "Sương Liêm",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Thánh Hỏa Lệnh Pháp",
+        "desc": "Tăng 40% tốc đánh và tốc chạy",
+        "type": "haste",
+        "value": 40
+      }
+    },
+    {
+      "wave": 45,
+      "level": 45,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1010,
+      "monster_name": "Thừa Phong",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Lăng Ba Vi Bộ",
+        "desc": "Tăng 70% tốc độ di chuyển và miễn dịch làm chậm",
+        "type": "super_speed",
+        "value": 70
+      }
+    },
+    {
+      "wave": 46,
+      "level": 46,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1011,
+      "monster_name": "Thủy Quỷ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Khô Vinh Thiền Công",
+        "desc": "Chuyển hóa luân phiên giữa kháng vật lý và kháng phép",
+        "type": "hybrid_res",
+        "value": 40
+      }
+    },
+    {
+      "wave": 47,
+      "level": 47,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1012,
+      "monster_name": "Thần Tý",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Kim Cang Hộ Thể",
+        "desc": "Tăng 50% toàn bộ kháng tính và phòng ngự",
+        "type": "resist",
+        "value": 50
+      }
+    },
+    {
+      "wave": 48,
+      "level": 48,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1013,
+      "monster_name": "Tranh Hán",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Bất Động Minh Vương",
+        "desc": "Miễn dịch mọi trạng thái khống chế (choáng, chậm)",
+        "type": "immune_cc",
+        "value": 1
+      }
+    },
+    {
+      "wave": 49,
+      "level": 49,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1014,
+      "monster_name": "Phá Lang",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "La Hán Trận",
+        "desc": "Phản đòn 35% sát thương cận chiến",
+        "type": "reflect",
+        "value": 35
+      }
+    },
+    {
+      "wave": 50,
+      "level": 50,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1015,
+      "monster_name": "ảnh Côn",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Hỗn Nguyên Nhất Khí Công",
+        "desc": "Tăng 30% sinh lực tối đa",
+        "type": "max_hp",
+        "value": 30
+      },
+      "boss": {
+        "monster_id": 1040,
+        "name": "Đại Đao Phỉ Thủ",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 51,
+      "level": 51,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1016,
+      "monster_name": "Đao Tử",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Kim Chung Tráo",
+        "desc": "Giảm 40% sát thương phải chịu",
+        "type": "dmg_reduce",
+        "value": 40
+      }
+    },
+    {
+      "wave": 52,
+      "level": 52,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1017,
+      "monster_name": "Lang Bổng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Đoạn Hồn Thích",
+        "desc": "Tăng 60% tốc độ di chuyển xông thẳng vào trụ",
+        "type": "speed",
+        "value": 60
+      }
+    },
+    {
+      "wave": 53,
+      "level": 53,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1018,
+      "monster_name": "Hắc Cân",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Tĩnh Tâm Quyết",
+        "desc": "Hồi phục 3% máu tối đa mỗi giây",
+        "type": "regen_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 54,
+      "level": 54,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1020,
+      "monster_name": "Sát phục",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Bất Khuất Thần Công",
+        "desc": "Khi dưới 30% máu nhận khiên hộ thể bất tử 3 giây",
+        "type": "shield_low_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 55,
+      "level": 55,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1021,
+      "monster_name": "Lôi điện",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Mê Ảnh Tung",
+        "desc": "Tăng 50% tốc độ chạy và 40% tỉ lệ né tránh",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 56,
+      "level": 56,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1022,
+      "monster_name": "Hàn băng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Vô Ảnh Tiêu",
+        "desc": "Tăng 25% tốc độ tấn công đánh trụ",
+        "type": "atk_speed",
+        "value": 25
+      }
+    },
+    {
+      "wave": 57,
+      "level": 57,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1023,
+      "monster_name": "Chú thuật ác nhân",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Tâm Nhãn",
+        "desc": "Tăng 100% độ chính xác, không thể bị né tránh",
+        "type": "accuracy",
+        "value": 100
+      }
+    },
+    {
+      "wave": 58,
+      "level": 58,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1024,
+      "monster_name": "Siêu cường",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Bẫy Độn Giáp Hộ Thể",
+        "desc": "Kháng độc 80% và giảm sát thương bẫy",
+        "type": "resist_poison",
+        "value": 80
+      }
+    },
+    {
+      "wave": 59,
+      "level": 59,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1025,
+      "monster_name": "Phản sát",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vô Hình Độc",
+        "desc": "Tỏa ra khí độc rút 2% máu mỗi giây cho kẻ địch quanh quái",
+        "type": "aura_poison",
+        "value": 2
+      }
+    },
+    {
+      "wave": 60,
+      "level": 60,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1051,
+      "monster_name": "Nữ Phỉ đầu",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Bách Độc Xuyên Tâm",
+        "desc": "Đòn đánh làm giảm 30% phòng ngự của mục tiêu",
+        "type": "armor_shred",
+        "value": 30
+      },
+      "boss": {
+        "monster_id": 1050,
+        "name": "Cổ Mộ U Hồn Tướng",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 61,
+      "level": 61,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1055,
+      "monster_name": "sơn tặc vương",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vạn Cổ Khô Vinh",
+        "desc": "Kháng toàn bộ độc tính và hiệu ứng suy yếu",
+        "type": "immune_poison",
+        "value": 1
+      }
+    },
+    {
+      "wave": 62,
+      "level": 62,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1067,
+      "monster_name": "Tống Tiểu Hiệu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Chu Cáp Thanh Phổ",
+        "desc": "Tăng 40% kháng Lôi và kháng Thủy",
+        "type": "resist_dual",
+        "value": 40
+      }
+    },
+    {
+      "wave": 63,
+      "level": 63,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1068,
+      "monster_name": "Tống Đội trưởng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Từ Hàng Phổ Độ",
+        "desc": "Hào quang hồi 4% máu mỗi 2 giây cho toàn bộ quái cùng đợt",
+        "type": "heal_aura",
+        "value": 4
+      }
+    },
+    {
+      "wave": 64,
+      "level": 64,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1069,
+      "monster_name": "Tống Tiên phong",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Mộng Điệp",
+        "desc": "Hồi phục liên tục nội lực và miễn dịch hút mana",
+        "type": "regen_mana",
+        "value": 10
+      }
+    },
+    {
+      "wave": 65,
+      "level": 65,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1072,
+      "monster_name": "Kim Tiểu Hiệu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Lưu Thủy",
+        "desc": "Tăng 45% tốc độ di chuyển uyển chuyển",
+        "type": "speed",
+        "value": 45
+      }
+    },
+    {
+      "wave": 66,
+      "level": 66,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1073,
+      "monster_name": "Kim Đội trưởng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Phật Tâm Từ Hữu",
+        "desc": "Tăng 25% sinh lực và 25% kháng tất cả",
+        "type": "all_res_hp",
+        "value": 25
+      }
+    },
+    {
+      "wave": 67,
+      "level": 67,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1074,
+      "monster_name": "Kim Tiên phong",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Hộ Thể Hàn Băng",
+        "desc": "Đóng băng người tấn công trong 1.5 giây nếu chạm vào",
+        "type": "freeze_attacker",
+        "value": 1.5
+      }
+    },
+    {
+      "wave": 68,
+      "level": 68,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1100,
+      "monster_name": "đoạt bảo tặc",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Phù Vân Lược Ảnh",
+        "desc": "Tăng 55% tốc độ di chuyển và tàng hình trong 3 giây đầu",
+        "type": "speed_stealth",
+        "value": 55
+      }
+    },
+    {
+      "wave": 69,
+      "level": 69,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1101,
+      "monster_name": "đoạt bảo tặc",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Tâm Tiên Tử",
+        "desc": "Giảm 50% thời gian chịu hiệu ứng khống chế",
+        "type": "cc_reduction",
+        "value": 50
+      }
+    },
+    {
+      "wave": 70,
+      "level": 70,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1102,
+      "monster_name": "đoạt bảo tặc",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Cốt Tuyết Cơ",
+        "desc": "Tăng 60% kháng Băng và hấp thụ sát thương Băng",
+        "type": "resist_cold",
+        "value": 60
+      },
+      "boss": {
+        "monster_id": 1060,
+        "name": "Khoái Đao Thích Khách",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 71,
+      "level": 71,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1103,
+      "monster_name": "đoạt bảo tặc",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Tiêu Dao Du",
+        "desc": "Tăng 60% tốc độ di chuyển và 50% tỉ lệ né tránh đòn",
+        "type": "speed_dodge",
+        "value": 60
+      }
+    },
+    {
+      "wave": 72,
+      "level": 72,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1105,
+      "monster_name": "đoạt bảo tặc (té ngã)",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hoạt Bất Lưu Thủ",
+        "desc": "Né tránh đòn tấn công vật lý tăng vọt 65%",
+        "type": "dodge",
+        "value": 65
+      }
+    },
+    {
+      "wave": 73,
+      "level": 73,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1106,
+      "monster_name": "đoạt bảo tặc (hôn mê)",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Túy Điệp Cuồng Vũ",
+        "desc": "Kháng chí mạng và tăng 35% sát thương lên trụ",
+        "type": "crit_res",
+        "value": 35
+      }
+    },
+    {
+      "wave": 74,
+      "level": 74,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1107,
+      "monster_name": "đoạt bảo tặc (giảm tốc)",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hóa Hiểm Vi Di",
+        "desc": "Khi bị khống chế tự giải phóng và tăng tốc chạy",
+        "type": "cleanse_speed",
+        "value": 1
+      }
+    },
+    {
+      "wave": 75,
+      "level": 75,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1108,
+      "monster_name": "đoạt bảo tặc (Chú thuật)",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Ma Diễm Thao Thiên",
+        "desc": "Quái bốc cháy, kẻ địch đứng gần bị thiêu đốt 3% máu/s",
+        "type": "burn_aura",
+        "value": 3
+      }
+    },
+    {
+      "wave": 76,
+      "level": 76,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1109,
+      "monster_name": "đoạt bảo tặc (công kích)",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Đạp Tuyết Vô Ngân",
+        "desc": "Tăng 50% tốc độ chạy và kháng làm chậm 100%",
+        "type": "immune_slow",
+        "value": 50
+      }
+    },
+    {
+      "wave": 77,
+      "level": 77,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1161,
+      "monster_name": "Mộc nhân",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Bi Tô Thanh Phong",
+        "desc": "Hào quang làm giảm 25% kháng tính của người chơi",
+        "type": "debuff_res",
+        "value": 25
+      }
+    },
+    {
+      "wave": 78,
+      "level": 78,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1206,
+      "monster_name": "ác bá",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Hấp Tinh Trận",
+        "desc": "Đòn đánh hút 10% sát thương gây ra thành máu cho quái",
+        "type": "lifesteal",
+        "value": 10
+      }
+    },
+    {
+      "wave": 79,
+      "level": 79,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1207,
+      "monster_name": "Bát Bì",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thọa Khí Quyết",
+        "desc": "Tăng 45% tốc độ chạy và tăng tốc hồi phục",
+        "type": "speed_regen",
+        "value": 45
+      }
+    },
+    {
+      "wave": 80,
+      "level": 80,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1221,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Bác Cấp Nhi Phục",
+        "desc": "Khiên Chân Khí chặn 40% sát thương nhận vào",
+        "type": "mana_shield",
+        "value": 40
+      },
+      "boss": {
+        "monster_id": 1070,
+        "name": "Ngũ Độc Giáo Đầu",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 81,
+      "level": 81,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1237,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thái Cực Thần Công",
+        "desc": "Tăng 40% phòng ngự nội công và kháng Lôi",
+        "type": "resist_light",
+        "value": 40
+      }
+    },
+    {
+      "wave": 82,
+      "level": 82,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1238,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thê Vân Tung",
+        "desc": "Tăng 50% tốc độ di chuyển lướt gió",
+        "type": "speed",
+        "value": 50
+      }
+    },
+    {
+      "wave": 83,
+      "level": 83,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1257,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Sương Ngạo Côn Lôn",
+        "desc": "Tăng 50% tốc độ chạy và 45% né đòn",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 84,
+      "level": 84,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1258,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thiên Thanh Địa Trọc",
+        "desc": "Khi chết quái phát nổ làm choáng xung quanh 1 giây",
+        "type": "death_stun",
+        "value": 1
+      }
+    },
+    {
+      "wave": 85,
+      "level": 85,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1259,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thanh Phong Phù",
+        "desc": "Tăng 50% tốc độ đánh và giảm thời gian trúng bùa",
+        "type": "cleanse_buff",
+        "value": 50
+      }
+    },
+    {
+      "wave": 86,
+      "level": 86,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1261,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Khí Diệt Thần Trọng",
+        "desc": "Hào quang rút mana của mục tiêu khi đánh cận chiến",
+        "type": "mana_burn",
+        "value": 15
+      }
+    },
+    {
+      "wave": 87,
+      "level": 87,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1263,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Tử Hà Thần Công",
+        "desc": "Tăng 30% kháng tất cả và giảm 25% sát thương nhận",
+        "type": "resist_all",
+        "value": 30
+      }
+    },
+    {
+      "wave": 88,
+      "level": 88,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1264,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Bạch Lộc Di Thân",
+        "desc": "Lướt nhanh tăng 55% tốc chạy",
+        "type": "speed",
+        "value": 55
+      }
+    },
+    {
+      "wave": 89,
+      "level": 89,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1267,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Càn Khôn Đại Na Di",
+        "desc": "Chuyển hóa 30% sát thương gánh chịu thành hồi máu",
+        "type": "absorb_heal",
+        "value": 30
+      }
+    },
+    {
+      "wave": 90,
+      "level": 90,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1268,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Thánh Hỏa Lệnh Pháp",
+        "desc": "Tăng 40% tốc đánh và tốc chạy",
+        "type": "haste",
+        "value": 40
+      },
+      "boss": {
+        "monster_id": 1080,
+        "name": "Thiên Nhẫn Sát Thủ",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 91,
+      "level": 91,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1269,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Lăng Ba Vi Bộ",
+        "desc": "Tăng 70% tốc độ di chuyển và miễn dịch làm chậm",
+        "type": "super_speed",
+        "value": 70
+      }
+    },
+    {
+      "wave": 92,
+      "level": 92,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1270,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Khô Vinh Thiền Công",
+        "desc": "Chuyển hóa luân phiên giữa kháng vật lý và kháng phép",
+        "type": "hybrid_res",
+        "value": 40
+      }
+    },
+    {
+      "wave": 93,
+      "level": 93,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1271,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Kim Cang Hộ Thể",
+        "desc": "Tăng 50% toàn bộ kháng tính và phòng ngự",
+        "type": "resist",
+        "value": 50
+      }
+    },
+    {
+      "wave": 94,
+      "level": 94,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1283,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Bất Động Minh Vương",
+        "desc": "Miễn dịch mọi trạng thái khống chế (choáng, chậm)",
+        "type": "immune_cc",
+        "value": 1
+      }
+    },
+    {
+      "wave": 95,
+      "level": 95,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1284,
+      "monster_name": "damahu_ib",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "La Hán Trận",
+        "desc": "Phản đòn 35% sát thương cận chiến",
+        "type": "reflect",
+        "value": 35
+      }
+    },
+    {
+      "wave": 96,
+      "level": 96,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1291,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Hỗn Nguyên Nhất Khí Công",
+        "desc": "Tăng 30% sinh lực tối đa",
+        "type": "max_hp",
+        "value": 30
+      }
+    },
+    {
+      "wave": 97,
+      "level": 97,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1296,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Kim Chung Tráo",
+        "desc": "Giảm 40% sát thương phải chịu",
+        "type": "dmg_reduce",
+        "value": 40
+      }
+    },
+    {
+      "wave": 98,
+      "level": 98,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1299,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Đoạn Hồn Thích",
+        "desc": "Tăng 60% tốc độ di chuyển xông thẳng vào trụ",
+        "type": "speed",
+        "value": 60
+      }
+    },
+    {
+      "wave": 99,
+      "level": 99,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 13,
+      "monster_name": "Đại Tượng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Tĩnh Tâm Quyết",
+        "desc": "Hồi phục 3% máu tối đa mỗi giây",
+        "type": "regen_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 100,
+      "level": 100,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1300,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Bất Khuất Thần Công",
+        "desc": "Khi dưới 30% máu nhận khiên hộ thể bất tử 3 giây",
+        "type": "shield_low_hp",
+        "value": 3
+      },
+      "boss": {
+        "monster_id": 1090,
+        "name": "Vạn Độc Xà Vương",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 101,
+      "level": 101,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1301,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Mê Ảnh Tung",
+        "desc": "Tăng 50% tốc độ chạy và 40% tỉ lệ né tránh",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 102,
+      "level": 102,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1302,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Vô Ảnh Tiêu",
+        "desc": "Tăng 25% tốc độ tấn công đánh trụ",
+        "type": "atk_speed",
+        "value": 25
+      }
+    },
+    {
+      "wave": 103,
+      "level": 103,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1303,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Tâm Nhãn",
+        "desc": "Tăng 100% độ chính xác, không thể bị né tránh",
+        "type": "accuracy",
+        "value": 100
+      }
+    },
+    {
+      "wave": 104,
+      "level": 104,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1304,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Bẫy Độn Giáp Hộ Thể",
+        "desc": "Kháng độc 80% và giảm sát thương bẫy",
+        "type": "resist_poison",
+        "value": 80
+      }
+    },
+    {
+      "wave": 105,
+      "level": 105,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1305,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vô Hình Độc",
+        "desc": "Tỏa ra khí độc rút 2% máu mỗi giây cho kẻ địch quanh quái",
+        "type": "aura_poison",
+        "value": 2
+      }
+    },
+    {
+      "wave": 106,
+      "level": 106,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1306,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Bách Độc Xuyên Tâm",
+        "desc": "Đòn đánh làm giảm 30% phòng ngự của mục tiêu",
+        "type": "armor_shred",
+        "value": 30
+      }
+    },
+    {
+      "wave": 107,
+      "level": 107,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1307,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vạn Cổ Khô Vinh",
+        "desc": "Kháng toàn bộ độc tính và hiệu ứng suy yếu",
+        "type": "immune_poison",
+        "value": 1
+      }
+    },
+    {
+      "wave": 108,
+      "level": 108,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1308,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Chu Cáp Thanh Phổ",
+        "desc": "Tăng 40% kháng Lôi và kháng Thủy",
+        "type": "resist_dual",
+        "value": 40
+      }
+    },
+    {
+      "wave": 109,
+      "level": 109,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1312,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Từ Hàng Phổ Độ",
+        "desc": "Hào quang hồi 4% máu mỗi 2 giây cho toàn bộ quái cùng đợt",
+        "type": "heal_aura",
+        "value": 4
+      }
+    },
+    {
+      "wave": 110,
+      "level": 110,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1317,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Mộng Điệp",
+        "desc": "Hồi phục liên tục nội lực và miễn dịch hút mana",
+        "type": "regen_mana",
+        "value": 10
+      },
+      "boss": {
+        "monster_id": 1100,
+        "name": "Tây Vực Ma Đầu",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 111,
+      "level": 111,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1322,
+      "monster_name": "Cây giáng sinh thần bí",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Lưu Thủy",
+        "desc": "Tăng 45% tốc độ di chuyển uyển chuyển",
+        "type": "speed",
+        "value": 45
+      }
+    },
+    {
+      "wave": 112,
+      "level": 112,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1323,
+      "monster_name": "A Hùng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Phật Tâm Từ Hữu",
+        "desc": "Tăng 25% sinh lực và 25% kháng tất cả",
+        "type": "all_res_hp",
+        "value": 25
+      }
+    },
+    {
+      "wave": 113,
+      "level": 113,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1324,
+      "monster_name": "A Sơn",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Hộ Thể Hàn Băng",
+        "desc": "Đóng băng người tấn công trong 1.5 giây nếu chạm vào",
+        "type": "freeze_attacker",
+        "value": 1.5
+      }
+    },
+    {
+      "wave": 114,
+      "level": 114,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1335,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Phù Vân Lược Ảnh",
+        "desc": "Tăng 55% tốc độ di chuyển và tàng hình trong 3 giây đầu",
+        "type": "speed_stealth",
+        "value": 55
+      }
+    },
+    {
+      "wave": 115,
+      "level": 115,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1336,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Tâm Tiên Tử",
+        "desc": "Giảm 50% thời gian chịu hiệu ứng khống chế",
+        "type": "cc_reduction",
+        "value": 50
+      }
+    },
+    {
+      "wave": 116,
+      "level": 116,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1337,
+      "monster_name": "Công Thành Chiến Xa",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Cốt Tuyết Cơ",
+        "desc": "Tăng 60% kháng Băng và hấp thụ sát thương Băng",
+        "type": "resist_cold",
+        "value": 60
+      }
+    },
+    {
+      "wave": 117,
+      "level": 117,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1338,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Tiêu Dao Du",
+        "desc": "Tăng 60% tốc độ di chuyển và 50% tỉ lệ né tránh đòn",
+        "type": "speed_dodge",
+        "value": 60
+      }
+    },
+    {
+      "wave": 118,
+      "level": 118,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1339,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hoạt Bất Lưu Thủ",
+        "desc": "Né tránh đòn tấn công vật lý tăng vọt 65%",
+        "type": "dodge",
+        "value": 65
+      }
+    },
+    {
+      "wave": 119,
+      "level": 119,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1341,
+      "monster_name": "ậẻắỹễậẦáấẴ̉ứ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Túy Điệp Cuồng Vũ",
+        "desc": "Kháng chí mạng và tăng 35% sát thương lên trụ",
+        "type": "crit_res",
+        "value": 35
+      }
+    },
+    {
+      "wave": 120,
+      "level": 120,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1342,
+      "monster_name": "ẵỖắỹễậẦáấẴ̉ứ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hóa Hiểm Vi Di",
+        "desc": "Khi bị khống chế tự giải phóng và tăng tốc chạy",
+        "type": "cleanse_speed",
+        "value": 1
+      },
+      "boss": {
+        "monster_id": 1110,
+        "name": "Kim Quốc Tiên Phong Tướng",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 121,
+      "level": 121,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1343,
+      "monster_name": "Hỏa Trụ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Ma Diễm Thao Thiên",
+        "desc": "Quái bốc cháy, kẻ địch đứng gần bị thiêu đốt 3% máu/s",
+        "type": "burn_aura",
+        "value": 3
+      }
+    },
+    {
+      "wave": 122,
+      "level": 122,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1344,
+      "monster_name": "Băng Trụ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Đạp Tuyết Vô Ngân",
+        "desc": "Tăng 50% tốc độ chạy và kháng làm chậm 100%",
+        "type": "immune_slow",
+        "value": 50
+      }
+    },
+    {
+      "wave": 123,
+      "level": 123,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1345,
+      "monster_name": "Độc Trụ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Bi Tô Thanh Phong",
+        "desc": "Hào quang làm giảm 25% kháng tính của người chơi",
+        "type": "debuff_res",
+        "value": 25
+      }
+    },
+    {
+      "wave": 124,
+      "level": 124,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1346,
+      "monster_name": "Lôi Trụ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Hấp Tinh Trận",
+        "desc": "Đòn đánh hút 10% sát thương gây ra thành máu cho quái",
+        "type": "lifesteal",
+        "value": 10
+      }
+    },
+    {
+      "wave": 125,
+      "level": 125,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1347,
+      "monster_name": "Kim Trụ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thọa Khí Quyết",
+        "desc": "Tăng 45% tốc độ chạy và tăng tốc hồi phục",
+        "type": "speed_regen",
+        "value": 45
+      }
+    },
+    {
+      "wave": 126,
+      "level": 126,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1349,
+      "monster_name": "ậẻẵỖễậẦá́à_ếẵảã",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Bác Cấp Nhi Phục",
+        "desc": "Khiên Chân Khí chặn 40% sát thương nhận vào",
+        "type": "mana_shield",
+        "value": 40
+      }
+    },
+    {
+      "wave": 127,
+      "level": 127,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1351,
+      "monster_name": "Gấu đen",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thái Cực Thần Công",
+        "desc": "Tăng 40% phòng ngự nội công và kháng Lôi",
+        "type": "resist_light",
+        "value": 40
+      }
+    },
+    {
+      "wave": 128,
+      "level": 128,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1358,
+      "monster_name": "Tây Vương Tà Độc",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thê Vân Tung",
+        "desc": "Tăng 50% tốc độ di chuyển lướt gió",
+        "type": "speed",
+        "value": 50
+      }
+    },
+    {
+      "wave": 129,
+      "level": 129,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1361,
+      "monster_name": "Hắc Y Sát Thủ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Sương Ngạo Côn Lôn",
+        "desc": "Tăng 50% tốc độ chạy và 45% né đòn",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 130,
+      "level": 130,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1375,
+      "monster_name": "ẳýậỵ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thiên Thanh Địa Trọc",
+        "desc": "Khi chết quái phát nổ làm choáng xung quanh 1 giây",
+        "type": "death_stun",
+        "value": 1
+      },
+      "boss": {
+        "monster_id": 1120,
+        "name": "Tống Triều Đô Thống",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 131,
+      "level": 131,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1376,
+      "monster_name": "Tiểu Đạo Tặc",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thanh Phong Phù",
+        "desc": "Tăng 50% tốc độ đánh và giảm thời gian trúng bùa",
+        "type": "cleanse_buff",
+        "value": 50
+      }
+    },
+    {
+      "wave": 132,
+      "level": 132,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1380,
+      "monster_name": "àãẨềàẤễ́Ẳù",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Khí Diệt Thần Trọng",
+        "desc": "Hào quang rút mana của mục tiêu khi đánh cận chiến",
+        "type": "mana_burn",
+        "value": 15
+      }
+    },
+    {
+      "wave": 133,
+      "level": 133,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1381,
+      "monster_name": "ãòỀưàẤằặẲểẽú",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Tử Hà Thần Công",
+        "desc": "Tăng 30% kháng tất cả và giảm 25% sát thương nhận",
+        "type": "resist_all",
+        "value": 30
+      }
+    },
+    {
+      "wave": 134,
+      "level": 134,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1386,
+      "monster_name": "ẦỗỀÊÊăẵỖÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Bạch Lộc Di Thân",
+        "desc": "Lướt nhanh tăng 55% tốc chạy",
+        "type": "speed",
+        "value": 55
+      }
+    },
+    {
+      "wave": 135,
+      "level": 135,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1387,
+      "monster_name": "ẦỗỀÊÊăẤắÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Càn Khôn Đại Na Di",
+        "desc": "Chuyển hóa 30% sát thương gánh chịu thành hồi máu",
+        "type": "absorb_heal",
+        "value": 30
+      }
+    },
+    {
+      "wave": 136,
+      "level": 136,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1388,
+      "monster_name": "ẦỗỀÊÊăậđÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Thánh Hỏa Lệnh Pháp",
+        "desc": "Tăng 40% tốc đánh và tốc chạy",
+        "type": "haste",
+        "value": 40
+      }
+    },
+    {
+      "wave": 137,
+      "level": 137,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1389,
+      "monster_name": "ẦỗỀÊÊăằỖÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Lăng Ba Vi Bộ",
+        "desc": "Tăng 70% tốc độ di chuyển và miễn dịch làm chậm",
+        "type": "super_speed",
+        "value": 70
+      }
+    },
+    {
+      "wave": 138,
+      "level": 138,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1390,
+      "monster_name": "ẦỗỀÊÊăỂẦÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Khô Vinh Thiền Công",
+        "desc": "Chuyển hóa luân phiên giữa kháng vật lý và kháng phép",
+        "type": "hybrid_res",
+        "value": 40
+      }
+    },
+    {
+      "wave": 139,
+      "level": 139,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 14,
+      "monster_name": "Voi Hoàng hà",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Kim Cang Hộ Thể",
+        "desc": "Tăng 50% toàn bộ kháng tính và phòng ngự",
+        "type": "resist",
+        "value": 50
+      }
+    },
+    {
+      "wave": 140,
+      "level": 140,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 140,
+      "monster_name": "Khoái Thối",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Bất Động Minh Vương",
+        "desc": "Miễn dịch mọi trạng thái khống chế (choáng, chậm)",
+        "type": "immune_cc",
+        "value": 1
+      },
+      "boss": {
+        "monster_id": 1130,
+        "name": "Đột Quyết Dũng Sĩ",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 141,
+      "level": 141,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1408,
+      "monster_name": "Kẻ Trộm Hoa",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "La Hán Trận",
+        "desc": "Phản đòn 35% sát thương cận chiến",
+        "type": "reflect",
+        "value": 35
+      }
+    },
+    {
+      "wave": 142,
+      "level": 142,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 141,
+      "monster_name": "Tây Nam sơn tặc đầu lĩnh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Hỗn Nguyên Nhất Khí Công",
+        "desc": "Tăng 30% sinh lực tối đa",
+        "type": "max_hp",
+        "value": 30
+      }
+    },
+    {
+      "wave": 143,
+      "level": 143,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1410,
+      "monster_name": "ềỵẫớẽíẾồẤé",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Kim Chung Tráo",
+        "desc": "Giảm 40% sát thương phải chịu",
+        "type": "dmg_reduce",
+        "value": 40
+      }
+    },
+    {
+      "wave": 144,
+      "level": 144,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 142,
+      "monster_name": "Giang Nam sơn tặc đầu lĩnh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Đoạn Hồn Thích",
+        "desc": "Tăng 60% tốc độ di chuyển xông thẳng vào trụ",
+        "type": "speed",
+        "value": 60
+      }
+    },
+    {
+      "wave": 145,
+      "level": 145,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 143,
+      "monster_name": "Đông Bắc sơn tặc đầu lĩnh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Tĩnh Tâm Quyết",
+        "desc": "Hồi phục 3% máu tối đa mỗi giây",
+        "type": "regen_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 146,
+      "level": 146,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1431,
+      "monster_name": "Nhím béo phì",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Bất Khuất Thần Công",
+        "desc": "Khi dưới 30% máu nhận khiên hộ thể bất tử 3 giây",
+        "type": "shield_low_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 147,
+      "level": 147,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1433,
+      "monster_name": "damahu_ib",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Mê Ảnh Tung",
+        "desc": "Tăng 50% tốc độ chạy và 40% tỉ lệ né tránh",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 148,
+      "level": 148,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1439,
+      "monster_name": "ềứãùấèỀđ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Vô Ảnh Tiêu",
+        "desc": "Tăng 25% tốc độ tấn công đánh trụ",
+        "type": "atk_speed",
+        "value": 25
+      }
+    },
+    {
+      "wave": 149,
+      "level": 149,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 144,
+      "monster_name": "Hoa Bắc sơn tặc đầu lĩnh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Tâm Nhãn",
+        "desc": "Tăng 100% độ chính xác, không thể bị né tránh",
+        "type": "accuracy",
+        "value": 100
+      }
+    },
+    {
+      "wave": 150,
+      "level": 150,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1440,
+      "monster_name": "ẵỖẦỳệựìể",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Bẫy Độn Giáp Hộ Thể",
+        "desc": "Kháng độc 80% và giảm sát thương bẫy",
+        "type": "resist_poison",
+        "value": 80
+      },
+      "boss": {
+        "monster_id": 1140,
+        "name": "Thiên Hộ Trưởng",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 151,
+      "level": 151,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1441,
+      "monster_name": "ềứẦỳệựìể",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vô Hình Độc",
+        "desc": "Tỏa ra khí độc rút 2% máu mỗi giây cho kẻ địch quanh quái",
+        "type": "aura_poison",
+        "value": 2
+      }
+    },
+    {
+      "wave": 152,
+      "level": 152,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1449,
+      "monster_name": "Linh Miêu",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Bách Độc Xuyên Tâm",
+        "desc": "Đòn đánh làm giảm 30% phòng ngự của mục tiêu",
+        "type": "armor_shred",
+        "value": 30
+      }
+    },
+    {
+      "wave": 153,
+      "level": 153,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 145,
+      "monster_name": "Nam bộ sơn tặc đầu lĩnh",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vạn Cổ Khô Vinh",
+        "desc": "Kháng toàn bộ độc tính và hiệu ứng suy yếu",
+        "type": "immune_poison",
+        "value": 1
+      }
+    },
+    {
+      "wave": 154,
+      "level": 154,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1450,
+      "monster_name": "Thiên Ưng",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Chu Cáp Thanh Phổ",
+        "desc": "Tăng 40% kháng Lôi và kháng Thủy",
+        "type": "resist_dual",
+        "value": 40
+      }
+    },
+    {
+      "wave": 155,
+      "level": 155,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1451,
+      "monster_name": "Địa Xà",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Từ Hàng Phổ Độ",
+        "desc": "Hào quang hồi 4% máu mỗi 2 giây cho toàn bộ quái cùng đợt",
+        "type": "heal_aura",
+        "value": 4
+      }
+    },
+    {
+      "wave": 156,
+      "level": 156,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 146,
+      "monster_name": "Đoạt Mệnh Liêm",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Mộng Điệp",
+        "desc": "Hồi phục liên tục nội lực và miễn dịch hút mana",
+        "type": "regen_mana",
+        "value": 10
+      }
+    },
+    {
+      "wave": 157,
+      "level": 157,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 147,
+      "monster_name": "Đao khách",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Lưu Thủy",
+        "desc": "Tăng 45% tốc độ di chuyển uyển chuyển",
+        "type": "speed",
+        "value": 45
+      }
+    },
+    {
+      "wave": 158,
+      "level": 158,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 148,
+      "monster_name": "Báo đốm",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Nga Mi",
+        "name": "Phật Tâm Từ Hữu",
+        "desc": "Tăng 25% sinh lực và 25% kháng tất cả",
+        "type": "all_res_hp",
+        "value": 25
+      }
+    },
+    {
+      "wave": 159,
+      "level": 159,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 149,
+      "monster_name": "Trường Thương",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Hộ Thể Hàn Băng",
+        "desc": "Đóng băng người tấn công trong 1.5 giây nếu chạm vào",
+        "type": "freeze_attacker",
+        "value": 1.5
+      }
+    },
+    {
+      "wave": 160,
+      "level": 160,
+      "element": 0,
+      "element_name": "Kim",
+      "monster_count": 20,
+      "monster_id": 1497,
+      "monster_name": "Tuần Lộc",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Phù Vân Lược Ảnh",
+        "desc": "Tăng 55% tốc độ di chuyển và tàng hình trong 3 giây đầu",
+        "type": "speed_stealth",
+        "value": 55
+      },
+      "boss": {
+        "monster_id": 1150,
+        "name": "Đại Kim Bát Kỳ Tướng",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 161,
+      "level": 161,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1498,
+      "monster_name": "Sói tuyết",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Tâm Tiên Tử",
+        "desc": "Giảm 50% thời gian chịu hiệu ứng khống chế",
+        "type": "cc_reduction",
+        "value": 50
+      }
+    },
+    {
+      "wave": 162,
+      "level": 162,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 150,
+      "monster_name": "Thanh Mi",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thúy Yên",
+        "name": "Băng Cốt Tuyết Cơ",
+        "desc": "Tăng 60% kháng Băng và hấp thụ sát thương Băng",
+        "type": "resist_cold",
+        "value": 60
+      }
+    },
+    {
+      "wave": 163,
+      "level": 163,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1502,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Tiêu Dao Du",
+        "desc": "Tăng 60% tốc độ di chuyển và 50% tỉ lệ né tránh đòn",
+        "type": "speed_dodge",
+        "value": 60
+      }
+    },
+    {
+      "wave": 164,
+      "level": 164,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1503,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hoạt Bất Lưu Thủ",
+        "desc": "Né tránh đòn tấn công vật lý tăng vọt 65%",
+        "type": "dodge",
+        "value": 65
+      }
+    },
+    {
+      "wave": 165,
+      "level": 165,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1504,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Túy Điệp Cuồng Vũ",
+        "desc": "Kháng chí mạng và tăng 35% sát thương lên trụ",
+        "type": "crit_res",
+        "value": 35
+      }
+    },
+    {
+      "wave": 166,
+      "level": 166,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 151,
+      "monster_name": "Mãng Hán",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Cái Bang",
+        "name": "Hóa Hiểm Vi Di",
+        "desc": "Khi bị khống chế tự giải phóng và tăng tốc chạy",
+        "type": "cleanse_speed",
+        "value": 1
+      }
+    },
+    {
+      "wave": 167,
+      "level": 167,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1510,
+      "monster_name": "ãẫẫ́ÊăỀỹẹêạẩÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Ma Diễm Thao Thiên",
+        "desc": "Quái bốc cháy, kẻ địch đứng gần bị thiêu đốt 3% máu/s",
+        "type": "burn_aura",
+        "value": 3
+      }
+    },
+    {
+      "wave": 168,
+      "level": 168,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1511,
+      "monster_name": "ìòấẰÊăỀỹẹêạẩÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Đạp Tuyết Vô Ngân",
+        "desc": "Tăng 50% tốc độ chạy và kháng làm chậm 100%",
+        "type": "immune_slow",
+        "value": 50
+      }
+    },
+    {
+      "wave": 169,
+      "level": 169,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1512,
+      "monster_name": "ẫ́àẦÊăỀỹẹêạẩÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Bi Tô Thanh Phong",
+        "desc": "Hào quang làm giảm 25% kháng tính của người chơi",
+        "type": "debuff_res",
+        "value": 25
+      }
+    },
+    {
+      "wave": 170,
+      "level": 170,
+      "element": 1,
+      "element_name": "Mộc",
+      "monster_count": 20,
+      "monster_id": 1513,
+      "monster_name": "ẤđễụÊăỀỹẹêạẩÊâ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiên Nhẫn",
+        "name": "Hấp Tinh Trận",
+        "desc": "Đòn đánh hút 10% sát thương gây ra thành máu cho quái",
+        "type": "lifesteal",
+        "value": 10
+      },
+      "boss": {
+        "monster_id": 1160,
+        "name": "Long Trụ Thủ Hộ Giả",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 171,
+      "level": 171,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1514,
+      "monster_name": "ẵỖằãũỵẫòÊăậ́ạầẹẨÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thọa Khí Quyết",
+        "desc": "Tăng 45% tốc độ chạy và tăng tốc hồi phục",
+        "type": "speed_regen",
+        "value": 45
+      }
+    },
+    {
+      "wave": 172,
+      "level": 172,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1515,
+      "monster_name": "ẵỖàủÊăậ́ạầẹẨÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Bác Cấp Nhi Phục",
+        "desc": "Khiên Chân Khí chặn 40% sát thương nhận vào",
+        "type": "mana_shield",
+        "value": 40
+      }
+    },
+    {
+      "wave": 173,
+      "level": 173,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1516,
+      "monster_name": "éôìểÊăậ́ạầẹẨÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thái Cực Thần Công",
+        "desc": "Tăng 40% phòng ngự nội công và kháng Lôi",
+        "type": "resist_light",
+        "value": 40
+      }
+    },
+    {
+      "wave": 174,
+      "level": 174,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1517,
+      "monster_name": "ẵỖạỳá̉ẵô2ÊăèỡáẵẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Võ Đang",
+        "name": "Thê Vân Tung",
+        "desc": "Tăng 50% tốc độ di chuyển lướt gió",
+        "type": "speed",
+        "value": 50
+      }
+    },
+    {
+      "wave": 175,
+      "level": 175,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1518,
+      "monster_name": "ẵỖạỳạửứ2ÊăèỡáẵẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Sương Ngạo Côn Lôn",
+        "desc": "Tăng 50% tốc độ chạy và 45% né đòn",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 176,
+      "level": 176,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1519,
+      "monster_name": "àỉằÔãăÊăèỡáẵẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thiên Thanh Địa Trọc",
+        "desc": "Khi chết quái phát nổ làm choáng xung quanh 1 giây",
+        "type": "death_stun",
+        "value": 1
+      }
+    },
+    {
+      "wave": 177,
+      "level": 177,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 152,
+      "monster_name": "Tây Nam sơn tặc 2",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Thanh Phong Phù",
+        "desc": "Tăng 50% tốc độ đánh và giảm thời gian trúng bùa",
+        "type": "cleanse_buff",
+        "value": 50
+      }
+    },
+    {
+      "wave": 178,
+      "level": 178,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1520,
+      "monster_name": "ẵọẨẫễẲấììựÊăèỡáẵẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Côn Lôn",
+        "name": "Khí Diệt Thần Trọng",
+        "desc": "Hào quang rút mana của mục tiêu khi đánh cận chiến",
+        "type": "mana_burn",
+        "value": 15
+      }
+    },
+    {
+      "wave": 179,
+      "level": 179,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1521,
+      "monster_name": "ẫẵễụấìẦỡ1ÊăàỉẤáẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Tử Hà Thần Công",
+        "desc": "Tăng 30% kháng tất cả và giảm 25% sát thương nhận",
+        "type": "resist_all",
+        "value": 30
+      }
+    },
+    {
+      "wave": 180,
+      "level": 180,
+      "element": 2,
+      "element_name": "Thủy",
+      "monster_count": 20,
+      "monster_id": 1522,
+      "monster_name": "Ấẽậẻá̉ẵô1ÊăàỉẤáẫẵÊâ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Hoa Sơn",
+        "name": "Bạch Lộc Di Thân",
+        "desc": "Lướt nhanh tăng 55% tốc chạy",
+        "type": "speed",
+        "value": 55
+      },
+      "boss": {
+        "monster_id": 1170,
+        "name": "Cực Bắc Huyết Ma",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 181,
+      "level": 181,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1523,
+      "monster_name": "ẵỖạỳầạ̉ứ2ÊăàỉẤáẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Càn Khôn Đại Na Di",
+        "desc": "Chuyển hóa 30% sát thương gánh chịu thành hồi máu",
+        "type": "absorb_heal",
+        "value": 30
+      }
+    },
+    {
+      "wave": 182,
+      "level": 182,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1524,
+      "monster_name": "Ấẽậẻàả̉ứ1ÊăàỉẤáẫẵÊâ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Minh Giáo",
+        "name": "Thánh Hỏa Lệnh Pháp",
+        "desc": "Tăng 40% tốc đánh và tốc chạy",
+        "type": "haste",
+        "value": 40
+      }
+    },
+    {
+      "wave": 183,
+      "level": 183,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 153,
+      "monster_name": "Giang Nam sơn tặc 1",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Lăng Ba Vi Bộ",
+        "desc": "Tăng 70% tốc độ di chuyển và miễn dịch làm chậm",
+        "type": "super_speed",
+        "value": 70
+      }
+    },
+    {
+      "wave": 184,
+      "level": 184,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1536,
+      "monster_name": "ậộễẨ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đoàn Thị",
+        "name": "Khô Vinh Thiền Công",
+        "desc": "Chuyển hóa luân phiên giữa kháng vật lý và kháng phép",
+        "type": "hybrid_res",
+        "value": 40
+      }
+    },
+    {
+      "wave": 185,
+      "level": 185,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1537,
+      "monster_name": "ẮƠẤẽ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Kim Cang Hộ Thể",
+        "desc": "Tăng 50% toàn bộ kháng tính và phòng ngự",
+        "type": "resist",
+        "value": 50
+      }
+    },
+    {
+      "wave": 186,
+      "level": 186,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1538,
+      "monster_name": "Ầệề̀ìớầồãỗ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Bất Động Minh Vương",
+        "desc": "Miễn dịch mọi trạng thái khống chế (choáng, chậm)",
+        "type": "immune_cc",
+        "value": 1
+      }
+    },
+    {
+      "wave": 187,
+      "level": 187,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 154,
+      "monster_name": "Lưu Lương",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "La Hán Trận",
+        "desc": "Phản đòn 35% sát thương cận chiến",
+        "type": "reflect",
+        "value": 35
+      }
+    },
+    {
+      "wave": 188,
+      "level": 188,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1544,
+      "monster_name": "ẵỖ̉ứàẤỂửằờ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiếu Lâm",
+        "name": "Hỗn Nguyên Nhất Khí Công",
+        "desc": "Tăng 30% sinh lực tối đa",
+        "type": "max_hp",
+        "value": 30
+      }
+    },
+    {
+      "wave": 189,
+      "level": 189,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1545,
+      "monster_name": "ẵỖạỳẵôẦỡàẤỂửằờ",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Kim Chung Tráo",
+        "desc": "Giảm 40% sát thương phải chịu",
+        "type": "dmg_reduce",
+        "value": 40
+      }
+    },
+    {
+      "wave": 190,
+      "level": 190,
+      "element": 3,
+      "element_name": "Hỏa",
+      "monster_count": 20,
+      "monster_id": 1549,
+      "monster_name": "Sát Huyết Lão Hổ",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Đoạn Hồn Thích",
+        "desc": "Tăng 60% tốc độ di chuyển xông thẳng vào trụ",
+        "type": "speed",
+        "value": 60
+      },
+      "boss": {
+        "monster_id": 1180,
+        "name": "Lâm An Phản Tướng",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    },
+    {
+      "wave": 191,
+      "level": 191,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 155,
+      "monster_name": "Hắc Cân",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Tĩnh Tâm Quyết",
+        "desc": "Hồi phục 3% máu tối đa mỗi giây",
+        "type": "regen_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 192,
+      "level": 192,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1558,
+      "monster_name": "ạửứ1",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Thiên Vương",
+        "name": "Bất Khuất Thần Công",
+        "desc": "Khi dưới 30% máu nhận khiên hộ thể bất tử 3 giây",
+        "type": "shield_low_hp",
+        "value": 3
+      }
+    },
+    {
+      "wave": 193,
+      "level": 193,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1559,
+      "monster_name": "̣èẴỂ1",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Mê Ảnh Tung",
+        "desc": "Tăng 50% tốc độ chạy và 40% tỉ lệ né tránh",
+        "type": "speed_dodge",
+        "value": 50
+      }
+    },
+    {
+      "wave": 194,
+      "level": 194,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 156,
+      "monster_name": "ảnh Côn",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Vô Ảnh Tiêu",
+        "desc": "Tăng 25% tốc độ tấn công đánh trụ",
+        "type": "atk_speed",
+        "value": 25
+      }
+    },
+    {
+      "wave": 195,
+      "level": 195,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1560,
+      "monster_name": "̣èẴỂ2",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Tâm Nhãn",
+        "desc": "Tăng 100% độ chính xác, không thể bị né tránh",
+        "type": "accuracy",
+        "value": 100
+      }
+    },
+    {
+      "wave": 196,
+      "level": 196,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1561,
+      "monster_name": "̣èẴỂ3",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Đường Môn",
+        "name": "Bẫy Độn Giáp Hộ Thể",
+        "desc": "Kháng độc 80% và giảm sát thương bẫy",
+        "type": "resist_poison",
+        "value": 80
+      }
+    },
+    {
+      "wave": 197,
+      "level": 197,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1562,
+      "monster_name": "̣èẴỂ4",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vô Hình Độc",
+        "desc": "Tỏa ra khí độc rút 2% máu mỗi giây cho kẻ địch quanh quái",
+        "type": "aura_poison",
+        "value": 2
+      }
+    },
+    {
+      "wave": 198,
+      "level": 198,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1563,
+      "monster_name": "̣èẴỂ5",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Bách Độc Xuyên Tâm",
+        "desc": "Đòn đánh làm giảm 30% phòng ngự của mục tiêu",
+        "type": "armor_shred",
+        "value": 30
+      }
+    },
+    {
+      "wave": 199,
+      "level": 199,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1564,
+      "monster_name": "̣èẴỂ6",
+      "is_boss_wave": false,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Vạn Cổ Khô Vinh",
+        "desc": "Kháng toàn bộ độc tính và hiệu ứng suy yếu",
+        "type": "immune_poison",
+        "value": 1
+      }
+    },
+    {
+      "wave": 200,
+      "level": 200,
+      "element": 4,
+      "element_name": "Thổ",
+      "monster_count": 20,
+      "monster_id": 1565,
+      "monster_name": "̣èẴỂ7",
+      "is_boss_wave": true,
+      "buff": {
+        "sect": "Ngũ Độc",
+        "name": "Chu Cáp Thanh Phổ",
+        "desc": "Tăng 40% kháng Lôi và kháng Thủy",
+        "type": "resist_dual",
+        "value": 40
+      },
+      "boss": {
+        "monster_id": 1190,
+        "name": "Chiến Thần Lâm An",
+        "hp_multiplier": 7.5,
+        "scale": 1.4
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ var camp := 0
 var nation := 0               ## Nation.Type — phe Tống / Kim trong trận Chiến trường Tống Kim (NONE ngoài trận)
 var avatar: CharacterAvatar
 var aura: AnimatedSprite2D
+var status_controller: StatusEffectController
 var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
 var _label: Label
@@ -50,11 +51,15 @@ func setup(info: Dictionary) -> void:
 	nation = int(info.get("nation", Nation.Type.NONE))
 	add_to_group("other_players")
 	add_to_group("followable")
+	status_controller = StatusEffectController.new()
+	status_controller.name = "StatusEffectController"
+	add_child(status_controller)
 	avatar = CharacterAvatar.new()
 	avatar.position = Vector2(0, FEET_OFFSET)
 	add_child(avatar)
 	aura = CharacterAura.create_aura_node()
 	aura.position = avatar.position + Vector2(0, 1)
+	aura.visible = false
 	add_child(aura)
 	_label = Label.new()
 	_label.text = Nation.decorate_name(display_name, nation)
@@ -133,6 +138,18 @@ func set_name_label_visible(on: bool) -> void:
 	if _label:
 		_label.visible = on
 
+## Đổi màu tên và tiền tố phe (VD đấu trường Thách Đấu / Lộn Xộn: [Phe Xanh], [Phe Đỏ]).
+func set_name_color(col: Color, prefix: String = "") -> void:
+	if _label:
+		_label.add_theme_color_override("font_color", col)
+		if prefix != "":
+			_label.text = "%s %s%s" % [prefix, _match_level_tag, display_name]
+		else:
+			_label.text = "%s%s" % [_match_level_tag, display_name]
+
+func reset_name_color() -> void:
+	_refresh_nameplate()
+
 var _match_level_tag: String = ""
 
 func set_match_level_tag(lvl: int, side: String = "") -> void:
@@ -165,7 +182,9 @@ func refresh_name_color() -> void:
 		var m_color: Color = _look.get("modulate", mask_info["modulate"])
 		_label.add_theme_color_override("font_color", m_color)
 	else:
-		_label.add_theme_color_override("font_color", PK_ENEMY_COLOR if pk_enemy else _camp_color())
+		var is_pk: bool = (flags & NetProto.FLAG_PK) != 0
+		var col: Color = Color(1.0, 0.2, 0.2) if is_pk else (PK_ENEMY_COLOR if pk_enemy else _camp_color())
+		_label.add_theme_color_override("font_color", col)
 
 func _refresh_nameplate() -> void:
 	if _label == null:
@@ -267,6 +286,10 @@ func open_stall() -> void:
 		return
 	_open_stall_until = 0
 	var p := GameManager.local_profile
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		if me.has_method("notify"):
+			me.notify("Tính năng Bày Bán tại chỗ đã đóng — vui lòng sử dụng Chợ Giao Thương để xem/treo bán vật phẩm.")
+		return
 	var seller := SocialDirectory.find_by_id(p, eid) if p else null
 	if seller != null:
 		StallBrowseWindow.open(get_tree().current_scene, SocialHub.of(p), seller)
@@ -341,8 +364,17 @@ func _process(_delta: float) -> void:
 	_apply(a)
 
 func _apply(st: Dictionary) -> void:
+	var old_flags := flags
 	flags = int(st.flags)
-	_refresh_sign()
+	if flags != old_flags:
+		_refresh_sign()
+		refresh_name_color()
+		if (flags & NetProto.FLAG_PK) != 0:
+			set_pk_enemy(true)
+		else:
+			var main_scene = get_tree().current_scene
+			if main_scene and main_scene.get("_pk_mode") != 1:
+				set_pk_enemy(false)
 	var dir := int(st.dir)
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))

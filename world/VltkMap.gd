@@ -98,6 +98,7 @@ func _ready() -> void:
 	above_root.z_index = 100
 	above_root.y_sort_enabled = true
 	_g_base.name = "GroundBase"
+	_g_base.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_g_covers.name = "GroundCovers"
 	_g_flat.name = "GroundFlat"
 	ground_root.add_child(_g_base)
@@ -385,10 +386,10 @@ func _load_atlas() -> void:
 	for it in _atlas_items:
 		pad[0] = maxi(pad[0], -int(it[5]))
 		pad[1] = maxi(pad[1], -int(it[6]))
-		pad[2] = maxi(pad[2], int(it[5]) + int(it[3]) - 32)
-		pad[3] = maxi(pad[3], int(it[6]) + int(it[4]) - 32)
+		pad[2] = maxi(pad[2], int(it[5]) + int(it[3]) - 64)
+		pad[3] = maxi(pad[3], int(it[6]) + int(it[4]) - 64)
 	for i in 4:
-		_bake_pad[i] = mini(pad[i], 128)
+		_bake_pad[i] = mini(maxi(0, pad[i]), 128)
 
 
 ## Compose the ground cells of one region into a texture (+ the margin the pictures hang over the region border).
@@ -620,9 +621,10 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 		var tex := _load_tex(_p("tiles/%d_%d.%s" % [rx, ry, tile_ext]))
 		if tex:
 			var s := Sprite2D.new()
+			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			s.texture = tex
 			s.centered = false
-			s.scale = Vector2.ONE * (512.0 / tile_px)
+			s.scale = Vector2.ONE * ((512.0 + 2.0) / tile_px)
 			s.position = Vector2(rx * 512, ry * 512)
 			_g_base.add_child(s)
 			_tiles[key] = s
@@ -632,8 +634,11 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 			if ground_mode == "atlas":
 				if doc.has("g") and bake_ground and not _atlas_img.is_empty() and _atlas_img[0] != null:
 					var gs := Sprite2D.new()
+					gs.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 					gs.texture = _bake_ground(doc["g"])
 					gs.centered = false
+					var t_sz := Vector2(gs.texture.get_size())
+					gs.scale = Vector2((t_sz.x + 2.0) / t_sz.x, (t_sz.y + 2.0) / t_sz.y)
 					gs.position = Vector2(rx * 512 - int(_bake_pad[0]), ry * 512 - int(_bake_pad[1]))
 					_g_base.add_child(gs)
 					_tiles[key] = gs

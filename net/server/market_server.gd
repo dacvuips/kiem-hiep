@@ -14,7 +14,9 @@ var _loaded := false
 var _dirty: Dictionary = {}       ## id listing cần lưu (còn trong sổ) / xoá (đã ra khỏi sổ)
 var _flushing := false
 var _flush_clock := 0.0
+var _tax_clock := 0.0
 var _last_op: Dictionary = {}     ## character_id -> giây server
+var _busy_conns: Dictionary = {}  ## character_id -> true: đang thực hiện thao tác chợ, chống duplicate / race condition
 
 func _init(server: GameServer) -> void:
 	gs = server
@@ -26,7 +28,10 @@ func load_all() -> void:
 		return
 	for row in r.get("listings", []):
 		if row.get("data") is Dictionary and (row.data as Dictionary).has("id"):
-			book.put(row.data)
+			var d: Dictionary = row.data
+			if int(d.get("sid", 0)) <= 0:
+				continue   ## Khóa BE: Tuyệt đối không nạp listing bot/chợ giả
+			book.put(d)
 	_loaded = true
 	print("Chợ giao thương: %d món" % book.listings.size())
 
@@ -35,11 +40,23 @@ func tick(dt: float) -> void:
 	if _flush_clock >= FLUSH_SECONDS:
 		_flush_clock = 0.0
 		_flush()
+	_tax_clock += dt
+	if _tax_clock >= 15.0:
+		_tax_clock = 0.0
+		if _loaded and gs:
+			for conn in gs.in_world_conns():
+				_check_taxes_for(conn)
 
-## Vào map: nhận tiền các món đã bán lúc vắng mặt.
+## Vào map: nhận tiền các món đã bán lúc vắng mặt và kiểm tra thuế ngày.
 func on_join(c) -> void:
 	if _loaded:
 		_settle(c)
+		_check_taxes_for(c)
+
+func on_leave(c) -> void:
+	if c:
+		_busy_conns.erase(c.character_id)
+		_last_op.erase(c.character_id)
 
 func on_market(c, b: StreamPeerBuffer) -> void:
 	var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 4096))
@@ -49,6 +66,10 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 		return
 	var now_s := gs.now()
 	if now_s - float(_last_op.get(c.character_id, -10.0)) < MIN_OP_GAP:
+		_done(c, "Thao tác quá nhanh, xin chờ giây lát.")
+		return
+	if _busy_conns.get(c.character_id, false):
+		_done(c, "Đang xử lý giao dịch trước đó, xin chờ giây lát.")
 		return
 	_last_op[c.character_id] = now_s
 	var t := int(Time.get_unix_time_from_system())
@@ -62,23 +83,33 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 			_reply(c, res)
 		"mine":
 			_settle(c)
+			_check_taxes_for(c)
 			_send_mine(c, t)
 		"sell":
+			if sid <= 0:
+				_done(c, "Nhân vật không hợp lệ.")
+				return
+			_busy_conns[c.character_id] = true
 			if c.trade:
+				_busy_conns.erase(c.character_id)
 				_done(c, "Đang giao dịch, không treo bán được.")
 				return
 			var r := book.sell(c.profile, sid, str(a.get("uid", "")), int(a.get("price", 0)), int(a.get("cur", 0)), t, str(a.get("note", "")))
+			_busy_conns.erase(c.character_id)
 			if r[0] != "":
 				_done(c, r[0])
 				return
 			_dirty[str(r[1]["id"])] = true
 			_changed(c)
-			_done(c, "", "Đã treo bán — xem ở tab Của Tôi.")
+			_done(c, "", "Đã treo bán (đã trừ thuế 3%%) — xem ở tab Của Tôi.")
 		"buy":
+			_busy_conns[c.character_id] = true
 			if c.trade:
+				_busy_conns.erase(c.character_id)
 				_done(c, "Đang giao dịch, không mua được.")
 				return
 			var r := book.buy(c.profile, sid, str(a.get("id", "")), t)
+			_busy_conns.erase(c.character_id)
 			if r[0] != "":
 				_done(c, r[0])
 				return
@@ -90,25 +121,44 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 			if seller:
 				_settle(seller)
 		"cancel":
+			_busy_conns[c.character_id] = true
 			var id := str(a.get("id", ""))
-			var err := book.cancel(c.profile, sid, id)
-			if err != "":
-				_done(c, err)
+			var res := book.cancel(c.profile, sid, id)
+			_busy_conns.erase(c.character_id)
+			if res.get("error", "") != "":
+				_done(c, str(res["error"]))
 				return
 			_dirty[id] = true
 			_changed(c)
-			_done(c, "", "Đã huỷ treo — món đồ đã về hành trang.")
+			var target_str := str(res.get("target", "hành trang"))
+			_done(c, "", "Đã huỷ treo — món đồ đã chuyển về %s." % target_str)
 			_send_mine(c, t)
+
+func _check_taxes_for(c) -> void:
+	if c.profile == null:
+		return
+	var t := int(Time.get_unix_time_from_system())
+	var events := book.process_seller_daily_taxes(c.profile, c.character_id, t)
+	if events.is_empty():
+		return
+	for ev in events:
+		gs.notice(c, str(ev.get("text", "")))
+		_dirty[str(ev.get("id", ""))] = true
+	_changed(c)
 
 ## Trả tiền các món đã bán cho người bán đang online.
 func _settle(c) -> void:
 	var sold := book.of_seller(c.character_id).filter(func(l: Dictionary) -> bool: return str(l["state"]) == MarketBook.STATE_SOLD)
 	if sold.is_empty():
 		return
+	var old_storage_gold: int = c.profile.storage_gold
 	for l in sold:
 		gs.notice(c, MarketBook.sold_line(l))
 		_dirty[str(l["id"])] = true
 	book.claim_sold(c.profile, c.character_id)
+	if c.profile.storage_gold > old_storage_gold:
+		var overflow_added: int = c.profile.storage_gold - old_storage_gold
+		gs.notice(c, "Hành trang đầy tiền (trên 2 tỷ), %s lượng dư đã được chuyển vào Rương chứa đồ!" % MarketBook.price_text(overflow_added, MarketBook.CUR_GOLD))
 	_changed(c)
 
 func _changed(c) -> void:

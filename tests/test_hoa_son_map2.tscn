@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c7816824a0141"]
+
+[ext_resource type="Script" path="res://tests/test_hoa_son_map2.gd" id="1_test"]
+
+[node name="TestHoaSonMap2" type="Node"]
+script = ExtResource("1_test")

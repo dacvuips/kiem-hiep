@@ -170,6 +170,7 @@ shape = SubResource("RectangleShape2D_3ns5p")
 script = ExtResource("5_qjkh3")
 
 [node name="Aura" type="AnimatedSprite2D" parent="." unique_id=680578686]
+visible = false
 z_index = -1
 position = Vector2(0, 31)
 scale = Vector2(0.42, 0.42)

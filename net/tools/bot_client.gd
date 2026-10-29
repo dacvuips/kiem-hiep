@@ -3,7 +3,7 @@ extends RefCounted
 ## Người chơi giả (không hình ảnh) — dùng cho kiểm thử mạng và load test.
 ## Mỗi bot có 1 kết nối ENet riêng tới game server, gửi C_HELLO, ghi lại những gì nhận được.
 
-var peer := ENetMultiplayerPeer.new()
+var peer: MultiplayerPeer
 var eid := 0
 var feet := Vector2.ZERO
 var name := ""
@@ -49,14 +49,23 @@ var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HE
 var _token := ""
 var _character_id := 0
 
-func start(host: String, port: int, token: String, character_id: int, as_hub := false) -> bool:
+func start(host: String, port: int, token: String, character_id: int, as_hub := false, ws_url := "") -> bool:
 	hub = as_hub
 	_token = token
 	_character_id = character_id
-	if peer.create_client(host, port, 2) != OK:
-		return false
+	if ws_url != "":
+		var ws := WebSocketMultiplayerPeer.new()
+		if ws.create_client(ws_url) != OK:
+			return false
+		peer = ws
+	else:
+		var enet := ENetMultiplayerPeer.new()
+		if enet.create_client(host, port, 2) != OK:
+			return false
+		peer = enet
 	peer.peer_connected.connect(func(_id: int) -> void:
-		NetProto.tune_enet_peer(peer.get_peer(1))
+		if peer is ENetMultiplayerPeer:
+			NetProto.tune_enet_peer((peer as ENetMultiplayerPeer).get_peer(1))
 		_hello())
 	peer.peer_disconnected.connect(func(_id: int) -> void: closed = true)
 	return true

@@ -29,7 +29,7 @@ func _init(p: PlayerProfile) -> void:
 	tabs.add_theme_constant_override("separation", 6)
 	body.add_child(tabs)
 	for i in MODE_NAMES.size():
-		var b := _tab_button(MODE_NAMES[i])
+		var b := _tab_button(tr(MODE_NAMES[i]))
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_set_mode.bind(i))
 		tabs.add_child(b)
@@ -41,7 +41,7 @@ func _init(p: PlayerProfile) -> void:
 	nav.add_theme_constant_override("separation", 6)
 	row.add_child(nav)
 	for i in PAGES.size():
-		var b := _tab_button(PAGES[i])
+		var b := _tab_button(tr(PAGES[i]))
 		b.custom_minimum_size = Vector2(110, 64)
 		b.pressed.connect(_set_page.bind(i))
 		nav.add_child(b)
@@ -62,7 +62,7 @@ func _init(p: PlayerProfile) -> void:
 	_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_toggle.pressed.connect(_on_toggle_auto)
 	buttons.add_child(_toggle)
-	var close := SocialUi.stone_button("Đóng")
+	var close := SocialUi.stone_button(tr("Đóng"))
 	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func() -> void: close_requested.emit())
 	buttons.add_child(close)
@@ -73,7 +73,7 @@ func _init(p: PlayerProfile) -> void:
 func _process(_delta: float) -> void:
 	var p := _player()
 	var on: bool = p != null and p.is_auto_mode
-	var text := "Tắt auto" if on else "Bật auto"
+	var text := tr("Tắt auto") if on else tr("Bật auto")
 	if _toggle.text != text:
 		_toggle.text = text
 
@@ -110,6 +110,21 @@ func _rebuild() -> void:
 		3: _build_logistics()
 		4: _build_loot()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		for i in MODE_NAMES.size():
+			if i < _mode_buttons.size() and is_instance_valid(_mode_buttons[i]):
+				_mode_buttons[i].text = tr(MODE_NAMES[i])
+		for i in PAGES.size():
+			if i < _page_buttons.size() and is_instance_valid(_page_buttons[i]):
+				_page_buttons[i].text = tr(PAGES[i])
+		if is_instance_valid(_toggle):
+			var p := _player()
+			var on: bool = p != null and p.is_auto_mode
+			_toggle.text = tr("Tắt auto") if on else tr("Bật auto")
+		_refresh_tabs()
+		_rebuild()
+
 func _changed() -> void:
 	var p := _player()
 	if p != null:
@@ -135,7 +150,7 @@ func _build_recovery() -> void:
 	_header("Sử dụng Dược Phẩm")
 	var grid := _grid(6)
 	for h in ["", "Mức 1", "Mili giây", "Mức 2", "Số lượng", "Mili giây"]:
-		grid.add_child(SocialUi.label(h, SocialUi.TITLE, 13, HORIZONTAL_ALIGNMENT_CENTER))
+		grid.add_child(SocialUi.label(tr(h) if h != "" else "", SocialUi.TITLE, 13, HORIZONTAL_ALIGNMENT_CENTER))
 	grid.add_child(_check("Sinh lực (%):", "hp_on"))
 	grid.add_child(_num("hp_lv1", 1, 99))
 	grid.add_child(_num("hp_ms1", 100, 10000, 100))
@@ -178,15 +193,15 @@ func _build_attack() -> void:
 	for g in [["Tấn công", "attack_skills", SlotKind.ATTACK], ["Kỹ năng Hỗ trợ", "support_skills", SlotKind.SUPPORT],
 			["Vòng sáng & Buff máu", "aura_skills", SlotKind.AURA]]:
 		var box := VBoxContainer.new()
-		box.add_child(SocialUi.label(g[0], SocialUi.TEXT, 14))
+		box.add_child(SocialUi.label(tr(g[0]), SocialUi.TEXT, 14))
 		var slots := HBoxContainer.new()
 		slots.add_theme_constant_override("separation", 6)
 		for i in AutoSettings.SLOTS:
 			slots.add_child(_skill_slot(g[1], i, g[2]))
 		box.add_child(slots)
 		groups.add_child(box)
-	_content.add_child(_row([SocialUi.label("Phạm vi", SocialUi.TEXT, 14), _num("scan_range", 100, 5000, 50),
-		SocialUi.label("    Tiếp cận", SocialUi.TEXT, 14), _num("approach", 50, 5000, 50)]))
+	_content.add_child(_row([SocialUi.label(tr("Phạm vi"), SocialUi.TEXT, 14), _num("scan_range", 100, 5000, 50),
+		SocialUi.label("    " + tr("Tiếp cận"), SocialUi.TEXT, 14), _num("approach", 50, 5000, 50)]))
 	_note("Không đặt ô Tấn công nào thì auto đánh bằng đòn ở nút chính. Bấm ô để chọn / bỏ kỹ năng.")
 
 	_header("Tuỳ biến ưu tiên")
@@ -206,7 +221,7 @@ func _build_attack() -> void:
 	el.add_child(_check("Ngũ hành", "element_filter_on"))
 	for i in 5:
 		var cb := CheckBox.new()
-		cb.text = ElementTypes.ELEMENT_NAME.get(i, "?")
+		cb.text = tr(ElementTypes.ELEMENT_NAME.get(i, "?"))
 		for c in ["font_color", "font_pressed_color", "font_hover_color", "font_hover_pressed_color"]:
 			cb.add_theme_color_override(c, Color("#" + ItemText.ELEMENT_COLORS[i]))
 		cb.button_pressed = bool(_s.elements[i])
@@ -223,7 +238,7 @@ func _build_attack() -> void:
 	sect_col.add_child(sects)
 	for sect in SectRegistry.load_all():
 		var cb := CheckBox.new()
-		cb.text = sect.sect_name
+		cb.text = tr(sect.sect_name)
 		cb.add_theme_color_override("font_color", SocialUi.TEXT)
 		cb.button_pressed = sect.id in _s.sects
 		var sid := sect.id
@@ -260,7 +275,7 @@ func _skill_slot(key: String, index: int, kind: SlotKind) -> Button:
 func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) -> void:
 	var menu := PopupMenu.new()
 	var options: Array[SkillDefinition] = _candidates(kind)
-	menu.add_item("— Bỏ trống —", 0)
+	menu.add_item(tr("— Bỏ trống —"), 0)
 	for i in options.size():
 		if options[i].icon != null:
 			menu.add_icon_item(options[i].icon, options[i].skill_name, i + 1)
@@ -305,7 +320,7 @@ func _find_skill(id: String) -> SkillDefinition:
 
 func _build_movement() -> void:
 	var anchor_label := SocialUi.label(_anchor_text(), SocialUi.MUTED, 13)
-	var save_anchor := SocialUi.small_button("Lưu toạ độ")
+	var save_anchor := SocialUi.small_button(tr("Lưu toạ độ"))
 	save_anchor.pressed.connect(func() -> void:
 		var feet: Variant = _player_feet()
 		if feet == null:
@@ -318,7 +333,7 @@ func _build_movement() -> void:
 	_content.add_child(_row([_check("Chạy toạ độ", "route_on"), _num("route_radius", 100, 5000, 50),
 		SocialUi.label("      ", SocialUi.TEXT), _check("Theo sau đội trưởng", "follow_leader_on"), _num("follow_leader_dist", 50, 2000, 10)]))
 	_content.add_child(_row([_check("Đổi bản đồ khi chết", "change_map_on_death"), _num("change_map_deaths", 1, 20),
-		SocialUi.label("lần trong", SocialUi.TEXT, 14), _num("change_map_minutes", 1, 60), SocialUi.label("phút", SocialUi.TEXT, 14)]))
+		SocialUi.label(tr("lần trong"), SocialUi.TEXT, 14), _num("change_map_minutes", 1, 60), SocialUi.label(tr("phút"), SocialUi.TEXT, 14)]))
 
 	_header("Toạ độ chạy (lần lượt từ trên xuống)")
 	var row := HBoxContainer.new()
@@ -334,22 +349,22 @@ func _build_movement() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
 	row.add_child(col)
-	var add := SocialUi.stone_button("Thêm", Vector2(110, 36))
-	add.tooltip_text = "Thêm vị trí đang đứng"
+	var add := SocialUi.stone_button(tr("Thêm"), Vector2(110, 36))
+	add.tooltip_text = tr("Thêm vị trí đang đứng")
 	add.pressed.connect(func() -> void:
 		var feet: Variant = _player_feet()
 		if feet != null:
 			_s.route.append(feet)
 			_changed()
 			fill.call())
-	var del := SocialUi.stone_button("Xoá", Vector2(110, 36))
+	var del := SocialUi.stone_button(tr("Xoá"), Vector2(110, 36))
 	del.pressed.connect(func() -> void:
 		var sel := list.get_selected_items()
 		if not sel.is_empty():
 			_s.route.remove_at(sel[0])
 			_changed()
 			fill.call())
-	var clear := SocialUi.stone_button("Xoá hết", Vector2(110, 36))
+	var clear := SocialUi.stone_button(tr("Xoá hết"), Vector2(110, 36))
 	clear.pressed.connect(func() -> void:
 		_s.route.clear()
 		_changed()
@@ -359,7 +374,7 @@ func _build_movement() -> void:
 	_note("Chạy toạ độ: đánh quái trong bán kính quanh từng toạ độ, hết quái thì sang toạ độ kế. Bản đồ hiện chỉ có 1 nên chưa đổi bản đồ khi chết, chỉ ghi chiến báo.")
 
 func _anchor_text() -> String:
-	return "Điểm: %s" % AutoSettings.coord_text(_s.anchor) if _s.has_anchor else "Chưa lưu điểm"
+	return ("%s: %s" % [tr("Điểm"), AutoSettings.coord_text(_s.anchor)]) if _s.has_anchor else tr("Chưa lưu điểm")
 
 func _player_feet() -> Variant:
 	var p := _player()
@@ -375,7 +390,7 @@ func _build_logistics() -> void:
 	left.add_theme_constant_override("separation", 6)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(left)
-	left.add_child(SocialUi.label("Thiết lập mua Dược:", SocialUi.TITLE, 14))
+	left.add_child(SocialUi.label(tr("Thiết lập mua Dược:"), SocialUi.TITLE, 14))
 	var g := GridContainer.new()
 	g.columns = 2
 	g.add_theme_constant_override("h_separation", 20)
@@ -388,7 +403,7 @@ func _build_logistics() -> void:
 		left.add_child(_potion_row(i))
 	left.add_child(_row([_check("Mua Tuý Cơ Hồng Bao", "buy_tuyco"), _check("Mua TĐP", "buy_tdp")]))
 	left.add_child(_check("Quay lại điểm cũ", "return_to_spot"))
-	var map_edit := SocialUi.line_edit("<Bản đồ luyện công>")
+	var map_edit := SocialUi.line_edit(tr("<Bản đồ luyện công>"))
 	map_edit.text = _s.train_map
 	map_edit.custom_minimum_size.x = 220
 	map_edit.text_changed.connect(func(t: String) -> void: _s.train_map = t)
@@ -398,14 +413,14 @@ func _build_logistics() -> void:
 	right.add_theme_constant_override("separation", 6)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(right)
-	right.add_child(SocialUi.label("Thiết lập chiến báo:", SocialUi.TITLE, 14))
+	right.add_child(SocialUi.label(tr("Thiết lập chiến báo:"), SocialUi.TITLE, 14))
 	right.add_child(_row([_check("Phù liên tiếp", "report_tdp_on"), _num("report_tdp_count", 1, 20),
-		SocialUi.label("lần trong", SocialUi.TEXT, 14), _num("report_tdp_minutes", 1, 60), SocialUi.label("phút", SocialUi.TEXT, 14)]))
-	right.add_child(_row([SocialUi.label("      Đổ thông báo", SocialUi.TEXT, 14), _num("report_tdp_notify", 1, 10), SocialUi.label("lần", SocialUi.TEXT, 14)]))
+		SocialUi.label(tr("lần trong"), SocialUi.TEXT, 14), _num("report_tdp_minutes", 1, 60), SocialUi.label(tr("phút"), SocialUi.TEXT, 14)]))
+	right.add_child(_row([SocialUi.label("      " + tr("Đổ thông báo"), SocialUi.TEXT, 14), _num("report_tdp_notify", 1, 10), SocialUi.label(tr("lần"), SocialUi.TEXT, 14)]))
 	right.add_child(_row([_check("Chết liên tiếp", "report_death_on"), _num("report_death_count", 1, 20),
-		SocialUi.label("lần trong", SocialUi.TEXT, 14), _num("report_death_minutes", 1, 60), SocialUi.label("phút", SocialUi.TEXT, 14)]))
-	right.add_child(_row([SocialUi.label("      Đổ thông báo", SocialUi.TEXT, 14), _num("report_death_notify", 1, 10), SocialUi.label("lần", SocialUi.TEXT, 14)]))
-	var history := SocialUi.stone_button("Xem lịch sử", Vector2(160, 36))
+		SocialUi.label(tr("lần trong"), SocialUi.TEXT, 14), _num("report_death_minutes", 1, 60), SocialUi.label(tr("phút"), SocialUi.TEXT, 14)]))
+	right.add_child(_row([SocialUi.label("      " + tr("Đổ thông báo"), SocialUi.TEXT, 14), _num("report_death_notify", 1, 10), SocialUi.label(tr("lần"), SocialUi.TEXT, 14)]))
+	var history := SocialUi.stone_button(tr("Xem lịch sử"), Vector2(160, 36))
 	history.pressed.connect(_show_history)
 	right.add_child(history)
 	_note("Chưa có cửa hàng / thuốc / rương tự động: mục mua dược, bán, cất, sửa được lưu sẵn để dùng khi có hệ thống.")
@@ -419,7 +434,7 @@ func _potion_row(i: int) -> HBoxContainer:
 	opt.focus_mode = Control.FOCUS_NONE
 	opt.custom_minimum_size.x = 220
 	for n in POTIONS:
-		opt.add_item(n)
+		opt.add_item(tr(n))
 	opt.select(maxi(POTIONS.find(str(entry[1])), 0))
 	opt.item_selected.connect(func(idx: int) -> void: _s.potion_buys[i][1] = POTIONS[idx])
 	var qty := _spin(0, 200, 1, int(entry[2]))
@@ -427,7 +442,7 @@ func _potion_row(i: int) -> HBoxContainer:
 	return _row([cb, opt, qty])
 
 func _show_history() -> void:
-	var win := SocialWindow.new("Lịch sử chiến báo", "%d dòng gần nhất" % profile.auto_log.size(), 460.0)
+	var win := SocialWindow.new(tr("Lịch sử chiến báo"), "%d %s" % [profile.auto_log.size(), tr("dòng gần nhất")], 460.0)
 	var text := RichTextLabel.new()
 	text.custom_minimum_size = Vector2(420, 280)
 	text.add_theme_color_override("default_color", SocialUi.TEXT)
@@ -437,7 +452,7 @@ func _show_history() -> void:
 		var t := Time.get_datetime_string_from_unix_time(int(e.get("t", 0)) + _tz_offset(), true)
 		lines.append("[color=#9a9a9a]%s[/color]  %s" % [t, str(e.get("text", ""))])
 	text.bbcode_enabled = true
-	text.text = "\n".join(lines) if not lines.is_empty() else "Chưa có chiến báo."
+	text.text = "\n".join(lines) if not lines.is_empty() else tr("Chưa có chiến báo.")
 	win.body.add_child(text)
 	SocialWindow.present(get_parent().get_parent(), win, &"auto_history")
 
@@ -454,12 +469,12 @@ func _build_loot() -> void:
 	left.add_theme_constant_override("separation", 6)
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(left)
-	left.add_child(SocialUi.label("Thiết lập nhặt đồ:", SocialUi.TITLE, 14))
+	left.add_child(SocialUi.label(tr("Thiết lập nhặt đồ:"), SocialUi.TITLE, 14))
 	var g := GridContainer.new()
 	g.columns = 2
 	g.add_theme_constant_override("h_separation", 24)
 	left.add_child(g)
-	g.add_child(_row([SocialUi.label("Phạm vi nhặt", SocialUi.TEXT, 14), _num("pick_range", 50, 3000, 50)]))
+	g.add_child(_row([SocialUi.label(tr("Phạm vi nhặt"), SocialUi.TEXT, 14), _num("pick_range", 50, 3000, 50)]))
 	g.add_child(_check("Nhặt tiền vạn", "pick_money"))
 	g.add_child(_check("Nhặt tất cả", "pick_all"))
 	g.add_child(_check("Nhặt trang bị xanh", "pick_blue"))
@@ -470,7 +485,7 @@ func _build_loot() -> void:
 
 	var rows_box := VBoxContainer.new()
 	rows_box.add_theme_constant_override("separation", 4)
-	left.add_child(SocialUi.label("Lọc thuộc tính (chữ trong dòng thuộc tính + giá trị tối thiểu):", SocialUi.MUTED, 12))
+	left.add_child(SocialUi.label(tr("Lọc thuộc tính (chữ trong dòng thuộc tính + giá trị tối thiểu):"), SocialUi.MUTED, 12))
 	left.add_child(rows_box)
 	var fill_rows := func(self_ref: Callable) -> void:
 		for c in rows_box.get_children():
@@ -478,7 +493,7 @@ func _build_loot() -> void:
 		for i in _s.filter_rows.size():
 			rows_box.add_child(_filter_row(i, self_ref))
 	fill_rows.call(fill_rows)
-	var add_row := SocialUi.small_button("⊕  Thêm dòng")
+	var add_row := SocialUi.small_button("⊕  " + tr("Thêm dòng"))
 	add_row.pressed.connect(func() -> void:
 		_s.filter_rows.append({"text": "", "min": 0})
 		fill_rows.call(fill_rows))
@@ -489,11 +504,11 @@ func _build_loot() -> void:
 	right.custom_minimum_size.x = 210
 	row.add_child(right)
 	right.add_child(_check("Thiết lập tổ đội", "team_on"))
-	right.add_child(SocialUi.label("Mời đội", SocialUi.TEXT, 14))
+	right.add_child(SocialUi.label(tr("Mời đội"), SocialUi.TEXT, 14))
 	right.add_child(_option("invite_mode", AutoSettings.INVITE_NAMES))
-	right.add_child(SocialUi.label("Nhận lời mời", SocialUi.TEXT, 14))
+	right.add_child(SocialUi.label(tr("Nhận lời mời"), SocialUi.TEXT, 14))
 	right.add_child(_option("accept_mode", AutoSettings.ACCEPT_NAMES))
-	var list_btn := SocialUi.stone_button("Thiết lập danh sách", Vector2(0, 36))
+	var list_btn := SocialUi.stone_button(tr("Thiết lập danh sách"), Vector2(0, 36))
 	var set_list := func(t: String) -> void:
 		var names := []
 		for n in t.split(",", false):
@@ -502,13 +517,13 @@ func _build_loot() -> void:
 		_s.team_list = names
 		_changed()
 	list_btn.pressed.connect(func() -> void:
-		SocialWindow.prompt(get_parent().get_parent(), "Danh sách tổ đội", "Tên người chơi, cách nhau bằng dấu phẩy",
+		SocialWindow.prompt(get_parent().get_parent(), tr("Danh sách tổ đội"), tr("Tên người chơi, cách nhau bằng dấu phẩy"),
 				set_list, ", ".join(_s.team_list)))
 	right.add_child(list_btn)
 
 func _filter_row(i: int, refill: Callable) -> HBoxContainer:
 	var data: Dictionary = _s.filter_rows[i]
-	var edit := SocialUi.line_edit("VD: Sinh lực / Kháng độc / Tốc độ chạy")
+	var edit := SocialUi.line_edit(tr("VD: Sinh lực / Kháng độc / Tốc độ chạy"))
 	edit.text = str(data.get("text", ""))
 	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	edit.text_changed.connect(func(t: String) -> void: _s.filter_rows[i]["text"] = t)
@@ -524,7 +539,7 @@ func _filter_row(i: int, refill: Callable) -> HBoxContainer:
 
 func _check(text: String, key: String) -> CheckBox:
 	var cb := CheckBox.new()
-	cb.text = text
+	cb.text = tr(text)
 	cb.focus_mode = Control.FOCUS_NONE
 	cb.add_theme_color_override("font_color", SocialUi.TEXT)
 	cb.add_theme_color_override("font_pressed_color", SocialUi.TEXT)
@@ -555,7 +570,7 @@ func _option(key: String, names: Array) -> OptionButton:
 	var opt := OptionButton.new()
 	opt.focus_mode = Control.FOCUS_NONE
 	for n in names:
-		opt.add_item(n)
+		opt.add_item(tr(n))
 	opt.select(clampi(int(_s.get(key)), 0, names.size() - 1))
 	opt.item_selected.connect(func(idx: int) -> void:
 		_s.set(key, idx)
@@ -564,11 +579,11 @@ func _option(key: String, names: Array) -> OptionButton:
 
 func _header(text: String) -> void:
 	var panel := GameUi.panel(GameUi.SECTION)
-	panel.add_child(SocialUi.label(text, SocialUi.LABEL_GREEN, 14))
+	panel.add_child(SocialUi.label(tr(text), SocialUi.LABEL_GREEN, 14))
 	_content.add_child(panel)
 
 func _note(text: String) -> void:
-	var l := SocialUi.label(text, SocialUi.MUTED, 12)
+	var l := SocialUi.label(tr(text), SocialUi.MUTED, 12)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_content.add_child(l)
 

@@ -47,13 +47,18 @@ func _ready() -> void:
 	_cooldown_timer.timeout.connect(_tick_cooldown)
 	add_child(_cooldown_timer)
 	_user.text = AccountScreen.next_login_username
-	if not OS.has_feature("mobile"):
+	AccountScreen.setup_mobile_web_input(_user, "Nhập tên tài khoản:")
+	AccountScreen.setup_mobile_web_input(_email, "Nhập địa chỉ email:")
+	AccountScreen.setup_mobile_web_input(_code, "Nhập mã xác nhận (6 số):")
+	AccountScreen.setup_mobile_web_input(_password, "Nhập mật khẩu mới:")
+	AccountScreen.setup_mobile_web_input(_password2, "Nhập lại mật khẩu mới:")
+	if not AccountScreen.is_touch_or_mobile():
 		(_email if _user.text != "" else _user).grab_focus()
 
 func _show_step(reset: bool) -> void:
 	_step_request.visible = not reset
 	_step_reset.visible = reset
-	if not OS.has_feature("mobile"):
+	if not AccountScreen.is_touch_or_mobile():
 		if reset:
 			_code.grab_focus()
 		else:

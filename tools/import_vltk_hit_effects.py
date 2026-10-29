@@ -20,6 +20,9 @@ import sys
 import unicodedata
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 ROOT = Path(__file__).resolve().parent.parent
 TRES_DIR = ROOT / "systems" / "sect" / "data"
 VLTK = Path("D:/game/source_vo-lam-truyen-ky/anh-viet")
@@ -127,7 +130,7 @@ def load_skills_txt(path=None):
         while f"LvlSetting{n}" in col:
             attr = cells[col[f"LvlSetting{n}"]].strip()
             table = cells[col[f"LvlData{n}"]].strip()
-            if attr and table and not attr.startswith(SKIP_PREFIXES):
+            if attr and table and (not attr.startswith(SKIP_PREFIXES) or attr == "skill_attackradius"):
                 mapping.setdefault(attr, table)
             n += 1
         flags = {k: cells[col[c]].strip() == "1" for k, c in FLAG_COLUMNS.items()}
@@ -286,6 +289,16 @@ def main():
                         attribs[attr] = parsed
                         if "Conic" in str(parsed) or "Extrac" in str(parsed):
                             stats["conic"].add(f"{name_m.group(1)}.{attr}")
+                if "skill_attackradius" not in attribs:
+                    for table in set(mapping.values()):
+                        parsed_ar = lua_attr(script, table, "skill_attackradius", lua_dirs)
+                        if isinstance(parsed_ar, list) and parsed_ar:
+                            attribs["skill_attackradius"] = parsed_ar
+                            break
+                if "skill_attackradius" in attribs and attribs["skill_attackradius"]:
+                    ar_points = attribs["skill_attackradius"][0]
+                    if ar_points and len(ar_points) > 0 and len(ar_points[0]) >= 2:
+                        flags["vltk_attack_radius"] = int(ar_points[0][1])
                 lines = "".join(f"{k} = {'true' if flags[k] else 'false'}\n" for k in FLAG_COLUMNS)
                 for field in ["vltk_is_physical"] + list(INT_COLUMNS):
                     value = flags[field]
@@ -293,6 +306,9 @@ def main():
                         value += vltk_source.FX_ID_OFFSET   ## states.json: trạng thái bản 15 phái ở khoá riêng
                     lines += f"{field} = {value}\n"
                 missle = missles.get(flags["_child_missle"], {})
+                if not missle and flags["_child_missle"] in by_id:
+                    sub_child = by_id[flags["_child_missle"]][2].get("_child_missle", 0)
+                    missle = missles.get(sub_child, {})
                 for field in MISSLE_FIELDS:
                     lines += f"{field} = {missle.get(field, 0)}\n"
                 if attribs:

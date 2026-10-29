@@ -11,7 +11,7 @@ const GUILD := 3
 const PRIVATE := 4
 const CHANNEL_NAMES := ["Gần", "Thế giới", "Tổ đội", "Bang hội", "Riêng"]
 
-const MAX_LEN := 200
+const MAX_LEN := 600
 const MIN_INTERVAL := 0.8
 const WORLD_COOLDOWN := 10.0
 
@@ -48,6 +48,78 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		c.profile.gold += add
 		gs.profile_changed(c)
 		gs.notice(c, "[Thử nghiệm] Đã cộng %d lượng." % add)
+		return
+	## Lệnh GM: tạo KNB, Tiền Xu và Tiên Thảo Lộ (chỉ GM hoặc chế độ TEST)
+	if text.begins_with("/knb"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var parts := text.split(" ", false)
+		var add := 1000
+		if parts.size() > 1 and parts[1].is_valid_int():
+			add = clampi(int(parts[1]), 1, 100_000_000)
+		c.profile.jade += add
+		gs.profile_changed(c)
+		gs.notice(c, "[GM] Nhận được %d KNB (Kim Nguyên Bảo)." % add)
+		return
+	if text.begins_with("/xu"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var parts := text.split(" ", false)
+		var add := 1000
+		if parts.size() > 1 and parts[1].is_valid_int():
+			add = clampi(int(parts[1]), 1, 100_000_000)
+		c.profile.xu += add
+		gs.profile_changed(c)
+		gs.notice(c, "[GM] Nhận được %d Tiền Xu." % add)
+		return
+	if text.begins_with("/ttl") or text.begins_with("/tienthaolo"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var ttl_1h := ItemGenerator.generate_misc("6_1_71")
+		var ttl_8h := ItemGenerator.generate_misc("6_1_1181")
+		var ttl_hoan := ItemGenerator.generate_misc("6_1_113")
+		var knb_item := ItemGenerator.generate_misc("6_1_1877")
+		var added := 0
+		if ttl_1h and c.profile.add_item(ttl_1h): added += 1
+		if ttl_8h and c.profile.add_item(ttl_8h): added += 1
+		if ttl_hoan and c.profile.add_item(ttl_hoan): added += 1
+		if knb_item and c.profile.add_item(knb_item): added += 1
+		gs.profile_changed(c)
+		gs.notice(c, "[Hệ thống] Đã thêm Tiên Thảo Lộ & Kim Nguyên Bảo vào hành trang.")
+		return
+	if text.begins_with("/aura"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var parts := text.split(" ", false)
+		if parts.size() < 2:
+			gs.notice(c, "Cú pháp: /aura <id_state> [tên_người_chơi hoặc eid]")
+			return
+		var state_id := int(parts[1])
+		var target_c: GameServer.Conn = c
+		if parts.size() >= 3:
+			var target_str := parts[2]
+			if target_str.is_valid_int() and gs.conn_of_eid(int(target_str)) != null:
+				target_c = gs.conn_of_eid(int(target_str))
+			else:
+				for other in gs.in_world_conns():
+					if other.entity and (other.entity.name == target_str or other.username == target_str):
+						target_c = other
+						break
+		if target_c == null or target_c.entity == null:
+			gs.notice(c, "Không tìm thấy người chơi mục tiêu.")
+			return
+		target_c.profile.gm_aura_state = state_id
+		target_c.data["gm_aura_state"] = state_id
+		target_c.entity.look = gs.look_from_profile(target_c.data)
+		target_c.entity.look_dirty = true
+		if not gs._look_dirty.has(target_c.entity):
+			gs._look_dirty.append(target_c.entity)
+		gs.profile_changed(target_c)
+		gs.notice(c, "[GM] Đã gán hào quang state #%d cho %s." % [state_id, target_c.entity.name])
 		return
 	var now := gs.now()
 	var unix := Time.get_unix_time_from_system()

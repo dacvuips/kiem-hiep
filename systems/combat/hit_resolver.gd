@@ -20,7 +20,10 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 		_apply_hit_state(defender, status, mods)
 		return 0
 
-	if (mods == null or mods.use_attack_rating) and not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense):
+	var ignore_def: int = attacker_stats.ignore_defense_p if attacker_stats else 0
+	if mods and "ignore_defense_percent" in mods and mods.ignore_defense_percent > 0:
+		ignore_def = maxi(ignore_def, mods.ignore_defense_percent)
+	if (mods == null or mods.use_attack_rating) and not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense, ignore_def):
 		return MISSED
 
 	if mods and is_player_like(defender) and is_player_like(mods.attacker_node):
@@ -30,12 +33,22 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	parts[damage_type] = main_part + Vector2i(min_damage, max_damage)
 	parts = CombatFormulas.apply_server_damage_scaling(parts, int(attacker_element))
 	var dealt := {}
+	var mana_absorbed_box := [0]
+	var defender_mana := int(defender.mana) if (defender != null and "mana" in defender) else 0
 	var final_damage := CombatFormulas.resolve_multi_damage(attacker_stats, defender_stats, defender_hp,
-			parts, attacker_element, mods, dealt)
+			parts, attacker_element, mods, dealt, defender_mana, mana_absorbed_box)
 	## Trúng nhưng giáp / kháng nuốt hết sát thương: KNpc::CalcDamage gốc trả FALSE, ReceiveDamage vẫn coi là trúng (không hiện
 	## "trượt") — chỉ không mất máu. "Trượt" chỉ khi CheckHitTarget roll trượt (ở trên).
 	if final_damage < 0:
 		return 0
+
+	if mana_absorbed_box[0] > 0 and defender != null and "mana" in defender:
+		defender.mana = maxf(0.0, defender.mana - mana_absorbed_box[0])
+
+	if defender_stats and defender_stats.damage_to_mana_p > 0 and final_damage > 0 and defender != null and "mana" in defender:
+		var mana_gained: float = final_damage * defender_stats.damage_to_mana_p / 100.0
+		var max_m: float = float(defender_stats.max_mana)
+		defender.mana = minf(max_m, defender.mana + mana_gained)
 
 	if status:
 		status.apply_vltk_hit(mods, dealt, defender_stats)

@@ -18,6 +18,7 @@ enum Mode {
 	THACH_DAU = 2,
 	TONG_KIM_LOL = 3,
 	LON_XON = 4,
+	VAN_TIEU = 5,
 }
 
 const MODE_NAMES := {
@@ -26,6 +27,7 @@ const MODE_NAMES := {
 	Mode.THACH_DAU: "Thách đấu",
 	Mode.TONG_KIM_LOL: "Tống Kim LOL",
 	Mode.LON_XON: "Lộn xộn",
+	Mode.VAN_TIEU: "Vận Tiêu (Long Môn Tiêu Cục)",
 }
 const MIN_LEVEL := {
 	Mode.DAI_HOI: 90,
@@ -33,9 +35,10 @@ const MIN_LEVEL := {
 	Mode.THACH_DAU: 10,
 	Mode.TONG_KIM_LOL: 10,
 	Mode.LON_XON: 10,
+	Mode.VAN_TIEU: 30,
 }
 const SENIOR_LEVEL := 120                ## Liên đấu: từ cấp này là hạng cao cấp
-const PREPARE_SEC := 10.0
+const PREPARE_SEC := 3.0
 const FIGHT_SEC := 600.0
 const MATCH_LEVEL_DIFF := 10
 const MATCH_WAIT_SEC := 60.0
@@ -43,6 +46,18 @@ const LEAVE_AFTER_SEC := 8.0
 
 const WIN_POINTS := 10
 const LOSE_POINTS := 2
+
+## Xử lý điểm PK khi giết người chơi / bot:
+##   - Chỉ khi KHI CHẾT, thủ phạm ĐANG Ở TRẠNG THÁI ĐỒ SÁT (killer_pk_mode == 2) và nạn nhân không phải đồ sát: +1 điểm PK (tối đa 10).
+##   - Nếu thủ phạm đã tắt đồ sát về Chiến Đấu (killer_pk_mode == 1) hoặc Luyện Công / Bình Thường (killer_pk_mode == 0),
+##     dù nạn nhân chết do trúng độc rút hay đòn trước đó: KHÔNG bị cộng điểm PK.
+static func handle_murder_kill(killer_profile: PlayerProfile, killer_pk_mode: int, victim_is_murder: bool = false) -> bool:
+	if killer_profile == null:
+		return false
+	if killer_pk_mode == 2 and not victim_is_murder:
+		killer_profile.pk_value = mini(10, killer_profile.pk_value + 1)
+		return true
+	return false
 
 ## Các thể thức thách đấu: 1vs1, 2vs2, ..., 8vs8
 const TEAM_FORMATS := [1, 2, 3, 4, 5, 6, 7, 8]
@@ -106,15 +121,16 @@ const MODE_INTRO := {
 	Mode.THACH_DAU: "Thách đấu võ nghệ: Đấu trường tự do tỷ thí võ nghệ giữa các hiệp khách. Chủ phòng có thể từ chối đối thủ trước khi bắt đầu. Không tính điểm xếp hạng.",
 	Mode.LON_XON: "Đấu trường Lộn Xộn: Chế độ Loạn Đả tự do (16 người) và Đấu đội sinh tử (1vs1 đến 8vs8) trên các bản đồ 9x, 12x, Lâm Du Quan. Mỗi mạng hạ gục nhận 300 điểm, bị diệt trừ 100 điểm. Kết thúc trận quy đổi x30 điểm thành EXP thực tế!",
 	Mode.TONG_KIM_LOL: "Ải Tống Kim LOL: Bảo vệ Tướng Soái, công phá 3 cổng, diệt lính và Boss Hoàng Kim theo phong cách đối kháng MOBA (1vs1 đến 5vs5).",
+	Mode.VAN_TIEU: "Long Môn Tiêu Cục (Vận Tiêu Cá Nhân): Hộ tống tiêu xa xuyên suốt đại đô thành Biện Kinh vào Thứ Bảy & Chủ Nhật (Tối đa 3 lần/ngày). Chia làm 2 phe đối kháng: Phe Hộ Tiêu (Bảo vệ tiêu xa tới đích) và Phe Cướp Tiêu (Chặn đánh cướp tiêu đoạt bảo). Khi chết xem như thất bại nhưng không bị mất lượt.",
 }
 
 ## Chế độ có cho phép chủ phòng từ chối/đá đối thủ ra không
 static func can_kick(mode: Mode) -> bool:
-	return mode == Mode.THACH_DAU or mode == Mode.TONG_KIM_LOL or mode == Mode.LON_XON
+	return mode == Mode.THACH_DAU or mode == Mode.TONG_KIM_LOL or mode == Mode.LON_XON or mode == Mode.VAN_TIEU
 
 ## Chế độ có tính điểm trên bảng xếp hạng không
 static func has_rank_points(mode: Mode) -> bool:
-	return mode != Mode.THACH_DAU and mode != Mode.TONG_KIM_LOL and mode != Mode.LON_XON
+	return mode != Mode.THACH_DAU and mode != Mode.TONG_KIM_LOL and mode != Mode.LON_XON and mode != Mode.VAN_TIEU
 
 ## Lý do không vào được chế độ này ("" = được).
 static func check_entry(profile: PlayerProfile, mode: Mode) -> String:
@@ -122,22 +138,35 @@ static func check_entry(profile: PlayerProfile, mode: Mode) -> String:
 		return "Chưa có nhân vật."
 	if mode == Mode.DAI_HOI and not profile.has_sect():
 		return "Chỉ người của môn phái mới được tham gia Đại hội võ lâm."
+	if mode == Mode.VAN_TIEU:
+		var esc_win: GDScript = load("res://ui/events/escort_window.gd")
+		if not esc_win.is_escort_day():
+			return "Vận tiêu chỉ mở vào Thứ Bảy và Chủ Nhật hàng tuần!"
+		var runs: int = esc_win.get_runs_today(profile)
+		if runs >= esc_win.RUNS_PER_DAY:
+			return "Hôm nay đại hiệp đã hoàn thành đủ %d/3 chuyến tiêu rồi!" % esc_win.RUNS_PER_DAY
 	var need := int(MIN_LEVEL.get(mode, 1))
 	if profile.level < need:
 		return "Cần đạt cấp %d mới được tham gia %s." % [need, MODE_NAMES.get(mode, "")]
 	return ""
 
-## 2 người có ghép được không: chênh cấp <= MATCH_LEVEL_DIFF; Đại hội võ lâm phải cùng phái; Thách đấu tự do.
-static func can_match(mode: Mode, level_a: int, sect_a: String, level_b: int, sect_b: String) -> bool:
-	if mode == Mode.THACH_DAU or mode == Mode.TONG_KIM_LOL or mode == Mode.LON_XON:
-		return true
-	if absi(level_a - level_b) > MATCH_LEVEL_DIFF:
-		return false
-	return mode != Mode.DAI_HOI or sect_a == sect_b
+## 2 người có ghép được không: Đại hội võ lâm phải cùng phái; không chặn chênh lệch cấp.
+static func can_match(mode: Mode, _level_a: int, sect_a: String, _level_b: int, sect_b: String) -> bool:
+	if mode == Mode.DAI_HOI:
+		return sect_a == sect_b
+	return true
 
 ## Mục "map" đưa cho Character Hub (GameManager.field_map) để vào đấu trường. `pk` = {mode, room_id, opponent: hồ sơ bot (dict)}.
 static func arena_entry(pk: Dictionary) -> Dictionary:
 	var m := int(pk.get("mode", Mode.LIEN_DAU))
+	if m == Mode.VAN_TIEU:
+		var cart_dict: Dictionary = pk.get("cart", {})
+		var role: String = str(pk.get("side", "defender"))
+		var esc_script: GDScript = load("res://systems/challenge/escort_challenge.gd")
+		var entry: Dictionary = esc_script.map_entry(cart_dict, role)
+		entry["pk"] = pk
+		entry["room"] = pk
+		return entry
 	if m == Mode.TONG_KIM_LOL:
 		return {
 			"id": TongKimLolRules.MAP_ID,
@@ -149,7 +178,7 @@ static func arena_entry(pk: Dictionary) -> Dictionary:
 			"room": pk
 		}
 	if m == Mode.LON_XON:
-		var map_id: int = int(pk.get("map_id", 319))
+		var map_id: int = int(pk.get("map_id", pk.get("action", {}).get("map_id", 319)))
 		var map_info := get_brawl_map_info(map_id)
 		return {
 			"id": map_id,

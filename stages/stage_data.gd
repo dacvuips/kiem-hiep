@@ -43,6 +43,18 @@ func get_boss_spawn_time() -> float:
 ## Màu hào quang ở rìa ô.
 @export var arena_color: Color = Color(1.0, 0.82, 0.35)
 
+@export_group("Cân bằng chiến đấu màn chơi")
+## Hệ số sát thương quái riêng cho màn chơi này (1.0 = giữ nguyên sát thương gốc).
+## Giúp cân bằng độ đau của quái trong màn chơi đông quái mà giữ nguyên vẹn dữ liệu quái cốt lõi.
+@export var stage_monster_damage_multiplier: float = 1.0
+
+## Bật thời gian miễn thương chớp nhoáng (I-Frame) khi người chơi trúng đòn trong màn chơi này
+## (bảo vệ người chơi khi bị đàn quái đông bao vây, tránh bị cắn dồn dập shock sát thương trong 1 khung hình).
+@export var enable_hit_invincibility: bool = true
+
+## Thời gian miễn thương chớp nhoáng sau khi trúng đòn (giây). Mặc định 0.35s.
+@export var hit_invincibility_duration: float = 0.35
+
 @export_group("Âm thanh / khác")
 ## Map VLTK gốc (STT trong maplist.ini) dùng để lấy NHẠC NỀN của màn này (MusicSet.txt). 0 = dùng nhạc mặc định.
 @export var vltk_map_id: int = 0

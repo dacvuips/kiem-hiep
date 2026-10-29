@@ -9,9 +9,9 @@ class_name VltkStateSprite
 ## Node tự bám theo `target`, đặt ở chân nhân vật (cùng toạ độ VltkEffect), không dùng ObjectPool vì tồn tại lâu và hiếm.
 
 const Z_BEHIND := -1
-const Z_FRONT := 2
-## Hệ số tăng tốc hoạt ảnh trạng thái (skill hỗ trợ) — gốc chạy chậm, nhìn không rõ.
-const ANIM_SPEED := 0.7   ## hệ số so với nhịp gốc (1.0 = đúng gốc); đã chỉnh 1.8 -> 0.36 -> 0.7
+const Z_FRONT := 1
+## Tốc độ hoạt ảnh trạng thái: 1.0 = đúng chuẩn 100% nhịp 18 FPS gốc VLTK
+const ANIM_SPEED := 1.0
 
 var state_id: int = 0
 var target: Node2D = null
@@ -34,8 +34,8 @@ static func attach(target_node: Node2D, id: int) -> VltkStateSprite:
 	node.target = target_node
 	node._state = state
 	node._anim = anim
-	node.top_level = true            ## không thừa kế toạ độ của người mang — tự đặt theo chân
-	node.z_as_relative = false
+	node.top_level = false
+	node.z_as_relative = true
 	target_node.add_child(node)
 	return node
 
@@ -79,13 +79,20 @@ func _update() -> void:
 	_sprite.visible = true
 	_sprite.region_rect = Rect2((frame % cols) * size[0], (frame / cols) * size[1], size[0], size[1])
 	_sprite.position = Vector2(offset[0], offset[1])
-	global_position = VltkMath.to_world(VltkMath.logic_of(target) + Vector2(0, 1))
+	if "avatar" in target and target.avatar != null:
+		position = target.avatar.position + Vector2(0, 1)
+	elif target.has_method("get_ground_position"):
+		position = target.to_local(target.get_ground_position()) + Vector2(0, 1)
+	else:
+		position = Vector2(0, 31)
 	z_index = _layer(frame_in_dir)
 
 func _layer(frame_in_dir: int) -> int:
 	match str(_state.get("type", "Body")):
 		"Foot":
 			return Z_BEHIND
+		"Head":
+			return Z_FRONT + 1
 		"Body":
 			var back_start := int(_state.get("back_start", 0))
 			var back_end := int(_state.get("back_end", 0))

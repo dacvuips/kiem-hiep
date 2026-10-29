@@ -108,7 +108,7 @@ func _build(origin: Control) -> void:
 	header.add_child(title_vbox)
 
 	var title_lbl := Label.new()
-	title_lbl.text = "CHẾ ĐỘ CHIẾN ĐẤU (PK)"
+	title_lbl.text = tr("CHẾ ĐỘ CHIẾN ĐẤU (PK)")
 	title_lbl.add_theme_color_override("font_color", GameUi.GOLD)
 	title_lbl.add_theme_font_size_override("font_size", 14)
 	title_lbl.add_theme_constant_override("outline_size", 2)
@@ -116,7 +116,7 @@ func _build(origin: Control) -> void:
 	title_vbox.add_child(title_lbl)
 
 	var sub_lbl := Label.new()
-	sub_lbl.text = "Chọn trạng thái PK (Phím tắt: F9)"
+	sub_lbl.text = tr("Chọn trạng thái PK (Phím tắt: F9)")
 	sub_lbl.add_theme_color_override("font_color", GameUi.MUTED)
 	sub_lbl.add_theme_font_size_override("font_size", 11)
 	title_vbox.add_child(sub_lbl)
@@ -236,7 +236,7 @@ func _build_option_button(opt: Dictionary, is_selected: bool) -> Button:
 	hbox.add_child(text_vbox)
 
 	var name_lbl := Label.new()
-	name_lbl.text = opt["name"]
+	name_lbl.text = tr(opt["name"])
 	name_lbl.add_theme_font_size_override("font_size", 13)
 	name_lbl.add_theme_color_override("font_color", GameUi.GOLD if is_selected else (color if opt["enabled"] else Color.GRAY))
 	name_lbl.add_theme_constant_override("outline_size", 2)
@@ -244,14 +244,14 @@ func _build_option_button(opt: Dictionary, is_selected: bool) -> Button:
 	text_vbox.add_child(name_lbl)
 
 	var desc_lbl := Label.new()
-	desc_lbl.text = opt["desc"]
+	desc_lbl.text = tr(opt["desc"])
 	desc_lbl.add_theme_font_size_override("font_size", 10)
 	desc_lbl.add_theme_color_override("font_color", GameUi.TEXT if opt["enabled"] else Color(0.5, 0.5, 0.5))
 	text_vbox.add_child(desc_lbl)
 
 	if is_selected:
 		var check_lbl := Label.new()
-		check_lbl.text = "✓ Đang chọn"
+		check_lbl.text = "✓ " + tr("Đang chọn")
 		check_lbl.add_theme_font_size_override("font_size", 10)
 		check_lbl.add_theme_color_override("font_color", GameUi.GOLD)
 		check_lbl.add_theme_constant_override("outline_size", 1)

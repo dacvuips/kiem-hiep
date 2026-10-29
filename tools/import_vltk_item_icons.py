@@ -92,6 +92,10 @@ def main():
     tmp = os.path.join(OUT_DIR, "_tmp.spr")
     for path in sorted(paths):
         out = os.path.join(OUT_DIR, paths[path] + ".png")
+        small_out = os.path.join(SMALL_DIR, paths[path] + ".png")
+        if os.path.isfile(out) and os.path.isfile(small_out) and os.path.getsize(out) > 0:
+            ok += 1
+            continue
         data = read_any(readers, path)
         if data is None:
             missing.append(path)
@@ -117,7 +121,9 @@ def main():
     print("ảnh không món nào dùng (giữ nguyên):", len(stale))
     for name in os.listdir(OUT_DIR):
         if name.endswith(".png"):
-            make_small(os.path.join(OUT_DIR, name), os.path.join(SMALL_DIR, name))
+            small_path = os.path.join(SMALL_DIR, name)
+            if not os.path.isfile(small_path):
+                make_small(os.path.join(OUT_DIR, name), small_path)
     print("xong %d / %d ảnh" % (ok, len(paths)))
     if sizes:
         print("cỡ lớn nhất:", max(s[0] for s in sizes), "x", max(s[1] for s in sizes))

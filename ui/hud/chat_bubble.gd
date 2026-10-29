@@ -1,5 +1,7 @@
 extends Node2D
 class_name ChatBubble
+
+const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
 ## Lời nói kênh Gần hiện NGAY CHỖ tên nhân vật (kiểu VLTK): "Tên: nội dung" — tên màu vàng, nội dung màu trắng, viền đen; trong lúc
 ## hiện, nhãn tên gốc tạm ẩn (set_name_label_visible) để không thấy 2 tên. Gắn làm con của nhân vật (Player / RemotePlayer); dòng cuối
 ## nằm đúng chỗ nhãn tên (chat_anchor_y() của nhân vật — đổi khi lên ngựa / nhảy), câu dài thì dòng trên đẩy lên.
@@ -42,7 +44,8 @@ func _init() -> void:
 	visible = false
 
 func say(speaker_name: String, text: String) -> void:
-	_label.text = "[center][color=#%s]%s:[/color] %s[/center]" % [NAME_COLOR.to_html(false), _esc(speaker_name), _esc(text)]
+	var clean_text := ItemChatHelper.clean_item_tags_for_plain_text(text)
+	_label.text = "[center][color=#%s]%s:[/color] %s[/center]" % [NAME_COLOR.to_html(false), _esc(speaker_name), _esc(clean_text)]
 	_left = SHOW_SECONDS
 	visible = true
 	_set_name_visible(false)

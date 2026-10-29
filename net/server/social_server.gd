@@ -58,19 +58,38 @@ class Trade:
 	var conns: Array = []          ## [GameServer.Conn, GameServer.Conn] cùng thứ tự session.sides
 
 var gs: GameServer
-var _invites: Dictionary = {}      ## "from_eid:to_eid" -> hết hạn (giây server)
-var _team_invites: Dictionary = {} ## "captain_eid:to_eid" -> hết hạn
+var _invites: Dictionary = {}          ## "from_eid:to_eid" -> Dictionary thông tin lời mời
+var _team_invites: Dictionary = {}     ## "captain_eid:to_eid" -> hết hạn
+var _trade_rejections: Dictionary = {} ## "from_cid:to_cid" -> {"count": int, "cooldown_until": float}
+
+static func _format_cooldown_time(sec: int) -> String:
+	if sec >= 60:
+		var m := sec / 60
+		var s := sec % 60
+		return "%d phút %d giây" % [m, s] if s > 0 else "%d phút" % m
+	return "%d giây" % sec
 
 func _init(server: GameServer) -> void:
 	gs = server
 
 func tick(dt: float, now: float) -> void:
 	for k in _invites.keys():
-		if now > float(_invites[k]):
+		var inv: Variant = _invites[k]
+		var expire_at: float = float(inv.get("until", inv) if inv is Dictionary else inv)
+		if now > expire_at:
+			if inv is Dictionary:
+				var from_eid: int = int(inv.get("from_eid", 0))
+				var f = gs.conn_of_eid(from_eid)
+				if f:
+					gs.notice(f, "Lời mời giao dịch đã hết thời gian chờ (đối phương không phản hồi).")
 			_invites.erase(k)
 	for k in _team_invites.keys():
 		if now > float(_team_invites[k]):
 			_team_invites.erase(k)
+	for k in _trade_rejections.keys():
+		var rec: Dictionary = _trade_rejections[k]
+		if now > float(rec.get("cooldown_until", 0.0)) + 3600.0:
+			_trade_rejections.erase(k)
 	var seen := {}
 	for c in gs.in_world_conns():
 		if c.trade and not seen.has(c.trade):
@@ -109,19 +128,40 @@ func on_trade_request_id(c, character_id: int) -> void:
 func _invite(c, t, need_open: bool) -> void:
 	var err := SecurityLock.check(c.profile, SecurityLock.A_TRADE_START)
 	if err == "":
-		if c.trade or t.trade:
+		if c.entity == null or t.entity == null:
+			err = "Người chơi không hợp lệ."
+		elif c.entity.hp <= 0:
+			err = "Bạn đang trọng thương, không thể giao dịch."
+		elif t.entity.hp <= 0:
+			err = "Đối phương đang trọng thương, không thể nhận giao dịch."
+		elif c.trade or t.trade:
 			err = "Bạn hoặc đối phương đang trong một giao dịch."
 		elif need_open and not t.trade_open:
 			err = "Đối phương không mở giao dịch."
 		elif t.stall_open:
 			err = "Đối phương đang bày bán."
+	var reject_key := "%d:%d" % [c.character_id, t.character_id]
+	if err == "" and _trade_rejections.has(reject_key):
+		var record: Dictionary = _trade_rejections[reject_key]
+		var cd_until: float = float(record.get("cooldown_until", 0.0))
+		var left: float = cd_until - gs.now()
+		if left > 0.0:
+			var time_left_str := _format_cooldown_time(int(ceil(left)))
+			var count: int = int(record.get("count", 1))
+			err = "Đối phương đã từ chối giao dịch (lần %d). Vui lòng đợi %s nữa mới có thể gửi lại lời mời." % [count, time_left_str]
 	var key := "%d:%d" % [c.entity.eid, t.entity.eid]
 	if err == "" and _invites.has(key):
 		err = "Đã gửi lời mời tới %s — hãy chờ trả lời." % t.entity.name   ## chống gửi dồn lời mời (nhất là mời theo ID)
 	if err != "":
 		gs.notice(c, err)
 		return
-	_invites[key] = gs.now() + INVITE_SECONDS
+	_invites[key] = {
+		"until": gs.now() + INVITE_SECONDS,
+		"from_cid": c.character_id,
+		"to_cid": t.character_id,
+		"from_eid": c.entity.eid,
+		"to_eid": t.entity.eid
+	}
 	var b := NetProto.writer(NetProto.S_TRADE_INVITE)
 	b.put_u32(c.entity.eid)
 	NetProto.put_str(b, c.entity.name)
@@ -136,9 +176,24 @@ func on_trade_answer(c, from_eid: int, accept: bool) -> void:
 	var f = gs.conn_of_eid(from_eid)
 	if f == null:
 		return
+	var reject_key := "%d:%d" % [f.character_id, c.character_id]
 	if not accept:
-		gs.notice(f, "%s từ chối giao dịch." % c.entity.name)
+		var record: Dictionary = _trade_rejections.get(reject_key, {"count": 0, "cooldown_until": 0.0})
+		var count: int = int(record.get("count", 0)) + 1
+		var cd_seconds: float = 60.0
+		if count == 2:
+			cd_seconds = 300.0   ## Lần 2: 5 phút
+		elif count >= 3:
+			cd_seconds = 1800.0  ## Lần 3 trở lên: 30 phút
+		_trade_rejections[reject_key] = {
+			"count": count,
+			"cooldown_until": gs.now() + cd_seconds
+		}
+		var time_str := _format_cooldown_time(int(cd_seconds))
+		gs.notice(f, "%s đã từ chối giao dịch (từ chối liên tiếp lần %d, thời gian chờ gửi lại là %s)." % [c.entity.name, count, time_str])
+		gs.notice(c, "Bạn đã từ chối giao dịch với %s (đã chặn lời mời từ người này trong %s)." % [f.entity.name, time_str])
 		return
+	_trade_rejections.erase(reject_key)
 	if f.trade or c.trade:
 		gs.notice(c, "Đối phương đang bận giao dịch khác.")
 		return
@@ -460,7 +515,7 @@ func team_exp(killer, monster_pos: Vector2, base_exp: int, monster_level: int) -
 		out[present[i]] = ExpRules.self_exp(present[i].profile.level, monster_level, int(shares[i]))
 	var cap = t.captain()
 	if present.has(cap) and present.size() > 1:
-		var gained := ExpRules.add_lead_exp(cap.profile, ExpRules.lead_exp(base_exp, levels, cap.profile.level))
+		var gained := ExpRules.add_lead_exp(cap.profile, ExpRules.lead_exp(base_exp, levels, killer.profile.level))
 		cap.data["lead_level"] = cap.profile.lead_level
 		cap.data["lead_exp"] = cap.profile.lead_exp
 		cap.dirty = true
@@ -545,24 +600,12 @@ func on_stall(c, b: StreamPeerBuffer) -> void:
 	var op := b.get_u8()
 	match op:
 		STALL_OPEN:
-			var title := NetProto.get_str(b, 200)
-			var riding: bool = (c.entity.flags & NetProto.FLAG_RIDING) != 0
-			var err := StallService.open_stall(c.profile, title, riding)
-			if err != "":
-				gs.notice(c, err)
-			else:
-				c.stall_open = true
-				c.trade_open = false
-				c.stall_title = c.profile.stall_title
-				c.entity.action = NetProto.action_index("sit")   ## người khác thấy ngồi ngay, không chờ gói di chuyển
-				c.entity.flags |= NetProto.FLAG_SITTING
-				c.entity.touch()
-			_flags(c)
+			gs.notice(c, "Tính năng Bày Bán tại chỗ đã đóng — vui lòng sử dụng Chợ Giao Thương để treo bán vật phẩm.")
 		STALL_CLOSE:
 			c.stall_open = false
 			_flags(c)
 		TRADE_OPEN:
-			var err := StallService.open_trade(c.profile) if not c.stall_open else "Đang bày bán — hãy dọn quầy trước."
+			var err := StallService.open_trade(c.profile)
 			if err != "":
 				gs.notice(c, err)
 			else:
@@ -572,10 +615,9 @@ func on_stall(c, b: StreamPeerBuffer) -> void:
 			c.trade_open = false
 			_flags(c)
 		STALL_BROWSE:
-			_browse(c, b.get_u32())
+			gs.notice(c, "Tính năng Bày Bán tại chỗ đã đóng.")
 		STALL_BUY:
-			var seller_eid := b.get_u32()
-			_buy(c, seller_eid, NetProto.get_str(b, 64))
+			gs.notice(c, "Tính năng Bày Bán tại chỗ đã đóng.")
 
 ## Dọn quầy do server (người bán rời chỗ ngồi...). `why` = thông báo cho người bán.
 func close_stall(c, why := "") -> void:

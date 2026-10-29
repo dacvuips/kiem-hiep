@@ -14,6 +14,8 @@ static func now() -> int:
 	return int(Time.get_unix_time_from_system())
 
 static func book(p: PlayerProfile) -> MarketBook:
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return MarketBook.new()
 	var key := "%s|%d" % [p.display_name, p.get_instance_id()]
 	if _book == null or _owner_key != key:
 		_owner_key = key
@@ -36,6 +38,8 @@ const SAMPLE_NOTES := [
 
 ## op: "list" {filter} | "mine" | "sell" {uid, price, cur} | "buy" {id} | "cancel" {id} -> Dictionary như S_MARKET.
 static func handle(p: PlayerProfile, op: String, args: Dictionary) -> Dictionary:
+	if NetWorldSync.is_online_mode() or NetClient.is_in_world():
+		return {"op": "done", "ok": false, "msg": "Chế độ Online không sử dụng chợ offline."}
 	var b := book(p)
 	var t := now()
 	match op:

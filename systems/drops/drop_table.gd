@@ -97,11 +97,14 @@ static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0)
 				out.append({"type": "item", "item": item})
 	return out
 
-## BOSS HOÀNG KIM (Thập Đại Boss): rơi cực nhiều bảo vật:
+## BOSS HOÀNG KIM (Thập Đại Boss - source gốc VLTK): rơi cực nhiều bảo vật:
 ##   - 4-6 đống tiền lớn (20.000 - 50.000 lượng);
-##   - 4-6 trang bị xanh/tím cấp 9-10 max 6 dòng magic;
+##   - 4-6 trang bị xanh cấp 9-10 max 6 dòng magic;
 ##   - 2-3 Huyền Tinh Khoáng Thạch (6_1_147);
-##   - 35% cơ hội rơi Trang Bị Hoàng Kim Môn Phái (ItemGenerator.generate_gold).
+##   - 1-2 Thủy Tinh (Lam/Tử/Lục) hoặc Tinh Hồng Bảo Thạch;
+##   - 50% rơi Võ Lâm Mật Tịch / Tẩy Tủy Kinh / Tiên Thảo Lộ;
+##   - 40% rơi Trang Bị Hoàng Kim Môn Phái (ItemGenerator.generate_gold);
+##   - 30% rơi Bí Kíp 90 Môn Phái.
 static func roll_gold_boss(monster_level: int, series: int) -> Array:
 	var out: Array = []
 	var tier := 10
@@ -122,18 +125,41 @@ static func roll_gold_boss(monster_level: int, series: int) -> Array:
 		if ht != null:
 			out.append({"type": "item", "item": ht})
 
-	if randf() < 0.35:
-		var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(7, 10))
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
+	for i in randi_range(1, 2):
+		var tt_keys := ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]
+		var pick_key: String = tt_keys[randi() % tt_keys.size()]
+		var tt := ItemGenerator.generate_misc(pick_key, 1, 0, 1)
+		if tt != null:
+			out.append({"type": "item", "item": tt})
+
+	if randf() < 0.50:
+		var book_keys := ["6_1_26", "6_1_22", "6_1_71"]
+		var pick_book: String = book_keys[randi() % book_keys.size()]
+		var bk := ItemGenerator.generate_misc(pick_book, 1, 0, 1)
+		if bk != null:
+			out.append({"type": "item", "item": bk})
+
+	if randf() < 0.30:
+		var sect_bk_id := "6_1_%d" % randi_range(3993, 4022)
+		var sect_bk := ItemGenerator.generate_misc(sect_bk_id, 1, 0, 1)
+		if sect_bk != null:
+			out.append({"type": "item", "item": sect_bk})
+
+	## Tạm thời ẩn rơi Trang Bị Hoàng Kim Môn Phái theo yêu cầu
+	# if randf() < 0.40:
+	# 	var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(7, 10))
+	# 	if gold_item != null:
+	# 		out.append({"type": "item", "item": gold_item})
 
 	return out
 
 ## TIỂU HOÀNG KIM (Diệu Như, Liễu Thanh Thanh, Trương Tông Chính - drop_tieuhk.lua gốc):
 ##   - 2-4 đống tiền (10.000 - 25.000 lượng);
 ##   - 6-10 trang bị xanh cấp 9-10 (4-6 dòng magic);
-##   - 1-2 Huyền Tinh / Thủy Tinh / Tinh Hồng Bảo Thạch;
-##   - 15% cơ hội rơi Bí kíp / Mật tịch hoặc Đồ Hoàng Kim.
+##   - 1-2 Huyền Tinh (cấp 4-6);
+##   - 1 Thủy Tinh (Lam/Tử/Lục) hoặc Tinh Hồng Bảo Thạch;
+##   - 25% rơi Mật tịch / Tẩy tủy kinh / Tiên thảo lộ;
+##   - 20% cơ hội rơi Đồ Hoàng Kim môn phái.
 static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
 	var out: Array = []
 	var tier := 10
@@ -154,10 +180,25 @@ static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
 		if ht != null:
 			out.append({"type": "item", "item": ht})
 
-	if randf() < 0.15:
-		var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(6, 9))
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
+	if randf() < 0.60:
+		var tt_keys := ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]
+		var pick_key: String = tt_keys[randi() % tt_keys.size()]
+		var tt := ItemGenerator.generate_misc(pick_key, 1, 0, 1)
+		if tt != null:
+			out.append({"type": "item", "item": tt})
+
+	if randf() < 0.25:
+		var book_keys := ["6_1_26", "6_1_22", "6_1_71"]
+		var pick_book: String = book_keys[randi() % book_keys.size()]
+		var bk := ItemGenerator.generate_misc(pick_book, 1, 0, 1)
+		if bk != null:
+			out.append({"type": "item", "item": bk})
+
+	## Tạm thời ẩn rơi Trang Bị Hoàng Kim Môn Phái theo yêu cầu
+	# if randf() < 0.20:
+	# 	var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(6, 9))
+	# 	if gold_item != null:
+	# 		out.append({"type": "item", "item": gold_item})
 
 	return out
 
