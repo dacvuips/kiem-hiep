@@ -68,11 +68,11 @@ func _on_profile(data: Dictionary) -> void:
 	if profile == null:
 		return
 	var old_avatar := profile.custom_avatar
-	var old_gm_aura := profile.gm_aura_state
+	var old_gm_aura: int = int(profile.get("gm_aura_state")) if profile.get("gm_aura_state") != null else 0
 	profile.copy_from(PlayerProfile.from_dict(data))
 	if profile.custom_avatar.strip_edges() == "" and old_avatar.strip_edges() != "":
 		profile.custom_avatar = old_avatar
-	if profile.gm_aura_state == 0 and old_gm_aura > 0:
+	if profile.get("gm_aura_state") != null and profile.gm_aura_state == 0 and old_gm_aura > 0:
 		profile.gm_aura_state = old_gm_aura
 	profile_applied.emit()
 

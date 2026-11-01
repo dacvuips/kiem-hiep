@@ -245,11 +245,11 @@ class SortedMap extends VltkMap:
 		if int(info[3]) == 1:
 			var parsed := region_doc(v.x, v.y)              ## regions/X_Y.json hoặc mục của vùng trong file khối
 			for o in parsed.get("objects", []):
-				var p := map_dir.path_join(str(o["img"]))
+				var p := _p(str(o["img"]))
 				if not paths.has(p):
 					paths.append(p)
 			for c in parsed.get("covers", []):         ## nền dạng atlas: cover là sprite rời
-				var cp := map_dir.path_join(str(c[0]))
+				var cp := _p(str(c[0]))
 				if not paths.has(cp):
 					paths.append(cp)
 		var need: Array[String] = []
@@ -1142,8 +1142,16 @@ static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumpi
 	var step := velocity * delta
 	if not w._blocked_at(feet + step, jumping, ignore_obstacles):
 		return velocity
-	if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping, ignore_obstacles):
-		return Vector2(velocity.x, 0.0)
-	if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping, ignore_obstacles):
-		return Vector2(0.0, velocity.y)
+
+	# Ưu tiên trượt theo trục có vận tốc lớn hơn để tránh khựng/giật khi điều khiển Joystick
+	if absf(velocity.y) >= absf(velocity.x):
+		if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping, ignore_obstacles):
+			return Vector2(0.0, velocity.y)
+		if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping, ignore_obstacles):
+			return Vector2(velocity.x, 0.0)
+	else:
+		if step.x != 0.0 and not w._blocked_at(feet + Vector2(step.x, 0.0), jumping, ignore_obstacles):
+			return Vector2(velocity.x, 0.0)
+		if step.y != 0.0 and not w._blocked_at(feet + Vector2(0.0, step.y), jumping, ignore_obstacles):
+			return Vector2(0.0, velocity.y)
 	return Vector2.ZERO

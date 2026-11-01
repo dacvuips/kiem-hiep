@@ -1,0 +1,7443 @@
+{
+  "name": "Thiên Tầm Tháp",
+  "map_id": 1038,
+  "total_waves": 744,
+  "waves": [
+    {
+      "wave": 1,
+      "monster_id": 43,
+      "monster_name": "Heo trắng",
+      "monster_res": "ani063",
+      "level": 30,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 2,
+      "monster_id": 448,
+      "monster_name": "Nai",
+      "monster_res": "ani061",
+      "level": 30,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 3,
+      "monster_id": 12,
+      "monster_name": "Nhím",
+      "monster_res": "ani019",
+      "level": 30,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 4,
+      "monster_id": 11,
+      "monster_name": "Heo rừng",
+      "monster_res": "ani018",
+      "level": 30,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 5,
+      "monster_id": 0,
+      "monster_name": "Đông Bắc hổ",
+      "monster_res": "ani001",
+      "level": 31,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 6,
+      "monster_id": 1,
+      "monster_name": "Hoa Nam hổ",
+      "monster_res": "ani002",
+      "level": 31,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 7,
+      "monster_id": 2,
+      "monster_name": "Bạch Hổ",
+      "monster_res": "ani003",
+      "level": 31,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 8,
+      "monster_id": 3,
+      "monster_name": "Kim Tiền báo",
+      "monster_res": "ani005",
+      "level": 31,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 9,
+      "monster_id": 4,
+      "monster_name": "Báo trắng",
+      "monster_res": "ani006",
+      "level": 32,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 10,
+      "monster_id": 5,
+      "monster_name": "Sói xám",
+      "monster_res": "ani009",
+      "level": 32,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 456,
+        "name": "Đạo Nhất Chân Nhân",
+        "res": "enemy046",
+        "level": 32,
+        "series": 4,
+        "next_monster_id": 6,
+        "next_monster_name": "Sói đỏ",
+        "next_monster_level": 32
+      }
+    },
+    {
+      "wave": 11,
+      "monster_id": 6,
+      "monster_name": "Sói đỏ",
+      "monster_res": "ani010",
+      "level": 32,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 12,
+      "monster_id": 7,
+      "monster_name": "Sói xanh",
+      "monster_res": "ani011",
+      "level": 32,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 13,
+      "monster_id": 8,
+      "monster_name": "Sói tuyết",
+      "monster_res": "ani012",
+      "level": 33,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 14,
+      "monster_id": 9,
+      "monster_name": "Hồ ly",
+      "monster_res": "ani013",
+      "level": 33,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 15,
+      "monster_id": 10,
+      "monster_name": "Hỏa Hồ",
+      "monster_res": "ani015",
+      "level": 33,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 16,
+      "monster_id": 13,
+      "monster_name": "Đại Tượng",
+      "monster_res": "ani021",
+      "level": 33,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 17,
+      "monster_id": 14,
+      "monster_name": "Voi Hoàng hà",
+      "monster_res": "ani024",
+      "level": 34,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 18,
+      "monster_id": 15,
+      "monster_name": "Gấu nâu",
+      "monster_res": "ani025",
+      "level": 34,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 19,
+      "monster_id": 16,
+      "monster_name": "Gấu đen",
+      "monster_res": "ani026",
+      "level": 34,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 20,
+      "monster_id": 17,
+      "monster_name": "Trâu rừng",
+      "monster_res": "ani029",
+      "level": 34,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 457,
+        "name": "Diệp Tiếp Mỹ",
+        "res": "enemy047",
+        "level": 34,
+        "series": 4,
+        "next_monster_id": 18,
+        "next_monster_name": "Cá sấu",
+        "next_monster_level": 35
+      }
+    },
+    {
+      "wave": 21,
+      "monster_id": 18,
+      "monster_name": "Cá sấu",
+      "monster_res": "ani033",
+      "level": 35,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 22,
+      "monster_id": 19,
+      "monster_name": "Thằn lằn đỏ",
+      "monster_res": "ani036",
+      "level": 35,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 23,
+      "monster_id": 20,
+      "monster_name": "Nhãn Kính Mãng xà",
+      "monster_res": "ani037",
+      "level": 35,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 24,
+      "monster_id": 21,
+      "monster_name": "Rắn xanh",
+      "monster_res": "ani038",
+      "level": 35,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 25,
+      "monster_id": 22,
+      "monster_name": "Kim Hoàn Mãng Xà",
+      "monster_res": "ani039",
+      "level": 36,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 26,
+      "monster_id": 23,
+      "monster_name": "Xích Luyện Xà",
+      "monster_res": "ani040",
+      "level": 36,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 27,
+      "monster_id": 24,
+      "monster_name": "Kim Điêu",
+      "monster_res": "ani041",
+      "level": 36,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 28,
+      "monster_id": 25,
+      "monster_name": "Thương ưng",
+      "monster_res": "ani042",
+      "level": 36,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 29,
+      "monster_id": 26,
+      "monster_name": "Kền Kền",
+      "monster_res": "ani043",
+      "level": 37,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 30,
+      "monster_id": 27,
+      "monster_name": "Dơi chúa",
+      "monster_res": "ani045",
+      "level": 37,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 458,
+        "name": "Từ Đại Nhạc",
+        "res": "enemy048",
+        "level": 37,
+        "series": 4,
+        "next_monster_id": 28,
+        "next_monster_name": "Dơi chúa đỏ",
+        "next_monster_level": 37
+      }
+    },
+    {
+      "wave": 31,
+      "monster_id": 28,
+      "monster_name": "Dơi chúa đỏ",
+      "monster_res": "ani046",
+      "level": 37,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 32,
+      "monster_id": 29,
+      "monster_name": "Dơi Dong",
+      "monster_res": "ani047",
+      "level": 37,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 33,
+      "monster_id": 30,
+      "monster_name": "Dơi hút máu",
+      "monster_res": "ani048",
+      "level": 38,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 34,
+      "monster_id": 31,
+      "monster_name": "Kim Miêu",
+      "monster_res": "ani049",
+      "level": 38,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 35,
+      "monster_id": 32,
+      "monster_name": "Xá Lị",
+      "monster_res": "ani050",
+      "level": 38,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 36,
+      "monster_id": 33,
+      "monster_name": "Hoán hùng",
+      "monster_res": "ani051",
+      "level": 38,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 37,
+      "monster_id": 34,
+      "monster_name": "Linh Miêu",
+      "monster_res": "ani052",
+      "level": 39,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 38,
+      "monster_id": 35,
+      "monster_name": "Tàng Vực hầu",
+      "monster_res": "ani053",
+      "level": 39,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 39,
+      "monster_id": 36,
+      "monster_name": "Khỉ xám",
+      "monster_res": "ani054",
+      "level": 39,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 40,
+      "monster_id": 37,
+      "monster_name": "Hắc Diệp Hầu",
+      "monster_res": "ani055",
+      "level": 39,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 459,
+        "name": "Chu Vân Tuyền",
+        "res": "enemy049",
+        "level": 39,
+        "series": 4,
+        "next_monster_id": 38,
+        "next_monster_name": "Kim Tơ Hầu",
+        "next_monster_level": 40
+      }
+    },
+    {
+      "wave": 41,
+      "monster_id": 38,
+      "monster_name": "Kim Tơ Hầu",
+      "monster_res": "ani056",
+      "level": 40,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 42,
+      "monster_id": 39,
+      "monster_name": "Sài",
+      "monster_res": "ani058",
+      "level": 40,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 43,
+      "monster_id": 40,
+      "monster_name": "Tuyết Quái",
+      "monster_res": "ani059",
+      "level": 40,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 44,
+      "monster_id": 41,
+      "monster_name": "Cóc",
+      "monster_res": "ani060",
+      "level": 40,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 45,
+      "monster_id": 42,
+      "monster_name": "Hươu đốm",
+      "monster_res": "ani061",
+      "level": 41,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 46,
+      "monster_id": 44,
+      "monster_name": "Bọ cạp",
+      "monster_res": "ani065",
+      "level": 41,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 47,
+      "monster_id": 45,
+      "monster_name": "Nhện",
+      "monster_res": "ani066",
+      "level": 41,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 48,
+      "monster_id": 46,
+      "monster_name": "Rết",
+      "monster_res": "ani067",
+      "level": 41,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 49,
+      "monster_id": 140,
+      "monster_name": "Khoái Thối",
+      "monster_res": "enemy121",
+      "level": 42,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 50,
+      "monster_id": 141,
+      "monster_name": "Tây Nam sơn tặc đầu lĩnh",
+      "monster_res": "enemy122",
+      "level": 42,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 460,
+        "name": "Đơn Tư Nam",
+        "res": "enemy050",
+        "level": 42,
+        "series": 4,
+        "next_monster_id": 142,
+        "next_monster_name": "Giang Nam sơn tặc đầu lĩnh",
+        "next_monster_level": 42
+      }
+    },
+    {
+      "wave": 51,
+      "monster_id": 142,
+      "monster_name": "Giang Nam sơn tặc đầu lĩnh",
+      "monster_res": "enemy123",
+      "level": 42,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 52,
+      "monster_id": 143,
+      "monster_name": "Đông Bắc sơn tặc đầu lĩnh",
+      "monster_res": "enemy124",
+      "level": 42,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 53,
+      "monster_id": 144,
+      "monster_name": "Hoa Bắc sơn tặc đầu lĩnh",
+      "monster_res": "enemy125",
+      "level": 43,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 54,
+      "monster_id": 145,
+      "monster_name": "Nam bộ sơn tặc đầu lĩnh",
+      "monster_res": "enemy126",
+      "level": 43,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 55,
+      "monster_id": 146,
+      "monster_name": "Đoạt Mệnh Liêm",
+      "monster_res": "enemy127",
+      "level": 43,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 56,
+      "monster_id": 147,
+      "monster_name": "Đao khách",
+      "monster_res": "enemy128",
+      "level": 43,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 57,
+      "monster_id": 148,
+      "monster_name": "Báo đốm",
+      "monster_res": "enemy129",
+      "level": 44,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 58,
+      "monster_id": 149,
+      "monster_name": "Trường Thương",
+      "monster_res": "enemy130",
+      "level": 44,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 59,
+      "monster_id": 150,
+      "monster_name": "Thanh Mi",
+      "monster_res": "enemy131",
+      "level": 44,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 60,
+      "monster_id": 151,
+      "monster_name": "Mãng Hán",
+      "monster_res": "enemy132",
+      "level": 44,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 461,
+        "name": "Lý Thiên Mục",
+        "res": "enemy051",
+        "level": 44,
+        "series": 4,
+        "next_monster_id": 152,
+        "next_monster_name": "Tây Nam sơn tặc 2",
+        "next_monster_level": 45
+      }
+    },
+    {
+      "wave": 61,
+      "monster_id": 152,
+      "monster_name": "Tây Nam sơn tặc 2",
+      "monster_res": "enemy133",
+      "level": 45,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 62,
+      "monster_id": 153,
+      "monster_name": "Giang Nam sơn tặc 1",
+      "monster_res": "enemy134",
+      "level": 45,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 63,
+      "monster_id": 154,
+      "monster_name": "Lưu Lương",
+      "monster_res": "enemy135",
+      "level": 45,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 64,
+      "monster_id": 155,
+      "monster_name": "Hắc Cân",
+      "monster_res": "enemy136",
+      "level": 45,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 65,
+      "monster_id": 156,
+      "monster_name": "ảnh Côn",
+      "monster_res": "enemy137",
+      "level": 46,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 66,
+      "monster_id": 157,
+      "monster_name": "Đông Bắc sơn tặc 1",
+      "monster_res": "enemy138",
+      "level": 46,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 67,
+      "monster_id": 158,
+      "monster_name": "Đông Bắc sơn tặc 2",
+      "monster_res": "enemy139",
+      "level": 46,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 68,
+      "monster_id": 159,
+      "monster_name": "Hoa Bắc sơn tặc 1",
+      "monster_res": "enemy140",
+      "level": 46,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 69,
+      "monster_id": 160,
+      "monster_name": "Hoa Bắc sơn tặc 2",
+      "monster_res": "enemy141",
+      "level": 47,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 70,
+      "monster_id": 161,
+      "monster_name": "Thiết Trảo",
+      "monster_res": "enemy142",
+      "level": 47,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 462,
+        "name": "Đào Thạch Môn",
+        "res": "enemy052",
+        "level": 47,
+        "series": 4,
+        "next_monster_id": 162,
+        "next_monster_name": "Đoản Kích",
+        "next_monster_level": 47
+      }
+    },
+    {
+      "wave": 71,
+      "monster_id": 162,
+      "monster_name": "Đoản Kích",
+      "monster_res": "enemy143",
+      "level": 47,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 72,
+      "monster_id": 163,
+      "monster_name": "sơn tặc 01",
+      "monster_res": "enemy144",
+      "level": 47,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 73,
+      "monster_id": 164,
+      "monster_name": "sơn tặc 02",
+      "monster_res": "enemy145",
+      "level": 48,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 74,
+      "monster_id": 165,
+      "monster_name": "sơn tặc 03",
+      "monster_res": "enemy146",
+      "level": 48,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 75,
+      "monster_id": 166,
+      "monster_name": "sơn tặc 04",
+      "monster_res": "enemy147",
+      "level": 48,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 76,
+      "monster_id": 167,
+      "monster_name": "sơn tặc 05",
+      "monster_res": "enemy148",
+      "level": 48,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 77,
+      "monster_id": 168,
+      "monster_name": "sơn tặc 06",
+      "monster_res": "enemy149",
+      "level": 49,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 78,
+      "monster_id": 169,
+      "monster_name": "sơn tặc 07",
+      "monster_res": "enemy150",
+      "level": 49,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 79,
+      "monster_id": 176,
+      "monster_name": "Quái nhân",
+      "monster_res": "enemy157",
+      "level": 49,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 80,
+      "monster_id": 190,
+      "monster_name": "Mộc nhân",
+      "monster_res": "enemy171",
+      "level": 49,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 463,
+        "name": "Thanh Phong",
+        "res": "enemy053",
+        "level": 49,
+        "series": 4,
+        "next_monster_id": 191,
+        "next_monster_name": "Đồng Nhân",
+        "next_monster_level": 50
+      }
+    },
+    {
+      "wave": 81,
+      "monster_id": 191,
+      "monster_name": "Đồng Nhân",
+      "monster_res": "enemy172",
+      "level": 50,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 82,
+      "monster_id": 192,
+      "monster_name": "Nữ Thích Khách",
+      "monster_res": "enemy173",
+      "level": 50,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 83,
+      "monster_id": 411,
+      "monster_name": "Hòa thượng chiến đấu",
+      "monster_res": "enemy176",
+      "level": 50,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 84,
+      "monster_id": 412,
+      "monster_name": "ác Ni",
+      "monster_res": "enemy177",
+      "level": 50,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 85,
+      "monster_id": 446,
+      "monster_name": "chướng ngại chiến trường",
+      "monster_res": "enemy181",
+      "level": 51,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 86,
+      "monster_id": 449,
+      "monster_name": "Tống cung binh",
+      "monster_res": "enemy026",
+      "level": 51,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 87,
+      "monster_id": 450,
+      "monster_name": "Kim cung binh",
+      "monster_res": "enemy028",
+      "level": 51,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 88,
+      "monster_id": 451,
+      "monster_name": "Tống đao binh",
+      "monster_res": "enemy029",
+      "level": 51,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 89,
+      "monster_id": 452,
+      "monster_name": "Kim đao binh",
+      "monster_res": "enemy031",
+      "level": 52,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 90,
+      "monster_id": 453,
+      "monster_name": "Tống thương quân",
+      "monster_res": "enemy034",
+      "level": 52,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 464,
+        "name": "Minh Nguyệt",
+        "res": "enemy054",
+        "level": 52,
+        "series": 4,
+        "next_monster_id": 454,
+        "next_monster_name": "Kim thương quân",
+        "next_monster_level": 52
+      }
+    },
+    {
+      "wave": 91,
+      "monster_id": 454,
+      "monster_name": "Kim thương quân",
+      "monster_res": "enemy036",
+      "level": 52,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 92,
+      "monster_id": 494,
+      "monster_name": "Bạch Doanh Doanh",
+      "monster_res": "enemy097",
+      "level": 52,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 93,
+      "monster_id": 496,
+      "monster_name": "Yên Hiểu Trái",
+      "monster_res": "enemy100",
+      "level": 53,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 94,
+      "monster_id": 512,
+      "monster_name": "Huyền Không",
+      "monster_res": "enemy044",
+      "level": 53,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 95,
+      "monster_id": 514,
+      "monster_name": "Lý Nguyên Khánh",
+      "monster_res": "enemy088",
+      "level": 53,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 96,
+      "monster_id": 515,
+      "monster_name": "Bành Liên Ân",
+      "monster_res": "enemy105",
+      "level": 53,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 97,
+      "monster_id": 516,
+      "monster_name": "Tào Minh",
+      "monster_res": "enemy122",
+      "level": 54,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 98,
+      "monster_id": 517,
+      "monster_name": "Tào Chân",
+      "monster_res": "enemy126",
+      "level": 54,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 99,
+      "monster_id": 518,
+      "monster_name": "Tào Sảng",
+      "monster_res": "enemy130",
+      "level": 54,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 100,
+      "monster_id": 519,
+      "monster_name": "Tào Khiêm",
+      "monster_res": "enemy136",
+      "level": 54,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 465,
+        "name": "Huyền Bi",
+        "res": "enemy040",
+        "level": 54,
+        "series": 0,
+        "next_monster_id": 520,
+        "next_monster_name": "Tào Lực",
+        "next_monster_level": 55
+      }
+    },
+    {
+      "wave": 101,
+      "monster_id": 520,
+      "monster_name": "Tào Lực",
+      "monster_res": "enemy138",
+      "level": 55,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 102,
+      "monster_id": 521,
+      "monster_name": "Thi Thanh",
+      "monster_res": "enemy146",
+      "level": 55,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 103,
+      "monster_id": 522,
+      "monster_name": "Đường Phong",
+      "monster_res": "enemy157",
+      "level": 55,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 104,
+      "monster_id": 524,
+      "monster_name": "Công thành Xung xa",
+      "monster_res": "enemy186",
+      "level": 55,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 105,
+      "monster_id": 525,
+      "monster_name": "Đầu Thạch Xa",
+      "monster_res": "enemy187",
+      "level": 56,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 106,
+      "monster_id": 526,
+      "monster_name": "Lôi Cổ Binh Sĩ",
+      "monster_res": "enemy188",
+      "level": 56,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 107,
+      "monster_id": 527,
+      "monster_name": "Dao Kỳ Binh Sĩ",
+      "monster_res": "enemy189",
+      "level": 56,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 108,
+      "monster_id": 528,
+      "monster_name": "Công Long trụ nguyên",
+      "monster_res": "enemy190",
+      "level": 56,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 109,
+      "monster_id": 529,
+      "monster_name": "Công Long trụ vỡ",
+      "monster_res": "enemy192",
+      "level": 57,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 110,
+      "monster_id": 530,
+      "monster_name": "Thủ Long trụ nguyên",
+      "monster_res": "enemy191",
+      "level": 57,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 466,
+        "name": "Huyền Nan",
+        "res": "enemy043",
+        "level": 57,
+        "series": 0,
+        "next_monster_id": 531,
+        "next_monster_name": "Thủ Long trụ vỡ",
+        "next_monster_level": 57
+      }
+    },
+    {
+      "wave": 111,
+      "monster_id": 531,
+      "monster_name": "Thủ Long trụ vỡ",
+      "monster_res": "enemy192",
+      "level": 57,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 112,
+      "monster_id": 532,
+      "monster_name": "Thành môn nguyên vẹn",
+      "monster_res": "enemy193",
+      "level": 57,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 113,
+      "monster_id": 533,
+      "monster_name": "Thành môn tổn hại",
+      "monster_res": "enemy194",
+      "level": 58,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 114,
+      "monster_id": 534,
+      "monster_name": "Tật Vũ",
+      "monster_res": "enemy174",
+      "level": 58,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 115,
+      "monster_id": 535,
+      "monster_name": "Tật Phong",
+      "monster_res": "enemy157",
+      "level": 58,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 116,
+      "monster_id": 536,
+      "monster_name": "Tật Vũ",
+      "monster_res": "enemy144",
+      "level": 58,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 117,
+      "monster_id": 537,
+      "monster_name": "Tật Viêm",
+      "monster_res": "enemy136",
+      "level": 59,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 118,
+      "monster_id": 538,
+      "monster_name": "Tật Điện",
+      "monster_res": "enemy127",
+      "level": 59,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 119,
+      "monster_id": 539,
+      "monster_name": "Đá luyện công",
+      "monster_res": "enemy179",
+      "level": 59,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 120,
+      "monster_id": 544,
+      "monster_name": "Vân Bộ sơn Ưng",
+      "monster_res": "enemy079",
+      "level": 59,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 467,
+        "name": "Huyền Giác",
+        "res": "enemy044",
+        "level": 59,
+        "series": 0,
+        "next_monster_id": 545,
+        "next_monster_name": "Lôi Bộ Cuồng Lang",
+        "next_monster_level": 60
+      }
+    },
+    {
+      "wave": 121,
+      "monster_id": 545,
+      "monster_name": "Lôi Bộ Cuồng Lang",
+      "monster_res": "enemy078",
+      "level": 60,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 122,
+      "monster_id": 547,
+      "monster_name": "Kim Quốc Mật Sứ",
+      "monster_res": "enemy073",
+      "level": 60,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 123,
+      "monster_id": 552,
+      "monster_name": "Thứu thần",
+      "monster_res": "ani042",
+      "level": 60,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 124,
+      "monster_id": 556,
+      "monster_name": "Xích Luyện Xà",
+      "monster_res": "ani039",
+      "level": 60,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 125,
+      "monster_id": 557,
+      "monster_name": "Kên đất",
+      "monster_res": "ani041",
+      "level": 61,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 126,
+      "monster_id": 558,
+      "monster_name": "Bọ cạp",
+      "monster_res": "ani065",
+      "level": 61,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 127,
+      "monster_id": 559,
+      "monster_name": "Võ Đang Thị Đồng Thanh Phong",
+      "monster_res": "enemy137",
+      "level": 61,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 128,
+      "monster_id": 560,
+      "monster_name": "Lưu Quang",
+      "monster_res": "enemy141",
+      "level": 61,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 129,
+      "monster_id": 561,
+      "monster_name": "Lưu Vân",
+      "monster_res": "enemy121",
+      "level": 62,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 130,
+      "monster_id": 585,
+      "monster_name": "Cọc gỗ",
+      "monster_res": "enemy178",
+      "level": 62,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 468,
+        "name": "Thanh Hiểu Sư Thái",
+        "res": "enemy055",
+        "level": 62,
+        "series": 2,
+        "next_monster_id": 586,
+        "next_monster_name": "Mộc nhân",
+        "next_monster_level": 62
+      }
+    },
+    {
+      "wave": 131,
+      "monster_id": 586,
+      "monster_name": "Mộc nhân",
+      "monster_res": "enemy179",
+      "level": 62,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 132,
+      "monster_id": 587,
+      "monster_name": "Bao cát",
+      "monster_res": "enemy180",
+      "level": 62,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 133,
+      "monster_id": 588,
+      "monster_name": "Bôn Lôi",
+      "monster_res": "enemy067",
+      "level": 63,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 134,
+      "monster_id": 589,
+      "monster_name": "Ngân Nha",
+      "monster_res": "enemy023",
+      "level": 63,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 135,
+      "monster_id": 590,
+      "monster_name": "Đông Bắc hổ",
+      "monster_res": "ani001",
+      "level": 63,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 136,
+      "monster_id": 591,
+      "monster_name": "Độc Bộ",
+      "monster_res": "enemy082",
+      "level": 63,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 137,
+      "monster_id": 592,
+      "monster_name": "Xích Chưởng",
+      "monster_res": "enemy107",
+      "level": 64,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 138,
+      "monster_id": 593,
+      "monster_name": "Tuyết ảnh",
+      "monster_res": "enemy141",
+      "level": 64,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 139,
+      "monster_id": 594,
+      "monster_name": "Đao Trảm",
+      "monster_res": "enemy128",
+      "level": 64,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 140,
+      "monster_id": 595,
+      "monster_name": "Lạc Quang",
+      "monster_res": "enemy021",
+      "level": 64,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 469,
+        "name": "Diệu Như",
+        "res": "enemy056",
+        "level": 64,
+        "series": 2,
+        "next_monster_id": 596,
+        "next_monster_name": "Hàn Thương",
+        "next_monster_level": 65
+      }
+    },
+    {
+      "wave": 141,
+      "monster_id": 596,
+      "monster_name": "Hàn Thương",
+      "monster_res": "enemy036",
+      "level": 65,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 142,
+      "monster_id": 597,
+      "monster_name": "Đoạt Phách",
+      "monster_res": "enemy029",
+      "level": 65,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 143,
+      "monster_id": 598,
+      "monster_name": "Sương Đao",
+      "monster_res": "enemy024",
+      "level": 65,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 144,
+      "monster_id": 599,
+      "monster_name": "Lãnh Cung",
+      "monster_res": "enemy028",
+      "level": 65,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 145,
+      "monster_id": 600,
+      "monster_name": "Giáng Chùy",
+      "monster_res": "enemy086",
+      "level": 66,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 146,
+      "monster_id": 601,
+      "monster_name": "Sãn Vũ",
+      "monster_res": "enemy040",
+      "level": 66,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 147,
+      "monster_id": 603,
+      "monster_name": "Cây thông 1",
+      "monster_res": "enemy197",
+      "level": 66,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 148,
+      "monster_id": 604,
+      "monster_name": "Cây thông 2",
+      "monster_res": "enemy197",
+      "level": 66,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 149,
+      "monster_id": 605,
+      "monster_name": "Cây thông 3",
+      "monster_res": "enemy197",
+      "level": 67,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 150,
+      "monster_id": 606,
+      "monster_name": "Cây thông 4",
+      "monster_res": "enemy197",
+      "level": 67,
+      "series": 3,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 470,
+        "name": "Diệu ẩn",
+        "res": "enemy057",
+        "level": 67,
+        "series": 2,
+        "next_monster_id": 607,
+        "next_monster_name": "Cây thông 5",
+        "next_monster_level": 67
+      }
+    },
+    {
+      "wave": 151,
+      "monster_id": 607,
+      "monster_name": "Cây thông 5",
+      "monster_res": "enemy197",
+      "level": 67,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 152,
+      "monster_id": 608,
+      "monster_name": "Cây thông 6",
+      "monster_res": "enemy197",
+      "level": 67,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 153,
+      "monster_id": 609,
+      "monster_name": "Cây thông 7",
+      "monster_res": "enemy197",
+      "level": 68,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 154,
+      "monster_id": 610,
+      "monster_name": "Cây thông 8",
+      "monster_res": "enemy197",
+      "level": 68,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 155,
+      "monster_id": 611,
+      "monster_name": "Cây thông 9",
+      "monster_res": "enemy197",
+      "level": 68,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 156,
+      "monster_id": 612,
+      "monster_name": "Cây thông 10",
+      "monster_res": "enemy197",
+      "level": 68,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 157,
+      "monster_id": 613,
+      "monster_name": "Cây thông 11",
+      "monster_res": "enemy197",
+      "level": 69,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 158,
+      "monster_id": 614,
+      "monster_name": "Cây thông 12",
+      "monster_res": "enemy197",
+      "level": 69,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 159,
+      "monster_id": 615,
+      "monster_name": "Cây thông 13",
+      "monster_res": "enemy197",
+      "level": 69,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 160,
+      "monster_id": 616,
+      "monster_name": "Cây thông 14",
+      "monster_res": "enemy197",
+      "level": 69,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 471,
+        "name": "Diệp Băng Hân",
+        "res": "enemy059",
+        "level": 69,
+        "series": 2,
+        "next_monster_id": 617,
+        "next_monster_name": "Cây thông 15",
+        "next_monster_level": 70
+      }
+    },
+    {
+      "wave": 161,
+      "monster_id": 617,
+      "monster_name": "Cây thông 15",
+      "monster_res": "enemy197",
+      "level": 70,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 162,
+      "monster_id": 618,
+      "monster_name": "Thông Hoàng Kim 1",
+      "monster_res": "enemy198",
+      "level": 70,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 163,
+      "monster_id": 619,
+      "monster_name": "Thông Hoàng Kim 2",
+      "monster_res": "enemy198",
+      "level": 70,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 164,
+      "monster_id": 620,
+      "monster_name": "Thông Hoàng Kim 3",
+      "monster_res": "enemy198",
+      "level": 70,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 165,
+      "monster_id": 621,
+      "monster_name": "Thông Hoàng Kim 4",
+      "monster_res": "enemy198",
+      "level": 71,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 166,
+      "monster_id": 622,
+      "monster_name": "Thông Hoàng Kim 5",
+      "monster_res": "enemy198",
+      "level": 71,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 167,
+      "monster_id": 623,
+      "monster_name": "Ông Già Noel",
+      "monster_res": "enemy195",
+      "level": 71,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 168,
+      "monster_id": 624,
+      "monster_name": "Thiên Sứ Giáng Sinh",
+      "monster_res": "enemy196",
+      "level": 71,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 169,
+      "monster_id": 631,
+      "monster_name": "Tống binh",
+      "monster_res": "enemy034",
+      "level": 72,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 170,
+      "monster_id": 632,
+      "monster_name": "Tống Hiệu úy",
+      "monster_res": "enemy029",
+      "level": 72,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 472,
+        "name": "Hà Linh Phiêu",
+        "res": "enemy060",
+        "level": 72,
+        "series": 2,
+        "next_monster_id": 633,
+        "next_monster_name": "Tống Thống lĩnh",
+        "next_monster_level": 72
+      }
+    },
+    {
+      "wave": 171,
+      "monster_id": 633,
+      "monster_name": "Tống Thống lĩnh",
+      "monster_res": "enemy026",
+      "level": 72,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 172,
+      "monster_id": 634,
+      "monster_name": "Tống Phó tướng",
+      "monster_res": "enemy021",
+      "level": 72,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 173,
+      "monster_id": 635,
+      "monster_name": "Tống Đại tướng",
+      "monster_res": "enemy017",
+      "level": 73,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 174,
+      "monster_id": 636,
+      "monster_name": "Tống Nguyên Soái",
+      "monster_res": "enemy004",
+      "level": 73,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 175,
+      "monster_id": 637,
+      "monster_name": "Kim binh",
+      "monster_res": "enemy028",
+      "level": 73,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 176,
+      "monster_id": 638,
+      "monster_name": "Kim Hiệu úy",
+      "monster_res": "enemy031",
+      "level": 73,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 177,
+      "monster_id": 639,
+      "monster_name": "Kim Thống Lĩnh",
+      "monster_res": "enemy036",
+      "level": 74,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 178,
+      "monster_id": 640,
+      "monster_name": "Kim Phó tướng",
+      "monster_res": "enemy024",
+      "level": 74,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 179,
+      "monster_id": 641,
+      "monster_name": "Kim Đại tướng",
+      "monster_res": "enemy023",
+      "level": 74,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 180,
+      "monster_id": 642,
+      "monster_name": "Kim Nguyên Soái",
+      "monster_res": "enemy006",
+      "level": 74,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 473,
+        "name": "Tần ỷ Phong",
+        "res": "enemy061",
+        "level": 74,
+        "series": 2,
+        "next_monster_id": 643,
+        "next_monster_name": "Người chơi đoạt cờ",
+        "next_monster_level": 75
+      }
+    },
+    {
+      "wave": 181,
+      "monster_id": 643,
+      "monster_name": "Người chơi đoạt cờ",
+      "monster_res": "enemy189",
+      "level": 75,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 182,
+      "monster_id": 652,
+      "monster_name": "Nam trung niên Thần bí",
+      "monster_res": "enemy201",
+      "level": 75,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 183,
+      "monster_id": 667,
+      "monster_name": "Nam Cung Phi",
+      "monster_res": "enemy201",
+      "level": 75,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 184,
+      "monster_id": 668,
+      "monster_name": "Tề Tức Phong",
+      "monster_res": "enemy077",
+      "level": 75,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 185,
+      "monster_id": 669,
+      "monster_name": "Lộ Trường Thiên",
+      "monster_res": "enemy093",
+      "level": 76,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 186,
+      "monster_id": 670,
+      "monster_name": "Lục lâm",
+      "monster_res": "enemy072",
+      "level": 76,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 187,
+      "monster_id": 671,
+      "monster_name": "Phan Như Long",
+      "monster_res": "enemy051",
+      "level": 76,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 188,
+      "monster_id": 672,
+      "monster_name": "Du Tương Tân",
+      "monster_res": "enemy095",
+      "level": 76,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 189,
+      "monster_id": 673,
+      "monster_name": "Mông Cổ Võ sĩ",
+      "monster_res": "enemy204",
+      "level": 77,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 190,
+      "monster_id": 674,
+      "monster_name": "Thủy Tặc",
+      "monster_res": "enemy205",
+      "level": 77,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 474,
+        "name": "Tạ Vân Lâu",
+        "res": "enemy064",
+        "level": 77,
+        "series": 2,
+        "next_monster_id": 675,
+        "next_monster_name": "Hà Hoa Đạo",
+        "next_monster_level": 77
+      }
+    },
+    {
+      "wave": 191,
+      "monster_id": 675,
+      "monster_name": "Hà Hoa Đạo",
+      "monster_res": "enemy059",
+      "level": 77,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 192,
+      "monster_id": 676,
+      "monster_name": "Long Truy Vũ",
+      "monster_res": "enemy091",
+      "level": 77,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 193,
+      "monster_id": 682,
+      "monster_name": "Tống binh",
+      "monster_res": "enemy034",
+      "level": 78,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 194,
+      "monster_id": 683,
+      "monster_name": "Tống Hiệu úy",
+      "monster_res": "enemy029",
+      "level": 78,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 195,
+      "monster_id": 684,
+      "monster_name": "Tống Thống lĩnh",
+      "monster_res": "enemy026",
+      "level": 78,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 196,
+      "monster_id": 685,
+      "monster_name": "Tống Phó tướng",
+      "monster_res": "enemy021",
+      "level": 78,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 197,
+      "monster_id": 686,
+      "monster_name": "Tống Đại tướng",
+      "monster_res": "enemy017",
+      "level": 79,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 198,
+      "monster_id": 687,
+      "monster_name": "Tống Nguyên Soái",
+      "monster_res": "enemy004",
+      "level": 79,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 199,
+      "monster_id": 688,
+      "monster_name": "Kim binh",
+      "monster_res": "enemy028",
+      "level": 79,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 200,
+      "monster_id": 689,
+      "monster_name": "Kim Hiệu úy",
+      "monster_res": "enemy031",
+      "level": 79,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 475,
+        "name": "Tuyền Cơ Tử",
+        "res": "enemy065",
+        "level": 79,
+        "series": 4,
+        "next_monster_id": 690,
+        "next_monster_name": "Kim Thống Lĩnh",
+        "next_monster_level": 80
+      }
+    },
+    {
+      "wave": 201,
+      "monster_id": 690,
+      "monster_name": "Kim Thống Lĩnh",
+      "monster_res": "enemy036",
+      "level": 80,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 202,
+      "monster_id": 691,
+      "monster_name": "Kim Phó tướng",
+      "monster_res": "enemy024",
+      "level": 80,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 203,
+      "monster_id": 692,
+      "monster_name": "Kim Đại tướng",
+      "monster_res": "enemy023",
+      "level": 80,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 204,
+      "monster_id": 693,
+      "monster_name": "Kim Nguyên Soái",
+      "monster_res": "enemy006",
+      "level": 80,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 205,
+      "monster_id": 695,
+      "monster_name": "Danh hiệu_ Nữ",
+      "monster_res": "enemy207",
+      "level": 81,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 206,
+      "monster_id": 696,
+      "monster_name": "Danh hiệu_ Nam",
+      "monster_res": "enemy208",
+      "level": 81,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 207,
+      "monster_id": 699,
+      "monster_name": "Thi Nghi Sinh",
+      "monster_res": "enemy003",
+      "level": 81,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 208,
+      "monster_id": 700,
+      "monster_name": "Chính Võ Sĩ",
+      "monster_res": "enemy076",
+      "level": 81,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 209,
+      "monster_id": 701,
+      "monster_name": "Nguyễn Minh Viễn",
+      "monster_res": "enemy147",
+      "level": 82,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 210,
+      "monster_id": 702,
+      "monster_name": "Thịnh Doãn",
+      "monster_res": "enemy021",
+      "level": 82,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 476,
+        "name": "Thanh Liên Tử",
+        "res": "enemy066",
+        "level": 82,
+        "series": 4,
+        "next_monster_id": 703,
+        "next_monster_name": "Phi Sa",
+        "next_monster_level": 82
+      }
+    },
+    {
+      "wave": 211,
+      "monster_id": 703,
+      "monster_name": "Phi Sa",
+      "monster_res": "enemy083",
+      "level": 82,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 212,
+      "monster_id": 704,
+      "monster_name": "Tẩu Thạch",
+      "monster_res": "enemy078",
+      "level": 82,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 213,
+      "monster_id": 705,
+      "monster_name": "Sa Đạo",
+      "monster_res": "enemy134",
+      "level": 83,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 214,
+      "monster_id": 706,
+      "monster_name": "Mạc Tặc",
+      "monster_res": "enemy129",
+      "level": 83,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 215,
+      "monster_id": 707,
+      "monster_name": "Thần Tý",
+      "monster_res": "enemy028",
+      "level": 83,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 216,
+      "monster_id": 708,
+      "monster_name": "Lãnh Thương",
+      "monster_res": "enemy036",
+      "level": 83,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 217,
+      "monster_id": 709,
+      "monster_name": "Liệt Không Mạc Bắc Thảo Nguyên",
+      "monster_res": "enemy147",
+      "level": 84,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 218,
+      "monster_id": 710,
+      "monster_name": "Kinh Phong Mạc Bắc Thảo Nguyên",
+      "monster_res": "enemy024",
+      "level": 84,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 219,
+      "monster_id": 711,
+      "monster_name": "Phục Ba Kim sơn đảo",
+      "monster_res": "enemy205",
+      "level": 84,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 220,
+      "monster_id": 712,
+      "monster_name": "Phá Lang Kim sơn đảo",
+      "monster_res": "enemy048",
+      "level": 84,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 477,
+        "name": "Ngọc Hoành Tử",
+        "res": "enemy067",
+        "level": 84,
+        "series": 4,
+        "next_monster_id": 713,
+        "next_monster_name": "Thừa Phong Kim sơn đảo",
+        "next_monster_level": 85
+      }
+    },
+    {
+      "wave": 221,
+      "monster_id": 713,
+      "monster_name": "Thừa Phong Kim sơn đảo",
+      "monster_res": "enemy069",
+      "level": 85,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 222,
+      "monster_id": 716,
+      "monster_name": "Hạ Hầu Phục",
+      "monster_res": "enemy050",
+      "level": 85,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 223,
+      "monster_id": 717,
+      "monster_name": "Tiếu Vô Thường",
+      "monster_res": "enemy051",
+      "level": 85,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 224,
+      "monster_id": 720,
+      "monster_name": "Lục Phi",
+      "monster_res": "enemy089",
+      "level": 85,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 225,
+      "monster_id": 721,
+      "monster_name": "Đồ Đại nhân",
+      "monster_res": "enemy093",
+      "level": 86,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 226,
+      "monster_id": 722,
+      "monster_name": "Tiểu Kỳ Nhi",
+      "monster_res": "enemy143",
+      "level": 86,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 227,
+      "monster_id": 723,
+      "monster_name": "Tàng Bảo khách",
+      "monster_res": "enemy085",
+      "level": 86,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 228,
+      "monster_id": 724,
+      "monster_name": "Thủy tặc",
+      "monster_res": "enemy205",
+      "level": 86,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 229,
+      "monster_id": 726,
+      "monster_name": "Đầu ông địa",
+      "monster_res": "npc050111001",
+      "level": 87,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 230,
+      "monster_id": 727,
+      "monster_name": "Nam Sư",
+      "monster_res": "npc050111002",
+      "level": 87,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 478,
+        "name": "Đồng Tịch Nhan",
+        "res": "enemy069",
+        "level": 87,
+        "series": 4,
+        "next_monster_id": 728,
+        "next_monster_name": "Bắc Sư",
+        "next_monster_level": 87
+      }
+    },
+    {
+      "wave": 231,
+      "monster_id": 728,
+      "monster_name": "Bắc Sư",
+      "monster_res": "npc050111003",
+      "level": 87,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 232,
+      "monster_id": 729,
+      "monster_name": "Long Châu",
+      "monster_res": "npc050111004",
+      "level": 87,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 233,
+      "monster_id": 730,
+      "monster_name": "Đầu Rồng",
+      "monster_res": "npc050111005",
+      "level": 88,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 234,
+      "monster_id": 731,
+      "monster_name": "Thân Rồng",
+      "monster_res": "npc050111006",
+      "level": 88,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 235,
+      "monster_id": 732,
+      "monster_name": "Đuôi Rồng",
+      "monster_res": "npc050111007",
+      "level": 88,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 236,
+      "monster_id": 738,
+      "monster_name": "ác lang",
+      "monster_res": "ani011",
+      "level": 88,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 237,
+      "monster_id": 761,
+      "monster_name": "Nhiệm vụ sát thủ cấp 20",
+      "monster_res": "enemy051",
+      "level": 89,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 238,
+      "monster_id": 762,
+      "monster_name": "Nhiệm vụ sát thủ cấp 30",
+      "monster_res": "enemy051",
+      "level": 89,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 239,
+      "monster_id": 763,
+      "monster_name": "Nhiệm vụ sát thủ cấp 40",
+      "monster_res": "enemy051",
+      "level": 89,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 240,
+      "monster_id": 764,
+      "monster_name": "Nhiệm vụ sát thủ cấp 50",
+      "monster_res": "enemy051",
+      "level": 89,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 479,
+        "name": "Chu KhuyếtBoss",
+        "res": "enemy070",
+        "level": 89,
+        "series": 4,
+        "next_monster_id": 765,
+        "next_monster_name": "Nhiệm vụ sát thủ cấp 60",
+        "next_monster_level": 90
+      }
+    },
+    {
+      "wave": 241,
+      "monster_id": 765,
+      "monster_name": "Nhiệm vụ sát thủ cấp 60",
+      "monster_res": "enemy051",
+      "level": 90,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 242,
+      "monster_id": 766,
+      "monster_name": "Nhiệm vụ sát thủ cấp 70",
+      "monster_res": "enemy051",
+      "level": 90,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 243,
+      "monster_id": 767,
+      "monster_name": "Nhiệm vụ sát thủ cấp 80",
+      "monster_res": "enemy051",
+      "level": 90,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 244,
+      "monster_id": 768,
+      "monster_name": "Nhiệm vụ sát thủ cấp 90",
+      "monster_res": "enemy051",
+      "level": 90,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 245,
+      "monster_id": 770,
+      "monster_name": "Nhiệm vụ sát thủ cấp 201",
+      "monster_res": "enemy107",
+      "level": 91,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 246,
+      "monster_id": 771,
+      "monster_name": "Nhiệm vụ sát thủ cấp 202",
+      "monster_res": "enemy081",
+      "level": 91,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 247,
+      "monster_id": 772,
+      "monster_name": "Nhiệm vụ sát thủ cấp 203",
+      "monster_res": "enemy109",
+      "level": 91,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 248,
+      "monster_id": 773,
+      "monster_name": "Nhiệm vụ sát thủ cấp 301",
+      "monster_res": "enemy107",
+      "level": 91,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 249,
+      "monster_id": 774,
+      "monster_name": "Nhiệm vụ sát thủ cấp 302",
+      "monster_res": "enemy081",
+      "level": 92,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 250,
+      "monster_id": 775,
+      "monster_name": "Nhiệm vụ sát thủ cấp 303",
+      "monster_res": "enemy109",
+      "level": 92,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 480,
+        "name": "Ngụy Liễu Ông",
+        "res": "enemy072",
+        "level": 92,
+        "series": 0,
+        "next_monster_id": 776,
+        "next_monster_name": "Nhiệm vụ sát thủ cấp 304",
+        "next_monster_level": 92
+      }
+    },
+    {
+      "wave": 251,
+      "monster_id": 776,
+      "monster_name": "Nhiệm vụ sát thủ cấp 304",
+      "monster_res": "enemy126",
+      "level": 92,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 252,
+      "monster_id": 777,
+      "monster_name": "Nhiệm vụ sát thủ cấp 401",
+      "monster_res": "enemy107",
+      "level": 92,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 253,
+      "monster_id": 778,
+      "monster_name": "Nhiệm vụ sát thủ cấp 402",
+      "monster_res": "enemy081",
+      "level": 93,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 254,
+      "monster_id": 779,
+      "monster_name": "Nhiệm vụ sát thủ cấp 403",
+      "monster_res": "enemy109",
+      "level": 93,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 255,
+      "monster_id": 780,
+      "monster_name": "Nhiệm vụ sát thủ cấp 404",
+      "monster_res": "enemy126",
+      "level": 93,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 256,
+      "monster_id": 781,
+      "monster_name": "Nhiệm vụ sát thủ cấp 405",
+      "monster_res": "enemy089",
+      "level": 93,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 257,
+      "monster_id": 782,
+      "monster_name": "Nhiệm vụ sát thủ cấp 501",
+      "monster_res": "enemy107",
+      "level": 94,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 258,
+      "monster_id": 783,
+      "monster_name": "Nhiệm vụ sát thủ cấp 502",
+      "monster_res": "enemy081",
+      "level": 94,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 259,
+      "monster_id": 784,
+      "monster_name": "Nhiệm vụ sát thủ cấp 503",
+      "monster_res": "enemy109",
+      "level": 94,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 260,
+      "monster_id": 785,
+      "monster_name": "Nhiệm vụ sát thủ cấp 504",
+      "monster_res": "enemy126",
+      "level": 94,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 481,
+        "name": "Mạnh Thương Lương",
+        "res": "enemy073",
+        "level": 94,
+        "series": 3,
+        "next_monster_id": 786,
+        "next_monster_name": "Nhiệm vụ sát thủ cấp 505",
+        "next_monster_level": 95
+      }
+    },
+    {
+      "wave": 261,
+      "monster_id": 786,
+      "monster_name": "Nhiệm vụ sát thủ cấp 505",
+      "monster_res": "enemy089",
+      "level": 95,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 262,
+      "monster_id": 787,
+      "monster_name": "Nhiệm vụ sát thủ cấp 506",
+      "monster_res": "enemy070",
+      "level": 95,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 263,
+      "monster_id": 788,
+      "monster_name": "Nhiệm vụ sát thủ cấp 601",
+      "monster_res": "enemy107",
+      "level": 95,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 264,
+      "monster_id": 789,
+      "monster_name": "Nhiệm vụ sát thủ cấp 602",
+      "monster_res": "enemy081",
+      "level": 95,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 265,
+      "monster_id": 790,
+      "monster_name": "Nhiệm vụ sát thủ cấp 603",
+      "monster_res": "enemy109",
+      "level": 96,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 266,
+      "monster_id": 791,
+      "monster_name": "Nhiệm vụ sát thủ cấp 604",
+      "monster_res": "enemy126",
+      "level": 96,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 267,
+      "monster_id": 792,
+      "monster_name": "Nhiệm vụ sát thủ cấp 605",
+      "monster_res": "enemy089",
+      "level": 96,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 268,
+      "monster_id": 793,
+      "monster_name": "Nhiệm vụ sát thủ cấp 606",
+      "monster_res": "enemy070",
+      "level": 96,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 269,
+      "monster_id": 794,
+      "monster_name": "Nhiệm vụ sát thủ cấp 607",
+      "monster_res": "enemy048",
+      "level": 97,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 270,
+      "monster_id": 795,
+      "monster_name": "Nhiệm vụ sát thủ cấp 701",
+      "monster_res": "enemy107",
+      "level": 97,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 482,
+        "name": "Xà Tam Trượng",
+        "res": "enemy074",
+        "level": 97,
+        "series": 3,
+        "next_monster_id": 796,
+        "next_monster_name": "Nhiệm vụ sát thủ cấp 702",
+        "next_monster_level": 97
+      }
+    },
+    {
+      "wave": 271,
+      "monster_id": 796,
+      "monster_name": "Nhiệm vụ sát thủ cấp 702",
+      "monster_res": "enemy081",
+      "level": 97,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 272,
+      "monster_id": 797,
+      "monster_name": "Nhiệm vụ sát thủ cấp 703",
+      "monster_res": "enemy109",
+      "level": 97,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 273,
+      "monster_id": 798,
+      "monster_name": "Nhiệm vụ sát thủ cấp 704",
+      "monster_res": "enemy126",
+      "level": 98,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 274,
+      "monster_id": 799,
+      "monster_name": "Nhiệm vụ sát thủ cấp 705",
+      "monster_res": "enemy089",
+      "level": 98,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 275,
+      "monster_id": 800,
+      "monster_name": "Nhiệm vụ sát thủ cấp 706",
+      "monster_res": "enemy070",
+      "level": 98,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 276,
+      "monster_id": 801,
+      "monster_name": "Nhiệm vụ sát thủ cấp 707",
+      "monster_res": "enemy048",
+      "level": 98,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 277,
+      "monster_id": 802,
+      "monster_name": "Nhiệm vụ sát thủ cấp 708",
+      "monster_res": "enemy082",
+      "level": 99,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 278,
+      "monster_id": 803,
+      "monster_name": "Nhiệm vụ sát thủ cấp 801",
+      "monster_res": "enemy107",
+      "level": 99,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 279,
+      "monster_id": 804,
+      "monster_name": "Nhiệm vụ sát thủ cấp 802",
+      "monster_res": "enemy081",
+      "level": 99,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 280,
+      "monster_id": 805,
+      "monster_name": "Nhiệm vụ sát thủ cấp 803",
+      "monster_res": "enemy109",
+      "level": 99,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 483,
+        "name": "La Khuông Sinh",
+        "res": "enemy075",
+        "level": 99,
+        "series": 3,
+        "next_monster_id": 806,
+        "next_monster_name": "Nhiệm vụ sát thủ cấp 804",
+        "next_monster_level": 100
+      }
+    },
+    {
+      "wave": 281,
+      "monster_id": 806,
+      "monster_name": "Nhiệm vụ sát thủ cấp 804",
+      "monster_res": "enemy126",
+      "level": 100,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 282,
+      "monster_id": 807,
+      "monster_name": "Nhiệm vụ sát thủ cấp 805",
+      "monster_res": "enemy089",
+      "level": 100,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 283,
+      "monster_id": 808,
+      "monster_name": "Nhiệm vụ sát thủ cấp 806",
+      "monster_res": "enemy070",
+      "level": 100,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 284,
+      "monster_id": 819,
+      "monster_name": "Nhiệm vụ sát thủ cấp 908",
+      "monster_res": "enemy082",
+      "level": 100,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 285,
+      "monster_id": 820,
+      "monster_name": "Nhiệm vụ sát thủ cấp 909",
+      "monster_res": "enemy050",
+      "level": 101,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 286,
+      "monster_id": 823,
+      "monster_name": "Phong Kỳ Tiểu quái 6079",
+      "monster_res": "enemy129",
+      "level": 101,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 287,
+      "monster_id": 824,
+      "monster_name": "Phong Kỳ Điểm quái 6079",
+      "monster_res": "enemy103",
+      "level": 101,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 288,
+      "monster_id": 825,
+      "monster_name": "Phong Kỳ Xuất quái 6079",
+      "monster_res": "enemy109",
+      "level": 101,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 289,
+      "monster_id": 826,
+      "monster_name": "Phong Kỳ Tiểu quái 8089",
+      "monster_res": "enemy129",
+      "level": 102,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 290,
+      "monster_id": 827,
+      "monster_name": "Phong Kỳ Điểm quái 8089",
+      "monster_res": "enemy103",
+      "level": 102,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 484,
+        "name": "Đường Phong",
+        "res": "enemy157",
+        "level": 102,
+        "series": 1,
+        "next_monster_id": 828,
+        "next_monster_name": "Phong Kỳ Xuất quái 8089",
+        "next_monster_level": 102
+      }
+    },
+    {
+      "wave": 291,
+      "monster_id": 828,
+      "monster_name": "Phong Kỳ Xuất quái 8089",
+      "monster_res": "enemy109",
+      "level": 102,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 292,
+      "monster_id": 829,
+      "monster_name": "Phong Kỳ Tiểu quái 90",
+      "monster_res": "enemy129",
+      "level": 102,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 293,
+      "monster_id": 830,
+      "monster_name": "Phong Kỳ Điểm quái 90",
+      "monster_res": "enemy103",
+      "level": 103,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 294,
+      "monster_id": 831,
+      "monster_name": "Phong Kỳ Xuất quái 90",
+      "monster_res": "enemy109",
+      "level": 103,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 295,
+      "monster_id": 833,
+      "monster_name": "Thần miếu đao yêu 6079",
+      "monster_res": "enemy125",
+      "level": 103,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 296,
+      "monster_id": 834,
+      "monster_name": "Đao yêu huynh đệ 6079",
+      "monster_res": "enemy070",
+      "level": 103,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 297,
+      "monster_id": 835,
+      "monster_name": "Thần miếu đao thủ 6079",
+      "monster_res": "enemy127",
+      "level": 104,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 298,
+      "monster_id": 836,
+      "monster_name": "Thần miếu đao yêu 8089",
+      "monster_res": "enemy125",
+      "level": 104,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 299,
+      "monster_id": 837,
+      "monster_name": "Đao yêu huynh đệ 8089",
+      "monster_res": "enemy070",
+      "level": 104,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 300,
+      "monster_id": 838,
+      "monster_name": "Đoạt Mệnh Liêm",
+      "monster_res": "enemy127",
+      "level": 104,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 485,
+        "name": "Đường Cừu",
+        "res": "enemy077",
+        "level": 104,
+        "series": 1,
+        "next_monster_id": 839,
+        "next_monster_name": "Thần miếu đao yêu 90",
+        "next_monster_level": 105
+      }
+    },
+    {
+      "wave": 301,
+      "monster_id": 839,
+      "monster_name": "Thần miếu đao yêu 90",
+      "monster_res": "enemy125",
+      "level": 105,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 302,
+      "monster_id": 840,
+      "monster_name": "Đao yêu huynh đệ 90",
+      "monster_res": "enemy070",
+      "level": 105,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 303,
+      "monster_id": 841,
+      "monster_name": "Thần miếu đao thủ 90",
+      "monster_res": "enemy127",
+      "level": 105,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 304,
+      "monster_id": 845,
+      "monster_name": "Thiên Bảo Hộ thủ 6079",
+      "monster_res": "enemy089",
+      "level": 105,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 305,
+      "monster_id": 846,
+      "monster_name": "Thiên bảo đạo tặc 6079",
+      "monster_res": "enemy122",
+      "level": 106,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 306,
+      "monster_id": 847,
+      "monster_name": "Thiên Bảo Hộ thủ 8089",
+      "monster_res": "enemy089",
+      "level": 106,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 307,
+      "monster_id": 848,
+      "monster_name": "Thiên bảo đạo tặc 8089",
+      "monster_res": "enemy122",
+      "level": 106,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 308,
+      "monster_id": 849,
+      "monster_name": "Thiên Bảo Hộ thủ 90",
+      "monster_res": "enemy089",
+      "level": 106,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 309,
+      "monster_id": 850,
+      "monster_name": "Thiên bảo đạo tặc 90",
+      "monster_res": "enemy122",
+      "level": 107,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 310,
+      "monster_id": 859,
+      "monster_name": "Bạch hổ dưới cấp 50",
+      "monster_res": "ani003",
+      "level": 107,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 486,
+        "name": "Đường Nhàn",
+        "res": "enemy078",
+        "level": 107,
+        "series": 1,
+        "next_monster_id": 860,
+        "next_monster_name": "Bạch hổ cấp 60",
+        "next_monster_level": 107
+      }
+    },
+    {
+      "wave": 311,
+      "monster_id": 860,
+      "monster_name": "Bạch hổ cấp 60",
+      "monster_res": "ani003",
+      "level": 107,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 312,
+      "monster_id": 861,
+      "monster_name": "Bạch hổ cấp 70",
+      "monster_res": "ani003",
+      "level": 107,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 313,
+      "monster_id": 862,
+      "monster_name": "Bạch hổ cấp 80",
+      "monster_res": "ani003",
+      "level": 108,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 314,
+      "monster_id": 863,
+      "monster_name": "Bạch hổ cấp 90",
+      "monster_res": "ani003",
+      "level": 108,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 315,
+      "monster_id": 864,
+      "monster_name": "Hắc Diệp Hầu dưới 50",
+      "monster_res": "ani055",
+      "level": 108,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 316,
+      "monster_id": 865,
+      "monster_name": "Hắc Diệp Hầu cấp 60",
+      "monster_res": "ani055",
+      "level": 108,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 317,
+      "monster_id": 866,
+      "monster_name": "Hắc Diệp Hầu cấp 70",
+      "monster_res": "ani055",
+      "level": 109,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 318,
+      "monster_id": 867,
+      "monster_name": "Hắc Diệp Hầu cấp 80",
+      "monster_res": "ani055",
+      "level": 109,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 319,
+      "monster_id": 868,
+      "monster_name": "Hắc Diệp Hầu cấp 90",
+      "monster_res": "ani055",
+      "level": 109,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 320,
+      "monster_id": 869,
+      "monster_name": "sơn tặc dưới cấp 50",
+      "monster_res": "enemy146",
+      "level": 109,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 487,
+        "name": "Đường Vân",
+        "res": "enemy079",
+        "level": 109,
+        "series": 1,
+        "next_monster_id": 870,
+        "next_monster_name": "sơn tặc cấp 60",
+        "next_monster_level": 110
+      }
+    },
+    {
+      "wave": 321,
+      "monster_id": 870,
+      "monster_name": "sơn tặc cấp 60",
+      "monster_res": "enemy146",
+      "level": 110,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 322,
+      "monster_id": 871,
+      "monster_name": "sơn tặc cấp 70",
+      "monster_res": "enemy146",
+      "level": 110,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 323,
+      "monster_id": 872,
+      "monster_name": "sơn tặc cấp 80",
+      "monster_res": "enemy146",
+      "level": 110,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 324,
+      "monster_id": 873,
+      "monster_name": "sơn tặc cấp 90",
+      "monster_res": "enemy146",
+      "level": 110,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 325,
+      "monster_id": 874,
+      "monster_name": "Thủy Tặc dưới cấp 50",
+      "monster_res": "enemy205",
+      "level": 111,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 326,
+      "monster_id": 875,
+      "monster_name": "Thủy Tặc cấp 60",
+      "monster_res": "enemy205",
+      "level": 111,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 327,
+      "monster_id": 876,
+      "monster_name": "Thủy Tặc cấp 70",
+      "monster_res": "enemy205",
+      "level": 111,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 328,
+      "monster_id": 877,
+      "monster_name": "Thủy Tặc",
+      "monster_res": "enemy205",
+      "level": 111,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 329,
+      "monster_id": 878,
+      "monster_name": "Thủy Tặc Đầu Lĩnh",
+      "monster_res": "enemy205",
+      "level": 112,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 330,
+      "monster_id": 879,
+      "monster_name": "Phi Sa dưới cấp 50",
+      "monster_res": "enemy083",
+      "level": 112,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 488,
+        "name": "Đường Dã",
+        "res": "enemy080",
+        "level": 112,
+        "series": 1,
+        "next_monster_id": 880,
+        "next_monster_name": "Phi Sa cấp 60",
+        "next_monster_level": 112
+      }
+    },
+    {
+      "wave": 331,
+      "monster_id": 880,
+      "monster_name": "Phi Sa cấp 60",
+      "monster_res": "enemy083",
+      "level": 112,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 332,
+      "monster_id": 881,
+      "monster_name": "Phi Sa cấp 70",
+      "monster_res": "enemy083",
+      "level": 112,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 333,
+      "monster_id": 882,
+      "monster_name": "Phi Sa cấp 80",
+      "monster_res": "enemy083",
+      "level": 113,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 334,
+      "monster_id": 883,
+      "monster_name": "Phi Sa cấp 90",
+      "monster_res": "enemy083",
+      "level": 113,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 335,
+      "monster_id": 884,
+      "monster_name": "Lãnh Thương dưới cấp 50",
+      "monster_res": "enemy036",
+      "level": 113,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 336,
+      "monster_id": 885,
+      "monster_name": "Lãnh Thương cấp 60",
+      "monster_res": "enemy036",
+      "level": 113,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 337,
+      "monster_id": 886,
+      "monster_name": "Lãnh Thương cấp 70",
+      "monster_res": "enemy036",
+      "level": 114,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 338,
+      "monster_id": 887,
+      "monster_name": "Lãnh Thương cấp 80",
+      "monster_res": "enemy036",
+      "level": 114,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 339,
+      "monster_id": 888,
+      "monster_name": "Lãnh Thương cấp 90",
+      "monster_res": "enemy036",
+      "level": 114,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 340,
+      "monster_id": 889,
+      "monster_name": "Ngân Nhacdưới cấp 50",
+      "monster_res": "enemy023",
+      "level": 114,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 489,
+        "name": "Đường Hạc",
+        "res": "enemy081",
+        "level": 114,
+        "series": 1,
+        "next_monster_id": 890,
+        "next_monster_name": "Ngân Nha cấp 60",
+        "next_monster_level": 115
+      }
+    },
+    {
+      "wave": 341,
+      "monster_id": 890,
+      "monster_name": "Ngân Nha cấp 60",
+      "monster_res": "enemy023",
+      "level": 115,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 342,
+      "monster_id": 891,
+      "monster_name": "Ngân Nha cấp 70",
+      "monster_res": "enemy023",
+      "level": 115,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 343,
+      "monster_id": 892,
+      "monster_name": "Ngân Nha cấp 80",
+      "monster_res": "enemy023",
+      "level": 115,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 344,
+      "monster_id": 893,
+      "monster_name": "Ngân Nha cấp 90",
+      "monster_res": "enemy023",
+      "level": 115,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 345,
+      "monster_id": 894,
+      "monster_name": "Thừa Phong dưới cấp 50",
+      "monster_res": "enemy069",
+      "level": 116,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 346,
+      "monster_id": 895,
+      "monster_name": "Thừa Phong cấp 60",
+      "monster_res": "enemy069",
+      "level": 116,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 347,
+      "monster_id": 896,
+      "monster_name": "Thừa Phong cấp 70",
+      "monster_res": "enemy069",
+      "level": 116,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 348,
+      "monster_id": 897,
+      "monster_name": "Thừa Phong cấp 80",
+      "monster_res": "enemy069",
+      "level": 116,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 349,
+      "monster_id": 898,
+      "monster_name": "Thừa Phong cấp 90",
+      "monster_res": "enemy069",
+      "level": 117,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 350,
+      "monster_id": 899,
+      "monster_name": "Mông Cổ dưới cấp 50",
+      "monster_res": "enemy204",
+      "level": 117,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 490,
+        "name": "Đường Nhất Trần",
+        "res": "enemy082",
+        "level": 117,
+        "series": 1,
+        "next_monster_id": 900,
+        "next_monster_name": "Mông Cổ cấp 60",
+        "next_monster_level": 117
+      }
+    },
+    {
+      "wave": 351,
+      "monster_id": 900,
+      "monster_name": "Mông Cổ cấp 60",
+      "monster_res": "enemy204",
+      "level": 117,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 352,
+      "monster_id": 901,
+      "monster_name": "Mông Cổ cấp 70",
+      "monster_res": "enemy204",
+      "level": 117,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 353,
+      "monster_id": 902,
+      "monster_name": "Mông Cổ cấp 80",
+      "monster_res": "enemy204",
+      "level": 118,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 354,
+      "monster_id": 903,
+      "monster_name": "Mông Cổ cấp 90",
+      "monster_res": "enemy204",
+      "level": 118,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 355,
+      "monster_id": 904,
+      "monster_name": "Sương Đaodưới cấp 50",
+      "monster_res": "enemy024",
+      "level": 118,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 356,
+      "monster_id": 905,
+      "monster_name": "Sương Đao cấp 60",
+      "monster_res": "enemy024",
+      "level": 118,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 357,
+      "monster_id": 906,
+      "monster_name": "Sương Đao cấp 70",
+      "monster_res": "enemy024",
+      "level": 119,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 358,
+      "monster_id": 907,
+      "monster_name": "Sương Đao cấp 80",
+      "monster_res": "enemy024",
+      "level": 119,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 359,
+      "monster_id": 908,
+      "monster_name": "Sương Đao cấp 90",
+      "monster_res": "enemy024",
+      "level": 119,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 360,
+      "monster_id": 909,
+      "monster_name": "Sương Đao (khu vực sơ cấp)",
+      "monster_res": "enemy150",
+      "level": 119,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 491,
+        "name": "Hạ Thành",
+        "res": "enemy086",
+        "level": 119,
+        "series": 0,
+        "next_monster_id": 910,
+        "next_monster_name": "Phi Sa (khu vực sơ cấp)",
+        "next_monster_level": 120
+      }
+    },
+    {
+      "wave": 361,
+      "monster_id": 910,
+      "monster_name": "Phi Sa (khu vực sơ cấp)",
+      "monster_res": "enemy083",
+      "level": 120,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 362,
+      "monster_id": 911,
+      "monster_name": "Sương Liêm (khu vực sơ cấp)",
+      "monster_res": "enemy122",
+      "level": 120,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 363,
+      "monster_id": 912,
+      "monster_name": "Thừa Phong (khu vực sơ cấp)",
+      "monster_res": "enemy069",
+      "level": 120,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 364,
+      "monster_id": 913,
+      "monster_name": "Thủy Quỷ (khu vực sơ cấp)",
+      "monster_res": "enemy205",
+      "level": 120,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 365,
+      "monster_id": 914,
+      "monster_name": "Thần Tý (khu vực sơ cấp)",
+      "monster_res": "enemy085",
+      "level": 121,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 366,
+      "monster_id": 915,
+      "monster_name": "Tranh Hán (khu vực sơ cấp)",
+      "monster_res": "enemy134",
+      "level": 121,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 367,
+      "monster_id": 916,
+      "monster_name": "Phá Lang (khu vực sơ cấp",
+      "monster_res": "enemy140",
+      "level": 121,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 368,
+      "monster_id": 917,
+      "monster_name": "Lưu Phong",
+      "monster_res": "enemy137",
+      "level": 121,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 369,
+      "monster_id": 918,
+      "monster_name": "Đao Tử (khu vực sơ cấp)",
+      "monster_res": "enemy135",
+      "level": 122,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 370,
+      "monster_id": 919,
+      "monster_name": "Lang Bổng (khu vực sơ cấp)",
+      "monster_res": "enemy129",
+      "level": 122,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 492,
+        "name": "Hắc Diện Lang Quân",
+        "res": "enemy091",
+        "level": 122,
+        "series": 1,
+        "next_monster_id": 920,
+        "next_monster_name": "Hắc Cân (khu vực sơ cấp)",
+        "next_monster_level": 122
+      }
+    },
+    {
+      "wave": 371,
+      "monster_id": 920,
+      "monster_name": "Hắc Cân (khu vực sơ cấp)",
+      "monster_res": "enemy136",
+      "level": 122,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 372,
+      "monster_id": 921,
+      "monster_name": "Hà Hồn 1",
+      "monster_res": "enemy138",
+      "level": 122,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 373,
+      "monster_id": 922,
+      "monster_name": "Hà Hồn 2",
+      "monster_res": "enemy146",
+      "level": 123,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 374,
+      "monster_id": 927,
+      "monster_name": "(khu vực cao cấp) Sương Đao",
+      "monster_res": "enemy150",
+      "level": 123,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 375,
+      "monster_id": 928,
+      "monster_name": "(khu vực cao cấp) Phi Sa",
+      "monster_res": "enemy083",
+      "level": 123,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 376,
+      "monster_id": 929,
+      "monster_name": "(khu vực cao cấp) Sương Liêm",
+      "monster_res": "enemy122",
+      "level": 123,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 377,
+      "monster_id": 930,
+      "monster_name": "(khu vực cao cấp) Thừa Phong",
+      "monster_res": "enemy069",
+      "level": 124,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 378,
+      "monster_id": 931,
+      "monster_name": "(khu vực cao cấp) Thủy Quỷ",
+      "monster_res": "enemy205",
+      "level": 124,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 379,
+      "monster_id": 932,
+      "monster_name": "(khu vực cao cấp) Thần Tý",
+      "monster_res": "enemy085",
+      "level": 124,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 380,
+      "monster_id": 933,
+      "monster_name": "(khu vực cao cấp) Tranh Hán",
+      "monster_res": "enemy134",
+      "level": 124,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 493,
+        "name": "Đồ Dị",
+        "res": "enemy093",
+        "level": 124,
+        "series": 1,
+        "next_monster_id": 934,
+        "next_monster_name": "(khu vực cao cấp) Phá Lang",
+        "next_monster_level": 125
+      }
+    },
+    {
+      "wave": 381,
+      "monster_id": 934,
+      "monster_name": "(khu vực cao cấp) Phá Lang",
+      "monster_res": "enemy140",
+      "level": 125,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 382,
+      "monster_id": 935,
+      "monster_name": "(khu vực cao cấp) ảnh Côn",
+      "monster_res": "enemy137",
+      "level": 125,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 383,
+      "monster_id": 936,
+      "monster_name": "(khu vực cao cấp) Đao Tử",
+      "monster_res": "enemy135",
+      "level": 125,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 384,
+      "monster_id": 937,
+      "monster_name": "(khu vực cao cấp) Lang Bổng",
+      "monster_res": "enemy129",
+      "level": 125,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 385,
+      "monster_id": 938,
+      "monster_name": "(khu vực cao cấp) Hắc Cân",
+      "monster_res": "enemy136",
+      "level": 126,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 386,
+      "monster_id": 939,
+      "monster_name": "Hà Hồn 1",
+      "monster_res": "enemy138",
+      "level": 126,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 387,
+      "monster_id": 940,
+      "monster_name": "Hà Hồn 2",
+      "monster_res": "enemy146",
+      "level": 126,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 388,
+      "monster_id": 960,
+      "monster_name": "Lưu Khiếu Khoát",
+      "monster_res": "enemy095",
+      "level": 126,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 389,
+      "monster_id": 961,
+      "monster_name": "Lương Miêu Miêu",
+      "monster_res": "enemy064",
+      "level": 127,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 390,
+      "monster_id": 962,
+      "monster_name": "Lý Tinh",
+      "monster_res": "enemy204",
+      "level": 127,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 495,
+        "name": "Doãn Hàm Yên",
+        "res": "enemy098",
+        "level": 127,
+        "series": 2,
+        "next_monster_id": 964,
+        "next_monster_name": "Đường Ngư",
+        "next_monster_level": 127
+      }
+    },
+    {
+      "wave": 391,
+      "monster_id": 964,
+      "monster_name": "Đường Ngư",
+      "monster_res": "enemy024",
+      "level": 127,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 392,
+      "monster_id": 967,
+      "monster_name": "Bất Thùy",
+      "monster_res": "enemy052",
+      "level": 127,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 393,
+      "monster_id": 968,
+      "monster_name": "Bất Nha",
+      "monster_res": "enemy061",
+      "level": 128,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 394,
+      "monster_id": 969,
+      "monster_name": "Bất Sở",
+      "monster_res": "enemy083",
+      "level": 128,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 395,
+      "monster_id": 975,
+      "monster_name": "(sơ cấp) Sương Đao",
+      "monster_res": "enemy150",
+      "level": 128,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 396,
+      "monster_id": 976,
+      "monster_name": "(sơ cấp) Phi Sa",
+      "monster_res": "enemy083",
+      "level": 128,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 397,
+      "monster_id": 977,
+      "monster_name": "(sơ cấp) Sương Liêm",
+      "monster_res": "enemy122",
+      "level": 129,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 398,
+      "monster_id": 978,
+      "monster_name": "(sơ cấp) Thừa Phong",
+      "monster_res": "enemy069",
+      "level": 129,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 399,
+      "monster_id": 979,
+      "monster_name": "(sơ cấp) Thủy Quỷ",
+      "monster_res": "enemy205",
+      "level": 129,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 400,
+      "monster_id": 980,
+      "monster_name": "(sơ cấp) Thần Tý",
+      "monster_res": "enemy085",
+      "level": 129,
+      "series": 3,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 497,
+        "name": "Hoàn Nhan Hùng Liệt",
+        "res": "enemy103",
+        "level": 129,
+        "series": 3,
+        "next_monster_id": 981,
+        "next_monster_name": "(sơ cấp) Tranh Hán",
+        "next_monster_level": 130
+      }
+    },
+    {
+      "wave": 401,
+      "monster_id": 981,
+      "monster_name": "(sơ cấp) Tranh Hán",
+      "monster_res": "enemy134",
+      "level": 130,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 402,
+      "monster_id": 982,
+      "monster_name": "(sơ cấp) Phá Lang",
+      "monster_res": "enemy140",
+      "level": 130,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 403,
+      "monster_id": 983,
+      "monster_name": "(sơ cấp) ảnh Côn",
+      "monster_res": "enemy137",
+      "level": 130,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 404,
+      "monster_id": 984,
+      "monster_name": "(sơ cấp) Đao Tử",
+      "monster_res": "enemy135",
+      "level": 130,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 405,
+      "monster_id": 985,
+      "monster_name": "(sơ cấp) Lang Bổng",
+      "monster_res": "enemy129",
+      "level": 131,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 406,
+      "monster_id": 986,
+      "monster_name": "(sơ cấp) Hắc Cân",
+      "monster_res": "enemy136",
+      "level": 131,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 407,
+      "monster_id": 988,
+      "monster_name": "(sơ cấp) npc té ngã",
+      "monster_res": "enemy007",
+      "level": 131,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 408,
+      "monster_id": 989,
+      "monster_name": "(sơ cấp) npc hôn mê",
+      "monster_res": "enemy005",
+      "level": 131,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 409,
+      "monster_id": 990,
+      "monster_name": "(sơ cấp) npc giảm tốc",
+      "monster_res": "enemy091",
+      "level": 132,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 410,
+      "monster_id": 991,
+      "monster_name": "(sơ cấp) npc Chú thuật",
+      "monster_res": "enemy003",
+      "level": 132,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 498,
+        "name": "Hắc Diện Ma Quân",
+        "res": "enemy107",
+        "level": 132,
+        "series": 3,
+        "next_monster_id": 992,
+        "next_monster_name": "(sơ cấp) npc siêu mạnh",
+        "next_monster_level": 132
+      }
+    },
+    {
+      "wave": 411,
+      "monster_id": 992,
+      "monster_name": "(sơ cấp) npc siêu mạnh",
+      "monster_res": "enemy077",
+      "level": 132,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 412,
+      "monster_id": 993,
+      "monster_name": "(sơ cấp) npc phản đòn",
+      "monster_res": "enemy171",
+      "level": 132,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 413,
+      "monster_id": 1007,
+      "monster_name": "Sương Đao",
+      "monster_res": "enemy150",
+      "level": 133,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 414,
+      "monster_id": 1008,
+      "monster_name": "Phi Sa",
+      "monster_res": "enemy083",
+      "level": 133,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 415,
+      "monster_id": 1009,
+      "monster_name": "Sương Liêm",
+      "monster_res": "enemy122",
+      "level": 133,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 416,
+      "monster_id": 1010,
+      "monster_name": "Thừa Phong",
+      "monster_res": "enemy069",
+      "level": 133,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 417,
+      "monster_id": 1011,
+      "monster_name": "Thủy Quỷ",
+      "monster_res": "enemy205",
+      "level": 134,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 418,
+      "monster_id": 1012,
+      "monster_name": "Thần Tý",
+      "monster_res": "enemy085",
+      "level": 134,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 419,
+      "monster_id": 1013,
+      "monster_name": "Tranh Hán",
+      "monster_res": "enemy134",
+      "level": 134,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 420,
+      "monster_id": 1014,
+      "monster_name": "Phá Lang",
+      "monster_res": "enemy140",
+      "level": 134,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 499,
+        "name": "Ô Hợp Tát",
+        "res": "enemy109",
+        "level": 134,
+        "series": 3,
+        "next_monster_id": 1015,
+        "next_monster_name": "ảnh Côn",
+        "next_monster_level": 135
+      }
+    },
+    {
+      "wave": 421,
+      "monster_id": 1015,
+      "monster_name": "ảnh Côn",
+      "monster_res": "enemy137",
+      "level": 135,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 422,
+      "monster_id": 1016,
+      "monster_name": "Đao Tử",
+      "monster_res": "enemy135",
+      "level": 135,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 423,
+      "monster_id": 1017,
+      "monster_name": "Lang Bổng",
+      "monster_res": "enemy129",
+      "level": 135,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 424,
+      "monster_id": 1018,
+      "monster_name": "Hắc Cân",
+      "monster_res": "enemy136",
+      "level": 135,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 425,
+      "monster_id": 1020,
+      "monster_name": "Sát phục",
+      "monster_res": "enemy007",
+      "level": 136,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 426,
+      "monster_id": 1021,
+      "monster_name": "Lôi điện",
+      "monster_res": "enemy005",
+      "level": 136,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 427,
+      "monster_id": 1022,
+      "monster_name": "Hàn băng",
+      "monster_res": "enemy091",
+      "level": 136,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 428,
+      "monster_id": 1023,
+      "monster_name": "Chú thuật ác nhân",
+      "monster_res": "enemy003",
+      "level": 136,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 429,
+      "monster_id": 1024,
+      "monster_name": "Siêu cường",
+      "monster_res": "enemy077",
+      "level": 137,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 430,
+      "monster_id": 1025,
+      "monster_name": "Phản sát",
+      "monster_res": "enemy171",
+      "level": 137,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 500,
+        "name": "Ô Hợp Mạn",
+        "res": "enemy109",
+        "level": 137,
+        "series": 3,
+        "next_monster_id": 1051,
+        "next_monster_name": "Nữ Phỉ đầu",
+        "next_monster_level": 137
+      }
+    },
+    {
+      "wave": 431,
+      "monster_id": 1051,
+      "monster_name": "Nữ Phỉ đầu",
+      "monster_res": "enemy100",
+      "level": 137,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 432,
+      "monster_id": 1054,
+      "monster_name": "sơn tặc trại chủ",
+      "monster_res": "enemy072",
+      "level": 137,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 433,
+      "monster_id": 1055,
+      "monster_name": "sơn tặc vương",
+      "monster_res": "enemy040",
+      "level": 138,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 434,
+      "monster_id": 1067,
+      "monster_name": "Tống Tiểu Hiệu",
+      "monster_res": "enemy034",
+      "level": 138,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 435,
+      "monster_id": 1068,
+      "monster_name": "Tống Đội trưởng",
+      "monster_res": "enemy029",
+      "level": 138,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 436,
+      "monster_id": 1069,
+      "monster_name": "Tống Tiên phong",
+      "monster_res": "enemy021",
+      "level": 138,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 437,
+      "monster_id": 1072,
+      "monster_name": "Kim Tiểu Hiệu",
+      "monster_res": "enemy031",
+      "level": 139,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 438,
+      "monster_id": 1073,
+      "monster_name": "Kim Đội trưởng",
+      "monster_res": "enemy036",
+      "level": 139,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 439,
+      "monster_id": 1074,
+      "monster_name": "Kim Tiên phong",
+      "monster_res": "enemy024",
+      "level": 139,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 440,
+      "monster_id": 1100,
+      "monster_name": "đoạt bảo tặc",
+      "monster_res": "enemy150",
+      "level": 139,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 501,
+        "name": "Liệu Kỳ",
+        "res": "enemy110",
+        "level": 139,
+        "series": 3,
+        "next_monster_id": 1101,
+        "next_monster_name": "đoạt bảo tặc",
+        "next_monster_level": 140
+      }
+    },
+    {
+      "wave": 441,
+      "monster_id": 1101,
+      "monster_name": "đoạt bảo tặc",
+      "monster_res": "enemy083",
+      "level": 140,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 442,
+      "monster_id": 1102,
+      "monster_name": "đoạt bảo tặc",
+      "monster_res": "enemy205",
+      "level": 140,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 443,
+      "monster_id": 1103,
+      "monster_name": "đoạt bảo tặc",
+      "monster_res": "enemy135",
+      "level": 140,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 444,
+      "monster_id": 1105,
+      "monster_name": "đoạt bảo tặc (té ngã)",
+      "monster_res": "enemy007",
+      "level": 140,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 445,
+      "monster_id": 1106,
+      "monster_name": "đoạt bảo tặc (hôn mê)",
+      "monster_res": "enemy005",
+      "level": 141,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 446,
+      "monster_id": 1107,
+      "monster_name": "đoạt bảo tặc (giảm tốc)",
+      "monster_res": "enemy091",
+      "level": 141,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 447,
+      "monster_id": 1108,
+      "monster_name": "đoạt bảo tặc (Chú thuật)",
+      "monster_res": "enemy003",
+      "level": 141,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 448,
+      "monster_id": 1109,
+      "monster_name": "đoạt bảo tặc (công kích)",
+      "monster_res": "enemy077",
+      "level": 141,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 449,
+      "monster_id": 1161,
+      "monster_name": "Mộc nhân",
+      "monster_res": "enemy171",
+      "level": 142,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 450,
+      "monster_id": 1206,
+      "monster_name": "ác bá",
+      "monster_res": "enemy007",
+      "level": 142,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 502,
+        "name": "Phụng Hấp Như",
+        "res": "enemy104",
+        "level": 142,
+        "series": 3,
+        "next_monster_id": 1207,
+        "next_monster_name": "Bát Bì",
+        "next_monster_level": 142
+      }
+    },
+    {
+      "wave": 451,
+      "monster_id": 1207,
+      "monster_name": "Bát Bì",
+      "monster_res": "enemy016",
+      "level": 142,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 452,
+      "monster_id": 1221,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "ani065",
+      "level": 142,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 453,
+      "monster_id": 1237,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy081",
+      "level": 143,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 454,
+      "monster_id": 1238,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy081",
+      "level": 143,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 455,
+      "monster_id": 1257,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy003",
+      "level": 143,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 456,
+      "monster_id": 1258,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy056",
+      "level": 143,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 457,
+      "monster_id": 1259,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy173",
+      "level": 144,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 458,
+      "monster_id": 1261,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy050",
+      "level": 144,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 459,
+      "monster_id": 1263,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy100",
+      "level": 144,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 460,
+      "monster_id": 1264,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy109",
+      "level": 144,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 503,
+        "name": "Thi Thanh",
+        "res": "enemy146",
+        "level": 144,
+        "series": 0,
+        "next_monster_id": 1267,
+        "next_monster_name": "<<ẹ̉ãưềở>>",
+        "next_monster_level": 145
+      }
+    },
+    {
+      "wave": 461,
+      "monster_id": 1267,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy089",
+      "level": 145,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 462,
+      "monster_id": 1268,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy107",
+      "level": 145,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 463,
+      "monster_id": 1269,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy126",
+      "level": 145,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 464,
+      "monster_id": 1270,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy134",
+      "level": 145,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 465,
+      "monster_id": 1271,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy205",
+      "level": 146,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 466,
+      "monster_id": 1283,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy205",
+      "level": 146,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 467,
+      "monster_id": 1284,
+      "monster_name": "damahu_ib",
+      "monster_res": "enemy006",
+      "level": 146,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 468,
+      "monster_id": 1291,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy105",
+      "level": 146,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 469,
+      "monster_id": 1296,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy072",
+      "level": 147,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 470,
+      "monster_id": 1299,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy085",
+      "level": 147,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 504,
+        "name": "Liễu Thanh Thanh",
+        "res": "enemy173",
+        "level": 147,
+        "series": 0,
+        "next_monster_id": 1300,
+        "next_monster_name": "<<ẹ̉ãưềở>>",
+        "next_monster_level": 147
+      }
+    },
+    {
+      "wave": 471,
+      "monster_id": 1300,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy040",
+      "level": 147,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 472,
+      "monster_id": 1301,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy097",
+      "level": 147,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 473,
+      "monster_id": 1302,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy078",
+      "level": 148,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 474,
+      "monster_id": 1303,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy061",
+      "level": 148,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 475,
+      "monster_id": 1304,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy101",
+      "level": 148,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 476,
+      "monster_id": 1305,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy110",
+      "level": 148,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 477,
+      "monster_id": 1306,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy075",
+      "level": 149,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 478,
+      "monster_id": 1307,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy048",
+      "level": 149,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 479,
+      "monster_id": 1308,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy066",
+      "level": 149,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 480,
+      "monster_id": 1312,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy105",
+      "level": 149,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 505,
+        "name": "Kiếm Thập Tam",
+        "res": "enemy076",
+        "level": 149,
+        "series": 0,
+        "next_monster_id": 1317,
+        "next_monster_name": "<<ẹ̉ãưềở>>",
+        "next_monster_level": 150
+      }
+    },
+    {
+      "wave": 481,
+      "monster_id": 1317,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy072",
+      "level": 150,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 482,
+      "monster_id": 1322,
+      "monster_name": "Cây giáng sinh thần bí",
+      "monster_res": "enemy198",
+      "level": 150,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 483,
+      "monster_id": 1323,
+      "monster_name": "A Hùng",
+      "monster_res": "enemy211",
+      "level": 150,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 484,
+      "monster_id": 1324,
+      "monster_name": "A Sơn",
+      "monster_res": "enemy212",
+      "level": 150,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 485,
+      "monster_id": 1335,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "passerby219",
+      "level": 151,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 486,
+      "monster_id": 1336,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "passerby220",
+      "level": 151,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 487,
+      "monster_id": 1337,
+      "monster_name": "Công Thành Chiến Xa",
+      "monster_res": "enemy226",
+      "level": 151,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 488,
+      "monster_id": 1338,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "enemy034",
+      "level": 151,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 489,
+      "monster_id": 1339,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "ani055",
+      "level": 152,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 490,
+      "monster_id": 1341,
+      "monster_name": "ậẻắỹễậẦáấẴ̉ứ",
+      "monster_res": "passerby240",
+      "level": 152,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 506,
+        "name": "Yến Cửu",
+        "res": "enemy083",
+        "level": 152,
+        "series": 1,
+        "next_monster_id": 1342,
+        "next_monster_name": "ẵỖắỹễậẦáấẴ̉ứ",
+        "next_monster_level": 152
+      }
+    },
+    {
+      "wave": 491,
+      "monster_id": 1342,
+      "monster_name": "ẵỖắỹễậẦáấẴ̉ứ",
+      "monster_res": "passerby241",
+      "level": 152,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 492,
+      "monster_id": 1343,
+      "monster_name": "Hỏa Trụ",
+      "monster_res": "enemy227",
+      "level": 152,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 493,
+      "monster_id": 1344,
+      "monster_name": "Băng Trụ",
+      "monster_res": "enemy228",
+      "level": 153,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 494,
+      "monster_id": 1345,
+      "monster_name": "Độc Trụ",
+      "monster_res": "enemy229",
+      "level": 153,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 495,
+      "monster_id": 1346,
+      "monster_name": "Lôi Trụ",
+      "monster_res": "enemy230",
+      "level": 153,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 496,
+      "monster_id": 1347,
+      "monster_name": "Kim Trụ",
+      "monster_res": "enemy231",
+      "level": 153,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 497,
+      "monster_id": 1349,
+      "monster_name": "ậẻẵỖễậẦá́à_ếẵảã",
+      "monster_res": "passerby242",
+      "level": 154,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 498,
+      "monster_id": 1351,
+      "monster_name": "Gấu đen",
+      "monster_res": "ani026",
+      "level": 154,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 499,
+      "monster_id": 1358,
+      "monster_name": "Tây Vương Tà Độc",
+      "monster_res": "enemy105",
+      "level": 154,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 500,
+      "monster_id": 1361,
+      "monster_name": "Hắc Y Sát Thủ",
+      "monster_res": "enemy072",
+      "level": 154,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 507,
+        "name": "Bành Liên Đức",
+        "res": "enemy085",
+        "level": 154,
+        "series": 0,
+        "next_monster_id": 1375,
+        "next_monster_name": "ẳýậỵ",
+        "next_monster_level": 155
+      }
+    },
+    {
+      "wave": 501,
+      "monster_id": 1375,
+      "monster_name": "ẳýậỵ",
+      "monster_res": "passerby251",
+      "level": 155,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 502,
+      "monster_id": 1376,
+      "monster_name": "Tiểu Đạo Tặc",
+      "monster_res": "enemy211",
+      "level": 155,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 503,
+      "monster_id": 1380,
+      "monster_name": "àãẨềàẤễ́Ẳù",
+      "monster_res": "ani055",
+      "level": 155,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 504,
+      "monster_id": 1381,
+      "monster_name": "ãòỀưàẤằặẲểẽú",
+      "monster_res": "ani024",
+      "level": 155,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 505,
+      "monster_id": 1386,
+      "monster_name": "ẦỗỀÊÊăẵỖÊâ",
+      "monster_res": "enemy232",
+      "level": 156,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 506,
+      "monster_id": 1387,
+      "monster_name": "ẦỗỀÊÊăẤắÊâ",
+      "monster_res": "enemy232",
+      "level": 156,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 507,
+      "monster_id": 1388,
+      "monster_name": "ẦỗỀÊÊăậđÊâ",
+      "monster_res": "enemy232",
+      "level": 156,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 508,
+      "monster_id": 1389,
+      "monster_name": "ẦỗỀÊÊăằỖÊâ",
+      "monster_res": "enemy232",
+      "level": 156,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 509,
+      "monster_id": 1390,
+      "monster_name": "ẦỗỀÊÊăỂẦÊâ",
+      "monster_res": "enemy232",
+      "level": 157,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 510,
+      "monster_id": 1408,
+      "monster_name": "Kẻ Trộm Hoa",
+      "monster_res": "enemy205",
+      "level": 157,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 508,
+        "name": "Lưu Phi Long",
+        "res": "enemy089",
+        "level": 157,
+        "series": 0,
+        "next_monster_id": 1410,
+        "next_monster_name": "ềỵẫớẽíẾồẤé",
+        "next_monster_level": 157
+      }
+    },
+    {
+      "wave": 511,
+      "monster_id": 1410,
+      "monster_name": "ềỵẫớẽíẾồẤé",
+      "monster_res": "enemy205",
+      "level": 157,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 512,
+      "monster_id": 1431,
+      "monster_name": "Nhím béo phì",
+      "monster_res": "ani019",
+      "level": 157,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 513,
+      "monster_id": 1433,
+      "monster_name": "damahu_ib",
+      "monster_res": "enemy006",
+      "level": 158,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 514,
+      "monster_id": 1439,
+      "monster_name": "ềứãùấèỀđ",
+      "monster_res": "enemy223",
+      "level": 158,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 515,
+      "monster_id": 1440,
+      "monster_name": "ẵỖẦỳệựìể",
+      "monster_res": "enemy190",
+      "level": 158,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 516,
+      "monster_id": 1441,
+      "monster_name": "ềứẦỳệựìể",
+      "monster_res": "enemy191",
+      "level": 158,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 517,
+      "monster_id": 1449,
+      "monster_name": "Linh Miêu",
+      "monster_res": "ani052",
+      "level": 159,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 518,
+      "monster_id": 1450,
+      "monster_name": "Thiên Ưng",
+      "monster_res": "ani041",
+      "level": 159,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 519,
+      "monster_id": 1451,
+      "monster_name": "Địa Xà",
+      "monster_res": "ani037",
+      "level": 159,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 520,
+      "monster_id": 1497,
+      "monster_name": "Tuần Lộc",
+      "monster_res": "ani061",
+      "level": 159,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 509,
+        "name": "Mạc Tiểu Oanh",
+        "res": "enemy101",
+        "level": 159,
+        "series": 0,
+        "next_monster_id": 1498,
+        "next_monster_name": "Sói tuyết",
+        "next_monster_level": 160
+      }
+    },
+    {
+      "wave": 521,
+      "monster_id": 1498,
+      "monster_name": "Sói tuyết",
+      "monster_res": "ani012",
+      "level": 160,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 522,
+      "monster_id": 1502,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "passerby306",
+      "level": 160,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 523,
+      "monster_id": 1503,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "passerby307",
+      "level": 160,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 524,
+      "monster_id": 1504,
+      "monster_name": "<<ẹ̉ãưềở>>",
+      "monster_res": "passerby308",
+      "level": 160,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 525,
+      "monster_id": 1510,
+      "monster_name": "ãẫẫ́ÊăỀỹẹêạẩÊâ",
+      "monster_res": "enemy083",
+      "level": 161,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 526,
+      "monster_id": 1511,
+      "monster_name": "ìòấẰÊăỀỹẹêạẩÊâ",
+      "monster_res": "enemy078",
+      "level": 161,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 527,
+      "monster_id": 1512,
+      "monster_name": "ẫ́àẦÊăỀỹẹêạẩÊâ",
+      "monster_res": "enemy134",
+      "level": 161,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 528,
+      "monster_id": 1513,
+      "monster_name": "ẤđễụÊăỀỹẹêạẩÊâ",
+      "monster_res": "enemy129",
+      "level": 161,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 529,
+      "monster_id": 1514,
+      "monster_name": "ẵỖằãũỵẫòÊăậ́ạầẹẨÊâ",
+      "monster_res": "ani039",
+      "level": 162,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 530,
+      "monster_id": 1515,
+      "monster_name": "ẵỖàủÊăậ́ạầẹẨÊâ",
+      "monster_res": "ani041",
+      "level": 162,
+      "series": 3,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 510,
+        "name": "Đàm Tam Thoái",
+        "res": "enemy095",
+        "level": 162,
+        "series": 0,
+        "next_monster_id": 1516,
+        "next_monster_name": "éôìểÊăậ́ạầẹẨÊâ",
+        "next_monster_level": 162
+      }
+    },
+    {
+      "wave": 531,
+      "monster_id": 1516,
+      "monster_name": "éôìểÊăậ́ạầẹẨÊâ",
+      "monster_res": "ani065",
+      "level": 162,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 532,
+      "monster_id": 1517,
+      "monster_name": "ẵỖạỳá̉ẵô2ÊăèỡáẵẫẵÊâ",
+      "monster_res": "enemy024",
+      "level": 162,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 533,
+      "monster_id": 1518,
+      "monster_name": "ẵỖạỳạửứ2ÊăèỡáẵẫẵÊâ",
+      "monster_res": "enemy028",
+      "level": 163,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 534,
+      "monster_id": 1519,
+      "monster_name": "àỉằÔãăÊăèỡáẵẫẵÊâ",
+      "monster_res": "enemy086",
+      "level": 163,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 535,
+      "monster_id": 1520,
+      "monster_name": "ẵọẨẫễẲấììựÊăèỡáẵẫẵÊâ",
+      "monster_res": "enemy040",
+      "level": 163,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 536,
+      "monster_id": 1521,
+      "monster_name": "ẫẵễụấìẦỡ1ÊăàỉẤáẫẵÊâ",
+      "monster_res": "enemy128",
+      "level": 163,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 537,
+      "monster_id": 1522,
+      "monster_name": "Ấẽậẻá̉ẵô1ÊăàỉẤáẫẵÊâ",
+      "monster_res": "enemy021",
+      "level": 164,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 538,
+      "monster_id": 1523,
+      "monster_name": "ẵỖạỳầạ̉ứ2ÊăàỉẤáẫẵÊâ",
+      "monster_res": "enemy036",
+      "level": 164,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 539,
+      "monster_id": 1524,
+      "monster_name": "Ấẽậẻàả̉ứ1ÊăàỉẤáẫẵÊâ",
+      "monster_res": "enemy029",
+      "level": 164,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 540,
+      "monster_id": 1536,
+      "monster_name": "ậộễẨ",
+      "monster_res": "enemy100",
+      "level": 164,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 511,
+        "name": "Trương Tông Chính",
+        "res": "enemy003",
+        "level": 164,
+        "series": 4,
+        "next_monster_id": 1537,
+        "next_monster_name": "ẮƠẤẽ",
+        "next_monster_level": 165
+      }
+    },
+    {
+      "wave": 541,
+      "monster_id": 1537,
+      "monster_name": "ẮƠẤẽ",
+      "monster_res": "enemy140",
+      "level": 165,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 542,
+      "monster_id": 1538,
+      "monster_name": "Ầệề̀ìớầồãỗ",
+      "monster_res": "passerby319",
+      "level": 165,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 543,
+      "monster_id": 1544,
+      "monster_name": "ẵỖ̉ứàẤỂửằờ",
+      "monster_res": "enemy028",
+      "level": 165,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 544,
+      "monster_id": 1545,
+      "monster_name": "ẵỖạỳẵôẦỡàẤỂửằờ",
+      "monster_res": "enemy023",
+      "level": 165,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 545,
+      "monster_id": 1549,
+      "monster_name": "Sát Huyết Lão Hổ",
+      "monster_res": "ani002",
+      "level": 166,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 546,
+      "monster_id": 1558,
+      "monster_name": "ạửứ1",
+      "monster_res": "enemy028",
+      "level": 166,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 547,
+      "monster_id": 1559,
+      "monster_name": "̣èẴỂ1",
+      "monster_res": "enemy130",
+      "level": 166,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 548,
+      "monster_id": 1560,
+      "monster_name": "̣èẴỂ2",
+      "monster_res": "enemy132",
+      "level": 166,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 549,
+      "monster_id": 1561,
+      "monster_name": "̣èẴỂ3",
+      "monster_res": "enemy134",
+      "level": 167,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 550,
+      "monster_id": 1562,
+      "monster_name": "̣èẴỂ4",
+      "monster_res": "enemy121",
+      "level": 167,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 513,
+        "name": "Diệu Như",
+        "res": "enemy056",
+        "level": 167,
+        "series": 2,
+        "next_monster_id": 1563,
+        "next_monster_name": "̣èẴỂ5",
+        "next_monster_level": 167
+      }
+    },
+    {
+      "wave": 551,
+      "monster_id": 1563,
+      "monster_name": "̣èẴỂ5",
+      "monster_res": "enemy122",
+      "level": 167,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 552,
+      "monster_id": 1564,
+      "monster_name": "̣èẴỂ6",
+      "monster_res": "enemy123",
+      "level": 167,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 553,
+      "monster_id": 1565,
+      "monster_name": "̣èẴỂ7",
+      "monster_res": "enemy124",
+      "level": 168,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 554,
+      "monster_id": 1566,
+      "monster_name": "̣èẴỂ8",
+      "monster_res": "enemy125",
+      "level": 168,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 555,
+      "monster_id": 1567,
+      "monster_name": "̣èẴỂ9",
+      "monster_res": "enemy126",
+      "level": 168,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 556,
+      "monster_id": 1568,
+      "monster_name": "̣èẴỂ10",
+      "monster_res": "enemy127",
+      "level": 168,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 557,
+      "monster_id": 1572,
+      "monster_name": "Mặt nạ - Cổ Truyền",
+      "monster_res": "passerby337",
+      "level": 169,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 558,
+      "monster_id": 1573,
+      "monster_name": "Mặt nạ - áo Dài",
+      "monster_res": "passerby338",
+      "level": 169,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 559,
+      "monster_id": 1578,
+      "monster_name": "Báo tử đầu",
+      "monster_res": "enemy141",
+      "level": 169,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 560,
+      "monster_id": 1579,
+      "monster_name": "Đại Lực Thị Vệ",
+      "monster_res": "enemy022",
+      "level": 169,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 523,
+        "name": "Liễu Thanh Thanh",
+        "res": "enemy173",
+        "level": 169,
+        "series": 1,
+        "next_monster_id": 1580,
+        "next_monster_name": "Thường Thắng Thị Vệ",
+        "next_monster_level": 170
+      }
+    },
+    {
+      "wave": 561,
+      "monster_id": 1580,
+      "monster_name": "Thường Thắng Thị Vệ",
+      "monster_res": "enemy021",
+      "level": 170,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 562,
+      "monster_id": 1581,
+      "monster_name": "Kim Cương Thị Vệ",
+      "monster_res": "enemy017",
+      "level": 170,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 563,
+      "monster_id": 1589,
+      "monster_name": "ác Tặc",
+      "monster_res": "enemy140",
+      "level": 170,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 564,
+      "monster_id": 1590,
+      "monster_name": "Bách Hương Lộc",
+      "monster_res": "ani069",
+      "level": 170,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 565,
+      "monster_id": 1591,
+      "monster_name": "Bạo Hùng",
+      "monster_res": "ani025",
+      "level": 171,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 566,
+      "monster_id": 1602,
+      "monster_name": "Mãnh An",
+      "monster_res": "enemy005",
+      "level": 171,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 567,
+      "monster_id": 1603,
+      "monster_name": "Mưu Khắc",
+      "monster_res": "enemy089",
+      "level": 171,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 568,
+      "monster_id": 1604,
+      "monster_name": "Bồ Lí Diễn",
+      "monster_res": "enemy122",
+      "level": 171,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 569,
+      "monster_id": 1606,
+      "monster_name": "Sĩ Trưởng",
+      "monster_res": "enemy124",
+      "level": 172,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 570,
+      "monster_id": 1607,
+      "monster_name": "A Lý Hỹ",
+      "monster_res": "enemy144",
+      "level": 172,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 540,
+        "name": "Thiệu Ngọc Phi",
+        "res": "enemy126",
+        "level": 172,
+        "series": 0,
+        "next_monster_id": 1608,
+        "next_monster_name": "Ngũ Trưởng",
+        "next_monster_level": 172
+      }
+    },
+    {
+      "wave": 571,
+      "monster_id": 1608,
+      "monster_name": "Ngũ Trưởng",
+      "monster_res": "enemy149",
+      "level": 172,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 572,
+      "monster_id": 1609,
+      "monster_name": "Sĩ Tốt",
+      "monster_res": "enemy141",
+      "level": 172,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 573,
+      "monster_id": 1610,
+      "monster_name": "Hoàng Nhan Quảng Dương",
+      "monster_res": "enemy221",
+      "level": 173,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 574,
+      "monster_id": 1625,
+      "monster_name": "Long Cửu Thiên",
+      "monster_res": "passerby347",
+      "level": 173,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 575,
+      "monster_id": 1628,
+      "monster_name": "Ngọc Long Hộ Pháp",
+      "monster_res": "enemy052",
+      "level": 173,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 576,
+      "monster_id": 1629,
+      "monster_name": "Ngọc Long Nam Đệ Tử",
+      "monster_res": "enemy015",
+      "level": 173,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 577,
+      "monster_id": 1630,
+      "monster_name": "Ngọc Long Nữ Đệ Tử",
+      "monster_res": "enemy064",
+      "level": 174,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 578,
+      "monster_id": 1631,
+      "monster_name": "Ngũ Thái Long Thù",
+      "monster_res": "ani066",
+      "level": 174,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 579,
+      "monster_id": 1632,
+      "monster_name": "Màng Nhện Ngàn Năm",
+      "monster_res": "passerby342",
+      "level": 174,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 580,
+      "monster_id": 1633,
+      "monster_name": "ạỀắứẫ̉ÊăấẨẳỵ6Êâ",
+      "monster_res": "enemy023",
+      "level": 174,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 541,
+        "name": "Thương Lãng Khách",
+        "res": "enemy110",
+        "level": 174,
+        "series": 3,
+        "next_monster_id": 1634,
+        "next_monster_name": "Tuyệt Sát số 1",
+        "next_monster_level": 175
+      }
+    },
+    {
+      "wave": 581,
+      "monster_id": 1634,
+      "monster_name": "Tuyệt Sát số 1",
+      "monster_res": "enemy079",
+      "level": 175,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 582,
+      "monster_id": 1635,
+      "monster_name": "Tuyệt Sát số 2",
+      "monster_res": "enemy079",
+      "level": 175,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 583,
+      "monster_id": 1636,
+      "monster_name": "Tuyệt Sát số 3",
+      "monster_res": "enemy079",
+      "level": 175,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 584,
+      "monster_id": 1637,
+      "monster_name": "Tuyệt Sát số 4",
+      "monster_res": "enemy079",
+      "level": 175,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 585,
+      "monster_id": 1638,
+      "monster_name": "Tuyệt Sát số 5",
+      "monster_res": "enemy079",
+      "level": 176,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 586,
+      "monster_id": 1639,
+      "monster_name": "Tuyệt Sát số 6",
+      "monster_res": "enemy079",
+      "level": 176,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 587,
+      "monster_id": 1640,
+      "monster_name": "Tuyệt Sát số 7",
+      "monster_res": "enemy079",
+      "level": 176,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 588,
+      "monster_id": 1641,
+      "monster_name": "Tuyệt Sát số 8",
+      "monster_res": "enemy079",
+      "level": 176,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 589,
+      "monster_id": 1642,
+      "monster_name": "Lãnh Băng",
+      "monster_res": "enemy059",
+      "level": 177,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 590,
+      "monster_id": 1643,
+      "monster_name": "Nhím",
+      "monster_res": "ani019",
+      "level": 177,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 542,
+        "name": "\"Boss \"\"Quỷ ảnh\"\" Hoàn Nhan Cốt\"",
+        "res": "enemy105",
+        "level": 177,
+        "series": 1,
+        "next_monster_id": 1652,
+        "next_monster_name": "Kim quốc V?s?",
+        "next_monster_level": 177
+      }
+    },
+    {
+      "wave": 591,
+      "monster_id": 1652,
+      "monster_name": "Kim quốc V?s?",
+      "monster_res": "enemy085",
+      "level": 177,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 592,
+      "monster_id": 1654,
+      "monster_name": "Ngọc Long Đệ Tử",
+      "monster_res": "enemy076",
+      "level": 177,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 593,
+      "monster_id": 1655,
+      "monster_name": "Lưu Tuấn",
+      "monster_res": "enemy051",
+      "level": 178,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 594,
+      "monster_id": 1656,
+      "monster_name": "Phùng Quang Quang",
+      "monster_res": "enemy203",
+      "level": 178,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 595,
+      "monster_id": 1660,
+      "monster_name": "̣úỂãỂịỂị_ì̀ấẻ_ếẵảã",
+      "monster_res": "npc050111001",
+      "level": 178,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 596,
+      "monster_id": 1661,
+      "monster_name": "ẻốẤẽấă_ì̀ấẻ_ếẵảã",
+      "monster_res": "npc050111002",
+      "level": 178,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 597,
+      "monster_id": 1662,
+      "monster_name": "ẻố̉̉ấă_ì̀ấẻ_ếẵảã",
+      "monster_res": "npc050111003",
+      "level": 179,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 598,
+      "monster_id": 1670,
+      "monster_name": "ệ̃ấữẵẾãƠẤắếò",
+      "monster_res": "enemy023",
+      "level": 179,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 599,
+      "monster_id": 1671,
+      "monster_name": "ạỀắứẫ̉ÊăấẨẳỵ41Êâ",
+      "monster_res": "enemy023",
+      "level": 179,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 600,
+      "monster_id": 1672,
+      "monster_name": "ệựìểÊăấẨẳỵ23Êâ",
+      "monster_res": "passerby341_jin",
+      "level": 179,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 543,
+        "name": "Thác Nhĩ Hán",
+        "res": "enemy085",
+        "level": 179,
+        "series": 0,
+        "next_monster_id": 1673,
+        "next_monster_name": "Nhiếp Thí Trần",
+        "next_monster_level": 180
+      }
+    },
+    {
+      "wave": 601,
+      "monster_id": 1673,
+      "monster_name": "Nhiếp Thí Trần",
+      "monster_res": "enemy205",
+      "level": 180,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 602,
+      "monster_id": 1685,
+      "monster_name": "Đặc Thám Tống Quân",
+      "monster_res": "enemy017",
+      "level": 180,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 603,
+      "monster_id": 1686,
+      "monster_name": "Đặc Thám Quân Kim",
+      "monster_res": "enemy023",
+      "level": 180,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 604,
+      "monster_id": 1692,
+      "monster_name": "Thủy Tặc Đại Đầu Lĩnh",
+      "monster_res": "enemy205",
+      "level": 180,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 605,
+      "monster_id": 1693,
+      "monster_name": "ác Lang Tả Sứ",
+      "monster_res": "enemy093",
+      "level": 181,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 606,
+      "monster_id": 1695,
+      "monster_name": "Ngọc Long Cao Thủ",
+      "monster_res": "enemy024",
+      "level": 181,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 607,
+      "monster_id": 1696,
+      "monster_name": "Trần Tiều",
+      "monster_res": "enemy125",
+      "level": 181,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 608,
+      "monster_id": 1700,
+      "monster_name": "Xà Noãn",
+      "monster_res": "passerby343",
+      "level": 181,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 609,
+      "monster_id": 1701,
+      "monster_name": "Lộ Bưu",
+      "monster_res": "enemy006",
+      "level": 182,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 610,
+      "monster_id": 1702,
+      "monster_name": "Thủ Hạ Lộ Bưu",
+      "monster_res": "enemy070",
+      "level": 182,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 546,
+        "name": "Mạc Không Nguyệt",
+        "res": "enemy076",
+        "level": 182,
+        "series": 4,
+        "next_monster_id": 1703,
+        "next_monster_name": "ệựìểÊăấẨẳỵ10Êâ",
+        "next_monster_level": 182
+      }
+    },
+    {
+      "wave": 611,
+      "monster_id": 1703,
+      "monster_name": "ệựìểÊăấẨẳỵ10Êâ",
+      "monster_res": "passerby341_tu",
+      "level": 182,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 612,
+      "monster_id": 1712,
+      "monster_name": "Thập Bát Đồng Nhân",
+      "monster_res": "enemy043",
+      "level": 182,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 613,
+      "monster_id": 1713,
+      "monster_name": "Đồng Nhân",
+      "monster_res": "enemy093",
+      "level": 183,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 614,
+      "monster_id": 1722,
+      "monster_name": "Hoắc Viêm Viêm",
+      "monster_res": "enemy223",
+      "level": 183,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 615,
+      "monster_id": 1723,
+      "monster_name": "ệựìểÊăằỖầẵÊâ",
+      "monster_res": "passerby341_huo",
+      "level": 183,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 616,
+      "monster_id": 1724,
+      "monster_name": "ệựìểÊăạ̃àẰÊâ",
+      "monster_res": "passerby341_jin",
+      "level": 183,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 617,
+      "monster_id": 1725,
+      "monster_name": "ệựìểÊăẻịéẻạặÊâ",
+      "monster_res": "passerby341_mu",
+      "level": 184,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 618,
+      "monster_id": 1726,
+      "monster_name": "ệựìểÊăẪẻàỷÊâ",
+      "monster_res": "passerby341_shui",
+      "level": 184,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 619,
+      "monster_id": 1727,
+      "monster_name": "Ngọc Long Thần Tăng",
+      "monster_res": "enemy224",
+      "level": 184,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 620,
+      "monster_id": 1733,
+      "monster_name": "ẻẤõựÊăấẨẳỵ32Êâ",
+      "monster_res": "enemy069",
+      "level": 184,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 548,
+        "name": "Người Thần bí",
+        "res": "enemy070",
+        "level": 184,
+        "series": 4,
+        "next_monster_id": 1734,
+        "next_monster_name": "ẮốẳỷẲõÊăấẨẳỵ32Êâ",
+        "next_monster_level": 185
+      }
+    },
+    {
+      "wave": 621,
+      "monster_id": 1734,
+      "monster_name": "ẮốẳỷẲõÊăấẨẳỵ32Êâ",
+      "monster_res": "enemy050",
+      "level": 185,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 622,
+      "monster_id": 1739,
+      "monster_name": "ợẾẦỳàĩìể-ầỔẦỳÊăậđẽàÊâ",
+      "monster_res": "enemy082",
+      "level": 185,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 623,
+      "monster_id": 1740,
+      "monster_name": "ợẾẦỳàĩìể-̀ìằÂÊăẵỖẽàÊâ",
+      "monster_res": "enemy082",
+      "level": 185,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 624,
+      "monster_id": 1741,
+      "monster_name": "ợẾẦỳàĩìể-ệỡẩáÊăằỖẽàÊâ",
+      "monster_res": "enemy082",
+      "level": 185,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 625,
+      "monster_id": 1742,
+      "monster_name": "ợẾẦỳàĩìể-éỵẻọÊăỂẦẽàÊâ",
+      "monster_res": "enemy082",
+      "level": 186,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 626,
+      "monster_id": 1743,
+      "monster_name": "ệựìểÊăấẨẳỵ40Êâ",
+      "monster_res": "passerby341_shui",
+      "level": 186,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 627,
+      "monster_id": 1748,
+      "monster_name": "Tiểu Xà",
+      "monster_res": "ani039",
+      "level": 186,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 628,
+      "monster_id": 1755,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ1",
+      "monster_res": "enemy085",
+      "level": 186,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 629,
+      "monster_id": 1756,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ2",
+      "monster_res": "enemy040",
+      "level": 187,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 630,
+      "monster_id": 1757,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ3",
+      "monster_res": "enemy097",
+      "level": 187,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 549,
+        "name": "Ngư Tố Chân",
+        "res": "enemy061",
+        "level": 187,
+        "series": 0,
+        "next_monster_id": 1758,
+        "next_monster_name": "ảủẮầ̀ù̀ùệẾ4",
+        "next_monster_level": 187
+      }
+    },
+    {
+      "wave": 631,
+      "monster_id": 1758,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ4",
+      "monster_res": "enemy078",
+      "level": 187,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 632,
+      "monster_id": 1759,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ5",
+      "monster_res": "enemy061",
+      "level": 187,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 633,
+      "monster_id": 1760,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ6",
+      "monster_res": "enemy101",
+      "level": 188,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 634,
+      "monster_id": 1761,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ7",
+      "monster_res": "enemy110",
+      "level": 188,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 635,
+      "monster_id": 1762,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ8",
+      "monster_res": "enemy075",
+      "level": 188,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 636,
+      "monster_id": 1763,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ9",
+      "monster_res": "enemy048",
+      "level": 188,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 637,
+      "monster_id": 1764,
+      "monster_name": "ảủẮầ̀ù̀ùệẾ10",
+      "monster_res": "enemy066",
+      "level": 189,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 638,
+      "monster_id": 1767,
+      "monster_name": "ảủẮầ̀ùéĂảể́Ô3",
+      "monster_res": "enemy105",
+      "level": 189,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 639,
+      "monster_id": 1772,
+      "monster_name": "ảủẮầ̀ùéĂảể́Ô8",
+      "monster_res": "enemy072",
+      "level": 189,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 640,
+      "monster_id": 1775,
+      "monster_name": "ảủẮầ̀ù́ÔẮẽ1",
+      "monster_res": "enemy146",
+      "level": 189,
+      "series": 3,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 550,
+        "name": "Lôi Quyết",
+        "res": "enemy031",
+        "level": 189,
+        "series": 3,
+        "next_monster_id": 1788,
+        "next_monster_name": "Cao thủ Ngũ Độc Bách Nhân Lôi Đài",
+        "next_monster_level": 190
+      }
+    },
+    {
+      "wave": 641,
+      "monster_id": 1788,
+      "monster_name": "Cao thủ Ngũ Độc Bách Nhân Lôi Đài",
+      "monster_res": "enemy105",
+      "level": 190,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 642,
+      "monster_id": 1793,
+      "monster_name": "Cao thủ Cái Bang Bách Nhân Lôi Đài",
+      "monster_res": "enemy072",
+      "level": 190,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 643,
+      "monster_id": 1796,
+      "monster_name": "5ẲỀấẨẳỵễẻẹÊạệ",
+      "monster_res": "enemy076",
+      "level": 190,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 644,
+      "monster_id": 1800,
+      "monster_name": "21ẲỀấẨẳỵỀđàĩìể",
+      "monster_res": "enemy064",
+      "level": 190,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 645,
+      "monster_id": 1803,
+      "monster_name": "Tiểu Lâu La ác Lang Bang",
+      "monster_res": "enemy124",
+      "level": 191,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 646,
+      "monster_id": 1804,
+      "monster_name": "Tiểu Lâu La ác Lang Bang",
+      "monster_res": "enemy144",
+      "level": 191,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 647,
+      "monster_id": 1805,
+      "monster_name": "Tiểu Lâu La ác Lang Bang",
+      "monster_res": "enemy149",
+      "level": 191,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 648,
+      "monster_id": 1806,
+      "monster_name": "Tiểu Lâu La ác Lang Bang",
+      "monster_res": "enemy141",
+      "level": 191,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 649,
+      "monster_id": 1829,
+      "monster_name": "Cường Nhân",
+      "monster_res": "enemy149",
+      "level": 192,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 650,
+      "monster_id": 1831,
+      "monster_name": "ểỔẴếẴế(ếẵảã)",
+      "monster_res": "enemy109",
+      "level": 192,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 551,
+        "name": "Dạ Xoa",
+        "res": "enemy023",
+        "level": 192,
+        "series": 1,
+        "next_monster_id": 1836,
+        "next_monster_name": "Mộc Vô Ngôn",
+        "next_monster_level": 192
+      }
+    },
+    {
+      "wave": 651,
+      "monster_id": 1836,
+      "monster_name": "Mộc Vô Ngôn",
+      "monster_res": "enemy095",
+      "level": 192,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 652,
+      "monster_id": 1838,
+      "monster_name": "Diệp Hành Kiệm Diệp Hành Kiệm",
+      "monster_res": "enemy003",
+      "level": 192,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 653,
+      "monster_id": 1841,
+      "monster_name": "Phỉ Nhân",
+      "monster_res": "enemy144",
+      "level": 193,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 654,
+      "monster_id": 1844,
+      "monster_name": "Hoàn Nhan Khả Hỷ",
+      "monster_res": "enemy006",
+      "level": 193,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 655,
+      "monster_id": 1853,
+      "monster_name": "Kiếm Si",
+      "monster_res": "enemy076",
+      "level": 193,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 656,
+      "monster_id": 1854,
+      "monster_name": "Kiếm Cuồng",
+      "monster_res": "enemy089",
+      "level": 193,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 657,
+      "monster_id": 1855,
+      "monster_name": "Võ lâm nhân sĩ của Thần trí bất thanh",
+      "monster_res": "enemy078",
+      "level": 194,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 658,
+      "monster_id": 1856,
+      "monster_name": "Sơn Tặc Đầu Mục",
+      "monster_res": "enemy125",
+      "level": 194,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 659,
+      "monster_id": 1881,
+      "monster_name": "2012_12_ếỀìẾếý",
+      "monster_res": "enemy003",
+      "level": 194,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 660,
+      "monster_id": 1882,
+      "monster_name": "2012_12_Ẫợẩỗ",
+      "monster_res": "enemy056",
+      "level": 194,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 553,
+        "name": "Tiên Hồ",
+        "res": "ani015",
+        "level": 194,
+        "series": 3,
+        "next_monster_id": 1883,
+        "next_monster_name": "2012_12_ẦứầỔầỔ",
+        "next_monster_level": 195
+      }
+    },
+    {
+      "wave": 661,
+      "monster_id": 1883,
+      "monster_name": "2012_12_ẦứầỔầỔ",
+      "monster_res": "enemy173",
+      "level": 195,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 662,
+      "monster_id": 1892,
+      "monster_name": "ạớạẩ",
+      "monster_res": "enemy233",
+      "level": 195,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 663,
+      "monster_id": 1893,
+      "monster_name": "ẤôạƠ",
+      "monster_res": "enemy234",
+      "level": 195,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 664,
+      "monster_id": 1895,
+      "monster_name": "ẫéẽỂ",
+      "monster_res": "enemy236",
+      "level": 195,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 665,
+      "monster_id": 1896,
+      "monster_name": "ãầẮệ",
+      "monster_res": "enemy237",
+      "level": 196,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 666,
+      "monster_id": 1897,
+      "monster_name": "ĩ̀ệủ",
+      "monster_res": "enemy238",
+      "level": 196,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 667,
+      "monster_id": 1898,
+      "monster_name": "ậđắư",
+      "monster_res": "enemy239",
+      "level": 196,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 668,
+      "monster_id": 1899,
+      "monster_name": "ẫẵốù",
+      "monster_res": "enemy240",
+      "level": 196,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 669,
+      "monster_id": 1900,
+      "monster_name": "ầĐệỉẨƠ9",
+      "monster_res": "enemy006",
+      "level": 197,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 670,
+      "monster_id": 1901,
+      "monster_name": "ầĐệỉẨƠ10",
+      "monster_res": "passerby337",
+      "level": 197,
+      "series": 3,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 554,
+        "name": "Tuyết Báo vương",
+        "res": "ani006",
+        "level": 197,
+        "series": 2,
+        "next_monster_id": 1903,
+        "next_monster_name": "VNằÔậỂẩẻẻủẨớ́à",
+        "next_monster_level": 197
+      }
+    },
+    {
+      "wave": 671,
+      "monster_id": 1903,
+      "monster_name": "VNằÔậỂẩẻẻủẨớ́à",
+      "monster_res": "enemy241",
+      "level": 197,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 672,
+      "monster_id": 1908,
+      "monster_name": "Băng Đông Thủ Vệ",
+      "monster_res": "enemy050",
+      "level": 197,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 673,
+      "monster_id": 1909,
+      "monster_name": "Huyễn Vựng Thủ Vệ",
+      "monster_res": "enemy050",
+      "level": 198,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 674,
+      "monster_id": 1910,
+      "monster_name": "Từ Hàng Thủ Vệ",
+      "monster_res": "enemy050",
+      "level": 198,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 675,
+      "monster_id": 1911,
+      "monster_name": "Hỏa Tường Thủ Vệ",
+      "monster_res": "enemy050",
+      "level": 198,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 676,
+      "monster_id": 1915,
+      "monster_name": "Linh Điệp",
+      "monster_res": "enemy236",
+      "level": 198,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 677,
+      "monster_id": 1916,
+      "monster_name": "Kiêu Điệp",
+      "monster_res": "enemy234",
+      "level": 199,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 678,
+      "monster_id": 1917,
+      "monster_name": "Mê Điệp",
+      "monster_res": "enemy238",
+      "level": 199,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 679,
+      "monster_id": 1918,
+      "monster_name": "Linh Điệp Tinh Anh",
+      "monster_res": "enemy236",
+      "level": 199,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 680,
+      "monster_id": 1919,
+      "monster_name": "Kiêu Điệp Tinh Anh",
+      "monster_res": "enemy234",
+      "level": 199,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 562,
+        "name": "Đạo Thanh Chân Nhân",
+        "res": "boss001",
+        "level": 199,
+        "series": 4,
+        "next_monster_id": 1920,
+        "next_monster_name": "Mê Điệp Tinh Anh",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 681,
+      "monster_id": 1920,
+      "monster_name": "Mê Điệp Tinh Anh",
+      "monster_res": "enemy238",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 682,
+      "monster_id": 1921,
+      "monster_name": "Đăng Điệp",
+      "monster_res": "enemy242",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 683,
+      "monster_id": 1923,
+      "monster_name": "Giang Dương Đại Đạo",
+      "monster_res": "enemy005",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 684,
+      "monster_id": 1928,
+      "monster_name": "ẩậãã",
+      "monster_res": "enemy129",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 685,
+      "monster_id": 1929,
+      "monster_name": "ẩậããấìẦỡ",
+      "monster_res": "enemy023",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 686,
+      "monster_id": 1952,
+      "monster_name": "Tiểu Hỗn Hỗn",
+      "monster_res": "enemy135",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 687,
+      "monster_id": 1956,
+      "monster_name": "Giang Hồ ác Phỉ",
+      "monster_res": "enemy129",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 688,
+      "monster_id": 1979,
+      "monster_name": "ỄẦạỵ̀úấạẨớ́à",
+      "monster_res": "enemy241",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 689,
+      "monster_id": 1982,
+      "monster_name": "Kẻ Trộm Hoa",
+      "monster_res": "enemy205",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 690,
+      "monster_id": 1987,
+      "monster_name": "ữẻ",
+      "monster_res": "enemy076",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 563,
+        "name": "Gia Luật Tị Ly",
+        "res": "boss011",
+        "level": 200,
+        "series": 3,
+        "next_monster_id": 1988,
+        "next_monster_name": "ữẩ",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 691,
+      "monster_id": 1988,
+      "monster_name": "ữẩ",
+      "monster_res": "enemy076",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 692,
+      "monster_id": 1989,
+      "monster_name": "ữỂ",
+      "monster_res": "enemy122",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 693,
+      "monster_id": 1990,
+      "monster_name": "ữậ",
+      "monster_res": "enemy123",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 694,
+      "monster_id": 2014,
+      "monster_name": "àẦẤạễụ1",
+      "monster_res": "enemy085",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 695,
+      "monster_id": 2015,
+      "monster_name": "àẦẤạễụ2",
+      "monster_res": "enemy040",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 696,
+      "monster_id": 2016,
+      "monster_name": "àẦẤạễụ3",
+      "monster_res": "enemy097",
+      "level": 200,
+      "series": 1,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 697,
+      "monster_id": 2017,
+      "monster_name": "àẦẤạễụ4",
+      "monster_res": "enemy078",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 698,
+      "monster_id": 2018,
+      "monster_name": "àẦẤạễụ5",
+      "monster_res": "enemy075",
+      "level": 200,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 699,
+      "monster_id": 2019,
+      "monster_name": "àẦẤạễụ6",
+      "monster_res": "enemy066",
+      "level": 200,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 700,
+      "monster_id": 2020,
+      "monster_name": "ẪỵẵỖéÊẻắ1",
+      "monster_res": "enemy105",
+      "level": 200,
+      "series": 1,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 564,
+        "name": "Hoàn Nhan Tuyết Y",
+        "res": "boss014",
+        "level": 200,
+        "series": 3,
+        "next_monster_id": 2021,
+        "next_monster_name": "ẪỵẵỖéÊẻắ2",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 701,
+      "monster_id": 2021,
+      "monster_name": "ẪỵẵỖéÊẻắ2",
+      "monster_res": "enemy138",
+      "level": 200,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 702,
+      "monster_id": 2025,
+      "monster_name": "Tống binh",
+      "monster_res": "enemy034",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 703,
+      "monster_id": 2026,
+      "monster_name": "Tống Hiệu úy",
+      "monster_res": "enemy029",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 704,
+      "monster_id": 2027,
+      "monster_name": "Tống Thống lĩnh",
+      "monster_res": "enemy026",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 705,
+      "monster_id": 2028,
+      "monster_name": "Tống Phó tướng",
+      "monster_res": "enemy021",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 706,
+      "monster_id": 2029,
+      "monster_name": "Tống Đại tướng",
+      "monster_res": "enemy017",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 707,
+      "monster_id": 2030,
+      "monster_name": "Tống Nguyên Soái",
+      "monster_res": "enemy004",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 708,
+      "monster_id": 2031,
+      "monster_name": "Kim binh",
+      "monster_res": "enemy028",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 709,
+      "monster_id": 2032,
+      "monster_name": "Kim Hiệu úy",
+      "monster_res": "enemy031",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 710,
+      "monster_id": 2033,
+      "monster_name": "Kim Thống Lĩnh",
+      "monster_res": "enemy036",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 565,
+        "name": "Đoan Mộc Duệ",
+        "res": "boss015",
+        "level": 200,
+        "series": 3,
+        "next_monster_id": 2034,
+        "next_monster_name": "Kim Phó tướng",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 711,
+      "monster_id": 2034,
+      "monster_name": "Kim Phó tướng",
+      "monster_res": "enemy024",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 712,
+      "monster_id": 2035,
+      "monster_name": "Kim Đại tướng",
+      "monster_res": "enemy023",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 713,
+      "monster_id": 2036,
+      "monster_name": "Kim Nguyên Soái",
+      "monster_res": "enemy006",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 714,
+      "monster_id": 2037,
+      "monster_name": "ậẻãẵậĐặỡ1",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 715,
+      "monster_id": 2038,
+      "monster_name": "ậẻãẵậĐặỡ2",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 716,
+      "monster_id": 2039,
+      "monster_name": "ậẻãẵậĐặỡ3",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 717,
+      "monster_id": 2040,
+      "monster_name": "ậẻãẵậĐặỡ4",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 718,
+      "monster_id": 2041,
+      "monster_name": "ậẻãẵậĐặỡ5",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 719,
+      "monster_id": 2042,
+      "monster_name": "ậẻãẵậĐặỡ6",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 720,
+      "monster_id": 2043,
+      "monster_name": "ậẻãẵậĐặỡ7",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 566,
+        "name": "Cổ Bách",
+        "res": "boss018",
+        "level": 200,
+        "series": 0,
+        "next_monster_id": 2044,
+        "next_monster_name": "ậẻãẵậĐặỡ8",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 721,
+      "monster_id": 2044,
+      "monster_name": "ậẻãẵậĐặỡ8",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 722,
+      "monster_id": 2045,
+      "monster_name": "ậẻãẵậĐặỡ9",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 723,
+      "monster_id": 2046,
+      "monster_name": "ậẻãẵậĐặỡ10",
+      "monster_res": "passerby196",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 724,
+      "monster_id": 2047,
+      "monster_name": "ẵỖãẵậĐặỡ1",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 725,
+      "monster_id": 2048,
+      "monster_name": "ẵỖãẵậĐặỡ2",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 726,
+      "monster_id": 2049,
+      "monster_name": "ẵỖãẵậĐặỡ3",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 727,
+      "monster_id": 2050,
+      "monster_name": "ẵỖãẵậĐặỡ4",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 728,
+      "monster_id": 2051,
+      "monster_name": "ẵỖãẵậĐặỡ5",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 729,
+      "monster_id": 2052,
+      "monster_name": "ẵỖãẵậĐặỡ6",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 730,
+      "monster_id": 2053,
+      "monster_name": "ẵỖãẵậĐặỡ7",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 567,
+        "name": "Chung Linh Tú",
+        "res": "boss005",
+        "level": 200,
+        "series": 2,
+        "next_monster_id": 2054,
+        "next_monster_name": "ẵỖãẵậĐặỡ8",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 731,
+      "monster_id": 2054,
+      "monster_name": "ẵỖãẵậĐặỡ8",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 732,
+      "monster_id": 2055,
+      "monster_name": "ẵỖãẵậĐặỡ9",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 733,
+      "monster_id": 2056,
+      "monster_name": "ẵỖãẵậĐặỡ10",
+      "monster_res": "passerby197",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 734,
+      "monster_id": 2057,
+      "monster_name": "Cờ Rồng",
+      "monster_res": "passerby286",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 735,
+      "monster_id": 2084,
+      "monster_name": "Đồng Tiêu Xa",
+      "monster_res": "enemy241",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 736,
+      "monster_id": 2085,
+      "monster_name": "Bạc Tiêu Xa",
+      "monster_res": "enemy241",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 737,
+      "monster_id": 2086,
+      "monster_name": "Vàng Tiêu Xa",
+      "monster_res": "enemy241",
+      "level": 200,
+      "series": 0,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 738,
+      "monster_id": 2090,
+      "monster_name": "ằêẫẵẦãẵÊàĩìể",
+      "monster_res": "enemy050",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 739,
+      "monster_id": 2092,
+      "monster_name": "Cường đạo",
+      "monster_res": "enemy142",
+      "level": 200,
+      "series": 4,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 740,
+      "monster_id": 2097,
+      "monster_name": "ẫẵãậ",
+      "monster_res": "enemy133",
+      "level": 200,
+      "series": 4,
+      "is_boss_wave": true,
+      "boss": {
+        "monster_id": 568,
+        "name": "Hà Linh Phiêu",
+        "res": "boss002",
+        "level": 200,
+        "series": 2,
+        "next_monster_id": 2100,
+        "next_monster_name": "àừắỪìằÂ",
+        "next_monster_level": 200
+      }
+    },
+    {
+      "wave": 741,
+      "monster_id": 2100,
+      "monster_name": "àừắỪìằÂ",
+      "monster_res": "ani003",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 742,
+      "monster_id": 2101,
+      "monster_name": "ầỳẻịéẻ",
+      "monster_res": "enemy110",
+      "level": 200,
+      "series": 3,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 743,
+      "monster_id": 2103,
+      "monster_name": "ẲẾềảẦộẲù",
+      "monster_res": "ani055",
+      "level": 200,
+      "series": 2,
+      "is_boss_wave": false
+    },
+    {
+      "wave": 744,
+      "monster_id": 2105,
+      "monster_name": "Người thần bí",
+      "monster_res": "enemy157",
+      "level": 200,
+      "series": 1,
+      "is_boss_wave": false
+    }
+  ]
+}

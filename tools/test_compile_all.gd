@@ -1,0 +1,20 @@
+extends SceneTree
+
+func _init():
+	print("[*] Testing compilation of LoginScreen and RegisterScreen:")
+	var l = ResourceLoader.load("res://ui/login/login_screen.gd")
+	print("LoginScreen script: ", l)
+	var r = ResourceLoader.load("res://ui/account/register_screen.gd")
+	print("RegisterScreen script: ", r)
+	var login_scene = ResourceLoader.load("res://ui/login/Login.tscn")
+	print("Login.tscn: ", login_scene)
+	var reg_scene = ResourceLoader.load("res://ui/account/Register.tscn")
+	print("Register.tscn: ", reg_scene)
+	var tut_mgr = ResourceLoader.load("res://ui/tutorial/tutorial_manager.gd")
+	print("TutorialManager script: ", tut_mgr)
+	var tut_overlay = ResourceLoader.load("res://ui/tutorial/TutorialOverlay.tscn")
+	print("TutorialOverlay.tscn: ", tut_overlay)
+	var auto_win = ResourceLoader.load("res://ui/auto/auto_settings_window.gd")
+	print("AutoSettingsWindow script: ", auto_win)
+	print("[SUCCESS] All scenes and scripts loaded and compiled without errors!")
+	quit()

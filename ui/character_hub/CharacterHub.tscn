@@ -55,6 +55,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/trang_bi/vat_pham.png" id="eq_vp"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_chat_msg.png" id="ico_chat_msg"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_cong_thanh_chien.png" id="btn_ctc_tex"]
 
 
 [sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
@@ -346,6 +347,47 @@ corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxEmpty" id="ktc_btn_focus"]
 
+[sub_resource type="StyleBoxFlat" id="siege_btn_normal"]
+bg_color = Color(0.55, 0.15, 0.12, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.95, 0.8, 0.35, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 2
+shadow_offset = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="siege_btn_hover"]
+bg_color = Color(0.68, 0.2, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(1, 0.92, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.85, 0.35, 0.1, 0.45)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="siege_btn_pressed"]
+bg_color = Color(0.42, 0.1, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8, 0.65, 0.25, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [sub_resource type="StyleBoxFlat" id="inv_btn_wuxia"]
 bg_color = Color(0.05, 0.16, 0.18, 0.95)
 border_width_left = 1
@@ -604,6 +646,18 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 17
 text = ""
 vertical_alignment = 1
+
+[node name="SiegeButton" type="TextureButton" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 318.0
+offset_top = -3.0
+offset_right = 458.0
+offset_bottom = 57.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_ctc_tex")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
 unique_name_in_owner = true
@@ -2518,6 +2572,26 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
 text = "📖 Hướng Dẫn"
+
+[node name="TestIntroButton" type="Button" parent="Stage/BottomBar"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 338.0
+offset_top = 6.0
+offset_right = 478.0
+offset_bottom = 48.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Test Hướng Dẫn Bắt Buộc (Introduce Tân Thủ)"
+theme_override_colors/font_color = Color(1, 0.78, 0.45, 1)
+theme_override_colors/font_hover_color = Color(1, 0.92, 0.65, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
+text = "⚔️ Giới Thiệu (Test)"
 
 [node name="ToastLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true

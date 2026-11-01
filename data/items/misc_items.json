@@ -108074,5 +108074,21 @@
     "script": "",
     "skill_id": 0,
     "icon": "res://assets/skill_icons/vltk/minh_giao_van_ly_lieu_nguyen.png"
+  },
+  {
+    "id": "4_999_0",
+    "name": "Lệnh Bài Linh Lung Tháp",
+    "genre": 4,
+    "detail": 999,
+    "particular": 0,
+    "image": "\\\\spr\\\\item\\\\questkey\\\\taskobj126.spr",
+    "width": 1,
+    "height": 1,
+    "intro": "Lệnh bài phong ấn cổ xưa của Linh Lung Tháp. Sử dụng để báo danh khiêu chiến vượt 7 tầng ải Linh Lung Tháp tại tab Ải hoặc NPC Nhạc Xung.",
+    "price": 50000,
+    "level": 110,
+    "stack": 100,
+    "source": "questkey",
+    "icon": "taskobj126"
   }
 ]

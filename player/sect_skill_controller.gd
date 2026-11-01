@@ -186,7 +186,7 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		skill_cast.emit(skill.id)
 		return true
 
-	## Tiêu hao nội lực (chỉ ải Luyện và Tinh anh mới miễn phí nội lực; các ải khác và PK đều tiêu hao).
+	## Tiêu hao nội lực: mọi bản đồ đều tiêu hao nội lực khi thi triển kỹ năng.
 	var mana_cost := skill.get_mana_cost_at_level(_learned_level(skill))
 	if mana_cost > 0 and not GameManager.is_free_mana_stage(caster):
 		if "mana" in caster:

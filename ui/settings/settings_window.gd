@@ -140,7 +140,8 @@ func _build_basic_tab() -> void:
 	_music_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_music_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_music_slider.focus_mode = Control.FOCUS_NONE
-	_music_slider.value = roundi(MusicManager.volume * 100.0)
+	var m_vol: float = float(MusicManager.get("volume")) if MusicManager and MusicManager.get("volume") != null else 1.0
+	_music_slider.value = roundi(m_vol * 100.0)
 	music_vol_row.add_child(_music_slider)
 
 	_music_val_label = SocialUi.label("%d%%" % int(_music_slider.value), SocialUi.GOLD)
@@ -166,7 +167,8 @@ func _build_basic_tab() -> void:
 	_sfx_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_sfx_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_sfx_slider.focus_mode = Control.FOCUS_NONE
-	_sfx_slider.value = roundi(SfxManager.volume * 100.0)
+	var s_vol: float = float(SfxManager.get("volume")) if SfxManager and SfxManager.get("volume") != null else 1.0
+	_sfx_slider.value = roundi(s_vol * 100.0)
 	sfx_vol_row.add_child(_sfx_slider)
 
 	_sfx_val_label = SocialUi.label("%d%%" % int(_sfx_slider.value), SocialUi.GOLD)
@@ -199,8 +201,9 @@ func _build_basic_tab() -> void:
 
 	var cur_locale := GameSettings.locale()
 	var langs: Array[Dictionary] = []
-	if LocalizationManager != null and LocalizationManager.has_method("get_supported_languages"):
-		langs = LocalizationManager.get_supported_languages()
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_method("get_supported_languages"):
+		langs = loc_mgr.get_supported_languages()
 
 	if langs.is_empty():
 		langs = [
@@ -492,24 +495,30 @@ func _on_quit_game_clicked() -> void:
 func _ready() -> void:
 	super._ready()
 	_player = get_tree().get_first_node_in_group("player")
-	MusicManager.enabled_changed.connect(_on_music_changed)
-	MusicManager.volume_changed.connect(_on_music_vol_changed)
-	SfxManager.enabled_changed.connect(_on_sfx_changed)
-	SfxManager.volume_changed.connect(_on_sfx_vol_changed)
-	if LocalizationManager != null and LocalizationManager.has_signal("locale_changed"):
-		LocalizationManager.locale_changed.connect(_on_global_locale_changed)
+	if MusicManager != null and MusicManager.has_signal("enabled_changed"):
+		MusicManager.enabled_changed.connect(_on_music_changed)
+	if MusicManager != null and MusicManager.has_signal("volume_changed"):
+		MusicManager.volume_changed.connect(_on_music_vol_changed)
+	if SfxManager != null and SfxManager.has_signal("enabled_changed"):
+		SfxManager.enabled_changed.connect(_on_sfx_changed)
+	if SfxManager != null and SfxManager.has_signal("volume_changed"):
+		SfxManager.volume_changed.connect(_on_sfx_vol_changed)
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(_on_global_locale_changed)
 
 func _exit_tree() -> void:
-	if MusicManager.enabled_changed.is_connected(_on_music_changed):
+	if MusicManager != null and MusicManager.has_signal("enabled_changed") and MusicManager.enabled_changed.is_connected(_on_music_changed):
 		MusicManager.enabled_changed.disconnect(_on_music_changed)
-	if MusicManager.volume_changed.is_connected(_on_music_vol_changed):
+	if MusicManager != null and MusicManager.has_signal("volume_changed") and MusicManager.volume_changed.is_connected(_on_music_vol_changed):
 		MusicManager.volume_changed.disconnect(_on_music_vol_changed)
-	if SfxManager.enabled_changed.is_connected(_on_sfx_changed):
+	if SfxManager != null and SfxManager.has_signal("enabled_changed") and SfxManager.enabled_changed.is_connected(_on_sfx_changed):
 		SfxManager.enabled_changed.disconnect(_on_sfx_changed)
-	if SfxManager.volume_changed.is_connected(_on_sfx_vol_changed):
+	if SfxManager != null and SfxManager.has_signal("volume_changed") and SfxManager.volume_changed.is_connected(_on_sfx_vol_changed):
 		SfxManager.volume_changed.disconnect(_on_sfx_vol_changed)
-	if LocalizationManager != null and LocalizationManager.has_signal("locale_changed") and LocalizationManager.locale_changed.is_connected(_on_global_locale_changed):
-		LocalizationManager.locale_changed.disconnect(_on_global_locale_changed)
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed") and loc_mgr.locale_changed.is_connected(_on_global_locale_changed):
+		loc_mgr.locale_changed.disconnect(_on_global_locale_changed)
 
 func _on_global_locale_changed(code: String) -> void:
 	if _lang_option != null:

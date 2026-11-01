@@ -118,6 +118,8 @@ func _ready() -> void:
 		%CloseButton.pressed.connect(_on_back_pressed)
 	%PlayButton.pressed.connect(func() -> void: PkWindow.open(self, _profile, _enter_field_map))
 	%ChallengeButton.pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
+	if has_node("%SiegeButton"):
+		%SiegeButton.pressed.connect(func() -> void: CityWarWindow.open(self, _profile, _enter_field_map))
 
 	# Nút Kỳ Trân Các trên TopBar (thay thế ô thể lực cuối)
 	if has_node("%KyTranCacTopButton"):
@@ -176,11 +178,15 @@ func _ready() -> void:
 		else:
 			%GmButton.queue_free()
 
-	GmManager.profile_modified.connect(_on_gm_profile_modified)
-	GmManager.gm_state_changed.connect(func() -> void:
-		_refresh_portrait()
-		_refresh_mask_check()
-	)
+	var gm: Node = get_node_or_null("/root/GmManager")
+	if gm != null:
+		if gm.has_signal("profile_modified"):
+			gm.profile_modified.connect(_on_gm_profile_modified)
+		if gm.has_signal("gm_state_changed"):
+			gm.gm_state_changed.connect(func() -> void:
+				_refresh_portrait()
+				_refresh_mask_check()
+			)
 
 	if has_node("%ChatButton"):
 		%ChatButton.pressed.connect(func() -> void:
@@ -194,7 +200,17 @@ func _ready() -> void:
 
 	if has_node("%GuideButton"):
 		%GuideButton.pressed.connect(func() -> void:
-			TutorialManager.start_explore_tutorial(self)
+			var tm: Node = get_node_or_null("/root/TutorialManager")
+			if tm and tm.has_method("start_explore_tutorial"):
+				tm.start_explore_tutorial(self)
+		)
+
+	if has_node("%TestIntroButton"):
+		%TestIntroButton.visible = false
+		%TestIntroButton.pressed.connect(func() -> void:
+			var tm: Node = get_node_or_null("/root/TutorialManager")
+			if tm and tm.has_method("start_initial_tutorial"):
+				tm.start_initial_tutorial(self)
 		)
 
 	_style_nav_active = %CharacterButton.get_theme_stylebox("normal")
@@ -219,8 +235,9 @@ func _ready() -> void:
 	refresh()
 	_sync_world_rank.call_deferred()
 
-	if LocalizationManager != null and LocalizationManager.has_signal("locale_changed"):
-		LocalizationManager.locale_changed.connect(_on_locale_changed)
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(_on_locale_changed)
 	_retranslate_tree(self)
 
 	modulate.a = 0.0
@@ -277,15 +294,23 @@ func _ready() -> void:
 			break
 
 	# Chức năng Introduce / Hướng dẫn tân thủ khi người dùng vào game
-	if TutorialManager.should_show_intro():
+	if _profile == null or not _profile.needs_sect():
+		_check_and_start_intro_tutorial()
+
+func _check_and_start_intro_tutorial() -> void:
+	var tm_intro: Node = get_node_or_null("/root/TutorialManager")
+	if tm_intro and tm_intro.has_method("should_show_intro") and tm_intro.should_show_intro():
 		get_tree().create_timer(0.4).timeout.connect(func() -> void:
-			if is_inside_tree() and TutorialManager.should_show_intro():
-				TutorialManager.start_initial_tutorial(self)
+			var tm_inner: Node = get_node_or_null("/root/TutorialManager")
+			if is_inside_tree() and tm_inner and tm_inner.has_method("should_show_intro") and tm_inner.should_show_intro():
+				tm_inner.start_initial_tutorial(self)
 		)
 
 func _test_tutorial_welcome_and_quit() -> void:
 	await get_tree().create_timer(0.4).timeout
-	TutorialManager.start_explore_tutorial(self)
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("start_explore_tutorial"):
+		tm.start_explore_tutorial(self)
 	await get_tree().create_timer(0.6).timeout
 	var img := get_viewport().get_texture().get_image()
 	if img:
@@ -295,7 +320,9 @@ func _test_tutorial_welcome_and_quit() -> void:
 
 func _test_tutorial_spotlight_and_quit() -> void:
 	await get_tree().create_timer(0.4).timeout
-	TutorialManager.start_initial_tutorial(self) # Dạng 1: Đầu game
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("start_initial_tutorial"):
+		tm.start_initial_tutorial(self) # Dạng 1: Đầu game
 	await get_tree().create_timer(0.8).timeout
 	var img := get_viewport().get_texture().get_image()
 	if img:
@@ -303,8 +330,8 @@ func _test_tutorial_spotlight_and_quit() -> void:
 		print("TUTORIAL_MODE1_STEP1_CAPTURE_SUCCESS")
 	
 	# Thử nghiệm click vào vùng sáng để tự động chuyển sang Bước 2 (Trang Bị)
-	if is_instance_valid(TutorialManager._active_overlay):
-		TutorialManager._active_overlay._handle_target_click()
+	if tm and is_instance_valid(tm._active_overlay):
+		tm._active_overlay._handle_target_click()
 	await get_tree().create_timer(0.8).timeout
 	var img2 := get_viewport().get_texture().get_image()
 	if img2:
@@ -315,7 +342,9 @@ func _test_tutorial_spotlight_and_quit() -> void:
 
 func _test_tutorial_mode2_and_quit() -> void:
 	await get_tree().create_timer(0.4).timeout
-	TutorialManager.start_explore_tutorial(self) # Dạng 2: Khám phá toàn bộ nút
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("start_explore_tutorial"):
+		tm.start_explore_tutorial(self) # Dạng 2: Khám phá toàn bộ nút
 	await get_tree().create_timer(0.8).timeout
 	var img := get_viewport().get_texture().get_image()
 	if img:
@@ -323,8 +352,8 @@ func _test_tutorial_mode2_and_quit() -> void:
 		print("TUTORIAL_MODE2_STEP1_CAPTURE_SUCCESS")
 
 	# Test bấm nút Next
-	if is_instance_valid(TutorialManager._active_overlay):
-		TutorialManager._active_overlay._on_next_step_pressed()
+	if tm and is_instance_valid(tm._active_overlay):
+		tm._active_overlay._on_next_step_pressed()
 	await get_tree().create_timer(0.8).timeout
 	var img2 := get_viewport().get_texture().get_image()
 	if img2:
@@ -332,10 +361,10 @@ func _test_tutorial_mode2_and_quit() -> void:
 		print("TUTORIAL_MODE2_STEP2_CAPTURE_SUCCESS")
 
 	# Test bấm tiếp để xem 1 nút khác (nút Kỹ Năng)
-	if is_instance_valid(TutorialManager._active_overlay):
-		TutorialManager._active_overlay._on_next_step_pressed() # sang step 3: CharacterButton
-		TutorialManager._active_overlay._on_next_step_pressed() # sang step 4: NavButton0
-		TutorialManager._active_overlay._on_next_step_pressed() # sang step 5: NavButton1
+	if tm and is_instance_valid(tm._active_overlay):
+		tm._active_overlay._on_next_step_pressed() # sang step 3: CharacterButton
+		tm._active_overlay._on_next_step_pressed() # sang step 4: NavButton0
+		tm._active_overlay._on_next_step_pressed() # sang step 5: NavButton1
 	await get_tree().create_timer(0.8).timeout
 	var img3 := get_viewport().get_texture().get_image()
 	if img3:
@@ -800,10 +829,11 @@ func _setup_portrait() -> void:
 		v_box.add_theme_constant_override("separation", 4)
 		_hub_avatar_upload_box.add_child(v_box)
 
-		var cam_icon := Label.new()
-		cam_icon.text = "📷"
-		cam_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cam_icon.add_theme_font_size_override("font_size", 22)
+		var cam_icon := TextureRect.new()
+		if ResourceLoader.exists("res://assets/ui/icon_camera.png"):
+			cam_icon.texture = load("res://assets/ui/icon_camera.png")
+		cam_icon.custom_minimum_size = Vector2(0, 22)
+		cam_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 		v_box.add_child(cam_icon)
 
 		var upload_lbl := Label.new()
@@ -1570,7 +1600,7 @@ func _on_event_action(event_id: String) -> void:
 			var pk_win := PkWindow.open(self, _profile, _enter_field_map)
 			pk_win._select_mode(PkRules.Mode.VAN_TIEU)
 		"siege":
-			SiegeWindow.open(self, _profile, _enter_field_map)
+			CityWarWindow.open(self, _profile, _enter_field_map)
 		"huy_hoang":
 			HuyHoangWindow.open(self, _profile)
 		"bat_nha":
@@ -2001,6 +2031,7 @@ func _ask_sect_if_needed() -> void:
 		SaveManager.save_profile(_profile)
 		SaveManager.flush_online()
 		refresh()
+		_check_and_start_intro_tutorial()
 	)
 
 static func format_number(value: int) -> String:
@@ -2172,7 +2203,8 @@ func _retranslate_tree(node: Node) -> void:
 		if not lbl.text.is_empty():
 			var key: String = lbl.get_meta(&"orig_text", lbl.text)
 			lbl.set_meta(&"orig_text", key)
-			if LocalizationManager != null and LocalizationManager.TRANSLATIONS.has(key):
+			var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+			if loc_mgr and ("TRANSLATIONS" in loc_mgr) and loc_mgr.TRANSLATIONS.has(key):
 				lbl.text = tr(key)
 	for child in node.get_children():
 		_retranslate_tree(child)

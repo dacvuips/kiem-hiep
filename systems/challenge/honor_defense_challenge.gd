@@ -38,7 +38,7 @@ var _player: Node2D = null
 static func map_entry() -> Dictionary:
 	return {
 		"id": 1001,
-		"name": "Bảo Vệ Trụ Danh Dự (Lâm An)",
+		"name": "Bảo Vệ Trụ Danh Dự",
 		"dir": MAP_DIR,
 		"level": 100,
 		"honor_defense": true,

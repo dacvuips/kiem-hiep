@@ -154,7 +154,13 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 				color = C_GOLD_INACTIVE if gold else C_INACTIVE
 				all_active = false
 		var bracket := _format_bracket_magic(item, line, i, false)
-		out.append("%s%s" % [_c(color, text), bracket])
+		var req_tag := ""
+		if i % 2 == 1 and NEED_SERIES.has(item.series):
+			var req_name := get_hidden_req_name(item, i, part)
+			if req_name != "":
+				var need_color: String = ELEMENT_COLORS.get(NEED_SERIES[item.series], C_WHITE)
+				req_tag = " " + _c(need_color, "[lb]%s[rb]" % req_name)
+		out.append("%s%s%s" % [_c(color, text), bracket, req_tag])
 	## Đồ tím: các ô khảm còn trống (Compound — Khảm đồ tím, khoáng thuộc tính đúng thứ tự ô).
 	for k in item.sockets:
 		out.append(_c(C_INACTIVE, "◇ Ô khảm %d — còn trống" % (item.magic.size() + k + 1)))
@@ -268,6 +274,75 @@ static func _need_slots(item: ItemInstance, part: int) -> String:
 	if detail == ItemDatabase.Detail.RING:
 		return NEED_SLOTS[32] if part == Equipment.Part.RING2 else NEED_SLOTS[31]
 	return NEED_SLOTS.get(detail, "?")
+
+## Tên điều kiện kích hoạt dòng ẩn ngũ hành (dòng 2, 4, 6...):
+## - Dòng 2 (ẩn 1): ngũ hành nhân vật hoặc món 1 (VD: [Nhân vật / Dây chuyền], [Nhân vật / Nón])
+## - Dòng 4 (ẩn 2): món kích hoạt 1 hoặc 2 (VD: [Dây chuyền / Áo], [Nón / Vũ khí])
+## - Dòng 6 (ẩn 3): món kích hoạt 2 (VD: [Áo], [Vũ khí])
+static func get_hidden_req_name(item: ItemInstance, magic_idx: int, part: int = -1) -> String:
+	if item == null:
+		return ""
+	var detail := item.get_detail()
+	if detail >= ItemDatabase.Detail.HORSE:
+		return ""
+	if magic_idx % 2 != 1:
+		return ""
+
+	var hidden_step := magic_idx / 2  ## 0 = ẩn 1 (dòng 2), 1 = ẩn 2 (dòng 4), 2 = ẩn 3 (dòng 6)
+
+	var slot1 := ""
+	var slot2 := ""
+
+	if part >= 0:
+		match part:
+			Equipment.Part.WEAPON, Equipment.Part.HEAD:
+				slot1 = "Dây chuyền"
+				slot2 = "Áo"
+			Equipment.Part.FOOT:
+				slot1 = "Nón"
+				slot2 = "Vũ khí"
+			Equipment.Part.RING1:
+				slot1 = "Vũ khí"
+				slot2 = "Nón"
+			Equipment.Part.CUFF, Equipment.Part.PENDANT:
+				slot1 = "Giày"
+				slot2 = "Nhẫn trên"
+			Equipment.Part.BELT, Equipment.Part.RING2:
+				slot1 = "Bao tay"
+				slot2 = "Ngọc bội"
+			Equipment.Part.BODY, Equipment.Part.AMULET:
+				slot1 = "Thắt lưng"
+				slot2 = "Nhẫn dưới"
+	else:
+		match detail:
+			ItemDatabase.Detail.MELEE, ItemDatabase.Detail.RANGE, ItemDatabase.Detail.HELM:
+				slot1 = "Dây chuyền"
+				slot2 = "Áo"
+			ItemDatabase.Detail.BOOT:
+				slot1 = "Nón"
+				slot2 = "Vũ khí"
+			ItemDatabase.Detail.CUFF, ItemDatabase.Detail.PENDANT:
+				slot1 = "Giày"
+				slot2 = "Nhẫn trên"
+			ItemDatabase.Detail.BELT:
+				slot1 = "Bao tay"
+				slot2 = "Ngọc bội"
+			ItemDatabase.Detail.ARMOR, ItemDatabase.Detail.AMULET:
+				slot1 = "Thắt lưng"
+				slot2 = "Nhẫn dưới"
+			ItemDatabase.Detail.RING:
+				slot1 = "Vũ khí/Bao tay"
+				slot2 = "Nón/Ngọc bội"
+			_:
+				return ""
+
+	if hidden_step == 0:
+		return "Nhân vật / " + slot1
+	elif hidden_step == 1:
+		return slot1 + " / " + slot2
+	elif hidden_step == 2:
+		return slot2
+	return "Nhân vật"
 
 ## Danh sách món cùng bộ (KItem::GetDesc gốc): đang mặc cam, có trong túi xanh lá, chưa có xanh đậm.
 static func _append_gold_set(out: Array, item: ItemInstance, profile: PlayerProfile) -> void:

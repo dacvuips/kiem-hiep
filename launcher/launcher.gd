@@ -361,6 +361,7 @@ func _boot(installed: Dictionary) -> void:
 	# Đảm bảo toàn bộ các Autoload singleton được tạo và gắn vào cây /root
 	var autoloads: Array = [
 		["GameUiBoot", "res://ui/common/game_ui_boot.gd"],
+		["LocalizationManager", "res://systems/localization_manager.gd"],
 		["PlayerStats", "res://systems/player_stats.gd"],
 		["VfxManager", "res://systems/vfx_manager.gd"],
 		["SfxManager", "res://systems/sfx_manager.gd"],
@@ -372,11 +373,21 @@ func _boot(installed: Dictionary) -> void:
 		["NetClient", "res://net/client/net_client.gd"],
 		["ContentPacks", "res://systems/boot/content_packs.gd"],
 		["GmManager", "res://systems/gm/gm_manager.gd"],
+		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
 	]
 	for al in autoloads:
 		var node_name: String = al[0]
 		var script_path: String = al[1]
-		if not get_tree().root.has_node(node_name):
+		if get_tree().root.has_node(node_name):
+			if ResourceLoader.exists(script_path):
+				var scr = load(script_path)
+				var existing = get_tree().root.get_node(node_name)
+				if scr and existing and existing.get_script() != scr:
+					existing.set_script(scr)
+					if existing.has_method("_ready"):
+						existing._ready()
+					print("Launcher: Nâng cấp script singleton %s -> OK" % node_name)
+		else:
 			if ResourceLoader.exists(script_path):
 				var scr = load(script_path)
 				if scr:

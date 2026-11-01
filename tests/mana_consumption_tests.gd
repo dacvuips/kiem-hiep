@@ -54,18 +54,18 @@ func test_free_mana_stage_rules() -> void:
 	var mock_player = PlayerScene.instantiate()
 	mock_player.pk_mode = 0
 
-	# 1. Ải Luyện (Map luyện công)
+	# 1. Ải Luyện (Map luyện công) -> TỐN mana (tân thủ <= 80 được hồi qua Hộ thể Mộng Điệp)
 	GameManager.field_map = {"id": 121, "name": "Long Môn Trấn", "level": 10}
-	check("Ải Luyện (pk_mode = 0) là MIỄN PHÍ mana", GameManager.is_free_mana_stage(mock_player) == true)
+	check("Ải Luyện BẮT BUỘC tốn mana (không còn miễn phí)", GameManager.is_free_mana_stage(mock_player) == false)
 
 	# 2. Ải Luyện nhưng bật PK Đồ Sát (pk_mode = 1)
 	mock_player.pk_mode = 1
 	check("Ải Luyện nhưng bật F9 Đồ Sát (pk_mode = 1) BẮT BUỘC tốn mana", GameManager.is_free_mana_stage(mock_player) == false)
 	mock_player.pk_mode = 0
 
-	# 3. Tinh Anh (Tab Tinh Anh 1-5 sao)
+	# 3. Tinh Anh (Tab Tinh Anh 1-5 sao) -> TỐN mana
 	GameManager.field_map = {"id": 121, "name": "Long Môn Trấn", "hell": {"tier": 10, "stars": 3}}
-	check("Tinh Anh (pk_mode = 0) là MIỄN PHÍ mana", GameManager.is_free_mana_stage(mock_player) == true)
+	check("Tinh Anh BẮT BUỘC tốn mana (không còn miễn phí)", GameManager.is_free_mana_stage(mock_player) == false)
 
 	# 4. Tinh Anh bật PK Đồ Sát (pk_mode = 1)
 	mock_player.pk_mode = 1

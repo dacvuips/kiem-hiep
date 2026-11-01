@@ -27,3 +27,19 @@ server/deploy/deploy.env
 # Build output Web Docker
 docker/web/dist/
 *.jks
+
+# Debug screenshots & temporary test crops
+screen_*.png
+screen_*.png.import
+tools/*.png
+tools/*.png.import
+tools/road_crops/
+app_*.png
+app_*.png.import
+phone_*.png
+phone_*.png.import
+s*.png
+s*.png.import
+maps_tmp.txt
+
+

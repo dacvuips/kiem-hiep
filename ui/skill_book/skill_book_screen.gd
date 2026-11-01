@@ -89,6 +89,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameUi.apply()
 	(%Dim as ColorRect).color = GameUi.DIM
+	%CloseButton.add_to_group("tutorial_skill_close_btn")
 	%CloseButton.pressed.connect(_on_close_pressed)
 	if not AccountApi.is_gm() and has_node("%TestButton"):
 		%TestButton.visible = false
@@ -97,6 +98,7 @@ func _ready() -> void:
 		%TestButton.pressed.connect(func() -> void:
 			if _selected and _profile.debug_raise_skill(_selected.id):
 				_after_skill_changed())
+	%LearnButton.add_to_group("tutorial_learn_btn")
 	%LearnButton.pressed.connect(_on_learn_pressed)
 	_bind_setting(%NoTargetCheck, "no_target")
 	_bind_setting(%FaceDirectionCheck, "face_direction")
@@ -135,6 +137,7 @@ static func _make_check_icon(checked: bool) -> Texture2D:
 
 func _build_grid() -> void:
 	var grid: GridContainer = %Grid
+	var found_first_learnable := false
 	for skill in _skills:
 		var b := Button.new()
 		b.custom_minimum_size = SLOT_SIZE
@@ -142,6 +145,15 @@ func _build_grid() -> void:
 		b.flat = true
 		b.pressed.connect(_select.bind(skill))
 		b.set_drag_forwarding(_get_grid_drag_data.bind(skill, b), Callable(), Callable())
+		# Gán group hướng dẫn cho tất cả ô kỹ năng 1x của môn phái
+		if skill.req_level <= 10:
+			b.add_to_group("tutorial_1x_skill_slot")
+		# Gán group tương thích cũ cho ô kỹ năng đánh đầu tiên có thể học
+		var is_attack_skill := (skill.category == SkillDefinition.SkillCategory.ACTIVE)
+		var can_learn := (_profile != null and _profile.level >= skill.req_level)
+		if not found_first_learnable and is_attack_skill and can_learn:
+			b.add_to_group("tutorial_learnable_skill_slot")
+			found_first_learnable = true
 		var frame := Panel.new()
 		frame.name = "Frame"
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -276,6 +288,9 @@ func _on_learn_pressed() -> void:
 	var ok := _profile.learn_practice_skill(_selected.id) if _selected.practice_only \
 			else _profile.learn_skill(_selected.id)
 	if ok:
+		var tm = get_node_or_null("/root/TutorialManager")
+		if tm and tm.has_method("set_last_learned_skill") and _selected != null:
+			tm.set_last_learned_skill(_selected.id)
 		_after_skill_changed()
 
 func _after_skill_changed() -> void:

@@ -8,7 +8,7 @@ class_name RankingWindow
 ##   - Môn Phái: chọn 1 trong 15 phái -> cao thủ + phú hộ của phái đó; cột trái ghi sẵn đệ nhất cao thủ mỗi phái.
 ## Chơi offline (chưa đăng nhập máy chủ) thì vẫn xem được BXH Đấu trường võ lâm.
 
-const TABS := ["Cao Thủ", "Phú Hộ", "Võ Lâm PK", "Môn Phái"]
+const TABS := ["Cao Thủ", "Phú Hộ", "Võ Lâm PK", "Thiên Tầm Tháp", "Môn Phái"]
 ## Thứ tự môn phái theo bảng môn phái gốc (tools/vltk_source.py SECTS).
 const SECT_ORDER := ["thieu_lam", "thien_vuong_bang", "duong_mon", "ngu_doc_giao", "nga_mi", "thuy_yen_mon", "cai_bang",
 	"thien_nhan_giao", "vo_dang", "con_lon", "hoa_son", "vu_hon", "tieu_dao", "duong_gia", "minh_giao"]
@@ -157,7 +157,16 @@ func _select_tab(i: int) -> void:
 		2:
 			_content.add_child(_pk_board())
 		3:
+			_content.add_child(_thien_tam_thap_board())
+		4:
 			_build_sects()
+
+func _thien_tam_thap_board() -> Control:
+	var chal_script: GDScript = load("res://systems/challenge/thien_tam_thap_challenge.gd")
+	var list: Array[Dictionary] = []
+	if chal_script != null and chal_script.has_method("get_leaderboard"):
+		list = chal_script.get_leaderboard(_profile)
+	return _board(tr("Bảng Xếp Hạng Thiên Tầm Tháp (Vượt Ải Nhiều Nhất)"), list, "stage")
 
 func _pk_board() -> Control:
 	var list: Array = []
@@ -289,11 +298,14 @@ func _board(header: String, rows: Array, value_type: String, compact := false) -
 		elif value_type == "pk":
 			value = "%d %s" % [int(e.get("pk_points", e.get("points", 0))), tr("điểm")]
 			color = SocialUi.GOLD
+		elif value_type == "stage":
+			value = "Vượt %d ải" % int(e.get("best_stage", 0))
+			color = Color(1.0, 0.88, 0.25)
 		else:
 			value = "%s %d" % [tr("Cấp"), int(e["level"])]
 			color = SocialUi.LABEL_BLUE
 		var value_l := SocialUi.label(value, color, 13, HORIZONTAL_ALIGNMENT_RIGHT)
-		value_l.custom_minimum_size.x = 110 if value_type in ["money", "pk"] else 70
+		value_l.custom_minimum_size.x = 110 if value_type in ["money", "pk", "stage"] else 70
 		row.add_child(value_l)
 		list.add_child(row)
 	return panel

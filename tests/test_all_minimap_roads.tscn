@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cot08553fym1u"]
+
+[ext_resource type="Script" path="res://tests/test_all_minimap_roads.gd" id="1_test"]
+
+[node name="TestAllMinimapRoads" type="Node"]
+script = ExtResource("1_test")

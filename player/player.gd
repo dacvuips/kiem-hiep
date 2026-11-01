@@ -146,8 +146,9 @@ func _ready() -> void:
 	## Buff/bùa thêm hoặc hết hạn -> dựng lại chỉ số (CombatantStats.build gồm trạng thái đang dính).
 	status_controller.stats_changed.connect(refresh_combat_stats)
 	## Trang bị thay đổi (mặc/tháo đồ từ F3/F4) -> dựng lại chỉ số & đổi ngoại hình ngay lập tức trong trận
-	if profile and not profile.equipment_changed.is_connected(_on_profile_equipment_changed):
-		profile.equipment_changed.connect(_on_profile_equipment_changed)
+	if profile and profile.has_signal("equipment_changed"):
+		if not profile.equipment_changed.is_connected(_on_profile_equipment_changed):
+			profile.equipment_changed.connect(_on_profile_equipment_changed)
 	_build_name_label(profile.display_name if profile else "")
 	_build_head_health_bar()
 	refresh_appearance()
@@ -257,8 +258,9 @@ func _on_profile_equipment_changed() -> void:
 
 func _exit_tree() -> void:
 	var profile := GameManager.local_profile if GameManager else null
-	if profile and profile.equipment_changed.is_connected(_on_profile_equipment_changed):
-		profile.equipment_changed.disconnect(_on_profile_equipment_changed)
+	if profile and profile.has_signal("equipment_changed"):
+		if profile.equipment_changed.is_connected(_on_profile_equipment_changed):
+			profile.equipment_changed.disconnect(_on_profile_equipment_changed)
 
 ## Mặc/tháo mũ, áo, vũ khí -> đổi hình nhân vật ngay (gọi kèm refresh_combat_stats sau mỗi lần đổi trang bị).
 ## Mới có bộ hình nam — nhân vật nữ tạm dùng hình nam cho tới khi nhập bộ nữ.
@@ -293,8 +295,9 @@ func get_current_look() -> Dictionary:
 	final_look["gender"] = 1 if final_gender == "female" else 0
 	final_look["mask_particular"] = int(look.get("mask_particular", -1))
 	var cur_aura := _aura_sprite_state
-	if cur_aura == 0 and profile.gm_aura_state > 0:
-		cur_aura = profile.gm_aura_state
+	var gm_aura: int = int(profile.get("gm_aura_state")) if profile and profile.get("gm_aura_state") != null else 0
+	if cur_aura == 0 and gm_aura > 0:
+		cur_aura = gm_aura
 	final_look["aura_state"] = cur_aura
 	return final_look
 
@@ -816,6 +819,38 @@ func _physics_process(delta: float) -> void:
 	# Tự hồi phục Sinh Lực theo thời gian (Dịch Cân Kinh)
 	if PlayerStats.hp_regen_percent > 0.0 and health < max_health and not _dead:
 		heal(max_health * PlayerStats.hp_regen_percent * delta)
+
+	# Quản lý Hộ thể Mộng Điệp (Tân thủ <= 80 trong map luyện: hồi 100 HP & 100 MP mỗi 0.5s, aura Mộng Điệp, lên cấp 81 là hết)
+	var mong_diep_on := is_mong_diep_active()
+	if mong_diep_on != _last_mong_diep_active:
+		_last_mong_diep_active = mong_diep_on
+		_refresh_aura_sprite()
+
+	if mong_diep_on:
+		var need_regen := (health < max_health) or (mana < max_mana)
+		if need_regen:
+			if _mong_diep_just_lost:
+				# Vừa mất máu hoặc mana -> hồi ngay lập tức 30 điểm
+				_mong_diep_just_lost = false
+				_mong_diep_timer = 0.0
+				if health < max_health:
+					heal(MONG_DIEP_REGEN_AMOUNT)
+				if mana < max_mana:
+					restore_mana(MONG_DIEP_REGEN_AMOUNT)
+			else:
+				_mong_diep_timer += delta
+				if _mong_diep_timer >= MONG_DIEP_REGEN_INTERVAL:
+					_mong_diep_timer = 0.0
+					if health < max_health:
+						heal(MONG_DIEP_REGEN_AMOUNT)
+					if mana < max_mana:
+						restore_mana(MONG_DIEP_REGEN_AMOUNT)
+		else:
+			_mong_diep_timer = 0.0
+			_mong_diep_just_lost = true
+	else:
+		_mong_diep_timer = 0.0
+		_mong_diep_just_lost = true
 
 	## Auto: chọn mục tiêu / ra chiêu / buff / nhặt đồ theo "Thiết lập auto đánh" (AutoController). Skill phụ phím skill_1-4
 	## vẫn bấm tay được song song.
@@ -1516,10 +1551,35 @@ func revive() -> void:
 var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
 
+## Trạng thái Hộ thể Mộng Điệp (Tân thủ <= 80 trong map luyện công):
+## Hồi 100 HP & 100 MP mỗi 0.5s và hiển thị Aura Mộng Điệp (State ID 40). Lên level 81 là hết.
+const STATE_ID_MONG_DIEP := 40
+const MONG_DIEP_REGEN_INTERVAL := 0.5
+const MONG_DIEP_REGEN_AMOUNT := 100.0
+
+var _mong_diep_timer: float = 0.0
+var _last_mong_diep_active: bool = false
+var _mong_diep_just_lost: bool = true
+
+func is_mong_diep_active() -> bool:
+	if _dead:
+		return false
+	var profile := GameManager.local_profile
+	if profile == null:
+		return false
+	# Lên cấp 81 là hết hộ thể (chỉ có tác dụng từ cấp 80 trở xuống)
+	if profile.level > 80:
+		return false
+	# Chỉ áp dụng trong phần luyện (map luyện công dã ngoại)
+	if GameManager == null or not GameManager.is_training_stage():
+		return false
+	return true
+
 func set_gm_aura(state_id: int) -> void:
 	var profile := GameManager.local_profile
 	if profile:
-		profile.gm_aura_state = state_id
+		if profile.get("gm_aura_state") != null:
+			profile.set("gm_aura_state", state_id)
 		SaveManager.save_profile(profile)
 		SaveManager.flush_online.call_deferred()
 	_refresh_aura_sprite()
@@ -1529,8 +1589,9 @@ func set_gm_aura(state_id: int) -> void:
 func _refresh_aura_sprite() -> void:
 	var profile := GameManager.local_profile
 	var state_id := 0
-	if profile and profile.gm_aura_state > 0:
-		state_id = profile.gm_aura_state
+	var gm_aura: int = int(profile.get("gm_aura_state")) if profile and profile.get("gm_aura_state") != null else 0
+	if gm_aura > 0:
+		state_id = gm_aura
 	elif profile and profile.active_aura_id != "":
 		var sect := SectRegistry.get_by_id(profile.sect_id)
 		if sect:
@@ -1538,6 +1599,10 @@ func _refresh_aura_sprite() -> void:
 				if skill.id == profile.active_aura_id:
 					state_id = skill.vltk_state_special_id
 					break
+	# Hộ thể Mộng Điệp tân thủ: tự động gắn aura Mộng Điệp nếu chưa có hào quang khác
+	if state_id == 0 and is_mong_diep_active():
+		state_id = STATE_ID_MONG_DIEP
+
 	if state_id == _aura_sprite_state and (state_id == 0 or _aura_sprite != null):
 		return
 	if _aura_sprite != null and is_instance_valid(_aura_sprite):

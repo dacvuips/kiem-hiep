@@ -49,10 +49,11 @@ func _init() -> void:
 	super._init("Chủ Tiền Trang", "Quản lý Tiền Xu tài khoản & Quy đổi Kim Nguyên Bảo", 480.0)
 	_build_ui()
 	_load_data()
-	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
-		if p == null or p == _profile or p == GameManager.local_profile:
-			_refresh_display()
-	)
+	if GmManager != null and GmManager.has_signal("profile_modified"):
+		GmManager.connect("profile_modified", func(p: PlayerProfile) -> void:
+			if p == null or p == _profile or p == GameManager.local_profile:
+				_refresh_display()
+		)
 
 func _build_ui() -> void:
 	# Khung tóm tắt 3 loại tiền tệ

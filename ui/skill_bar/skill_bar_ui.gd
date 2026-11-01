@@ -215,9 +215,14 @@ func _place_auto_button() -> void:
 		_auto_gear.tooltip_text = "Thiết lập auto đánh (Cấu hình Auto)"
 		_auto_gear.focus_mode = Control.FOCUS_NONE
 		_auto_gear.add_theme_font_size_override("font_size", 22)
+		_auto_gear.add_to_group("tutorial_auto_gear")
 		_auto_gear.pressed.connect(func() -> void:
 			if GameManager.local_profile != null:
-				AutoSettingsWindow.open(get_tree().current_scene, GameManager.local_profile))
+				var auto_win := AutoSettingsWindow.open(get_tree().current_scene, GameManager.local_profile)
+				var tm_intro: Node = get_node_or_null("/root/TutorialManager")
+				if auto_win != null and tm_intro and tm_intro.has_method("is_in_intro_flow") and tm_intro.is_in_intro_flow():
+					auto_win._set_page(1)
+		)
 		_auto_button.add_sibling(_auto_gear)
 
 	var gear_elem: Dictionary = HudLayout.get_element("auto_gear")

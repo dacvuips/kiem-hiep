@@ -50,6 +50,9 @@ var camp: int = Camp.Type.ANIMAL
 var combat_stats: CombatantStats
 var health: float = 1.0
 var max_health: float = 1.0
+var drop_multiplier: int = 1
+var exp_multiplier: float = 1.0
+var damage_range_override: Vector2 = Vector2.ZERO
 var status_controller: StatusEffectController
 ## Phe trong Chiến Trường / MOBA Tống Kim LOL ("song", "jin" hoặc "")
 var battle_side: String = "":
@@ -1087,6 +1090,8 @@ func _fire_skill() -> void:
 
 ## Sát thương cơ bản [nhỏ nhất, lớn nhất] theo cấp (công thức gốc); quái chưa có dữ liệu -> chỉ số thử nghiệm.
 func _damage_range() -> Vector2:
+	if damage_range_override != Vector2.ZERO:
+		return damage_range_override
 	# Quái / Lính trong MOBA Tống Kim LOL (Bộ binh & Cung binh):
 	# Sử dụng công thức dame hợp lý theo cấp để lính đánh nhau vừa phải (~150 dame), không bị one-shot lính hay người chơi
 	if is_lane_creep or monster_id == TongKimLolRules.CREEP_MELEE_TPL or monster_id == TongKimLolRules.CREEP_RANGED_TPL:
@@ -1386,27 +1391,32 @@ func grant_rewards(with_drops := true) -> void:
 	if _state != State.DEAD:
 		die()
 	if with_drops and net_eid == 0:   ## online: đồ rơi do server tung (S_DROPS)
-		var drops: Array
 		var luck := 0
 		var loop := Engine.get_main_loop()
 		var player_node: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
 		if player_node != null and "combat_stats" in player_node and player_node.combat_stats != null:
 			luck = player_node.combat_stats.lucky_v
-		if gold_boss:
-			drops = DropTable.roll_gold_boss(level, int(_build.element))
-			ChatBox.push_system("[color=#ffd700][Võ Lâm Minh Chủ][/color] Hào kiệt đã kích sát thành công [Hoàng Kim] %s!" % str(data.get("name", "Boss")))
-		elif small_gold_boss:
-			drops = DropTable.roll_small_gold_boss(level, int(_build.element))
-			ChatBox.push_system("[color=#ffff00][Tiểu Hoàng Kim][/color] Hào kiệt đã kích sát thành công [Tiểu Hoàng Kim] %s!" % str(data.get("name", "Boss")))
-		elif killer_boss:
-			drops = DropTable.roll_killer_boss(level, int(_build.element))
-			ChatBox.push_system("[color=#ff9900][Nhiếp Thí Trần][/color] Hào kiệt đã hoàn thành tiêu diệt [Sát Thủ] %s!" % str(data.get("name", "Boss")))
-		elif hell_stars > 0:
-			drops = DropTable.roll_hell(level, int(_build.element), hell_stars, blue_boss)
-		else:
-			drops = DropTable.roll_blue_boss(level, int(_build.element), luck) if blue_boss else DropTable.roll(level, int(_build.element), luck)
-		if not drops.is_empty():
-			GroundDrop.spawn_drops(get_parent(), position, drops)
+		var roll_count: int = maxi(1, drop_multiplier)
+		for _drop_idx in range(roll_count):
+			var drops: Array
+			if gold_boss:
+				drops = DropTable.roll_gold_boss(level, int(_build.element))
+				if _drop_idx == 0:
+					ChatBox.push_system("[color=#ffd700][Võ Lâm Minh Chủ][/color] Hào kiệt đã kích sát thành công [Hoàng Kim] %s!" % str(data.get("name", "Boss")))
+			elif small_gold_boss:
+				drops = DropTable.roll_small_gold_boss(level, int(_build.element))
+				if _drop_idx == 0:
+					ChatBox.push_system("[color=#ffff00][Tiểu Hoàng Kim][/color] Hào kiệt đã kích sát thành công [Tiểu Hoàng Kim] %s!" % str(data.get("name", "Boss")))
+			elif killer_boss:
+				drops = DropTable.roll_killer_boss(level, int(_build.element))
+				if _drop_idx == 0:
+					ChatBox.push_system("[color=#ff9900][Nhiếp Thí Trần][/color] Hào kiệt đã hoàn thành tiêu diệt [Sát Thủ] %s!" % str(data.get("name", "Boss")))
+			elif hell_stars > 0:
+				drops = DropTable.roll_hell(level, int(_build.element), hell_stars, blue_boss)
+			else:
+				drops = DropTable.roll_blue_boss(level, int(_build.element), luck) if blue_boss else DropTable.roll(level, int(_build.element), luck)
+			if not drops.is_empty():
+				GroundDrop.spawn_drops(get_parent(), position, drops)
 	if net_eid != 0:
 		return   ## online: kinh nghiệm do game server tính và báo (S_PROGRESS)
 	KillRewards.on_monster_killed(self)

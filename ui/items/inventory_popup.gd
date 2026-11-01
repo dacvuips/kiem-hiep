@@ -47,10 +47,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group(GROUP)
 	GameUi.apply()
-	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
-		if p == null or p == _profile or p == GameManager.local_profile:
-			refresh()
-	)
+	var gm: Node = get_node_or_null("/root/GmManager")
+	if gm != null and gm.has_signal("profile_modified"):
+		gm.profile_modified.connect(func(p: PlayerProfile) -> void:
+			if p == null or p == _profile or p == GameManager.local_profile:
+				refresh()
+		)
 	var dim: ColorRect = %Dim
 	dim.color = GameUi.DIM
 	dim.visible = _modal

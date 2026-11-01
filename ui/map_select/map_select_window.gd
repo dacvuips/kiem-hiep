@@ -17,6 +17,8 @@ class_name MapSelectWindow
 const TABS := ["Luyện", "Tinh anh", "Ải", "Boss"]
 const THUMB_SIZE := Vector2(168, 104)
 const LIST_SIZE := Vector2(620, 440)
+const LinhLungThapScript = preload("res://systems/challenge/linh_lung_thap_challenge.gd")
+const ThienTamThapScript = preload("res://systems/challenge/thien_tam_thap_challenge.gd")
 
 var _profile: PlayerProfile
 var _on_play: Callable
@@ -118,6 +120,8 @@ func _build_ai() -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 	TouchScrollHelperScript.attach(scroll, scroll)
+	_build_thien_tam_thap(list)
+	_build_linh_lung_thap(list)
 	_build_honor_defense(list)
 	_build_stages_challenge(list)
 	_build_time_challenge(list)
@@ -136,7 +140,194 @@ func _get_hub() -> Node:
 		return ml.current_scene
 	return null
 
-## Thẻ Ải "Bảo Vệ Trụ Danh Dự" (Công Thành Chiến Lâm An #1001)
+# ---------------------------------------------------------------- tab Ải (Thiên Tầm Tháp)
+
+## Thẻ Ải "Thiên Tầm Tháp"
+func _build_thien_tam_thap(parent: Control) -> void:
+	var card := GameUi.panel(GameUi.PANEL)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(card)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	card.add_child(box)
+
+	box.add_child(SocialUi.label("🏯 " + tr("Thiên Tầm Tháp"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label(tr("Tháp cổ ngàn tầng thử thách giang hồ: Mỗi vòng 1 đợt quái từ heo, nai, nhím, heo rừng... đến tận cùng danh sách! Quái tăng x2 máu, rớt đồ x3, EXP x2. Cứ mỗi 10 ải xuất hiện Đại Boss (Máu x10, Rớt đồ x5)."),
+			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(desc)
+	box.add_child(SocialUi.divider())
+
+	var middle := HBoxContainer.new()
+	middle.add_theme_constant_override("separation", 16)
+	box.add_child(middle)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	middle.add_child(info)
+
+	var map_entry: Dictionary = ThienTamThapScript.map_entry()
+	var map_frame := _minimap_frame(map_entry)
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
+	info.add_child(SocialUi.label(tr("Điều kiện tham gia: Đẳng cấp 30 trở lên · Tối đa 3 lượt đi mỗi ngày."), SocialUi.GOLD, 14))
+	info.add_child(SocialUi.label(tr("Quy mô: Hơn 740 đợt quái liên hoàn theo thứ tự từ sơ khai đến cao cấp."), SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label(tr("Cơ chế Quái thường: Máu nâng lên x2, Sát thương giữ nguyên, Rớt đồ gấp 3 lần, EXP x2."), SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label(tr("Cơ chế Đại Boss: Mỗi 10 ải xuất hiện 1 Boss, Máu gấp 10 lần quái tiếp theo, Dame bằng quái tiếp theo, Rớt đồ x5."), SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label(tr("Thành tích: Mỗi lần qua ải được tính 1 lần (ví dụ: vượt 200 ải, vượt 201 ải), lưu kỷ lục cao nhất."), SocialUi.LABEL_BLUE, 13))
+
+	var runs_cnt := ThienTamThapScript.runs_today(_profile)
+	var best_s := ThienTamThapScript.best_stage(_profile)
+	info.add_child(SocialUi.label(tr("Hôm nay đã đi: %d/%d lượt   ·   Kỷ lục đã vượt: %d ải") % [
+			runs_cnt,
+			ThienTamThapScript.RUNS_PER_DAY,
+			best_s
+		],
+		SocialUi.WARN if runs_cnt >= ThienTamThapScript.RUNS_PER_DAY else SocialUi.LABEL_BLUE, 14))
+
+	var reason := ThienTamThapScript.check_entry(_profile)
+	if reason != "":
+		var status := SocialUi.label(tr(reason), SocialUi.WARN, 13)
+		status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.add_child(status)
+
+	box.add_child(SocialUi.divider())
+
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+
+	var play_btn := SocialUi.stone_button(tr("Vào Khiêu Chiến Thiên Tầm Tháp"), Vector2(250, 44))
+	if reason != "":
+		play_btn.disabled = true
+		play_btn.tooltip_text = tr(reason)
+	else:
+		play_btn.pressed.connect(func() -> void:
+			_play(map_entry)
+		)
+	row.add_child(play_btn)
+
+	var rank_btn := SocialUi.stone_button(tr("🏆 Bảng Xếp Hạng"), Vector2(170, 44))
+	rank_btn.tooltip_text = tr("Xem bảng xếp hạng cao thủ vượt ải Thiên Tầm Tháp cao nhất")
+	rank_btn.pressed.connect(func() -> void:
+		var lb_script: GDScript = load("res://ui/ranking/thien_tam_thap_leaderboard_window.gd")
+		if lb_script != null:
+			lb_script.open(self, _profile)
+	)
+	row.add_child(rank_btn)
+
+# ---------------------------------------------------------------- tab Ải (Linh Lung Tháp)
+
+## Thẻ Ải "Linh Lung Tháp" (Chuẩn VNG 2.0 Hoàng Kim Phong Mã)
+func _build_linh_lung_thap(parent: Control) -> void:
+	var card := GameUi.panel(GameUi.PANEL)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(card)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	card.add_child(box)
+
+	box.add_child(SocialUi.label("🏯 " + tr("Linh Lung Tháp — 7 Tầng & Cầm Long Trụ"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var quote := SocialUi.label(tr("Nhạc Xung: \"Đại hiệp hãy ẩn danh tiến vào 7 tầng tháp huyền bí, chiếm giữ Cầm Long Trụ tích lũy linh khí, đoạt Rương Đoạt Khôi.\""),
+			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(quote)
+	box.add_child(SocialUi.divider())
+
+	var middle := HBoxContainer.new()
+	middle.add_theme_constant_override("separation", 16)
+	box.add_child(middle)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	middle.add_child(info)
+
+	var map_frame := _minimap_frame(LinhLungThapScript.map_entry())
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
+	var lines := [
+		tr("Vượt 7 tầng tháp trong 25 phút: Cơ chế Ẩn Danh (Người Bí Ẩn), PK tự do tranh đoạt Cầm Long Trụ."),
+		tr("Quy tắc: Tích lũy đủ tiến độ cá nhân (diệt quái, chiếm Cầm Long Trụ, PK đối thủ) để thăng tầng; Bị đánh bại rơi tụt xuống tầng dưới."),
+		tr("Điều kiện: Cấp từ %d (8x) · Tối thiểu 5 người · Phí: 1 %s (hoặc %s lượng) · Mỗi ngày %d lượt.") % [
+			LinhLungThapScript.MIN_LEVEL,
+			tr(LinhLungThapScript.ENTRY_ITEM_NAME),
+			LinhLungThapScript._money(LinhLungThapScript.ENTRY_FEE),
+			LinhLungThapScript.RUNS_PER_DAY
+		],
+		tr("Phần thưởng: Rương Linh Lung Tháp Đoạt Khôi, Đúc Thiết, Huyền Tinh và Kinh nghiệm khủng."),
+	]
+	for t in lines:
+		var l := SocialUi.label(t, SocialUi.TEXT, 14)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.add_child(l)
+
+	var item_cnt := LinhLungThapScript.entry_item_count(_profile)
+	var fee_str := tr("1 Lệnh bài") if item_cnt > 0 else tr("%s lượng") % LinhLungThapScript._money(LinhLungThapScript.ENTRY_FEE)
+	var best_f := LinhLungThapScript.best_floor(_profile)
+	var best_s := LinhLungThapScript.best_score(_profile)
+	info.add_child(SocialUi.label(tr("Lệnh bài hiện có: %d   ·   Hôm nay đã đi: %d/%d   ·   Kỷ lục: Tầng %d (%d điểm)") % [
+			item_cnt,
+			LinhLungThapScript.runs_today(_profile),
+			LinhLungThapScript.RUNS_PER_DAY,
+			best_f if best_f > 0 else 1,
+			best_s
+		],
+		SocialUi.LABEL_BLUE, 14))
+
+	var reason := LinhLungThapScript.check_entry(_profile)
+	var status_text := tr(reason) if reason != "" else tr("Đủ điều kiện tham gia (thủ tục: nộp %s).") % fee_str
+	var status := SocialUi.label(status_text, SocialUi.WARN if reason != "" else SocialUi.LABEL_BLUE, 14)
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(status)
+
+	box.add_child(SocialUi.divider())
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+
+	var enter_btn := SocialUi.stone_button(tr("Báo Danh Tiến Vào Linh Lung Tháp"), Vector2(250, 44))
+	enter_btn.disabled = reason != ""
+	enter_btn.pressed.connect(_start_linh_lung_thap)
+	row.add_child(enter_btn)
+
+	var claim_btn := SocialUi.stone_button(tr("⚡ Nhận Lệnh Bài Thử Nghiệm"), Vector2(220, 44))
+	claim_btn.tooltip_text = tr("Nhận ngay 1 Lệnh Bài Linh Lung Tháp vào hành trang để thử nghiệm tính năng lập tức")
+	claim_btn.pressed.connect(_claim_linh_lung_thap_token)
+	row.add_child(claim_btn)
+
+func _start_linh_lung_thap() -> void:
+	var reason := LinhLungThapScript.check_entry(_profile)
+	if reason != "":
+		_select_tab(2)
+		return
+	var item_cnt := LinhLungThapScript.entry_item_count(_profile)
+	var cost_desc := "1 %s" % LinhLungThapScript.ENTRY_ITEM_NAME if item_cnt > 0 else "%s lượng phí khiêu chiến" % LinhLungThapScript._money(LinhLungThapScript.ENTRY_FEE)
+	SocialWindow.confirm(self, "Linh Lung Tháp",
+			"Báo danh tiến vào Linh Lung Tháp? Bạn sẽ vào Phòng Chờ (Khu Chuẩn Bị) 5 phút trước khi khai chiến. Thủ tục thu %s và tính 1 lượt hôm nay." % cost_desc,
+			func() -> void:
+				if not LinhLungThapScript.pay_entry(_profile):
+					_select_tab(2)
+					return
+				_play(LinhLungThapScript.prep_map_entry()))
+
+func _claim_linh_lung_thap_token() -> void:
+	if LinhLungThapScript.claim_test_item(_profile):
+		var hub := _get_hub()
+		if hub and hub.has_method("_show_toast"):
+			hub._show_toast("🎁 Đã nhận 1 Lệnh Bài Linh Lung Tháp vào hành trang!")
+		_select_tab(2)
+
+## Thẻ Ải "Bảo Vệ Trụ Danh Dự"
 func _build_honor_defense(parent: Control) -> void:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -146,7 +337,7 @@ func _build_honor_defense(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("🛡️ " + tr("Bảo Vệ Trụ Danh Dự — Công Thành Lâm An (#1001)"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(SocialUi.label("🛡️ " + tr("Bảo Vệ Trụ Danh Dự"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
 	var desc := SocialUi.label(tr("Đài chiến trung tâm Lâm An đang bị 200 đợt quái giang hồ công phá từ 4 cổng! Cùng đồng đội tử thủ Long Trụ, chiêu mộ Danh Tướng viện binh."),
 			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -795,6 +986,7 @@ func _map_card(m: Dictionary) -> Control:
 	play.disabled = not playable
 	play.tooltip_text = "" if playable else tr("Bản đồ này chưa được xuất (tools/export_training_maps.py)")
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	play.add_to_group("tutorial_enter_btn")
 	play.pressed.connect(_enter_field.bind(m))
 	row.add_child(play)
 	return card
@@ -1097,6 +1289,9 @@ static func join_entry(room: Dictionary) -> Dictionary:
 
 func _play(m: Dictionary) -> void:
 	close_requested.emit()
+	var tm_intro: Node = get_node_or_null("/root/TutorialManager")
+	if tm_intro and tm_intro.has_method("is_in_intro_flow") and tm_intro.is_in_intro_flow():
+		tm_intro.advance_to_field_step()
 	if _on_play.is_valid():
 		_on_play.call(m)
 

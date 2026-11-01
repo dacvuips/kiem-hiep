@@ -130,39 +130,20 @@ func get_stage_index(stage: StageData) -> int:
 	return maxi(0, tier - 1)
 
 ## Kiểm tra bản đồ hiện tại có được MIỄN PHÍ nội lực (không mất mana khi đánh/ra chiêu) hay không:
-##   - CHỈ màn Luyện (Map luyện công thường) và Tinh Anh (1-5 sao): KHÔNG mất nội lực (khi không bật PK).
-##   - TẤT CẢ các màn chơi khác (Vượt Ải Stage bàn 1-12, Boss Hoàng Kim / Tiểu Hoàng Kim, Thách Thức Thời Gian,
-##     Phong Lăng Độ, Tống Kim, MOBA LOL, Vận Tiêu, Viêm Đế, Đấu trường, Lôi đài...) và mọi hoạt động PK (hoặc bật PK Đồ Sát):
-##     BẮT BUỘC tiêu hao nội lực.
-func is_free_mana_stage(player: Node = null) -> bool:
-	# Nếu người chơi đang bật chế độ Đồ Sát (PK) -> tốn mana
-	if player != null and "pk_mode" in player and player.pk_mode != 0:
-		return false
-	
-	# Chế độ Vượt Ải Bàn 1..12 (StageData) -> tốn mana
+## Hiện tại TẤT CẢ các bản đồ và chế độ (kể cả Luyện và Tinh Anh) đều tiêu hao nội lực khi ra chiêu.
+## (Ở tab Luyện, tân thủ cấp <= 80 được hồi phục qua Hộ thể Mộng Điệp 100 HP & 100 MP / 0.5s).
+func is_free_mana_stage(_player: Node = null) -> bool:
+	return false
+
+## Kiểm tra bản đồ hiện tại có thuộc phần "Luyện" (tab Luyện - map luyện công dã ngoại thông thường) không.
+func is_training_stage() -> bool:
 	if current_stage != null:
 		return false
-	
-	# Đấu trường PK / Lôi đài / Đại hội / Lộn xộn / Tống Kim LOL -> tốn mana
-	if field_map.has("pk") or field_map.has("arena") or field_map.get("brawl", false) or field_map.get("tong_kim_lol", false):
+	if field_map.is_empty() or not field_map.has("id"):
 		return false
-	
-	# Bản đồ Boss (Boss Hoàng Kim / Tiểu Hoàng Kim) -> tốn mana
-	if field_map.has("boss"):
+	if field_map.has("hell") or field_map.has("boss") or field_map.has("pk") or field_map.has("arena"):
 		return false
-	
-	# Tab Ải: Thách Thức Thời Gian, Phong Lăng Độ, Chiến Trường Tống Kim, Vận Tiêu, Viêm Đế -> tốn mana
-	if field_map.get("challenge", false) or field_map.get("phong_lang_do", false) or field_map.has("battle") or field_map.get("escort", false) or field_map.get("viem_de", false):
+	if field_map.get("challenge", false) or field_map.get("phong_lang_do", false) or field_map.has("battle") or field_map.get("escort", false) or field_map.get("viem_de", false) or field_map.get("brawl", false) or field_map.get("tong_kim_lol", false) or field_map.get("city_war", false) or field_map.get("linh_lung_thap", false) or field_map.get("linh_lung_prep", false):
 		return false
-	
-	# Tab Tinh Anh (có cờ hell) -> KHÔNG tốn mana
-	if field_map.has("hell"):
-		return true
-	
-	# Tab Luyện (Map luyện công: có id bản đồ và không thuộc bất kỳ hoạt động đặc biệt nào ở trên) -> KHÔNG tốn mana
-	if not field_map.is_empty() and field_map.has("id"):
-		return true
-	
-	# Mọi màn chơi khác -> BẮT BUỘC tốn mana
-	return false
+	return true
 

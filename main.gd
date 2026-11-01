@@ -144,8 +144,9 @@ func _ready() -> void:
 
 	_apply_hud_layout()   ## 4 ô thuốc nhanh ngay trên cụm nút skill
 
-	if LocalizationManager != null:
-		LocalizationManager.locale_changed.connect(func(_loc: String) -> void:
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(func(_loc: String) -> void:
 			_refresh_pk_ui()
 		)
 
@@ -158,21 +159,11 @@ func _ready() -> void:
 	add_child(_sect_prompt)
 
 	if AccountApi.is_gm():   ## công cụ thử (chỉ admin GM): hàng nút nhỏ góc trên trái
+		_setup_gm_buttons()
 
-		_build_debug_button("★ GM ★", "Trung tâm điều hành Game Master (Phím F12)", _open_gm_window, true)
-
-		_build_debug_button("Quái", "Danh sách quái VLTK — tạo quái để thử", _toggle_monster_popup)
-
-		_build_debug_button("Skill", "Bảng tất cả skill theo phái — thi triển thử", _toggle_skill_popup)
-
-		_build_debug_button("TEST", "Thử nhân vật: lên cấp, đồ, tiền, cộng chỉ số", _open_test_window)
-
-		GmManager.profile_modified.connect(func(target_profile: PlayerProfile) -> void:
-			if target_profile == null or target_profile == GameManager.local_profile:
-				_on_panel_profile_changed()
-				if is_instance_valid(_inventory_window) and _inventory_window.has_method("refresh"):
-					_inventory_window.refresh()
-		)
+	var tm_intro: Node = get_node_or_null("/root/TutorialManager")
+	if tm_intro and tm_intro.has_method("is_in_intro_flow") and tm_intro.is_in_intro_flow():
+		tm_intro.continue_in_game_tutorial(self)
 
 ## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
 
@@ -246,6 +237,22 @@ func _enter_main_map() -> void:
 
 		add_child(pld)
 
+	## Khu Chuẩn Bị Linh Lung Tháp (Map #1037)
+	elif field.get("linh_lung_prep", false):
+		var prep_script: GDScript = load("res://systems/challenge/linh_lung_prep_area.gd")
+		if prep_script != null:
+			var prep = prep_script.new()
+			prep.name = "LinhLungPrepArea"
+			add_child(prep)
+
+	## Ải Linh Lung Tháp (tab "Ải" của màn Vượt Ải): 7 tầng tháp & Cầm Long Trụ
+	elif field.get("linh_lung_thap", false):
+		var llt_script: GDScript = load("res://systems/challenge/linh_lung_thap_challenge.gd")
+		if llt_script != null:
+			var llt = llt_script.new()
+			llt.name = "LinhLungThapChallenge"
+			add_child(llt)
+
 	## Ải Hộ Tống Tiêu Xa (Long Môn Tiêu Cục): map 53 Ba Lăng Huyện
 
 	elif field.get("escort_field", false):
@@ -282,9 +289,27 @@ func _enter_main_map() -> void:
 
 			add_child(defense)
 
-	## Ải Tống Kim LOL (MOBA 1vs1 - 5vs5 trên map 378)
+	## Ải Thiên Tầm Tháp (Map 1038)
 
-	if field.get("tong_kim_lol", false) or int(field.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL:
+	elif field.get("thien_tam_thap", false):
+
+		var ttt_script: GDScript = load("res://systems/challenge/thien_tam_thap_challenge.gd")
+
+		if ttt_script != null:
+
+			var ttt = ttt_script.new()
+
+			ttt.name = "ThienTamThapChallenge"
+
+			add_child(ttt)
+
+	## Trận Công Thành Chiến (20 vs 20 trên map 378 - 20 phút)
+	if field.get("city_war", false):
+		var cw_match := CityWarMatch.new()
+		cw_match.name = "CityWarMatch"
+		add_child(cw_match)
+	## Ải Tống Kim LOL (MOBA 1vs1 - 5vs5 trên map 378)
+	elif field.get("tong_kim_lol", false) or int(field.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL:
 
 		var lol_match := TongKimLolMatch.new()
 
@@ -318,7 +343,7 @@ func _enter_main_map() -> void:
 
 			add_child(match_node)
 
-	var is_pk: bool = field.has("pk") or field.get("brawl", false) or field.get("tong_kim_lol", false)
+	var is_pk: bool = field.has("pk") or field.get("brawl", false) or field.get("tong_kim_lol", false) or field.get("city_war", false)
 
 	if is_pk:
 
@@ -908,7 +933,8 @@ func _build_side_menu() -> void:
 
 	menu.add_entry("items", "", "Hành trang", _toggle_inventory_window)
 
-	menu.add_entry("skills", "", "Kỹ năng (phím G)", _toggle_skill_book)
+	var skill_btn := menu.add_entry("skills", "", "Kỹ năng (phím G)", _toggle_skill_book)
+	skill_btn.add_to_group("tutorial_skill_menu_btn")
 
 	menu.add_entry("itemex", "Kỳ", "Kỳ Trân Các (phím F11)", _toggle_ky_tran_cac)
 
@@ -938,21 +964,23 @@ func _build_side_menu() -> void:
 
 	$UI.add_child(exit_button)
 
-	## Các nút tiện ích: hàng ngang nằm ngay dưới nút Cài đặt, thẳng hàng bên trái mini map, không chèn lên TopStatusBar.
+	## Các nút tiện ích: chuyển xuống hàng dưới cùng (sát mép đáy, thẳng hàng đều với cụm nút thao tác ở hàng trên).
 
-	menu.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	menu.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 
-	menu.offset_right = -right
+	menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+
+	menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
+
+	menu.offset_right = -360.0
 
 	var count := menu.get_child_count()
 
-	menu.offset_left = menu.offset_right - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP)
+	menu.offset_left = -360.0 - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP)
 
-	menu.offset_top = exit_button.offset_bottom + 4.0
+	menu.offset_top = -58.0
 
-	menu.offset_bottom = menu.offset_top + SideMenu.SLOT
-
-	menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	menu.offset_bottom = -12.0
 
 	menu.alignment = BoxContainer.ALIGNMENT_END
 
@@ -960,7 +988,7 @@ func _build_side_menu() -> void:
 
 	_build_bottom_action_bar()
 
-## Cụm nút thao tác (Tổ đội, Chiến đấu/PK, Giao dịch) đặt cạnh nút Ngồi ở góc dưới màn hình
+## Cụm nút thao tác (Tổ đội, Chiến đấu/PK, Giao dịch) đặt ở hàng trên, thẳng hàng đều với cụm tiện ích phía dưới
 
 func _build_bottom_action_bar() -> void:
 
@@ -982,31 +1010,31 @@ func _build_bottom_action_bar() -> void:
 
 	_bottom_action_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	_team_button = SideMenu.make_button("party", "👥", "Tổ Đội (phím P)", _toggle_team_window)
+	_trade_button = SideMenu.make_button("exchange", "🤝", "Bật giao dịch (phím F4)", _toggle_trade_mode)
 
 	_pk_button = SideMenu.make_button("pk", "", "Chế độ PK (phím F9): Chọn Luyện Công / Chiến Đấu / Đồ Sát", func() -> void: _toggle_pk_menu(_pk_button))
 
-	_trade_button = SideMenu.make_button("exchange", "🤝", "Bật giao dịch (phím F4)", _toggle_trade_mode)
+	_team_button = SideMenu.make_button("party", "👥", "Tổ Đội (phím P)", _toggle_team_window)
 
-	_bottom_action_bar.add_child(_team_button)
+	_bottom_action_bar.add_child(_trade_button)
 
 	_bottom_action_bar.add_child(_pk_button)
 
-	_bottom_action_bar.add_child(_trade_button)
+	_bottom_action_bar.add_child(_team_button)
 
 	_refresh_trade_button()
 
 	_refresh_pk_ui()
 
 	# Căn sát bên trái nút Ngồi (SitButton offset_left = -409, height 52)
+	# Hàng trên (Giao dịch, PK, Tổ đội) thẳng hàng y = -112.0 đến -66.0
+	_bottom_action_bar.offset_right = -412.0
 
-	_bottom_action_bar.offset_right = -415.0
+	_bottom_action_bar.offset_left = -412.0 - (3 * SideMenu.SLOT + 2 * 6)
 
-	_bottom_action_bar.offset_left = -415.0 - (3 * SideMenu.SLOT + 2 * 6)
+	_bottom_action_bar.offset_top = -112.0
 
-	_bottom_action_bar.offset_top = -58.0
-
-	_bottom_action_bar.offset_bottom = -14.0
+	_bottom_action_bar.offset_bottom = -66.0
 
 	$UI.add_child(_bottom_action_bar)
 
@@ -1052,7 +1080,7 @@ func _apply_hud_layout() -> void:
 
 		exit_btn.scale = Vector2.ONE * exit_scale
 
-	# SideMenu (Hàng nút túi đồ / nhân vật...)
+	# SideMenu (Hàng nút túi đồ / nhân vật... ở hàng dưới sát đáy)
 
 	var side_menu := $UI.get_node_or_null("SideMenu") as SideMenu
 
@@ -1068,21 +1096,23 @@ func _apply_hud_layout() -> void:
 
 		var count: int = side_menu.get_child_count()
 
-		var right: float = right_base - side_ox
+		side_menu.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 
-		side_menu.offset_right = -right
+		side_menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 
-		side_menu.offset_left = side_menu.offset_right - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP) * side_scale
+		side_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
-		var top_base: float = MiniMap.SCREEN_MARGIN + SideMenu.SLOT + 4.0
+		side_menu.offset_right = -360.0 + side_ox
 
-		side_menu.offset_top = top_base + mm_oy + side_oy
+		side_menu.offset_left = -360.0 - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP) * side_scale + side_ox
 
-		side_menu.offset_bottom = side_menu.offset_top + SideMenu.SLOT * side_scale
+		side_menu.offset_top = -58.0 + side_oy
+
+		side_menu.offset_bottom = -12.0 + side_oy
 
 		side_menu.scale = Vector2.ONE * side_scale
 
-	# BottomActionBar (Tổ đội, PK, Giao dịch)
+	# BottomActionBar (Giao dịch, PK, Tổ đội ở hàng trên)
 
 	if _bottom_action_bar != null and is_instance_valid(_bottom_action_bar):
 
@@ -1094,13 +1124,13 @@ func _apply_hud_layout() -> void:
 
 		var bar_scale: float = float(bar_data.get("scale", 1.0))
 
-		_bottom_action_bar.offset_right = -415.0 + bar_ox
+		_bottom_action_bar.offset_right = -412.0 + bar_ox
 
-		_bottom_action_bar.offset_left = -415.0 - (3 * SideMenu.SLOT + 2 * 6) * bar_scale + bar_ox
+		_bottom_action_bar.offset_left = -412.0 - (3 * SideMenu.SLOT + 2 * 6) * bar_scale + bar_ox
 
-		_bottom_action_bar.offset_top = -58.0 + bar_oy
+		_bottom_action_bar.offset_top = -112.0 + bar_oy
 
-		_bottom_action_bar.offset_bottom = -14.0 + bar_oy
+		_bottom_action_bar.offset_bottom = -66.0 + bar_oy
 
 		_bottom_action_bar.scale = Vector2.ONE * bar_scale
 
@@ -1658,8 +1688,20 @@ func _notification(what: int) -> void:
 func _update_pk_hud_button() -> void:
 	_refresh_pk_ui()
 
-## Nút công cụ thử (chỉ bản debug/GM) — xếp thẳng hàng cùng nút PK ở góc trên trái, không chèn đè lên nhau.
+func _setup_gm_buttons() -> void:
+	_build_debug_button("★ GM ★", "Trung tâm điều hành Game Master (Phím F12)", _open_gm_window, true)
+	_build_debug_button("Quái", "Danh sách quái VLTK — tạo quái để thử", _toggle_monster_popup)
+	_build_debug_button("Skill", "Bảng tất cả skill theo phái — thi triển thử", _toggle_skill_popup)
+	_build_debug_button("TEST", "Thử nhân vật: lên cấp, đồ, tiền, cộng chỉ số", _open_test_window)
+	if GmManager != null and GmManager.has_signal("profile_modified"):
+		GmManager.connect("profile_modified", func(target_profile: PlayerProfile) -> void:
+			if target_profile == null or target_profile == GameManager.local_profile:
+				_on_panel_profile_changed()
+				if is_instance_valid(_inventory_window) and _inventory_window.has_method("refresh"):
+					_inventory_window.refresh()
+		)
 
+## Nút công cụ thử (chỉ bản debug/GM) — xếp thẳng hàng cùng nút PK ở góc trên trái, không chèn đè lên nhau.
 func _build_debug_button(text: String, tip: String, on_press: Callable, is_gold_highlight: bool = false) -> Button:
 
 	var button := Button.new()

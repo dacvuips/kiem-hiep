@@ -56,7 +56,10 @@ func _ready() -> void:
 			get_tree().change_scene_to_file.call_deferred(HUB_SCENE_PATH)
 			return
 
-	MusicManager.play_title_music()
+	if MusicManager.has_method("play_title_music"):
+		MusicManager.play_title_music()
+	elif MusicManager.has_method("play"):
+		MusicManager.play("music001.mp3")
 	_build_element_grid()
 	_male_card.pressed.connect(_select_gender.bind(PlayerProfile.Gender.MALE))
 	_female_card.pressed.connect(_select_gender.bind(PlayerProfile.Gender.FEMALE))
@@ -187,6 +190,7 @@ func _on_create_pressed() -> void:
 		return
 
 	## Đã có nhân vật (quay lại từ màn Nhân Vật) thì chỉ đổi tên/giới tính/môn phái, giữ nguyên tiến trình.
+	var is_new := GameManager.local_profile == null
 	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _selected_gender
@@ -194,6 +198,11 @@ func _on_create_pressed() -> void:
 		profile.set_sect(_selected_sect)   ## offline: nhân vật đã vào phái vẫn đổi phái được (thử nghiệm)
 	else:
 		profile.choose_element(_selected_sect.element)   ## nhân vật mới: Vô Môn Phái, cấp 10 mới chọn phái (SectPrompt)
+	if is_new:
+		profile.intro_completed = false
+		var tm: Node = get_node_or_null("/root/TutorialManager")
+		if tm and tm.has_method("notify_character_created"):
+			tm.notify_character_created()
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
 

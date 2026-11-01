@@ -91,8 +91,9 @@ func _ready() -> void:
 	for b: BaseButton in [_create_button, _enter_button, _back_button]:
 		_style_pill_button(b)
 	_update_locale_texts()
-	if LocalizationManager.has_signal("locale_changed"):
-		LocalizationManager.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	_dice_button.pressed.connect(_on_dice_pressed)
 	_dice_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_create_button.pressed.connect(_on_create_pressed)
@@ -100,7 +101,8 @@ func _ready() -> void:
 	_back_button.pressed.connect(_on_back_pressed)
 	_back_button.mouse_entered.connect(_play_ui.bind(VltkSound.UI_HOVER))
 	_name_input.text_submitted.connect(func(_t: String) -> void: _on_enter_pressed())
-	AccountScreen.setup_mobile_web_input(_name_input, "Nhập tên nhân vật:")
+	if OS.has_feature("web"):
+		AccountScreen.setup_mobile_web_input(_name_input, "Nhập tên nhân vật:")
 
 	for b in _side_buttons:
 		if b.name == "AccountButton":
@@ -290,7 +292,11 @@ func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 	if need_gender >= 0:
 		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
 	if is_new:
+		profile.intro_completed = false
 		StarterKit.apply(profile)   ## quà tân thủ: cấp 10 + đồ trong túi (vào game là phải chọn phái)
+		var tm: Node = get_node_or_null("/root/TutorialManager")
+		if tm and tm.has_method("notify_character_created"):
+			tm.notify_character_created()
 	GameManager.local_profile = profile
 	SaveManager.save_profile(profile)
 	_show_message(tr("Đã tạo nhân vật %s — %s") % [player_name, profile.sect_name])
@@ -317,7 +323,11 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 	var need_gender := PlayerProfile.required_gender(int(_element))
 	if need_gender >= 0:
 		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
+	profile.intro_completed = false
 	StarterKit.apply(profile)
+	var tm_new: Node = get_node_or_null("/root/TutorialManager")
+	if tm_new and tm_new.has_method("notify_character_created"):
+		tm_new.notify_character_created()
 
 	_create_button.disabled = true
 	_enter_button.disabled = true

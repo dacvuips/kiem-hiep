@@ -51,10 +51,11 @@ func _init() -> void:
 	custom_minimum_size = Vector2(716, 545)
 	_build_ui()
 	_refresh_ui()
-	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
-		if p == null or p == _profile or p == GameManager.local_profile:
-			_refresh_ui()
-	)
+	if GmManager != null and GmManager.has_signal("profile_modified"):
+		GmManager.connect("profile_modified", func(p: PlayerProfile) -> void:
+			if p == null or p == _profile or p == GameManager.local_profile:
+				_refresh_ui()
+		)
 
 func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 6)

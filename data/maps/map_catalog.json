@@ -6,19 +6,19 @@
       "name": "Hoa Sơn",
       "kind": "Field",
       "level": 20,
-      "monster_count": 693,
+      "monster_count": 125,
       "monsters": [
         {
           "t": 11,
           "name": "Heo rừng",
           "level": 20,
-          "count": 347
+          "count": 62
         },
         {
           "t": 12,
           "name": "Nhím",
           "level": 20,
-          "count": 346
+          "count": 63
         }
       ],
       "dir": "res://world/maps/map_2",
@@ -29,7 +29,10 @@
       "start": [
         151,
         118
-      ]
+      ],
+      "folder": "res://world/maps/map_2",
+      "monster_summary": "62 Heo rừng, 63 Nhím",
+      "npc_count": 129
     },
     {
       "id": 9,
@@ -1187,6 +1190,36 @@
       "start": [
         99,
         101
+      ]
+    },
+    {
+      "id": 1037,
+      "name": "Khu Chuẩn Bị Linh Lung Tháp",
+      "kind": "Special",
+      "level": 80,
+      "monster_count": 0,
+      "monsters": [],
+      "dir": "res://world/maps/map_1037",
+      "start": [
+        99,
+        100
+      ]
+    },
+    {
+      "id": 1038,
+      "name": "Linh Lung Tháp",
+      "kind": "Special",
+      "level": 80,
+      "monster_count": 0,
+      "monsters": [],
+      "dir": "res://world/maps/map_1038",
+      "arena_center": [
+        50944,
+        50944
+      ],
+      "start": [
+        99,
+        99
       ]
     }
   ]

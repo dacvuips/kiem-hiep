@@ -36,6 +36,11 @@ static func box(bg: Color, border: Color, radius := 6, border_w := 1, margin := 
 static func window_style() -> StyleBoxFlat:
 	return GameUi.window_style()
 
+static func get_camera_icon() -> Texture2D:
+	if ResourceLoader.exists("res://assets/ui/icon_camera.png"):
+		return load("res://assets/ui/icon_camera.png") as Texture2D
+	return null
+
 static func label(text: String, color: Color = TEXT, size := 14, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	return GameUi.label(text, color, size, align)
 

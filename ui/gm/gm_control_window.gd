@@ -63,9 +63,13 @@ func _init() -> void:
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
 	body.add_child(close_btn)
 
-	GmManager.gm_state_changed.connect(_refresh_footer)
-	GmManager.possession_changed.connect(func(_p: bool, _t: String) -> void: _refresh_footer())
-	GmManager.profile_modified.connect(_on_gm_profile_modified)
+	if GmManager != null:
+		if GmManager.has_signal("gm_state_changed"):
+			GmManager.connect("gm_state_changed", _refresh_footer)
+		if GmManager.has_signal("possession_changed"):
+			GmManager.connect("possession_changed", func(_p: bool, _t: String) -> void: _refresh_footer())
+		if GmManager.has_signal("profile_modified"):
+			GmManager.connect("profile_modified", _on_gm_profile_modified)
 
 func _on_gm_profile_modified(_p: PlayerProfile) -> void:
 	_refresh_footer()

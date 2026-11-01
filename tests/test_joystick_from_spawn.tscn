@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ci874jy8w4230"]
+
+[ext_resource type="Script" path="res://tests/test_joystick_from_spawn.gd" id="1_test"]
+
+[node name="TestJoystickFromSpawn" type="Node"]
+script = ExtResource("1_test")

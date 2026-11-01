@@ -3,9 +3,13 @@
 [ext_resource type="FontFile" uid="uid://c1ufvxcvnbh6a" path="res://assets/fonts/NotoSerif-Variable.ttf" id="1_font"]
 [ext_resource type="FontFile" uid="uid://b6whr5l32ctr7" path="res://assets/fonts/BeVietnamPro-Regular.ttf" id="2_input"]
 [ext_resource type="FontFile" uid="uid://cbu74uj7f22lp" path="res://assets/fonts/symbol_fallback.ttf" id="3_sym"]
+[ext_resource type="FontFile" uid="uid://c1nd3u8i2muyh" path="res://assets/fonts/NotoSansThai.ttf" id="4_thai"]
+[ext_resource type="FontFile" uid="uid://cfijkgsbgnqwe" path="res://assets/fonts/NotoSansJP.ttf" id="5_jp"]
+[ext_resource type="FontFile" uid="uid://1ju8g2rr710e" path="res://assets/fonts/NotoSansKR.ttf" id="6_kr"]
+[ext_resource type="FontFile" uid="uid://c5atoy41orqli" path="res://assets/fonts/NotoSansSC.ttf" id="7_sc"]
 
 [sub_resource type="SystemFont" id="SystemFont_vltk"]
-fallbacks = Array[Font]([ExtResource("1_font"), ExtResource("3_sym")])
+fallbacks = Array[Font]([ExtResource("1_font"), ExtResource("4_thai"), ExtResource("5_jp"), ExtResource("6_kr"), ExtResource("7_sc"), ExtResource("3_sym")])
 font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI", "sans-serif")
 
 [resource]

@@ -121,11 +121,14 @@ def godot_version(godot: str) -> str:
 
 def export_pack(godot: str, preset: str, dest: Path) -> None:
     print(f"  xuất '{preset}' ...", flush=True)
-    r = subprocess.run([godot, "--headless", "--path", str(ROOT), "--export-pack", preset, str(dest)],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace")
-    if r.returncode != 0 or not dest.exists() or dest.stat().st_size == 0:
-        sys.stderr.write(r.stdout[-4000:] + r.stderr[-4000:])
-        sys.exit(f"Xuất gói '{preset}' thất bại (mã {r.returncode})")
+    with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as out:
+        r = subprocess.run([godot, "--headless", "--path", str(ROOT), "--export-pack", preset, str(dest)],
+                           stdout=out, stderr=subprocess.STDOUT)
+        if r.returncode != 0 or not dest.exists() or dest.stat().st_size == 0:
+            out.seek(0)
+            tail = out.read()[-4000:]
+            sys.stderr.write(tail)
+            sys.exit(f"Xuất gói '{preset}' thất bại (mã {r.returncode})")
 
 
 def main() -> None:
@@ -140,6 +143,7 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--min-launcher", type=int, help="LAUNCHER_VERSION tối thiểu (launcher cũ hơn -> báo tải APK mới)")
     ap.add_argument("--apk-url", help="link tải APK mới, hiện khi launcher quá cũ")
+    ap.add_argument("--clean-old", action="store_true", help="Xoá toàn bộ gói cũ không thuộc manifest mới nhất (mặc định giữ lại 1 bản trước)")
     ap.add_argument("--files-base", help="để gói trên CDN: https://cdn.../client/ (mặc định server tài khoản)")
     args = ap.parse_args()
 
@@ -220,8 +224,11 @@ def main() -> None:
     tmp_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp_manifest, manifest_path)
 
-    # Giữ gói của bản trước cho người đang tải dở; xoá gói cũ hơn.
-    keep = {p["file"] for p in packs} | {p["file"] for p in old.get("packs", [])}
+    # Giữ gói của bản trước cho người đang tải dở (trừ khi bật --clean-old); xoá gói cũ hơn.
+    if args.clean_old:
+        keep = {p["file"] for p in packs}
+    else:
+        keep = {p["file"] for p in packs} | {p["file"] for p in old.get("packs", [])}
     for f in files_dir.glob("*.pck"):
         if f.name not in keep:
             f.unlink()

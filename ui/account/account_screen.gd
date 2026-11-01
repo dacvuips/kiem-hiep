@@ -42,7 +42,10 @@ var _busy := false
 
 ## Gọi trong _ready() của màn con.
 func _setup_screen() -> void:
-	MusicManager.play_title_music()
+	if MusicManager.has_method("play_title_music"):
+		MusicManager.play_title_music()
+	elif MusicManager.has_method("play"):
+		MusicManager.play("music001.mp3")
 	_reload_input_icons()
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)

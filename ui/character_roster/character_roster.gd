@@ -43,7 +43,10 @@ func _notification(what: int) -> void:
 		_update_locale_texts()
 
 func _ready() -> void:
-	MusicManager.play_title_music()
+	if MusicManager.has_method("play_title_music"):
+		MusicManager.play_title_music()
+	elif MusicManager.has_method("play"):
+		MusicManager.play("music001.mp3")
 	_create_ref = load(CREATE_SCENE).instantiate()
 	_enter_btn.pressed.connect(_on_enter_pressed)
 	_create_btn.pressed.connect(_on_create_pressed)
@@ -52,8 +55,9 @@ func _ready() -> void:
 	for b: BaseButton in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
 		_style_pill_button(b)
 	_update_locale_texts()
-	if LocalizationManager.has_signal("locale_changed"):
-		LocalizationManager.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
+	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
+	if loc_mgr and loc_mgr.has_signal("locale_changed"):
+		loc_mgr.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 	if AccountApi.is_logged_in():
@@ -343,7 +347,12 @@ func _on_enter_pressed() -> void:
 			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 			return
 
-	GameManager.local_profile = slot["profile"]
+	var prof: PlayerProfile = slot["profile"]
+	if ResourceLoader.exists("res://systems/player_profile.gd"):
+		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
+		if prof_scr and prof != null:
+			prof.set_script(prof_scr)
+	GameManager.local_profile = prof
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]
 		SaveManager.set_online_character(int(c["id"]), int(c["version"]))

@@ -34,6 +34,8 @@ static func on_monster_killed(monster: VltkMonster) -> void:
 	var base := MonsterData.stat_at_level(monster.data, "exp", monster.level)
 	if base <= 0:
 		base = int(monster.data.get("exp", 0))
+	if "exp_multiplier" in monster and monster.exp_multiplier > 0.0 and monster.exp_multiplier != 1.0:
+		base = int(round(base * monster.exp_multiplier))
 	var got := grant_exp(GameManager.local_profile, base, monster.level)
 	if got > 0:
 		var mname: String = str(monster.data.get("name", "Quái")) if monster.data else "Quái"

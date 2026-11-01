@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c6s7e8sav0e1r"]
+
+[ext_resource type="Script" path="res://tests/test_server_mapgrid.gd" id="1_test"]
+
+[node name="TestServerMapgrid" type="Node"]
+script = ExtResource("1_test")

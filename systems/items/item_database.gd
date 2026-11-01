@@ -294,6 +294,30 @@ static func get_misc(misc_id: String) -> Dictionary:
 				"stack": 10,
 				"width": 1,
 				"height": 1,
+			},
+			{
+				"id": "4_999_0",
+				"name": "Lệnh Bài Linh Lung Tháp",
+				"intro": "Lệnh bài phong ấn cổ xưa của Linh Lung Tháp. Sử dụng để báo danh khiêu chiến vượt 7 tầng ải Linh Lung Tháp tại tab Ải hoặc NPC Nhạc Xung.",
+				"icon": "taskobj126",
+				"price": 50000,
+				"level": 110,
+				"stack": 100,
+				"width": 1,
+				"height": 1,
+				"source": "questkey"
+			},
+			{
+				"id": "4_999_1",
+				"name": "Rương Linh Lung Tháp Đoạt Khôi",
+				"intro": "Bảo rương vinh danh dũng sĩ đoạt ngôi vị cao nhất Linh Lung Tháp. Mở ra nhận Đúc Thiết, Tinh Thiết Quặng, Huyền Tinh và lượng lớn kinh nghiệm giang hồ.",
+				"icon": "item_goldenbox",
+				"price": 200000,
+				"level": 110,
+				"stack": 10,
+				"width": 1,
+				"height": 1,
+				"source": "questkey"
 			}
 		]
 		for c_it in custom_ky_items:

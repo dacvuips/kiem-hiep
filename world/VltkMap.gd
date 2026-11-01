@@ -167,7 +167,14 @@ func load_map(dir: String) -> void:
 
 ## Local path of a file of the exported map: inside the project, or in the download cache.
 func _p(rel: String) -> String:
-	return _cache_dir.path_join(rel) if base_url != "" else map_dir.path_join(rel)
+	if base_url != "":
+		return _cache_dir.path_join(rel)
+	if rel.begins_with("sprites/"):
+		var local_path := map_dir.path_join(rel)
+		if ResourceLoader.exists(local_path) or FileAccess.file_exists(local_path):
+			return local_path
+		return "res://world/maps/shared_sprites/".path_join(rel.get_file())
+	return map_dir.path_join(rel)
 
 
 # ---------------------------------------------------------------- regions (one file each, or packed in chunks)
@@ -454,7 +461,13 @@ func _load_tex(path: String) -> Texture2D:
 			var im: Image = Image.load_from_file(path) if FileAccess.file_exists(path) else null
 			_tex_cache[path] = ImageTexture.create_from_image(im) if im != null else null
 		else:
-			_tex_cache[path] = load(path) if ResourceLoader.exists(path) else null
+			if ResourceLoader.exists(path):
+				_tex_cache[path] = load(path)
+			elif path.contains("/sprites/"):
+				var shared := "res://world/maps/shared_sprites/".path_join(path.get_file())
+				_tex_cache[path] = load(shared) if ResourceLoader.exists(shared) else null
+			else:
+				_tex_cache[path] = null
 	return _tex_cache[path]
 
 

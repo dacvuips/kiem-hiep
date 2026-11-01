@@ -1,0 +1,211 @@
+{
+  "name": "Linh Lung Tháp",
+  "prep_map": 1037,
+  "prep_map_name": "Khu Chuẩn Bị Linh Lung Tháp",
+  "prep_map_dir": "res://world/maps/map_1037",
+  "map": 1038,
+  "map_name": "Linh Lung Tháp",
+  "map_dir": "res://world/maps/map_1038",
+  "entry": [
+    51200,
+    101888
+  ],
+  "pillar_pos": [
+    51225,
+    102384
+  ],
+  "pillar_res": "enemy190",
+  "spawn_points": [
+    [
+      51380,
+      51180
+    ],
+    [
+      51343,
+      51301
+    ],
+    [
+      51200,
+      51314
+    ],
+    [
+      51072,
+      51261
+    ],
+    [
+      51020,
+      51180
+    ],
+    [
+      51072,
+      51090
+    ],
+    [
+      51200,
+      51054
+    ],
+    [
+      51327,
+      51090
+    ],
+    [
+      51460,
+      51180
+    ],
+    [
+      51383,
+      51316
+    ],
+    [
+      51200,
+      51362
+    ],
+    [
+      51016,
+      51308
+    ],
+    [
+      50940,
+      51180
+    ],
+    [
+      51016,
+      51051
+    ],
+    [
+      51200,
+      50998
+    ],
+    [
+      51383,
+      51051
+    ],
+    [
+      51540,
+      51180
+    ],
+    [
+      51440,
+      51348
+    ],
+    [
+      51200,
+      51418
+    ],
+    [
+      50959,
+      51348
+    ],
+    [
+      50860,
+      51180
+    ],
+    [
+      50959,
+      51011
+    ],
+    [
+      51200,
+      50942
+    ],
+    [
+      51440,
+      51011
+    ]
+  ],
+  "npc": {
+    "name": "Nhạc Xung",
+    "location": "Lâm An (170/209)"
+  },
+  "rules": {
+    "min_level": 80,
+    "min_players": 5,
+    "entry_item": "Lệnh Bài Linh Lung Tháp",
+    "entry_item_id": "4_999_0",
+    "cost": 50000,
+    "runs_per_day": 3,
+    "time_limit_sec": 1500,
+    "total_floors": 7,
+    "pillar_range": 250.0,
+    "pillar_tick_sec": 3.0,
+    "player_kill_climb": 1
+  },
+  "floors": [
+    {
+      "floor": 1,
+      "name": "Linh Lung Tầng 1 - Sơ Nhập",
+      "monster_level": 80,
+      "monster_count": 10,
+      "kill_target": 10,
+      "pillar_pts": 10,
+      "monster_name": "Linh Lung Thủ Vệ Tầng 1",
+      "target_score": 150
+    },
+    {
+      "floor": 2,
+      "name": "Linh Lung Tầng 2 - Khám Phá",
+      "monster_level": 82,
+      "monster_count": 12,
+      "kill_target": 12,
+      "pillar_pts": 20,
+      "monster_name": "Linh Lung Thủ Vệ Tầng 2",
+      "target_score": 250
+    },
+    {
+      "floor": 3,
+      "name": "Linh Lung Tầng 3 - Thử Thách",
+      "monster_level": 84,
+      "monster_count": 15,
+      "kill_target": 15,
+      "pillar_pts": 35,
+      "monster_name": "Linh Lung Cương Binh Tầng 3",
+      "target_score": 400
+    },
+    {
+      "floor": 4,
+      "name": "Linh Lung Tầng 4 - Tranh Đoạt",
+      "monster_level": 86,
+      "monster_count": 18,
+      "kill_target": 18,
+      "pillar_pts": 50,
+      "monster_name": "Linh Lung Chiến Tướng Tầng 4",
+      "target_score": 600
+    },
+    {
+      "floor": 5,
+      "name": "Linh Lung Tầng 5 - Thâm Uyên",
+      "monster_level": 88,
+      "monster_count": 20,
+      "kill_target": 20,
+      "pillar_pts": 70,
+      "monster_name": "Linh Lung Cuồng Ma Tầng 5",
+      "target_score": 850
+    },
+    {
+      "floor": 6,
+      "name": "Linh Lung Tầng 6 - Tuyệt Đỉnh",
+      "monster_level": 90,
+      "monster_count": 22,
+      "kill_target": 22,
+      "pillar_pts": 95,
+      "monster_name": "Linh Lung Hộ Pháp Tầng 6",
+      "target_score": 1150
+    },
+    {
+      "floor": 7,
+      "name": "Linh Lung Tầng 7 - Cực Đỉnh Đoạt Khôi",
+      "monster_level": 92,
+      "monster_count": 24,
+      "kill_target": 24,
+      "pillar_pts": 130,
+      "monster_name": "Linh Lung Tháp Chủ Tầng 7",
+      "target_score": 2000
+    }
+  ],
+  "rewards": {
+    "exp_per_point": 250,
+    "chest_item_id": "4_999_1",
+    "chest_name": "Rương Linh Lung Tháp Đoạt Khôi",
+    "min_score_for_chest": 500
+  }
+}

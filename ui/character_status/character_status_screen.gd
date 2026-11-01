@@ -70,10 +70,12 @@ func _ready() -> void:
 		push_warning("CharacterStatusScreen: _profile chưa được gán — bỏ qua refresh(). Scene này phải tạo qua CharacterStatusScreen.attach(), không chạy trực tiếp.")
 		return
 
-	GmManager.profile_modified.connect(func(p: PlayerProfile) -> void:
-		if p == null or p == _profile or p == GameManager.local_profile:
-			refresh()
-	)
+	var gm: Node = get_node_or_null("/root/GmManager")
+	if gm != null and gm.has_signal("profile_modified"):
+		gm.profile_modified.connect(func(p: PlayerProfile) -> void:
+			if p == null or p == _profile or p == GameManager.local_profile:
+				refresh()
+		)
 
 	refresh()
 
@@ -285,10 +287,11 @@ func _setup_portrait() -> void:
 		v_box.add_theme_constant_override("separation", 4)
 		_avatar_upload_box.add_child(v_box)
 
-		var icon_lbl := Label.new()
-		icon_lbl.text = "📷"
-		icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon_lbl.add_theme_font_size_override("font_size", 22)
+		var icon_lbl := TextureRect.new()
+		if ResourceLoader.exists("res://assets/ui/icon_camera.png"):
+			icon_lbl.texture = load("res://assets/ui/icon_camera.png")
+		icon_lbl.custom_minimum_size = Vector2(0, 22)
+		icon_lbl.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 		v_box.add_child(icon_lbl)
 
 		var upload_lbl := Label.new()

@@ -172,7 +172,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var source: Variant = data.get("source")
 	if source in ["craft_slot", "craft_alt"]:
 		return true
-	var from_other: bool = source != null and source != profile
+	var from_other: bool = source != null and ((source is not Object) or source != profile)
 	if from_other and not transfer_handler.is_valid():
 		return false
 	var item: ItemInstance = data["item"]
@@ -200,7 +200,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			_overlay.queue_redraw()
 		return
 	var at_cell := _target_cell(at_position, data)
-	var from_other: bool = source != null and source != profile
+	var from_other: bool = source != null and ((source is not Object) or source != profile)
 	if from_other:
 		if transfer_handler.call(item, source, profile, at_cell.x, at_cell.y, bag):
 			changed.emit()

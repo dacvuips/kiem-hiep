@@ -53,14 +53,39 @@ func _setup_visual() -> void:
 			_vltk_sprite.set_resource(res_id)
 			_vltk_sprite.set_pose("stand", 0, 0.0)
 
-	# Vòng hào quang phòng thủ dưới chân trụ
+	# Vòng hào quang phòng thủ & Bóng đổ tiếp đất dưới chân trụ (Isometric 2:1)
 	_aura_fx = Node2D.new()
 	_aura_fx.name = "DefenseAura"
-	add_child(_aura_fx)
+	_aura_fx.z_index = 0
+	var base_center := Vector2(0.0, 22.0)
 	_aura_fx.draw.connect(func() -> void:
-		_aura_fx.draw_arc(Vector2.ZERO, 60.0, 0, TAU, 32, Color(1.0, 0.85, 0.2, 0.4), 3.0)
-		_aura_fx.draw_arc(Vector2.ZERO, 72.0, 0, TAU, 32, Color(0.2, 0.8, 1.0, 0.25), 2.0)
+		# Lớp bóng đổ tiếp xúc mặt đất (Ground Contact Shadow)
+		var pts_amb := PackedVector2Array()
+		for i in 33:
+			var a := TAU * float(i) / 32.0
+			pts_amb.append(base_center + Vector2(cos(a) * 125.0, sin(a) * 62.5))
+		_aura_fx.draw_colored_polygon(pts_amb, Color(0.0, 0.0, 0.0, 0.32))
+
+		var pts_base := PackedVector2Array()
+		for i in 33:
+			var a := TAU * float(i) / 32.0
+			pts_base.append(base_center + Vector2(cos(a) * 95.0, sin(a) * 47.5))
+		_aura_fx.draw_colored_polygon(pts_base, Color(0.0, 0.0, 0.0, 0.55))
+
+		# Vòng hào quang phòng thủ isometric 2:1
+		var pts_aura1 := PackedVector2Array()
+		for i in 33:
+			var a := TAU * float(i) / 32.0
+			pts_aura1.append(base_center + Vector2(cos(a) * 90.0, sin(a) * 45.0))
+		_aura_fx.draw_polyline(pts_aura1, Color(1.0, 0.85, 0.2, 0.65), 3.0)
+
+		var pts_aura2 := PackedVector2Array()
+		for i in 33:
+			var a := TAU * float(i) / 32.0
+			pts_aura2.append(base_center + Vector2(cos(a) * 110.0, sin(a) * 55.0))
+		_aura_fx.draw_polyline(pts_aura2, Color(0.2, 0.8, 1.0, 0.4), 2.0)
 	)
+	add_child(_aura_fx)
 	_aura_fx.queue_redraw()
 
 func _setup_hud() -> void:

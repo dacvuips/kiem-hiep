@@ -10,6 +10,9 @@ const POTIONS := ["Hồi Thiên Đan", "Đại Bổ Tán", "Ngũ Hoa Ngọc Lộ
 const SLOT_SIZE := Vector2(52, 52)
 const NUM_WIDTH := 84.0
 
+static var current_dropdown: Control = null
+static var current_skill_menu: PopupMenu = null
+
 var profile: PlayerProfile
 var _s: AutoSettings
 var _page := 0
@@ -44,6 +47,8 @@ func _init(p: PlayerProfile) -> void:
 		var b := _tab_button(tr(PAGES[i]))
 		b.custom_minimum_size = Vector2(110, 64)
 		b.pressed.connect(_set_page.bind(i))
+		if i == 1: # Tab "Tấn công"
+			b.add_to_group("tutorial_auto_attack_tab")
 		nav.add_child(b)
 		_page_buttons.append(b)
 	var panel := GameUi.panel(GameUi.PANEL)
@@ -61,6 +66,7 @@ func _init(p: PlayerProfile) -> void:
 	_toggle = SocialUi.stone_button("")
 	_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_toggle.pressed.connect(_on_toggle_auto)
+	_toggle.add_to_group("tutorial_toggle_auto")
 	buttons.add_child(_toggle)
 	var close := SocialUi.stone_button(tr("Đóng"))
 	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -140,6 +146,10 @@ func _on_toggle_auto() -> void:
 		return
 	_save()
 	p.is_auto_mode = not p.is_auto_mode
+	var tm_intro: Node = get_node_or_null("/root/TutorialManager")
+	if p.is_auto_mode and tm_intro and tm_intro.has_method("is_in_intro_flow") and tm_intro.is_in_intro_flow():
+		tm_intro.complete_intro()
+		close_requested.emit()
 
 func _player() -> Node:
 	return get_tree().get_first_node_in_group("player") if is_inside_tree() else null
@@ -197,7 +207,10 @@ func _build_attack() -> void:
 		var slots := HBoxContainer.new()
 		slots.add_theme_constant_override("separation", 6)
 		for i in AutoSettings.SLOTS:
-			slots.add_child(_skill_slot(g[1], i, g[2]))
+			var slot := _skill_slot(g[1], i, g[2])
+			if i == 0 and str(g[1]) == "attack_skills":
+				slot.add_to_group("tutorial_attack_slot")
+			slots.add_child(slot)
 		box.add_child(slots)
 		groups.add_child(box)
 	_content.add_child(_row([SocialUi.label(tr("Phạm vi"), SocialUi.TEXT, 14), _num("scan_range", 100, 5000, 50),
@@ -273,34 +286,181 @@ func _skill_slot(key: String, index: int, kind: SlotKind) -> Button:
 	return b
 
 func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) -> void:
-	var menu := PopupMenu.new()
+	if is_instance_valid(current_dropdown):
+		current_dropdown.queue_free()
+		current_dropdown = null
+
 	var options: Array[SkillDefinition] = _candidates(kind)
-	menu.add_item(tr("— Bỏ trống —"), 0)
-	for i in options.size():
-		if options[i].icon != null:
-			menu.add_icon_item(options[i].icon, options[i].skill_name, i + 1)
-		else:
-			menu.add_item(options[i].skill_name, i + 1)
-		menu.set_item_icon_max_width(menu.item_count - 1, 28)
-	menu.id_pressed.connect(func(id: int) -> void:
-		_s.get(key)[index] = "" if id == 0 else options[id - 1].id
+	var last_learned := ""
+	var tm = get_node_or_null("/root/TutorialManager")
+	if tm:
+		last_learned = tm.last_learned_skill_id
+
+	var in_tut: bool = bool(tm != null and tm.has_method("is_in_intro_flow") and tm.is_in_intro_flow())
+
+	var blocker: Control = null
+	if not in_tut:
+		blocker = Control.new()
+		blocker.set_anchors_preset(Control.PRESET_FULL_RECT)
+		blocker.top_level = true
+		blocker.z_index = 199
+		blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+		add_child(blocker)
+
+	var dropdown := PanelContainer.new()
+	dropdown.name = "SkillSelectDropdown"
+	dropdown.z_index = 200
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.12, 0.10, 0.09, 0.98)
+	sb.border_width_left = 1
+	sb.border_width_top = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.border_color = Color(0.85, 0.70, 0.35, 0.9)
+	sb.corner_radius_top_left = 6
+	sb.corner_radius_top_right = 6
+	sb.corner_radius_bottom_right = 6
+	sb.corner_radius_bottom_left = 6
+	sb.shadow_color = Color(0, 0, 0, 0.6)
+	sb.shadow_size = 8
+	sb.shadow_offset = Vector2(0, 4)
+	dropdown.add_theme_stylebox_override("panel", sb)
+
+	var close_dropdown := func() -> void:
+		if is_instance_valid(dropdown):
+			dropdown.queue_free()
+		if is_instance_valid(blocker):
+			blocker.queue_free()
+		if current_dropdown == dropdown:
+			current_dropdown = null
+
+	if blocker != null:
+		blocker.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev is InputEventMouseButton and ev.is_pressed():
+				close_dropdown.call()
+		)
+
+	var scroll := ScrollContainer.new()
+	var visible_items := mini(options.size() + 1, 8)
+	scroll.custom_minimum_size = Vector2(250, visible_items * 38 + 8)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	dropdown.add_child(scroll)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 2)
+	scroll.add_child(vbox)
+
+	# 1. Nút Bỏ trống
+	var empty_btn := _make_dropdown_item(null, tr("— Bỏ trống —"))
+	empty_btn.pressed.connect(func() -> void:
+		_s.get(key)[index] = ""
 		_changed()
-		_rebuild())
-	menu.popup_hide.connect(menu.queue_free)
-	add_child(menu)
-	menu.popup(Rect2i(Vector2i(anchor.get_screen_position() + Vector2(0, anchor.size.y)), Vector2i.ZERO))
+		_rebuild()
+		close_dropdown.call()
+	)
+	vbox.add_child(empty_btn)
+
+	# 2. Danh sách kỹ năng
+	var found_target := false
+	for i in options.size():
+		var skill := options[i]
+		var item_btn := _make_dropdown_item(skill.icon, skill.skill_name)
+
+		var is_target := false
+		if not found_target:
+			if not last_learned.is_empty() and skill.id == last_learned:
+				is_target = true
+				found_target = true
+			elif last_learned.is_empty() and not skill.is_basic_attack:
+				is_target = true
+				found_target = true
+
+		if is_target:
+			item_btn.add_to_group("tutorial_target_skill_item")
+
+		item_btn.pressed.connect(func() -> void:
+			_s.get(key)[index] = skill.id
+			_changed()
+			_rebuild()
+			close_dropdown.call()
+			var tm_inst = get_node_or_null("/root/TutorialManager")
+			if tm_inst and tm_inst.has_method("notify_auto_skill_selected"):
+				tm_inst.notify_auto_skill_selected()
+		)
+		vbox.add_child(item_btn)
+
+	# Fallback gán group vào kỹ năng đầu tiên nếu chưa tìm thấy
+	if not found_target and vbox.get_child_count() > 1:
+		vbox.get_child(1).add_to_group("tutorial_target_skill_item")
+
+	var tut_overlay: Node = null
+	if tm != null and tm.has_method("get_active_overlay"):
+		tut_overlay = tm.get_active_overlay()
+
+	if is_instance_valid(tut_overlay):
+		tut_overlay.add_child(dropdown)
+	else:
+		add_child(dropdown)
+	current_dropdown = dropdown
+
+	# Định vị trí dropdown ngay dưới anchor (phải gán sau khi add_child)
+	var anchor_pos := anchor.get_global_position()
+	dropdown.global_position = Vector2(anchor_pos.x - 2.0, anchor_pos.y + anchor.size.y + 4.0)
+
+	var tm_inst = get_node_or_null("/root/TutorialManager")
+	if tm_inst and tm_inst.has_method("notify_skill_menu_opened"):
+		tm_inst.notify_skill_menu_opened(anchor, null, options)
+
+func _make_dropdown_item(icon: Texture2D, title: String) -> Button:
+	var b := Button.new()
+	b.text = " " + title
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.custom_minimum_size = Vector2(240, 36)
+	b.focus_mode = Control.FOCUS_NONE
+	if icon != null:
+		b.icon = icon
+		b.expand_icon = true
+	b.add_theme_font_size_override("font_size", 14)
+	b.add_theme_color_override("font_color", Color(0.92, 0.88, 0.82))
+	b.add_theme_color_override("font_hover_color", Color(1.0, 0.85, 0.4))
+
+	var normal_sb := StyleBoxFlat.new()
+	normal_sb.bg_color = Color(0, 0, 0, 0)
+	normal_sb.content_margin_left = 6
+	normal_sb.content_margin_right = 6
+	b.add_theme_stylebox_override("normal", normal_sb)
+
+	var hover_sb := StyleBoxFlat.new()
+	hover_sb.bg_color = Color(0.35, 0.28, 0.15, 0.85)
+	hover_sb.corner_radius_top_left = 4
+	hover_sb.corner_radius_top_right = 4
+	hover_sb.corner_radius_bottom_right = 4
+	hover_sb.corner_radius_bottom_left = 4
+	hover_sb.content_margin_left = 6
+	hover_sb.content_margin_right = 6
+	b.add_theme_stylebox_override("hover", hover_sb)
+
+	return b
 
 ## Kỹ năng đã học hợp nhóm: Tấn công = chiêu đánh địch; Hỗ trợ = buff/bùa; Vòng sáng & Buff máu = hào quang + buff lên mình/đồng đội.
 func _candidates(kind: SlotKind) -> Array[SkillDefinition]:
 	var out: Array[SkillDefinition] = []
 	var p := _player()
-	if p == null:
+	var controller: SectSkillController = p.skill_controller if (p != null and "skill_controller" in p) else null
+	var sect: SectDefinition = controller.sect if (controller != null and controller.sect != null) else (SectRegistry.get_by_id(profile.sect_id) if profile else null)
+	if sect == null:
 		return out
-	var controller: SectSkillController = p.skill_controller
-	if controller.sect == null:
-		return out
-	for skill in controller.sect.skills:
-		if not skill.can_assign_to_hotbar() or not controller.is_skill_usable(skill):
+
+	for skill in sect.skills:
+		if not skill.can_assign_to_hotbar():
+			continue
+		var usable := false
+		if controller != null:
+			usable = controller.is_skill_usable(skill)
+		elif profile != null:
+			usable = skill.is_main_attack or skill.is_basic_attack or profile.get_skill_level(skill.id) > 0
+		if not usable:
 			continue
 		var state := skill.is_state_skill()
 		var ok := false
@@ -313,8 +473,18 @@ func _candidates(kind: SlotKind) -> Array[SkillDefinition]:
 	return out
 
 func _find_skill(id: String) -> SkillDefinition:
+	if id.is_empty():
+		return null
 	var p := _player()
-	return p.skill_controller.get_skill(id) if p != null and id != "" else null
+	if p != null and "skill_controller" in p and p.skill_controller != null:
+		var s = p.skill_controller.get_skill(id)
+		if s != null:
+			return s
+	if profile != null and not profile.sect_id.is_empty():
+		var sect := SectRegistry.get_by_id(profile.sect_id)
+		if sect != null:
+			return sect.get_skill(id)
+	return null
 
 # ------------------------------------------------------------------ 3. Di chuyển
 

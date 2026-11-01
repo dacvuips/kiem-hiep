@@ -334,7 +334,7 @@ func _calc_element_screen_rect(id: String) -> Rect2:
 		"side_menu":
 			var w := (4.0 * 46.0 + 3.0 * 6.0) * sc
 			var h := 46.0 * sc
-			return Rect2(Vector2(vp_size.x - 170.0 - w + ox, 56.0 + oy), Vector2(w, h))
+			return Rect2(Vector2(vp_size.x - 360.0 - w + ox, vp_size.y - 58.0 + oy), Vector2(w, h))
 		"auto_button":
 			var sz := Vector2(52.0, 52.0) * sc
 			return Rect2(Vector2(vp_size.x - 60.0 + ox, 155.0 + oy), sz)
@@ -347,7 +347,7 @@ func _calc_element_screen_rect(id: String) -> Rect2:
 		"bottom_bar":
 			var w := (3.0 * 46.0 + 2.0 * 6.0) * sc
 			var h := 46.0 * sc
-			return Rect2(Vector2(vp_size.x - 415.0 - w + ox, vp_size.y - 58.0 + oy), Vector2(w, h))
+			return Rect2(Vector2(vp_size.x - 412.0 - w + ox, vp_size.y - 112.0 + oy), Vector2(w, h))
 		"joystick":
 			var sz := Vector2(200.0, 200.0) * sc
 			return Rect2(Vector2(40.0 + ox, vp_size.y - 250.0 + oy), sz)

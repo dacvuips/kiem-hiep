@@ -26,6 +26,7 @@ const PolicyDialog = preload("res://ui/policy/policy_dialog.gd")
 @onready var _message: Label = %Message
 
 func _ready() -> void:
+	_upgrade_singletons_from_pack()
 	_setup_screen()
 	_update_locale_texts()
 	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
@@ -34,8 +35,9 @@ func _ready() -> void:
 	_login.pressed.connect(_on_login_pressed)
 	_user.text_submitted.connect(func(_t: String) -> void: _password.grab_focus())
 	_password.text_submitted.connect(func(_t: String) -> void: _on_login_pressed())
-	AccountScreen.setup_mobile_web_input(_user, "Nhập tên tài khoản:")
-	AccountScreen.setup_mobile_web_input(_password, "Nhập mật khẩu:")
+	if OS.has_feature("web"):
+		AccountScreen.setup_mobile_web_input(_user, "Nhập tên tài khoản:")
+		AccountScreen.setup_mobile_web_input(_password, "Nhập mật khẩu:")
 	_bind_eye(_eye, [_password])
 	_forgot.pressed.connect(func() -> void:
 		AccountScreen.next_login_username = _user.text.strip_edges().to_lower()
@@ -69,7 +71,7 @@ func _ready() -> void:
 	if AccountScreen.next_login_message != "":
 		_toast(_message, AccountScreen.next_login_message, 4.0)
 		AccountScreen.next_login_message = ""
-	if not AccountScreen.is_touch_or_mobile():
+	if not OS.has_feature("mobile") and not OS.has_feature("web"):
 		(_password if _user.text != "" else _user).grab_focus()
 
 	for arg in OS.get_cmdline_args():
@@ -84,7 +86,7 @@ func _ready() -> void:
 			dlg.accepted_done.connect(func() -> void:
 				if AccountApi.has_saved_session():
 					_resume()
-				elif not AccountScreen.is_touch_or_mobile():
+				elif not OS.has_feature("mobile") and not OS.has_feature("web"):
 					(_password if _user.text != "" else _user).grab_focus()
 			)
 			return
@@ -193,3 +195,39 @@ func _update_locale_texts() -> void:
 	var back_mode: BaseButton = get_node_or_null("%BackModeButton")
 	if back_mode:
 		back_mode.text = tr("‹ Đổi Chế Độ Chơi")
+
+func _upgrade_singletons_from_pack() -> void:
+	var singletons: Array = [
+		["GmManager", "res://systems/gm/gm_manager.gd"],
+		["LocalizationManager", "res://systems/localization_manager.gd"],
+		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
+		["MusicManager", "res://systems/music_manager.gd"],
+		["SfxManager", "res://systems/sfx_manager.gd"],
+		["PlayerStats", "res://systems/player_stats.gd"],
+		["GameManager", "res://systems/game_manager.gd"],
+		["SaveManager", "res://systems/save/save_manager.gd"],
+		["AccountApi", "res://systems/net/account_api.gd"],
+		["NetClient", "res://net/client/net_client.gd"],
+	]
+	for item in singletons:
+		var node_name: String = item[0]
+		var script_path: String = item[1]
+		var node: Node = get_tree().root.get_node_or_null(node_name)
+		if node != null:
+			if ResourceLoader.exists(script_path):
+				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+				if scr:
+					node.set_script(scr)
+					if node.has_method("_ready"):
+						node._ready()
+		else:
+			if ResourceLoader.exists(script_path):
+				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+				if scr:
+					var inst = scr.new()
+					inst.name = node_name
+					get_tree().root.add_child(inst)
+	if ResourceLoader.exists("res://systems/player_profile.gd"):
+		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
+		if prof_scr and GameManager != null and GameManager.local_profile != null:
+			GameManager.local_profile.set_script(prof_scr)

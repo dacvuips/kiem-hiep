@@ -33,6 +33,8 @@ var pk_points: int = 0
 ## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): mã vật phẩm (misc_items) gán vào từng ô, "" = trống.
 var quick_items: Array = ["", "", "", ""]
 var world_rank: String = ""
+## Đã hoàn thành hoặc trải nghiệm hướng dẫn bắt buộc đầu game (Introduce tân thủ)
+var intro_completed: bool = false
 ## id trong SectDefinition. "" = VÔ MÔN PHÁI: nhân vật mới chỉ chọn hệ, đủ NEWBIE_LEVEL mới gia nhập 1 phái của hệ
 ## (SectPrompt, giống VLTK gốc) — trước đó chỉ có đánh thường, không có skill phái.
 var sect_id: String = ""
@@ -404,6 +406,10 @@ func add_exp(amount: int) -> void:
 		level_up()
 	if level >= MAX_LEVEL:
 		current_exp = 0
+
+## Tương thích ngược: alias cho add_exp()
+func gain_exp(amount: int) -> void:
+	add_exp(amount)
 
 ## Lên 1 cấp + nhận điểm kỹ năng/tiềm năng tương ứng — dùng chung cho add_exp() và nút test lên cấp
 ## (DebugCheatPanel), để 2 đường lên cấp luôn cộng điểm giống hệt nhau.
@@ -939,6 +945,7 @@ func to_dict() -> Dictionary:
 		"pk_points": pk_points,
 		"quick_items": quick_items.duplicate(),
 		"world_rank": world_rank,
+		"intro_completed": intro_completed,
 		"sect_id": sect_id,
 		"sect_name": sect_name,
 		"element": element,
@@ -1050,6 +1057,11 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))
 	profile.stages_cleared = int(data.get("stages_cleared", 0))
+	if data.has("intro_completed"):
+		profile.intro_completed = bool(data.get("intro_completed", false))
+	else:
+		var has_progress := profile.stages_cleared > 0 or profile.level > 10 or not profile.skill_levels.is_empty()
+		profile.intro_completed = has_progress
 	profile.herb_garden_level = int(data.get("herb_garden_level", 1))
 	profile.pending_quest_count = int(data.get("pending_quest_count", 0))
 	var saved_slots: Array = data.get("gem_slots", [])

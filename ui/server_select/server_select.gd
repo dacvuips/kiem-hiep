@@ -59,7 +59,10 @@ var _loading := false
 var _filter_buttons: Array[Button] = []
 
 func _ready() -> void:
-	MusicManager.play_title_music()
+	if MusicManager.has_method("play_title_music"):
+		MusicManager.play_title_music()
+	elif MusicManager.has_method("play"):
+		MusicManager.play("music001.mp3")
 	_update_account_label()
 
 	_back.pressed.connect(_on_back_pressed)

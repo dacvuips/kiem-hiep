@@ -33,7 +33,10 @@ var _lang_btn: OptionButton = null
 var _current_network_text := "Đang kiểm tra kết nối mạng..."
 
 func _ready() -> void:
-	MusicManager.play_title_music()
+	if MusicManager.has_method("play_title_music"):
+		MusicManager.play_title_music()
+	elif MusicManager.has_method("play"):
+		MusicManager.play("music001.mp3")
 	modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 1.0, 0.35)

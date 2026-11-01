@@ -37,6 +37,27 @@ TEMPLATE = """<!DOCTYPE html>
 				});
 				window.console.clear();
 			} catch (e) {}
+
+			// Phát hiện sớm điện thoại / máy tính bảng (Mobile / Tablet) để chặn tức thì không tải tài nguyên nặng
+			try {
+				var ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+				var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+				var isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+				var isCompact = (window.innerWidth <= 1024 && window.innerHeight <= 1366) || (window.screen && Math.min(window.screen.width, window.screen.height) <= 850);
+				var isMob = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk|kindle|playbook|bb10/i.test(ua)
+					|| (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+					|| (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1)
+					|| ((hasTouch || isCoarse) && isCompact);
+
+				if (isMob) {
+					document.documentElement.className += ' mobile-blocked';
+					window.__IS_MOBILE_DEVICE = true;
+				} else {
+					window.__IS_MOBILE_DEVICE = false;
+				}
+			} catch (e) {
+				window.__IS_MOBILE_DEVICE = false;
+			}
 		})();
 		</script>
 
@@ -364,9 +385,9 @@ body {
 }
 
 /* ========================================================
-   ROTATE SCREEN OVERLAY (MOBILE PORTRAIT REMINDER)
+   MOBILE & TABLET BLOCK OVERLAY (CHẶN ĐIỆN THOẠI & TABLET)
    ======================================================== */
-#rotate-overlay {
+#mobile-block-overlay {
 	display: none;
 	position: fixed;
 	top: 0;
@@ -375,87 +396,266 @@ body {
 	bottom: 0;
 	width: 100%;
 	height: 100%;
-	background: radial-gradient(circle at 50% 36%, #1c140d 0%, #0d0a08 60%, #050403 100%);
+	background: radial-gradient(circle at 50% 25%, #241912 0%, #0d0a08 65%, #050403 100%);
 	z-index: 100000;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: center;
-	text-align: center;
-	padding: 24px;
+	padding: 24px 16px;
 	box-sizing: border-box;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
-@media screen and (orientation: portrait) and (max-width: 950px) {
-	#rotate-overlay {
-		display: flex !important;
-	}
+html.mobile-blocked #mobile-block-overlay {
+	display: flex !important;
 }
 
-.rotate-card {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	max-width: 360px;
-	width: 90%;
-	background: rgba(20, 14, 10, 0.92);
-	border: 1.5px solid rgba(217, 178, 100, 0.55);
+html.mobile-blocked #status,
+html.mobile-blocked #canvas {
+	display: none !important;
+}
+
+.mb-backdrop-glow {
+	position: absolute;
+	width: 480px;
+	height: 480px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(184, 50, 38, 0.08) 50%, transparent 70%);
+	filter: blur(50px);
+	pointer-events: none;
+	top: 5%;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.mb-card {
+	position: relative;
+	max-width: 460px;
+	width: 100%;
+	background: rgba(18, 13, 10, 0.94);
+	border: 1px solid rgba(217, 178, 100, 0.45);
 	border-radius: 16px;
-	padding: 28px 20px;
-	box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85), 0 0 24px rgba(217, 178, 100, 0.2);
+	padding: 26px 20px;
+	box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(217, 178, 100, 0.18);
+	text-align: center;
+	margin: auto 0;
 }
 
-.rotate-icon-anim {
-	font-size: 54px;
-	margin-bottom: 16px;
+.mb-logo-wrapper {
+	margin-bottom: 12px;
+}
+
+.mb-logo {
+	max-width: 210px;
+	height: auto;
+	filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8));
+}
+
+.mb-badge {
 	display: inline-block;
-	animation: rotatePhoneAnim 2.8s ease-in-out infinite;
-	filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+	background: rgba(220, 38, 38, 0.15);
+	border: 1px solid rgba(239, 68, 68, 0.4);
+	color: #fca5a5;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	padding: 4px 14px;
+	border-radius: 20px;
+	margin-bottom: 12px;
+	text-transform: uppercase;
 }
 
-@keyframes rotatePhoneAnim {
-	0%, 20% { transform: rotate(0deg); }
-	50%, 80% { transform: rotate(-90deg); }
-	100% { transform: rotate(0deg); }
-}
-
-.rotate-title {
+.mb-title {
 	font-family: 'Cinzel', 'Be Vietnam Pro', serif;
 	font-size: 18px;
 	font-weight: 700;
-	color: #fbbf24;
-	letter-spacing: 0.8px;
-	margin-bottom: 10px;
-	text-transform: uppercase;
-	text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+	color: #ffd700;
+	letter-spacing: 0.5px;
+	margin: 0 0 12px 0;
+	line-height: 1.4;
+	text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
-.rotate-desc {
+.mb-alert-text {
 	font-size: 13px;
-	line-height: 1.55;
+	line-height: 1.6;
 	color: #d1c2ab;
-	margin-bottom: 22px;
+	margin-bottom: 18px;
 }
 
-.btn-rotate-fs {
-	display: inline-flex;
+.mb-alert-text strong {
+	color: #fef08a;
+}
+
+.mb-pc-box {
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px dashed rgba(217, 178, 100, 0.4);
+	border-radius: 10px;
+	padding: 14px 16px;
+	margin-bottom: 18px;
+	text-align: left;
+}
+
+.mb-pc-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.mb-pc-icon {
+	font-size: 20px;
+}
+
+.mb-pc-title {
+	font-size: 12px;
+	font-weight: 700;
+	color: #60a5fa;
+	letter-spacing: 0.5px;
+}
+
+.mb-pc-desc {
+	font-size: 12px;
+	line-height: 1.5;
+	color: #cbd5e1;
+	margin-bottom: 12px;
+}
+
+.mb-pc-desc em {
+	color: #93c5fd;
+	font-style: normal;
+}
+
+.btn-copy-link {
+	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
-	color: #120b05;
-	font-weight: 700;
-	font-size: 14px;
-	padding: 12px 22px;
-	border-radius: 10px;
-	border: 1px solid rgba(255, 255, 255, 0.4);
+	width: 100%;
+	background: rgba(30, 41, 59, 0.7);
+	border: 1px solid rgba(148, 163, 184, 0.3);
+	color: #f1f5f9;
+	font-size: 12.5px;
+	font-weight: 600;
+	padding: 9px 14px;
+	border-radius: 8px;
 	cursor: pointer;
-	box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-	text-decoration: none;
-	user-select: none;
+	transition: all 0.2s ease;
 }
 
-.btn-rotate-fs:active {
-	transform: scale(0.96);
+.btn-copy-link:hover, .btn-copy-link:active {
+	background: rgba(51, 65, 85, 0.9);
+	border-color: #ffd700;
+	color: #ffd700;
+}
+
+.mb-apk-box {
+	background: linear-gradient(180deg, rgba(30, 20, 14, 0.7) 0%, rgba(20, 14, 10, 0.9) 100%);
+	border: 1px solid rgba(245, 158, 11, 0.45);
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.mb-apk-header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.mb-apk-icon {
+	font-size: 20px;
+}
+
+.mb-apk-title {
+	font-size: 12px;
+	font-weight: 700;
+	color: #f59e0b;
+	letter-spacing: 0.6px;
+	text-transform: uppercase;
+}
+
+.mb-apk-desc {
+	font-size: 12px;
+	line-height: 1.5;
+	color: #e2e8f0;
+	margin-bottom: 14px;
+}
+
+.mb-apk-desc strong {
+	color: #fbbf24;
+}
+
+.btn-download-apk {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+	border: 1px solid #fbbf24;
+	color: #120902;
+	text-decoration: none;
+	padding: 13px 18px;
+	border-radius: 10px;
+	box-shadow: 0 4px 18px rgba(245, 158, 11, 0.45);
+	transition: all 0.25s ease;
+}
+
+.btn-download-apk:active, .btn-download-apk:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 24px rgba(245, 158, 11, 0.7);
+	background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+}
+
+.btn-apk-icon {
+	font-size: 26px;
+	flex-shrink: 0;
+}
+
+.btn-apk-content {
+	display: flex;
+	flex-direction: column;
+	text-align: left;
+}
+
+.btn-apk-main {
+	font-size: 14.5px;
+	font-weight: 800;
+	letter-spacing: 0.5px;
+	color: #120902;
+	line-height: 1.25;
+}
+
+.btn-apk-sub {
+	font-size: 11px;
+	font-weight: 600;
+	color: #3b1e06;
+	line-height: 1.3;
+	margin-top: 2px;
+}
+
+.mb-guide-link {
+	display: inline-block;
+	color: #f4d38c;
+	font-size: 12px;
+	text-decoration: underline;
+	transition: color 0.2s;
+}
+
+.mb-guide-link:hover {
+	color: #ffffff;
+}
+
+.mb-ios-tip {
+	font-size: 11px;
+	line-height: 1.45;
+	color: #94a3b8;
+	margin-top: 12px;
+	border-top: 1px dashed rgba(255, 255, 255, 0.1);
+	padding-top: 10px;
 }
 
 
@@ -580,17 +780,67 @@ body {
 			Trình duyệt của bạn đang tắt JavaScript. Vui lòng bật lại để chơi game.
 		</noscript>
 
-		<!-- Màn hình thông báo xoay ngang điện thoại (Chỉ hiện khi cầm dọc trên mobile) -->
-		<div id="rotate-overlay">
-			<div class="rotate-card">
-				<div class="rotate-icon-anim">📱</div>
-				<div class="rotate-title">Vui Lòng Xoay Ngang Máy</div>
-				<div class="rotate-desc">
-					Để có tầm nhìn giang hồ bao quát và thao tác võ công thuận tiện nhất, đại hiệp hãy <strong>xoay ngang màn hình điện thoại</strong>.
+		<!-- MÀN HÌNH CHẶN TRUY CẬP TRÊN THIẾT BỊ DI ĐỘNG & MÁY TÍNH BẢNG (MOBILE / TABLET) -->
+		<div id="mobile-block-overlay">
+			<div class="mb-backdrop-glow"></div>
+			<div class="mb-card">
+				<!-- Logo Game -->
+				<div class="mb-logo-wrapper">
+					<img src="index.png" alt="JX1 Idle Origin" class="mb-logo">
 				</div>
-				<button class="btn-rotate-fs" onclick="window.enterLandscapeFullscreen()">
-					<span>⛶</span> Toàn màn hình & Xoay ngay
-				</button>
+
+				<div class="mb-badge">
+					<span>⚔️ THÔNG BÁO BẢN WEB ⚔️</span>
+				</div>
+
+				<h2 class="mb-title">VUI LÒNG MỞ TRÌNH DUYỆT TRÊN MÁY TÍNH</h2>
+
+				<div class="mb-alert-text">
+					Phiên bản Web của <strong>JX1 Idle Origin</strong> yêu cầu màn hình rộng và bàn phím máy tính để tối ưu trải nghiệm. Game <strong>không hỗ trợ chơi trực tiếp qua trình duyệt trên Điện thoại &amp; Máy tính bảng (Tablet)</strong>.
+				</div>
+
+				<!-- Hướng dẫn dành cho Máy tính PC/Laptop -->
+				<div class="mb-pc-box">
+					<div class="mb-pc-header">
+						<span class="mb-pc-icon">💻</span>
+						<span class="mb-pc-title">TRẢI NGHIỆM BẢN WEB TRÊN PC / LAPTOP</span>
+					</div>
+					<div class="mb-pc-desc">
+						Quý huynh đệ hãy mở trình duyệt <em>(Chrome, Cốc Cốc, Edge...)</em> trên máy tính để vào game trực tiếp mà không cần cài đặt.
+					</div>
+					<button id="btn-copy-link" class="btn-copy-link" onclick="window.copyGameWebLink()">
+						<span>📋</span> Sao Chép Liên Kết Web
+					</button>
+				</div>
+
+				<!-- Tải App Android (APK) dành cho Điện thoại & Tablet -->
+				<div class="mb-apk-box">
+					<div class="mb-apk-header">
+						<span class="mb-apk-icon">📱</span>
+						<span class="mb-apk-title">CHƠI TRÊN ĐIỆN THOẠI &amp; MÁY TÍNH BẢNG</span>
+					</div>
+					<div class="mb-apk-desc">
+						Bổn môn đã phát hành bản cài đặt <strong>Android (APK)</strong> chính thức, mượt mà và tối ưu thao tác cảm ứng:
+					</div>
+					
+					<a href="https://kiem-hiep-api.viettheo.site/download/kiem-hiep-launcher.apk" class="btn-download-apk" download="kiem-hiep-launcher.apk">
+						<span class="btn-apk-icon">📥</span>
+						<span class="btn-apk-content">
+							<span class="btn-apk-main">TẢI BẢN CÀI ĐẶT ANDROID (APK)</span>
+							<span class="btn-apk-sub">Bản chính thức • ~113 MB • Cài đặt nhanh</span>
+						</span>
+					</a>
+
+					<div style="margin-top: 10px;">
+						<a href="https://kiem-hiep-api.viettheo.site/download/" target="_blank" class="mb-guide-link">
+							📖 Xem trang hướng dẫn tải &amp; cài đặt chi tiết
+						</a>
+					</div>
+
+					<div class="mb-ios-tip">
+						🍎 <em>Lưu ý với iPhone / iPad: Vui lòng mở trình duyệt trên máy tính PC / Laptop để chơi bản Web.</em>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -674,6 +924,45 @@ body {
 
 		<script>
 window.__IS_FROM_SSD = false;
+
+window.copyGameWebLink = function () {
+	var url = window.location.href;
+	var btn = document.getElementById('btn-copy-link');
+	function showSuccess() {
+		if (!btn) return;
+		var original = btn.innerHTML;
+		btn.innerHTML = '<span>✅</span> Đã Sao Chép Liên Kết!';
+		btn.style.borderColor = '#10b981';
+		btn.style.color = '#34d399';
+		setTimeout(function () {
+			btn.innerHTML = original;
+			btn.style.borderColor = '';
+			btn.style.color = '';
+		}, 2500);
+	}
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		navigator.clipboard.writeText(url).then(showSuccess).catch(function () {
+			fallbackCopy(url);
+		});
+	} else {
+		fallbackCopy(url);
+	}
+	function fallbackCopy(text) {
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.style.position = 'fixed';
+		ta.style.opacity = '0';
+		document.body.appendChild(ta);
+		ta.select();
+		try {
+			document.execCommand('copy');
+			showSuccess();
+		} catch (e) {
+			alert('Hãy sao chép liên kết này: ' + text);
+		}
+		document.body.removeChild(ta);
+	}
+};
 
 // Tự động dọn dẹp các cache bị hỏng/dở dang từ các phiên bản cũ
 (async function cleanupStaleCaches() {
@@ -846,6 +1135,18 @@ engine.preloadFile = function (file, path) {
 			}, 400);
 		}, 350);
 	}, 4200);
+
+	// Nếu là thiết bị di động / máy tính bảng: Ngăn chặn tải game hoàn toàn
+	if (window.__IS_MOBILE_DEVICE) {
+		if (typeof tipInterval !== 'undefined') clearInterval(tipInterval);
+		const mobOverlay = document.getElementById('mobile-block-overlay');
+		if (mobOverlay) mobOverlay.style.display = 'flex';
+		const statusEl = document.getElementById('status');
+		if (statusEl) statusEl.style.display = 'none';
+		const canvasEl = document.getElementById('canvas');
+		if (canvasEl) canvasEl.style.display = 'none';
+		return;
+	}
 
 	const statusOverlay = document.getElementById('status');
 	const progressBarFill = document.getElementById('progress-bar-fill');

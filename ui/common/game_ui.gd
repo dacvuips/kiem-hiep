@@ -64,6 +64,24 @@ const ICON_LOCK := "🔒"
 const ICON_CHEST := "🧰"
 const ICON_BAG := "🎒"
 
+# Icon textures (đảm bảo hiển thị sắc nét, đồng nhất trên Web & Desktop)
+static var _camera_icon_tex: Texture2D
+
+static func get_camera_icon() -> Texture2D:
+	if _camera_icon_tex != null:
+		return _camera_icon_tex
+	if ResourceLoader.exists("res://assets/ui/icon_camera.png"):
+		var res = load("res://assets/ui/icon_camera.png")
+		if res is Texture2D:
+			_camera_icon_tex = res
+			return _camera_icon_tex
+	var img := Image.new()
+	var raw := Marshalls.base64_to_raw("iVBORw0KGgoAAAANSUhEUgAAACAAAAAWCAYAAAChWZ5EAAAD2UlEQVR4nMVVXUxbZRh+vtPTn3PantLTAbbURdxwk05HaFwLi4iJ80ajaUI08QqNF3ohwUAiJiYkBox3XkBizOKNmnjhsmuD0SiKy6IMZOAWZAYZFiiFtqf09LTnp6antB1zOy3hYk/y5ft73u99z/e973MI7kBPT88Lo6OjFwkhVHEuiqLQ19fXIUmSiEMgHA4/Nz4+/kX5nDIKhYI6PDz86tzc3C/lNWKxWKyDg4MfhEKhZ7xer7+lpaX1TqOlpaVZVVXlwwTA83yj3+8/ca+9tbW1lVgsFp2env5ucnLyYzIyMvLRwMDA+3gAGBsbe4/q7u7uxQNCV1dXL03TtPmwhoqiIJlMIpvNghAChmHgcrlA0/ShzjGbzWZ6T8hbl29s1ulYxk4iCiG9U0ypA3sEBBx3DB63DyZTfYGIGcVGX/lx87iQWq9JtjsJHjtDw8pUE1vcy+o962BQQAEpYRsbG1tYvi6jnrpxcNqjtJAW0gDrMiJabcDpszTMFgr5nIzff7qOG9duIS+VisPGWtEePInOpwNg7TTaOy1YuJqDIhPDAGLbsS0qLaRTxnEW0HbGrDvfS2Vw6bNv8cevNyvOi5DEHK79vITLn08hK0qwWAjaArVTK5FI7lJZKVu6x/vAfYyCgytd+9Q3M0jtpvUxZbGB5b1g+GYMffgOLl76BEQj+P7yFX3fxZvAuY1voPh1B5TqXuCbSpTbtzawtR7Xx7TNDs7bCivnho3zoL0jgM7wWbw19Dpur1R5nn1bI1C1CHZHNYAyrJxHL78yvv5yCrKswNng0Ofrf5eqit23NQJdi1CuKCmTq6wR6uDBs7/dxCsvDiG+uqLPM+nSq5pMOPoNKEqp3lknU1nLZ/6ftxur/0DMlBzb97ll2yMFIO6V+odPeCtrOWEX4u4mlLykt0w8CjkjVPaPt/n2bQtHf4KdLRWND5nQ0toM3yNNiK7G9PcvBlFsd6P1tB+NXr5iWwsUyzKsESER15BOavr4Qt958E3316xGH4/el0P6OLmjopbCEAJCOZ0cZ0wiWF6Ukc9puuRG3nwewZ4A7Fw1JxwuFk89+yQib1yAjbEiJ2lY+VMx9g6gwc17yLtvf5oUkqqhFBdhY4FTT5jB2KtpU5TlYjWaLVXVy6Q1/LUoQzKUt3LgWpTuCDUstp0MnK9NB1RVwXb8XySS29A0FRZr1TFFmcC7m/H4KR/Onauj/gDMz1+dJ5FI5LWJiYmvKIqqqZvVQFQIggBJkvQ5y7JwOp2g7tKHGmdo/f39L+lOg8FgVzgc7jHV+yM/ImRZzs/MzPywsLAw+x/QwGmToHFN8wAAAABJRU5ErkJggg==")
+	var err := img.load_png_from_buffer(raw)
+	if err == OK:
+		_camera_icon_tex = ImageTexture.create_from_image(img)
+	return _camera_icon_tex
+
 # ================================================================ Tên biến thể theme (theme_type_variation)
 const WINDOW := &"GameWindow"          ## PanelContainer: khung cửa sổ/popup
 const TITLE_BAR := &"GameTitleBar"     ## PanelContainer: thanh tiêu đề (vùng kéo)
@@ -114,6 +132,20 @@ static func apply() -> void:
 	if target == null:
 		target = ThemeDB.get_default_theme()
 	target.merge_with(get_theme())
+	_init_font_fallbacks(target)
+
+static func _init_font_fallbacks(target: Theme) -> void:
+	var chain := get_fallback_chain()
+	if target != null and target.default_font != null:
+		for f in chain:
+			if f != target.default_font and not target.default_font.fallbacks.has(f):
+				target.default_font.fallbacks.append(f)
+	if ResourceLoader.exists("res://assets/fonts/BeVietnamPro-Regular.ttf"):
+		var input_f: Font = load("res://assets/fonts/BeVietnamPro-Regular.ttf")
+		if input_f != null:
+			for f in chain:
+				if f != input_f and not input_f.fallbacks.has(f):
+					input_f.fallbacks.append(f)
 
 # ================================================================ Font
 ## Font TRONG GAME (từ màn Hub trở đi + mọi popup): IBM Plex Mono như Võ Lâm Idle — 3 file woff2 tách theo bảng chữ của bản gốc đã
@@ -121,6 +153,14 @@ static func apply() -> void:
 ## Màn đăng nhập / đăng ký / chọn server / chọn-tạo nhân vật (PREGAME_SCENES) giữ font cũ — GameUiBoot đổi qua lại khi chuyển màn.
 const GAME_FONT_PATH := "res://assets/fonts/ibm_plex_mono/IBMPlexMono-Regular-vi.ttf"
 const SYMBOL_FONT_PATH := "res://assets/fonts/symbol_fallback.ttf"
+const FALLBACK_FONT_PATHS: Array[String] = [
+	"res://assets/fonts/NotoSerif-Variable.ttf",
+	"res://assets/fonts/NotoSansThai.ttf",
+	"res://assets/fonts/NotoSansJP.ttf",
+	"res://assets/fonts/NotoSansKR.ttf",
+	"res://assets/fonts/NotoSansSC.ttf",
+	"res://assets/fonts/symbol_fallback.ttf",
+]
 const PREGAME_SCENES := [
 	"res://ui/login/Login.tscn",
 	"res://ui/account/Register.tscn",
@@ -136,23 +176,26 @@ const BOLD_EMBOLDEN := 0.7
 static var _game_font: FontVariation
 static var _game_font_bold: FontVariation
 static var _pregame_fonts := {}   ## font gốc của theme project, khôi phục khi quay lại màn đăng nhập
+static var _loaded_fallbacks: Array[Font] = []
+
+static func get_fallback_chain() -> Array[Font]:
+	if _loaded_fallbacks.is_empty():
+		for path in FALLBACK_FONT_PATHS:
+			if ResourceLoader.exists(path):
+				var f: Font = load(path)
+				if f != null and not _loaded_fallbacks.has(f):
+					_loaded_fallbacks.append(f)
+	var chain: Array[Font] = []
+	for f in _loaded_fallbacks:
+		if f != null and not chain.has(f):
+			chain.append(f)
+	return chain
 
 static func game_font() -> Font:
 	if _game_font == null:
 		_game_font = FontVariation.new()
 		_game_font.base_font = load(GAME_FONT_PATH)
-		var chain: Array[Font] = []
-		var project := ThemeDB.get_project_theme()
-		var old: Font = _pregame_fonts.get("default", project.default_font if project != null else null)
-		if old != null:
-			chain.append(old)
-		if ResourceLoader.exists(SYMBOL_FONT_PATH):
-			var sym_font: Font = load(SYMBOL_FONT_PATH)
-			if sym_font != null:
-				chain.append(sym_font)
-				var base_f: Font = load(GAME_FONT_PATH)
-				if base_f != null and not base_f.fallbacks.has(sym_font):
-					base_f.fallbacks.append(sym_font)
+		var chain := get_fallback_chain()
 		_game_font.fallbacks = chain
 	return _game_font
 
