@@ -120,6 +120,10 @@ func _ready() -> void:
 	%ChallengeButton.pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
 	if has_node("%SiegeButton"):
 		%SiegeButton.pressed.connect(func() -> void: CityWarWindow.open(self, _profile, _enter_field_map))
+	if has_node("%ManorButton"):
+		var manor_btn: TextureButton = %ManorButton
+		_setup_manor_button(manor_btn)
+		manor_btn.pressed.connect(_on_manor_pressed)
 
 	# Nút Kỳ Trân Các trên TopBar (thay thế ô thể lực cuối)
 	if has_node("%KyTranCacTopButton"):
@@ -1137,24 +1141,6 @@ func _setup_inventory_view() -> void:
 				_show_toast("Đã bật khóa bảo vệ!")
 				refresh()
 		)
-	var is_gm := AccountApi.is_gm()
-	if has_node("%TestCreateButton"):
-		var btn: Button = get_node("%TestCreateButton")
-		btn.visible = is_gm
-		if not is_gm:
-			btn.queue_free()
-
-	if is_gm:
-		if has_node("%TestCreateButton"):
-			%TestCreateButton.text = tr(%TestCreateButton.text)
-			%TestCreateButton.pressed.connect(func() -> void:
-				ItemCreatorPopup.open(self, _profile, func() -> void:
-					SaveManager.save_profile(_profile)
-					SaveManager.flush_online()
-					refresh()
-					_refresh_inventory_view()
-				)
-			)
 	if has_node("%CloseInvBtn"):
 		%CloseInvBtn.pressed.connect(func() -> void:
 			_set_view("character")
@@ -1919,9 +1905,38 @@ func _enter_field_map(entry: Dictionary) -> void:
 		GameManager.field_map = entry
 		GameManager.current_stage = null
 	GameManager.is_game_over = false
-	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
-	tween.tween_callback(get_tree().change_scene_to_file.bind(GAME_SCENE_PATH))
+	var map_title: String = str(entry.get("name", entry.get("title", "")))
+	if has_node("/root/SceneTransition"):
+		get_node("/root/SceneTransition").change_scene(GAME_SCENE_PATH, map_title)
+	else:
+		get_tree().change_scene_to_file(GAME_SCENE_PATH)
+
+func _setup_manor_button(btn: TextureButton) -> void:
+	btn.tooltip_text = "Sơn Trang"
+	if btn.texture_normal == null:
+		var path := "res://ui/character_hub/btn_son_trang.png"
+		if ResourceLoader.exists(path):
+			btn.texture_normal = load(path)
+		elif FileAccess.file_exists(path):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			if img != null:
+				btn.texture_normal = ImageTexture.create_from_image(img)
+
+func _on_manor_pressed() -> void:
+	var entry: Dictionary = {
+		"id": 1041,
+		"name": "Nguyệt Ca Đảo",
+		"title": "Nguyệt Ca Đảo",
+		"kind": "Field",
+		"dir": "res://world/maps/map_1041",
+		"start": [90, 91],
+		"arena_center": [46464, 46976],
+		"no_monsters": true,
+		"manor": true,
+		"monster_count": 0,
+		"monsters": []
+	}
+	_enter_field_map(entry)
 
 func _show_toast(message: String, is_error: bool = false) -> void:
 	var toast: Label = %ToastLabel

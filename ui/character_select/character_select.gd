@@ -53,7 +53,9 @@ func _ready() -> void:
 	if GameManager.local_profile == null and SaveManager.has_profile():
 		GameManager.local_profile = SaveManager.load_profile()
 		if GameManager.local_profile:
-			get_tree().change_scene_to_file.call_deferred(HUB_SCENE_PATH)
+			WebContentManager.ensure_ready(self, func():
+				get_tree().change_scene_to_file.call_deferred(HUB_SCENE_PATH)
+			)
 			return
 
 	if MusicManager.has_method("play_title_music"):
@@ -207,9 +209,11 @@ func _on_create_pressed() -> void:
 	SaveManager.save_profile(profile)
 
 	_create_button.disabled = true
-	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
-	tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
+	WebContentManager.ensure_ready(self, func():
+		var tween := create_tween()
+		tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+		tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
+	)
 
 # ---------------------------------------------------------------- Điều hướng bước
 

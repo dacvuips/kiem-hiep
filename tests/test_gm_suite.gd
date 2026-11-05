@@ -168,7 +168,22 @@ func _ready() -> void:
 	assert(horse_ok, "Cấp Thần mã Phiên Vũ thành công")
 	var gems_count: int = GmManager.give_gem_pack(GameManager.local_profile)
 	assert(gems_count > 0, "Cấp gói Nguyên liệu & Thủy tinh thành công")
-	print("PASS: Cấp bộ HKMP, An Bang, Định Quốc, Kim Phong, Thần Mã và Thủy Tinh thành công")
+
+	# Test các tiện ích tạo đồ TEST mới: Dọn dẹp túi đồ, Mặt Nạ, Phi Phong, Đồ Xanh, Thuốc
+	var cleared_pre: int = GmManager.clear_inventory(GameManager.local_profile)
+	assert(GameManager.local_profile.inventory.is_empty(), "Hành trang phải rỗng sau khi clear_inventory")
+	var mask_cnt: int = GmManager.give_mask_set(GameManager.local_profile)
+	assert(mask_cnt == 5, "Cấp 5 mặt nạ test phải thành công")
+	var mantle_cnt: int = GmManager.give_mantle_set(GameManager.local_profile)
+	assert(mantle_cnt == 5, "Cấp 5 phi phong test phải thành công")
+	var blue_cnt: int = GmManager.give_blue_set(GameManager.local_profile)
+	assert(blue_cnt == 10, "Cấp 10 món trang bị xanh cấp 10 full 6 dòng thành công")
+	var cons_cnt: int = GmManager.give_consumables_pack(GameManager.local_profile)
+	assert(cons_cnt > 0, "Cấp gói thuốc, phúc duyên và lệnh bài thành công")
+	var cleared_cnt: int = GmManager.clear_inventory(GameManager.local_profile)
+	assert(cleared_cnt > 0, "Dọn dẹp túi đồ phải xóa các món test đã cấp")
+	assert(GameManager.local_profile.inventory.is_empty(), "Hành trang phải rỗng sau khi clear_inventory")
+	print("PASS: Cấp bộ HKMP, An Bang, Định Quốc, Kim Phong, Thần Mã, Đồ Xanh, Mặt Nạ, Phi Phong và Clear Inv thành công")
 
 	# 11.6 Quét định vị Boss & Kick All lưu dữ liệu
 	var scanned_bosses: Array[Dictionary] = GmManager.find_bosses()
@@ -176,5 +191,21 @@ func _ready() -> void:
 	GmManager.kick_all_save_data()
 	print("PASS: Quét Boss (findgoldboss) và Kick All lưu an toàn máy chủ thành công")
 
-	print("--- TOÀN BỘ 11 MỤC KIỂM THỬ HỆ THỐNG GM ĐÃ VƯỢT QUA XUẤT SẮC! ---")
+	# 11.7 Kiểm tra chuyển đổi tất cả các môn phái cho bản thân
+	var sects: Array[SectDefinition] = SectRegistry.load_all()
+	assert(not sects.is_empty(), "Danh sách môn phái không được rỗng")
+	for s in sects:
+		var change_ok: bool = GmManager.change_player_sect(GameManager.local_profile, s.id, true)
+		assert(change_ok, "Chuyển sang môn phái %s (%s) phải thành công" % [s.sect_name, s.id])
+		assert(GameManager.local_profile.sect_id == s.id, "sect_id phải khớp môn phái mới")
+		assert(GameManager.local_profile.element == int(s.element), "Hệ ngũ hành phải chuyển theo môn phái")
+		assert(not GameManager.local_profile.skill_levels.is_empty(), "Phải tự động học kỹ năng của phái mới")
+
+	# Kiểm tra chuyển về Vô Môn Phái
+	var reset_ok: bool = GmManager.change_player_sect(GameManager.local_profile, "vo_mon_phai")
+	assert(reset_ok, "Chuyển về Vô Môn Phái phải thành công")
+	assert(GameManager.local_profile.sect_id == "", "sect_id của Vô Môn Phái phải rỗng")
+	print("PASS: Chuyển đổi thành công toàn bộ %d môn phái và về Vô Môn Phái" % sects.size())
+
+	print("--- TOÀN BỘ CÁC MỤC KIỂM THỬ HỆ THỐNG GM ĐÃ VƯỢT QUA XUẤT SẮC! ---")
 	get_tree().quit(0)

@@ -328,11 +328,15 @@ class SortedMap extends VltkMap:
 			_objects.erase(key)
 
 	func _is_real_monster(n: Dictionary) -> bool:
+		if GameManager.field_map.get("no_monsters", false):
+			return false
 		return str(n.get("role", "")) == "monster" and not MonsterData.monster(int(n.get("t", -1))).is_empty()
 
 	## Quái thật do override này sinh -> bản gốc bỏ qua chúng.
 	func _spawn_filter(n: Dictionary) -> bool:
-		if (GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl()) and str(n.get("role", "")) == "monster":
+		if (GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl() or GameManager.field_map.get("no_monsters", false)) and str(n.get("role", "")) == "monster":
+			return false
+		if GameManager.field_map.get("no_monsters", false) and _is_real_monster(n):
 			return false
 		return not _is_real_monster(n)
 
@@ -341,6 +345,8 @@ class SortedMap extends VltkMap:
 		super._spawn_npcs(rx, ry, made)      ## NPC, sinh vật nền, quái không có dữ liệu mẫu
 		for i in range(before, made.size()):
 			_add_shadow(made[i])
+		if GameManager.field_map.get("no_monsters", false):
+			return
 		for n in region_npcs(rx, ry):
 			if _is_real_monster(n):
 				var m := _spawn_monster(n)
@@ -348,7 +354,7 @@ class SortedMap extends VltkMap:
 					made.append(m)
 
 	func _spawn_monster(n: Dictionary) -> VltkMonster:
-		if VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl():
+		if GameManager.field_map.get("no_monsters", false) or VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl():
 			return null
 		var uid := str(n.get("uid", ""))
 		if _live_monsters.has(uid) and is_instance_valid(_live_monsters[uid]):
@@ -405,9 +411,20 @@ class SortedMap extends VltkMap:
 	func clear_all_monsters() -> void:
 		clear_map_monsters()
 
+	func spawn_monsters_for_loaded_regions() -> void:
+		if GameManager.field_map.get("no_monsters", false):
+			return
+		for key in _done.keys():
+			var v: Vector2i = _done[key]
+			for n in region_npcs(v.x, v.y):
+				if _is_real_monster(n):
+					var m := _spawn_monster(n)
+					if m != null and _objects.has(key):
+						_objects[key].append(m)
+
 	## Quái đã chết: hết thời gian chờ thì sinh lại tại chỗ cũ (nếu vùng của nó đang được nạp).
 	func _tick_respawns() -> void:
-		if _respawns.is_empty():
+		if GameManager.field_map.get("no_monsters", false) or _respawns.is_empty():
 			return
 		var now := Time.get_ticks_msec() / 1000.0
 		for r in _respawns.duplicate():
@@ -474,6 +491,11 @@ func setup_stage(stage: StageData) -> void:
 		var spawn_pos: Vector2 = corners.pick_random() if not corners.is_empty() else _free_position_near(center)
 		player.global_position = spawn_pos - Vector2(0, FEET_OFFSET)
 		respawn_point = spawn_pos
+		if player.has_method("reset_has_moved"):
+			player.reset_has_moved()
+		else:
+			player.set("has_moved", false)
+			player.set("spawn_position", player.global_position)
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
 
@@ -713,6 +735,11 @@ static func is_tong_kim_lol() -> bool:
 func clear_all_monsters() -> void:
 	if map != null and map.has_method("clear_map_monsters"):
 		map.clear_map_monsters()
+
+## Sinh quái cho các vùng đã nạp nếu trước đó ở chế độ net_monsters
+func ensure_monsters_spawned() -> void:
+	if map != null and map.has_method("spawn_monsters_for_loaded_regions"):
+		map.spawn_monsters_for_loaded_regions()
 
 ## Chế độ "Chơi" (map chính, đi lại tự do): dựng map, KHÔNG có ô vuông / hào quang, nhân vật đứng ở ô trống gần tâm khu chơi.
 func setup_main_map() -> void:

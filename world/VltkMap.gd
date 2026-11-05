@@ -268,6 +268,7 @@ func _chunk_regions(c: Vector2i) -> Dictionary:
 		return {}
 	if _chunk_jobs.has(k):
 		WorkerThreadPool.wait_for_task_completion(_chunk_jobs[k])
+		_chunk_jobs.erase(k)
 	_collect_chunks()
 	if not _chunks.has(k):
 		_install_chunk(k, _parse_chunk(_p(_chunk_rel(c))))

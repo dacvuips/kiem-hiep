@@ -306,16 +306,28 @@ func _on_disconnected(code: String, message: String) -> void:
 		AccountApi.logout()
 		get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 
+func _is_invalid_position(feet: Vector2) -> bool:
+	if VltkWorld.current == null or VltkWorld.current.map == null:
+		return false
+	var m = VltkWorld.current.map
+	if m.has_method("is_blocked") and m.is_blocked(feet):
+		return true
+	if m.grid != null:
+		var c: Vector2i = m.world_to_cell(feet) if m.has_method("world_to_cell") else Vector2i.ZERO
+		if not m.grid.is_in_boundsv(c):
+			return true
+	return false
+
 func _teleport(feet: Vector2) -> void:
-	if player == null:
+	if player == null or not is_instance_valid(player):
+		return
+	if not VltkWorld.net_monsters:
+		return
+	if _is_invalid_position(feet):
 		return
 	if VltkWorld.is_brawl() or VltkWorld.is_tong_kim_lol():
 		if feet.distance_to(PkRules.ARENA_CENTER) < 500.0:
 			return
-		if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.grid:
-			var grid = VltkWorld.current.map.grid
-			if not grid.in_bounds(feet) or grid.is_blocked(feet):
-				return
 	player.global_position = feet - Vector2(0, RemotePlayer.FEET_OFFSET)
 	player.velocity = Vector2.ZERO
 	if VltkWorld.current and VltkWorld.current.map:
@@ -324,13 +336,13 @@ func _teleport(feet: Vector2) -> void:
 			(VltkWorld.current.map as VltkWorld.SortedMap).warm_up(player.global_position)
 
 func _on_corrected(feet: Vector2) -> void:
+	if not VltkWorld.net_monsters:
+		return
+	if _is_invalid_position(feet):
+		return
 	if VltkWorld.is_brawl() or VltkWorld.is_tong_kim_lol():
 		if feet.distance_to(PkRules.ARENA_CENTER) < 500.0:
 			return
-		if VltkWorld.current and VltkWorld.current.map and VltkWorld.current.map.grid:
-			var grid = VltkWorld.current.map.grid
-			if not grid.in_bounds(feet) or grid.is_blocked(feet):
-				return
 	_teleport(feet)
 
 func _parent() -> Node:

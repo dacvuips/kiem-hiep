@@ -23,6 +23,7 @@ const TIERS := [
 		"reward_exp": 500000,
 		"reward_fuyuan": 10,
 		"reward_gold": 20000,
+		"reward_prestige": 15,
 		"color": Color(0.4, 0.85, 1.0),
 		"desc": "Dành cho hiệp khách cấp 40 - 89. Hấp thu linh khí khai mở kinh mạch sơ cấp."
 	},
@@ -36,6 +37,7 @@ const TIERS := [
 		"reward_exp": 2000000,
 		"reward_fuyuan": 30,
 		"reward_gold": 60000,
+		"reward_prestige": 30,
 		"color": Color(0.9, 0.65, 1.0),
 		"desc": "Dành cho cao thủ cấp 90 - 119. Củng cố nội lực chân nguyên, thăng tiến thần tốc."
 	},
@@ -49,6 +51,7 @@ const TIERS := [
 		"reward_exp": 5000000,
 		"reward_fuyuan": 60,
 		"reward_gold": 150000,
+		"reward_prestige": 50,
 		"color": Color(1.0, 0.85, 0.25),
 		"desc": "Dành cho tôn sư cấp 120 trở lên. Quả hấp thu linh khí dồi dào, tăng lượng lớn kinh nghiệm."
 	},
@@ -62,6 +65,7 @@ const TIERS := [
 		"reward_exp": 10000000,
 		"reward_fuyuan": 120,
 		"reward_gold": 300000,
+		"reward_prestige": 100,
 		"color": Color(1.0, 0.5, 0.2),
 		"desc": "Đại quả ngàn năm xuất thế tại đỉnh Huy Hoàng. Cấp 130+, nhận 10.000.000 EXP và phúc duyên cực cao."
 	}
@@ -214,9 +218,10 @@ func _render() -> void:
 		req_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info.add_child(req_lbl)
 
-		var rew_lbl := SocialUi.label("Cơ bản: +%s EXP  ·  +%d Phúc Duyên  ·  +%s Lượng" % [
+		var rew_lbl := SocialUi.label("Cơ bản: +%s EXP  ·  +%d Phúc Duyên  ·  +%d Danh Vọng  ·  +%s Lượng" % [
 			InventoryPopup.format_money(int(tier["reward_exp"])),
 			int(tier["reward_fuyuan"]),
+			int(tier.get("reward_prestige", 15)),
 			InventoryPopup.format_money(int(tier["reward_gold"]))
 		], Color(0.8, 0.95, 0.8), 12)
 		info.add_child(rew_lbl)
@@ -262,7 +267,7 @@ func _play_flappy_harvest(tier: Dictionary) -> void:
 		SocialWindow.info(self, "Hết Lượt", "Hôm nay đại hiệp đã ăn đủ %d Quả Huy Hoàng rồi. Ngày mai hãy tiếp tục!" % MAX_FRUITS_PER_DAY)
 		return
 
-	FlappyScript.launch(self, _profile, tier, func(score: int, total_exp: int, total_gold: int, total_fuyuan: int) -> void:
+	FlappyScript.launch(self, _profile, tier, func(score: int, total_exp: int, total_gold: int, total_fuyuan: int, total_prestige: int = 0) -> void:
 		# Nếu 0% hoàn thành (0 EXP, 0 Vàng, 0 Phúc Duyên), giữ nguyên lượt ăn quả để người chơi có thể chơi lại
 		if total_exp <= 0 and total_gold <= 0 and total_fuyuan <= 0:
 			return
@@ -270,6 +275,7 @@ func _play_flappy_harvest(tier: Dictionary) -> void:
 		_profile.add_exp(total_exp)
 		_profile.gold += total_gold
 		_profile.fuyuan += total_fuyuan
+		_profile.prestige += total_prestige
 
 		var r := _get_records()
 		var eaten_d: Dictionary = r.get("eaten", {})
@@ -296,10 +302,12 @@ func _eat_fruit(tier: Dictionary, count: int) -> void:
 
 	var total_exp := int(tier.get("reward_exp", 0)) * actual_count
 	var total_fuyuan := int(tier.get("reward_fuyuan", 0)) * actual_count
+	var total_prestige := int(tier.get("reward_prestige", 15)) * actual_count
 	var total_gold := int(tier.get("reward_gold", 0)) * actual_count
 
 	_profile.add_exp(total_exp)
 	_profile.fuyuan += total_fuyuan
+	_profile.prestige += total_prestige
 	_profile.gold += total_gold
 
 	var eaten_dict: Dictionary = rec.get("eaten", {})
@@ -311,11 +319,12 @@ func _eat_fruit(tier: Dictionary, count: int) -> void:
 	SaveManager.flush_online()
 
 	SocialWindow.info(self, "Hái Quả Thành Công",
-			"Đại hiệp đã thưởng thức %d %s!\nNhận được:\n+ %s Điểm Kinh Nghiệm\n+ %d Điểm Phúc Duyên\n+ %s Lượng" % [
+			"Đại hiệp đã thưởng thức %d %s!\nNhận được:\n+ %s Điểm Kinh Nghiệm\n+ %d Điểm Phúc Duyên\n+ %d Điểm Danh Vọng\n+ %s Lượng" % [
 				actual_count,
 				str(tier["name"]),
 				InventoryPopup.format_money(total_exp),
 				total_fuyuan,
+				total_prestige,
 				InventoryPopup.format_money(total_gold)
 			])
 	_render()

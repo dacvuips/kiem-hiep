@@ -1,0 +1,161 @@
+{
+  "tools": {
+    "hoe": {
+      "id": "hoe",
+      "name": "Cuốc Thép",
+      "description": "Dùng để cày và chuẩn bị các ô đất trồng trọt.",
+      "price_gold": 1000,
+      "price_xu": 0
+    },
+    "watering_can": {
+      "id": "watering_can",
+      "name": "Bình Tưới Nước",
+      "description": "Dùng để tưới nước giúp cây trồng sinh trưởng nhanh hơn.",
+      "price_gold": 1500,
+      "price_xu": 0
+    },
+    "fertilizer": {
+      "id": "fertilizer",
+      "name": "Phân Bón Hữu Cơ",
+      "description": "Bón phân giúp rút ngắn 30% thời gian sinh trưởng.",
+      "price_gold": 300,
+      "price_xu": 0
+    },
+    "whip": {
+      "id": "whip",
+      "name": "Roi Chăn Nuôi",
+      "description": "Công cụ quản lý chuồng trại và thúc giục thú nuôi.",
+      "price_gold": 2000,
+      "price_xu": 0
+    },
+    "fishing_rod_bamboo": {
+      "id": "fishing_rod_bamboo",
+      "name": "Cần Câu Tre",
+      "description": "Cần câu cơ bản để câu cá ven biển và ao hồ.",
+      "price_gold": 2000,
+      "price_xu": 3
+    }
+  },
+  "plants": {
+    "duoc_thao": {
+      "id": "duoc_thao",
+      "name": "Dược Thảo",
+      "best_season": -1,
+      "grow_time_seconds": 3600,
+      "seed_price_gold": 200,
+      "seed_price_xu": 0,
+      "sale_price_gold": 450,
+      "exp_reward": 50,
+      "stages": 4,
+      "chest_drop": "chest_moc_tinh",
+      "icon_path": "res://assets/items/icons/bainianqixingcao.png",
+      "sprite_growing": "res://assets/farm/crops/growing_duoc_thao.png",
+      "sprite_mature": "res://assets/farm/crops/mature_duoc_thao.png"
+    },
+    "hoa_cuc": {
+      "id": "hoa_cuc",
+      "name": "Hoa Cúc",
+      "best_season": 2,
+      "grow_time_seconds": 7200,
+      "seed_price_gold": 400,
+      "seed_price_xu": 0,
+      "sale_price_gold": 950,
+      "exp_reward": 90,
+      "stages": 4,
+      "chest_drop": "chest_moc_tinh",
+      "icon_path": "res://assets/items/icons/jihuazhi.png",
+      "sprite_growing": "res://assets/farm/crops/growing_hoa_cuc.png",
+      "sprite_mature": "res://assets/farm/crops/mature_hoa_cuc.png"
+    },
+    "lua_vang": {
+      "id": "lua_vang",
+      "name": "Lúa Vàng",
+      "best_season": 1,
+      "grow_time_seconds": 7200,
+      "seed_price_gold": 500,
+      "seed_price_xu": 0,
+      "sale_price_gold": 1200,
+      "exp_reward": 100,
+      "stages": 4,
+      "chest_drop": "chest_moc_tinh",
+      "icon_path": "res://assets/items/icons/damai.png",
+      "sprite_growing": "res://assets/farm/crops/growing_lua_vang.png",
+      "sprite_mature": "res://assets/farm/crops/mature_lua_vang.png"
+    },
+    "tra_xanh": {
+      "id": "tra_xanh",
+      "name": "Trà Xanh",
+      "best_season": 0,
+      "grow_time_seconds": 10800,
+      "seed_price_gold": 700,
+      "seed_price_xu": 1,
+      "sale_price_gold": 1700,
+      "exp_reward": 160,
+      "stages": 4,
+      "chest_drop": "chest_moc_tinh",
+      "icon_path": "res://assets/items/icons/huangcha.png",
+      "sprite_growing": "res://assets/farm/crops/growing_tra_xanh.png",
+      "sprite_mature": "res://assets/farm/crops/mature_tra_xanh.png"
+    },
+    "tao_do": {
+      "id": "tao_do",
+      "name": "Táo Đỏ",
+      "best_season": 2,
+      "grow_time_seconds": 10800,
+      "seed_price_gold": 800,
+      "seed_price_xu": 1,
+      "sale_price_gold": 1900,
+      "exp_reward": 180,
+      "stages": 4,
+      "chest_drop": "chest_moc_tinh",
+      "icon_path": "res://assets/items/icons/hongpingguo.png",
+      "sprite_growing": "res://assets/farm/crops/growing_tao_do.png",
+      "sprite_mature": "res://assets/farm/crops/mature_tao_do.png"
+    },
+    "linh_chi": {
+      "id": "linh_chi",
+      "name": "Linh Chi Thảo",
+      "best_season": 0,
+      "grow_time_seconds": 14400,
+      "seed_price_gold": 1500,
+      "seed_price_xu": 2,
+      "sale_price_gold": 3800,
+      "exp_reward": 350,
+      "stages": 4,
+      "chest_drop": "chest_linh_duoc",
+      "icon_path": "res://assets/items/icons/heidiaoxin.png",
+      "sprite_growing": "res://assets/farm/crops/growing_linh_chi.png",
+      "sprite_mature": "res://assets/farm/crops/mature_linh_chi.png"
+    },
+    "nhan_sam": {
+      "id": "nhan_sam",
+      "name": "Nhân Sâm Nghìn Năm",
+      "best_season": 0,
+      "grow_time_seconds": 21600,
+      "seed_price_gold": 2500,
+      "seed_price_xu": 5,
+      "sale_price_gold": 7000,
+      "exp_reward": 600,
+      "stages": 4,
+      "chest_drop": "chest_linh_duoc",
+      "icon_path": "res://assets/items/icons/bainianqixingcao.png",
+      "sprite_growing": "res://assets/farm/crops/growing_nhan_sam.png",
+      "sprite_mature": "res://assets/farm/crops/mature_nhan_sam.png"
+    },
+    "mai_hoa": {
+      "id": "mai_hoa",
+      "name": "Hàn Mai Tuyết",
+      "best_season": 3,
+      "grow_time_seconds": 28800,
+      "seed_price_gold": 3000,
+      "seed_price_xu": 6,
+      "sale_price_gold": 9000,
+      "exp_reward": 800,
+      "stages": 4,
+      "chest_drop": "chest_ngu_hanh",
+      "icon_path": "res://assets/items/icons/canhmai.png",
+      "sprite_growing": "res://assets/farm/crops/growing_mai_hoa.png",
+      "sprite_mature": "res://assets/farm/crops/mature_mai_hoa.png"
+    }
+  }
+}

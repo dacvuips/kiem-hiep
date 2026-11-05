@@ -328,7 +328,11 @@ func _on_home_pressed() -> void:
 		SaveManager.save_profile(GameManager.local_profile)
 		await SaveManager.flush_online()
 	queue_free()
-	get_tree().change_scene_to_file(HUB_SCENE_PATH)
+	var transition: Node = get_tree().root.get_node_or_null("SceneTransition") if get_tree() != null and get_tree().root != null else null
+	if transition != null and transition.has_method("change_scene"):
+		transition.change_scene(HUB_SCENE_PATH, "Về Thành Dưỡng Sức")
+	else:
+		get_tree().change_scene_to_file(HUB_SCENE_PATH)
 
 func _on_next_stage_pressed(next_stage: StageData) -> void:
 	if _is_transitioning or next_stage == null:
@@ -345,4 +349,9 @@ func _on_next_stage_pressed(next_stage: StageData) -> void:
 			SaveManager.save_profile(GameManager.local_profile)
 			await SaveManager.flush_online()
 	queue_free()
-	get_tree().change_scene_to_file(GAME_SCENE_PATH)
+	var transition: Node = get_tree().root.get_node_or_null("SceneTransition") if get_tree() != null and get_tree().root != null else null
+	if transition != null and transition.has_method("change_scene"):
+		var stage_name: String = next_stage.stage_name if next_stage != null and next_stage.stage_name != "" else "Ải Tiếp Theo"
+		transition.change_scene(GAME_SCENE_PATH, stage_name)
+	else:
+		get_tree().change_scene_to_file(GAME_SCENE_PATH)

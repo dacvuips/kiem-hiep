@@ -55,10 +55,16 @@ signal mana_changed(mana: float, max_mana: float)
 var max_mana: float = 100.0
 var mana: float = 100.0:
 	set(value):
+		if GmManager and GmManager.is_god_mode:
+			mana = maxf(max_mana, 1.0)
+			mana_changed.emit(mana, max_mana)
+			return
 		mana = clampf(value, 0.0, maxf(max_mana, 1.0))
 		mana_changed.emit(mana, max_mana)
 var last_direction: Vector2 = Vector2.RIGHT
 var is_invincible: bool = false
+var has_moved: bool = false
+var spawn_position: Vector2 = Vector2.ZERO
 ## Snapshot số liệu combat CHÍNH XÁC 100% VLTK (AttackRating/Defense/Damage/Kháng theo Ngũ Hành) —
 ## dựng từ PlayerProfile lúc _ready(), xem CombatantStats + CombatFormulas (systems/combat/).
 var combat_stats: CombatantStats
@@ -112,7 +118,12 @@ var follow_target: Node2D = null
 ## Bộ máy Auto đánh (Thiết lập auto đánh) — chạy khi is_auto_mode bật, xem AutoController.
 var auto: AutoController
 
+func reset_has_moved() -> void:
+	has_moved = false
+	spawn_position = global_position
+
 func _ready() -> void:
+	reset_has_moved()
 	var profile := GameManager.local_profile
 	combat_stats = profile.get_combat_stats() if profile else CombatantStats.new()
 	## HP tối đa hiển thị/dùng trong màn chơi lấy từ CombatantStats (VLTK gốc), KHÔNG dùng
@@ -776,6 +787,9 @@ func _physics_process(delta: float) -> void:
 	var noclip: bool = GmManager.is_noclip if GmManager else false
 	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, _is_jumping, noclip)
 	move_and_slide()
+	if not has_moved:
+		if global_position.distance_squared_to(spawn_position) > 100.0 or velocity.length_squared() > 10.0 or is_attacking or is_casting:
+			has_moved = true
 	if _is_jumping and get_slide_collision_count() > 0:
 		_end_jump()  ## đụng vật cản: hạ xuống tại chỗ (gốc cắt quãng nhảy trước vật cản)
 

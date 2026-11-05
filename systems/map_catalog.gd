@@ -21,7 +21,9 @@ static func _ensure() -> void:
 	if parsed is Dictionary:
 		_maps = parsed.get("maps", [])
 		_maps.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-			return [int(a["level"]), int(a["id"])] < [int(b["level"]), int(b["id"])])
+			var p_a: int = int(a.get("order", 0 if int(a.get("id", 0)) == 1041 else 100))
+			var p_b: int = int(b.get("order", 0 if int(b.get("id", 0)) == 1041 else 100))
+			return [int(a["level"]), p_a, int(a["id"])] < [int(b["level"]), p_b, int(b["id"])])
 
 static func all() -> Array:
 	_ensure()
@@ -73,7 +75,7 @@ const HELL_MAX_STARS := 5
 const HELL_MAPS := {
 	10: [224, 320, 319, 123],            ## Sa Mạc Địa Biểu, Chân Núi Trường Bạch, Lâm Du Quan, Lão Hổ Động
 	11: [225, 226, 227, 75, 93, 124],    ## Sa Mạc 1-3, Xi Vưu Động, Tiến Cúc Động, Hiên Viên Động
-	12: [321, 322, 336, 340],            ## Trường Bạch Sơn Nam / Bắc, Phong Lăng Độ, Mạc Cao Quật
+	12: [1041, 321, 322, 336, 340],      ## Nguyệt Ca Đảo, Trường Bạch Sơn Nam / Bắc, Phong Lăng Độ, Mạc Cao Quật
 }
 
 static func hell_level(tier: int) -> int:
@@ -95,7 +97,7 @@ static func hell_maps(tier: int) -> Array:
 ## Mục map để vào (GameManager.field_map): thêm "hell" = {tier, level, stars} — VltkWorld sinh quái theo đó.
 static func hell_entry(m: Dictionary, stars: int) -> Dictionary:
 	var e: Dictionary = m.duplicate(true)
-	var tier := int(m.get("hell_tier", 11))
+	var tier := int(m.get("hell_tier", tier_of_level(int(m.get("level", 120)))))
 	stars = clampi(stars, 1, HELL_MAX_STARS)
 	e["hell"] = {"tier": tier, "level": hell_level(tier), "stars": stars}
 	e["name"] = "%s · Tinh Anh %d★" % [str(m["name"]), stars]

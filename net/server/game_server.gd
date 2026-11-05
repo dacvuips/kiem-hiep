@@ -407,7 +407,7 @@ func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "", base
 	for dx in range(-1, 2):
 		for dy in range(-1, 2):
 			for e: ServerEntity in aoi.player_bucket(center + Vector2i(dx, dy)).values():
-				if (e.flags & NetProto.FLAG_DEAD) != 0:
+				if (e.flags & NetProto.FLAG_DEAD) != 0 or not e.has_moved:
 					continue
 				if exclude_side != "" and battle:
 					var side := battle.side_of(_players_by_eid.get(e.eid))
@@ -865,6 +865,8 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 		else:
 			action = NetProto.action_index("sit")
 			flags |= NetProto.FLAG_SITTING
+	if dist > 2.0:
+		e.has_moved = true
 	if p != e.pos or dir != e.dir or action != e.action or z != e.z or flags != e.flags:
 		e.pos = p
 		e.dir = dir
@@ -1294,6 +1296,7 @@ func conn_of_eid(eid: int) -> Conn:
 func teleport(c: Conn, p: Vector2) -> void:
 	var e := c.entity
 	e.pos = p
+	e.has_moved = false
 	e.touch()
 	aoi.update(e)
 	c.move_budget = c.max_speed * MOVE_BUDGET_CAP

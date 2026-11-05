@@ -25,6 +25,7 @@ var snap_ver := -1               ## `version` đã đưa vào gói vị trí c�
 ## thực thể ở phòng khác không bao giờ nằm trong 3x3 ô của nhau — phần gửi vị trí theo AOI không cần biết tới phòng.
 var room_id := 0
 var cell_base := Vector2i.ZERO
+var has_moved := false
 
 func touch() -> void:
 	version += 1

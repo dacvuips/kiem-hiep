@@ -6,10 +6,19 @@ const AuraDatabase = preload("res://systems/auras/aura_database.gd")
 ## TRUNG TÂM ĐIỀU HÀNH GAME MASTER (GM CONTROL CENTER)
 ## Giao diện trực quan tích hợp toàn diện các công cụ hỗ trợ GM quản lý thế giới, người chơi, boss, cấp phát vật phẩm.
 
-enum Tab { PLAYER, SELF, DISPENSER, BOSS, POSSESS, AUDIT, AURA }
-const TAB_NAMES := ["1. Người Chơi", "2. Bản Thân", "3. Cấp Đồ & Tiền", "4. Boss & Rớt Đồ", "5. Chiếm Quyền", "6. Nhật Ký GM", "7. Hào Quang Aura"]
+enum Tab { SELF, PLAYER, DISPENSER, ITEM_CREATOR, BOSS, POSSESS, AUDIT, AURA }
+const TAB_NAMES := [
+	"1. Bản Thân",
+	"2. Người Chơi",
+	"3. Cấp Tiền Tệ",
+	"4. Tạo Đồ TEST",
+	"5. Boss & Rớt Đồ",
+	"6. Chiếm Quyền",
+	"7. Nhật Ký GM",
+	"8. Hào Quang Aura"
+]
 
-var _current_tab: int = Tab.PLAYER
+var _current_tab: int = Tab.SELF
 var _tab_bar: HBoxContainer
 var _content_area: VBoxContainer
 var _status_footer: HBoxContainer
@@ -75,7 +84,7 @@ func _on_gm_profile_modified(_p: PlayerProfile) -> void:
 	_refresh_footer()
 	if _current_tab == Tab.DISPENSER:
 		_update_dispenser_summary()
-	elif _current_tab == Tab.PLAYER:
+	elif _current_tab == Tab.PLAYER or _current_tab == Tab.SELF:
 		_render_tab()
 
 func _ready() -> void:
@@ -125,12 +134,14 @@ func _render_tab() -> void:
 		c.queue_free()
 
 	match _current_tab:
-		Tab.PLAYER:
-			_build_player_tab()
 		Tab.SELF:
 			_build_self_tab()
+		Tab.PLAYER:
+			_build_player_tab()
 		Tab.DISPENSER:
 			_build_dispenser_tab()
+		Tab.ITEM_CREATOR:
+			_build_item_creator_tab()
 		Tab.BOSS:
 			_build_boss_tab()
 		Tab.POSSESS:
@@ -417,6 +428,68 @@ func _build_self_tab() -> void:
 	camp_sec[1].add_child(camp_row)
 	_content_area.add_child(camp_sec[0])
 
+	var cur_p := GameManager.local_profile
+	var cur_sect_name := cur_p.sect_name if (cur_p and cur_p.has_sect()) else "Vô Môn Phái"
+	var sect_sec := SocialUi.info_box("🥋 Chuyển Đổi Môn Phái (Hiện tại: %s)" % cur_sect_name)
+
+	var elements_row := HBoxContainer.new()
+	elements_row.add_theme_constant_override("separation", 8)
+	elements_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var element_keys := [
+		ElementTypes.ElementType.KIM,
+		ElementTypes.ElementType.MOC,
+		ElementTypes.ElementType.THUY,
+		ElementTypes.ElementType.HOA,
+		ElementTypes.ElementType.THO
+	]
+	var element_icons := ["⚡", "🍃", "💧", "🔥", "⛰"]
+
+	for idx in element_keys.size():
+		var elem: ElementTypes.ElementType = element_keys[idx]
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 6)
+
+		var elem_color: Color = ElementTypes.ELEMENT_COLOR.get(elem, SocialUi.TEXT)
+		var elem_header := SocialUi.label("%s HỆ %s" % [element_icons[idx], ElementTypes.ELEMENT_NAME.get(elem, "").to_upper()], elem_color.lightened(0.2), 13, HORIZONTAL_ALIGNMENT_CENTER)
+		col.add_child(elem_header)
+
+		var sects_in_elem: Array[SectDefinition] = SectRegistry.get_by_element(elem)
+		for sect in sects_in_elem:
+			var is_current: bool = cur_p != null and cur_p.sect_id == sect.id
+			var btn_text: String = ("✔ " if is_current else "") + sect.sect_name
+			var btn := SocialUi.small_button(btn_text)
+			btn.custom_minimum_size = Vector2(0, 32)
+			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			if is_current:
+				btn.modulate = Color(1.2, 1.2, 0.8)
+			btn.pressed.connect(func() -> void:
+				GmManager.change_player_sect(GameManager.local_profile, sect.id)
+				_show_toast("Đã chuyển sang môn phái %s (%s) và học full kỹ năng!" % [sect.sect_name, ElementTypes.ELEMENT_NAME.get(elem, "")])
+				_render_tab()
+			)
+			col.add_child(btn)
+
+		elements_row.add_child(col)
+
+	sect_sec[1].add_child(elements_row)
+
+	var bot_row := HBoxContainer.new()
+	bot_row.add_theme_constant_override("separation", 10)
+	var reset_sect_btn := SocialUi.small_button("⭕ Chuyển Về Vô Môn Phái")
+	reset_sect_btn.pressed.connect(func() -> void:
+		GmManager.change_player_sect(GameManager.local_profile, "vo_mon_phai")
+		_show_toast("Đã chuyển nhân vật về trạng thái Vô Môn Phái!")
+		_render_tab()
+	)
+	var tip_lbl := SocialUi.label("💡 Khi chuyển phái: tự động hoàn trả điểm cũ, đổi hệ & giới tính tương thích, học trọn bộ kỹ năng phái mới.", SocialUi.MUTED, 11)
+	bot_row.add_child(reset_sect_btn)
+	bot_row.add_child(tip_lbl)
+	sect_sec[1].add_child(bot_row)
+
+	_content_area.add_child(sect_sec[0])
+
 	var skill_sec := SocialUi.info_box("📜 Kỹ Năng & Tẩy Tủy Môn Phái")
 	var skill_row := HBoxContainer.new()
 	skill_row.add_theme_constant_override("separation", 10)
@@ -441,22 +514,6 @@ func _build_self_tab() -> void:
 	skill_row.add_child(add_1k_pts_btn)
 	skill_sec[1].add_child(skill_row)
 	_content_area.add_child(skill_sec[0])
-
-	var loc_sec := SocialUi.info_box("📍 Dịch Chuyển Tức Thời Đến Địa Danh Trọng Yếu")
-	var loc_grid := GridContainer.new()
-	loc_grid.columns = 4
-	loc_grid.add_theme_constant_override("h_separation", 8)
-	loc_grid.add_theme_constant_override("v_separation", 8)
-	for loc_name in GmManager.LOCATIONS.keys():
-		var lb := SocialUi.small_button("🚩 %s" % loc_name)
-		lb.custom_minimum_size = Vector2(160, 32)
-		lb.pressed.connect(func() -> void:
-			GmManager.teleport_to_location({"is_self": true, "name": "Bản thân"}, loc_name)
-			_show_toast("Đã dịch chuyển tới %s!" % loc_name)
-		)
-		loc_grid.add_child(lb)
-	loc_sec[1].add_child(loc_grid)
-	_content_area.add_child(loc_sec[0])
 
 	var spd_sec := SocialUi.info_box("🏃 Tốc Độ Di Chuyển")
 	var spd_row := HBoxContainer.new()
@@ -628,35 +685,36 @@ func _build_dispenser_tab() -> void:
 	var add_5k_xu := SocialUi.small_button("+5.000 Xu")
 	var add_1k_knb := SocialUi.small_button("+1.000 KNB")
 	var add_10k_knb := SocialUi.small_button("+10.000 KNB")
-	var add_rep := SocialUi.small_button("+500 Danh Vọng & Phúc Duyên")
 
 	add_10tr.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 10_000_000, 0, 0, 0, 0)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +1.000 vạn lượng cho %s" % target_name)
 	)
 	add_50tr.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 50_000_000, 0, 0, 0, 0)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +5.000 vạn lượng cho %s" % target_name)
 	)
 	add_1k_xu.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 0, 0, 0, 0, 1000)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +1.000 Tiền Xu cho %s" % target_name)
 	)
 	add_5k_xu.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 0, 0, 0, 0, 5000)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +5.000 Tiền Xu cho %s" % target_name)
 	)
 	add_1k_knb.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 0, 1000, 0, 0, 0)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +1.000 KNB cho %s" % target_name)
 	)
 	add_10k_knb.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 0, 10000, 0, 0, 0)
+		_update_dispenser_summary()
 		_show_toast("Đã cấp +10.000 KNB cho %s" % target_name)
-	)
-	add_rep.pressed.connect(func() -> void:
-		GmManager.give_resources(target_p, 0, 0, 500, 500, 0)
-		_show_toast("Đã cấp +500 Danh vọng và Phúc duyên cho %s" % target_name)
 	)
 
 	money_row.add_child(add_10tr)
@@ -665,68 +723,193 @@ func _build_dispenser_tab() -> void:
 	money_row.add_child(add_5k_xu)
 	money_row.add_child(add_1k_knb)
 	money_row.add_child(add_10k_knb)
-	money_row.add_child(add_rep)
 	money_sec[1].add_child(money_row)
 	_content_area.add_child(money_sec[0])
 
-	var item_sec := SocialUi.info_box("⚔ Cấp Trang Bị & Khoáng Thạch")
-	var item_row := HBoxContainer.new()
-	item_row.add_theme_constant_override("separation", 10)
+	# Cụm cấp thủ công Danh Vọng & Phúc Duyên
+	var rep_sec := SocialUi.info_box("⭐ Cấp Danh Vọng & Phúc Duyên (Thủ Công)")
+	var rep_vb := VBoxContainer.new()
+	rep_vb.add_theme_constant_override("separation", 8)
 
-	var open_creator_btn := SocialUi.small_button("🛠 Bảng Chế Tạo Trang Bị Tự Chọn (Item Creator)")
-	var add_10_rnd := SocialUi.small_button("🎲 10 Trang Bị Ngẫu Nhiên")
-	var add_xj_10 := SocialUi.small_button("💎 3 Viên Huyền Tinh Cấp 10")
+	var rep_quick_row := HBoxContainer.new()
+	rep_quick_row.add_theme_constant_override("separation", 10)
 
+	var add_100_rep := SocialUi.small_button("+100 Danh Vọng")
+	var add_500_rep := SocialUi.small_button("+500 Danh Vọng")
+	var add_100_fy := SocialUi.small_button("+100 Phúc Duyên")
+	var add_500_fy := SocialUi.small_button("+500 Phúc Duyên")
+	var add_both_rep_fy := SocialUi.small_button("+500 Cả Hai (Lập Bang)")
+
+	add_100_rep.pressed.connect(func() -> void:
+		GmManager.give_resources(target_p, 0, 0, 100, 0, 0)
+		_update_dispenser_summary()
+		_show_toast("Đã cấp +100 Danh vọng cho %s" % target_name)
+	)
+	add_500_rep.pressed.connect(func() -> void:
+		GmManager.give_resources(target_p, 0, 0, 500, 0, 0)
+		_update_dispenser_summary()
+		_show_toast("Đã cấp +500 Danh vọng cho %s" % target_name)
+	)
+	add_100_fy.pressed.connect(func() -> void:
+		GmManager.give_resources(target_p, 0, 0, 0, 100, 0)
+		_update_dispenser_summary()
+		_show_toast("Đã cấp +100 Phúc duyên cho %s" % target_name)
+	)
+	add_500_fy.pressed.connect(func() -> void:
+		GmManager.give_resources(target_p, 0, 0, 0, 500, 0)
+		_update_dispenser_summary()
+		_show_toast("Đã cấp +500 Phúc duyên cho %s" % target_name)
+	)
+	add_both_rep_fy.pressed.connect(func() -> void:
+		GmManager.give_resources(target_p, 0, 0, 500, 500, 0)
+		_update_dispenser_summary()
+		_show_toast("Đã cấp +500 Danh vọng và Phúc duyên cho %s" % target_name)
+	)
+
+	rep_quick_row.add_child(add_100_rep)
+	rep_quick_row.add_child(add_500_rep)
+	rep_quick_row.add_child(add_100_fy)
+	rep_quick_row.add_child(add_500_fy)
+	rep_quick_row.add_child(add_both_rep_fy)
+	rep_vb.add_child(rep_quick_row)
+
+	var rep_custom_row := HBoxContainer.new()
+	rep_custom_row.add_theme_constant_override("separation", 8)
+	rep_custom_row.add_child(SocialUi.label("Nhập số điểm:", SocialUi.MUTED, 13))
+
+	var custom_input := LineEdit.new()
+	custom_input.placeholder_text = "VD: 300 hoặc 500"
+	custom_input.text = "300"
+	custom_input.custom_minimum_size = Vector2(140, 30)
+	rep_custom_row.add_child(custom_input)
+
+	var add_custom_rep := SocialUi.small_button("➕ Thêm Danh Vọng")
+	var add_custom_fy := SocialUi.small_button("➕ Thêm Phúc Duyên")
+	var reset_both := SocialUi.small_button("🔄 Đặt Lại = 0")
+
+	add_custom_rep.pressed.connect(func() -> void:
+		var val := int(custom_input.text.strip_edges())
+		if val != 0:
+			GmManager.give_resources(target_p, 0, 0, val, 0, 0)
+			_update_dispenser_summary()
+			_show_toast("Đã cấp %+d Danh vọng cho %s" % [val, target_name])
+	)
+	add_custom_fy.pressed.connect(func() -> void:
+		var val := int(custom_input.text.strip_edges())
+		if val != 0:
+			GmManager.give_resources(target_p, 0, 0, 0, val, 0)
+			_update_dispenser_summary()
+			_show_toast("Đã cấp %+d Phúc duyên cho %s" % [val, target_name])
+	)
+	reset_both.pressed.connect(func() -> void:
+		target_p.prestige = 0
+		target_p.fuyuan = 0
+		SaveManager.save_profile(target_p)
+		SaveManager.flush_online()
+		GmManager.profile_modified.emit(target_p)
+		_update_dispenser_summary()
+		_show_toast("Đã reset Danh vọng & Phúc duyên của %s về 0" % target_name)
+	)
+
+	rep_custom_row.add_child(add_custom_rep)
+	rep_custom_row.add_child(add_custom_fy)
+	rep_custom_row.add_child(reset_both)
+	rep_vb.add_child(rep_custom_row)
+
+	rep_sec[1].add_child(rep_vb)
+	_content_area.add_child(rep_sec[0])
+
+# ==============================================================================
+# TAB 4: TẠO ĐỒ & THỬ NGHIỆM VẬT PHẨM (TEST)
+# ==============================================================================
+
+func _build_item_creator_tab() -> void:
+	var target_name: String = _selected_player.get("name", "Bản Thân")
+	var target_p: PlayerProfile = _selected_profile()
+	if target_p == null:
+		target_p = GameManager.local_profile
+
+	var elem_name: String = str(ElementTypes.ELEMENT_NAME.get(target_p.get_element(), "Vô Hệ")) if target_p else "Vô Hệ"
+	var sect_str: String = target_p.sect_id if target_p else "Vô Môn Phái"
+	var info_sec := SocialUi.info_box("🛠 Mục Tiêu Tạo Đồ: %s (Hệ %s · Phái: %s)" % [target_name, elem_name, sect_str])
+	info_sec[1].add_child(SocialUi.label("Toàn bộ vật phẩm thử nghiệm được cấp trực tiếp vào Hành trang của mục tiêu đang chọn.", SocialUi.MUTED, 12))
+	_content_area.add_child(info_sec[0])
+
+	# 1. Trình tạo đồ toàn năng
+	var creator_sec := SocialUi.info_box("🛠 Trình Tạo Đồ Tự Chọn Toàn Năng (Full Item Creator)")
+	var creator_row := HBoxContainer.new()
+	creator_row.add_theme_constant_override("separation", 10)
+	var open_creator_btn := SocialUi.stone_button("🛠 Mở Bảng Tạo Đồ Chi Tiết (Tùy Chọn Phẩm Chất, Cấp, Hệ, Dòng Thuộc Tính)", Vector2(560, 36))
 	open_creator_btn.pressed.connect(func() -> void:
 		ItemCreatorPopup.open(get_tree().current_scene, target_p, func() -> void:
 			SaveManager.save_profile(target_p)
 			SaveManager.flush_online.call_deferred()
 			GmManager.profile_modified.emit(target_p)
-			_show_toast("Đã thêm trang bị tùy chọn vào túi đồ của %s!" % target_name)
+			_show_toast("Đã thêm trang bị tùy chọn vào hành trang của %s!" % target_name)
 		)
 	)
-	add_10_rnd.pressed.connect(func() -> void:
-		for i in 10:
-			target_p.add_item(ItemGenerator.random_equipment(target_p.level))
-		SaveManager.save_profile(target_p)
-		SaveManager.flush_online.call_deferred()
-		GmManager.profile_modified.emit(target_p)
-		_show_toast("Đã cấp 10 trang bị ngẫu nhiên cho %s" % target_name)
-	)
-	add_xj_10.pressed.connect(func() -> void:
-		for i in 3:
-			var xj := ItemGenerator.generate_misc(Compound.XUANJING, 10, 0, 1)
-			target_p.add_item(xj)
-		SaveManager.save_profile(target_p)
-		SaveManager.flush_online.call_deferred()
-		GmManager.profile_modified.emit(target_p)
-		_show_toast("Đã cấp 3 viên Huyền Tinh Cấp 10 cho %s" % target_name)
-	)
+	creator_row.add_child(open_creator_btn)
+	creator_sec[1].add_child(creator_row)
+	_content_area.add_child(creator_sec[0])
 
-	item_row.add_child(open_creator_btn)
-	item_row.add_child(add_10_rnd)
-	item_row.add_child(add_xj_10)
-	item_sec[1].add_child(item_row)
-	_content_area.add_child(item_sec[0])
+	# 2. Trang bị Hoàng Kim Môn Phái
+	var hkmp_sec := SocialUi.info_box("🏆 Trang Bị Hoàng Kim Môn Phái (HKMP Hoàn Mỹ)")
+	var hkmp_vb := VBoxContainer.new()
+	hkmp_vb.add_theme_constant_override("separation", 8)
 
-	var gold_sec := SocialUi.info_box("🏆 Bộ Trang Bị Hoàng Kim & Thần Mã (Chuẩn 15 Phái)")
-	var gold_grid := GridContainer.new()
-	gold_grid.columns = 3
-	gold_grid.add_theme_constant_override("h_separation", 10)
-	gold_grid.add_theme_constant_override("v_separation", 8)
-
-	var btn_hkmp := SocialUi.small_button("🏆 Cấp Bộ HKMP Hoàn Mỹ (Theo Phái)")
-	var btn_ab := SocialUi.small_button("🌟 Cấp Trọn Bộ An Bang")
-	var btn_dq := SocialUi.small_button("🛡 Cấp Trọn Bộ Định Quốc")
-	var btn_kp := SocialUi.small_button("🎖 Cấp Trọn Bộ Kim Phong")
-	var btn_horse_pv := SocialUi.small_button("🐎 Thần Mã Phiên Vũ (Cấp 10)")
-	var btn_horse_bt := SocialUi.small_button("🐎 Chiến Mã Bôn Tiêu (Cấp 10)")
-	var btn_gems := SocialUi.small_button("🔮 Gói Thủy Tinh, Tinh Hồng & HT 10")
-
-	btn_hkmp.pressed.connect(func() -> void:
+	var hkmp_cur_row := HBoxContainer.new()
+	hkmp_cur_row.add_theme_constant_override("separation", 10)
+	var btn_hkmp_curr := SocialUi.small_button("👑 Cấp Full Set HKMP Theo Môn Phái Hiện Tại")
+	btn_hkmp_curr.pressed.connect(func() -> void:
 		var c := GmManager.give_hkmp_set(target_p)
 		_show_toast("Đã cấp trọn bộ HKMP (%d món) cho %s!" % [c, target_name])
 	)
+	hkmp_cur_row.add_child(btn_hkmp_curr)
+	hkmp_vb.add_child(hkmp_cur_row)
+
+	var hkmp_sects_grid := GridContainer.new()
+	hkmp_sects_grid.columns = 5
+	hkmp_sects_grid.add_theme_constant_override("h_separation", 6)
+	hkmp_sects_grid.add_theme_constant_override("v_separation", 6)
+
+	var sects_data := [
+		{"name": "Thiếu Lâm", "id": "shaolin", "gid": 1},
+		{"name": "Thiên Vương", "id": "tianwang", "gid": 4},
+		{"name": "Đường Môn", "id": "tangmen", "gid": 12},
+		{"name": "Ngũ Độc", "id": "wudu", "gid": 25},
+		{"name": "Nga My", "id": "emei", "gid": 7},
+		{"name": "Thúy Yên", "id": "cuiyan", "gid": 10},
+		{"name": "Cái Bang", "id": "gaibang", "gid": 18},
+		{"name": "Thiên Nhẫn", "id": "tianren", "gid": 22},
+		{"name": "Võ Đang", "id": "wudang", "gid": 29},
+		{"name": "Côn Lôn", "id": "kunlun", "gid": 32},
+	]
+	for s_info in sects_data:
+		var sb := SocialUi.small_button("Set " + str(s_info["name"]))
+		var gid: int = s_info["gid"]
+		var sname: String = s_info["name"]
+		sb.pressed.connect(func() -> void:
+			var c := GmManager.give_hkmp_set(target_p, gid)
+			_show_toast("Đã cấp Full Set HKMP %s (%d món) cho %s!" % [sname, c, target_name])
+		)
+		hkmp_sects_grid.add_child(sb)
+	hkmp_vb.add_child(hkmp_sects_grid)
+	hkmp_sec[1].add_child(hkmp_vb)
+	_content_area.add_child(hkmp_sec[0])
+
+	# 3. Các Bộ Hoàng Kim Nổi Tiếng & Đồ Xanh Max Opt
+	var sets_sec := SocialUi.info_box("⭐ Bộ Hoàng Kim Danh Tiếng & Đồ Xanh Cực Phẩm")
+	var sets_grid := GridContainer.new()
+	sets_grid.columns = 3
+	sets_grid.add_theme_constant_override("h_separation", 10)
+	sets_grid.add_theme_constant_override("v_separation", 8)
+
+	var btn_ab := SocialUi.small_button("🌟 Cấp Trọn Bộ An Bang (4 món)")
+	var btn_dq := SocialUi.small_button("🛡 Cấp Trọn Bộ Định Quốc (6 món)")
+	var btn_kp := SocialUi.small_button("🎖 Cấp Trọn Bộ Kim Phong (10 món)")
+	var btn_blue := SocialUi.small_button("🔵 Bộ 10 Đồ Xanh Cấp 10 (Full 6 Dòng)")
+	var btn_rnd := SocialUi.small_button("🎲 10 Trang Bị Ngẫu Nhiên Cấp Độ")
+
 	btn_ab.pressed.connect(func() -> void:
 		var c := GmManager.give_an_bang_set(target_p)
 		_show_toast("Đã cấp bộ An Bang (%d món) cho %s!" % [c, target_name])
@@ -739,28 +922,131 @@ func _build_dispenser_tab() -> void:
 		var c := GmManager.give_kim_phong_set(target_p)
 		_show_toast("Đã cấp bộ Kim Phong (%d món) cho %s!" % [c, target_name])
 	)
-	btn_horse_pv.pressed.connect(func() -> void:
+	btn_blue.pressed.connect(func() -> void:
+		var c := GmManager.give_blue_set(target_p)
+		_show_toast("Đã cấp 10 món Đồ Xanh Cấp 10 Full 6 dòng cho %s!" % target_name)
+	)
+	btn_rnd.pressed.connect(func() -> void:
+		for i in 10:
+			target_p.add_item(ItemGenerator.random_equipment(target_p.level))
+		SaveManager.save_profile(target_p)
+		SaveManager.flush_online.call_deferred()
+		GmManager.profile_modified.emit(target_p)
+		_show_toast("Đã cấp 10 trang bị ngẫu nhiên cho %s" % target_name)
+	)
+
+	for b in [btn_ab, btn_dq, btn_kp, btn_blue, btn_rnd]:
+		b.custom_minimum_size = Vector2(230, 32)
+		sets_grid.add_child(b)
+	sets_sec[1].add_child(sets_grid)
+	_content_area.add_child(sets_sec[0])
+
+	# 4. Thần mã VIP, Mặt Nạ & Phi Phong
+	var vip_sec := SocialUi.info_box("🐎 Thần Mã VIP, Mặt Nạ & Phi Phong")
+	var vip_grid := GridContainer.new()
+	vip_grid.columns = 3
+	vip_grid.add_theme_constant_override("h_separation", 10)
+	vip_grid.add_theme_constant_override("v_separation", 8)
+
+	var btn_pv := SocialUi.small_button("🐎 Thần Mã Phiên Vũ (Cấp 10)")
+	var btn_bt := SocialUi.small_button("🐎 Chiến Mã Bôn Tiêu (Cấp 10)")
+	var btn_cd := SocialUi.small_button("🐎 Chiếu Dạ Ngọc Sư Tử (Cấp 10)")
+	var btn_mask := SocialUi.small_button("🎭 Bộ 5 Mặt Nạ Biến Hình (Test)")
+	var btn_mantle := SocialUi.small_button("🧣 Bộ 5 Phi Phong (Test)")
+
+	btn_pv.pressed.connect(func() -> void:
 		GmManager.give_horse_vip(target_p, "Phiên Vũ")
 		_show_toast("Đã cấp Thần Mã Phiên Vũ cho %s!" % target_name)
 	)
-	btn_horse_bt.pressed.connect(func() -> void:
+	btn_bt.pressed.connect(func() -> void:
 		GmManager.give_horse_vip(target_p, "Bôn Tiêu")
 		_show_toast("Đã cấp Chiến Mã Bôn Tiêu cho %s!" % target_name)
 	)
-	btn_gems.pressed.connect(func() -> void:
-		var c := GmManager.give_gem_pack(target_p)
-		_show_toast("Đã cấp gói Nguyên liệu & Thủy tinh (%d món) cho %s!" % [c, target_name])
+	btn_cd.pressed.connect(func() -> void:
+		GmManager.give_horse_vip(target_p, "Chiếu Dạ")
+		_show_toast("Đã cấp Chiến Mã Chiếu Dạ cho %s!" % target_name)
+	)
+	btn_mask.pressed.connect(func() -> void:
+		var c := GmManager.give_mask_set(target_p)
+		_show_toast("Đã cấp %d Mặt Nạ cho %s!" % [c, target_name])
+	)
+	btn_mantle.pressed.connect(func() -> void:
+		var c := GmManager.give_mantle_set(target_p)
+		_show_toast("Đã cấp %d Phi Phong cho %s!" % [c, target_name])
 	)
 
-	for b in [btn_hkmp, btn_ab, btn_dq, btn_kp, btn_horse_pv, btn_horse_bt, btn_gems]:
+	for b in [btn_pv, btn_bt, btn_cd, btn_mask, btn_mantle]:
 		b.custom_minimum_size = Vector2(230, 32)
-		gold_grid.add_child(b)
+		vip_grid.add_child(b)
+	vip_sec[1].add_child(vip_grid)
+	_content_area.add_child(vip_sec[0])
 
-	gold_sec[1].add_child(gold_grid)
-	_content_area.add_child(gold_sec[0])
+	# 5. Dược phẩm, Phúc Duyên Lộ, Huyền Tinh & Lệnh Bài
+	var mat_sec := SocialUi.info_box("🧪 Dược Phẩm, Phúc Duyên Lộ, Huyền Tinh & Lệnh Bài")
+	var mat_grid := GridContainer.new()
+	mat_grid.columns = 3
+	mat_grid.add_theme_constant_override("h_separation", 10)
+	mat_grid.add_theme_constant_override("v_separation", 8)
+
+	var btn_consumables := SocialUi.small_button("🧪 Gói Thuốc & Phúc Duyên Lộ Đại")
+	var btn_gems := SocialUi.small_button("🔮 Gói Thủy Tinh & Huyền Tinh 10")
+	var btn_xj10 := SocialUi.small_button("💎 3 Viên Huyền Tinh Cấp 10")
+
+	btn_consumables.pressed.connect(func() -> void:
+		var c := GmManager.give_consumables_pack(target_p)
+		_show_toast("Đã cấp gói Dược Phẩm, Phúc Duyên & Lệnh Bài (%d món) cho %s!" % [c, target_name])
+	)
+	btn_gems.pressed.connect(func() -> void:
+		var c := GmManager.give_gem_pack(target_p)
+		_show_toast("Đã cấp gói Thủy Tinh & Huyền Tinh (%d món) cho %s!" % [c, target_name])
+	)
+	btn_xj10.pressed.connect(func() -> void:
+		for i in 3:
+			var xj := ItemGenerator.generate_misc(Compound.XUANJING, 10, 0, 1)
+			target_p.add_item(xj)
+		SaveManager.save_profile(target_p)
+		SaveManager.flush_online.call_deferred()
+		GmManager.profile_modified.emit(target_p)
+		_show_toast("Đã cấp 3 viên Huyền Tinh Cấp 10 cho %s!" % target_name)
+	)
+
+	for b in [btn_consumables, btn_gems, btn_xj10]:
+		b.custom_minimum_size = Vector2(230, 32)
+		mat_grid.add_child(b)
+	mat_sec[1].add_child(mat_grid)
+	_content_area.add_child(mat_sec[0])
+
+	# 6. Tiện ích dọn dẹp túi đồ
+	var util_sec := SocialUi.info_box("🧹 Tiện Ích Dọn Dẹp & Quản Lý Hành Trang")
+	var util_row := HBoxContainer.new()
+	util_row.add_theme_constant_override("separation", 10)
+
+	var btn_clear := SocialUi.small_button("🗑 Dọn Sạch Toàn Bộ Túi Đồ (Clear Inv)")
+	var btn_sort := SocialUi.small_button("🔄 Sắp Xếp Túi Đồ (Auto-Sort)")
+
+	btn_clear.pressed.connect(func() -> void:
+		var c := GmManager.clear_inventory(target_p)
+		_show_toast("Đã xóa sạch %d vật phẩm trong túi đồ của %s!" % [c, target_name])
+	)
+	btn_sort.pressed.connect(func() -> void:
+		target_p.inventory.sort_custom(func(a: ItemInstance, b: ItemInstance) -> bool:
+			if a.get_detail() != b.get_detail():
+				return a.get_detail() < b.get_detail()
+			return a.get_level() > b.get_level()
+		)
+		SaveManager.save_profile(target_p)
+		SaveManager.flush_online.call_deferred()
+		GmManager.profile_modified.emit(target_p)
+		_show_toast("Đã sắp xếp lại toàn bộ túi đồ của %s!" % target_name)
+	)
+
+	util_row.add_child(btn_clear)
+	util_row.add_child(btn_sort)
+	util_sec[1].add_child(util_row)
+	_content_area.add_child(util_sec[0])
 
 # ==============================================================================
-# TAB 4: QUẢN LÝ BOSS & RỚT ĐỒ
+# TAB 5: QUẢN LÝ BOSS & RỚT ĐỒ
 # ==============================================================================
 
 func _build_boss_tab() -> void:

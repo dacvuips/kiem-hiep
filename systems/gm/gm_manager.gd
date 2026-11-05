@@ -20,6 +20,15 @@ var is_invisible: bool = false:
 var is_god_mode: bool = false:
 	set(v):
 		is_god_mode = v
+		if is_god_mode:
+			var tree := Engine.get_main_loop() as SceneTree
+			if tree:
+				var player := tree.get_first_node_in_group("player")
+				if player and is_instance_valid(player):
+					if "health" in player and "max_health" in player:
+						player.health = player.max_health
+					if "mana" in player and "max_mana" in player:
+						player.mana = player.max_mana
 		gm_state_changed.emit()
 
 var is_noclip: bool = false:
@@ -264,6 +273,66 @@ func change_player_camp(target_profile: PlayerProfile, camp_type: int) -> void:
 	log_action("CHANGE_CAMP", target_profile.display_name, "Đổi sang phe/màu PK: %s (Camp %d)" % [camp_name, camp_type])
 	profile_modified.emit(target_profile)
 	gm_state_changed.emit()
+
+## Chuyển đổi môn phái tức thời cho người chơi (GM chuyển phái)
+func change_player_sect(target_profile: PlayerProfile, new_sect_id: String, auto_learn_skills: bool = true) -> bool:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return false
+
+	if new_sect_id == "" or new_sect_id == "vo_mon_phai":
+		target_profile.refund_all_points()
+		target_profile.sect_id = ""
+		target_profile.sect_name = PlayerProfile.NO_SECT_NAME
+		SaveManager.save_profile(target_profile)
+		SaveManager.flush_online.call_deferred()
+		var player := get_player_node()
+		if player:
+			if player.has_method("refresh_sect"):
+				player.refresh_sect()
+			if player.has_method("refresh_appearance"):
+				player.refresh_appearance()
+			if player.has_method("refresh_combat_stats"):
+				player.refresh_combat_stats()
+		log_action("CHANGE_SECT", target_profile.display_name, "Chuyển về Vô Môn Phái")
+		profile_modified.emit(target_profile)
+		gm_state_changed.emit()
+		return true
+
+	var sect := SectRegistry.get_by_id(new_sect_id)
+	if sect == null:
+		return false
+
+	# Hoàn lại điểm tiềm năng và kỹ năng cũ
+	target_profile.refund_all_points()
+
+	# Cập nhật thông tin môn phái, ngũ hành, giới tính bắt buộc nếu có
+	target_profile.set_sect(sect)
+
+	# Tự động học trọn bộ kỹ năng của môn phái mới nếu auto_learn_skills = true
+	if auto_learn_skills:
+		for skill in sect.skills:
+			target_profile.skill_levels[skill.id] = skill.max_level
+			if skill.is_main_attack and target_profile.main_skill_id.is_empty():
+				target_profile.main_skill_id = skill.id
+
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+
+	var player := get_player_node()
+	if player:
+		if player.has_method("refresh_sect"):
+			player.refresh_sect()
+		if player.has_method("refresh_appearance"):
+			player.refresh_appearance()
+		if player.has_method("refresh_combat_stats"):
+			player.refresh_combat_stats()
+
+	log_action("CHANGE_SECT", target_profile.display_name, "Chuyển môn phái sang: %s (%s)" % [sect.sect_name, sect.id])
+	profile_modified.emit(target_profile)
+	gm_state_changed.emit()
+	return true
 
 ## Học full kỹ năng môn phái hiện tại (theo hàm HocKyNangMonPhai / AddSkills của source 15 phái)
 func learn_all_sect_skills(target_profile: PlayerProfile) -> int:
@@ -794,6 +863,122 @@ func give_gem_pack(target_profile: PlayerProfile) -> int:
 	SaveManager.save_profile(target_profile)
 	SaveManager.flush_online.call_deferred()
 	log_action("GIVE_GEMS", target_profile.display_name, "Cấp gói Nguyên Liệu Chế Tạo & Thủy Tinh (%d món)" % count)
+	profile_modified.emit(target_profile)
+	return count
+
+## Cấp trọn bộ 5 Mặt Nạ thử nghiệm
+func give_mask_set(target_profile: PlayerProfile) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return 0
+	var count := 0
+	for p in 5:
+		var it := ItemGenerator.generate(ItemDatabase.Detail.MASK, p, 1, target_profile.get_element(), [5, 5, 5, 5, 5, 5])
+		if it and target_profile.add_item(it):
+			count += 1
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	log_action("GIVE_MASKS", target_profile.display_name, "Cấp bộ Mặt Nạ thử nghiệm (%d món)" % count)
+	profile_modified.emit(target_profile)
+	return count
+
+## Cấp trọn bộ 5 Phi Phong thử nghiệm
+func give_mantle_set(target_profile: PlayerProfile) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return 0
+	var count := 0
+	for lv in [1, 3, 5, 6, 7]:
+		var it := ItemGenerator.generate(ItemDatabase.Detail.MANTLE, 0, lv, target_profile.get_element(), [6, 6, 6, 6, 6, 6])
+		if it and target_profile.add_item(it):
+			count += 1
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	log_action("GIVE_MANTLES", target_profile.display_name, "Cấp bộ Phi Phong thử nghiệm (%d món)" % count)
+	profile_modified.emit(target_profile)
+	return count
+
+## Cấp trọn bộ 10 Trang Bị Xanh Cấp 10 (Full 6 dòng thuộc tính tối đa)
+func give_blue_set(target_profile: PlayerProfile, elem: int = -1) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return 0
+	var series := elem if elem >= 0 else target_profile.get_element()
+	var slots := [
+		[ItemDatabase.Detail.MELEE, 0],   # Kiếm Cấp 10
+		[ItemDatabase.Detail.ARMOR, 0],   # Áo Cấp 10
+		[ItemDatabase.Detail.HELM, 0],    # Mão Cấp 10
+		[ItemDatabase.Detail.BOOT, 0],    # Giày Cấp 10
+		[ItemDatabase.Detail.BELT, 0],    # Thắt Lưng Cấp 10
+		[ItemDatabase.Detail.CUFF, 0],    # Hộ Uyển Cấp 10
+		[ItemDatabase.Detail.AMULET, 0],  # Dây Chuyền Cấp 10
+		[ItemDatabase.Detail.PENDANT, 0], # Ngọc Bội Cấp 10
+		[ItemDatabase.Detail.RING, 0],    # Nhẫn 1 Cấp 10
+		[ItemDatabase.Detail.RING, 0],    # Nhẫn 2 Cấp 10
+	]
+	var max_lines := [10, 10, 10, 10, 10, 10]
+	var count := 0
+	for s in slots:
+		var it := ItemGenerator.generate(s[0], s[1], 10, series, max_lines)
+		if it and target_profile.add_item(it):
+			count += 1
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	log_action("GIVE_BLUE_SET", target_profile.display_name, "Cấp bộ 10 Trang Bị Xanh Cấp 10 full 6 dòng (%d món)" % count)
+	profile_modified.emit(target_profile)
+	return count
+
+## Cấp túi Dược Phẩm, Phúc Duyên Lộ & Lệnh Bài Hoạt Động
+func give_consumables_pack(target_profile: PlayerProfile) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return 0
+	var count := 0
+	# 5 Phúc Duyên Lộ (Đại)
+	for i in 5:
+		var it := ItemGenerator.generate_misc("6_1_124")
+		if it and target_profile.add_item(it): count += 1
+	# 5 Tiên Thảo Lộ Đặc Biệt
+	for i in 5:
+		var it := ItemGenerator.generate_misc("6_1_1180")
+		if it and target_profile.add_item(it): count += 1
+	# 5 Bách Quả Lộ
+	for i in 5:
+		var it := ItemGenerator.generate_misc("6_1_1437")
+		if it and target_profile.add_item(it): count += 1
+	# 3 Lệnh Bài Phong Lăng Độ
+	for i in 3:
+		var it := ItemGenerator.generate_misc("4_489_1")
+		if it and target_profile.add_item(it): count += 1
+	# 3 Lệnh Bài Thủy Tặc
+	for i in 3:
+		var it := ItemGenerator.generate_misc("6_1_2745")
+		if it and target_profile.add_item(it): count += 1
+	# 3 Sát Thủ Giản
+	for i in 3:
+		var it := ItemGenerator.generate_misc("6_1_400")
+		if it and target_profile.add_item(it): count += 1
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	log_action("GIVE_CONSUMABLES", target_profile.display_name, "Cấp gói Dược Phẩm, Phúc Duyên & Lệnh Bài (%d món)" % count)
+	profile_modified.emit(target_profile)
+	return count
+
+## Xóa sạch toàn bộ vật phẩm trong hành trang của nhân vật (tiện ích dọn dẹp khi test đồ)
+func clear_inventory(target_profile: PlayerProfile) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return 0
+	var count := target_profile.inventory.size()
+	target_profile.inventory.clear()
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	log_action("CLEAR_INVENTORY", target_profile.display_name, "Dọn sạch %d vật phẩm trong túi đồ" % count)
 	profile_modified.emit(target_profile)
 	return count
 

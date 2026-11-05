@@ -36,8 +36,11 @@ func test_catalog_structure() -> void:
 	assert_true(vp_p1.size() == 15, "Trang 1 của Vật Phẩm có đúng 15 món đồ")
 
 	var vp_p2: Array[Dictionary] = KyTranCacShop.get_items_for_page(0, 1)
-	assert_true(vp_p2.size() == 1, "Trang 2 của Vật Phẩm có 1 món đồ (Trống Khải Hoàn)")
+	assert_true(vp_p2.size() == 4, "Trang 2 của Vật Phẩm có 4 món đồ (Trống Khải Hoàn, Phúc Duyên Lộ Tiểu/Trung/Đại)")
 	assert_true(vp_p2[0]["name"] == "Trống Khải Hoàn", "Món đầu trang 2 là Trống Khải Hoàn")
+	assert_true(vp_p2[1]["id"] == "6_1_122", "Có bán Phúc Duyên Lộ (Tiểu)")
+	assert_true(vp_p2[2]["id"] == "6_1_123", "Có bán Phúc Duyên Lộ (Trung)")
+	assert_true(vp_p2[3]["id"] == "6_1_124", "Có bán Phúc Duyên Lộ (Đại)")
 
 	# Tab Tính Năng có 3 trang
 	var tn_pages: int = KyTranCacShop.get_page_count(1)

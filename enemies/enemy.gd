@@ -223,7 +223,7 @@ func _physics_process(delta: float) -> void:
 	## Player đã chết (queue_free()) — target vẫn còn tham chiếu cũ (không tự về null), truy cập
 	## target.global_position lúc này sẽ lỗi vì object đã bị giải phóng. Dừng hẳn di chuyển thay
 	## vì không còn ai để đuổi theo nữa.
-	if GameManager.is_game_over or target == null or not is_instance_valid(target):
+	if GameManager.is_game_over or target == null or not is_instance_valid(target) or (target.is_in_group("player") and target.get("has_moved") == false):
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_update_vltk_pose(Vector2.ZERO, delta)
@@ -599,6 +599,10 @@ func _get_stage_damage_scale() -> float:
 	return scale
 
 func _deal_contact_damage(body: Node) -> void:
+	if body == null or not is_instance_valid(body):
+		return
+	if body.is_in_group("player") and body.get("has_moved") == false:
+		return
 	## Ưu tiên take_damage_from() (pipeline CombatFormulas đầy đủ — roll trúng/né, tương khắc Ngũ
 	## Hành, % kháng) khi target hỗ trợ (Player). Fallback take_damage() cho các body khác (VD test
 	## scene chưa có take_damage_from) để không phá vỡ tương thích.

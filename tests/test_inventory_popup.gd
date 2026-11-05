@@ -42,7 +42,7 @@ func _ready() -> void:
 	# Test test buttons
 	assert(popup.has_node("%SortButton"), "SortButton exists")
 	assert(popup.has_node("%ShopButton"), "ShopButton exists")
-	assert(popup.has_node("%TestCreateButton"), "TestCreateButton exists")
+	assert(not popup.has_node("%TestCreateButton"), "TestCreateButton should not exist in Inventory UI (moved to GM)")
 
 	# Test adding masks via test button
 	popup._on_test_mask_pressed()

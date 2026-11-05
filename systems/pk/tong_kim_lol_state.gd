@@ -157,10 +157,15 @@ func apply_shop_item(item: Dictionary) -> bool:
 
 	return true
 
-## Kết thúc trận đấu: Phục hồi hồ sơ và trao thưởng EXP x10
-func finish_and_reward() -> int:
+var last_repute_reward: int = 0
+var last_fuyuan_reward: int = 0
+
+## Kết thúc trận đấu: Phục hồi hồ sơ và trao thưởng EXP x10, Danh Vọng, Phúc Duyên
+func finish_and_reward(is_win: bool = false, is_draw: bool = false) -> int:
 	var profile := GameManager.local_profile
 	var real_exp_reward := int(total_exp_earned * TongKimLolRules.END_EXP_REWARD_MULT)
+	last_repute_reward = 100 if is_win else (50 if is_draw else 30)
+	last_fuyuan_reward = 50 if is_win else (25 if is_draw else 10)
 
 	if profile and not _saved_profile_dict.is_empty():
 		# Khôi phục trạng thái điểm kỹ năng & tiềm năng gốc
@@ -168,13 +173,16 @@ func finish_and_reward() -> int:
 		profile.skill_points = int(_saved_profile_dict.get("skill_points", profile.skill_points))
 		profile.skill_levels = (_saved_profile_dict.get("skill_levels", {}) as Dictionary).duplicate()
 
-		# Trao thưởng EXP thực tế (x10 EXP trong trận)
+		# Trao thưởng EXP thực tế (x10 EXP trong trận), Danh Vọng và Phúc Duyên
 		profile.add_exp(real_exp_reward)
+		profile.prestige += last_repute_reward
+		profile.fuyuan += last_fuyuan_reward
+		SaveManager.save_profile(profile)
+		SaveManager.flush_online()
 
 	cleanup_tk_items()
 	current = null
 	return real_exp_reward
-
 ## Thu dọn toàn bộ thuốc Quân Nhu Tống Kim trong hành trang khi kết thúc trận
 static func cleanup_tk_items() -> void:
 	var profile := GameManager.local_profile

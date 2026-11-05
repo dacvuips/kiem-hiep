@@ -318,6 +318,18 @@ static func get_misc(misc_id: String) -> Dictionary:
 				"width": 1,
 				"height": 1,
 				"source": "questkey"
+			},
+			{
+				"id": "ruong_bach_thu_son_trang",
+				"name": "Rương Bách Thú Sơn Trang",
+				"intro": "Bảo rương quý giá thu được khi đổi thịt thú nuôi cho Trù Thần. Mở ra nhận Trang Bị Quý, Tiên Thảo Lộ, Thủy Tinh, và tỷ lệ CỰC HIẾM rớt Tuyệt Kỹ 150, Bí Kíp 180!",
+				"icon": "item_goldenbox",
+				"price": 100000,
+				"level": 1,
+				"stack": 50,
+				"width": 1,
+				"height": 1,
+				"source": "questkey"
 			}
 		]
 		for c_it in custom_ky_items:

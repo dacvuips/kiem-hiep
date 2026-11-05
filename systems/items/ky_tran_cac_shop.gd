@@ -30,9 +30,12 @@ const ITEMS_VAT_PHAM: Array[Array] = [
 		{"id": "4_238_1", "name": "Lam Thủy Tinh", "price_original": 20, "price": 20},
 		{"id": "ky_tui_lenh_bai_datau", "name": "Túi Lệnh Bài Dã Tẩu", "price_original": 15, "price": 15},
 	],
-	# Trang 2 / 2 (1 món, 14 ô trống)
+	# Trang 2 / 2 (4 món)
 	[
 		{"id": "6_1_2309", "name": "Trống Khải Hoàn", "price_original": 10, "price": 10},
+		{"id": "6_1_122", "name": "Phúc Duyên Lộ (Tiểu)", "price_original": 2, "price": 2},
+		{"id": "6_1_123", "name": "Phúc Duyên Lộ (Trung)", "price_original": 4, "price": 4},
+		{"id": "6_1_124", "name": "Phúc Duyên Lộ (Đại)", "price_original": 8, "price": 8},
 	]
 ]
 

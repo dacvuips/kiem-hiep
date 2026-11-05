@@ -356,9 +356,11 @@ func _enter_hub() -> void:
 	_enter_button.disabled = true
 	_create_button.disabled = true
 	_back_button.disabled = true
-	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
-	tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
+	WebContentManager.ensure_ready(self, func():
+		var tween := create_tween()
+		tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+		tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
+	)
 
 func _transition_to_roster() -> void:
 	_play_ui(VltkSound.UI_SELECT)

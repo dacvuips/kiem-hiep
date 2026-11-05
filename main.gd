@@ -138,7 +138,10 @@ func _ready() -> void:
 
 	_build_side_menu()
 
-	$UI.add_child(QuickItemBar.new())
+	var quick_item_bar := QuickItemBar.new()
+	$UI.add_child(quick_item_bar)
+	if GameManager.is_manor_mode():
+		quick_item_bar.visible = false
 
 	HudLayout.add_listener(_apply_hud_layout)
 
@@ -289,7 +292,7 @@ func _enter_main_map() -> void:
 
 			add_child(defense)
 
-	## Ải Thiên Tầm Tháp (Map 1038)
+	## Ải Hiệp Phong Luận Kiếm (Map 1040)
 
 	elif field.get("thien_tam_thap", false):
 
@@ -342,6 +345,83 @@ func _enter_main_map() -> void:
 			match_node.name = "PkMatch"
 
 			add_child(match_node)
+
+	## Map Nguyệt Ca Đảo (Sơn Trang Nông Trại)
+	if field.get("manor", false) or int(field.get("id", -1)) == 1041:
+		# Đảm bảo UI nổi lên trên màn phủ bóng tối ban đêm (layer 10)
+		if has_node("UI") and $UI is CanvasLayer:
+			$UI.layer = 10
+
+		var farm_hud_script: GDScript = load("res://ui/son_trang/farm_hud.gd")
+		if farm_hud_script != null:
+			var f_hud = farm_hud_script.new()
+			f_hud.name = "FarmHUD"
+			$UI.add_child(f_hud)
+
+		# Khởi tạo Hệ thống Chu kỳ Ngày & Đêm Sơn Trang (Day & Night System với quầng sáng đống lửa)
+		var day_night_script: GDScript = load("res://systems/son_trang/farm_day_night_controller.gd")
+		if day_night_script != null:
+			var day_night_node = day_night_script.new()
+			day_night_node.name = "FarmDayNightController"
+			add_child(day_night_node)
+		
+		# Khởi tạo khu đất trồng trọt tại tọa độ 185/185 -> 185/187 -> 193/190 -> 191/187
+		var plots_script: GDScript = load("res://systems/son_trang/farm_plots_controller.gd")
+		if plots_script != null:
+			var plots_node = plots_script.new()
+			plots_node.name = "FarmPlotsController"
+			var farm_pos: Vector2 = plots_script.FARM_CENTER_WORLD if "FARM_CENTER_WORLD" in plots_script else Vector2(48512, 47998)
+			plots_node.position = farm_pos
+			if VltkWorld.current != null:
+				VltkWorld.current.add_child(plots_node)
+			else:
+				add_child(plots_node)
+
+		# Khởi tạo khu chăn nuôi tại tọa độ 194/193
+		var livestock_script: GDScript = load("res://systems/son_trang/livestock_controller.gd")
+		if livestock_script != null:
+			var ls_node = livestock_script.new()
+			ls_node.name = "LivestockController"
+			var ls_pos: Vector2 = livestock_script.LIVESTOCK_CENTER_WORLD if "LIVESTOCK_CENTER_WORLD" in livestock_script else Vector2(49792, 49536)
+			ls_node.position = ls_pos
+			if VltkWorld.current != null:
+				VltkWorld.current.add_child(ls_node)
+			else:
+				add_child(ls_node)
+
+		# Khởi tạo 4 NPC Thương Nhân chuyên dụng (Chăn nuôi 195/192, Trồng trọt 191/186, Cá nước ngọt 180/185, Cá biển 196/197)
+		var npc_script: GDScript = load("res://systems/son_trang/farm_npc_controller.gd")
+		if npc_script != null:
+			var npc_node = npc_script.new()
+			npc_node.name = "FarmNPCController"
+			if VltkWorld.current != null:
+				VltkWorld.current.add_child(npc_node)
+			else:
+				add_child(npc_node)
+
+		# Khởi tạo 2 Khu Nuôi Trồng Thủy Hải Sản (Ao Cá Nước Ngọt 181/185 & Bè Cá Biển 196/196)
+		var fish_script: GDScript = load("res://systems/son_trang/farm_fish_controller.gd")
+		if fish_script != null:
+			var fish_node = fish_script.new()
+			fish_node.name = "FarmFishController"
+			if VltkWorld.current != null:
+				VltkWorld.current.add_child(fish_node)
+			else:
+				add_child(fish_node)
+
+		# Khởi tạo các Đống Lửa Sơn Trang (Campfire) tại mỗi vị trí NPC
+		var campfire_script: GDScript = load("res://systems/son_trang/farm_campfire_controller.gd")
+		if campfire_script != null:
+			var campfire_node = campfire_script.new()
+			campfire_node.name = "FarmCampfireController"
+			campfire_node.position = Vector2.ZERO
+			if VltkWorld.current != null:
+				VltkWorld.current.add_child(campfire_node)
+			else:
+				add_child(campfire_node)
+
+	# Khởi tạo Thú Cưng / Vật Nuôi Đồng Hành theo sau nhân vật khi di chuyển ở ngoài
+	_setup_pet_companion()
 
 	var is_pk: bool = field.has("pk") or field.get("brawl", false) or field.get("tong_kim_lol", false) or field.get("city_war", false)
 
@@ -1890,7 +1970,11 @@ func _on_exit_confirmed() -> void:
 
 	if tree != null:
 
-		tree.change_scene_to_file(HUB_SCENE_PATH)
+		var transition: Node = tree.root.get_node_or_null("SceneTransition") if tree.root != null else null
+		if transition != null and transition.has_method("change_scene"):
+			transition.change_scene(HUB_SCENE_PATH, "Về Thành Dưỡng Sức")
+		else:
+			tree.change_scene_to_file(HUB_SCENE_PATH)
 
 func _on_exit_cancelled(overlay: CanvasLayer) -> void:
 
@@ -1961,3 +2045,27 @@ func _test_arena_and_quit() -> void:
 		print("ARENA_SCREENSHOT_SAVED")
 
 	get_tree().quit()
+
+func _setup_pet_companion() -> void:
+	var farm_mgr = get_node_or_null("/root/FarmManager")
+	if farm_mgr == null:
+		return
+	var companion_info: Dictionary = farm_mgr.active_companion
+	if companion_info.is_empty():
+		return
+
+	var pet_script: GDScript = load("res://systems/son_trang/pet_companion.gd")
+	if pet_script == null:
+		return
+
+	var pet = pet_script.new(companion_info)
+	pet.name = "ActivePetCompanion"
+	var player = get_tree().get_first_node_in_group("player") as Node2D
+	if player != null:
+		pet.target_player = player
+		pet.global_position = player.global_position + Vector2(-35, 20)
+
+	if VltkWorld.current != null:
+		VltkWorld.current.add_child(pet)
+	else:
+		add_child(pet)

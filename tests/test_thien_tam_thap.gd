@@ -59,12 +59,13 @@ func _init() -> void:
 	assert(ThienTamThapChallenge.check_entry(valid_profile) != "", "Đã đi 3 lượt/ngày phải bị chặn không cho vào tiếp")
 	print("✓ PASS: 4. Kiểm tra điều kiện Cấp 30+ và Giới hạn 3 lượt/ngày chuẩn xác.")
 
-	# 5. Test Map Entry & Thumbnail Map 1038
+	# 5. Test Map Entry & Thumbnail Map 1040
 	var map_e := ThienTamThapChallenge.map_entry()
-	assert(map_e.get("id") == 1038, "ID bản đồ phải là 1038")
-	assert(map_e.get("dir") == "res://world/maps/map_1038", "Đường dẫn map phải là world/maps/map_1038")
+	assert(map_e.get("id") == 1040, "ID bản đồ phải là 1040")
+	assert(map_e.get("dir") == "res://world/maps/map_1040", "Đường dẫn map phải là world/maps/map_1040")
+	assert(map_e.get("name") == "Hiệp Phong Luận Kiếm", "Tên ải phải là Hiệp Phong Luận Kiếm")
 	assert(map_e.get("thien_tam_thap") == true, "Phải có cờ thien_tam_thap")
-	print("✓ PASS: 5. Bản đồ thumbnail Map 1038 cấu hình chuẩn xác.")
+	print("✓ PASS: 5. Bản đồ thumbnail Map 1040 cấu hình chuẩn xác.")
 
 	# 6. Test cơ chế tính và lưu kỷ lục qua ải (ví dụ vượt 200 ải, vượt 201 ải)
 	assert(ThienTamThapChallenge.best_stage(valid_profile) == 0, "Kỷ lục ban đầu là 0")
@@ -114,6 +115,29 @@ func _init() -> void:
 	rec.erase("DaiHiep30")
 	rec.erase("NoviceTester")
 	ThienTamThapChallenge.save_records(rec)
+
+	# 8. Test mini map & Sprite loading
+	var test_sprite_path := "res://world/maps/shared_sprites/4696d0e3_0.png"
+	assert(FileAccess.file_exists(test_sprite_path), "File sprite phai ton tai")
+	var tex = load(test_sprite_path)
+	assert(tex != null, "Texture phai load duoc")
+	print("✓ PASS: 8. Load texture shared sprite thanh cong.")
+
+	# 9. Test VltkMap rendering for map 1040 covers (nền đá sàn đấu & Thái Cực)
+	var tmap = VltkMap.new()
+	tmap.map_dir = "res://world/maps/map_1040"
+	var dummy = Node2D.new()
+	dummy.position = Vector2(51614.0, 51398.0)
+	tmap.focus = dummy
+	root.add_child(dummy)
+	root.add_child(tmap)
+
+	tmap.load_map("res://world/maps/map_1040")
+	var r_info = tmap.region_info(Vector2i(100, 100))
+	assert(not r_info.is_empty(), "Region (100, 100) phai ton tai")
+	tmap._show_region(100, 100, r_info)
+	assert(tmap._g_covers.get_child_count() > 0, "Map 1040 phai co covers san dau!")
+	print("✓ PASS: 9. Nền đá sàn đấu Map 1040 (covers) đã load thành công: %d covers." % tmap._g_covers.get_child_count())
 
 	print("\n🎉 TẤT CẢ TEST THIÊN TẦM THÁP & BẢNG XẾP HẠNG ĐÃ PASS THÀNH CÔNG 100%!")
 	quit(0)

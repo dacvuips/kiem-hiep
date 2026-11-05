@@ -29,11 +29,20 @@ echo [*] Dang xuat ban Web qua preset 'Web'...
 echo [*] Vui long doi khoang 1-2 phut de dong goi toan bo tai nguyen...
 echo.
 
+echo [*] [1/2] Dang xuat ban Web Core qua preset 'Web' (sieu nhe)...
 "%GODOT_EXE%" --headless --export-release "Web" "build/web/index.html"
-
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Xuat ban that bai! Ma loi: %errorlevel%
+    echo [ERROR] Xuat ban Web Core that bai! Ma loi: %errorlevel%
+    pause
+    exit /b %errorlevel%
+)
+
+echo [*] [2/2] Dang dong goi tai nguyen the gioi qua preset 'Web Content' (content.pck)...
+"%GODOT_EXE%" --headless --export-pack "Web Content" "build/web/content.pck"
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Dong goi Web Content that bai! Ma loi: %errorlevel%
     pause
     exit /b %errorlevel%
 )
@@ -49,4 +58,3 @@ echo.
 echo [*] De chay thu nghiem: Hay nhap dup file run_web.bat
 echo ========================================================
 echo.
-pause

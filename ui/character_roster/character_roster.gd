@@ -357,7 +357,7 @@ func _on_enter_pressed() -> void:
 		var c: Dictionary = slot["character"]
 		SaveManager.set_online_character(int(c["id"]), int(c["version"]))
 	## "Vào game" = vào Character Hub trước; từ Hub bấm "Chơi" mới vào map chính.
-	_go(HUB_SCENE)
+	WebContentManager.ensure_ready(self, func(): _go(HUB_SCENE))
 
 func _go(path: String) -> void:
 	var t := create_tween()

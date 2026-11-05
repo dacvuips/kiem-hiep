@@ -90,22 +90,36 @@ func _run() -> void:
 		return
 
 	var packs: Array = manifest["packs"]
+	# Ghi manifest đầy đủ để game bên trong có thể tải ngầm các gói còn lại
+	_write_json_atomic(CONTENT_DIR.path_join("manifest.json"), manifest)
+
+	# Chỉ yêu cầu gói core để khởi động vào game
+	var core_pack: Dictionary = {}
+	for p: Dictionary in packs:
+		if p.get("name") == "core":
+			core_pack = p
+			break
+
+	if core_pack.is_empty():
+		_fail("Không tìm thấy gói khởi động (core) trong dữ liệu máy chủ.")
+		return
+
 	var todo: Array = []
 	_dl_total = 0
 	_dl_done = 0
-	for p: Dictionary in packs:
-		if not _pack_present(p):
-			todo.append(p)
-			_dl_total += int(p["size"])
+	if not _pack_present(core_pack):
+		todo.append(core_pack)
+		_dl_total += int(core_pack["size"])
+
 	if not todo.is_empty():
 		DisplayServer.screen_set_keep_on(true)
 		_bar.visible = true
 		_speed_t0 = Time.get_ticks_msec()
 		_speed_b0 = 0
 		_speed = 0.0
-		var first_install := not _installed_ok(installed)
+		var first_install := not _pack_present(core_pack)
 		for p: Dictionary in todo:
-			_say(("Đang tải dữ liệu game" if first_install else "Đang cập nhật bản mới") + " (%s)..." % p["name"])
+			_say(("Đang tải dữ liệu khởi động" if first_install else "Đang cập nhật bản mới") + " (%s)..." % p["name"])
 			var err := await _fetch_pack(manifest, p)
 			if err != "":
 				DisplayServer.screen_set_keep_on(false)
@@ -179,11 +193,11 @@ func _installed_ok(installed: Dictionary) -> bool:
 	var packs: Variant = installed.get("packs")
 	if not packs is Array or (packs as Array).is_empty():
 		return false
+	# Chỉ cần gói core hợp lệ là có thể khởi động vào màn hình đăng nhập
 	for p: Variant in packs:
-		if not p is Dictionary or _file_re.search(str((p as Dictionary).get("file", ""))) == null \
-				or not _pack_present(p):
-			return false
-	return true
+		if p is Dictionary and (p as Dictionary).get("name") == "core":
+			return _pack_present(p as Dictionary)
+	return false
 
 # --- Tải 1 gói ---
 
@@ -345,22 +359,79 @@ func _boot(installed: Dictionary) -> void:
 	_bar.visible = false
 	_detail.text = ""
 	var packs: Array = installed.get("packs", [])
-	# Nạp toàn bộ các gói tài nguyên đã tải về vào virtual filesystem res://
-	for i in range(packs.size()):
-		var p: Dictionary = packs[i]
-		var file_name: String = str(p.get("file", ""))
-		var pck_path := CONTENT_DIR.path_join(file_name)
-		if FileAccess.file_exists(pck_path):
-			var replace := (i == 0)
-			var ok := ProjectSettings.load_resource_pack(pck_path, replace)
-			print("Launcher: Nạp gói %s (replace=%s) -> %s" % [file_name, replace, ok])
+
+	# 1. Tìm và nạp gói core trước tiên (replace = true)
+	var core_file := ""
+	for p: Dictionary in packs:
+		if p.get("name") == "core":
+			core_file = str(p.get("file", ""))
+			break
+
+	if core_file == "":
+		_fail("Không xác định được gói khởi động.")
+		return
+
+	var core_path := CONTENT_DIR.path_join(core_file)
+	if not FileAccess.file_exists(core_path):
+		_fail("Thiếu gói dữ liệu khởi động: " + core_file)
+		return
+
+	var ok_core := ProjectSettings.load_resource_pack(core_path, true)
+	print("Launcher: Nạp gói core %s -> %s" % [core_file, ok_core])
+
+	# 2. Nạp thêm các gói tài nguyên đã có sẵn trên máy (nếu có từ trước)
+	for p: Dictionary in packs:
+		if p.get("name") != "core":
+			var fn := str(p.get("file", ""))
+			var fp := CONTENT_DIR.path_join(fn)
+			if FileAccess.file_exists(fp) and _file_size(fp) == int(p.get("size", 0)):
+				var ok_pack := ProjectSettings.load_resource_pack(fp, false)
+				print("Launcher: Nạp gói bổ trợ %s -> %s" % [fn, ok_pack])
+
+	# 3. Đảm bảo toàn bộ các Autoload singleton được tạo và gắn vào cây /root
+	var autoloads: Array = [
+		["GameUiBoot", "res://ui/common/game_ui_boot.gd"],
+		["LocalizationManager", "res://systems/localization_manager.gd"],
+		["PlayerStats", "res://systems/player_stats.gd"],
+		["VfxManager", "res://systems/vfx_manager.gd"],
+		["SfxManager", "res://systems/sfx_manager.gd"],
+		["ObjectPool", "res://systems/object_pool.gd"],
+		["GameManager", "res://systems/game_manager.gd"],
+		["SaveManager", "res://systems/save/save_manager.gd"],
+		["MusicManager", "res://systems/music_manager.gd"],
+		["AccountApi", "res://systems/net/account_api.gd"],
+		["NetClient", "res://net/client/net_client.gd"],
+		["ContentPacks", "res://systems/boot/content_packs.gd"],
+		["WebContentManager", "res://systems/boot/web_content_manager.gd"],
+		["GmManager", "res://systems/gm/gm_manager.gd"],
+		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
+	]
+	for al in autoloads:
+		var node_name: String = al[0]
+		var script_path: String = al[1]
+		if get_tree().root.has_node(node_name):
+			if ResourceLoader.exists(script_path):
+				var scr = load(script_path)
+				var existing = get_tree().root.get_node(node_name)
+				if scr and existing and existing.get_script() != scr:
+					existing.set_script(scr)
+					if existing.has_method("_ready"):
+						existing._ready()
+					print("Launcher: Nâng cấp script singleton %s -> OK" % node_name)
 		else:
-			_fail("Thiếu gói dữ liệu: " + file_name)
-			return
+			if ResourceLoader.exists(script_path):
+				var scr = load(script_path)
+				if scr and scr is GDScript and scr.can_instantiate():
+					var inst = scr.new()
+					inst.name = node_name
+					get_tree().root.add_child(inst)
+					print("Launcher: Khởi tạo singleton %s -> OK" % node_name)
+				else:
+					push_warning("Launcher: Không thể khởi tạo singleton %s từ %s" % [node_name, script_path])
 
 	await get_tree().process_frame
-	print("Launcher: Chuyển cảnh sang màn hình chọn chế độ chơi (Offline / Online)...")
-	get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
+	print("Launcher: Chuyển cảnh sang màn hình đăng nhập...")
+	get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
 
 func _restart_via_java() -> void:
 	pass

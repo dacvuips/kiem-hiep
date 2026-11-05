@@ -8,7 +8,7 @@ class_name RankingWindow
 ##   - Môn Phái: chọn 1 trong 15 phái -> cao thủ + phú hộ của phái đó; cột trái ghi sẵn đệ nhất cao thủ mỗi phái.
 ## Chơi offline (chưa đăng nhập máy chủ) thì vẫn xem được BXH Đấu trường võ lâm.
 
-const TABS := ["Cao Thủ", "Phú Hộ", "Võ Lâm PK", "Thiên Tầm Tháp", "Môn Phái"]
+const TABS := ["Cao Thủ", "Phú Hộ", "Võ Lâm PK", "Hiệp Phong Luận Kiếm", "Môn Phái"]
 ## Thứ tự môn phái theo bảng môn phái gốc (tools/vltk_source.py SECTS).
 const SECT_ORDER := ["thieu_lam", "thien_vuong_bang", "duong_mon", "ngu_doc_giao", "nga_mi", "thuy_yen_mon", "cai_bang",
 	"thien_nhan_giao", "vo_dang", "con_lon", "hoa_son", "vu_hon", "tieu_dao", "duong_gia", "minh_giao"]
@@ -166,7 +166,7 @@ func _thien_tam_thap_board() -> Control:
 	var list: Array[Dictionary] = []
 	if chal_script != null and chal_script.has_method("get_leaderboard"):
 		list = chal_script.get_leaderboard(_profile)
-	return _board(tr("Bảng Xếp Hạng Thiên Tầm Tháp (Vượt Ải Nhiều Nhất)"), list, "stage")
+	return _board(tr("Bảng Xếp Hạng Hiệp Phong Luận Kiếm (Vượt Ải Nhiều Nhất)"), list, "stage")
 
 func _pk_board() -> Control:
 	var list: Array = []

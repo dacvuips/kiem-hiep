@@ -176,8 +176,6 @@ func _notification(what: int) -> void:
 			%ShopButton.text = tr("Hiệu Thuốc")
 		if is_instance_valid(_tt_btn):
 			_tt_btn.text = tr("Tiền Trang")
-		if has_node("%TestCreateButton"):
-			%TestCreateButton.text = tr("Test Đồ (TEST)")
 		if has_node("%BagTabs"):
 			var bags := %BagTabs.get_children()
 			for i in bags.size():

@@ -320,23 +320,6 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Hiệu Thuốc"
 
-[node name="TestRow" type="VBoxContainer" parent="Frame/Root/Body/Side/InvActions"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="TestCreateButton" type="Button" parent="Frame/Root/Body/Side/InvActions/TestRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 26)
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("inv_btn_wuxia")
-theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "Test Đồ (TEST)"
-
 [node name="Message" type="Label" parent="Frame/Root"]
 unique_name_in_owner = true
 layout_mode = 2

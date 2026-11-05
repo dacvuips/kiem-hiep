@@ -113,7 +113,7 @@ func _share_chat() -> void:
 		return
 	MapChatHelper.share_room_to_chat(room_id, self)
 
-## Báo lý do rồi về Character Hub (hoặc chuyển sang chế độ Boss đơn nếu máy chủ chưa mở).
+## Báo lý do rồi về Character Hub (hoặc chuyển sang chế độ ngoại tuyến nếu máy chủ phòng chung không khả dụng).
 func _leave(message: String) -> void:
 	if _leaving or not is_inside_tree():
 		return
@@ -126,15 +126,31 @@ func _leave(message: String) -> void:
 		_say("Mất kết nối máy chủ Boss — Chuyển sang chế độ offline.")
 		_leaving = false
 		VltkWorld.net_monsters = false
-		return
-	_info.text = message
-	_copy.disabled = true
-	_say(message)
-	await get_tree().create_timer(LEAVE_DELAY).timeout
-	if is_inside_tree():
 		NetClient.disconnect_from_server()
-		GameManager.field_map = {}
-		get_tree().change_scene_to_file(HUB_SCENE)
+		if NetWorldSync.current != null and is_instance_valid(NetWorldSync.current):
+			NetWorldSync.current.queue_free()
+		return
+
+	# Chuyển sang chế độ offline/cục bộ thay vì đá người chơi về Character Hub
+	_title.text = "Luyện công (Ngoại tuyến)"
+	_info.text = "Không có kết nối phòng chung — Đang chơi chế độ ngoại tuyến."
+	_copy.visible = false
+	_say("Chuyển sang chế độ ngoại tuyến.")
+	_leaving = false
+	VltkWorld.net_monsters = false
+	NetClient.disconnect_from_server()
+	if NetWorldSync.current != null and is_instance_valid(NetWorldSync.current):
+		NetWorldSync.current.queue_free()
+	if VltkWorld.current != null:
+		VltkWorld.current.ensure_monsters_spawned()
+		var p := get_tree().get_first_node_in_group("player")
+		if p and is_instance_valid(p) and VltkWorld.current.has_method("_default_center"):
+			var center: Vector2 = VltkWorld.current._default_center()
+			if center != Vector2.ZERO:
+				p.global_position = center - Vector2(0, RemotePlayer.FEET_OFFSET)
+				if p.has_method("reset_has_moved"):
+					p.reset_has_moved()
+	return
 
 func _say(text: String) -> void:
 	var player := get_tree().get_first_node_in_group("player")

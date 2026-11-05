@@ -178,7 +178,12 @@ static func _execute_enter_map(entry: Dictionary, tree: SceneTree) -> void:
 	if ChatPanel._open_panel != null and is_instance_valid(ChatPanel._open_panel):
 		ChatPanel._open_panel.close()
 
-	tree.change_scene_to_file(GAME_SCENE_PATH)
+	var map_title: String = str(entry.get("name", entry.get("title", "")))
+	var transition: Node = tree.root.get_node_or_null("SceneTransition") if tree != null and tree.root != null else null
+	if transition != null and transition.has_method("change_scene"):
+		transition.change_scene(GAME_SCENE_PATH, map_title)
+	else:
+		tree.change_scene_to_file(GAME_SCENE_PATH)
 
 static func _notify_player(host: Node, msg: String) -> void:
 	var tree := host.get_tree() if host != null else Engine.get_main_loop() as SceneTree

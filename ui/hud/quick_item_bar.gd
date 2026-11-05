@@ -44,9 +44,26 @@ var _last_use := -10.0
 
 var _refresh_acc := 0.0
 
-func _ready() -> void:
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		if visible and _is_manor():
+			visible = false
 
+static func _is_manor() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree != null and tree.root != null:
+		var gm = tree.root.get_node_or_null("GameManager")
+		if gm != null and gm.has_method("is_manor_mode"):
+			return gm.is_manor_mode()
+	return false
+
+func _ready() -> void:
 	add_to_group(GROUP)
+
+	if _is_manor():
+		visible = false
+		set_process(false)
+		return
 
 	set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 
@@ -73,6 +90,9 @@ func _exit_tree() -> void:
 	HudLayout.remove_listener(apply_hud_layout)
 
 func apply_hud_layout() -> void:
+	if _is_manor():
+		visible = false
+		return
 
 	var elem: Dictionary = HudLayout.get_element("quick_items")
 
@@ -251,6 +271,9 @@ func use_slot(i: int) -> void:
 ## Vẽ lại ảnh + số bình của 4 ô.
 
 func refresh() -> void:
+	if _is_manor():
+		visible = false
+		return
 
 	var p := GameManager.local_profile
 

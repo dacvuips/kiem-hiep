@@ -154,10 +154,14 @@ static func sweep(profile: PlayerProfile) -> Dictionary:
 
 	var levels := float(rules().get("reward_exp_levels", 0.5))
 	var exp_gain := int(float(profile.get_exp_to_next_level()) * levels)
+	var rep_gain := 80
+	var fy_gain := 50
 	profile.add_exp(exp_gain)
+	profile.prestige += rep_gain
+	profile.fuyuan += fy_gain
 	SaveManager.save_profile(profile)
 	SaveManager.flush_online()
-	return {"ok": true, "exp": exp_gain}
+	return {"ok": true, "exp": exp_gain, "prestige": rep_gain, "fuyuan": fy_gain}
 
 static func _money(v: int) -> String:
 	@warning_ignore("integer_division")
@@ -414,12 +418,17 @@ func _reward(profile: PlayerProfile) -> void:
 		return
 	var levels := float(rules().get("reward_exp_levels", 0.5))
 	var exp_gain := int(float(profile.get_exp_to_next_level()) * levels)
+	var rep_gain := 80
+	var fy_gain := 50
 	var before := profile.level
 	profile.add_exp(exp_gain)
+	profile.prestige += rep_gain
+	profile.fuyuan += fy_gain
 	SaveManager.save_profile(profile)
+	SaveManager.flush_online()
 	if _player and profile.level > before and _player.has_method("refresh_combat_stats"):
 		_player.refresh_combat_stats()
-	_say("Nhận %d kinh nghiệm thưởng vượt ải." % exp_gain)
+	_say("Nhận %d kinh nghiệm thưởng vượt ải, +%d Danh Vọng, +%d Phúc Duyên." % [exp_gain, rep_gain, fy_gain])
 
 func _go_home() -> void:
 	GameManager.field_map = {}

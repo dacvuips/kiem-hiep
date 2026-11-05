@@ -598,8 +598,10 @@ func _end_match(winner_side: String, reason: String) -> void:
 	var is_win: bool = winner_side == side
 	var is_draw: bool = winner_side == "draw"
 
-	# Trao thưởng EXP thực tế x10
-	var reward_exp := state.finish_and_reward()
+	# Trao thưởng EXP thực tế x10, Danh Vọng và Phúc Duyên
+	var reward_exp := state.finish_and_reward(is_win, is_draw)
+	var rep_gain: int = state.last_repute_reward
+	var fy_gain: int = state.last_fuyuan_reward
 
 	# Hiển thị thông báo kết thúc
 	var title := "CHIẾN THẮNG!" if is_win else ("HÒA TRẬN!" if is_draw else "THẤT BẠI!")
@@ -607,7 +609,11 @@ func _end_match(winner_side: String, reason: String) -> void:
 	client_hud.show_marquee_announcement("[%s] %s" % [title, reason])
 
 	ChatBox.push_system("[color=%s][%s][/color] %s" % [result_color, title, reason])
-	ChatBox.push_system("[color=#ffd700]Phần thưởng: Bạn nhận được %d EXP thực tế (x10 EXP trong trận)![/color]" % reward_exp)
+	ChatBox.push_system("[color=#ffd700]Phần thưởng Tống Kim: +%s EXP, +%d Danh Vọng, +%d Phúc Duyên![/color]" % [
+		InventoryPopup.format_money(reward_exp),
+		rep_gain,
+		fy_gain
+	])
 
 	# Đợi 5 giây rồi trở về Character Hub
 	await get_tree().create_timer(5.0).timeout

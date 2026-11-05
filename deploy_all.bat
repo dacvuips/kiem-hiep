@@ -137,11 +137,20 @@ if not exist "build\web" mkdir "build\web"
 if exist "build\web\*.tmp" del /f /q "build\web\*.tmp" >nul 2>&1
 if exist "build\web\index.pck" del /f /q "build\web\index.pck" >nul 2>&1
 
-echo [*] Đang xuất Web qua Godot headless...
+echo [*] [1/2] Đang xuất Web Core siêu nhẹ qua preset 'Web'...
 "%GODOT_EXE%" --headless --export-release "Web" "build/web/index.html"
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Xuất bản Web thất bại!
+    echo [ERROR] Xuất bản Web Core thất bại!
+    pause
+    exit /b %errorlevel%
+)
+
+echo [*] [2/2] Đang đóng gói tài nguyên thế giới qua preset 'Web Content' (content.pck)...
+"%GODOT_EXE%" --headless --export-pack "Web Content" "build/web/content.pck"
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Đóng gói Web Content thất bại!
     pause
     exit /b %errorlevel%
 )

@@ -140,9 +140,9 @@ func _get_hub() -> Node:
 		return ml.current_scene
 	return null
 
-# ---------------------------------------------------------------- tab Ải (Thiên Tầm Tháp)
+# ---------------------------------------------------------------- tab Ải (Hiệp Phong Luận Kiếm)
 
-## Thẻ Ải "Thiên Tầm Tháp"
+## Thẻ Ải "Hiệp Phong Luận Kiếm"
 func _build_thien_tam_thap(parent: Control) -> void:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -152,8 +152,8 @@ func _build_thien_tam_thap(parent: Control) -> void:
 	box.add_theme_constant_override("separation", 8)
 	card.add_child(box)
 
-	box.add_child(SocialUi.label("🏯 " + tr("Thiên Tầm Tháp"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
-	var desc := SocialUi.label(tr("Tháp cổ ngàn tầng thử thách giang hồ: Mỗi vòng 1 đợt quái từ heo, nai, nhím, heo rừng... đến tận cùng danh sách! Quái tăng x2 máu, rớt đồ x3, EXP x2. Cứ mỗi 10 ải xuất hiện Đại Boss (Máu x10, Rớt đồ x5)."),
+	box.add_child(SocialUi.label("⚔️ " + tr("Hiệp Phong Luận Kiếm"), SocialUi.TITLE, 20, HORIZONTAL_ALIGNMENT_CENTER))
+	var desc := SocialUi.label(tr("Đấu trường Hiệp Phong Luận Kiếm đỉnh cao giang hồ so tài: Mỗi vòng 1 đợt quái từ heo, nai, nhím, heo rừng... đến tận cùng danh sách! Quái tăng x2 máu, rớt đồ x3, EXP x2. Cứ mỗi 10 ải xuất hiện Đại Boss (Máu x10, Rớt đồ x5)."),
 			SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(desc)
@@ -202,7 +202,7 @@ func _build_thien_tam_thap(parent: Control) -> void:
 	row.add_theme_constant_override("separation", 16)
 	box.add_child(row)
 
-	var play_btn := SocialUi.stone_button(tr("Vào Khiêu Chiến Thiên Tầm Tháp"), Vector2(250, 44))
+	var play_btn := SocialUi.stone_button(tr("Vào Khiêu Chiến Hiệp Phong Luận Kiếm"), Vector2(250, 44))
 	if reason != "":
 		play_btn.disabled = true
 		play_btn.tooltip_text = tr(reason)
@@ -213,7 +213,7 @@ func _build_thien_tam_thap(parent: Control) -> void:
 	row.add_child(play_btn)
 
 	var rank_btn := SocialUi.stone_button(tr("🏆 Bảng Xếp Hạng"), Vector2(170, 44))
-	rank_btn.tooltip_text = tr("Xem bảng xếp hạng cao thủ vượt ải Thiên Tầm Tháp cao nhất")
+	rank_btn.tooltip_text = tr("Xem bảng xếp hạng cao thủ vượt ải Hiệp Phong Luận Kiếm cao nhất")
 	rank_btn.pressed.connect(func() -> void:
 		var lb_script: GDScript = load("res://ui/ranking/thien_tam_thap_leaderboard_window.gd")
 		if lb_script != null:

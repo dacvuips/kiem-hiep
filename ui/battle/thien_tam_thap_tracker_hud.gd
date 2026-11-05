@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name ThienTamThapTrackerHud
 
-## THANH TIẾN TRÌNH & HUD "THIÊN TẦM THÁP"
+## THANH TIẾN TRÌNH & HUD "HIỆP PHONG LUẬN KIẾM"
 ## Timeline dọc bên trái (nền trong suốt) tương tự Bảo Vệ Trụ Danh Dự,
 ## kèm thanh trạng thái trên đỉnh hiển thị thông tin ải hiện tại, số ải đã vượt, đồng hồ và nút tăng tốc.
 
@@ -240,7 +240,7 @@ func _build_hud() -> void:
 	lb_btn.add_theme_font_size_override("font_size", 12)
 	lb_btn.focus_mode = Control.FOCUS_NONE
 	lb_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	lb_btn.tooltip_text = "Xem Bảng Xếp Hạng Thiên Tầm Tháp"
+	lb_btn.tooltip_text = "Xem Bảng Xếp Hạng Hiệp Phong Luận Kiếm"
 	var lb_style := StyleBoxFlat.new()
 	lb_style.bg_color = Color(0.18, 0.15, 0.08, 0.9)
 	lb_style.border_color = Color(0.9, 0.75, 0.3, 0.9)
@@ -325,7 +325,7 @@ func _build_hud() -> void:
 	left_panel.add_child(left_v)
 
 	var title_lbl := Label.new()
-	title_lbl.text = "🏯 THIÊN TẦM THÁP"
+	title_lbl.text = "⚔️ HIỆP PHONG LUẬN KIẾM"
 	title_lbl.add_theme_font_override("font", _bold_font())
 	title_lbl.add_theme_font_size_override("font_size", 14)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))

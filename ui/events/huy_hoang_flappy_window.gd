@@ -342,11 +342,13 @@ func _trigger_game_finish(is_victory: bool) -> void:
 	var base_exp: int = int(_tier.get("reward_exp", 500000))
 	var base_gold: int = int(_tier.get("reward_gold", 20000))
 	var base_fuyuan: int = int(_tier.get("reward_fuyuan", 10))
+	var base_prestige: int = int(_tier.get("reward_prestige", 15))
 
 	# Tính toán phần thưởng thực nhận hoàn toàn tỷ lệ thuận theo % hoàn thành
 	var total_exp := int(round(base_exp * rate))
 	var total_gold := int(round(base_gold * rate))
 	var total_fuyuan := int(round(base_fuyuan * rate))
+	var total_prestige := int(round(base_prestige * rate))
 
 	# Điểm Flappy Fruit thưởng thêm theo số cây đã vượt và hệ số quả
 	if rate > 0.0:
@@ -356,11 +358,15 @@ func _trigger_game_finish(is_victory: bool) -> void:
 		total_gold += _score * bonus_gold_per_point
 
 	# Hiển thị bảng tổng kết kết thúc màn chơi
-	_show_game_over_dialog(is_victory, completion_pct, total_exp, total_gold, total_fuyuan)
+	_show_game_over_dialog(is_victory, completion_pct, total_exp, total_gold, total_fuyuan, total_prestige)
 
 	# Báo callback hoàn thành và trao thưởng
 	if _on_complete.is_valid():
-		_on_complete.call(_score, total_exp, total_gold, total_fuyuan)
+		var arg_count := _on_complete.get_argument_count()
+		if arg_count >= 5:
+			_on_complete.call(_score, total_exp, total_gold, total_fuyuan, total_prestige)
+		else:
+			_on_complete.call(_score, total_exp, total_gold, total_fuyuan)
 
 func _flap() -> void:
 	if _state == State.GAME_OVER:
@@ -551,7 +557,7 @@ func _build_game_over_panel() -> void:
 	_game_over_panel.add_theme_stylebox_override("panel", st)
 	_board.add_child(_game_over_panel)
 
-func _show_game_over_dialog(is_victory: bool, completion_pct: float, total_exp: int, total_gold: int, total_fuyuan: int) -> void:
+func _show_game_over_dialog(is_victory: bool, completion_pct: float, total_exp: int, total_gold: int, total_fuyuan: int, total_prestige: int = 0) -> void:
 	for c in _game_over_panel.get_children():
 		c.queue_free()
 
@@ -599,6 +605,7 @@ func _show_game_over_dialog(is_victory: bool, completion_pct: float, total_exp: 
 		rew_vb.add_child(SocialUi.label("+ %s Điểm Kinh Nghiệm (%d%%)" % [InventoryPopup.format_money(total_exp), int(completion_pct)], SocialUi.LABEL_GREEN, 14))
 		rew_vb.add_child(SocialUi.label("+ %s Lượng Bạc (%d%%)" % [InventoryPopup.format_money(total_gold), int(completion_pct)], SocialUi.GOLD, 14))
 		rew_vb.add_child(SocialUi.label("+ %d Điểm Phúc Duyên (%d%%)" % [total_fuyuan, int(completion_pct)], SocialUi.LABEL_BLUE, 14))
+		rew_vb.add_child(SocialUi.label("+ %d Điểm Danh Vọng (%d%%)" % [total_prestige, int(completion_pct)], Color(1.0, 0.75, 0.3), 14))
 	else:
 		rew_vb.add_child(SocialUi.label("Chưa đạt tiến độ nào (0%). Phần thưởng: 0", Color(0.9, 0.5, 0.4), 13))
 		rew_vb.add_child(SocialUi.label("Chưa bị trừ lượt hái quả hôm nay! Đại hiệp có thể thử lại ngay.", SocialUi.MUTED, 12))

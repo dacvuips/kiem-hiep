@@ -399,7 +399,7 @@ func _physics_process(delta: float) -> void:
 			elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
 				var pillar := get_tree().get_first_node_in_group("honor_pillar") as Node2D
 				target = pillar
-	elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
+	elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()) or (target.is_in_group("player") and target.get("has_moved") == false):
 		target = null
 		if battle_side != "":
 			_foe_search_timer -= delta
@@ -417,11 +417,14 @@ func _physics_process(delta: float) -> void:
 				else:
 					var p_node := get_tree().get_first_node_in_group("player") as Node2D
 					if p_node and is_instance_valid(p_node) and not (p_node.has_method("is_dead") and p_node.is_dead()) and int(data.get("ai_mode", 0)) > 0:
-						var vis_range: float = maxf(float(data.get("vision", 400)), 450.0)
-						if VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(p_node)) <= vis_range:
-							target = p_node
-						else:
+						if p_node.get("has_moved") == false:
 							target = null
+						else:
+							var vis_range: float = maxf(float(data.get("vision", 400)), 450.0)
+							if VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(p_node)) <= vis_range:
+								target = p_node
+							else:
+								target = null
 					else:
 						target = null
 	elif is_lane_creep and battle_side != "":
@@ -854,7 +857,10 @@ func _ai_think() -> void:
 	## Khoá kẻ địch trong tầm nhìn.
 	var enemy: Node2D = null
 	if target != null and is_instance_valid(target) and not GameManager.is_game_over and not (target.has_method("is_dead") and target.is_dead()):
-		if is_moba_general:
+		if target.is_in_group("player") and target.get("has_moved") == false:
+			target = null
+			enemy = null
+		elif is_moba_general:
 			var t_from_camp := VltkMath.logic_of(target).distance_to(_origin_logic)
 			if t_from_camp <= TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0:
 				enemy = target
@@ -1017,6 +1023,9 @@ func _tick_attack() -> void:
 
 func _fire_skill() -> void:
 	if target == null or not is_instance_valid(target) or GameManager.is_game_over:
+		return
+	if target.is_in_group("player") and target.get("has_moved") == false:
+		target = null
 		return
 	## Online, đòn nhắm người khác: chỉ vẽ hiệu ứng (đạn bay không gây sát thương), không đánh cận chiến.
 	var visual_only := net_eid != 0 and not _net_real_attack

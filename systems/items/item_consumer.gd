@@ -5,6 +5,25 @@ extends RefCounted
 ## Áp dụng cho toàn bộ các vật phẩm tiêu hao, rương báu, lễ hộp, đan dược, bí kíp, lệnh bài...
 ## Hoạt động được ở cả trong trận đấu (Map) và ngoài sảnh (CharacterHub).
 
+## BẢNG 15 BÍ KÍP 180 CỦA 15 MÔN PHÁI (6_1_18001 -> 6_1_18015)
+const BIKIP_180_MAP: Dictionary = {
+	"6_1_18001": {"sect": "thieu_lam", "skill": "thieu_lam_kim_quyen_la_han", "name": "Kim Quyền La Hán", "sect_name": "Thiếu Lâm"},
+	"6_1_18002": {"sect": "thien_vuong_bang", "skill": "thien_vuong_chinh_chien_bat_phuong", "name": "Chinh Chiến Bát Phương", "sect_name": "Thiên Vương"},
+	"6_1_18003": {"sect": "ngu_doc_giao", "skill": "ngu_doc_sam_la_doc_hai", "name": "Sâm La Độc Hải", "sect_name": "Ngũ Độc"},
+	"6_1_18004": {"sect": "duong_mon", "skill": "duong_mon_hap_tinh_tran", "name": "Hấp Tinh Trận", "sect_name": "Đường Môn"},
+	"6_1_18005": {"sect": "nga_mi", "skill": "nga_mi_ba_la_tam_kinh", "name": "Ba La Tâm Kinh", "sect_name": "Nga Mi"},
+	"6_1_18006": {"sect": "thuy_yen_mon", "skill": "thuy_yen_huyen_bang_vo_tac", "name": "Huyền Băng Vô Tắc", "sect_name": "Thúy Yên"},
+	"6_1_18007": {"sect": "cai_bang", "skill": "cai_bang_o_y_quyet", "name": "Ô Y Quyết", "sect_name": "Cái Bang"},
+	"6_1_18008": {"sect": "thien_nhan_giao", "skill": "thien_nhan_liet_hoa_phan_thien", "name": "Liệt Hỏa Phần Thiên", "sect_name": "Thiên Nhẫn"},
+	"6_1_18009": {"sect": "vo_dang", "skill": "vo_dang_chan_vo_that_tiet", "name": "Chân Võ Thất Tiết", "sect_name": "Võ Đang"},
+	"6_1_18010": {"sect": "con_lon", "skill": "con_lon_thien_cuong_khi_kinh", "name": "Thiên Cương Khí Kính", "sect_name": "Côn Lôn"},
+	"6_1_18011": {"sect": "hoa_son", "skill": "hoa_son_cuu_kiem_hop_nhat", "name": "Cửu Kiếm Hợp Nhất", "sect_name": "Hoa Sơn"},
+	"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tru_gian_diet_ninh", "name": "Trừ Gian Diệt Nịnh", "sect_name": "Vũ Hồn"},
+	"6_1_18013": {"sect": "tieu_dao", "skill": "tieu_dao_thap_bo_nhat_sat", "name": "Thập Bộ Nhất Sát", "sect_name": "Tiêu Dao"},
+	"6_1_18014": {"sect": "duong_gia", "skill": "duong_gia_bon_lang_thuong", "name": "Bôn Lang Thương", "sect_name": "Dương Môn"},
+	"6_1_18015": {"sect": "minh_giao", "skill": "minh_giao_loi_dinh_nhat_kich", "name": "Lôi Đình Nhất Kích", "sect_name": "Minh Giáo"},
+}
+
 static func is_chest_or_box(item: ItemInstance) -> bool:
 	if item == null:
 		return false
@@ -276,6 +295,11 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 			]
 		}
 
+	# 12.6. RƯƠNG BÁCH THÚ SƠN TRANG (ruong_bach_thu_son_trang)
+	if mid == "ruong_bach_thu_son_trang":
+		_consume_one(profile, item, index)
+		return open_ruong_bach_thu(profile)
+
 	# 13. THỦY TINH & TINH HỒNG BẢO THẠCH (4_238_1, 4_239_1, 4_240_1, 4_353_1)
 	if mid in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
 		if host != null:
@@ -456,23 +480,6 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 		}
 
 	# 18.10. TOÀN BỘ BÍ KÍP 180 (6_1_18001 -> 6_1_18015 của 15 Môn Phái)
-	const BIKIP_180_MAP: Dictionary = {
-		"6_1_18001": {"sect": "thieu_lam", "skill": "thieu_lam_kim_quyen_la_han", "name": "Kim Quyền La Hán", "sect_name": "Thiếu Lâm"},
-		"6_1_18002": {"sect": "thien_vuong_bang", "skill": "thien_vuong_chinh_chien_bat_phuong", "name": "Chinh Chiến Bát Phương", "sect_name": "Thiên Vương"},
-		"6_1_18003": {"sect": "ngu_doc_giao", "skill": "ngu_doc_sam_la_doc_hai", "name": "Sâm La Độc Hải", "sect_name": "Ngũ Độc"},
-		"6_1_18004": {"sect": "duong_mon", "skill": "duong_mon_hap_tinh_tran", "name": "Hấp Tinh Trận", "sect_name": "Đường Môn"},
-		"6_1_18005": {"sect": "nga_mi", "skill": "nga_mi_ba_la_tam_kinh", "name": "Ba La Tâm Kinh", "sect_name": "Nga Mi"},
-		"6_1_18006": {"sect": "thuy_yen_mon", "skill": "thuy_yen_huyen_bang_vo_tac", "name": "Huyền Băng Vô Tắc", "sect_name": "Thúy Yên"},
-		"6_1_18007": {"sect": "cai_bang", "skill": "cai_bang_o_y_quyet", "name": "Ô Y Quyết", "sect_name": "Cái Bang"},
-		"6_1_18008": {"sect": "thien_nhan_giao", "skill": "thien_nhan_liet_hoa_phan_thien", "name": "Liệt Hỏa Phần Thiên", "sect_name": "Thiên Nhẫn"},
-		"6_1_18009": {"sect": "vo_dang", "skill": "vo_dang_chan_vo_that_tiet", "name": "Chân Võ Thất Tiết", "sect_name": "Võ Đang"},
-		"6_1_18010": {"sect": "con_lon", "skill": "con_lon_thien_cuong_khi_kinh", "name": "Thiên Cương Khí Kính", "sect_name": "Côn Lôn"},
-		"6_1_18011": {"sect": "hoa_son", "skill": "hoa_son_cuu_kiem_hop_nhat", "name": "Cửu Kiếm Hợp Nhất", "sect_name": "Hoa Sơn"},
-		"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tru_gian_diet_ninh", "name": "Trừ Gian Diệt Nịnh", "sect_name": "Vũ Hồn"},
-		"6_1_18013": {"sect": "tieu_dao", "skill": "tieu_dao_thap_bo_nhat_sat", "name": "Thập Bộ Nhất Sát", "sect_name": "Tiêu Dao"},
-		"6_1_18014": {"sect": "duong_gia", "skill": "duong_gia_bon_lang_thuong", "name": "Bôn Lang Thương", "sect_name": "Dương Môn"},
-		"6_1_18015": {"sect": "minh_giao", "skill": "minh_giao_loi_dinh_nhat_kich", "name": "Lôi Đình Nhất Kích", "sect_name": "Minh Giáo"},
-	}
 	if BIKIP_180_MAP.has(mid):
 		var info: Dictionary = BIKIP_180_MAP[mid]
 		var target_sect: String = str(info["sect"])
@@ -505,4 +512,88 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 	return {
 		"ok": true,
 		"message": "Đã sử dụng [%s]!\n+ 200.000 EXP\n+ 10.000 Lượng" % item_name
+	}
+
+## MỞ RƯƠNG BÁCH THÚ SƠN TRANG (Phần thưởng khi đổi thịt thú nuôi cho NPC Trù Thần)
+## Mở ra nhận:
+## 1. Lượng lớn EXP & Ngân lượng
+## 2. Trang Bị Quý: 15% Hoàng Kim Môn Phái, 85% Trang bị Xanh Cực Phẩm Cấp 9-10 (4-6 dòng)
+## 3. Tiên Thảo Lộ (50% cơ hội rơi Tiên Thảo Lộ Đặc Biệt hoặc Thường)
+## 4. Thủy Tinh / Tinh Hồng Bảo Thạch (40% cơ hội)
+## 5. CỰC HIẾM: Ngẫu nhiên Bí Kíp 180 của 15 phái (~2.5% tỷ lệ) hoặc Đại Thành Bí Kíp 150 (~5.0% tỷ lệ)
+static func open_ruong_bach_thu(profile: PlayerProfile) -> Dictionary:
+	if profile == null:
+		return {"ok": false, "message": "Không tìm thấy hồ sơ nhân vật!"}
+
+	var gained_exp := randi_range(300000, 800000)
+	var gained_gold := randi_range(50000, 150000)
+	profile.add_exp(gained_exp)
+	profile.gold += gained_gold
+
+	var rewards_text: Array[String] = [
+		"+ %s EXP" % _fmt(gained_exp),
+		"+ %s Lượng" % _fmt(gained_gold)
+	]
+
+	# 1. ĐỒ TRANG BỊ
+	var equip_item: ItemInstance = null
+	if randf() < 0.15:
+		equip_item = ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(7, 10))
+		if equip_item != null:
+			rewards_text.append("✨ [HOÀNG KIM] %s" % equip_item.get_display_name())
+	if equip_item == null:
+		var tier_arr: Array = (DropTable.TIERS[10] as Array).duplicate()
+		equip_item = DropTable._roll_blue_item(tier_arr, randi_range(0, 4), randi_range(4, 6))
+		if equip_item != null:
+			rewards_text.append("🛡️ [Trang Bị] %s (%d dòng)" % [equip_item.get_display_name(), equip_item.magic.size()])
+	if equip_item != null:
+		profile.add_item(equip_item)
+
+	# 2. TIÊN THẢO LỘ
+	if randf() < 0.50:
+		var ttl_id := "6_1_1181" if randf() < 0.50 else "6_1_71"
+		var ttl_count := randi_range(1, 2)
+		var ttl_item := ItemGenerator.generate_misc(ttl_id, 0, 0, ttl_count)
+		if ttl_item != null:
+			profile.add_item(ttl_item)
+			rewards_text.append("🌿 %dx %s" % [ttl_count, ttl_item.get_display_name()])
+
+	# 3. THỦY TINH & BẢO THẠCH
+	if randf() < 0.40:
+		var gem_ids := ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]
+		var gem_item := ItemGenerator.generate_misc(gem_ids.pick_random(), 0, 0, 1)
+		if gem_item != null:
+			profile.add_item(gem_item)
+			rewards_text.append("💎 1x %s" % gem_item.get_display_name())
+
+	# 4. SKILL 180 (CỰC HIẾM ~2.5%): Ngẫu nhiên Bí Kíp 180 trong 15 Môn Phái
+	var got_skill_180 := false
+	if randf() < 0.025:
+		var b180_keys := BIKIP_180_MAP.keys()
+		var picked_180: String = b180_keys.pick_random()
+		var b180_item := ItemGenerator.generate_misc(picked_180, 0, 0, 1)
+		if b180_item != null:
+			profile.add_item(b180_item)
+			var sk_info: Dictionary = BIKIP_180_MAP.get(picked_180, {})
+			var sk_name: String = str(sk_info.get("name", "Bí Kíp 180"))
+			var s_name: String = str(sk_info.get("sect_name", "Môn Phái"))
+			rewards_text.append("⭐ [CỰC HIẾM] Bí Kíp 180 [%s] (%s)!" % [sk_name, s_name])
+			got_skill_180 = true
+
+	# 5. SKILL 150 (CỰC HIẾM ~5.0%): Rơi [Đại Thành Bí Kíp 150]
+	var got_skill_150 := false
+	if not got_skill_180 and randf() < 0.050:
+		var b150_item := ItemGenerator.generate_misc("6_1_30446", 0, 0, 1)
+		if b150_item != null:
+			profile.add_item(b150_item)
+			rewards_text.append("🌟 [CỰC HIẾM] [Đại Thành Bí Kíp 150] (+5 Điểm Kỹ Năng)!")
+			got_skill_150 = true
+
+	var title_msg := "🎉 Mở [Rương Bách Thú Sơn Trang] Thành Công!"
+	if got_skill_180 or got_skill_150:
+		title_msg = "🎊 [ĐẠI CÁT ĐẠI LỢI] Khí Vận Hanh Thông! Mở Rương Bách Thú Nhận Tuyệt Phẩm!"
+
+	return {
+		"ok": true,
+		"message": "%s\n%s" % [title_msg, "\n".join(rewards_text)]
 	}

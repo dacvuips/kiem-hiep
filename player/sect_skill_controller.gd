@@ -171,7 +171,9 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		if turning_on:
 			var cost := skill.get_mana_cost_at_level(_learned_level(skill))
 			if cost > 0 and not GameManager.is_free_mana_stage(caster):
-				if "mana" in caster:
+				if GmManager and GmManager.is_god_mode:
+					pass
+				elif "mana" in caster:
 					if caster.mana < cost:
 						if caster.has_method("notify"):
 							caster.notify("Không đủ nội lực!")
@@ -189,7 +191,9 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 	## Tiêu hao nội lực: mọi bản đồ đều tiêu hao nội lực khi thi triển kỹ năng.
 	var mana_cost := skill.get_mana_cost_at_level(_learned_level(skill))
 	if mana_cost > 0 and not GameManager.is_free_mana_stage(caster):
-		if "mana" in caster:
+		if GmManager and GmManager.is_god_mode:
+			pass
+		elif "mana" in caster:
 			if caster.mana < mana_cost:
 				if caster.has_method("notify"):
 					caster.notify("Không đủ nội lực!")

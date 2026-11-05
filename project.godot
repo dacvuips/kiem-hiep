@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="JX1 Idle Origin"
-run/main_scene="res://launcher.tscn"
+run/main_scene="uid://xkfo54r4ssfh"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=60
 boot_splash/bg_color=Color(0.04, 0.04, 0.04, 1)
@@ -35,8 +35,11 @@ MusicManager="*res://systems/music_manager.gd"
 AccountApi="*res://systems/net/account_api.gd"
 NetClient="*res://net/client/net_client.gd"
 ContentPacks="*res://systems/boot/content_packs.gd"
+WebContentManager="*res://systems/boot/web_content_manager.gd"
 GmManager="*res://systems/gm/gm_manager.gd"
 TutorialManager="*res://ui/tutorial/tutorial_manager.gd"
+FarmManager="*res://systems/son_trang/farm_manager.gd"
+SceneTransition="*res://ui/common/scene_transition.gd"
 PeekRuntimeHelper="*res://addons/godot_mcp/peek_runtime_helper.gd"
 
 [display]
@@ -187,5 +190,6 @@ network/account_url="https://kiem-hiep-api.viettheo.site"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true

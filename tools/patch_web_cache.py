@@ -18,7 +18,12 @@ wasm_size = os.path.getsize(wasm_path) if os.path.exists(wasm_path) else 3882007
 pck_mtime = int(os.path.getmtime(pck_path)) if os.path.exists(pck_path) else 1
 wasm_mtime = int(os.path.getmtime(wasm_path)) if os.path.exists(wasm_path) else 1
 build_version = f"{pck_size}_{pck_mtime}"
-wasm_version = f"{wasm_size}_{wasm_mtime}" 
+content_path = os.path.join(web_dir, "content.pck")
+content_size = os.path.getsize(content_path) if os.path.exists(content_path) else 1200000000
+content_mtime = int(os.path.getmtime(content_path)) if os.path.exists(content_path) else 1
+build_version = f"{pck_size}_{pck_mtime}"
+wasm_version = f"{wasm_size}_{wasm_mtime}"
+content_version = f"{content_size}_{content_mtime}"
 
 TEMPLATE = """<!DOCTYPE html>
 <html lang="vi">
@@ -896,9 +901,9 @@ html.mobile-blocked #canvas {
 				<div class="cache-notice">
 					<div class="cache-notice-icon" id="cache-icon">💾</div>
 					<div class="cache-notice-body">
-						<div class="cache-notice-title" id="cache-title">LƯU TRỮ VĨNH VIỄN TRÊN MÁY (SSD CACHE)</div>
+						<div class="cache-notice-title" id="cache-title">⚡ KHỞI ĐỘNG CỰC NHANH - TẢI NGẦM NỀN</div>
 						<div class="cache-notice-desc" id="cache-desc">
-							Dữ liệu game (~1.1 GB) chỉ cần tải <strong>1 lần duy nhất</strong>. Từ lần vào sau, game sẽ khởi động tức thì trong chớp mắt mà không tốn dung lượng mạng!
+							Mở game vào Đăng Nhập / Tạo Nhân Vật tức thì! Toàn bộ bản đồ thế giới (~1.2 GB) được tải ngầm dưới nền và lưu vĩnh viễn trên SSD máy.
 						</div>
 					</div>
 				</div>
@@ -1285,6 +1290,118 @@ engine.preloadFile = function (file, path) {
 			displayFailureNotice(missingMsg);
 		}
 	} else {
+		
+window.__CONTENT_PCK_STATUS = {
+	loaded: 0,
+	total: __CONTENT_SIZE__,
+	percent: 0,
+	speed: '',
+	is_ready: false,
+	error: null
+};
+
+async function startBackgroundContentDownload(engineInstance) {
+	const CACHE_NAME = 'jx1-content-cache-v1';
+	const CONTENT_URL = 'content.pck?v=__CONTENT_VERSION__';
+	
+	try {
+		if ('caches' in window) {
+			const cache = await caches.open(CACHE_NAME);
+			const cachedResp = await cache.match(CONTENT_URL);
+			if (cachedResp) {
+				window.__CONTENT_PCK_STATUS.speed = '⚡ SSD';
+				window.__CONTENT_PCK_STATUS.percent = 80;
+				const buf = await cachedResp.arrayBuffer();
+				window.__CONTENT_PCK_STATUS.loaded = buf.byteLength;
+				window.__CONTENT_PCK_STATUS.total = buf.byteLength;
+				window.__CONTENT_PCK_STATUS.percent = 100;
+				_injectContentPack(engineInstance, buf);
+				return;
+			}
+		}
+	} catch (e) {}
+
+	try {
+		window.__CONTENT_PCK_STATUS.speed = 'Đang kết nối...';
+		const resp = await fetch(CONTENT_URL);
+		if (!resp.ok) throw new Error('HTTP ' + resp.status);
+		
+		const clen = parseInt(resp.headers.get('content-length') || '__CONTENT_SIZE__', 10);
+		window.__CONTENT_PCK_STATUS.total = clen;
+		
+		const reader = resp.body.getReader();
+		const chunks = [];
+		let loaded = 0;
+		let lastT = performance.now();
+		let lastL = 0;
+
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			chunks.push(value);
+			loaded += value.length;
+			
+			const now = performance.now();
+			if (now - lastT >= 400) {
+				const spd = ((loaded - lastL) / (now - lastT)) * 1000;
+				window.__CONTENT_PCK_STATUS.speed = (spd / 1048576).toFixed(1) + ' MB/s';
+				lastT = now;
+				lastL = loaded;
+			}
+			
+			window.__CONTENT_PCK_STATUS.loaded = loaded;
+			if (clen > 0) {
+				window.__CONTENT_PCK_STATUS.percent = Math.min(99, Math.floor((loaded / clen) * 100));
+			}
+		}
+
+		const full = new Uint8Array(loaded);
+		let off = 0;
+		for (const ch of chunks) {
+			full.set(ch, off);
+			off += ch.length;
+		}
+		const finalBuf = full.buffer;
+
+		try {
+			if ('caches' in window) {
+				const cache = await caches.open(CACHE_NAME);
+				const keys = await cache.keys();
+				for (const k of keys) {
+					if (k.url.includes('content.pck')) await cache.delete(k);
+				}
+				await cache.put(CONTENT_URL, new Response(full, {
+					headers: {
+						'content-type': 'application/octet-stream',
+						'content-length': String(loaded)
+					}
+				}));
+			}
+		} catch (e) {}
+
+		_injectContentPack(engineInstance, finalBuf);
+	} catch (err) {
+		window.__CONTENT_PCK_STATUS.error = err.message;
+		window.__CONTENT_PCK_STATUS.speed = 'Lỗi nạp';
+	}
+}
+
+function _injectContentPack(engineInstance, buf) {
+	function doCopy() {
+		try {
+			if (engineInstance && engineInstance.copyToFS) {
+				engineInstance.copyToFS('content.pck', buf);
+				window.__CONTENT_PCK_STATUS.percent = 100;
+				window.__CONTENT_PCK_STATUS.is_ready = true;
+				window.__CONTENT_PCK_STATUS.speed = 'Sẵn sàng';
+				return;
+			}
+		} catch (e) {}
+		setTimeout(doCopy, 200);
+	}
+	doCopy();
+}
+
 		engine.startGame({
 			'onProgress': function (current, total) {
 				updateProgressUI(current, total);
@@ -1292,6 +1409,7 @@ engine.preloadFile = function (file, path) {
 			'onPrint': function () {},
 			'onPrintError': function () {}
 		}).then(() => {
+			startBackgroundContentDownload(engine);
 			if (progressBarFill) progressBarFill.style.width = '100%';
 			if (progressPercent) progressPercent.textContent = '100%';
 			if (progressState) progressState.textContent = 'Khởi động Võ Lâm...';
@@ -1322,6 +1440,8 @@ html_content = (TEMPLATE
     .replace("__WASM_SIZE__", str(wasm_size))
     .replace("__BUILD_VERSION__", str(build_version))
     .replace("__WASM_VERSION__", str(wasm_version))
+    .replace("__CONTENT_SIZE__", str(content_size))
+    .replace("__CONTENT_VERSION__", str(content_version))
 )
 
 with open(index_path, "w", encoding="utf-8") as f:

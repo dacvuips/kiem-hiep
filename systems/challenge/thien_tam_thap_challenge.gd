@@ -1,7 +1,7 @@
 extends Node
 class_name ThienTamThapChallenge
 
-## HỆ THỐNG ĐIỀU KHIỂN "THIÊN TẦM THÁP"
+## HỆ THỐNG ĐIỀU KHIỂN "HIỆP PHONG LUẬN KIẾM"
 ## Vượt ải liên hoàn từng đợt quái từ heo, nai, nhím, heo rừng... cho đến hết danh sách (hơn 740 ải).
 ## Quái thường: Máu x2, Dame giữ nguyên, Rớt đồ x3, EXP x2.
 ## Mỗi 10 ải xuất hiện 1 Đại Boss: Máu x10 quái tiếp theo, Dame bằng quái tiếp theo, Rớt đồ x5.
@@ -12,13 +12,13 @@ signal finished(success: bool, stages_cleared: int)
 
 const DATA_PATH := "res://data/challenge/thien_tam_thap_waves.json"
 const RECORDS_PATH := "user://thien_tam_thap_records.json"
-const MAP_DIR := "res://world/maps/map_1038"
-const MAP_ID := 1038
+const MAP_DIR := "res://world/maps/map_1040"
+const MAP_ID := 1040
 const MIN_LEVEL := 30
 const RUNS_PER_DAY := 3
 const WAVE_TIMEOUT := 60.0
 const REST_INTERVAL := 2.5
-const CENTER_POS := Vector2(51225.0, 51192.0)
+const CENTER_POS := Vector2(51614.0, 51398.0)
 
 const ThienTamThapTrackerHudScript = preload("res://ui/battle/thien_tam_thap_tracker_hud.gd")
 
@@ -40,7 +40,7 @@ var _player: Node2D = null
 static func map_entry() -> Dictionary:
 	return {
 		"id": MAP_ID,
-		"name": "Thiên Tầm Tháp",
+		"name": "Hiệp Phong Luận Kiếm",
 		"dir": MAP_DIR,
 		"level": MIN_LEVEL,
 		"thien_tam_thap": true,
@@ -173,9 +173,9 @@ static func check_entry(profile: PlayerProfile) -> String:
 	if profile == null:
 		return "Chưa có thông tin nhân vật."
 	if profile.level < MIN_LEVEL:
-		return "Cần đạt đẳng cấp %d trở lên mới có thể khiêu chiến Thiên Tầm Tháp." % MIN_LEVEL
+		return "Cần đạt đẳng cấp %d trở lên mới có thể khiêu chiến Hiệp Phong Luận Kiếm." % MIN_LEVEL
 	if runs_today(profile) >= RUNS_PER_DAY:
-		return "Hôm nay đại hiệp đã tham gia đủ %d/%d lượt Thiên Tầm Tháp. Hãy quay lại vào ngày mai!" % [RUNS_PER_DAY, RUNS_PER_DAY]
+		return "Hôm nay đại hiệp đã tham gia đủ %d/%d lượt Hiệp Phong Luận Kiếm. Hãy quay lại vào ngày mai!" % [RUNS_PER_DAY, RUNS_PER_DAY]
 	return ""
 
 # ---------------------------------------------------------------- Vòng lặp chính của Ải
@@ -206,7 +206,7 @@ func _setup_arena() -> void:
 	var profile: PlayerProfile = _get_profile()
 	var reason := check_entry(profile)
 	if reason != "":
-		ChatBox.push_system("[color=#ff3333][Thiên Tầm Tháp][/color] " + reason)
+		ChatBox.push_system("[color=#ff3333][Hiệp Phong Luận Kiếm][/color] " + reason)
 		get_tree().change_scene_to_file("res://ui/character_hub/CharacterHub.tscn")
 		return
 
@@ -300,7 +300,7 @@ func _start_wave(w_num: int) -> void:
 		_hud.refresh_tracker()
 
 	var boss_txt := " [color=#ff3333]👑 XUẤT HIỆN ĐẠI BOSS![/color]" if is_boss else ""
-	ChatBox.push_system("[color=#00ffff][Thiên Tầm Tháp][/color] Bắt đầu [b]Ải %d[/b]! Quái: %s (Cấp %d)%s" % [
+	ChatBox.push_system("[color=#00ffff][Hiệp Phong Luận Kiếm][/color] Bắt đầu [b]Ải %d[/b]! Quái: %s (Cấp %d)%s" % [
 		w_num,
 		str(w_info.get("monster_name", "Quái")),
 		m_lvl,
@@ -401,7 +401,7 @@ func _on_wave_cleared() -> void:
 	var profile: PlayerProfile = _get_profile()
 	update_best_stage(profile, stages_cleared)
 
-	ChatBox.push_system("[color=#ffd700][Thiên Tầm Tháp][/color] 🎉 Chúc mừng đại hiệp đã vượt qua [b]Ải %d[/b]! (Vượt thành công %d ải)" % [
+	ChatBox.push_system("[color=#ffd700][Hiệp Phong Luận Kiếm][/color] 🎉 Chúc mừng đại hiệp đã vượt qua [b]Ải %d[/b]! (Vượt thành công %d ải)" % [
 		current_wave,
 		stages_cleared
 	])
@@ -415,7 +415,7 @@ func _on_wave_cleared() -> void:
 func _on_player_died(_killer = null) -> void:
 	if is_game_over:
 		return
-	ChatBox.push_system("[color=#ff3333][Thiên Tầm Tháp][/color] Đại hiệp đã kiệt sức trước đợt quái!")
+	ChatBox.push_system("[color=#ff3333][Hiệp Phong Luận Kiếm][/color] Đại hiệp đã kiệt sức trước đợt quái!")
 	_finish_game(false)
 
 func _on_speed_changed(mult: float) -> void:
@@ -500,7 +500,7 @@ func _show_result_popup(success: bool, cleared: int, exp_pts: int, gold_pts: int
 	box.add_child(v)
 
 	var title := Label.new()
-	title.text = "★ HOÀN THÀNH THIÊN TẦM THÁP ★" if success else "⚔️ KẾT THÚC KHIÊU CHIẾN ⚔️"
+	title.text = "★ HOÀN THÀNH HIỆP PHONG LUẬN KIẾM ★" if success else "⚔️ KẾT THÚC KHIÊU CHIẾN ⚔️"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_override("font", GameUi.game_font_bold())
 	title.add_theme_font_size_override("font_size", 20)

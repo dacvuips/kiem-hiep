@@ -65,6 +65,10 @@ enum GameMode { STAGE, MAIN_MAP }
 var game_mode: GameMode = GameMode.STAGE
 ## Map luyện công đang vào ở chế độ MAIN_MAP (mục của MapCatalog, chọn ở màn "Vượt Ải") — {} = map chính.
 var field_map: Dictionary = {}
+
+func is_manor_mode() -> bool:
+	return bool(field_map.get("manor", false)) or int(field_map.get("id", -1)) == 1041
+
 ## true sau khi Player chết — Spawner kiểm tra cờ này trước khi tick sinh quái tiếp, không chỉ
 ## dựa vào signal (phòng trường hợp 1 Spawner được tạo SAU khi game_over đã bắn, VD debug/hot
 ## reload) để không bao giờ lỡ mất trạng thái game đã kết thúc.

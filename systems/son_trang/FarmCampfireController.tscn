@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ccy4m5f8ncf"]
+
+[ext_resource type="Script" path="res://systems/son_trang/farm_campfire_controller.gd" id="1_campfire"]
+
+[node name="FarmCampfireController" type="Node2D"]
+script = ExtResource("1_campfire")

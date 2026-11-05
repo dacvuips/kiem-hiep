@@ -56,6 +56,7 @@
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_chat_msg.png" id="ico_chat_msg"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_cong_thanh_chien.png" id="btn_ctc_tex"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_son_trang.png" id="btn_st_tex"]
 
 
 [sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
@@ -656,6 +657,18 @@ offset_right = 458.0
 offset_bottom = 57.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_ctc_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ManorButton" type="TextureButton" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 468.0
+offset_top = -3.0
+offset_right = 608.0
+offset_bottom = 57.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_st_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -1752,20 +1765,6 @@ theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Chế Tạo"
-
-[node name="TestCreateButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 27)
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 12
-theme_override_styles/normal = SubResource("inv_btn_wuxia")
-theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "Tạo Đồ (TEST)"
-
-
 
 [node name="CenterPanel" type="Control" parent="Stage"]
 unique_name_in_owner = true

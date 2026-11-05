@@ -34,6 +34,7 @@ screen_*.png.import
 tools/*.png
 tools/*.png.import
 tools/road_crops/
+tools/screenshots/
 app_*.png
 app_*.png.import
 phone_*.png

@@ -1,8 +1,8 @@
 extends SocialWindow
 class_name ThienTamThapLeaderboardWindow
 
-## BẢNG XẾP HẠNG THIÊN TẦM THÁP
-## Xếp hạng người chơi vượt qua nhiều ải nhất giang hồ trong Thiên Tầm Tháp.
+## BẢNG XẾP HẠNG HIỆP PHONG LUẬN KIẾM
+## Xếp hạng người chơi vượt qua nhiều ải nhất giang hồ trong Hiệp Phong Luận Kiếm.
 ## Hiển thị Hạng, Tên Đại Hiệp, Môn Phái, Cấp Độ và Số Ải Đã Vượt (sắp xếp giảm dần).
 
 const RANK_COLORS := [
@@ -18,7 +18,7 @@ static func open(host: Node, profile: PlayerProfile) -> ThienTamThapLeaderboardW
 	return SocialWindow.present(host, win, &"thien_tam_thap_leaderboard") as ThienTamThapLeaderboardWindow
 
 func _init(profile: PlayerProfile = null) -> void:
-	super._init("Bảng Xếp Hạng Thiên Tầm Tháp", "", 560.0)
+	super._init("Bảng Xếp Hạng Hiệp Phong Luận Kiếm", "", 560.0)
 	_profile = profile
 	_build_ui()
 
@@ -28,12 +28,12 @@ func _build_ui() -> void:
 	if chal_script != null and chal_script.has_method("get_leaderboard"):
 		list = chal_script.get_leaderboard(_profile)
 
-	var sub := SocialUi.label(tr("Vinh danh những cao thủ vượt ải Thiên Tầm Tháp cao nhất toàn máy chủ"), SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	var sub := SocialUi.label(tr("Vinh danh những cao thủ vượt ải Hiệp Phong Luận Kiếm cao nhất toàn máy chủ"), SocialUi.MUTED, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	body.add_child(sub)
 	body.add_child(SocialUi.divider())
 
 	# Bảng dữ liệu
-	var sec := SocialUi.info_box(tr("Bảng Phong Vân Thiên Tầm Tháp"))
+	var sec := SocialUi.info_box(tr("Bảng Phong Vân Hiệp Phong Luận Kiếm"))
 	var panel: Control = sec[0]
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(panel)
