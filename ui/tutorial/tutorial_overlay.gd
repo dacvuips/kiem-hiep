@@ -78,6 +78,7 @@ func _ready() -> void:
 	_callout_box.visible = false
 	_completion_dialog.visible = false
 	_pointer_arrow.visible = false
+	_dim_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func setup(steps: Array[Dictionary], mode_param = Mode.INITIAL) -> void:
 	_steps = steps
@@ -97,6 +98,7 @@ func setup(steps: Array[Dictionary], mode_param = Mode.INITIAL) -> void:
 
 func _show_welcome() -> void:
 	_is_spotlight_active = false
+	_dim_control.mouse_filter = Control.MOUSE_FILTER_STOP
 	_welcome_dialog.visible = true
 	_callout_box.visible = false
 	_completion_dialog.visible = false
@@ -223,6 +225,9 @@ func _show_step(target_idx: int, forward: bool = true) -> void:
 	# Nếu vẫn không có node mục tiêu nào hiển thị, chỉ bỏ qua nếu không phải bước bắt buộc
 	if target_nodes.is_empty():
 		if step.get("id") == "auto_select_skill" or _mode == Mode.INITIAL:
+			_is_spotlight_active = false
+			_dim_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_dim_control.queue_redraw()
 			return
 		if forward:
 			_show_step(target_idx + 1, true)
@@ -258,6 +263,7 @@ func _show_step(target_idx: int, forward: bool = true) -> void:
 
 func _setup_callout_and_rect(step: Dictionary, dest_rect: Rect2) -> void:
 	_is_spotlight_active = true
+	_dim_control.mouse_filter = Control.MOUSE_FILTER_STOP
 	_callout_box.visible = true
 	_pointer_arrow.visible = true
 
@@ -278,8 +284,9 @@ func _setup_callout_and_rect(step: Dictionary, dest_rect: Rect2) -> void:
 	_update_diamond_indicators()
 
 	if _mode == Mode.INITIAL:
-		# Dạng đầu game: Bắt buộc nhấp vào vùng sáng, không hiển thị nút bỏ qua
-		_btn_close_step.visible = false
+		# Dạng đầu game: Vẫn cho phép nút Bỏ qua để tránh bị kẹt màn hình nếu gặp sự cố input
+		_btn_close_step.visible = true
+		_btn_close_step.text = tr("✕ Bỏ qua")
 		_nav_control_box.visible = false
 		_hint_footer.visible = true
 		_hint_footer.text = tr("Làm theo để đi tiếp")
@@ -567,6 +574,9 @@ func _on_close_clicked() -> void:
 	close_tutorial()
 
 func close_tutorial() -> void:
+	_is_spotlight_active = false
+	if is_instance_valid(_dim_control):
+		_dim_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tm = get_node_or_null("/root/TutorialManager")
 	if tm:
 		if tm.has_method("cancel_intro_flow"):

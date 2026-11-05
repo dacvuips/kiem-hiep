@@ -127,7 +127,10 @@ func should_show_intro() -> bool:
 	if force_intro:
 		return true
 	if GameManager.local_profile != null:
-		return not GameManager.local_profile.intro_completed
+		# Nhân vật đã có cấp độ (level > 1) hoặc đã hoàn thành intro thì không bao giờ ép intro
+		if GameManager.local_profile.level > 1 or GameManager.local_profile.intro_completed:
+			return false
+		return true
 	return not _completed
 
 ## -------------------------------------------------------------
@@ -312,6 +315,15 @@ func continue_in_game_tutorial(main_scene: Node) -> void:
 					if is_instance_valid(it) and it.is_visible_in_tree():
 						return it as Control
 				return null,
+			"multi_target_getter": func() -> Array[Control]:
+				if not is_instance_valid(main_scene) or not main_scene.is_inside_tree():
+					return []
+				var res: Array[Control] = []
+				var items = main_scene.get_tree().get_nodes_in_group("tutorial_skill_dropdown_item")
+				for it in items:
+					if is_instance_valid(it) and it.is_visible_in_tree():
+						res.append(it as Control)
+				return res,
 			"title": "Cài đặt kỹ năng tấn công",
 			"description": "Nhấp chọn tuyệt kỹ võ công vừa học trong danh sách để cài vào hệ thống auto.",
 			"padding": Vector2(4, 4),
