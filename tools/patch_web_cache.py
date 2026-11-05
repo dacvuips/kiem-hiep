@@ -828,11 +828,11 @@ html.mobile-blocked #canvas {
 						Bổn môn đã phát hành bản cài đặt <strong>Android (APK)</strong> chính thức, mượt mà và tối ưu thao tác cảm ứng:
 					</div>
 					
-					<a href="https://kiem-hiep-api.viettheo.site/download/kiem-hiep-launcher.apk" class="btn-download-apk" download="kiem-hiep-launcher.apk">
+					<a href="https://kiem-hiep-api.viettheo.site/download/kiem-hiep-launcher.apk?v=28" class="btn-download-apk" download="kiem-hiep-launcher.apk">
 						<span class="btn-apk-icon">📥</span>
 						<span class="btn-apk-content">
 							<span class="btn-apk-main">TẢI BẢN CÀI ĐẶT ANDROID (APK)</span>
-							<span class="btn-apk-sub">Bản chính thức • ~113 MB • Cài đặt nhanh</span>
+							<span class="btn-apk-sub">Bản chính thức • ~135 MB • Cài đặt nhanh</span>
 						</span>
 					</a>
 
