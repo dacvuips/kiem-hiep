@@ -14,6 +14,11 @@ const COLOR_CREAM := Color("eadcc0")
 const COLOR_OUTLINE := Color("120c06")
 const COLOR_POTENTIAL := Color(0.95, 0.25, 0.2)
 
+func _get_account_api() -> Node:
+	if AccountApi != null:
+		return AccountApi
+	return get_node_or_null("/root/AccountApi")
+
 const NAV_ITEMS := [
 	["equipment", "Trang Bị"],
 	["skills", "Kỹ Năng"],
@@ -48,20 +53,9 @@ const TEX_EQUIP_BG_MALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/tr
 const TEX_EQUIP_BG_FEMALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nu.png")
 const ICON_CHECK := preload("res://ui/login/icon_check.png")
 
-@export var stages: Array[StageData] = [
-	preload("res://stages/stage_01/stage_01.tres"),
-	preload("res://stages/stage_02/stage_02.tres"),
-	preload("res://stages/stage_03/stage_03.tres"),
-	preload("res://stages/stage_04/stage_04.tres"),
-	preload("res://stages/stage_05/stage_05.tres"),
-	preload("res://stages/stage_06/stage_06.tres"),
-	preload("res://stages/stage_07/stage_07.tres"),
-	preload("res://stages/stage_08/stage_08.tres"),
-	preload("res://stages/stage_09/stage_09.tres"),
-	preload("res://stages/stage_10/stage_10.tres"),
-	preload("res://stages/stage_11/stage_11.tres"),
-	preload("res://stages/stage_12/stage_12.tres"),
-]
+## Danh sách màn: KHÔNG preload — các .tres này tham chiếu quái/tài nguyên nằm trong gói tải ngầm, preload sẽ làm hỏng cả script hub
+## khi gói chưa tải xong. Nạp lười qua GameManager.get_all_stages() khi cần.
+@export var stages: Array[StageData] = []
 
 var _profile: PlayerProfile
 var _toast_tween: Tween
@@ -106,7 +100,8 @@ func _ready() -> void:
 			if OS.has_feature("editor") or OS.is_debug_build():
 				_create_mock_profile()
 			else:
-				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH if AccountApi.is_logged_in() else SELECT_SCENE_PATH)
+				var api := _get_account_api()
+				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH if (api != null and api.is_logged_in()) else SELECT_SCENE_PATH)
 				return
 
 	_all_skills = _load_all_skills()
@@ -120,6 +115,8 @@ func _ready() -> void:
 	%ChallengeButton.pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
 	if has_node("%SiegeButton"):
 		%SiegeButton.pressed.connect(func() -> void: CityWarWindow.open(self, _profile, _enter_field_map))
+	if has_node("%DaTauButton"):
+		%DaTauButton.pressed.connect(func() -> void: DaTauWindow.open(self, _profile, _enter_field_map))
 	if has_node("%ManorButton"):
 		var manor_btn: TextureButton = %ManorButton
 		_setup_manor_button(manor_btn)
@@ -175,7 +172,8 @@ func _ready() -> void:
 	%BaseStatButton3.pressed.connect(_add_stat.bind(3)) # Nội công
 
 	if has_node("%GmButton"):
-		var is_gm := AccountApi.is_gm()
+		var api := _get_account_api()
+		var is_gm: bool = api != null and api.has_method("is_gm") and api.is_gm()
 		%GmButton.visible = is_gm
 		if is_gm:
 			%GmButton.pressed.connect(_toggle_gm_window)
@@ -1587,6 +1585,8 @@ func _on_event_action(event_id: String) -> void:
 			pk_win._select_mode(PkRules.Mode.VAN_TIEU)
 		"siege":
 			CityWarWindow.open(self, _profile, _enter_field_map)
+		"da_tau":
+			DaTauWindow.open(self, _profile, _enter_field_map)
 		"huy_hoang":
 			HuyHoangWindow.open(self, _profile)
 		"bat_nha":
@@ -1861,7 +1861,8 @@ func _on_change_character_pressed() -> void:
 		if _profile != null:
 			SaveManager.save_profile(_profile)
 			await SaveManager.flush_online()
-		if AccountApi.is_logged_in():
+		var api := _get_account_api()
+		if api != null and api.is_logged_in():
 			get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
 			return
 		get_tree().change_scene_to_file(SELECT_SCENE_PATH)
@@ -1887,25 +1888,42 @@ func _on_back_pressed() -> void:
 	if _profile != null:
 		SaveManager.save_profile(_profile)
 		await SaveManager.flush_online()
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
 		get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
 		return
 	get_tree().change_scene_to_file(SELECT_SCENE_PATH)
 
-func _enter_field_map(entry: Dictionary) -> void:
+func _enter_field_map(entry: Variant) -> void:
+	var map_entry: Dictionary = {}
+	if entry is int:
+		map_entry = MapCatalog.get_by_id(entry)
+		if map_entry.is_empty():
+			map_entry = {
+				"id": entry,
+				"name": "Bản đồ %d" % entry,
+				"dir": "res://world/maps/map_%d" % entry,
+				"level": 1
+			}
+	elif entry is Dictionary:
+		map_entry = entry
+	else:
+		push_error("Invalid map entry type: %s" % typeof(entry))
+		return
+
 	if _profile != null:
 		SaveManager.save_profile(_profile)
 		await SaveManager.flush_online()
-	if entry.has("stage") and entry["stage"] is StageData:
+	if map_entry.has("stage") and map_entry["stage"] is StageData:
 		GameManager.game_mode = GameManager.GameMode.STAGE
 		GameManager.field_map = {}
-		GameManager.current_stage = entry["stage"]
+		GameManager.current_stage = map_entry["stage"]
 	else:
 		GameManager.game_mode = GameManager.GameMode.MAIN_MAP
-		GameManager.field_map = entry
+		GameManager.field_map = map_entry
 		GameManager.current_stage = null
 	GameManager.is_game_over = false
-	var map_title: String = str(entry.get("name", entry.get("title", "")))
+	var map_title: String = str(map_entry.get("name", map_entry.get("title", "")))
 	if has_node("/root/SceneTransition"):
 		get_node("/root/SceneTransition").change_scene(GAME_SCENE_PATH, map_title)
 	else:
@@ -2225,7 +2243,8 @@ func _retranslate_tree(node: Node) -> void:
 		_retranslate_tree(child)
 
 func _toggle_gm_window() -> void:
-	if not AccountApi.is_gm():
+	var api := _get_account_api()
+	if api == null or not api.has_method("is_gm") or not api.is_gm():
 		return
 	var existing := get_tree().current_scene.find_child("GmControlWindow", true, false)
 	if existing:
@@ -2237,6 +2256,7 @@ func _toggle_gm_window() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F12 and AccountApi.is_gm():
+		var api := _get_account_api()
+		if event.keycode == KEY_F12 and (api != null and api.has_method("is_gm") and api.is_gm()):
 			_toggle_gm_window()
 			get_viewport().set_input_as_handled()

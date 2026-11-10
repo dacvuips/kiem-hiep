@@ -57,6 +57,7 @@
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_cong_thanh_chien.png" id="btn_ctc_tex"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_son_trang.png" id="btn_st_tex"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_da_tau.png" id="btn_da_tau_tex"]
 
 
 [sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
@@ -651,21 +652,33 @@ vertical_alignment = 1
 [node name="SiegeButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 318.0
+offset_left = 310.0
 offset_top = -3.0
-offset_right = 458.0
+offset_right = 430.0
 offset_bottom = 57.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_ctc_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="DaTauButton" type="TextureButton" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 436.0
+offset_top = -3.0
+offset_right = 556.0
+offset_bottom = 57.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_da_tau_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="ManorButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 468.0
+offset_left = 562.0
 offset_top = -3.0
-offset_right = 608.0
+offset_right = 682.0
 offset_bottom = 57.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_st_tex")

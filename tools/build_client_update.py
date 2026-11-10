@@ -155,7 +155,7 @@ def main() -> None:
     force = {s.strip() for s in args.force.split(",") if s.strip()}
     only = {s.strip() for s in args.only.split(",") if s.strip()}
 
-    for proj in (ROOT / "project.godot", ROOT / "launcher" / "project.godot"):
+    for proj in (ROOT / "project.godot",):
         m = re.search(r'(?m)^network/account_url="([^"]*)"', proj.read_text(encoding="utf-8"))
         url = m.group(1) if m else ""
         if not url.startswith("https://"):

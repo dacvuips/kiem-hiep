@@ -333,6 +333,8 @@ var max_stamina: int = 100
 var stages_cleared: int = 0
 var herb_garden_level: int = 1
 var pending_quest_count: int = 0
+## Trạng thái hệ thống Dã Tẩu (TaskLink) — lưu save
+var da_tau: Dictionary = {}
 ## id gem trong từng ô ("" = trống), luôn đủ GEM_SLOT_UNLOCK_LEVELS.size() phần tử.
 var gem_slots: Array[String] = []
 
@@ -918,7 +920,10 @@ static func _name_list(v: Variant, limit: int) -> Array:
 func copy_from(other: PlayerProfile) -> void:
 	for p in get_property_list():
 		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
-			set(p.name, other.get(p.name))
+			var val = other.get(p.name)
+			if p.name == "da_tau" and (val == null or (val is Dictionary and val.is_empty())) and not da_tau.is_empty():
+				continue
+			set(p.name, val)
 
 ## CHỈ ĐỂ THỬ (nút TEST trên màn chơi, bản debug): thuộc tính cộng thêm theo tên VLTK (lifemax_v, fastwalkrun_p...) -> giá trị — cộng vào
 ## chỉ số như 1 món trang bị (CombatantBuild.extra_attribs). Server chỉ nhận khi bật chế độ dev (GAME_DEV_TRUST_CLIENT / DEV_TRUST_CLIENT_SAVES).
@@ -997,6 +1002,7 @@ func to_dict() -> Dictionary:
 		"pk_value": pk_value,
 		"admin_grants": admin_grants.duplicate(true),
 		"test_attribs": test_attribs.duplicate(),
+		"da_tau": da_tau.duplicate(true),
 	}
 
 static func from_dict(data: Dictionary) -> PlayerProfile:
@@ -1114,4 +1120,6 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		if presets[i] is Dictionary:
 			AutoSettings.from_dict(presets[i], profile.auto_presets[i])
 	profile.auto_log = (auto_data.get("log", []) as Array).filter(func(e: Variant) -> bool: return e is Dictionary)
+	var saved_da_tau: Variant = data.get("da_tau", {})
+	profile.da_tau = saved_da_tau.duplicate(true) if saved_da_tau is Dictionary else {}
 	return profile

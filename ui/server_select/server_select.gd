@@ -58,11 +58,16 @@ var _row_buttons: Array[Button] = []
 var _loading := false
 var _filter_buttons: Array[Button] = []
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
 func _ready() -> void:
-	if MusicManager.has_method("play_title_music"):
-		MusicManager.play_title_music()
-	elif MusicManager.has_method("play"):
-		MusicManager.play("music001.mp3")
+	var music_mgr: Node = get_node_or_null("/root/MusicManager")
+	if music_mgr:
+		if music_mgr.has_method("play_title_music"):
+			music_mgr.play_title_music()
+		elif music_mgr.has_method("play"):
+			music_mgr.play("music001.mp3")
 	_update_account_label()
 
 	_back.pressed.connect(_on_back_pressed)
@@ -100,17 +105,19 @@ func _ready() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
 
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
 		_fetch_servers()
-		if AccountApi.has_signal("session_invalidated"):
-			AccountApi.session_invalidated.connect(_on_session_invalidated)
+		if api.has_signal("session_invalidated"):
+			api.session_invalidated.connect(_on_session_invalidated)
 	else:
 		_refresh_rows()
 
 func _update_account_label() -> void:
 	if not is_instance_valid(_account_label):
 		return
-	if not AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api == null or not api.is_logged_in():
 		if OS.has_feature("editor") or OS.is_debug_build():
 			_account_label.text = tr("Tài khoản: Khách (Thử nghiệm)")
 			_servers = MOCK_SERVERS.duplicate(true)
@@ -118,7 +125,7 @@ func _update_account_label() -> void:
 			get_tree().change_scene_to_file.call_deferred(LOGIN_SCENE)
 			return
 	else:
-		_account_label.text = tr("Tài khoản: ") + AccountApi.username()
+		_account_label.text = tr("Tài khoản: ") + api.username()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
@@ -156,7 +163,8 @@ var _session_poll_timer := 0.0
 const SESSION_POLL_INTERVAL := 5.0
 
 func _process(delta: float) -> void:
-	if not AccountApi.is_logged_in() or _loading:
+	var api := _get_account_api()
+	if api == null or not api.is_logged_in() or _loading:
 		return
 	_session_poll_timer += delta
 	if _session_poll_timer >= SESSION_POLL_INTERVAL:
@@ -164,9 +172,10 @@ func _process(delta: float) -> void:
 		_poll_session()
 
 func _poll_session() -> void:
-	if not AccountApi.has_method("check_session"):
+	var api := _get_account_api()
+	if api == null or not api.has_method("check_session"):
 		return
-	var chk: Dictionary = await AccountApi.check_session()
+	var chk: Dictionary = await api.check_session()
 	if not is_inside_tree():
 		return
 	if not chk.ok and chk.code in ["logged_in_elsewhere", "unauthorized", "banned"]:
@@ -192,7 +201,8 @@ func _fetch_servers() -> void:
 	_loading = true
 	_servers = []
 	_refresh_rows()
-	var r: Dictionary = await AccountApi.servers()
+	var api := _get_account_api()
+	var r: Dictionary = await api.servers() if api != null else {"ok": false, "code": "no_api", "message": "Lỗi kết nối"}
 	_loading = false
 	if r.ok and r.data is Dictionary:
 		_servers = r.data.get("servers", [])
@@ -211,8 +221,9 @@ func _on_back_pressed() -> void:
 	_enter.disabled = true
 	if _enter.material is ShaderMaterial:
 		(_enter.material as ShaderMaterial).set_shader_parameter("is_disabled", 1.0)
-	if AccountApi.is_logged_in():
-		await AccountApi.logout()
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
+		await api.logout()
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.0, FADE)
 	t.tween_callback(get_tree().change_scene_to_file.bind(LOGIN_SCENE))
@@ -433,9 +444,10 @@ func _on_enter_pressed() -> void:
 		return
 
 	# Kiểm tra xác thực phiên đăng nhập trước khi cho phép vào bên trong
-	if AccountApi.is_logged_in() and AccountApi.has_method("check_session"):
+	var api := _get_account_api()
+	if api != null and api.is_logged_in() and api.has_method("check_session"):
 		_enter.disabled = true
-		var chk: Dictionary = await AccountApi.check_session()
+		var chk: Dictionary = await api.check_session()
 		if not is_inside_tree():
 			return
 		if not chk.ok:

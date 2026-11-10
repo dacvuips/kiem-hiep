@@ -70,6 +70,18 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		_update_locale_texts()
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
+func _get_game_manager() -> Node:
+	return get_node_or_null("/root/GameManager")
+
+func _get_save_manager() -> Node:
+	return get_node_or_null("/root/SaveManager")
+
+func _get_content_manager() -> Node:
+	return get_node_or_null("/root/WebContentManager")
+
 func _ready() -> void:
 	_meta = _load_meta()
 
@@ -111,10 +123,15 @@ func _ready() -> void:
 			b.pressed.connect(_show_message.bind("Tính năng đang phát triển"))
 
 	## Đã đăng nhập: luôn tạo nhân vật MỚI trên server, không điền sẵn nhân vật cũ.
-	var existing: PlayerProfile = null if AccountApi.is_logged_in() else GameManager.local_profile
-	if existing == null and SaveManager.has_profile():
-		existing = SaveManager.load_profile()
-		GameManager.local_profile = existing
+	var api := _get_account_api()
+	var is_logged: bool = api != null and api.is_logged_in()
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
+	var existing: PlayerProfile = null if is_logged else (gm.local_profile if gm != null else null)
+	if existing == null and sm != null and sm.has_profile():
+		existing = sm.load_profile()
+		if gm != null:
+			gm.local_profile = existing
 	if existing:
 		_name_input.text = existing.display_name
 		_gender = existing.gender
@@ -276,14 +293,17 @@ func _submit_character(enter_game_directly: bool) -> void:
 		_show_message(tr("Hệ này chưa có môn phái"))
 		return
 
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
 		await _create_online(player_name, enter_game_directly)
 	else:
 		_create_offline(player_name, enter_game_directly)
 
 func _create_offline(player_name: String, enter_game_directly: bool) -> void:
-	var is_new := GameManager.local_profile == null
-	var profile := GameManager.local_profile if GameManager.local_profile else PlayerProfile.new()
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
+	var is_new := gm == null or gm.local_profile == null
+	var profile: PlayerProfile = gm.local_profile if (gm != null and gm.local_profile) else PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _gender
 	if profile.get_element() != _element or (not profile.has_sect() and profile.element < 0):
@@ -297,8 +317,10 @@ func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 		var tm: Node = get_node_or_null("/root/TutorialManager")
 		if tm and tm.has_method("notify_character_created"):
 			tm.notify_character_created()
-	GameManager.local_profile = profile
-	SaveManager.save_profile(profile)
+	if gm != null:
+		gm.local_profile = profile
+	if sm != null:
+		sm.save_profile(profile)
 	_show_message(tr("Đã tạo nhân vật %s — %s") % [player_name, profile.sect_name])
 
 	if enter_game_directly:
@@ -308,8 +330,10 @@ func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 
 ## Tạo nhân vật trên server (tài khoản + máy chủ đang chọn, ô target_slot)
 func _create_online(player_name: String, enter_game_directly: bool) -> void:
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
 	## Nếu nhân vật đã tạo thành công trong phiên này và tên không đổi -> vào game luôn
-	if SaveManager.online_character_id > 0 and GameManager.local_profile != null and GameManager.local_profile.display_name == player_name:
+	if sm != null and sm.online_character_id > 0 and gm != null and gm.local_profile != null and gm.local_profile.display_name == player_name:
 		if enter_game_directly:
 			_enter_hub()
 		else:
@@ -332,7 +356,8 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 	_create_button.disabled = true
 	_enter_button.disabled = true
 	_show_message(tr("Đang tạo nhân vật…"))
-	var r: Dictionary = await AccountApi.create_character(ServerSelectScreen.selected_server_id, target_slot, player_name, profile.to_dict())
+	var api := _get_account_api()
+	var r: Dictionary = await api.create_character(ServerSelectScreen.selected_server_id, target_slot, player_name, profile.to_dict()) if api != null else {"ok": false, "code": "no_api", "message": "Lỗi kết nối"}
 	_create_button.disabled = false
 	_enter_button.disabled = false
 	if not r.ok:
@@ -342,8 +367,10 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 			_name_input.select_all()
 		return
 	var c: Dictionary = r.data
-	GameManager.local_profile = PlayerProfile.from_dict(c["data"])
-	SaveManager.set_online_character(int(c["id"]), int(c["version"]))
+	if gm != null:
+		gm.local_profile = PlayerProfile.from_dict(c["data"])
+	if sm != null:
+		sm.set_online_character(int(c["id"]), int(c["version"]))
 	_show_message(tr("Đã tạo nhân vật %s — %s") % [c["name"], profile.sect_name])
 
 	if enter_game_directly:
@@ -356,11 +383,15 @@ func _enter_hub() -> void:
 	_enter_button.disabled = true
 	_create_button.disabled = true
 	_back_button.disabled = true
-	WebContentManager.ensure_ready(self, func():
+	var on_ready := func():
 		var tween := create_tween()
 		tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 		tween.tween_callback(get_tree().change_scene_to_file.bind(HUB_SCENE_PATH))
-	)
+	var wcm := _get_content_manager()
+	if wcm and wcm.has_method("ensure_ready"):
+		wcm.ensure_ready(self, on_ready)
+	else:
+		on_ready.call()
 
 func _transition_to_roster() -> void:
 	_play_ui(VltkSound.UI_SELECT)

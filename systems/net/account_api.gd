@@ -11,16 +11,17 @@ extends Node
 ##   {"ok": bool, "status": int (HTTP), "code": String (mã lỗi server, rỗng nếu ok), "message": String, "data": Variant}
 
 signal logged_out
+signal logged_in
 
 ## Địa chỉ server tài khoản. Đổi bằng tham số dòng lệnh `--account-url=https://...` hoặc Project Settings
 ## "kiem_hiep/network/account_url" (dùng khi xuất bản game).
-const DEFAULT_URL := "http://127.0.0.1:8080"
+const DEFAULT_URL := "https://kiem-hiep-api.viettheo.site"
 const SETTING_URL := "kiem_hiep/network/account_url"
 const SESSION_PATH := "user://session.dat"
 ## Cửa sổ game nào đang GIỮ file phiên (mã tiến trình). Mở 2 cửa sổ game trên 1 máy: cửa sổ thứ 2 không được tự đăng nhập bằng phiên
 ## của cửa sổ 1 — nếu không, 2 cửa sổ cùng xoay vòng 1 refresh token, server coi là token bị đánh cắp và thu hồi mọi phiên (đá văng).
 const SESSION_LOCK_PATH := "user://session.lock"
-const TIMEOUT := 15.0
+const TIMEOUT := 30.0
 ## Làm mới access token sớm chừng này giây trước khi hết hạn.
 const REFRESH_MARGIN := 30.0
 
@@ -52,12 +53,16 @@ func _ready() -> void:
 			if origin != null and str(origin).begins_with("http"):
 				base_url = str(origin)
 	base_url = base_url.trim_suffix("/")
+	_log_debug("AccountApi _ready, base_url = " + base_url)
 
 func is_logged_in() -> bool:
 	return not account.is_empty()
 
 func username() -> String:
 	return str(account.get("username", ""))
+
+func get_base_url() -> String:
+	return base_url
 
 ## Kiểm tra tài khoản có quyền GM (được server xác nhận trong dữ liệu tài khoản)
 func is_gm() -> bool:
@@ -69,7 +74,9 @@ func is_gm() -> bool:
 
 func login(user: String, password: String, remember: bool) -> Dictionary:
 	_remember = remember
+	_log_debug("Calling login for user: " + user)
 	var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/login", {"username": user, "password": password})
+	_log_debug("Login response: ok=" + str(r.ok) + ", code=" + str(r.code) + ", msg=" + str(r.message))
 	if r.ok:
 		_apply_session(r.data)
 	return r
@@ -243,6 +250,7 @@ func _apply_session(data: Variant) -> void:
 		_write_session_file()
 	else:
 		DirAccess.remove_absolute(SESSION_PATH)
+	logged_in.emit()
 
 func _clear_session() -> void:
 	## Đăng xuất / hết phiên: bỏ nhân vật đang chơi để tài khoản sau không thấy nhân vật của tài khoản trước.
@@ -344,7 +352,15 @@ func _authed(method: HTTPClient.Method, path: String, body: Variant = null) -> D
 
 # ---------------------------------------------------------------- HTTP
 
+func _log_debug(line: String) -> void:
+	print("[AccountApi] ", line)
+	var f := FileAccess.open("user://debug_login.txt", FileAccess.READ_WRITE if FileAccess.file_exists("user://debug_login.txt") else FileAccess.WRITE)
+	if f:
+		f.seek_end()
+		f.store_line("[%s] %s" % [Time.get_time_string_from_system(), line])
+
 func _request(method: HTTPClient.Method, path: String, body: Variant = null, bearer := "") -> Dictionary:
+	_log_debug("START request: %s%s" % [base_url, path])
 	var http := HTTPRequest.new()
 	http.timeout = TIMEOUT
 	add_child(http)
@@ -354,20 +370,24 @@ func _request(method: HTTPClient.Method, path: String, body: Variant = null, bea
 	var payload := "" if body == null else JSON.stringify(body)
 	var err := http.request(base_url + path, headers, method, payload)
 	if err != OK:
+		_log_debug("ERR request() returned: %d" % err)
 		http.queue_free()
 		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
 	var res: Array = await http.request_completed
 	http.queue_free()
 	var result: int = res[0]
 	var status: int = res[1]
-	if result != HTTPRequest.RESULT_SUCCESS:
-		if result == HTTPRequest.RESULT_TIMEOUT:
-			return _fail(0, "network", "Máy chủ không phản hồi, vui lòng thử lại")
-		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
 	var raw_bytes: PackedByteArray = res[3]
 	if raw_bytes.size() >= 2 and raw_bytes[0] == 0x1F and raw_bytes[1] == 0x8B:
 		raw_bytes = raw_bytes.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
 	var text := raw_bytes.get_string_from_utf8()
+	_log_debug("DONE: result=%d, status=%d, body=%s" % [result, status, text.substr(0, 200)])
+	if result != HTTPRequest.RESULT_SUCCESS:
+		if result == HTTPRequest.RESULT_TIMEOUT:
+			_log_debug("FAIL: TIMEOUT (15/30s)")
+			return _fail(0, "network", "Máy chủ không phản hồi, vui lòng thử lại")
+		_log_debug("FAIL: result code %d" % result)
+		return _fail(0, "network", "Không kết nối được máy chủ, hãy kiểm tra mạng")
 	var trimmed := text.strip_edges()
 	var data: Variant = null
 	if trimmed.begins_with("{") or trimmed.begins_with("["):

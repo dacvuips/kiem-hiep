@@ -69,11 +69,14 @@ func _on_profile(data: Dictionary) -> void:
 		return
 	var old_avatar := profile.custom_avatar
 	var old_gm_aura: int = int(profile.get("gm_aura_state")) if profile.get("gm_aura_state") != null else 0
+	var old_da_tau := profile.da_tau.duplicate(true)
 	profile.copy_from(PlayerProfile.from_dict(data))
 	if profile.custom_avatar.strip_edges() == "" and old_avatar.strip_edges() != "":
 		profile.custom_avatar = old_avatar
 	if profile.get("gm_aura_state") != null and profile.gm_aura_state == 0 and old_gm_aura > 0:
 		profile.gm_aura_state = old_gm_aura
+	if profile.da_tau.is_empty() and not old_da_tau.is_empty():
+		profile.da_tau = old_da_tau
 	profile_applied.emit()
 
 func _hub() -> SocialHub:

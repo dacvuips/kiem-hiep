@@ -525,6 +525,7 @@ func die() -> void:
 		_trigger_kill_explosion()
 	spawn_gem()
 	spawn_random_drops()
+	_try_drop_da_tau_scroll()
 	if has_meta("pool_key"):
 		ObjectPool.release(self)
 	else:
@@ -625,3 +626,25 @@ func _deal_contact_damage(body: Node) -> void:
 		if not CombatFormulas.is_monster(body):
 			amount = CombatFormulas.scale_monster_damage(amount)
 		body.take_damage(amount)
+
+func _try_drop_da_tau_scroll() -> void:
+	if GameManager == null:
+		return
+	var profile: PlayerProfile = GameManager.local_profile
+	if profile == null:
+		return
+	var cur_map_id: int = int(GameManager.field_map.get("id", -1))
+	if cur_map_id <= 0:
+		return
+	if DaTauManager.try_drop_scroll(profile, cur_map_id):
+		SaveManager.save_profile(profile)
+		var tree := get_tree()
+		if tree != null:
+			var players := tree.get_nodes_in_group("player")
+			if not players.is_empty() and players[0].has_method("notify"):
+				var q: Variant = DaTauManager.get_current_quest(profile)
+				if q is Dictionary:
+					var s_name := "Địa đồ chí" if q.get("scroll_type", 1) == 1 else "Mật chí"
+					var cur_n: int = q.get("done_num", 0)
+					var req_n: int = q.get("need_num", 1)
+					players[0].notify("Nhặt được %s (%d/%d)" % [s_name, cur_n, req_n])

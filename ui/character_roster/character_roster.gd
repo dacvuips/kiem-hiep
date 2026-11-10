@@ -42,11 +42,22 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		_update_locale_texts()
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
+func _get_game_manager() -> Node:
+	return get_node_or_null("/root/GameManager")
+
+func _get_save_manager() -> Node:
+	return get_node_or_null("/root/SaveManager")
+
 func _ready() -> void:
-	if MusicManager.has_method("play_title_music"):
-		MusicManager.play_title_music()
-	elif MusicManager.has_method("play"):
-		MusicManager.play("music001.mp3")
+	var music_mgr: Node = get_node_or_null("/root/MusicManager")
+	if music_mgr:
+		if music_mgr.has_method("play_title_music"):
+			music_mgr.play_title_music()
+		elif music_mgr.has_method("play"):
+			music_mgr.play("music001.mp3")
 	_create_ref = load(CREATE_SCENE).instantiate()
 	_enter_btn.pressed.connect(_on_enter_pressed)
 	_create_btn.pressed.connect(_on_create_pressed)
@@ -60,9 +71,10 @@ func _ready() -> void:
 		loc_mgr.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
-	if AccountApi.is_logged_in():
-		if AccountApi.has_signal("session_invalidated"):
-			AccountApi.session_invalidated.connect(func(reason: String) -> void:
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
+		if api.has_signal("session_invalidated"):
+			api.session_invalidated.connect(func(reason: String) -> void:
 				AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
 				get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 			)
@@ -143,10 +155,13 @@ func _style_pill_button(b: BaseButton) -> void:
 # ---------------------------------------------------------------- các ô nhân vật
 
 func _build_slots() -> void:
-	var profile: PlayerProfile = GameManager.local_profile
-	if profile == null and SaveManager.has_profile():
-		profile = SaveManager.load_profile()
-		GameManager.local_profile = profile
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
+	var profile: PlayerProfile = gm.local_profile if gm != null else null
+	if profile == null and sm != null and sm.has_profile():
+		profile = sm.load_profile()
+		if gm != null:
+			gm.local_profile = profile
 	if profile == null:
 		profile = PlayerProfile.new()
 		profile.display_name = "cô Đơn"
@@ -163,10 +178,15 @@ func _build_slots() -> void:
 
 ## Nhân vật trên server: mỗi ô = {profile, character (bản ghi server: id, version...), card, portrait, aura}.
 func _build_slots_online() -> void:
-	GameManager.local_profile = null
-	SaveManager.clear_online_character()
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
+	if gm != null:
+		gm.local_profile = null
+	if sm != null:
+		sm.clear_online_character()
 	_toast("Đang tải nhân vật…")
-	var r: Dictionary = await AccountApi.characters(ServerSelectScreen.selected_server_id)
+	var api := _get_account_api()
+	var r: Dictionary = await api.characters(ServerSelectScreen.selected_server_id) if api != null else {"ok": false, "code": "no_api", "message": "Lỗi kết nối"}
 	var by_slot := {}
 	if r.ok:
 		_message.modulate.a = 0.0
@@ -189,7 +209,8 @@ func _build_slots_online() -> void:
 		_slots.append(slot)
 
 func _on_create_pressed() -> void:
-	if not AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api == null or not api.is_logged_in():
 		_go(CREATE_SCENE)
 		return
 	for i in _slots.size():
@@ -338,8 +359,9 @@ func _on_enter_pressed() -> void:
 		return
 
 	# Kiểm tra xác thực phiên trước khi vào Hub
-	if AccountApi.is_logged_in() and AccountApi.has_method("check_session"):
-		var chk: Dictionary = await AccountApi.check_session()
+	var api := _get_account_api()
+	if api != null and api.is_logged_in() and api.has_method("check_session"):
+		var chk: Dictionary = await api.check_session()
 		if not is_inside_tree():
 			return
 		if not chk.ok:
@@ -352,12 +374,20 @@ func _on_enter_pressed() -> void:
 		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
 		if prof_scr and prof != null:
 			prof.set_script(prof_scr)
-	GameManager.local_profile = prof
+	var gm := _get_game_manager()
+	if gm != null:
+		gm.local_profile = prof
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]
-		SaveManager.set_online_character(int(c["id"]), int(c["version"]))
+		var sm := _get_save_manager()
+		if sm != null:
+			sm.set_online_character(int(c["id"]), int(c["version"]))
 	## "Vào game" = vào Character Hub trước; từ Hub bấm "Chơi" mới vào map chính.
-	WebContentManager.ensure_ready(self, func(): _go(HUB_SCENE))
+	var wcm: Node = get_node_or_null("/root/WebContentManager")
+	if wcm and wcm.has_method("ensure_ready"):
+		wcm.ensure_ready(self, func(): _go(HUB_SCENE))
+	else:
+		_go(HUB_SCENE)
 
 func _go(path: String) -> void:
 	var t := create_tween()

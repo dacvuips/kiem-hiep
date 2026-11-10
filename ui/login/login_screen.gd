@@ -25,6 +25,9 @@ const PolicyDialog = preload("res://ui/policy/policy_dialog.gd")
 @onready var _apple: TextureButton = get_node_or_null("%AppleButton")
 @onready var _message: Label = %Message
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
 func _ready() -> void:
 	_upgrade_singletons_from_pack()
 	_setup_screen()
@@ -84,17 +87,19 @@ func _ready() -> void:
 		var dlg := PolicyDialog.show_if_needed(self)
 		if dlg:
 			dlg.accepted_done.connect(func() -> void:
-				if AccountApi.has_saved_session():
+				var api := _get_account_api()
+				if api != null and api.has_saved_session():
 					_resume()
 				elif not OS.has_feature("mobile") and not OS.has_feature("web"):
 					(_password if _user.text != "" else _user).grab_focus()
 			)
 			return
 
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
 		## Quay lại màn này khi đang đăng nhập (VD bấm "Đổi tài khoản") = đăng xuất phiên cũ.
-		AccountApi.logout()
-	elif AccountApi.has_saved_session():
+		api.logout()
+	elif api != null and api.has_saved_session():
 		_resume()
 
 func _test_capture_policy() -> void:
@@ -107,11 +112,14 @@ func _test_capture_policy() -> void:
 
 ## Tự đăng nhập lại bằng phiên đã ghi nhớ.
 func _resume() -> void:
+	var api := _get_account_api()
+	if api == null:
+		return
 	if _user.text == "":
-		_user.text = AccountApi.saved_username()
+		_user.text = api.saved_username()
 	_set_busy(true, [_login, _create, _google])
 	_toast(_message, "Đang đăng nhập lại…", 30.0)
-	var r: Dictionary = await AccountApi.resume()
+	var r: Dictionary = await api.resume()
 	_set_busy(false, [_login, _create, _google])
 	if r.ok:
 		_go(AFTER_LOGIN_SCENE)
@@ -123,15 +131,17 @@ func _resume() -> void:
 var _google_waiting := false
 
 func _on_google_pressed() -> void:
+	var api := _get_account_api()
 	if _google_waiting:
-		AccountApi.cancel_google()
+		if api != null:
+			api.cancel_google()
 		return
 	if _busy:
 		return
 	_google_waiting = true
 	_set_busy(true, [_login, _create])
 	_toast(_message, "Đang chờ đăng nhập Google trên trình duyệt… (bấm Google lần nữa để hủy)", 300.0)
-	var r: Dictionary = await AccountApi.google_login()
+	var r: Dictionary = await api.google_login() if api != null else {"ok": false, "code": "no_api", "message": "Lỗi"}
 	_google_waiting = false
 	_set_busy(false, [_login, _create])
 	if not r.ok:
@@ -139,7 +149,7 @@ func _on_google_pressed() -> void:
 		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("login", "remember", true)
-	cfg.set_value("login", "name", AccountApi.username())
+	cfg.set_value("login", "name", api.username() if api != null else "")
 	cfg.save(CFG_PATH)
 	_go(AFTER_LOGIN_SCENE)
 
@@ -157,7 +167,12 @@ func _on_login_pressed() -> void:
 		return
 	_set_busy(true, [_login, _create, _google])
 	_toast(_message, "Đang đăng nhập…", 30.0)
-	var r: Dictionary = await AccountApi.login(name_text, _password.text, _remember.button_pressed)
+	var api := _get_account_api()
+	if api == null:
+		_set_busy(false, [_login, _create, _google])
+		_toast(_message, "Lỗi kết nối dịch vụ tài khoản")
+		return
+	var r: Dictionary = await api.login(name_text, _password.text, _remember.button_pressed)
 	_set_busy(false, [_login, _create, _google])
 	if not r.ok:
 		_toast(_message, r.message, 4.0 if r.code == "banned" else 2.6)

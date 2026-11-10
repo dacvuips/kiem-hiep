@@ -245,6 +245,7 @@ static func sanitize_new(data: Dictionary) -> Dictionary:
 	fresh.skill_settings = src.skill_settings
 	fresh.gm_aura_state = src.gm_aura_state
 	fresh.server_seen = 1
+	fresh.da_tau = src.da_tau.duplicate(true)
 	return fresh.to_dict()
 
 class _Caster extends Node2D:

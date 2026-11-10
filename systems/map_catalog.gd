@@ -29,6 +29,13 @@ static func all() -> Array:
 	_ensure()
 	return _maps
 
+## Tìm mục map theo ID trong danh mục luyện công; trả về {} nếu không có.
+static func get_by_id(map_id: int) -> Dictionary:
+	for m in all():
+		if int(m.get("id", -1)) == map_id:
+			return m.duplicate(true)
+	return {}
+
 static func tier_of_level(level: int) -> int:
 	@warning_ignore("integer_division")
 	return clampi(level / 10, 1, TIER_COUNT)
@@ -44,9 +51,13 @@ static func normal_tier_for_level(level: int) -> int:
 			return t + d
 	return t
 
+## Map sự kiện / thử thách không hiển thị trong tab Vượt Ải Thường (vẫn giữ trong all() cho Boss, hoạt động & server).
+const NORMAL_EXCLUDED_IDS := [337, 480, 1037, 1038]
+
 ## Map thuộc nhóm `tier` (1 = 1x), xếp theo cấp rồi số map.
 static func in_tier(tier: int) -> Array:
-	return all().filter(func(m: Dictionary) -> bool: return tier_of_level(int(m["level"])) == tier)
+	return all().filter(func(m: Dictionary) -> bool:
+		return not (int(m.get("id", -1)) in NORMAL_EXCLUDED_IDS) and tier_of_level(int(m["level"])) == tier)
 
 static func is_playable(entry: Dictionary) -> bool:
 	var dir := str(entry.get("dir", ""))
