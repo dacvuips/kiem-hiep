@@ -64,7 +64,10 @@ func deal_damage(target: Node, skill: Dictionary = {}) -> void:
 		mods.do_hurt_p = int(skill.get("do_hurt", 100))
 		target.take_damage_from(attacker, low, maxi(low, high), damage_type, stats.element, mods)
 	elif target.has_method("take_damage"):
-		target.take_damage(stats.damage)
+		var amount: float = stats.damage
+		if CombatFormulas.is_monster_hit(launcher, target):
+			amount = CombatFormulas.scale_monster_damage(amount)
+		target.take_damage(amount)
 
 	if launcher != null and is_instance_valid(launcher) and launcher.has_method("on_hit_target"):
 		launcher.on_hit_target(target, skill)

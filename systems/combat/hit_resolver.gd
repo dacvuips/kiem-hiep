@@ -32,6 +32,11 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	var main_part: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main_part + Vector2i(min_damage, max_damage)
 	parts = CombatFormulas.apply_server_damage_scaling(parts, int(attacker_element))
+	if mods and CombatFormulas.is_monster_hit(mods.attacker_node, defender):
+		for t in parts.keys():
+			var p: Vector2i = parts[t]
+			parts[t] = Vector2i(p.x * CombatFormulas.MONSTER_DAMAGE_RATE_PERCENT / 100,
+					p.y * CombatFormulas.MONSTER_DAMAGE_RATE_PERCENT / 100)
 	var dealt := {}
 	var mana_absorbed_box := [0]
 	var defender_mana := int(defender.mana) if (defender != null and "mana" in defender) else 0

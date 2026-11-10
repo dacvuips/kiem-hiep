@@ -228,6 +228,25 @@ class DamageResult:
 ## Hệ số sát thương khi người chơi đánh người chơi: settings/npc/player/pkrate.ini gốc [PK] rate=20 (KNpcSet.cpp đọc vào
 ## m_nPKDamageRate, KNpc.cpp:2592 nhân vào damage khi cả 2 bên là kind_player).
 const PK_DAMAGE_RATE_PERCENT := 20
+## Hệ số chung sát thương QUÁI gây ra cho người chơi / đồng minh (KHÔNG có trong gốc — chỉnh cân bằng riêng của game).
+## 50 = mọi đòn của quái (cận chiến, đạn, va chạm, kể cả độc/sát thương ngũ hành đi kèm) còn 1/2. Quái đánh quái giữ nguyên.
+const MONSTER_DAMAGE_RATE_PERCENT := 50
+
+## Node có phải quái (VltkMonster hoặc Enemy cũ enemies/enemy.gd) không.
+static func is_monster(node: Node) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	if node is VltkMonster:
+		return true
+	var scr: Script = node.get_script()
+	return scr != null and scr.resource_path == "res://enemies/enemy.gd"
+
+## Có giảm sát thương theo MONSTER_DAMAGE_RATE_PERCENT không: người đánh là quái, bên bị đánh không phải quái.
+static func is_monster_hit(attacker: Node, defender: Node) -> bool:
+	return is_monster(attacker) and not is_monster(defender)
+
+static func scale_monster_damage(amount: float) -> float:
+	return amount * MONSTER_DAMAGE_RATE_PERCENT / 100.0
 
 class HitModifiers:
 	var extra_damages: Dictionary = {}

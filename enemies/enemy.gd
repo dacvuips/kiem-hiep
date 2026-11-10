@@ -621,4 +621,7 @@ func _deal_contact_damage(body: Node) -> void:
 			mods.extra_damages = combat_stats.outer_element_damage.duplicate()
 		body.take_damage_from(combat_stats, min_dmg, max_dmg, CombatFormulas.DamageType.PHYSICS, combat_stats.element, mods)
 	elif body.has_method("take_damage"):
-		body.take_damage(contact_damage * scale)
+		var amount := contact_damage * scale
+		if not CombatFormulas.is_monster(body):
+			amount = CombatFormulas.scale_monster_damage(amount)
+		body.take_damage(amount)
