@@ -38,7 +38,9 @@ var _walk_dest := Vector2.ZERO
 var _next_ai_time := 0.0
 var _game_time := 0.0
 var _active_slot := 0
-var _skill_ready: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var _skill_ready: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]  ## ô 4 = đánh thường ảo (MonsterSkillAi.BASIC_SLOT)
+## eid mục tiêu đã bị ra chiêu (mở màn xong) — đổi mục tiêu thì mở màn lại bằng chiêu xa.
+var _opened_eid := 0
 var _max_radius := -1.0
 var _target_eid := 0
 ## Chiến trường Tống Kim: quái của 1 phe (Nguyên Soái) — chỉ đánh / bị đánh bởi người phe kia. "" = quái thường.
@@ -121,7 +123,8 @@ func reset() -> void:
 	last_hitter = 0
 	hidden = false
 	flags = 0
-	_skill_ready = [0.0, 0.0, 0.0, 0.0]
+	_skill_ready = [0.0, 0.0, 0.0, 0.0, 0.0]
+	_opened_eid = 0
 	_next_ai_time = 0.0
 	_enter(State.IDLE, "stand")
 	hp = 100
@@ -231,7 +234,7 @@ func _walk_to(dest_logic: Vector2) -> void:
 		_enter(State.WALK, "walk")
 
 func _skill_data(slot: int) -> Dictionary:
-	var sk: Array = data["skills"][slot]
+	var sk: Array = MonsterSkillAi.slot_skill(data["skills"], slot)
 	if int(sk[0]) <= 0:
 		return {}
 	return VltkSkillData.skill(int(sk[0]), int(sk[1]))
@@ -258,10 +261,27 @@ func _max_skill_radius() -> float:
 	return _max_radius
 
 func _has_melee_skill() -> bool:
-	for slot in 4:
-		if int(data["skills"][slot][0]) > 0 and _skill_radius(slot) <= 75.0:
+	for r in _ai_radii():
+		if r >= 0.0 and r <= MonsterSkillAi.MELEE_RADIUS:
 			return true
 	return false
+
+## Tầm tấn công từng ô cho AI (-1 = ô trống / chiêu không đánh địch), kèm ô đánh thường ảo — xem MonsterSkillAi.
+var _radii_cache: Array = []
+var _radii_key: Array = []
+
+func _ai_radii() -> Array:
+	## Gọi mỗi frame lúc đi (_has_melee_skill) -> nhớ lại, chỉ tính lại khi bộ skill / cấp quái đổi.
+	var key := [data["skills"]]
+	if not _radii_cache.is_empty() and _radii_key.size() == key.size() and is_same(_radii_key[0], key[0]) and _radii_key == key:
+		return _radii_cache
+	var radii: Array = []
+	for i in 4:
+		var s := _skill_data(i)
+		radii.append(_skill_radius(i) if MonsterSkillAi.is_attack_skill(s) else -1.0)
+	_radii_cache = MonsterSkillAi.with_basic(radii)
+	_radii_key = key
+	return _radii_cache
 
 func _ai_think(gs: GameServer) -> void:
 	if _ai_mode <= 0 or _vision <= 0.0:
@@ -291,47 +311,23 @@ func _ai_think(gs: GameServer) -> void:
 	if dist > _max_skill_radius():
 		_walk_to(there)
 		return
-	## Khi quái đã đứng gần người chơi (cự ly cận chiến <= 85px): không sử dụng skill tầm xa nữa, chỉ dùng đòn cận chiến/đánh thường.
-	var is_close_range := dist <= 85.0
-	var has_melee_skill := false
-	for i in 4:
-		if int(data["skills"][i][0]) > 0 and _skill_radius(i) <= 75.0:
-			has_melee_skill = true
-			break
-
-	var total_weight := 0
-	for i in 4:
-		if int(data["skills"][i][0]) > 0:
-			if is_close_range and has_melee_skill and _skill_radius(i) > 75.0:
-				continue
-			total_weight += maxi(0, int(p[i + 1]))
-	if total_weight <= 0:
-		total_weight = 100
-	var roll := randi() % total_weight
-	var slot := -1
-	var acc := 0
-	for i in 4:
-		if int(data["skills"][i][0]) <= 0:
-			continue
-		if is_close_range and has_melee_skill and _skill_radius(i) > 75.0:
-			continue
-		acc += maxi(0, int(p[i + 1]))
-		if roll < acc:
-			slot = i
-			break
-	if slot < 0:
-		return
-	_active_slot = slot
-	if int(data["skills"][slot][0]) <= 0 or _game_time < _skill_ready[slot]:
-		var stop_rad := 65.0 if has_melee_skill else (_skill_radius(slot) * 0.85)
-		if dist <= stop_rad:
-			_enter(State.IDLE, "stand")
-			var d := VltkMath.dir_between(here, there)
-			if d >= 0:
-				dir = d
-			return
+	## Chọn chiêu gần / xa giống VltkMonster (MonsterSkillAi): mở màn đánh xa, rồi áp sát đánh thường; mục tiêu chạy xa
+	## mà còn trong tầm chiêu xa thì đánh xa.
+	var ready: Array = []
+	for i in MonsterSkillAi.SLOT_COUNT:
+		ready.append(_game_time >= _skill_ready[i])
+	var slot := MonsterSkillAi.pick(dist, _ai_radii(), ready, p.slice(1, 5), _opened_eid == enemy.eid)
+	if slot == MonsterSkillAi.APPROACH:
 		_walk_to(there)
 		return
+	if slot == MonsterSkillAi.WAIT:
+		if state != State.IDLE:
+			_enter(State.IDLE, "stand")
+		var d := VltkMath.dir_between(here, there)
+		if d >= 0:
+			dir = d
+		return
+	_active_slot = slot
 	if dist <= _skill_radius(slot):
 		_begin_attack(gs, slot, enemy)
 	else:
@@ -358,7 +354,14 @@ func _begin_attack(gs: GameServer, slot: int, enemy: ServerEntity) -> void:
 	if d >= 0:
 		dir = d
 	_enter(State.ATTACK, action_name)
-	_skill_ready[slot] = _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len)))
+	## KSkillList::SetNextCastTime gốc khoá hồi chiêu THEO MÃ SKILL, không theo ô: quái đặt cùng 1 skill vào nhiều ô
+	## (VD Boss Thứu Thần 4 ô đều Đoạn Hồn Thích, hồi 36 frame) không được ra liền 4 lần bỏ qua TimePerCast.
+	var ready_at := _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len)))
+	var skill_id := int(MonsterSkillAi.slot_skill(data["skills"], slot)[0])
+	for i in MonsterSkillAi.SLOT_COUNT:
+		if int(MonsterSkillAi.slot_skill(data["skills"], i)[0]) == skill_id:
+			_skill_ready[i] = ready_at
+	_opened_eid = enemy.eid
 	gs.monster_attack(self, slot, enemy)
 
 # ---------------------------------------------------------------- nhận sát thương

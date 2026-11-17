@@ -306,6 +306,10 @@ func _tick_vltk_attack(delta: float) -> void:
 	if _atk_time >= _atk_len:
 		_atk_time = -1.0
 		_atk_cooldown = _atk_len * 0.5
+		## Chiêu có TimePerCast (Skills.txt, frame) thì cả vòng đánh + chờ không ngắn hơn hồi chiêu gốc.
+		if _active_skill_id > 0:
+			var tpc := float(VltkSkillData.skill(_active_skill_id, _active_skill_level).get("time_per_cast", 0)) / VltkMath.FPS
+			_atk_cooldown = maxf(_atk_cooldown, tpc - _atk_len)
 
 func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
