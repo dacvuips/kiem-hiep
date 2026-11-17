@@ -273,6 +273,12 @@ func interpolate_at_level(value_at_level_1: float, value_at_max_level: float, at
 	var t := clampf(float(at_level - 1) / float(max_level - 1), 0.0, 1.0)
 	return floorf(lerpf(value_at_level_1, value_at_max_level, t))
 
+## Như interpolate_at_level nhưng KHÔNG chặn ở [1, max_level] — đúng Line() trong Link gốc (ngoại suy theo 2 mốc).
+func extrapolate_at_level(value_at_level_1: float, value_at_max_level: float, at_level: int) -> float:
+	if max_level <= 1:
+		return value_at_level_1
+	return floorf(value_at_level_1 + (value_at_max_level - value_at_level_1) * float(at_level - 1) / float(max_level - 1))
+
 ## Hồi chiêu riêng (giây) của skill tại cấp `at_level` — KSkill::GetDelayPerCast gốc (NextCastTime), KHÔNG giảm theo
 ## tốc độ đánh. Đa số chiêu đánh = 0: nhịp ra đòn do độ dài động tác (SectSkillController.action_seconds) quyết định.
 func get_cooldown_at_level(at_level: int) -> float:
@@ -338,8 +344,10 @@ func is_physical() -> bool:
 			return true
 	return false
 
-## Số liệu damage THẬT (VLTK) tại 1 cấp, đọc từ chính các dòng stat_lines hiển thị trong popup —
-## để combat khớp 100% với số người chơi thấy:
+## Số liệu damage THẬT (VLTK) tại 1 cấp. Nguồn số liệu: thuộc tính gốc `vltk_attribs` (hàm Link của lua gốc —
+## đúng đường cong nhiều mốc và TIẾP TỤC tăng sau cấp 20 khi có cộng cấp skill), dòng stat_lines chỉ dùng khi skill
+## không có thuộc tính gốc tương ứng. Thuộc tính gốc có mà stat_lines không ghi (VD physicsdamage_v của skill nội công
+## Thúy Yên) vẫn được cộng — combat khớp AppendSkillEffect gốc, popup hiển thị cùng số qua stat_line_range().
 ##   physics_enhance: % tăng damage vật lý (physicsenhance_p) — -1.0 nếu skill không có dòng này
 ##                    (khi đó combat dùng base_damage/damage_growth_per_level mô phỏng cũ).
 ##   physics_flat:    Vector2i(min, max) damage vật lý tuyệt đối (physicsdamage_v).
@@ -352,7 +360,13 @@ func get_combat_damage_at_level(at_level: int) -> Dictionary:
 	var elements := {}
 	var deadly_strike := 0
 	var five_elements_damage_p := 0
+	var used_attribs := {}
 	for line in stat_lines:
+		var attrib := attrib_for_line(line)
+		if attrib != "":
+			if used_attribs.has(attrib):
+				continue  ## 2 dòng cùng 1 thuộc tính gốc -> chỉ tính 1 lần
+			used_attribs[attrib] = true
 		var value_range := stat_line_range(line, at_level)
 		if line.label == "Tấn công chí mạng":
 			deadly_strike += value_range.x
@@ -368,11 +382,61 @@ func get_combat_damage_at_level(at_level: int) -> Dictionary:
 			if not element_info.is_empty():
 				var damage_type: int = element_info["type"]
 				elements[damage_type] = elements.get(damage_type, Vector2i.ZERO) + value_range
+	for attrib in DAMAGE_ATTRIBS:
+		if used_attribs.has(attrib) or not has_attrib(attrib):
+			continue
+		var v := attrib_range(attrib, at_level)
+		match attrib:
+			"physicsenhance_p": physics_enhance = maxf(physics_enhance, 0.0) + v.x
+			"physicsdamage_v": physics_flat += v
+			"deadlystrike_p": deadly_strike += v.x
+			"seriesdamage_p": five_elements_damage_p += v.x
+			_:
+				if v.y > 0:
+					var t: int = ATTRIB_ELEMENT_TYPES[attrib]
+					elements[t] = elements.get(t, Vector2i.ZERO) + v
 	return {"physics_enhance": physics_enhance, "physics_flat": physics_flat, "elements": elements,
 			"deadly_strike": deadly_strike, "five_elements_damage_p": five_elements_damage_p}
 
-## Giá trị 1 dòng tại cấp `at_level` dạng Vector2i(min, max) — dòng 1 số thì min == max.
+## Thuộc tính đòn đánh gốc (AppendSkillEffect) mà combat đọc trực tiếp từ vltk_attribs.
+const DAMAGE_ATTRIBS := ["physicsenhance_p", "physicsdamage_v", "colddamage_v", "firedamage_v",
+	"lightingdamage_v", "poisondamage_v", "deadlystrike_p", "seriesdamage_p"]
+const ATTRIB_ELEMENT_TYPES := {
+	"colddamage_v": CombatFormulas.DamageType.COLD, "firedamage_v": CombatFormulas.DamageType.FIRE,
+	"lightingdamage_v": CombatFormulas.DamageType.LIGHT, "poisondamage_v": CombatFormulas.DamageType.POISON,
+}
+
+## Thuộc tính gốc mà 1 dòng stat_lines hiển thị — "" nếu dòng không phải damage hoặc skill không có thuộc tính đó.
+func attrib_for_line(line: SkillStatLine) -> String:
+	var attrib := ""
+	if line.label == "Tấn công chí mạng":
+		attrib = "deadlystrike_p"
+	elif line.label == "Ngũ hành tương khắc":
+		attrib = "seriesdamage_p"
+	elif line.label in PHYSICS_DAMAGE_LABELS:
+		attrib = "physicsenhance_p" if not line.is_range and line.suffix.strip_edges() == "%" else "physicsdamage_v"
+	else:
+		var element_info := parse_element_damage_label(line.label)
+		if not element_info.is_empty():
+			for a in ATTRIB_ELEMENT_TYPES:
+				if ATTRIB_ELEMENT_TYPES[a] == element_info["type"]:
+					attrib = a
+	return attrib if attrib != "" and has_attrib(attrib) else ""
+
+## Giá trị (min, max) của 1 thuộc tính đòn đánh gốc tại cấp — % / độc chỉ dùng thành phần [0]; damage _v dùng [0] và [2]
+## (thiếu [2] thì = [0]).
+func attrib_range(attrib: String, at_level: int) -> Vector2i:
+	var v := get_attrib(attrib, at_level)
+	if attrib.ends_with("_p") or attrib == "poisondamage_v" or v.z == 0:
+		return Vector2i(v.x, v.x)
+	return Vector2i(v.x, v.z)
+
+## Giá trị 1 dòng tại cấp `at_level` dạng Vector2i(min, max) — dòng 1 số thì min == max. Dòng damage có thuộc tính gốc
+## thì lấy từ thuộc tính gốc (Link, không chặn ở max_level) để popup và combat cùng 1 số.
 func stat_line_range(line: SkillStatLine, at_level: int) -> Vector2i:
+	var attrib := attrib_for_line(line)
+	if attrib != "":
+		return attrib_range(attrib, at_level)
 	if line.is_range:
 		return Vector2i(int(interpolate_at_level(line.min_at_level_1, line.min_at_max_level, at_level)),
 				int(interpolate_at_level(line.max_at_level_1, line.max_at_max_level, at_level)))
@@ -382,14 +446,14 @@ func stat_line_range(line: SkillStatLine, at_level: int) -> Vector2i:
 func get_damage_at_level(at_level: int) -> float:
 	return base_damage + damage_growth_per_level * maxf(0.0, float(at_level - 1))
 
-## Tổng % "Hỗ trợ từ các kỹ năng khác" tại 1 cấp — CHIỀU NGƯỢC của "Tăng sát thương kỹ năng liên
-## kết #N" (xem SkillStatLine.target_skill_id). Quét TẤT CẢ skill khác trong CÙNG môn phái
-## (`all_skills`, dùng đã học ở cấp nào thì tính theo cấp ĐÃ HỌC của skill NGUỒN, không phải cấp
-## của skill đang xem — đúng cơ chế gốc KSkillList::GetAddSkillDamage chỉ cộng nếu skill nguồn đã
-## học, SkillLevel > 0), cộng dồn value_at_max_level tại learned_level của mọi stat_line có
-## target_skill_id == self.id. Trả về 0.0 nếu không có skill nào hỗ trợ (ẩn dòng UI trong trường
-## hợp này, xem SkillBookScreen).
-func get_support_percent_from_other_skills(all_skills: Array[SkillDefinition], profile: PlayerProfile) -> float:
+## Tổng % "Hỗ trợ từ các kỹ năng khác" — NGUYÊN VĂN KSkillList::GetAddSkillDamage gốc: cộng addskilldamageN của mọi skill
+## ĐÃ HỌC (SkillLevel > 0) trỏ đích = skill này (stat_line.target_skill_id), tính ở cấp HIỆN TẠI của skill nguồn. Bị động
+## "tăng % vũ khí / + sát nội công" KHÔNG cộng ở đây — chúng là thuộc tính nhân vật (addphysicsdamage_p, add*magic_v...)
+## đã áp qua CombatantStats rồi vào công thức AppendSkillEffect. Trả về 0.0 nếu không có skill nào hỗ trợ.
+## `level_of` (tuỳ chọn): Callable(SkillDefinition) -> int trả cấp HIỆN TẠI của skill nguồn (đã gồm cấp cộng thêm); Link
+## không chặn ở cấp 20 (addskilldamage là đường thẳng 2 mốc).
+func get_support_percent_from_other_skills(all_skills: Array[SkillDefinition], profile: PlayerProfile,
+		level_of: Callable = Callable()) -> float:
 	var total := 0.0
 	for other in all_skills:
 		if other.id == id:
@@ -397,31 +461,8 @@ func get_support_percent_from_other_skills(all_skills: Array[SkillDefinition], p
 		var other_learned_level := profile.get_skill_level(other.id) if profile else 0
 		if other_learned_level <= 0:
 			continue
+		var other_current_level: int = level_of.call(other) if level_of.is_valid() else other_learned_level
 		for stat_line in other.stat_lines:
 			if stat_line.target_skill_id == id:
-				total += other.interpolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_learned_level)
-			elif stat_line.target_skill_id == "" and other.category == SkillCategory.PASSIVE:
-				var lbl := stat_line.label.to_lower()
-				if ("sát thương" in lbl or "công kích" in lbl) and stat_line.suffix.strip_edges() == "%":
-					var self_school := school_text.to_lower()
-					var other_school := other.school_text.to_lower()
-					var match_school := (
-						("kiếm" in other_school and "kiếm" in self_school) or
-						("đao" in other_school and "đao" in self_school) or
-						("côn" in other_school and "côn" in self_school) or
-						("thương" in other_school and "thương" in self_school) or
-						("chùy" in other_school and "chùy" in self_school) or
-						("quyền" in other_school and "quyền" in self_school) or
-						("chưởng" in other_school and "chưởng" in self_school) or
-						("ám khí" in other_school and "ám khí" in self_school) or
-						("nội công" in other_school and "nội công" in self_school) or
-						("hỗ trợ" in other_school and not ("kiếm" in other_school or "đao" in other_school or "chưởng" in other_school or "côn" in other_school))
-					)
-					if match_school:
-						total += other.interpolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_learned_level)
-		if other.category == SkillCategory.PASSIVE and other.passive_attack_bonus > 0.0:
-			var self_sc := school_text.to_lower()
-			var other_sc := other.school_text.to_lower()
-			if ("kiếm" in other_sc and "kiếm" in self_sc) or ("đao" in other_sc and "đao" in self_sc) or ("quyền" in other_sc and "quyền" in self_sc) or ("chưởng" in other_sc and "chưởng" in self_sc) or ("hỗ trợ" in other_sc):
-				total += other.passive_attack_bonus * float(other_learned_level)
+				total += other.extrapolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_current_level)
 	return total

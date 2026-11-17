@@ -12,7 +12,10 @@ var _content_box: VBoxContainer
 var _scroll: ScrollContainer
 
 # Chế độ & Phòng
-var _selected_mode: int = 0 # 0: Tất cả, 1: Solo, 2: Duo, 3: Trio, 4: Squad
+var _selected_mode: int = 1 # 1: Solo, 2: Duo, 3: Trio, 4: Squad
+var _fill_on: bool = true   ## Tự ghép đội khi tạo đội
+var _lbl_schedule: Label
+var _schedule_accum: float = 0.0
 var _current_room_id: String = ""
 var _mock_rooms: Array[Dictionary] = []
 
@@ -62,6 +65,8 @@ var _edit_join_code: LineEdit
 # Khung chat phòng chờ (lịch sử lưu trong room["chat"])
 var _chat_log: RichTextLabel
 var _chat_input: LineEdit
+var _chat_channel_btn: Button
+var _chat_target: String = ""   ## "" = Tán gẫu cả phòng, tên = chat mật
 const BOT_CHAT_LINES := ["Ok đại ca!", "Vào trận nhớ bám đội nhé.", "Đệ sẵn sàng rồi.", "Nhặt đồ Hoàng Kim chia nhau nha!", "Theo vòng bo mà chạy, đừng tách đội.", "Haha, lần này phải top 1!"]
 const BOT_SECTS := ["Thiếu Lâm", "Thiên Vương", "Đường Môn", "Ngũ Độc", "Nga Mi", "Thúy Yên", "Cái Bang", "Thiên Nhẫn", "Võ Đang", "Côn Lôn"]
 const BOT_NAMES := ["LýTầmHoan", "SởLưuHương", "LụcTiểuPhụng", "HoaMãnLâu", "TâyMônXuyTuyết", "ATú", "TiểuLongNữ", "ĐoànDự"]
@@ -72,7 +77,7 @@ static func open(host: Node, profile: PlayerProfile, on_play: Callable = Callabl
 	return SocialWindow.present(host, win, &"pubg")
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
-	super._init("⚔️ CHIẾN TRƯỜNG SINH TỒN (PUBG VÕ LÂM)", "Bản Đồ Tống Kim 1 — Vòng Bo 10 Phút — Đồ Hoàng Kim 90%", WIN_W)
+	super._init("⚔️ CHIẾN TRƯỜNG SINH TỒN (PUBG VÕ LÂM)", "", WIN_W)
 	_profile = profile
 	_on_play = on_play
 	is_full_width = false
@@ -86,7 +91,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_tabs_header.alignment = BoxContainer.ALIGNMENT_CENTER
 	body.add_child(_tabs_header)
 
-	var t1 := GameUi.button("🏠 Danh Sách Phòng PUBG", GameUi.TAB)
+	var t1 := GameUi.button("⚔️ Vào Trận", GameUi.TAB)
 	t1.custom_minimum_size = Vector2(210, 36)
 	t1.pressed.connect(_select_tab.bind(0))
 	_tabs_header.add_child(t1)
@@ -116,6 +121,24 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_scroll.add_child(_content_box)
 
 	_select_tab(0)
+	# Như các game lớn: mở lại cửa sổ khi đang ở trong 1 phòng chờ -> quay về đúng phòng đó
+	var mine := _find_room_with_self()
+	if not mine.is_empty():
+		_open_waiting_room(mine)
+
+## Phòng chờ (chưa vào trận) mà mình đang là thành viên.
+func _find_room_with_self() -> Dictionary:
+	for r in PubgManager.rooms:
+		if str(r.get("status", "")) == PubgManager.STATUS_PLAYING:
+			continue
+		if _self_index(r) >= 0:
+			return r
+	return {}
+
+## Đóng cửa sổ khi đang tìm trận: hủy tìm (phòng không bị kẹt ở "Đang Tìm Trận"), vẫn giữ chỗ trong phòng chờ.
+func _exit_tree() -> void:
+	if _is_searching:
+		_stop_search()
 
 func _init_mock_rooms() -> void:
 	if PubgManager.rooms.is_empty():
@@ -158,6 +181,16 @@ func _save_build_to_file() -> void:
 		f.store_string(JSON.stringify(data, "\t"))
 
 func _process(delta: float) -> void:
+	if not _is_searching:
+		_schedule_accum += delta
+		if _schedule_accum >= 1.0:
+			_schedule_accum = 0.0
+			var was_open := _lbl_schedule != null and is_instance_valid(_lbl_schedule) and _lbl_schedule.text.contains("ĐANG MỞ")
+			_update_schedule_label()
+			# Vừa qua giờ mở / đóng -> vẽ lại để bật / khóa nút
+			if _lbl_schedule != null and is_instance_valid(_lbl_schedule) and was_open != _lbl_schedule.text.contains("ĐANG MỞ"):
+				_render_content()
+		return
 	if _is_searching:
 		_search_time_left -= delta
 		_search_tick_accum += delta
@@ -165,31 +198,34 @@ func _process(delta: float) -> void:
 		# Trong lúc đang tìm trận, nếu có phòng thi đấu < 5 phút mở ra thì ghép vào thay Bot ngay
 		var inc_cnt: int = maxi(1, _members(_current_room).size())
 		var cur_r_id: String = str(_current_room.get("id", ""))
-		var active_match: Dictionary = PubgManager.find_joinable_active_match(inc_cnt, cur_r_id)
+		var active_match: Dictionary = PubgManager.find_joinable_active_match(inc_cnt, cur_r_id, _server_id())
 		if not active_match.is_empty():
 			_handle_backfill_match_found(active_match, inc_cnt, cur_r_id)
 			return
 
-		# Mỗi 1.2s tăng ngẫu nhiên số người chơi tìm thấy (1-3 người)
+		# Ghép theo ĐỘI: mỗi nhịp ~1.2s có thêm 1-2 đội cùng chế độ vào hàng chờ (Solo: 1-3 người)
+		var mode: int = clampi(int(_current_room.get("mode", 1)), 1, 4)
+		var cap: int = PubgManager.match_capacity(mode)
 		if _search_tick_accum >= 1.2:
 			_search_tick_accum = 0.0
-			var add_p: int = randi_range(1, 3)
-			_matched_players_count = mini(50, _matched_players_count + add_p)
+			var add_p: int = randi_range(1, 3) if mode == 1 else randi_range(1, 2) * mode
+			_matched_players_count = mini(cap, _matched_players_count + add_p)
 
 		if _lbl_countdown != null and is_instance_valid(_lbl_countdown):
-			var sec: int = maxi(0, ceili(_search_time_left))
-			_lbl_countdown.text = "⏱️ THỜI GIAN TÌM TRẬN: %02d GIÂY" % sec
+			var waited: int = int(PubgManager.MATCH_SEARCH_SEC - maxf(0.0, _search_time_left))
+			_lbl_countdown.text = "⏱️ Đã chờ %02d:%02d  —  tối đa %02d:%02d" % [waited / 60, waited % 60, int(PubgManager.MATCH_SEARCH_SEC) / 60, int(PubgManager.MATCH_SEARCH_SEC) % 60]
 		if _lbl_players_found != null and is_instance_valid(_lbl_players_found):
-			_lbl_players_found.text = "👥 Đã tìm thấy: %d / 50 người chơi" % _matched_players_count
+			_lbl_players_found.text = "👥 Đã tìm thấy: %d / %d người chơi (%d đội)" % [_matched_players_count, cap, ceili(float(_matched_players_count) / float(mode))]
 		if _progress_bar != null and is_instance_valid(_progress_bar):
+			_progress_bar.max_value = float(cap)
 			_progress_bar.value = float(_matched_players_count)
 
-		# Hết 60 giây hoặc đã đủ 50 người chơi -> Vào trận đấu (không tự động thêm bot nếu hết 60s)
-		if _search_time_left <= 0.0 or _matched_players_count >= 50:
+		# Hết 60 giây hoặc đã đủ người -> Vào trận đấu (không tự động thêm bot nếu hết 60s)
+		if _search_time_left <= 0.0 or _matched_players_count >= cap:
 			_is_searching = false
 			if _lbl_countdown != null and is_instance_valid(_lbl_countdown):
-				if _matched_players_count >= 50:
-					_lbl_countdown.text = "🎉 ĐÃ TÌM ĐỦ 50/50 NGƯỜI CHƠI!"
+				if _matched_players_count >= cap:
+					_lbl_countdown.text = "🎉 ĐÃ TÌM ĐỦ %d/%d NGƯỜI CHƠI!" % [cap, cap]
 				else:
 					_lbl_countdown.text = "⚔️ HẾT THỜI GIAN TÌM TRẬN — VÀO CHIẾN TRƯỜNG (%d NGƯỜI)!" % _matched_players_count
 			if _lbl_players_found != null and is_instance_valid(_lbl_players_found):
@@ -237,218 +273,110 @@ func _render_content() -> void:
 			_render_tab_rules()
 
 # ==============================================================================
-# TAB 0: DANH SÁCH PHÒNG PUBG
+# TAB 0: VÀO TRẬN — kiểu PUBG thật: KHÔNG có danh sách phòng công khai.
+#   Solo: bấm Bắt Đầu là tìm trận ngay. Đội 2-4: tạo đội rồi gửi mã cho bạn bè nhập để vào.
+#   Tự ghép đội (fill): đội thiếu người thì hệ thống ghép thêm người lạ khi vào trận.
+#   Chỉ ghép với người cùng máy chủ; chỉ mở trong khung giờ PubgManager (20:00 hằng ngày).
 # ==============================================================================
 func _render_tab_rooms() -> void:
 	_clear_content_box()
+	var open := PubgManager.is_open()
 
-	# Header & Filter Chế độ (sử dụng OptionButton - Select)
-	var top_bar := HBoxContainer.new()
-	top_bar.add_theme_constant_override("separation", 10)
-	_content_box.add_child(top_bar)
+	# 1. Máy chủ + giờ mở
+	var info := PanelContainer.new()
+	var info_v := VBoxContainer.new()
+	info_v.add_theme_constant_override("separation", 4)
+	info.add_child(info_v)
+	_content_box.add_child(info)
+	var srv := Label.new()
+	srv.text = "🌐 Máy chủ: %s   —   chỉ ghép trận với người chơi cùng máy chủ" % _server_name()
+	srv.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
+	info_v.add_child(srv)
+	_lbl_schedule = Label.new()
+	_lbl_schedule.add_theme_font_size_override("font_size", 16)
+	info_v.add_child(_lbl_schedule)
+	_update_schedule_label()
 
-	var lbl_mode := Label.new()
-	lbl_mode.text = "🎯 Lọc Chế Độ:"
-	lbl_mode.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-	top_bar.add_child(lbl_mode)
+	# 2. Nút chính Bắt Đầu Chơi
+	var act_row := HBoxContainer.new()
+	act_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	act_row.add_theme_constant_override("separation", 12)
+	_content_box.add_child(act_row)
+	var btn_start := Button.new()
+	btn_start.text = "⚔️ BẮT ĐẦU CHƠI"
+	btn_start.tooltip_text = "Chọn chế độ (Solo / Duo / Trio / Squad) và tham gia chiến trường"
+	btn_start.custom_minimum_size = Vector2(320, 52)
+	btn_start.add_theme_font_size_override("font_size", 20)
+	btn_start.disabled = not open
+	btn_start.modulate = Color(0.4, 1.2, 0.55) if open else Color(0.6, 0.6, 0.6)
+	btn_start.pressed.connect(_on_start_pressed)
+	act_row.add_child(btn_start)
 
-	var opt_mode := OptionButton.new()
-	opt_mode.custom_minimum_size = Vector2(180, 32)
-	opt_mode.add_item("✨ Tất Cả Chế Độ", 0)
-	opt_mode.add_item("👤 1 Người (Solo)", 1)
-	opt_mode.add_item("👥 2 Người (Duo)", 2)
-	opt_mode.add_item("🛡️ 3 Người (Trio)", 3)
-	opt_mode.add_item("🔥 4 Người (Squad)", 4)
-
-	# Chọn đúng chế độ đang chọn
-	for i in range(opt_mode.item_count):
-		if opt_mode.get_item_id(i) == _selected_mode:
-			opt_mode.select(i)
-			break
-
-	opt_mode.item_selected.connect(func(idx: int):
-		_selected_mode = opt_mode.get_item_id(idx)
-		_render_content()
-	)
-	top_bar.add_child(opt_mode)
-
-	# Nút Tạo Phòng Nhanh
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_bar.add_child(spacer)
-
-	# Vào phòng bằng mã phòng của chủ phòng
+	# 5. Vào đội của bạn bằng mã
+	var join_title := Label.new()
+	join_title.text = "🔑 VÀO ĐỘI CỦA BẠN BÈ"
+	join_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	_content_box.add_child(join_title)
+	var join_row := HBoxContainer.new()
+	join_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	join_row.add_theme_constant_override("separation", 10)
+	_content_box.add_child(join_row)
 	_edit_join_code = LineEdit.new()
-	_edit_join_code.placeholder_text = "Nhập mã phòng (VD: PUBG-1024)"
-	_edit_join_code.custom_minimum_size = Vector2(230, 32)
+	_edit_join_code.placeholder_text = "Nhập mã đội (VD: PUBG-1024 hoặc 1024)"
+	_edit_join_code.custom_minimum_size = Vector2(320, 36)
 	_edit_join_code.max_length = 12
+	_edit_join_code.editable = open
 	_edit_join_code.text_submitted.connect(func(_t: String) -> void: _on_join_by_code())
-	top_bar.add_child(_edit_join_code)
-
+	join_row.add_child(_edit_join_code)
 	var btn_join_code := Button.new()
-	btn_join_code.text = "🔑 Vào Bằng Mã"
-	btn_join_code.custom_minimum_size = Vector2(130, 32)
+	btn_join_code.text = "🔑 Vào Đội"
+	btn_join_code.custom_minimum_size = Vector2(140, 36)
+	btn_join_code.disabled = not open
 	btn_join_code.modulate = Color(0.5, 0.9, 1.2)
 	btn_join_code.pressed.connect(_on_join_by_code)
-	top_bar.add_child(btn_join_code)
+	join_row.add_child(btn_join_code)
 
-	var sep := VSeparator.new()
-	top_bar.add_child(sep)
+	var note := Label.new()
+	note.text = "Không có danh sách phòng công khai — muốn chơi cùng bạn bè thì một người tạo đội rồi gửi mã đội cho những người còn lại."
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.add_theme_color_override("font_color", Color(0.65, 0.68, 0.68))
+	_content_box.add_child(note)
+	set_process(true)   ## đếm giờ mở / đóng
 
-	# Tạo phòng: chọn số người 1-2-3-4
-	var opt_create := OptionButton.new()
-	opt_create.custom_minimum_size = Vector2(120, 32)
-	opt_create.tooltip_text = "Số người trong đội của phòng sẽ tạo"
-	for n in range(1, 5):
-		opt_create.add_item("%d người" % n, n)
-	opt_create.select(clampi(_create_mode, 1, 4) - 1)
-	opt_create.item_selected.connect(func(idx: int) -> void: _create_mode = opt_create.get_item_id(idx))
-	top_bar.add_child(opt_create)
+## Dòng giờ mở: đang mở -> còn bao lâu đóng; chưa mở -> còn bao lâu mở.
+func _update_schedule_label() -> void:
+	if _lbl_schedule == null or not is_instance_valid(_lbl_schedule):
+		return
+	var now := PubgManager.now_sec_of_day()
+	if PubgManager.schedule_bypass:
+		_lbl_schedule.text = "🕗 Giờ mở: %s   —   ĐANG MỞ (bỏ giới hạn giờ trên máy dev)" % PubgManager.schedule_text()
+		_lbl_schedule.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	elif PubgManager.is_open_at(now):
+		_lbl_schedule.text = "🕗 Giờ mở: %s   —   ĐANG MỞ, còn %s" % [PubgManager.schedule_text(), PubgManager.fmt_hms(PubgManager.secs_until_close(now))]
+		_lbl_schedule.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	else:
+		_lbl_schedule.text = "🕗 Giờ mở: %s   —   CHƯA MỞ, còn %s" % [PubgManager.schedule_text(), PubgManager.fmt_hms(PubgManager.secs_until_open(now))]
+		_lbl_schedule.add_theme_color_override("font_color", Color(1.0, 0.5, 0.35))
 
-	var btn_create := Button.new()
-	btn_create.text = "➕ Tạo Phòng"
-	btn_create.custom_minimum_size = Vector2(120, 32)
-	btn_create.modulate = Color(0.4, 1.2, 0.6)
-	btn_create.pressed.connect(_on_create_room_pressed)
-	top_bar.add_child(btn_create)
+## Máy chủ đang chơi: online = máy chủ đã chọn ở màn Chọn Máy Chủ; offline = 0 (không giới hạn).
+func _server_id() -> int:
+	if ServerSelectScreen.selected_server.is_empty():
+		return 0
+	return ServerSelectScreen.selected_server_id
 
-	# Bảng Danh sách phòng
-	var table_header := PanelContainer.new()
-	var h_box := HBoxContainer.new()
-	h_box.add_theme_constant_override("separation", 8)
-	table_header.add_child(h_box)
+func _server_name() -> String:
+	if ServerSelectScreen.selected_server.is_empty():
+		return "Ngoại tuyến (chơi với máy)"
+	return str(ServerSelectScreen.selected_server.get("name", "Máy chủ %d" % ServerSelectScreen.selected_server_id))
 
-	var h_id := Label.new(); h_id.text = "Mã Phòng"; h_id.custom_minimum_size = Vector2(130, 26)
-	h_id.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-	var h_leader := Label.new(); h_leader.text = "Chủ Phòng"; h_leader.custom_minimum_size = Vector2(150, 26)
-	h_leader.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-	var h_type := Label.new(); h_type.text = "Chế Độ"; h_type.custom_minimum_size = Vector2(120, 26)
-	h_type.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-	var h_count := Label.new(); h_count.text = "Số Người"; h_count.custom_minimum_size = Vector2(90, 26)
-	h_count.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-	var h_stat := Label.new(); h_stat.text = "Trạng Thái"; h_stat.custom_minimum_size = Vector2(100, 26)
-	h_stat.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-	var h_spacer := Control.new(); h_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var h_act := Label.new(); h_act.text = "Thao Tác"; h_act.custom_minimum_size = Vector2(120, 26)
-	h_act.add_theme_color_override("font_color", Color(0.9, 0.8, 0.4))
-
-	h_box.add_child(h_id)
-	h_box.add_child(h_leader)
-	h_box.add_child(h_type)
-	h_box.add_child(h_count)
-	h_box.add_child(h_stat)
-	h_box.add_child(h_spacer)
-	h_box.add_child(h_act)
-	_content_box.add_child(table_header)
-
-	# Duyệt qua các phòng
-	var room_list_box := VBoxContainer.new()
-	room_list_box.add_theme_constant_override("separation", 6)
-	_content_box.add_child(room_list_box)
-
-	var count_matched := 0
-	for r in _mock_rooms:
-		var r_mode: int = int(r.get("mode", 1))
-		if _selected_mode != 0 and r_mode != _selected_mode:
-			continue
-		count_matched += 1
-
-		var row := PanelContainer.new()
-		var r_box := HBoxContainer.new()
-		r_box.add_theme_constant_override("separation", 8)
-		row.add_child(r_box)
-
-		# Mã phòng kèm icon khóa 🔒 nếu có mật khẩu
-		var is_locked: bool = str(r.get("password", "")).strip_edges() != ""
-		var l_id := Label.new()
-		l_id.text = ("%s 🔒" if is_locked else "%s") % str(r.get("id", ""))
-		l_id.custom_minimum_size = Vector2(130, 32)
-		l_id.add_theme_color_override("font_color", Color(0.4, 0.8, 1.0))
-
-		# Cột Chủ Phòng: ngắn lại tầm 150px, nếu dài hơn thì hiển thị "..."
-		var l_leader := Label.new()
-		l_leader.text = str(r.get("leader", ""))
-		l_leader.custom_minimum_size = Vector2(150, 32)
-		l_leader.clip_text = true
-		l_leader.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		l_leader.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		l_leader.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-
-		var l_type := Label.new()
-		match r_mode:
-			1: l_type.text = "Solo (1)"
-			2: l_type.text = "Duo (2)"
-			3: l_type.text = "Trio (3)"
-			4: l_type.text = "Squad (4)"
-		l_type.custom_minimum_size = Vector2(120, 32)
-
-		var cur_p: int = int(r.get("players", 1))
-		var max_p: int = int(r.get("max_players", 1))
-		var l_count := Label.new(); l_count.text = "%d / %d" % [cur_p, max_p]; l_count.custom_minimum_size = Vector2(90, 32)
-
-		var status_str: String = str(r.get("status", "Sẵn Sàng"))
-		var l_stat := Label.new(); l_stat.text = status_str; l_stat.custom_minimum_size = Vector2(100, 32)
-		if status_str == "Đang Đấu":
-			l_stat.add_theme_color_override("font_color", Color(0.8, 0.4, 0.4))
-		else:
-			l_stat.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
-
-		var row_spacer := Control.new()
-		row_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-		var btn_join := Button.new()
-		btn_join.custom_minimum_size = Vector2(130, 32)
-		var is_my_room: bool = (_profile != null and str(r.get("leader", r.get("host", ""))) == _profile.display_name)
-		if status_str == "Đang Đấu":
-			var start_t: float = float(r.get("start_time", 0.0))
-			var elapsed_sec: float = (Time.get_unix_time_from_system() - start_t) if start_t > 0.0 else 999.0
-			var bot_c: int = int(r.get("bot_count", 0))
-			if elapsed_sec >= 0.0 and elapsed_sec < 300.0 and bot_c > 0:
-				var m_val: int = int(elapsed_sec) / 60
-				var s_val: int = int(elapsed_sec) % 60
-				btn_join.text = "⚡ Thay Bot (%02d:%02d)" % [m_val, s_val]
-				btn_join.disabled = false
-				btn_join.modulate = Color(0.3, 1.2, 0.5)
-				btn_join.pressed.connect(_on_late_join_match.bind(r))
-			else:
-				btn_join.text = "Đang Đấu"
-				btn_join.disabled = true
-				btn_join.modulate = Color(0.6, 0.6, 0.6)
-		elif cur_p >= max_p and not is_my_room:
-			btn_join.text = "Phòng Đầy"
-			btn_join.disabled = true
-			btn_join.modulate = Color(0.6, 0.6, 0.6)
-		else:
-			btn_join.text = "🏠 Phòng Chờ" if is_my_room else "⚔️ Vào Phòng"
-			btn_join.modulate = Color(1.0, 0.9, 0.3)
-			btn_join.pressed.connect(_on_join_room.bind(r))
-
-		r_box.add_child(l_id)
-		r_box.add_child(l_leader)
-		r_box.add_child(l_type)
-		r_box.add_child(l_count)
-		r_box.add_child(l_stat)
-		r_box.add_child(row_spacer)
-		r_box.add_child(btn_join)
-		room_list_box.add_child(row)
-
-	if count_matched == 0:
-		var empty_lbl := Label.new()
-		empty_lbl.text = "Hiện chưa có phòng nào thuộc chế độ này. Hãy bấm 'Tạo Phòng Mới' để làm chủ phòng!"
-		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-		room_list_box.add_child(empty_lbl)
-
-	# Banner thông báo nhanh
-	var banner := PanelContainer.new()
-	banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var b_lbl := Label.new()
-	b_lbl.text = "💡 Lưu ý: Khi vào trận đấu Đội (2-4 người), đồng đội sẽ xuất hiện chung 1 vị trí,\nkhông thể đánh nhau và có tên màu Xanh Dương."
-	b_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	b_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b_lbl.add_theme_color_override("font_color", Color(0.3, 0.8, 1.0))
-	banner.add_child(b_lbl)
-	_content_box.add_child(banner)
+## Chưa tới giờ mở -> báo và trả false.
+func _check_open() -> bool:
+	var why := PubgManager.closed_reason()
+	if why == "":
+		return true
+	SocialWindow.confirm(self, "Chưa Tới Giờ Mở", "🕗 " + why, Callable())
+	return false
 
 # ==============================================================================
 # TAB 1: PHÂN BỔ ĐIỂM CẤP 200
@@ -662,13 +590,13 @@ func _render_tab_rules() -> void:
 	v_box.add_child(d1)
 
 	var r2 := Label.new()
-	r2.text = "⭕ 2. VÒNG BO THU HẸP (CHU KỲ 10 PHÚT)"
+	r2.text = "⭕ 2. VÒNG BO THU HẸP (5 LẦN BO — MỖI LẦN 10 PHÚT)"
 	r2.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 	v_box.add_child(r2)
 
 	var d2 := Label.new()
 	d2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	d2.text = "• Cứ mỗi 10 phút, sẽ có một vòng tròn nhỏ hơn xuất hiện từ vòng lớn và chạy co vào vòng an toàn mới.\n• Vị trí và bán kính vòng bo được hiển thị trực tiếp và rõ nét trên Minimap.\n• Những người chơi đứng ở bên ngoài vòng bo an toàn sẽ bị rút máu liên tục theo thời gian cho tới khi kiệt sức hoặc chạy vào trong bo."
+	d2.text = "• Có 5 lần bo, mỗi lần 7 phút (chờ 4 phút rồi co trong 3 phút). Vòng mới có tâm ngẫu nhiên, luôn nằm trọn trong vòng trước; lần thứ 5 co về chỉ còn 1 chấm.\n• Vòng xanh = vùng an toàn hiện tại, vòng trắng = vùng sắp co tới — hiện cả trong map lẫn trên Minimap. Ngoài vòng bo trời tối dần.\n• Đứng ngoài vòng bo mất máu mỗi giây (1% → 10% máu tối đa): bo càng nhỏ càng mất nhiều.\n• Mỗi lần bo co xong, thời tiết đổi ngẫu nhiên (Nắng, Mưa, Giông, Sương mù, Tuyết, Gió)."
 	v_box.add_child(d2)
 
 	var r3 := Label.new()
@@ -696,51 +624,178 @@ func _render_tab_rules() -> void:
 # ==============================================================================
 # HÀNH ĐỘNG VÀO TRẬN & TẠO PHÒNG
 # ==============================================================================
-func _on_create_room_pressed() -> void:
-	SocialWindow.prompt(self, "Tạo Phòng Mới", "Nhập mật khẩu (để trống nếu phòng công khai):", func(pass_val: String) -> void:
-		_do_create_room(pass_val)
-	, "", false)
+## Nút chính tab Vào Trận: mở popup để chọn chế độ (Solo / Duo / Trio / Squad).
+func _on_start_pressed() -> void:
+	if not _check_open():
+		return
+	_show_mode_select_popup()
 
-func _do_create_room(pass_val: String = "") -> void:
-	var new_id: String = "PUBG-%04d" % randi_range(1000, 9999)
-	var leader_name: String = "HiệpKhách"
-	if _profile and "display_name" in _profile and _profile.display_name != "":
-		leader_name = _profile.display_name
-	var room_mode: int = clampi(_create_mode, 1, 4)
-	var clean_pass: String = pass_val.strip_edges()
+func _select_and_start_mode(mode_id: int) -> void:
+	_selected_mode = clampi(mode_id, 1, 4)
+	if _selected_mode <= 1:
+		_on_quick_play()
+	else:
+		_do_create_room("", _selected_mode)
+
+func _show_mode_select_popup() -> void:
+	for c in get_children():
+		if c.is_in_group("pubg_mode_popup"):
+			c.queue_free()
+
+	var overlay := Control.new()
+	overlay.add_to_group("pubg_mode_popup")
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.0, 0.0, 0.0, 0.72)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(520, 360)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.add_theme_stylebox_override("panel", WuxiaStyle.create_panel_box())
+	center.add_child(panel)
+
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 24)
+	pad.add_theme_constant_override("margin_right", 24)
+	pad.add_theme_constant_override("margin_top", 18)
+	pad.add_theme_constant_override("margin_bottom", 20)
+	panel.add_child(pad)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	pad.add_child(vbox)
+
+	# Tiêu đề + Nút đóng
+	var h_head := HBoxContainer.new()
+	vbox.add_child(h_head)
+
+	var title := Label.new()
+	title.text = "🎯 CHỌN CHẾ ĐỘ THI ĐẤU"
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", WuxiaStyle.COLOR_TEXT_GOLD)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h_head.add_child(title)
+
+	var btn_close := Button.new()
+	btn_close.text = "✕"
+	btn_close.flat = true
+	btn_close.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_close.pressed.connect(overlay.queue_free)
+	h_head.add_child(btn_close)
+
+	var desc := Label.new()
+	desc.text = "Chọn số lượng người chơi hoặc solo để bắt đầu:"
+	desc.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	desc.add_theme_font_size_override("font_size", 13)
+	vbox.add_child(desc)
+
+	# 4 Nút chế độ theo yêu cầu:
+	var modes := [
+		{"mode": 1, "text": "👤 SOLO (1 người)", "sub": "Đơn đấu độc hành — Tìm trận ngay", "color": Color(0.9, 0.95, 1.25)},
+		{"mode": 2, "text": "👥 DUO (2 người)", "sub": "Song kiếm hợp bích — Tạo đội 2 người", "color": Color(1.2, 1.15, 0.7)},
+		{"mode": 3, "text": "🛡️ TRIO (3 người)", "sub": "Tam anh chiến — Tạo đội 3 người", "color": Color(0.7, 1.1, 1.2)},
+		{"mode": 4, "text": "🔥 SQUAD (4 người)", "sub": "Tứ hải huynh đệ — Tạo đội 4 người", "color": Color(1.25, 0.85, 0.6)},
+	]
+
+	for m in modes:
+		var btn := Button.new()
+		btn.text = "%s   —   %s" % [m["text"], m["sub"]]
+		btn.custom_minimum_size = Vector2(460, 44)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.modulate = m["color"]
+		btn.add_theme_font_size_override("font_size", 15)
+		var mid: int = m["mode"]
+		btn.pressed.connect(func() -> void:
+			overlay.queue_free()
+			_select_and_start_mode(mid))
+		vbox.add_child(btn)
+
+	var fill := CheckBox.new()
+	fill.text = "🤝 Tự ghép đội — khi tạo đội 2-4 người chưa đủ thì tự ghép thêm người lạ khi vào trận"
+	fill.button_pressed = _fill_on
+	fill.toggled.connect(func(on: bool) -> void: _fill_on = on)
+	vbox.add_child(fill)
+
+## Tạo đội NGAY (không hỏi mật khẩu) — chủ phòng đặt mật khẩu sau trong phòng chờ nếu muốn.
+func _on_create_room_pressed() -> void:
+	_do_create_room("")
+
+func _do_create_room(pass_val: String = "", mode_override: int = 0, quick: bool = false) -> Dictionary:
+	_leave_other_rooms()
+	var leader_name := _my_name()
+	var new_id: String = PubgManager.new_room_id()
+	var room_mode: int = clampi(mode_override if mode_override > 0 else _create_mode, 1, 4)
 	var new_room := {
 		"id": new_id,
-		"name": "Phòng của " + leader_name,
+		"name": ("Chơi Ngay — %s" if quick else "Phòng của %s") % leader_name,
 		"mode": room_mode,
 		"mode_name": "Chế độ %d người" % room_mode,
 		"players": 1,
 		"players_count": 1,
-		"max_players": room_mode if room_mode > 1 else 1,
-		"status": "Đang Đợi",
-		"status_text": "Đang Đợi",
+		"max_players": room_mode,
+		"status": PubgManager.STATUS_FULL if room_mode == 1 else PubgManager.STATUS_WAITING,
+		"status_text": "",
 		"leader": leader_name,
 		"host": leader_name,
-		"password": clean_pass,
+		"password": pass_val.strip_edges(),
+		"quick": quick,
+		"server_id": _server_id(),
+		"fill": _fill_on and room_mode > 1,
 		"members": [],
 		"chat": []
 	}
+	new_room["status_text"] = new_room["status"]
 	var me := _make_self_member()
 	me["leader"] = true
+	me["ready"] = quick
 	new_room["members"].append(me)
-	_room_system_msg(new_room, "%s đã tạo phòng. Gửi mã [color=#ffd84a]%s[/color] cho bạn bè để vào cùng đội." % [_esc(leader_name), new_id])
-	_mock_rooms.insert(0, new_room)
+	if quick:
+		_room_system_msg(new_room, "Chơi Ngay: tự động tìm trận 1 người.")
+	elif room_mode > 1:
+		_room_system_msg(new_room, "%s đã tạo phòng. Gửi mã [color=#ffd84a]%s[/color] cho bạn bè để vào cùng đội." % [_esc(leader_name), new_id])
+	else:
+		_room_system_msg(new_room, "%s đã tạo phòng 1 người." % _esc(leader_name))
 	if not PubgManager.rooms.has(new_room):
 		PubgManager.rooms.insert(0, new_room)
-
-	# Chuyển ngay sang Giao Diện Phòng Chờ trên modal
 	_open_waiting_room(new_room)
+	return new_room
+
+## ⚡ Chơi Ngay: phòng 1 người, vào thẳng phòng chờ và bắt đầu tìm trận luôn (vẫn ghép trận chung hàng chờ với người khác).
+func _on_quick_play() -> void:
+	if not _check_open():
+		return
+	_do_create_room("", 1, true)
+	_start_matchmaking()
+
+## Mỗi người chỉ ở 1 phòng chờ: tạo / vào phòng khác thì tự rời phòng cũ.
+func _leave_other_rooms(keep: Dictionary = {}) -> void:
+	var old := _find_room_with_self()
+	if not old.is_empty() and not is_same(old, keep):
+		_current_room = old
+		_leave_room_data(old)
+		_current_room = {}
 
 func _on_join_room(room_data: Dictionary) -> void:
 	_ensure_members(room_data)
 	var already_in: bool = _self_index(room_data) >= 0
-	if not already_in and _members(room_data).size() >= int(room_data.get("mode", 1)):
-		SocialWindow.confirm(self, "Thông Báo", "⚠️ Phòng %s đã đủ người!" % str(room_data.get("id", "")), Callable())
-		return
+	if not already_in:
+		if not _check_open():
+			return
+		var why := PubgManager.join_block_reason(room_data, _members(room_data).size(), _server_id())
+		if why != "":
+			_show_join_error(why, str(room_data.get("id", "")))
+			return
 	var required_pass: String = str(room_data.get("password", "")).strip_edges()
 	if required_pass != "" and not already_in:
 		SocialWindow.prompt(self, "Mật Khẩu Phòng", "Phòng yêu cầu mật khẩu để tham gia:", func(entered_pass: String) -> void:
@@ -752,30 +807,36 @@ func _on_join_room(room_data: Dictionary) -> void:
 	else:
 		_join_as_member(room_data)
 
+func _show_join_error(why: String, code: String) -> void:
+	var msg := ""
+	match why:
+		"not_found": msg = "❓ Không tìm thấy phòng có mã %s." % code
+		"playing": msg = "⚔️ Phòng %s đang thi đấu, không thể vào phòng chờ." % code
+		"searching": msg = "🔍 Phòng %s đang tìm trận, hãy chờ chủ phòng hủy tìm." % code
+		"full": msg = "⚠️ Phòng %s đã đủ người!" % code
+		"other_server": msg = "🌐 Đội %s ở máy chủ khác — chỉ vào được đội cùng máy chủ." % code
+		_: msg = "Không vào được phòng %s." % code
+	SocialWindow.confirm(self, "Thông Báo", msg, Callable())
+
 ## Vào phòng bằng mã do chủ phòng gửi. Chấp nhận "PUBG-1024", "pubg 1024" hoặc chỉ "1024".
 func _on_join_by_code() -> void:
 	if _edit_join_code == null or not is_instance_valid(_edit_join_code):
 		return
-	var raw := _edit_join_code.text.strip_edges().to_upper().replace(" ", "").replace("_", "-")
-	if raw == "":
+	var code := PubgManager.normalize_room_code(_edit_join_code.text)
+	if code == "":
 		SocialWindow.confirm(self, "Thông Báo", "Hãy nhập mã phòng của chủ phòng (VD: PUBG-1024).", Callable())
 		return
-	var digits := raw.trim_prefix("PUBG").trim_prefix("-")
-	var code := "PUBG-" + digits
-	for r in PubgManager.rooms:
-		if str(r.get("id", "")).to_upper() != code:
-			continue
-		if str(r.get("status", "")) == "Đang Đấu":
-			SocialWindow.confirm(self, "Thông Báo", "⚔️ Phòng %s đang thi đấu, không thể vào phòng chờ." % code, Callable())
-			return
-		_on_join_room(r)
+	var r := PubgManager.find_room(code)
+	if r.is_empty():
+		_show_join_error("not_found", code)
 		return
-	SocialWindow.confirm(self, "Thông Báo", "❓ Không tìm thấy phòng có mã %s." % code, Callable())
+	_on_join_room(r)
 
 ## Thêm mình vào danh sách thành viên (nếu chưa có) rồi mở phòng chờ.
 func _join_as_member(room_data: Dictionary) -> void:
 	_ensure_members(room_data)
 	if _self_index(room_data) < 0:
+		_leave_other_rooms(room_data)
 		_members(room_data).append(_make_self_member())
 		_sync_player_count(room_data)
 		_room_system_msg(room_data, "%s đã vào phòng." % _esc(_my_name()))
@@ -786,9 +847,11 @@ func _open_waiting_room(room_data: Dictionary) -> void:
 	_current_room = room_data
 	_current_room_id = str(room_data.get("id", ""))
 	PubgManager.active_room = room_data
-	_is_ready = false
+	var idx := _self_index(room_data)
+	_is_ready = idx >= 0 and bool(_members(room_data)[idx].get("ready", false))
+	_chat_target = ""
 	_is_searching = false
-	_search_time_left = 60.0
+	_search_time_left = PubgManager.MATCH_SEARCH_SEC
 	_matched_players_count = int(room_data.get("players", 1))
 	set_process(false)
 	_render_content()
@@ -871,42 +934,92 @@ func _render_waiting_room() -> void:
 	match_panel.add_child(match_vbox)
 
 	if not _is_searching:
+		var leader := _am_leader(_current_room)
+		var all_ready := _all_ready(_current_room)
 		var tip_lbl := Label.new()
-		tip_lbl.text = "💡 Mặc định khi vào phòng là 'Chưa Sẵn Sàng'.\nKhi bấm 'Sẵn Sàng', hệ thống sẽ bắt đầu tìm đủ 50 người chơi cho trận đấu!"
+		if leader:
+			tip_lbl.text = "💡 Bấm 'Sẵn Sàng' — khi mọi người trong phòng đã Sẵn Sàng, hệ thống tự bắt đầu tìm trận (phòng chưa đủ người vẫn tìm được).\nĐội được ghép chung hàng chờ với các đội khác cho tới khi đủ %d người." % PubgManager.match_capacity(int(_current_room.get("mode", 1)))
+		else:
+			tip_lbl.text = "💡 Bấm 'Sẵn Sàng' để báo chủ phòng. Khi cả đội sẵn sàng, chủ phòng sẽ bắt đầu tìm trận."
 		tip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tip_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		tip_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tip_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 		match_vbox.add_child(tip_lbl)
 
+		var btn_row := HBoxContainer.new()
+		btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		btn_row.add_theme_constant_override("separation", 12)
+		match_vbox.add_child(btn_row)
 		_btn_ready = Button.new()
 		_btn_ready.custom_minimum_size = Vector2(260, 46)
-		if not _is_ready:
+		# Mặc định vào phòng là Chưa Sẵn Sàng — kể cả chủ phòng. Chủ phòng sẵn sàng + cả đội sẵn sàng -> Bắt Đầu Tìm Trận.
+		if leader and _is_ready:
+			_btn_ready.text = "⚔️ BẮT ĐẦU TÌM TRẬN" if all_ready else "⏳ CHỜ ĐỒNG ĐỘI SẴN SÀNG"
+			_btn_ready.disabled = not all_ready
+			_btn_ready.modulate = Color(0.3, 1.2, 0.5) if all_ready else Color(0.7, 0.7, 0.7)
+			_btn_ready.pressed.connect(_start_matchmaking)
+		elif not _is_ready:
 			_btn_ready.text = "⚡ BẤM SẴN SÀNG"
 			_btn_ready.modulate = Color(0.3, 1.2, 0.5)
+			_btn_ready.pressed.connect(_on_toggle_ready)
 		else:
 			_btn_ready.text = "❌ HỦY SẴN SÀNG"
 			_btn_ready.modulate = Color(1.2, 0.4, 0.4)
-		_btn_ready.pressed.connect(_on_toggle_ready)
-		match_vbox.add_child(_btn_ready)
+			_btn_ready.pressed.connect(_on_toggle_ready)
+		btn_row.add_child(_btn_ready)
+		if leader and _is_ready:
+			var btn_unready := Button.new()
+			btn_unready.text = "❌ Hủy Sẵn Sàng"
+			btn_unready.custom_minimum_size = Vector2(150, 46)
+			btn_unready.modulate = Color(1.2, 0.5, 0.45)
+			btn_unready.pressed.connect(_on_toggle_ready)
+			btn_row.add_child(btn_unready)
+		# Chủ phòng đặt / bỏ mật khẩu ngay trong phòng chờ (phòng đội)
+		if leader and int(_current_room.get("mode", 1)) > 1:
+			var has_pass := str(_current_room.get("password", "")).strip_edges() != ""
+			var btn_pass := Button.new()
+			btn_pass.text = "🔓 Bỏ Mật Khẩu" if has_pass else "🔒 Đặt Mật Khẩu"
+			btn_pass.custom_minimum_size = Vector2(150, 46)
+			btn_pass.pressed.connect(_on_toggle_password)
+			btn_row.add_child(btn_pass)
+		# Tự ghép đội: chủ phòng bật / tắt; thành viên chỉ xem
+		if int(_current_room.get("mode", 1)) > 1:
+			var fill_on := bool(_current_room.get("fill", false))
+			if leader:
+				var btn_fill := Button.new()
+				btn_fill.text = "🤝 Tự Ghép Đội: BẬT" if fill_on else "🤝 Tự Ghép Đội: TẮT"
+				btn_fill.tooltip_text = "Bật: đội thiếu người sẽ được ghép thêm người lạ khi vào trận.\nTắt: vào trận đúng số người đang có."
+				btn_fill.custom_minimum_size = Vector2(190, 46)
+				btn_fill.modulate = Color(0.5, 1.15, 0.6) if fill_on else Color(0.8, 0.8, 0.8)
+				btn_fill.pressed.connect(_on_toggle_fill)
+				btn_row.add_child(btn_fill)
+			var missing := PubgManager.fill_slots(_current_room, _members(_current_room).size())
+			if missing > 0:
+				var fill_lbl := Label.new()
+				fill_lbl.text = "🤝 Đội còn thiếu %d người — sẽ tự ghép người lạ khi vào trận." % missing
+				fill_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				fill_lbl.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
+				match_vbox.add_child(fill_lbl)
 	else:
-		# Đang tìm kiếm trận 50 người — Đếm lùi 60 giây
+		# Đang tìm trận — ghép theo đội tới khi đủ người hoặc hết thời gian
+		var r_mode_s: int = int(_current_room.get("mode", 1))
 		var search_title := Label.new()
-		search_title.text = "🔍 ĐANG TÌM KIẾM TRẬN ĐẤU PUBG (QUY MÔ 50 NGƯỜI)"
+		search_title.text = "🔍 ĐANG TÌM TRẬN PUBG (%d NGƯỜI — %s)" % [PubgManager.match_capacity(r_mode_s), "SOLO" if r_mode_s == 1 else "ĐỘI %d" % r_mode_s]
 		search_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		search_title.add_theme_font_size_override("font_size", 18)
 		search_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 		match_vbox.add_child(search_title)
 
 		_lbl_countdown = Label.new()
-		_lbl_countdown.text = "⏱️ THỜI GIAN TÌM TRẬN: %02d GIÂY" % ceili(_search_time_left)
+		_lbl_countdown.text = "⏱️ Đã chờ 00:00"
 		_lbl_countdown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_lbl_countdown.add_theme_font_size_override("font_size", 22)
 		_lbl_countdown.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
 		match_vbox.add_child(_lbl_countdown)
 
 		_lbl_players_found = Label.new()
-		_lbl_players_found.text = "👥 Đã tìm thấy: %d / 50 người chơi" % _matched_players_count
+		_lbl_players_found.text = "👥 Đã tìm thấy: %d / %d người chơi" % [_matched_players_count, PubgManager.match_capacity(r_mode_s)]
 		_lbl_players_found.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_lbl_players_found.add_theme_font_size_override("font_size", 14)
 		_lbl_players_found.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
@@ -914,7 +1027,7 @@ func _render_waiting_room() -> void:
 
 		_progress_bar = ProgressBar.new()
 		_progress_bar.custom_minimum_size = Vector2(420, 24)
-		_progress_bar.max_value = 50.0
+		_progress_bar.max_value = float(PubgManager.match_capacity(r_mode_s))
 		_progress_bar.value = float(_matched_players_count)
 		match_vbox.add_child(_progress_bar)
 
@@ -923,6 +1036,8 @@ func _render_waiting_room() -> void:
 		_btn_cancel_search.custom_minimum_size = Vector2(200, 38)
 		_btn_cancel_search.modulate = Color(1.2, 0.4, 0.4)
 		_btn_cancel_search.pressed.connect(_on_cancel_search)
+		# Chỉ chủ phòng hủy tìm trận; thành viên muốn thôi thì rời phòng
+		_btn_cancel_search.disabled = not _am_leader(_current_room)
 		match_vbox.add_child(_btn_cancel_search)
 
 	_content_box.add_child(match_panel)
@@ -946,6 +1061,15 @@ func _create_member_card(m: Dictionary, card_w: float, i_am_leader: bool) -> Con
 	name_lbl.clip_text = true
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_lbl.add_theme_color_override("font_color", Color(0.35, 0.8, 1.0) if is_self else Color(0.95, 0.92, 0.85))
+	if not is_self:
+		# Bấm tên đồng đội -> chat mật với người đó
+		name_lbl.mouse_filter = Control.MOUSE_FILTER_STOP
+		name_lbl.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		name_lbl.tooltip_text = "Bấm để chat mật"
+		var target_name := str(m.get("name", ""))
+		name_lbl.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_set_chat_target(target_name))
 	v.add_child(name_lbl)
 
 	# Hình nhân vật — bấm để xoay hướng
@@ -973,10 +1097,10 @@ func _create_member_card(m: Dictionary, card_w: float, i_am_leader: bool) -> Con
 			turn[0] = (int(turn[0]) + 1) % 8
 			avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * turn[0]))))
 
-	v.add_child(_card_line("⭐ Cấp %d — %s" % [int(m.get("level", 1)), str(m.get("sect", "Vô môn phái"))], Color(1.0, 0.85, 0.35)))
-	v.add_child(_card_line("🐎 Ngựa: %s" % _or_none(m.get("horse_name", "")), Color(0.85, 0.9, 0.95)))
-	v.add_child(_card_line("🎭 Mặt nạ: %s" % _or_none(m.get("mask_name", "")), Color(0.85, 0.9, 0.95)))
-	v.add_child(_card_line("🧥 Phi phong: %s" % _or_none(m.get("mantle_name", "")), Color(0.85, 0.9, 0.95)))
+	var lv_lbl := _card_line("Cấp %d — %s" % [int(m.get("level", 1)), str(m.get("sect", "Vô môn phái"))], Color(1.0, 0.85, 0.35))
+	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lv_lbl.add_theme_font_size_override("font_size", 14)
+	v.add_child(lv_lbl)
 
 	var stat_lbl := Label.new()
 	stat_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1008,7 +1132,7 @@ func _create_empty_card(card_w: float, room_id: String, i_am_leader: bool) -> Co
 	v.add_theme_constant_override("separation", 8)
 	card.add_child(v)
 	var l := Label.new()
-	l.text = "⌛ CHỖ TRỐNG\n\nĐang chờ người chơi\nnhập mã phòng:\n%s" % room_id
+	l.text = "⌛ CHỖ TRỐNG\n\nGửi mã đội cho bạn bè:\n%s%s" % [room_id, "\n\n🤝 Hoặc tự ghép người lạ\nkhi vào trận" if bool(_current_room.get("fill", false)) else ""]
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_color_override("font_color", Color(0.6, 0.65, 0.65))
@@ -1057,12 +1181,22 @@ func _create_chat_panel() -> Control:
 	_chat_log.add_theme_font_size_override("normal_font_size", 13)
 	_chat_log.add_theme_stylebox_override("normal", GameUi.box(Color(0.02, 0.04, 0.04, 0.85), GameUi.BORDER, 4, 1, 6))
 	v.add_child(_chat_log)
+	_chat_log.meta_underlined = false
+	_chat_log.meta_clicked.connect(func(meta: Variant) -> void: _set_chat_target(str(meta)))
 	for line in _current_room.get("chat", []):
 		_chat_log.append_text(str(line) + "\n")
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	v.add_child(row)
+	# Nút chọn kênh: Tán gẫu (cả phòng) hoặc Mật với 1 người
+	_chat_channel_btn = Button.new()
+	_chat_channel_btn.custom_minimum_size = Vector2(92, 0)
+	_chat_channel_btn.clip_text = true
+	_chat_channel_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_chat_channel_btn.add_theme_font_size_override("font_size", 12)
+	_chat_channel_btn.pressed.connect(_open_channel_menu)
+	row.add_child(_chat_channel_btn)
 	_chat_input = LineEdit.new()
 	_chat_input.placeholder_text = "Nhập tin nhắn..."
 	_chat_input.max_length = 120
@@ -1074,7 +1208,58 @@ func _create_chat_panel() -> Control:
 	send.custom_minimum_size = Vector2(56, 0)
 	send.pressed.connect(_on_chat_send)
 	row.add_child(send)
+	_update_channel_ui()
 	return panel
+
+## Tên nhân vật trong chat bấm được (meta = tên) -> chọn chat mật với người đó.
+func _name_link(n: String, col: String) -> String:
+	return "[url=%s][color=%s]%s[/color][/url]" % [n.replace("]", ""), col, _esc(n)]
+
+## Chọn kênh chat: "" = Tán gẫu (cả phòng), tên = chat mật với người đó.
+func _set_chat_target(target: String) -> void:
+	if target == _my_name() or (target != "" and _member_by_name(_current_room, target).is_empty()):
+		return
+	_chat_target = target
+	_update_channel_ui()
+	if _chat_input != null and is_instance_valid(_chat_input):
+		_chat_input.grab_focus()
+
+func _update_channel_ui() -> void:
+	if _chat_channel_btn == null or not is_instance_valid(_chat_channel_btn):
+		return
+	if _chat_target == "":
+		_chat_channel_btn.text = "💬 Tán gẫu"
+		_chat_channel_btn.tooltip_text = "Đang chat cả phòng — bấm để chọn kênh / chat mật"
+		_chat_channel_btn.modulate = Color.WHITE
+		if _chat_input != null and is_instance_valid(_chat_input):
+			_chat_input.placeholder_text = "Nhập tin nhắn..."
+	else:
+		_chat_channel_btn.text = "🔒 %s" % _chat_target
+		_chat_channel_btn.tooltip_text = "Đang chat mật với %s — bấm để đổi kênh" % _chat_target
+		_chat_channel_btn.modulate = Color(1.25, 0.75, 1.15)
+		if _chat_input != null and is_instance_valid(_chat_input):
+			_chat_input.placeholder_text = "Mật với %s..." % _chat_target
+
+func _open_channel_menu() -> void:
+	var menu := PopupMenu.new()
+	menu.add_item("💬 Tán gẫu (cả phòng)", 0)
+	var names: Array[String] = []
+	for m in _members(_current_room):
+		if not bool(m.get("is_self", false)):
+			names.append(str(m.get("name", "")))
+			menu.add_item("🔒 Mật: %s" % names.back(), names.size())
+	menu.id_pressed.connect(func(id: int) -> void:
+		_set_chat_target("" if id == 0 else names[id - 1]))
+	menu.popup_hide.connect(menu.queue_free)
+	_chat_channel_btn.add_child(menu)
+	var r := _chat_channel_btn.get_global_rect()
+	menu.popup(Rect2i(Vector2i(int(r.position.x), int(r.position.y) - 10 - 28 * (names.size() + 1)), Vector2i(int(maxf(r.size.x, 180.0)), 0)))
+
+func _member_by_name(room: Dictionary, n: String) -> Dictionary:
+	for m in _members(room):
+		if str(m.get("name", "")) == n:
+			return m
+	return {}
 
 func _on_chat_send() -> void:
 	if _chat_input == null or not is_instance_valid(_chat_input):
@@ -1083,16 +1268,33 @@ func _on_chat_send() -> void:
 	if text == "":
 		return
 	_chat_input.clear()
-	_room_chat(_current_room, "[color=#5ccfff]%s[/color]: %s" % [_esc(_my_name()), _esc(text)])
-	# Phòng giả lập offline: đồng đội máy thỉnh thoảng đáp lời
-	var bots: Array = _members(_current_room).filter(func(x: Dictionary) -> bool: return bool(x.get("is_bot", false)))
-	if not bots.is_empty() and randf() < 0.5 and is_inside_tree():
-		var room_ref: Dictionary = _current_room
-		var bot: Dictionary = bots.pick_random()
-		get_tree().create_timer(randf_range(0.8, 1.8)).timeout.connect(func() -> void:
-			if not is_instance_valid(self) or not _in_waiting_room or not is_same(_current_room, room_ref):
-				return
-			_room_chat(room_ref, "[color=#e8e0c8]%s[/color]: %s" % [_esc(str(bot.get("name", ""))), BOT_CHAT_LINES.pick_random()]))
+	var room_ref: Dictionary = _current_room
+	if _chat_target != "":
+		var target := _member_by_name(_current_room, _chat_target)
+		if target.is_empty():
+			_room_system_msg(_current_room, "%s không còn trong phòng." % _esc(_chat_target))
+			_set_chat_target("")
+			return
+		# Chat mật: chỉ mình và người nhận thấy
+		_room_chat(_current_room, "[color=#ff8fd8][Mật] Bạn → [/color]%s[color=#ff8fd8]: %s[/color]" % [_name_link(_chat_target, "#ffb0e6"), _esc(text)])
+		ChatBox.push_private(_my_name(), _chat_target, text)   ## lưu cả ở khung chat chính (kênh Riêng)
+		if bool(target.get("is_bot", false)) and randf() < 0.7 and is_inside_tree():
+			var who := _chat_target
+			get_tree().create_timer(randf_range(0.8, 1.8)).timeout.connect(func() -> void:
+				if is_instance_valid(self) and _in_waiting_room and is_same(_current_room, room_ref):
+					var reply: String = BOT_CHAT_LINES.pick_random()
+					_room_chat(room_ref, "[color=#ff8fd8][Mật] [/color]%s[color=#ff8fd8] → Bạn: %s[/color]" % [_name_link(who, "#ffb0e6"), reply])
+					ChatBox.push_private(who, _my_name(), reply))
+	else:
+		_room_chat(_current_room, "%s: %s" % [_name_link(_my_name(), "#5ccfff"), _esc(text)])
+		# Phòng giả lập offline: đồng đội máy thỉnh thoảng đáp lời
+		var bots: Array = _members(_current_room).filter(func(x: Dictionary) -> bool: return bool(x.get("is_bot", false)))
+		if not bots.is_empty() and randf() < 0.5 and is_inside_tree():
+			var bot: Dictionary = bots.pick_random()
+			get_tree().create_timer(randf_range(0.8, 1.8)).timeout.connect(func() -> void:
+				if not is_instance_valid(self) or not _in_waiting_room or not is_same(_current_room, room_ref):
+					return
+				_room_chat(room_ref, "%s: %s" % [_name_link(str(bot.get("name", "")), "#e8e0c8"), BOT_CHAT_LINES.pick_random()]))
 	_chat_input.grab_focus()
 
 ## Ghi 1 dòng vào lịch sử chat của phòng và đẩy lên khung chat đang mở.
@@ -1205,6 +1407,8 @@ func _sync_player_count(room: Dictionary) -> void:
 	var n := _members(room).size()
 	room["players"] = n
 	room["players_count"] = n
+	room["status"] = PubgManager.waiting_status(room, n)
+	room["status_text"] = room["status"]
 
 func _on_add_bot_member() -> void:
 	var list := _members(_current_room)
@@ -1213,7 +1417,7 @@ func _on_add_bot_member() -> void:
 	var b := _make_bot_member(list.map(func(x: Dictionary) -> String: return str(x.get("name", ""))))
 	list.append(b)
 	_sync_player_count(_current_room)
-	_room_system_msg(_current_room, "%s đã vào phòng." % _esc(str(b["name"])))
+	_room_system_msg(_current_room, "%s đã vào phòng." % _name_link(str(b["name"]), "#c8d4d4"))
 	_render_content()
 
 func _on_kick_member(m_name: String) -> void:
@@ -1229,10 +1433,44 @@ func _on_toggle_ready() -> void:
 	_is_ready = not _is_ready
 	_refresh_self_member(_current_room)
 	_room_system_msg(_current_room, "%s %s." % [_esc(_my_name()), "đã sẵn sàng" if _is_ready else "hủy sẵn sàng"])
+	_render_content()
+	# Khi mọi người trong phòng đều đã sẵn sàng -> bắt đầu tìm trận
 	if _is_ready and _all_ready(_current_room):
-		_start_matchmaking()
-	else:
+		if _leader_is_bot(_current_room) and is_inside_tree():
+			var room_ref: Dictionary = _current_room
+			get_tree().create_timer(1.2).timeout.connect(func() -> void:
+				if is_instance_valid(self) and _in_waiting_room and is_same(_current_room, room_ref) and not _is_searching and _all_ready(room_ref):
+					_room_system_msg(room_ref, "Chủ phòng bắt đầu tìm trận.")
+					_start_matchmaking())
+		else:
+			_start_matchmaking()
+
+func _leader_is_bot(room: Dictionary) -> bool:
+	for m in _members(room):
+		if bool(m.get("leader", false)):
+			return bool(m.get("is_bot", false))
+	return false
+
+func _on_toggle_password() -> void:
+	if str(_current_room.get("password", "")).strip_edges() != "":
+		_current_room["password"] = ""
+		_room_system_msg(_current_room, "Chủ phòng đã bỏ mật khẩu phòng.")
 		_render_content()
+		return
+	SocialWindow.prompt(self, "Đặt Mật Khẩu Phòng", "Nhập mật khẩu (người vào bằng mã phải nhập đúng):", func(pass_val: String) -> void:
+		var clean := pass_val.strip_edges()
+		if clean == "" or not _in_waiting_room:
+			return
+		_current_room["password"] = clean
+		_room_system_msg(_current_room, "Chủ phòng đã đặt mật khẩu phòng.")
+		_render_content()
+	, "", false)
+
+func _on_toggle_fill() -> void:
+	var on := not bool(_current_room.get("fill", false))
+	_current_room["fill"] = on
+	_room_system_msg(_current_room, "Chủ phòng đã %s tự ghép đội." % ("bật" if on else "tắt"))
+	_render_content()
 
 func _all_ready(room: Dictionary) -> bool:
 	for m in _members(room):
@@ -1241,20 +1479,31 @@ func _all_ready(room: Dictionary) -> bool:
 	return true
 
 func _start_matchmaking() -> void:
+	if not _check_open():
+		return
 	var incoming_count: int = maxi(1, _members(_current_room).size())
 	var cur_rid: String = str(_current_room.get("id", ""))
 
 	# 1. Kiểm tra ngay các phòng đang thi đấu có thời gian dưới 5 phút (< 300 giây)
-	var backfill_room: Dictionary = PubgManager.find_joinable_active_match(incoming_count, cur_rid)
+	var backfill_room: Dictionary = PubgManager.find_joinable_active_match(incoming_count, cur_rid, _server_id())
 	if not backfill_room.is_empty():
 		_handle_backfill_match_found(backfill_room, incoming_count, cur_rid)
 		return
 
-	# 2. Nếu không có phòng < 5 phút: Tìm trận bình thường đếm lùi 60 giây (sau 60s tạo bot bù đủ 50 người)
+	# 2. Vào hàng chờ: phòng chuyển "Đang Tìm Trận" (khóa không cho vào thêm), gom chung các đội cùng chế độ đang tìm
+	var mode: int = clampi(int(_current_room.get("mode", 1)), 1, 4)
+	var cap: int = PubgManager.match_capacity(mode)
+	var queued := incoming_count
+	for r in PubgManager.rooms:
+		if not is_same(r, _current_room) and int(r.get("mode", 1)) == mode and str(r.get("status", "")) == PubgManager.STATUS_SEARCHING and PubgManager.same_server(r, _server_id()):
+			queued += maxi(1, _members(r).size())
+	_current_room["status"] = PubgManager.STATUS_SEARCHING
+	_current_room["status_text"] = PubgManager.STATUS_SEARCHING
+	_room_system_msg(_current_room, "Bắt đầu tìm trận (%d người)." % cap)
 	_is_searching = true
-	_search_time_left = 60.0
+	_search_time_left = PubgManager.MATCH_SEARCH_SEC
 	_search_tick_accum = 0.0
-	_matched_players_count = clampi(incoming_count + randi_range(3, 8), 1, 49)
+	_matched_players_count = clampi(queued, 1, cap)
 	set_process(true)
 	_render_content()
 
@@ -1319,10 +1568,6 @@ func _handle_backfill_match_found(backfill_room: Dictionary, incoming_count: int
 	else:
 		_do_enter_backfill_match(backfill_room, incoming_count)
 
-func _on_late_join_match(room_data: Dictionary) -> void:
-	var incoming_count: int = 1
-	_do_enter_backfill_match(room_data, incoming_count)
-
 func _do_enter_backfill_match(room_data: Dictionary, incoming_count: int) -> void:
 	_current_room_id = str(room_data.get("id", ""))
 	var field_entry: Dictionary = PubgManager.backfill_player_into_match(room_data, incoming_count, _profile)
@@ -1337,27 +1582,63 @@ func _do_enter_backfill_match(room_data: Dictionary, incoming_count: int) -> voi
 		GameManager.enter_field_map(field_entry)
 
 func _on_cancel_search() -> void:
-	_is_searching = false
-	_is_ready = false
-	_search_time_left = 60.0
-	set_process(false)
+	# Solo không có phòng chờ: hủy tìm là quay về màn Vào Trận
+	if bool(_current_room.get("quick", false)):
+		_on_leave_waiting_room()
+		return
+	_stop_search()
+	_room_system_msg(_current_room, "Đã hủy tìm trận.")
 	_render_content()
 
-func _on_leave_waiting_room() -> void:
+## Thôi tìm trận: phòng trở lại phòng chờ (mở cho người khác vào), thành viên giữ nguyên trạng thái sẵn sàng.
+func _stop_search() -> void:
 	_is_searching = false
+	_search_time_left = PubgManager.MATCH_SEARCH_SEC
 	set_process(false)
-	var rid: String = str(_current_room.get("id", ""))
-	# Bỏ mình khỏi danh sách thành viên; leave_room tự trừ số người (và xóa phòng nếu mình là chủ phòng)
-	var idx := _self_index(_current_room)
-	if idx >= 0:
-		_members(_current_room).remove_at(idx)
-		_room_system_msg(_current_room, "%s đã rời phòng." % _esc(_my_name()))
+	if not _current_room.is_empty() and str(_current_room.get("status", "")) == PubgManager.STATUS_SEARCHING:
+		_current_room["status"] = ""  ## bỏ cờ đang tìm để waiting_status tính lại theo số người
+		_current_room["status"] = PubgManager.waiting_status(_current_room, _members(_current_room).size())
+		_current_room["status_text"] = _current_room["status"]
+
+func _on_leave_waiting_room() -> void:
+	_stop_search()
+	_leave_room_data(_current_room)
 	_is_ready = false
-	PubgManager.leave_room(rid, _profile)
 	_in_waiting_room = false
 	_current_room = {}
 	_current_room_id = ""
 	_render_content()
+
+## Rời 1 phòng: chủ phòng rời thì chuyển chủ phòng cho người thật kế tiếp (như các game lớn);
+## không còn người thật nào thì giải tán phòng.
+func _leave_room_data(room: Dictionary) -> void:
+	if room.is_empty():
+		return
+	var rid: String = str(room.get("id", ""))
+	var idx := _self_index(room)
+	if idx < 0:
+		return
+	if str(room.get("status", "")) == PubgManager.STATUS_SEARCHING:
+		room["status"] = ""
+	var was_leader := bool(_members(room)[idx].get("leader", false))
+	_members(room).remove_at(idx)
+	_room_system_msg(room, "%s đã rời phòng." % _esc(_my_name()))
+	if was_leader:
+		var heir: Dictionary = {}
+		for m in _members(room):
+			if not bool(m.get("is_bot", false)):
+				heir = m
+				break
+		if heir.is_empty():
+			PubgManager.rooms.erase(room)
+			return
+		heir["leader"] = true
+		heir["ready"] = true
+		room["leader"] = heir["name"]
+		room["host"] = heir["name"]
+		_room_system_msg(room, "%s trở thành chủ phòng." % _esc(str(heir["name"])))
+	_sync_player_count(room)
+	print("[PUBG] Rời phòng %s, còn %d người." % [rid, _members(room).size()])
 
 func _do_enter_match(room_data: Dictionary) -> void:
 	_current_room_id = str(room_data.get("id", ""))
@@ -1368,6 +1649,17 @@ func _do_enter_match(room_data: Dictionary) -> void:
 	if _profile != null and SaveManager:
 		SaveManager.save_profile(_profile)
 		await SaveManager.flush_online()
+
+	# Tự ghép đội: chỗ trống trong đội được ghép người lạ (cùng máy chủ) trước khi vào trận
+	var need := PubgManager.fill_slots(room_data, _members(room_data).size())
+	for _i in range(need):
+		var taken: Array = _members(room_data).map(func(x: Dictionary) -> String: return str(x.get("name", "")))
+		var stranger := _make_bot_member(taken)
+		stranger["stranger"] = true
+		_members(room_data).append(stranger)
+		_room_system_msg(room_data, "Tự ghép đội: %s vào đội." % _esc(str(stranger["name"])))
+	if need > 0:
+		_sync_player_count(room_data)
 
 	# Chuẩn bị trận đấu qua PubgManager (số người chơi thực tế tìm được)
 	var field_entry: Dictionary = PubgManager.start_match(_profile, room_data)

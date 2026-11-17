@@ -5,6 +5,8 @@ class_name PotionEffect
 ##     (KNpc.cpp 1051-1061). VD Kim Sáng Dược (tiểu) [10, 100]: +10 mỗi ~0,56 giây, 10 lần = 100 sinh lực trong ~5,6 giây.
 ##   - Uống chồng (KNpcAttribModify.cpp 747-760): thời gian mới = max(còn lại, mới), giá trị mỗi nhịp = (v1·t1 + v2·t2) / thời gian mới
 ##     -> tổng lượng hồi giữ nguyên, hồi NHANH hơn chứ không kéo dài.
+##   - Riêng game này (khác gốc): uống chồng CÙNG loại thì nhịp dày lên theo số bình đang chồng (2 bình 5 frame/nhịp,
+##     3 bình 3 frame...), mỗi nhịp cộng ít hơn tương ứng -> tổng & tốc độ hồi/giây như gốc, thanh máu lên mượt hơn (xem _Regen).
 ## Ngoài hồi sinh lực, mọi THUỐC DÙNG ĐƯỢC đều đi qua đây (usable / drink / consume):
 ##   - Thuốc buff có thời hạn (Trường Mệnh, Gia Bào, Đại Lực, Cao Thiểm, Cao Trung, Phi Tốc, các loại Phòng hoàn — loại 1_5 / 1_6):
 ##     [thuộc tính, giá trị, số frame] -> StatusEffectController.apply_state (cộng vào chỉ số, hiện biểu tượng buff). Uống lại cùng
@@ -39,10 +41,55 @@ const SPECIAL_ITEM_EFFECTS := {
 	"6_1_124": {"fuyuan": 50},                                                        ## Phúc Duyên Lộ (Đại)
 }
 
-var _value := 0.0       ## sinh lực mỗi nhịp
-var _frames := 0        ## frame còn lại
-var _mana_value := 0.0   ## nội lực mỗi nhịp
-var _mana_frames := 0    ## frame còn lại
+## 1 trạng thái hồi theo nhịp (sinh lực hoặc nội lực).
+##   value    = lượng hồi mỗi UPDATE_FRAMES frame (đơn vị gốc magic_*potion_v); frames = frame còn lại.
+##   base     = giá trị lớn nhất của 1 bình đơn trong đợt chồng này -> stack = round(value / base) = số bình cùng loại đang chồng.
+##   interval = UPDATE_FRAMES / stack (tối thiểu MIN_INTERVAL) -> nhịp dày hơn. Lượng mỗi frame dồn vào pending, xả ở mỗi nhịp
+##   (frame cuối luôn là 1 nhịp vì 0 % interval == 0) -> tổng hồi đúng bằng gốc, không hụt do chia lẻ.
+class _Regen:
+	var value := 0.0
+	var frames := 0
+	var base := 0.0
+	var interval := UPDATE_FRAMES
+	var pending := 0.0
+
+	func add(v: float, f: int) -> void:
+		if f <= 0:
+			return
+		if frames <= 0:
+			value = 0.0
+			base = 0.0
+			pending = 0.0
+		var new_frames := maxi(frames, f)
+		value = (value * frames + v * f) / float(new_frames)
+		frames = new_frames
+		base = maxf(base, absf(v))
+		var stack := 1
+		if base > 0.0:
+			stack = clampi(roundi(absf(value) / base), 1, UPDATE_FRAMES)
+		interval = maxi(MIN_INTERVAL, UPDATE_FRAMES / stack)
+
+	## Chạy 1 frame; trả lượng cần cộng ngay (0 nếu chưa tới nhịp).
+	func step() -> float:
+		if frames <= 0:
+			return 0.0
+		frames -= 1
+		pending += value / float(UPDATE_FRAMES)
+		if frames % interval == 0:
+			var out := pending
+			pending = 0.0
+			return out
+		return 0.0
+
+	func clear() -> void:
+		frames = 0
+		pending = 0.0
+
+## Nhịp dày nhất khi uống chồng (frame).
+const MIN_INTERVAL := 2
+
+var _life := _Regen.new()
+var _mana := _Regen.new()
 var _acc := 0.0
 
 ## Hiệu ứng thuốc của nhân vật `player` (tạo khi cần).
@@ -315,38 +362,37 @@ static func count_in_inventory(profile: PlayerProfile, misc_id: String) -> int:
 	return n
 
 func add(value: float, frames: int) -> void:
-	if frames <= 0:
-		return
-	var new_frames := maxi(_frames, frames)
-	_value = (_value * _frames + value * frames) / float(new_frames)
-	_frames = new_frames
+	_life.add(value, frames)
 
 func add_mana(value: float, frames: int) -> void:
-	if frames <= 0:
-		return
-	var new_frames := maxi(_mana_frames, frames)
-	_mana_value = (_mana_value * _mana_frames + value * frames) / float(new_frames)
-	_mana_frames = new_frames
+	_mana.add(value, frames)
 
 func is_active() -> bool:
-	return _frames > 0 or _mana_frames > 0
+	return _life.frames > 0 or _mana.frames > 0
+
+## Số frame giữa 2 nhịp hồi sinh lực / nội lực hiện tại (10 = 1 bình, nhỏ hơn khi uống chồng cùng loại).
+func life_interval() -> int:
+	return _life.interval
+
+func mana_interval() -> int:
+	return _mana.interval
 
 func _process(delta: float) -> void:
-	if _frames <= 0 and _mana_frames <= 0:
+	if not is_active():
+		_acc = 0.0
 		return
 	var parent := get_parent()
 	if parent == null or (parent.has_method("is_dead") and parent.call("is_dead")):
-		_frames = 0
-		_mana_frames = 0
+		_life.clear()
+		_mana.clear()
+		_acc = 0.0
 		return
 	_acc += delta * GAME_FPS
-	while _acc >= 1.0 and (_frames > 0 or _mana_frames > 0):
+	while _acc >= 1.0 and is_active():
 		_acc -= 1.0
-		if _frames > 0:
-			_frames -= 1
-			if _frames % UPDATE_FRAMES == 0 and parent.has_method("heal"):
-				parent.heal(_value)
-		if _mana_frames > 0:
-			_mana_frames -= 1
-			if _mana_frames % UPDATE_FRAMES == 0 and parent.has_method("restore_mana"):
-				parent.restore_mana(_mana_value)
+		var hp := _life.step()
+		if hp != 0.0 and parent.has_method("heal"):
+			parent.heal(hp)
+		var mp := _mana.step()
+		if mp != 0.0 and parent.has_method("restore_mana"):
+			parent.restore_mana(mp)

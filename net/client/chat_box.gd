@@ -53,6 +53,19 @@ var _messages: Array[Dictionary] = []
 var _attached_items: Dictionary = {} # "[Tên Món]" -> "{item:BASE64}"
 
 static var current: ChatBox = null
+## Tin nhắn riêng phát sinh khi chưa có khung chat (VD chat mật trong phòng chờ PUBG ở Hub) — đổ vào khi khung chat dựng xong.
+static var _pending_lines: Array[String] = []
+
+## Lưu 1 tin nhắn riêng (kênh "Riêng") vào khung chat chính, kể cả khi khung chat chưa có mặt.
+static func push_private(from_name: String, to_name: String, text: String) -> void:
+	var color: Color = COLORS[ChatServer.PRIVATE]
+	var line := "[color=#%s][%s] %s → %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[ChatServer.PRIVATE], _esc(from_name), _esc(to_name), _esc(text)]
+	if current != null and is_instance_valid(current) and current._log != null:
+		current.add_line(line, false)
+	else:
+		_pending_lines.append(line)
+		if _pending_lines.size() > MAX_LINES:
+			_pending_lines.pop_front()
 
 static func create() -> ChatBox:
 
@@ -269,6 +282,9 @@ func _init() -> void:
 func _ready() -> void:
 
 	_fit_height()
+	for line in _pending_lines:
+		add_line(line, false)
+	_pending_lines.clear()
 
 ## Chiều cao khung chữ theo font thật (chỉ đọc được theme khi đã vào cây cảnh).
 

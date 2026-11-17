@@ -10,6 +10,8 @@ var _profile: PlayerProfile
 var _on_finish: Callable
 var _step: int = 1 # 1: Chọn Ngựa, 2: Chọn Vũ Khí
 var _selected_weapon_idx: int = 0
+var _weapon_cards: Array[PanelContainer] = []
+var _weapon_status_labels: Array[Label] = []
 
 var _window_panel: PanelContainer
 var _title_label: Label
@@ -323,14 +325,14 @@ func _on_horse_selected(h_data: Dictionary) -> void:
 	_render_step_2_weapons()
 
 # ==============================================================================
-# ĐỢT 2: CHỌN LOẠI VŨ KHÍ CẤP 10 (THEO ẢNH DANH MỤC VŨ KHÍ)
+# ĐỢT 2: CHỌN LOẠI VŨ KHÍ CẤP 10 DẠNG GRID (VŨ KHÍ TRẮNG)
 # ==============================================================================
 func _render_step_2_weapons() -> void:
 	_step = 2
 	if _title_label != null:
 		_title_label.text = "⚔️ CHIẾN TRƯỜNG SINH TỒN — CHỌN LOẠI VŨ KHÍ CẤP 10 (ĐỢT 2/2)"
 	if _sub_label != null:
-		_sub_label.text = "Hãy chọn loại vũ khí cấp 10 phù hợp với kỹ năng và môn phái của bạn:"
+		_sub_label.text = "Hãy chọn vũ khí trắng cấp 10 khởi đầu phù hợp với kỹ năng và môn phái của bạn:"
 
 	if _cards_container == null:
 		return
@@ -341,24 +343,34 @@ func _render_step_2_weapons() -> void:
 		for b in _action_bar.get_children():
 			b.queue_free()
 
-	# Khung cuộn danh sách vũ khí dạng danh mục (như ảnh 2 người dùng cung cấp)
+	_weapon_cards.clear()
+	_weapon_status_labels.clear()
+
+	# Khung cuộn danh sách vũ khí dạng Grid (lưới)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(0, 360.0)
 	_cards_container.add_child(scroll)
 
-	var vbox_list := VBoxContainer.new()
-	vbox_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox_list.add_theme_constant_override("separation", 6)
-	scroll.add_child(vbox_list)
+	var center_box := CenterContainer.new()
+	center_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center_box)
 
-	var button_group := ButtonGroup.new()
+	var grid := GridContainer.new()
+	grid.columns = 7
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	center_box.add_child(grid)
 
 	for i in range(WEAPONS_10.size()):
 		var w_data: Dictionary = WEAPONS_10[i]
-		var row := _create_weapon_row(i, w_data, button_group)
-		vbox_list.add_child(row)
+		var card := _create_weapon_card(i, w_data)
+		grid.add_child(card)
+
+	_refresh_weapon_cards_visual()
 
 	# Nút xác nhận xuất trận
 	var btn_confirm := Button.new()
@@ -368,68 +380,104 @@ func _render_step_2_weapons() -> void:
 	btn_confirm.pressed.connect(_on_weapon_confirmed)
 	_action_bar.add_child(btn_confirm)
 
-func _create_weapon_row(index: int, w_data: Dictionary, btn_group: ButtonGroup) -> Control:
+func _create_weapon_card(index: int, w_data: Dictionary) -> Control:
 	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.custom_minimum_size = Vector2(118.0, 140.0)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	panel.tooltip_text = "%s - Cấp 10\n%s" % [w_data["name"], w_data.get("desc", "")]
 
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.16, 0.17, 0.20, 0.9)
-	sb.border_width_bottom = 1
-	sb.border_color = Color(0.3, 0.35, 0.4, 0.5)
-	sb.corner_radius_top_left = 4
-	sb.corner_radius_top_right = 4
-	sb.corner_radius_bottom_left = 4
-	sb.corner_radius_bottom_right = 4
-	sb.content_margin_left = 12
-	sb.content_margin_right = 12
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 8
-	panel.add_theme_stylebox_override("panel", sb)
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 6)
+	panel.add_child(vbox)
 
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 14)
-	hbox.alignment = BoxContainer.ALIGNMENT_BEGIN
-	panel.add_child(hbox)
-
-	# Radio Button
-	var radio := CheckBox.new()
-	radio.button_group = btn_group
-	radio.button_pressed = (index == _selected_weapon_idx)
-	radio.toggled.connect(func(pressed: bool):
-		if pressed:
-			_selected_weapon_idx = index
-	)
-	hbox.add_child(radio)
-
-	# Icon vũ khí
+	# 1. Hình ảnh / icon vũ khí
 	var icon_rect := TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(48, 48)
+	icon_rect.custom_minimum_size = Vector2(56, 56)
 	icon_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	var base_entry := ItemDatabase.get_base(ItemDatabase.find_base(int(w_data["detail"]), int(w_data["particular"]), 10))
 	if not base_entry.is_empty():
 		icon_rect.texture = ItemDatabase.get_icon(base_entry, true)
-	hbox.add_child(icon_rect)
+	vbox.add_child(icon_rect)
 
-	# Nhãn danh mục & Tên món C10 (giống ảnh 2: "Vũ khí — Kiếm" ...)
-	var info_vbox := VBoxContainer.new()
-	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_vbox.add_theme_constant_override("separation", 2)
-	hbox.add_child(info_vbox)
+	# 2. Tên vũ khí (Vũ khí trắng: chữ màu trắng trang nhã)
+	var name_lbl := Label.new()
+	name_lbl.text = str(w_data["name"])
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_lbl.add_theme_font_size_override("font_size", 13)
+	name_lbl.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	vbox.add_child(name_lbl)
 
-	var cat_lbl := Label.new()
-	cat_lbl.text = "%s (%s - Cấp 10)" % [w_data["cat"], w_data["name"]]
-	cat_lbl.add_theme_font_size_override("font_size", 15)
-	cat_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-	info_vbox.add_child(cat_lbl)
+	# 3. Cấp độ: "Cấp 10"
+	var lv_lbl := Label.new()
+	lv_lbl.text = "Cấp 10"
+	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lv_lbl.add_theme_font_size_override("font_size", 11)
+	lv_lbl.add_theme_color_override("font_color", Color(0.75, 0.80, 0.85))
+	vbox.add_child(lv_lbl)
 
-	var desc_lbl := Label.new()
-	desc_lbl.text = str(w_data["desc"])
-	desc_lbl.add_theme_font_size_override("font_size", 12)
-	desc_lbl.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
-	info_vbox.add_child(desc_lbl)
+	# 4. Trạng thái đã chọn (badge)
+	var status_lbl := Label.new()
+	status_lbl.text = "✓ Đã chọn"
+	status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_lbl.add_theme_font_size_override("font_size", 10)
+	status_lbl.add_theme_color_override("font_color", Color(0.35, 1.0, 0.55))
+	vbox.add_child(status_lbl)
+
+	_weapon_cards.append(panel)
+	_weapon_status_labels.append(status_lbl)
+
+	panel.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_select_weapon(index)
+			if event.double_click:
+				_on_weapon_confirmed()
+	)
 
 	return panel
+
+func _select_weapon(index: int) -> void:
+	_selected_weapon_idx = index
+	_refresh_weapon_cards_visual()
+
+func _refresh_weapon_cards_visual() -> void:
+	for i in range(_weapon_cards.size()):
+		var card := _weapon_cards[i]
+		if card == null or not is_instance_valid(card):
+			continue
+		var is_sel := (i == _selected_weapon_idx)
+		var sb := StyleBoxFlat.new()
+		if is_sel:
+			sb.bg_color = Color(0.20, 0.23, 0.29, 0.98)
+			sb.border_width_bottom = 2
+			sb.border_width_top = 2
+			sb.border_width_left = 2
+			sb.border_width_right = 2
+			sb.border_color = Color(1.0, 0.85, 0.25, 1.0)
+		else:
+			sb.bg_color = Color(0.12, 0.13, 0.16, 0.90)
+			sb.border_width_bottom = 1
+			sb.border_width_top = 1
+			sb.border_width_left = 1
+			sb.border_width_right = 1
+			sb.border_color = Color(0.3, 0.35, 0.4, 0.5)
+		sb.corner_radius_top_left = 6
+		sb.corner_radius_top_right = 6
+		sb.corner_radius_bottom_left = 6
+		sb.corner_radius_bottom_right = 6
+		sb.content_margin_left = 6
+		sb.content_margin_right = 6
+		sb.content_margin_top = 8
+		sb.content_margin_bottom = 8
+		card.add_theme_stylebox_override("panel", sb)
+
+		if i < _weapon_status_labels.size():
+			var lbl := _weapon_status_labels[i]
+			if lbl != null and is_instance_valid(lbl):
+				lbl.visible = is_sel
 
 func _on_weapon_confirmed() -> void:
 	if _profile == null:
@@ -443,8 +491,8 @@ func _on_weapon_confirmed() -> void:
 	var particular: int = int(w_data["particular"])
 	var elem: int = int(_profile.get_element()) if _profile.has_method("get_element") else 0
 
-	# Sinh vũ khí Cấp 10 thuộc hệ ngũ hành của người chơi, 6 dòng magic cấp 10
-	var weapon_item := ItemGenerator.generate(detail, particular, 10, elem, [10, 10, 10, 10, 10, 10])
+	# Sinh vũ khí trắng Cấp 10 (không có dòng ma pháp / magic_levels = [])
+	var weapon_item := ItemGenerator.generate(detail, particular, 10, elem, [])
 
 	if weapon_item != null:
 		_profile.equipment[Equipment.Part.WEAPON] = weapon_item

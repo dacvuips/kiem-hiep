@@ -6,6 +6,7 @@ const PubgDraftPopupClass = preload("res://ui/pubg/pubg_draft_popup.gd")
 
 func _ready() -> void:
 	print("=== BẮT ĐẦU TEST TOÀN DIỆN: CHẾ ĐỘ PUBG VÕ LÂM ===")
+	PubgManager.schedule_bypass = true   ## test chạy giờ nào cũng được
 
 	# 1. Kiểm tra CharacterHub & các nút
 	var hub_scene: PackedScene = load("res://ui/character_hub/CharacterHub.tscn")
@@ -113,7 +114,8 @@ func _ready() -> void:
 	assert(draft_prof.equipment.has(Equipment.Part.WEAPON), "Phải trang bị vũ khí vào slot WEAPON")
 	var wep_item: ItemInstance = draft_prof.equipment[Equipment.Part.WEAPON]
 	assert(wep_item.get_base().get("name") == "Huyền Thiết Kiếm", "Vũ khí cấp 10 được trang bị phải là Huyền Thiết Kiếm")
-	print("✓ Đợt 2: Chọn loại vũ khí cấp 10 và trang bị thành công!")
+	assert(wep_item.magic.is_empty(), "Vũ khí cấp 10 khởi đầu phải là vũ khí trắng (không có dòng ma pháp)")
+	print("✓ Đợt 2: Chọn loại vũ khí cấp 10 trắng dạng lưới thành công!")
 
 	dummy_node.queue_free()
 
@@ -301,8 +303,8 @@ func _ready() -> void:
 	print("✓ PASS: Toàn bộ kỹ năng môn phái trong PUBG đã được MAX HẾT!")
 
 	assert(real_prof.equipment.is_empty(), "Vào PUBG trang bị khởi đầu phải trống")
-	assert(real_prof.inventory.is_empty(), "Vào PUBG hành trang khởi đầu phải trống")
-	print("✓ PASS: Vào PUBG cấp 200, trang bị và hành trang được khởi tạo trống cho sinh tồn!")
+	assert(real_prof.inventory.size() == 1 and real_prof.inventory[0].misc_id == "1_8_0_4", "Vào PUBG chỉ cấp sẵn 50 bình máu Hồi Thiên Tái Tạo Đơn")
+	print("✓ PASS: Vào PUBG cấp 200, trang bị trống và chỉ cấp bình máu sinh tồn khởi đầu!")
 
 	# Thực hiện chọn Ngựa 8x và Vũ khí cấp 10 qua Draft Popup
 	var iso_draft = PubgDraftPopupClass.new()
@@ -321,7 +323,7 @@ func _ready() -> void:
 	# Trong trận nhặt được 1 món đồ rơi trên đất
 	var pubg_looted_item := ItemGenerator.generate(0, 2, 8, 0, [8, 8])
 	real_prof.inventory.append(pubg_looted_item)
-	assert(real_prof.inventory.size() == 1, "Hành trang PUBG lúc này có 1 món đồ nhặt trong trận")
+	assert(real_prof.inventory.size() == 2, "Hành trang PUBG lúc này có 2 món (thuốc cấp sẵn + đồ nhặt)")
 
 	# Thoát hoặc kết thúc trận đấu PUBG
 	PubgManager.end_match(real_prof)

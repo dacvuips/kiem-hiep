@@ -536,7 +536,7 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSk
 		sect = SectRegistry.get_by_id(profile.sect_id)
 		if sect:
 			sect_skills = sect.skills
-	var add_damage_p := skill.get_support_percent_from_other_skills(sect_skills, profile)
+	var add_damage_p := skill.get_support_percent_from_other_skills(sect_skills, profile, _learned_level)
 	var is_physical := skill.is_physical()
 
 	var combat_stats: CombatantStats
@@ -546,6 +546,11 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSk
 		combat_stats = profile.get_combat_stats()
 	else:
 		combat_stats = CombatantStats.new()
+	## nAddDamageP gốc = GetAddSkillDamage + m_CurrentSkillEnhancePercent (+ m_CurrentManaToSkillEnhanceP khi nội lực đầy).
+	add_damage_p += combat_stats.skill_enhance_p
+	if combat_stats.mana_to_skill_enhance_p != 0 and caster != null and "mana" in caster \
+			and combat_stats.max_mana > 0 and float(caster.mana) >= float(combat_stats.max_mana):
+		add_damage_p += combat_stats.mana_to_skill_enhance_p
 	## Damage tay không/vũ khí (m_PhysicsDamage gốc) — trung bình min/max vì `damage` của đòn là 1 số.
 	var base_unarmed_damage := (combat_stats.unarmed_min_damage + combat_stats.unarmed_max_damage) / 2
 

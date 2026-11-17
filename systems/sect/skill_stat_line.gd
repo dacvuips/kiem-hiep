@@ -38,6 +38,12 @@ class_name SkillStatLine
 @export var target_skill_id: String = ""
 
 func format_at_level(skill: SkillDefinition, at_level: int) -> String:
+	## Dòng damage có thuộc tính gốc: hiển thị ĐÚNG số combat dùng (Link gốc, xem SkillDefinition.stat_line_range).
+	if skill.attrib_for_line(self) != "":
+		var r := skill.stat_line_range(self, at_level)
+		if is_range or r.x != r.y:
+			return "%s: %d đến %d điểm" % [label, r.x, r.y]
+		return "%s: %d%s" % [label, r.x, suffix]
 	if is_range:
 		var lo := skill.interpolate_at_level(min_at_level_1, min_at_max_level, at_level)
 		var hi := skill.interpolate_at_level(max_at_level_1, max_at_max_level, at_level)

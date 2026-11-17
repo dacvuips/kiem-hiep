@@ -39,6 +39,7 @@ var _rank_label: Label
 var _bars: Dictionary = {}     ## tên -> {bar: BarCell, text: Label}
 var _last_text: Dictionary = {}
 var _disguise_tag: PanelContainer
+var _zone_label: Label
 var _disguise_tag_label: Label
 
 func setup(player: Node) -> void:
@@ -71,6 +72,16 @@ func _ready() -> void:
 	for key in _bars:
 		var rect: Rect2 = BAR_RECTS[key]
 		_bars[key]["text"] = _make_label(Rect2(rect.position.x, TEXT_Y, rect.size.x, 12), Color.WHITE)
+
+	## PUBG: đồng hồ vòng bo ngay dưới thanh Sinh lực (chỉ hiện trong trận PUBG).
+	var life: Rect2 = BAR_RECTS["life"]
+	_zone_label = Label.new()
+	_style_text(_zone_label, Color(0.6, 0.9, 1.0))
+	_zone_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_zone_label.size = Vector2(320, 18)
+	_zone_label.position = Vector2((life.position.x + life.size.x * 0.5) * SCALE - 160.0, (TEXT_Y + 13.0) * SCALE)
+	_zone_label.visible = false
+	add_child(_zone_label)
 
 	_disguise_tag = PanelContainer.new()
 	_disguise_tag.name = "DisguiseTag"
@@ -167,6 +178,20 @@ func _style_text(label: Label, color: Color) -> void:
 
 func _process(_delta: float) -> void:
 	_refresh()
+	_refresh_zone()
+
+func _refresh_zone() -> void:
+	if _zone_label == null:
+		return
+	var on := PubgManager.is_active
+	_zone_label.visible = on
+	if not on:
+		return
+	var txt := PubgZoneOverlay.zone_status_text()
+	if txt != _zone_label.text:
+		_zone_label.text = txt
+	var urgent := PubgManager.zone_shrinking or (PubgManager.zone_index < PubgManager.ZONE_COUNT and PubgManager.zone_timer <= 120.0)
+	_zone_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.3) if urgent else Color(0.6, 0.9, 1.0))
 
 func _refresh() -> void:
 	if _player == null or not is_instance_valid(_player):

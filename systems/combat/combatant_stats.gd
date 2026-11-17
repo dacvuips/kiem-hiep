@@ -65,6 +65,10 @@ var inner_element_damage: Dictionary = {}
 var outer_physics_enhance_p: int = 0
 ## "Tấn công chí mạng %" của nhân vật (m_CurrentDeadlyStrikeEnhanceP) — chỉ cộng cho skill ngoại công.
 var deadly_strike_enhance_p: int = 0
+## "% tăng sát thương kỹ năng" (m_CurrentSkillEnhancePercent) — cộng vào nAddDamageP của MỌI skill (AppendSkillEffect gốc).
+var skill_enhance_p: int = 0
+## m_CurrentManaToSkillEnhanceP — cộng thêm vào nAddDamageP khi nội lực đang đầy.
+var mana_to_skill_enhance_p: int = 0
 
 ## ---- Hiệu ứng trúng đòn (KNpc::AppendSkillEffect/ReceiveDamage gốc), đơn vị như VLTK:
 var cold_enhance_frames: int = 0      ## m_CurrentColdEnhance — + frame làm chậm cho đòn Băng sát của MÌNH

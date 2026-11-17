@@ -34,6 +34,18 @@ var _full_bag_cooldown: float = 0.0
 var _label := ""
 var _color := Color.WHITE
 var _icon: Texture2D
+## Đồ do người chơi tự VỨT từ hành trang: không tự nhặt lại khi đứng gần / đi ngang qua và auto không nhặt (nếu không vứt xong
+## sẽ bị nhặt lại ngay vì rơi dưới chân). Muốn lấy lại thì NHẤP vào.
+var discarded := false
+## uid các món vừa vứt khi online — server gửi vật rớt về sau, gặp uid này thì đánh dấu discarded.
+static var _discarded_uids: Dictionary = {}
+
+static func mark_discarded(uid: String) -> void:
+	if uid == "":
+		return
+	_discarded_uids[uid] = true
+	if _discarded_uids.size() > 64:
+		_discarded_uids.erase(_discarded_uids.keys()[0])
 
 ## Nhóm để AutoController quét vật rớt quanh người (không phải lục cả cây node).
 const GROUP := &"ground_drops"
@@ -53,6 +65,9 @@ func setup_item(it: ItemInstance) -> void:
 	_color = it.get_quality_color()
 	_icon = it.get_icon(true)
 	z_index = 4
+	if _discarded_uids.has(it.uid):
+		_discarded_uids.erase(it.uid)
+		discarded = true
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -68,7 +83,7 @@ func _process(delta: float) -> void:
 		var pickup_reach := REACH + 25.0
 		if GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false):
 			pickup_reach = maxf(pickup_reach, float(PlayerStats.pickup_radius))
-		if dist <= pickup_reach and _full_bag_cooldown <= 0.0:
+		if dist <= pickup_reach and _full_bag_cooldown <= 0.0 and not discarded:
 			_pick_up(player)
 			return
 		if _want_pickup:
@@ -212,6 +227,8 @@ static func spawn_drops(parent: Node, at: Vector2, drops: Array) -> void:
 			var it = d.get("item", null)
 			if it is ItemInstance:
 				g.setup_item(it)
+				if bool(d.get("discarded", false)):
+					g.discarded = true
 			else:
 				continue
 		else:

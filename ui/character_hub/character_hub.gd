@@ -1799,7 +1799,8 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 	if item.can_sell():
 		var label := "Bán (%s Lượng)" % InventoryPopup.format_money(item.get_sale_price())
 		actions.append([label, func() -> void: _sell_item_from_inv(index)])
-	actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])
+	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
+		actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])   ## đồ Hoàng Kim: chỉ vứt trong trận PUBG
 	if _current_view == "crafting" and _crafting_view and is_instance_valid(_crafting_view):
 		actions.insert(0, ["Đặt vào chế tạo", func() -> void: _crafting_view._put(item)])
 
@@ -1845,6 +1846,8 @@ func _drop_item_from_inv(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "":
+		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":
 		_show_toast(blocked, true)
 		return
@@ -2397,7 +2400,7 @@ func _apply_mode_ui() -> void:
 	# Căn chỉnh lại nút Vượt Ải trên TopBar: bắt đầu từ x=18
 	if has_node("%ChallengeButton"):
 		%ChallengeButton.offset_left = 18.0
-		%ChallengeButton.offset_right = 158.0
+		%ChallengeButton.offset_right = 148.0
 
 	# 2. RightPanel / NavList: Ẩn Sự Kiện (NavButton2), Bang Hội (NavButton3), Giao Dịch (NavButton4), BXH (NavButton6)
 	var hidden_navs := [2, 3, 4, 6]

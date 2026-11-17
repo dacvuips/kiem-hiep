@@ -198,6 +198,93 @@ func npc_labels() -> Array:
 
 ## Vẽ chấm + tên NPC trong khung `box` (toạ độ của `canvas`). `to_view` đổi toạ độ map -> khung. Tên đè lên tên đã vẽ thì bỏ (chỉ chấm).
 
+## VÒNG BO PUBG trên bản đồ (dùng chung mini map + bản đồ lớn): tô tối ngoài bo, viền xanh = bo hiện tại, viền trắng = bo kế tiếp,
+## vòng cuối = chấm đỏ; đứng ngoài bo kế tiếp thì kẻ đường nét đứt tới đó, bo nằm ngoài khung thì có mũi tên chỉ hướng ở mép.
+## to_view(world) -> toạ độ trên khung vẽ; me = vị trí nhân vật trên khung vẽ.
+static func draw_pubg_zone(canvas: Control, to_view: Callable, box: Rect2, me: Vector2, line_w: float = 2.0) -> void:
+	if not PubgManager.is_active:
+		return
+	var b := PubgManager.fixed_outer_boundary
+	if b.has_area():
+		var fa: Vector2 = to_view.call(b.position)
+		var fb: Vector2 = to_view.call(b.end)
+		canvas.draw_rect(Rect2(fa, fb - fa), Color(1.0, 0.85, 0.25, 0.9), false, line_w)
+	var c: Vector2 = to_view.call(PubgManager.zone_center)
+	var r: float = (to_view.call(PubgManager.zone_center + Vector2(PubgManager.zone_radius, 0.0)) as Vector2).distance_to(c)
+	# Tô tối ngoài bo: 1 dải cung thật dày ôm từ mép bo tới góc xa nhất của khung.
+	var far := 0.0
+	for corner in [box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]:
+		far = maxf(far, c.distance_to(corner))
+	var shade := Color(0.05, 0.0, 0.12, 0.45)
+	var band := far - r + 4.0
+	if band > 0.0:
+		canvas.draw_arc(c, r + band * 0.5, 0.0, TAU, 128, shade, band)
+	# Ngoài khung chơi cũng tối (vùng an toàn = vòng tròn ∩ khung)
+	if b.has_area():
+		var ba: Vector2 = to_view.call(b.position)
+		var bb: Vector2 = to_view.call(b.end)
+		var bx := Rect2(ba, bb - ba).abs()
+		for rr in [Rect2(box.position.x, box.position.y, box.size.x, bx.position.y - box.position.y),
+				Rect2(box.position.x, bx.end.y, box.size.x, box.end.y - bx.end.y),
+				Rect2(box.position.x, bx.position.y, bx.position.x - box.position.x, bx.size.y),
+				Rect2(bx.end.x, bx.position.y, box.end.x - bx.end.x, bx.size.y)]:
+			if rr.size.x > 0.0 and rr.size.y > 0.0:
+				canvas.draw_rect(rr, shade)
+	if r >= 1.5:
+		_draw_zone_outline(canvas, to_view, PubgManager.zone_center, PubgManager.zone_radius, b, Color(0.2, 0.75, 1.0, 1.0), line_w)
+	else:
+		canvas.draw_circle(c, 3.5, Color(1.0, 0.3, 0.25))
+	var nc: Vector2 = c
+	var nr := r
+	if PubgManager.zone_index < PubgManager.ZONE_COUNT:
+		nc = to_view.call(PubgManager.zone_next_center)
+		nr = (to_view.call(PubgManager.zone_next_center + Vector2(PubgManager.zone_next_radius, 0.0)) as Vector2).distance_to(nc)
+		if nr >= 1.5:
+			_draw_zone_outline(canvas, to_view, PubgManager.zone_next_center, PubgManager.zone_next_radius, b, Color(1.0, 1.0, 1.0, 0.95), line_w * 0.75)
+		else:
+			canvas.draw_circle(nc, 3.5, Color(1.0, 1.0, 1.0))
+	# Ngoài bo kế tiếp -> đường nét đứt từ nhân vật tới mép bo đó (đường chạy vào bo)
+	var dist := me.distance_to(nc)
+	if dist > nr + 1.0:
+		var dir := (nc - me) / dist
+		var target := nc - dir * nr
+		var pts := PackedVector2Array()
+		var step := 6.0
+		var t := 0.0
+		var total := me.distance_to(target)
+		while t < total:
+			pts.append(me + dir * t)
+			pts.append(me + dir * minf(t + step * 0.6, total))
+			t += step
+		if pts.size() >= 2:
+			canvas.draw_multiline(pts, Color(1.0, 0.95, 0.4, 0.95), 1.5)
+		# Bo nằm ngoài khung -> mũi tên ở mép khung chỉ về phía bo
+		if not box.grow(-2.0).has_point(target):
+			var edge := _edge_point(box.grow(-9.0), me, dir)
+			var side := Vector2(-dir.y, dir.x)
+			canvas.draw_colored_polygon(PackedVector2Array([edge + dir * 7.0, edge - dir * 4.0 + side * 5.0, edge - dir * 4.0 - side * 5.0]), Color(1.0, 0.95, 0.4))
+
+## Viền vùng (vòng tròn ∩ khung chơi): điểm trên vòng tròn nằm ngoài khung thì kéo về mép khung -> lúc đầu viền trùng đường sáng.
+static func _draw_zone_outline(canvas: Control, to_view: Callable, center: Vector2, radius: float, box: Rect2, col: Color, w: float) -> void:
+	var pts := PackedVector2Array()
+	for i in range(161):
+		var p := center + Vector2.from_angle(TAU * float(i) / 160.0) * radius
+		if box.has_area():
+			p = Vector2(clampf(p.x, box.position.x, box.end.x), clampf(p.y, box.position.y, box.end.y))
+		pts.append(to_view.call(p))
+	canvas.draw_polyline(pts, col, w)
+
+## Điểm trên mép hình chữ nhật theo tia từ `from` hướng `dir` (from nằm trong hình).
+static func _edge_point(rect: Rect2, from: Vector2, dir: Vector2) -> Vector2:
+	var t := INF
+	if dir.x > 0.0001: t = minf(t, (rect.end.x - from.x) / dir.x)
+	if dir.x < -0.0001: t = minf(t, (rect.position.x - from.x) / dir.x)
+	if dir.y > 0.0001: t = minf(t, (rect.end.y - from.y) / dir.y)
+	if dir.y < -0.0001: t = minf(t, (rect.position.y - from.y) / dir.y)
+	if t == INF or t < 0.0:
+		return from
+	return from + dir * t
+
 static func draw_npc_labels(canvas: Control, labels: Array, to_view: Callable, box: Rect2, font_size: int, dot_radius: float) -> void:
 
 	var font: Font = canvas.get_theme_default_font()
@@ -776,20 +863,8 @@ func _draw_view() -> void:
 
 	## Đường bo PUBG trên minimap
 	if PubgManager.is_active:
-		if PubgManager.fixed_outer_boundary.has_area():
-			var fa := _world_to_view(PubgManager.fixed_outer_boundary.position, zoom, src)
-			var fb := _world_to_view(PubgManager.fixed_outer_boundary.end, zoom, src)
-			_view.draw_rect(Rect2(fa, fb - fa), Color(1.0, 0.85, 0.25, 0.95), false, 2.0)
-
-		if PubgManager.current_zone.has_area():
-			var ca := _world_to_view(PubgManager.current_zone.position, zoom, src)
-			var cb := _world_to_view(PubgManager.current_zone.end, zoom, src)
-			_view.draw_rect(Rect2(ca, cb - ca), Color(0.2, 0.75, 1.0, 0.95), false, 2.0)
-
-		if PubgManager.next_safe_zone.has_area():
-			var na := _world_to_view(PubgManager.next_safe_zone.position, zoom, src)
-			var nb := _world_to_view(PubgManager.next_safe_zone.end, zoom, src)
-			_view.draw_rect(Rect2(na, nb - na), Color(1.0, 1.0, 1.0, 0.85), false, 1.5)
+		var to_view := func(w: Vector2) -> Vector2: return _world_to_view(w, zoom, src)
+		draw_pubg_zone(_view, to_view, Rect2(Vector2.ZERO, MAP_RECT.size), _world_to_view(_feet(), zoom, src), 1.5)
 
 	## NPC hội thoại: chấm xanh + tên.
 

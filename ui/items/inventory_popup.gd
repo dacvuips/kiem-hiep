@@ -343,7 +343,8 @@ func _on_item_pressed(item: ItemInstance) -> void:
 		var label := "Bán (%s Lượng)" % format_money(item.get_sale_price())
 		actions.append([label, _sell.bind(index)])
 
-	actions.append(["Vứt bỏ", _drop.bind(index)])
+	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
+		actions.append(["Vứt bỏ", _drop.bind(index)])   ## đồ Hoàng Kim: chỉ có nút Vứt bỏ trong trận PUBG
 
 	if PotionEffect.usable(item) or ItemConsumer.is_town_portal(item):
 		for i in _profile.quick_items.size():
@@ -539,12 +540,15 @@ func _drop(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "":
+		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":
 		_show_message(blocked)
 		return
 	_profile.inventory.remove_at(index)
 	if NetClient.is_in_world():
 		## Online: server đặt món xuống đất (mọi người ở gần đều thấy).
+		GroundDrop.mark_discarded(item.ensure_uid())
 		NetClient.send_discard(item.uid)
 		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
 		_commit()
@@ -555,7 +559,7 @@ func _drop(index: int) -> void:
 		if parent == null:
 			parent = player.get_parent()
 		var feet := player.global_position + Vector2(0, 30)
-		GroundDrop.spawn_drops(parent, feet + Vector2(randf_range(-14, 14), 6), [{"type": "item", "item": item}])
+		GroundDrop.spawn_drops(parent, feet + Vector2(randf_range(-14, 14), 6), [{"type": "item", "item": item, "discarded": true}])
 		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
 	else:
 		_show_message("")

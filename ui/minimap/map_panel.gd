@@ -341,6 +341,8 @@ func _draw_view() -> void:
 			_view.draw_circle(pp, 5.0, Color(1.0, 0.6, 0.15))
 			_view.draw_string(ThemeDB.fallback_font, pp + Vector2(8, 5), str(place.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.95, 0.8))
 	var me := _world_to_view(_mini.player_feet())
+	## Vòng bo PUBG (bo hiện tại / bo kế tiếp / tối ngoài bo / đường chạy vào bo)
+	MiniMap.draw_pubg_zone(_view, _world_to_view, Rect2(Vector2.ZERO, _view.size), me, 2.5)
 	## Lộ trình còn lại: chấm vàng từ nhân vật theo các điểm tới lá cờ.
 	if _mini.has_destination() and _player.is_moving_to_target():
 		var pts: PackedVector2Array = [me]

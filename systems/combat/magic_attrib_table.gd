@@ -104,6 +104,10 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.add_physics_magic += v.x
 		"deadlystrikeenhance_p":
 			s.deadly_strike_enhance_p += v.x
+		"skill_enhance":
+			s.skill_enhance_p += v.x
+		"manatoskill_enhance":
+			s.mana_to_skill_enhance_p += v.x
 		"coldenhance_p":
 			s.cold_enhance_frames += v.x
 		"poisonenhance_p":

@@ -620,6 +620,8 @@ func _tick_loot(s: AutoSettings) -> bool:
 ## Bộ lọc nhặt: tiền theo "Nhặt tiền vạn"; đồ: "Nhặt tất cả" lấy hết, không thì đạo cụ (thuốc, khoáng thạch, lệnh bài... — không
 ## phải trang bị) theo "Nhặt đạo cụ", đồ xanh/hoàng kim (Nhặt trang bị xanh) và đồ khớp 1 dòng lọc thuộc tính (Tuỳ chọn lọc đồ khi nhặt).
 func _wants(drop: GroundDrop, s: AutoSettings) -> bool:
+	if drop.discarded:
+		return false   ## đồ mình vừa vứt: auto không nhặt lại
 	if drop.amount > 0:
 		return s.pick_money
 	var item := drop.item

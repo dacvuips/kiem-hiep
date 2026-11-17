@@ -28,6 +28,7 @@ var map: VltkMap
 ## Ô vuông màn chơi hiện tại (toạ độ pixel map). size = 0 nghĩa là chưa có màn.
 var arena_rect := Rect2()
 var arena_border: ArenaBorder
+var _pubg_overlay: Node2D
 ## Điểm hồi sinh "Về thành dưỡng sức" (chiến trường: hậu doanh phe mình). INF = giữa ô màn chơi / điểm xuất phát của map.
 var respawn_point := Vector2.INF
 var _nav: AStarGrid2D   ## lưới tìm đường CHỈ trong ô vuông (sao từ lưới vật cản của map)
@@ -490,6 +491,9 @@ func _process(delta: float) -> void:
 	if PubgManager.is_active:
 		var p := get_tree().get_first_node_in_group("player")
 		PubgManager.update_circle(delta, p)
+		if _pubg_overlay == null or not is_instance_valid(_pubg_overlay):
+			_pubg_overlay = PubgZoneOverlay.new()   ## vòng bo: tối ngoài bo, viền bo, thời tiết, HUD
+			add_child(_pubg_overlay)
 
 ## Dựng map (lần đầu) + đặt ô vuông của màn `stage` + đưa nhân vật vào giữa ô. Gọi 1 lần lúc vào màn.
 func setup_stage(stage: StageData) -> void:

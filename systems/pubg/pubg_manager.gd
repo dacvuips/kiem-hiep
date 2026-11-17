@@ -4,7 +4,7 @@ extends Node
 ## - Quản lý danh sách phòng (ID phòng, trạng thái, số người chơi, chế độ 1, 2, 3, 4 người)
 ## - Đồng đội 2-4 người xuất hiện chung 1 chỗ, không đánh được nhau, tên màu xanh dương
 ## - Bản đồ Tống Kim 1 (tongkim1), giới hạn ngẫu nhiên cố định 140x80 region
-## - Vòng bo 10 phút co dần, hiển thị trên minimap, rút máu khi đứng ngoài bo
+## - Vòng bo 7 phút co dần, hiển thị trên minimap, rút máu khi đứng ngoài bo
 ## - Cấu hình nhân vật Level 200, cộng điểm tiềm năng và kỹ năng trước khi vào game, nút lưu điểm
 ## - Quái rớt đồ Hoàng Kim Môn Phái 90%
 ## - Đồ chỉ phục vụ cho màn chơi, hết màn chơi tất cả đều mất
@@ -21,9 +21,6 @@ const MAP_MAX_RX := 654
 const MAP_MIN_RY := 799
 const MAP_MAX_RY := 1150
 
-# Chu kỳ vòng bo (10 phút = 600 giây)
-const CIRCLE_INTERVAL := 600.0
-const CIRCLE_SHRINK_DURATION := 60.0 # Thời gian thu bo trong 60 giây
 
 ## Dữ liệu phòng
 static var rooms: Array[Dictionary] = []
@@ -48,18 +45,56 @@ static func is_pubg_active() -> bool:
 		return true
 	return false
 
-## Vòng bo (Circles)
+## ==============================================================================
+## VÒNG BO (hình tròn) — 5 lần co, lần cuối co về 1 CHẤM. Thuần dữ liệu + RNG có seed để server online tính y hệt.
+##   Vòng 0 phủ kín khung chơi. Mỗi lần bo: chờ ZONE_WAIT_SECS[i] (đã hiện vòng kế tiếp) -> co trong ZONE_SHRINK_SECS[i].
+##   Tâm vòng mới ngẫu nhiên, luôn nằm TRỌN trong vòng trước và trong khung chơi (vòng cuối bán kính 0 = 1 điểm).
+##   Ngoài bo mất % máu tối đa mỗi giây, bo càng nhỏ mất càng nhiều. Hết mỗi lần co -> đổi thời tiết ngẫu nhiên (thời tiết Sơn Trang).
+## ==============================================================================
+const ZONE_COUNT := 5
+## Thời gian từng lần bo (giây), phần tử i = lần bo thứ i+1: chờ (đã hiện vòng kế tiếp) rồi co.
+##   Bo 1: 4 + 3 = 7 phút | Bo 2–3: 3,5 + 2,5 = 6 phút | Bo 4–5: 3 + 2 = 5 phút.
+const ZONE_WAIT_SECS := [240.0, 210.0, 210.0, 180.0, 180.0]
+const ZONE_SHRINK_SECS := [180.0, 150.0, 150.0, 120.0, 120.0]
+
+## Thời gian chờ / co của lần bo thứ `i` (0..ZONE_COUNT-1, = zone_index lúc đang chờ/co lần đó).
+static func zone_wait_sec(i: int) -> float:
+	return ZONE_WAIT_SECS[clampi(i, 0, ZONE_COUNT - 1)]
+
+static func zone_shrink_sec(i: int) -> float:
+	return ZONE_SHRINK_SECS[clampi(i, 0, ZONE_COUNT - 1)]
+## Bán kính từng vòng theo tỉ lệ vòng 0 (vòng 0 = nửa đường chéo khung chơi). Phần tử cuối = 0 -> 1 chấm.
+const ZONE_RADIUS_FRAC := [1.0, 0.55, 0.30, 0.15, 0.06, 0.0]
+## % máu tối đa mất mỗi giây khi đứng ngoài vòng thứ i (vòng càng nhỏ càng đau).
+const ZONE_DPS_FRAC := [0.01, 0.015, 0.025, 0.04, 0.06, 0.10]
+const ZONE_TICK_SEC := 1.0
+## Mốc báo trước khi bo co (giây còn lại) -> sự kiện "warn_120" / "warn_60" + thoại audio/sfx/pubg/zone_warn_<giây>.mp3
+const ZONE_WARN_SEC := [120, 60]
+const WEATHER_COUNT := 6          ## FarmTimeSystem.Weather: SUNNY..WINDY
+
 static var fixed_outer_boundary: Rect2 = Rect2() # Khung sáng cố định 140 region x 80 region
-static var current_zone: Rect2 = Rect2() # Vòng bo hiện tại
-static var next_safe_zone: Rect2 = Rect2() # Vòng bo tiếp theo sẽ co vào
-static var circle_timer: float = CIRCLE_INTERVAL
-static var is_shrinking: bool = false
-static var shrink_progress: float = 0.0
+static var zone_center: Vector2 = Vector2.ZERO      ## vòng an toàn đang có (co mượt khi đang thu)
+static var zone_radius: float = 0.0
+static var zone_next_center: Vector2 = Vector2.ZERO ## vòng sắp co tới
+static var zone_next_radius: float = 0.0
+static var zone_index: int = 0                      ## số lần bo đã co xong (0..ZONE_COUNT)
+static var zone_shrinking: bool = false
+static var zone_timer: float = 240.0        ## giây còn lại của giai đoạn hiện tại (chờ / co)
+static var zone_from_center: Vector2 = Vector2.ZERO
+static var zone_from_radius: float = 0.0
+static var zone_rng := RandomNumberGenerator.new()
+static var zone_seed: int = 0
+static var weather: int = 0                         ## FarmTimeSystem.Weather
+static var _zone_tick_accum: float = 0.0
+## Tương thích code cũ (minimap...): hình chữ nhật bao ngoài vòng hiện tại / vòng kế tiếp.
+static var current_zone: Rect2 = Rect2()
+static var next_safe_zone: Rect2 = Rect2()
 static var circle_phase: int = 1
-static var poison_damage_rate: float = 0.03 # 3% max HP / giây ở Phase 1
 
 # Signal thông báo cho HUD / Minimap
 static var circle_updated: Callable
+## Sự kiện vòng bo cho HUD: "shrink_start" | "shrink_end" | "final".
+static var zone_event: Callable
 
 ## Khởi tạo danh sách phòng mặc định
 static func init_default_rooms() -> void:
@@ -155,6 +190,131 @@ static func init_default_rooms() -> void:
 			"password": ""
 		}
 	]
+
+# ==============================================================================
+# QUY TẮC PHÒNG & GHÉP TRẬN (thuần dữ liệu — server PUBG online sau này dùng lại y nguyên)
+# ==============================================================================
+const MATCH_PLAYERS := 50          ## quy mô 1 trận
+const MATCH_SEARCH_SEC := 60.0     ## tối đa thời gian tìm trận, hết giờ vào với số người đã tìm được
+const BACKFILL_MAX_SEC := 300.0    ## trận đã đấu dưới 5 phút còn nhận người thay bot
+const STATUS_WAITING := "Đang Đợi"
+const STATUS_FULL := "Sẵn Sàng"
+const STATUS_SEARCHING := "Đang Tìm Trận"
+const STATUS_PLAYING := "Đang Đấu"
+
+## GIỜ MỞ: chỉ được tạo đội / vào đội / tìm trận trong khung giờ này mỗi ngày (giờ máy; online sẽ lấy giờ server).
+## Trận đã bắt đầu thì đánh tiếp tới hết dù quá giờ đóng.
+const OPEN_HOUR := 20
+const OPEN_MINUTE := 0
+const OPEN_DURATION_MIN := 120     ## 20:00 – 22:00
+## Bỏ giới hạn giờ (test / máy dev): đặt biến môi trường KIEMHIEP_PUBG_ALWAYS_OPEN=1 hoặc gán true trong test.
+static var schedule_bypass: bool = OS.get_environment("KIEMHIEP_PUBG_ALWAYS_OPEN") == "1"
+
+static func _open_start_sec() -> int:
+	return OPEN_HOUR * 3600 + OPEN_MINUTE * 60
+
+## Giây hiện tại trong ngày theo giờ máy (0..86399).
+static func now_sec_of_day() -> int:
+	var t := Time.get_time_dict_from_system()
+	return int(t.hour) * 3600 + int(t.minute) * 60 + int(t.second)
+
+## Thuần dữ liệu: giây `sec` trong ngày có nằm trong giờ mở không (khung giờ được phép vắt qua nửa đêm).
+static func is_open_at(sec: int) -> bool:
+	var d := posmod(sec - _open_start_sec(), 86400)
+	return d < OPEN_DURATION_MIN * 60
+
+static func secs_until_open(sec: int) -> int:
+	return 0 if is_open_at(sec) else posmod(_open_start_sec() - sec, 86400)
+
+static func secs_until_close(sec: int) -> int:
+	if not is_open_at(sec):
+		return 0
+	return OPEN_DURATION_MIN * 60 - posmod(sec - _open_start_sec(), 86400)
+
+static func is_open() -> bool:
+	return schedule_bypass or is_open_at(now_sec_of_day())
+
+static func schedule_text() -> String:
+	var end := _open_start_sec() + OPEN_DURATION_MIN * 60
+	return "%02d:%02d – %02d:%02d hằng ngày" % [OPEN_HOUR, OPEN_MINUTE, (end / 3600) % 24, (end / 60) % 60]
+
+static func fmt_hms(secs: int) -> String:
+	return "%02d:%02d:%02d" % [secs / 3600, (secs / 60) % 60, secs % 60]
+
+## Câu báo khi chưa tới giờ ("" = đang mở).
+static func closed_reason() -> String:
+	if is_open():
+		return ""
+	return "Chiến Trường Sinh Tồn chỉ mở %s.\nCòn %s nữa mới mở." % [schedule_text(), fmt_hms(secs_until_open(now_sec_of_day()))]
+
+## KHU VỰC MÁY CHỦ: chỉ ghép trận / vào đội với người cùng máy chủ game.
+## Phòng không ghi server_id (phòng mẫu offline) coi như thuộc mọi máy chủ.
+static func same_server(room: Dictionary, server_id: int) -> bool:
+	return server_id <= 0 or not room.has("server_id") or int(room.get("server_id", 0)) == server_id
+
+## TỰ GHÉP ĐỘI (fill): đội chưa đủ người + bật tự ghép -> số chỗ trống sẽ được ghép người lạ khi vào trận.
+static func fill_slots(room: Dictionary, members_count: int) -> int:
+	if not bool(room.get("fill", false)):
+		return 0
+	return maxi(0, clampi(int(room.get("mode", 1)), 1, 4) - members_count)
+
+## Số người tối đa 1 trận theo kiểu đội: luôn chia hết cho số người mỗi đội (Squad 4 -> 12 đội = 48 người).
+static func match_capacity(mode: int) -> int:
+	var m := clampi(mode, 1, 4)
+	return (MATCH_PLAYERS / m) * m
+
+## Đồ HOÀNG KIM chỉ được vứt bỏ trong trận PUBG (đồ trong trận vốn mất hết khi hết trận); ngoài PUBG thì giữ lại.
+## Trả "" = được vứt, ngược lại là câu báo. Server online gọi với in_pubg = false (chưa có máy chủ PUBG online).
+const GOLD_DISCARD_BLOCKED := "Đồ Hoàng Kim chỉ vứt bỏ được trong trận PUBG."
+static func discard_block_reason(item: ItemInstance, in_pubg: bool) -> String:
+	if item != null and item.is_gold() and not in_pubg:
+		return GOLD_DISCARD_BLOCKED
+	return ""
+
+## Mã phòng PUBG-xxxx không trùng với phòng đang có.
+static func new_room_id() -> String:
+	init_default_rooms()
+	for _i in range(200):
+		var id := "PUBG-%04d" % randi_range(1000, 9999)
+		if find_room(id).is_empty():
+			return id
+	return "PUBG-%d" % (Time.get_ticks_msec() % 100000)
+
+static func find_room(room_id: String) -> Dictionary:
+	var want := room_id.strip_edges().to_upper()
+	for r in rooms:
+		if str(r.get("id", "")).to_upper() == want:
+			return r
+	return {}
+
+## Chuẩn hoá mã người chơi gõ: "pubg 1024", "PUBG_1024", "1024" -> "PUBG-1024".
+static func normalize_room_code(raw: String) -> String:
+	var s := raw.strip_edges().to_upper().replace(" ", "").replace("_", "-")
+	if s == "":
+		return ""
+	return "PUBG-" + s.trim_prefix("PUBG").trim_prefix("-")
+
+## Phòng còn nhận người vào phòng chờ không ("" = được, ngược lại là lý do từ chối).
+static func join_block_reason(room: Dictionary, members_count: int, server_id: int = 0) -> String:
+	if room.is_empty():
+		return "not_found"
+	if not same_server(room, server_id):
+		return "other_server"
+	var st := str(room.get("status", ""))
+	if st == STATUS_PLAYING:
+		return "playing"
+	if st == STATUS_SEARCHING:
+		return "searching"
+	if members_count >= int(room.get("mode", 1)):
+		return "full"
+	return ""
+
+## Trạng thái phòng chờ theo số thành viên (không đụng phòng đang tìm trận / đang đấu).
+static func waiting_status(room: Dictionary, members_count: int) -> String:
+	var st := str(room.get("status", ""))
+	if st == STATUS_SEARCHING or st == STATUS_PLAYING:
+		return st
+	return STATUS_FULL if members_count >= int(room.get("mode", 1)) else STATUS_WAITING
 
 static func refresh_rooms() -> Array[Dictionary]:
 	init_default_rooms()
@@ -267,12 +427,14 @@ static func unregister_bot(bot: Node) -> void:
 	active_bot_nodes.erase(bot)
 
 ## Tìm phòng đang thi đấu (Đang Đấu) có thời gian trôi qua < 5 phút (300 giây) và còn đủ BOT để thay thế
-static func find_joinable_active_match(required_slots: int = 1, exclude_room_id: String = "") -> Dictionary:
+static func find_joinable_active_match(required_slots: int = 1, exclude_room_id: String = "", server_id: int = 0) -> Dictionary:
 	init_default_rooms()
 	var now: float = Time.get_unix_time_from_system()
 	for r in rooms:
 		var rid: String = str(r.get("id", ""))
 		if exclude_room_id != "" and rid == exclude_room_id:
+			continue
+		if not same_server(r, server_id):
 			continue
 		var st: String = str(r.get("status", ""))
 		if st != "Đang Đấu":
@@ -485,13 +647,7 @@ static func start_match(profile: PlayerProfile, room: Dictionary) -> Dictionary:
 
 	# 3. Tạo khung cố định 140 region x 80 region
 	fixed_outer_boundary = generate_random_arena_box()
-	current_zone = fixed_outer_boundary
-	next_safe_zone = _generate_next_circle(current_zone, 0.5)
-	circle_timer = CIRCLE_INTERVAL
-	is_shrinking = false
-	shrink_progress = 0.0
-	circle_phase = 1
-	poison_damage_rate = 0.03
+	start_zone(fixed_outer_boundary, randi())
 
 	# 4. Tạo vị trí xuất hiện (Tất cả thành viên trong squad xuất hiện chung 1 chỗ)
 	var spawn_pos: Vector2 = fixed_outer_boundary.position + Vector2(
@@ -510,9 +666,19 @@ static func start_match(profile: PlayerProfile, room: Dictionary) -> Dictionary:
 	}
 	current_squad_members.append(my_member)
 
-	var bot_names := ["LýTầmHoan", "SởLưuHương", "LụcTiểuPhụng", "HoaMãnLâu"]
-	for i in range(1, current_squad_size):
-		var mate_name: String = bot_names[(i - 1) % bot_names.size()]
+	# Đồng đội = thành viên phòng đội (gồm cả người lạ được tự ghép). Phòng không có danh sách thành viên
+	# (gọi thẳng từ test / bản cũ) thì lấp đủ đội bằng tên mẫu.
+	var mate_names: Array[String] = []
+	if room.get("members", null) is Array:
+		for m in room["members"]:
+			if m is Dictionary and not bool(m.get("is_self", false)):
+				mate_names.append(str(m.get("name", "")))
+		current_squad_size = mate_names.size() + 1
+	else:
+		var bot_names := ["LýTầmHoan", "SởLưuHương", "LụcTiểuPhụng", "HoaMãnLâu"]
+		for i in range(1, current_squad_size):
+			mate_names.append(bot_names[(i - 1) % bot_names.size()])
+	for mate_name in mate_names:
 		var offset_pos := spawn_pos + Vector2(randf_range(-40, 40), randf_range(-40, 40))
 		current_squad_members.append({
 			"name": mate_name,
@@ -545,59 +711,145 @@ static func start_match(profile: PlayerProfile, room: Dictionary) -> Dictionary:
 	return field_entry
 
 ## Sinh vòng bo an toàn nhỏ hơn bên trong vùng hiện tại
-static func _generate_next_circle(parent_zone: Rect2, scale_factor: float) -> Rect2:
-	var new_w := parent_zone.size.x * scale_factor
-	var new_h := parent_zone.size.y * scale_factor
-	var margin_x := parent_zone.size.x - new_w
-	var margin_y := parent_zone.size.y - new_h
-	var new_x := parent_zone.position.x + randf_range(0.0, margin_x)
-	var new_y := parent_zone.position.y + randf_range(0.0, margin_y)
-	return Rect2(new_x, new_y, new_w, new_h)
+## Bắt đầu vòng bo cho 1 trận: vòng 0 phủ kín khung chơi, tính sẵn vòng 1 (hiện trên minimap ngay từ đầu).
+static func start_zone(box: Rect2, seed_value: int) -> void:
+	zone_seed = seed_value
+	zone_rng.seed = seed_value
+	zone_index = 0
+	zone_shrinking = false
+	zone_timer = zone_wait_sec(0)
+	_zone_tick_accum = 0.0
+	zone_center = box.get_center()
+	zone_radius = box.size.length() * 0.5
+	zone_from_center = zone_center
+	zone_from_radius = zone_radius
+	weather = zone_rng.randi_range(0, WEATHER_COUNT - 1)
+	_plan_next_zone(box)
+	_sync_zone_rects()
 
-## Cập nhật vòng bo mỗi frame trong trận
+## Bán kính vòng thứ i (0..ZONE_COUNT) theo khung chơi.
+static func zone_radius_for(i: int, box: Rect2) -> float:
+	return box.size.length() * 0.5 * float(ZONE_RADIUS_FRAC[clampi(i, 0, ZONE_COUNT)])
+
+## Tâm vòng mới: ngẫu nhiên đều trong đĩa bán kính (r_cũ - r_mới) quanh tâm cũ => vòng mới nằm trọn trong vòng cũ;
+## đồng thời tâm phải nằm trong khung chơi (thử lại, không được thì kéo về điểm gần nhất hợp lệ).
+static func pick_zone_center(prev_c: Vector2, prev_r: float, new_r: float, box: Rect2, rng: RandomNumberGenerator) -> Vector2:
+	var slack := maxf(0.0, prev_r - new_r)
+	var inner := box.grow(-minf(new_r, minf(box.size.x, box.size.y) * 0.45))   ## vòng mới cũng không lòi quá ra ngoài khung
+	for _i in range(40):
+		var ang := rng.randf() * TAU
+		var dist := sqrt(rng.randf()) * slack
+		var c := prev_c + Vector2(cos(ang), sin(ang)) * dist
+		if inner.has_point(c):
+			return c
+	var clamped := Vector2(clampf(prev_c.x, inner.position.x, inner.end.x), clampf(prev_c.y, inner.position.y, inner.end.y))
+	var off := clamped - prev_c
+	if off.length() > slack:
+		clamped = prev_c + off.normalized() * slack
+	return clamped
+
+static func _plan_next_zone(box: Rect2) -> void:
+	if zone_index >= ZONE_COUNT:
+		zone_next_center = zone_center
+		zone_next_radius = zone_radius
+		return
+	var new_r := zone_radius_for(zone_index + 1, box)
+	zone_next_radius = new_r
+	zone_next_center = pick_zone_center(zone_center, zone_radius, new_r, box, zone_rng)
+
+static func _sync_zone_rects() -> void:
+	current_zone = Rect2(zone_center - Vector2(zone_radius, zone_radius), Vector2(zone_radius, zone_radius) * 2.0)
+	next_safe_zone = Rect2(zone_next_center - Vector2(zone_next_radius, zone_next_radius), Vector2(zone_next_radius, zone_next_radius) * 2.0)
+	circle_phase = zone_index + 1
+
+## Vòng bo co tiếp theo thời gian. Trả về sự kiện: "" | "shrink_start" | "shrink_end" (kèm đổi thời tiết) | "final".
+static func tick_zone(delta: float) -> String:
+	if zone_index >= ZONE_COUNT:
+		return ""
+	var ev := ""
+	var before := zone_timer
+	zone_timer -= delta
+	if not zone_shrinking:
+		# Báo trước khi bo bắt đầu thu hẹp (kèm thoại)
+		for w in ZONE_WARN_SEC:
+			if before > float(w) and zone_timer <= float(w):
+				ev = "warn_%d" % w
+		if zone_timer <= 0.0:
+			zone_shrinking = true
+			zone_timer = zone_shrink_sec(zone_index)
+			zone_from_center = zone_center
+			zone_from_radius = zone_radius
+			ev = "shrink_start"
+	else:
+		var t := clampf(1.0 - zone_timer / zone_shrink_sec(zone_index), 0.0, 1.0)
+		zone_center = zone_from_center.lerp(zone_next_center, t)
+		zone_radius = lerpf(zone_from_radius, zone_next_radius, t)
+		if zone_timer <= 0.0:
+			zone_center = zone_next_center
+			zone_radius = zone_next_radius
+			zone_shrinking = false
+			zone_index += 1
+			zone_timer = zone_wait_sec(zone_index)
+			weather = roll_weather(weather, zone_rng)
+			_plan_next_zone(fixed_outer_boundary)
+			ev = "final" if zone_index >= ZONE_COUNT else "shrink_end"
+	_sync_zone_rects()
+	return ev
+
+## Thời tiết mới (khác thời tiết đang có) — bộ thời tiết của Sơn Trang (FarmTimeSystem.Weather).
+static func roll_weather(cur: int, rng: RandomNumberGenerator) -> int:
+	var w := rng.randi_range(0, WEATHER_COUNT - 2)
+	return w + 1 if w >= cur else w
+
+## Vùng an toàn = vòng tròn ∩ khung chơi: lúc đầu vòng ôm trọn khung nên mép bo CHÍNH LÀ đường sáng giới hạn màn chơi;
+## co lại thì các góc khung bị cắt trước rồi mới thành vòng tròn.
+static func zone_contains(p: Vector2) -> bool:
+	if fixed_outer_boundary.has_area() and not fixed_outer_boundary.grow(0.5).has_point(p):
+		return false
+	return p.distance_to(zone_center) <= zone_radius
+
+## % máu tối đa mất mỗi giây khi đứng ngoài bo lúc này (đang co thì tính theo vòng đang co tới).
+static func zone_dps_frac() -> float:
+	var i := zone_index + (1 if zone_shrinking else 0)
+	return float(ZONE_DPS_FRAC[clampi(i, 0, ZONE_DPS_FRAC.size() - 1)])
+
+## Cập nhật vòng bo mỗi frame trong trận + trừ máu ai đứng ngoài bo (mỗi ZONE_TICK_SEC giây, sát thương thật bỏ qua phòng thủ).
 static func update_circle(delta: float, player: Node) -> void:
 	if not is_active:
 		return
+	var ev := tick_zone(delta)
+	if ev != "" and zone_event.is_valid():
+		zone_event.call(ev)
 
-	if not is_shrinking:
-		circle_timer -= delta
-		if circle_timer <= 0.0:
-			# Bắt đầu co bo
-			is_shrinking = true
-			shrink_progress = 0.0
-	else:
-		shrink_progress += delta / CIRCLE_SHRINK_DURATION
-		if shrink_progress >= 1.0:
-			shrink_progress = 1.0
-			is_shrinking = false
-			current_zone = next_safe_zone
-			circle_phase += 1
-			circle_timer = CIRCLE_INTERVAL # 10 phút tiếp theo
-			poison_damage_rate += 0.02 # Rút máu đau hơn ở các vòng sau
-			next_safe_zone = _generate_next_circle(current_zone, 0.5)
-		else:
-			# Co bo mượt mà
-			var t := shrink_progress
-			var cur_pos := current_zone.position.lerp(next_safe_zone.position, t)
-			var cur_size := current_zone.size.lerp(next_safe_zone.size, t)
-			current_zone = Rect2(cur_pos, cur_size)
-
-	# Xử lý rút máu người chơi nếu đứng ngoài vòng bo
-	if player != null and is_instance_valid(player) and "global_position" in player:
-		var p_pos: Vector2 = player.global_position
-		if not current_zone.has_point(p_pos):
-			# Đứng ngoài vòng bo -> Bị độc khí rút máu từ từ tới chết
-			var max_hp: float = 1000.0
-			if "combat_stats" in player and player.combat_stats != null:
-				max_hp = float(player.combat_stats.max_hp)
-			var damage: float = max_hp * poison_damage_rate * delta
-			if player.has_method("take_damage"):
-				player.take_damage(damage)
-			elif "health" in player:
-				player.health -= damage
+	_zone_tick_accum += delta
+	if _zone_tick_accum >= ZONE_TICK_SEC:
+		_zone_tick_accum -= ZONE_TICK_SEC
+		var targets: Array = [player]
+		targets.append_array(active_bot_nodes)
+		for t in targets:
+			_apply_zone_damage(t)
 
 	if circle_updated.is_valid():
 		circle_updated.call()
+
+## Máu mất mỗi giây của 1 nhân vật đứng ngoài bo (0 nếu đang trong bo).
+static func zone_damage_for(max_hp: float, p: Vector2) -> float:
+	if zone_contains(p):
+		return 0.0
+	return maxf(1.0, ceilf(max_hp * zone_dps_frac() * ZONE_TICK_SEC))
+
+static func _apply_zone_damage(n: Variant) -> void:
+	if n == null or not is_instance_valid(n) or not (n is Node2D):
+		return
+	var node := n as Node2D
+	var max_hp: float = float(node.get("max_health")) if node.get("max_health") != null else 1000.0
+	var dmg := zone_damage_for(max_hp, node.global_position + Vector2(0, 30))
+	if dmg <= 0.0:
+		return
+	if node.has_method("take_status_damage"):
+		node.take_status_damage(dmg, "pubg_zone")
+	elif node.has_method("take_damage"):
+		node.take_damage(dmg)
 
 ## Kết thúc trận đấu PUBG: Khôi phục lại toàn bộ dữ liệu gốc, xoá toàn bộ đồ nhặt được trong trận, rời phòng
 static func end_match(profile: PlayerProfile = null) -> void:

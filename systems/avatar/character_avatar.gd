@@ -192,14 +192,14 @@ func _rebuild() -> void:
 		_set_layer(_layers[id], key)
 		_layer_file[id] = _data.get_file(key) if key != "" else {}
 		if _layer_part[id] == "body" and not _layer_file[id].is_empty():
-			_frames_per_dir = int(_layer_file[id]["frames_per_dir"])
+			_frames_per_dir = _dir_frames(_layer_file[id])
 	var shadow_key := _data.get_shadow_key(_vltk_action)
 	_set_layer(_shadow, shadow_key)
 	_shadow_file = _data.get_file(shadow_key) if shadow_key != "" else {}
 	if _frames_per_dir <= 1:
 		for id in _layer_file:
 			if not _layer_file[id].is_empty():
-				_frames_per_dir = maxi(_frames_per_dir, int(_layer_file[id]["frames_per_dir"]))
+				_frames_per_dir = maxi(_frames_per_dir, _dir_frames(_layer_file[id]))
 	_order_key = ""
 	_frame = -1
 	_apply_frame()
@@ -261,6 +261,23 @@ func _update_region(sprite: Sprite2D, file: Dictionary, frame: int) -> void:
 		return
 	var w: int = file["size"][0]
 	var h: int = file["size"][1]
-	var col := frame % int(file["frames_per_dir"])
+	var per := _dir_frames(file)
+	var col := frame % per
 	var row := direction % int(file["dirs"])
+	if _is_packed(file):  ## 8 hướng nối liền trên 1 hàng: hướng d chiếm cột d*per .. d*per+per-1
+		col += (direction % DIRS_PACKED) * per
+		row = 0
 	sprite.region_rect = Rect2(col * w, row * h, w, h)
+
+const DIRS_PACKED := 8
+
+## Vài file .spr gốc (ngựa Tuyệt Địa/mã 016, 018, nhiều vũ khí đặc biệt) ghi đầu file "1 hướng" nhưng thực chất
+## chứa đủ 8 hướng nối tiếp (VD 112 frame = 8 x 14). Bộ phận nhân vật luôn 8 hướng -> coi là 8 hướng gộp.
+## Không xử lý thì lớp đó luôn quay mặt xuống (hướng 0) và chạy hết 112 frame như xoay vòng.
+static func _is_packed(file: Dictionary) -> bool:
+	var total := int(file["frames_per_dir"])
+	return int(file["dirs"]) == 1 and total >= DIRS_PACKED * 2 and total % DIRS_PACKED == 0
+
+static func _dir_frames(file: Dictionary) -> int:
+	var total := maxi(int(file["frames_per_dir"]), 1)
+	return total / DIRS_PACKED if _is_packed(file) else total

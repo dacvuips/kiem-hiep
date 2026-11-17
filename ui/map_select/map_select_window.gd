@@ -21,8 +21,9 @@ static func get_tabs() -> Array:
 	if GameModeManager.is_offline():
 		return ["Luyện", "Thủ Thành", "Tinh anh", "Ải"]
 	return ["Luyện", "Thủ Thành", "Tinh anh", "Ải", "Boss"]
+const WIN_W: float = 1200.0
 const THUMB_SIZE := Vector2(168, 104)
-const LIST_SIZE := Vector2(620, 440)
+const LIST_SIZE := Vector2(1040, 500)
 const LinhLungThapScript = preload("res://systems/challenge/linh_lung_thap_challenge.gd")
 const ThienTamThapScript = preload("res://systems/challenge/thien_tam_thap_challenge.gd")
 
@@ -78,7 +79,8 @@ static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> MapSe
 	return presented
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: Node = null) -> void:
-	super._init("Vượt Ải", "", 800.0)
+	super._init("Vượt Ải", "", WIN_W)
+	custom_minimum_size = Vector2(WIN_W, 660.0)
 	_profile = profile
 	_on_play = on_play
 	_host = host
@@ -101,6 +103,8 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: 
 	_content = HBoxContainer.new()
 	_content.add_theme_constant_override("separation", 10)
 	_content.custom_minimum_size.y = LIST_SIZE.y
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(_content)
 	_build_join_row()
 	_select_tab(0)
@@ -274,16 +278,16 @@ func _build_thien_tam_thap(parent: Control) -> void:
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
 
+	var map_entry: Dictionary = ThienTamThapScript.map_entry()
+	var map_frame := _minimap_frame(map_entry)
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
 	var info := VBoxContainer.new()
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
-
-	var map_entry: Dictionary = ThienTamThapScript.map_entry()
-	var map_frame := _minimap_frame(map_entry)
-	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	middle.add_child(map_frame)
 
 	info.add_child(SocialUi.label(tr("Điều kiện tham gia: Đẳng cấp 30 trở lên · Tối đa 3 lượt đi mỗi ngày."), SocialUi.GOLD, 14))
 	info.add_child(SocialUi.label(tr("Quy mô: Hơn 740 đợt quái liên hoàn theo thứ tự từ sơ khai đến cao cấp."), SocialUi.TEXT, 13))
@@ -355,15 +359,15 @@ func _build_linh_lung_thap(parent: Control) -> void:
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
 
+	var map_frame := _minimap_frame(LinhLungThapScript.map_entry())
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
 	var info := VBoxContainer.new()
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
-
-	var map_frame := _minimap_frame(LinhLungThapScript.map_entry())
-	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	middle.add_child(map_frame)
 
 	var lines := [
 		tr("Vượt 7 tầng tháp trong 25 phút: Cơ chế Ẩn Danh (Người Bí Ẩn), PK tự do tranh đoạt Cầm Long Trụ."),
@@ -459,16 +463,16 @@ func _build_honor_defense(parent: Control) -> void:
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
 
+	var map_entry: Dictionary = HonorDefenseChallenge.map_entry()
+	var map_frame := _minimap_frame(map_entry)
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
 	var info := VBoxContainer.new()
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
-
-	var map_entry: Dictionary = HonorDefenseChallenge.map_entry()
-	var map_frame := _minimap_frame(map_entry)
-	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	middle.add_child(map_frame)
 
 	info.add_child(SocialUi.label(tr("Quy mô: 200 đợt quái (cấp 1 - 200) · 20s/đợt · 20 quái/đợt · 4 cổng xuất kích."), SocialUi.GOLD, 14))
 	info.add_child(SocialUi.label(tr("Cơ chế Boss: Mỗi 10 đợt xuất hiện 1 Đại Boss (máu tăng gấp 15 lần)."), SocialUi.TEXT, 13))
@@ -509,12 +513,6 @@ func _build_stages_challenge(parent: Control) -> void:
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
 
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 6)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.alignment = BoxContainer.ALIGNMENT_CENTER
-	middle.add_child(info)
-
 	var hub := _get_hub()
 	var stages_arr: Array[StageData] = []
 	if GameManager != null and GameManager.has_method("get_all_stages"):
@@ -534,6 +532,12 @@ func _build_stages_challenge(parent: Control) -> void:
 	var map_frame := _minimap_frame({"name": preview_stage_name, "dir": map_dir_current})
 	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	middle.add_child(map_frame)
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 6)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	middle.add_child(info)
 
 	info.add_child(SocialUi.label(tr("Bàn hiện tại: %s") % preview_stage_name, SocialUi.GOLD, 15))
 	var cleared_cnt: int = _profile.stages_cleared if _profile else 0
@@ -623,14 +627,14 @@ func _build_time_challenge(parent: Control) -> void:
 	var middle := HBoxContainer.new()
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
+	var map_frame := _minimap_frame(TimeChallenge.map_entry())
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
 	var info := VBoxContainer.new()
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
-	var map_frame := _minimap_frame(TimeChallenge.map_entry())
-	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	middle.add_child(map_frame)
 	var lines := [
 		tr("Vượt qua 28 ải trong %d phút: hết quái ải này mới ra ải sau; 12 ải có boss, ải 28 là đại boss Độc Cô Quỷ Kiếm.") % int(int(r.get("time_limit_sec", 1800)) / 60.0),
 		tr("Điều kiện: cấp từ %d · phí %s lượng + 1 %s · mỗi ngày %d lượt.") % [int(r.get("min_level", 80)), TimeChallenge._money(int(r.get("cost", 150000))), tr(TimeChallenge.ENTRY_ITEM_NAME), int(r.get("runs_per_day", 2))],
@@ -728,15 +732,15 @@ func _build_phong_lang_do(parent: Control) -> void:
 	middle.add_theme_constant_override("separation", 16)
 	box.add_child(middle)
 
+	var map_frame := _minimap_frame(PhongLangDoChallenge.map_entry())
+	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	middle.add_child(map_frame)
+
 	var info := VBoxContainer.new()
 	info.add_theme_constant_override("separation", 6)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	middle.add_child(info)
-
-	var map_frame := _minimap_frame(PhongLangDoChallenge.map_entry())
-	map_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	middle.add_child(map_frame)
 
 	var lines := [
 		tr("Vượt sông Hoàng Hà trong 10 phút: tiêu diệt 3 đợt Thủy Tặc & Đại Boss Hoàng Kim Yên Hiểu Trái."),

@@ -1339,6 +1339,9 @@ func _on_discard(c: Conn, uid: String) -> void:
 		if it.uid == uid:
 			if SecurityLock.is_item_locked(it):
 				return
+			## Đồ Hoàng Kim chỉ vứt trong trận PUBG — server online chưa có trận PUBG nên luôn chặn (không tin client).
+			if PubgManager.discard_block_reason(it, false) != "":
+				return
 			c.profile.inventory.remove_at(i)
 			c.data = c.profile.to_dict()
 			c.dirty = true
