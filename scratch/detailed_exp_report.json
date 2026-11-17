@@ -1,0 +1,3651 @@
+[
+  {
+    "id": 20,
+    "name": "Giang Tân Thôn",
+    "level": 10,
+    "mons": [
+      {
+        "tid": 31,
+        "name": "Kim Miêu",
+        "level": 10,
+        "count": 204,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 42,
+        "name": "Hươu đốm",
+        "level": 10,
+        "count": 204,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 43,
+        "name": "Heo trắng",
+        "level": 10,
+        "count": 203,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 414,
+        "name": "Mộc nhân",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 415,
+        "name": "Bao cát",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 413,
+        "name": "Cọc gỗ",
+        "level": 1,
+        "count": 6,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "name": "Ba Lăng Huyện",
+    "level": 10,
+    "mons": [
+      {
+        "tid": 31,
+        "name": "Kim Miêu",
+        "level": 10,
+        "count": 269,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 42,
+        "name": "Hươu đốm",
+        "level": 10,
+        "count": 268,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 43,
+        "name": "Heo trắng",
+        "level": 10,
+        "count": 268,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 414,
+        "name": "Mộc nhân",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 415,
+        "name": "Bao cát",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 413,
+        "name": "Cọc gỗ",
+        "level": 1,
+        "count": 6,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "name": "Nam Nhạc Trấn",
+    "level": 10,
+    "mons": [
+      {
+        "tid": 31,
+        "name": "Kim Miêu",
+        "level": 10,
+        "count": 49,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 42,
+        "name": "Hươu đốm",
+        "level": 10,
+        "count": 49,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 43,
+        "name": "Heo trắng",
+        "level": 10,
+        "count": 48,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 121,
+    "name": "Long Môn Trấn",
+    "level": 10,
+    "mons": [
+      {
+        "tid": 31,
+        "name": "Kim Miêu",
+        "level": 10,
+        "count": 407,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 42,
+        "name": "Hươu đốm",
+        "level": 10,
+        "count": 407,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 43,
+        "name": "Heo trắng",
+        "level": 10,
+        "count": 406,
+        "base_exp": 90,
+        "exp_matched": 90,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 414,
+        "name": "Mộc nhân",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 415,
+        "name": "Bao cát",
+        "level": 1,
+        "count": 8,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 413,
+        "name": "Cọc gỗ",
+        "level": 1,
+        "count": 6,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Hoa Sơn",
+    "level": 20,
+    "mons": [
+      {
+        "tid": 11,
+        "name": "Heo rừng",
+        "level": 20,
+        "count": 62,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 12,
+        "name": "Nhím",
+        "level": 20,
+        "count": 63,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Thành Đô",
+    "level": 20,
+    "mons": [
+      {
+        "tid": 11,
+        "name": "Heo rừng",
+        "level": 20,
+        "count": 171,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 33,
+        "name": "Hoán hùng",
+        "level": 20,
+        "count": 171,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 34,
+        "name": "Linh Miêu",
+        "level": 20,
+        "count": 170,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 12,
+        "name": "Nhím",
+        "level": 20,
+        "count": 170,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 162,
+    "name": "Đại Lý phủ",
+    "level": 20,
+    "mons": [
+      {
+        "tid": 11,
+        "name": "Heo rừng",
+        "level": 20,
+        "count": 160,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 33,
+        "name": "Hoán hùng",
+        "level": 20,
+        "count": 159,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 34,
+        "name": "Linh Miêu",
+        "level": 20,
+        "count": 159,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 12,
+        "name": "Nhím",
+        "level": 20,
+        "count": 159,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 176,
+    "name": "Lâm An",
+    "level": 20,
+    "mons": [
+      {
+        "tid": 11,
+        "name": "Heo rừng",
+        "level": 20,
+        "count": 250,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 33,
+        "name": "Hoán hùng",
+        "level": 20,
+        "count": 250,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 34,
+        "name": "Linh Miêu",
+        "level": 20,
+        "count": 250,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 12,
+        "name": "Nhím",
+        "level": 20,
+        "count": 250,
+        "base_exp": 170,
+        "exp_matched": 170,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Thanh Thành sơn",
+    "level": 30,
+    "mons": [
+      {
+        "tid": 24,
+        "name": "Kim Điêu",
+        "level": 30,
+        "count": 271,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 25,
+        "name": "Thương ưng",
+        "level": 30,
+        "count": 271,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 26,
+        "name": "Kền Kền",
+        "level": 30,
+        "count": 270,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "name": "Vũ Lăng Sơn",
+    "level": 30,
+    "mons": [
+      {
+        "tid": 10,
+        "name": "Hỏa Hồ",
+        "level": 30,
+        "count": 143,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 25,
+        "name": "Thương ưng",
+        "level": 30,
+        "count": 143,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 26,
+        "name": "Kền Kền",
+        "level": 30,
+        "count": 142,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 140,
+    "name": "Dược Vương Cốc",
+    "level": 30,
+    "mons": [
+      {
+        "tid": 34,
+        "name": "Linh Miêu",
+        "level": 30,
+        "count": 105,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 30,
+        "count": 104,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 42,
+        "name": "Hươu đốm",
+        "level": 30,
+        "count": 104,
+        "base_exp": 290,
+        "exp_matched": 290,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "name": "Đông Phục Ngưu Sơn",
+    "level": 40,
+    "mons": [
+      {
+        "tid": 7,
+        "name": "Sói xanh",
+        "level": 40,
+        "count": 212,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 8,
+        "name": "Sói tuyết",
+        "level": 40,
+        "count": 212,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 10,
+        "name": "Hỏa Hồ",
+        "level": 40,
+        "count": 211,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "name": "Thục Cương Sơn",
+    "level": 40,
+    "mons": [
+      {
+        "tid": 17,
+        "name": "Trâu rừng",
+        "level": 40,
+        "count": 204,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 36,
+        "name": "Khỉ xám",
+        "level": 40,
+        "count": 204,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 40,
+        "count": 203,
+        "base_exp": 410,
+        "exp_matched": 410,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "name": "Tây Phục Ngưu Sơn",
+    "level": 50,
+    "mons": [
+      {
+        "tid": 7,
+        "name": "Sói xanh",
+        "level": 50,
+        "count": 149,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 8,
+        "name": "Sói tuyết",
+        "level": 50,
+        "count": 149,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 10,
+        "name": "Hỏa Hồ",
+        "level": 50,
+        "count": 149,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 122,
+    "name": "Hoàng Hà Nguyên Đầu",
+    "level": 50,
+    "mons": [
+      {
+        "tid": 2,
+        "name": "Bạch Hổ",
+        "level": 50,
+        "count": 68,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 50,
+        "count": 67,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 26,
+        "name": "Kền Kền",
+        "level": 50,
+        "count": 67,
+        "base_exp": 795,
+        "exp_matched": 795,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "name": "Hưởng Thủy Động",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 11,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "name": "Thiết Tháp Tầng 1",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 17,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 13,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 3,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "name": "Thiết Tháp Tầng 2",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 7,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 7,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "name": "Thiết Tháp Tầng 3",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 20,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 12,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "name": "Thiên Tâm Động",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 14,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 11,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "name": "Đáy Động Đình Hồ tầng 1",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 22,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 7,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 5,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 116,
+    "name": "Tường Vân Động Tầng 1",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 17,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 15,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 9,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 5,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 132,
+    "name": "Băng Huyệt Mê Cung",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 10,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 9,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 8,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 5,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 4,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 182,
+    "name": "Mê Cung Nghiệt Long Động",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 10,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 9,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 5,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 2,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 194,
+    "name": "Mê Cung Ngọc Hoa Động",
+    "level": 55,
+    "mons": [
+      {
+        "tid": 1,
+        "name": "Hoa Nam hổ",
+        "level": 55,
+        "count": 13,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 37,
+        "name": "Hắc Diệp Hầu",
+        "level": 55,
+        "count": 6,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 22,
+        "name": "Kim Hoàn Mãng Xà",
+        "level": 55,
+        "count": 4,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 3,
+        "name": "Kim Tiền báo",
+        "level": 55,
+        "count": 3,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 169,
+        "name": "sơn tặc 07",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 168,
+        "name": "sơn tặc 06",
+        "level": 55,
+        "count": 1,
+        "base_exp": 937,
+        "exp_matched": 937,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Tần Lăng tầng 1",
+    "level": 60,
+    "mons": [
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 60,
+        "count": 18,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 60,
+        "count": 26,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 191,
+        "name": "Dong Nhan",
+        "level": 60,
+        "count": 13,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 60,
+        "count": 19,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 60,
+        "count": 14,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 60,
+        "count": 16,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 597,
+        "name": "Tong Dao Binh 1 Truong Bach Bac",
+        "level": 60,
+        "count": 11,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 125,
+    "name": "Lưu Tiên Động Tầng 1",
+    "level": 60,
+    "mons": [
+      {
+        "tid": 146,
+        "name": "Đoạt Mệnh Liêm",
+        "level": 60,
+        "count": 33,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 60,
+        "count": 33,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 60,
+        "count": 33,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 163,
+    "name": "ác Bá Địa Đạo",
+    "level": 60,
+    "mons": [
+      {
+        "tid": 176,
+        "name": "Quái nhân",
+        "level": 60,
+        "count": 40,
+        "base_exp": 975,
+        "exp_matched": 975,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 1206,
+        "name": "ác bá",
+        "level": 60,
+        "count": 40,
+        "base_exp": -1,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      },
+      {
+        "tid": 1207,
+        "name": "Bát Bì",
+        "level": 60,
+        "count": 40,
+        "base_exp": -1,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "name": "Mật Đạo Nha Môn Tương Dương",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 7,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 7,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 65,
+        "count": 5,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 3,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 2,
+        "name": "Bạch Hổ",
+        "level": 65,
+        "count": 1,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 114,
+    "name": "108 La Hán Trận",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 20,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 12,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 65,
+        "count": 6,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 6,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 2,
+        "name": "Bạch Hổ",
+        "level": 65,
+        "count": 2,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 117,
+    "name": "Tường Vân Động Tầng 2",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 26,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 15,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 6,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 65,
+        "count": 2,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 2,
+        "name": "Bạch Hổ",
+        "level": 65,
+        "count": 2,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 118,
+    "name": "Tường Vân Động Tầng 3",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 10,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 3,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 3,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 119,
+    "name": "Tường Vân Động Tầng 4",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 65,
+        "count": 29,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 19,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 8,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 6,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 196,
+    "name": "Dương Giác Động",
+    "level": 65,
+    "mons": [
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 65,
+        "count": 27,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 161,
+        "name": "Thiết Trảo",
+        "level": 65,
+        "count": 14,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 4,
+        "name": "Báo trắng",
+        "level": 65,
+        "count": 2,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 2,
+        "name": "Bạch Hổ",
+        "level": 65,
+        "count": 1,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 38,
+        "name": "Kim Tơ Hầu",
+        "level": 65,
+        "count": 1,
+        "base_exp": 1117,
+        "exp_matched": 1117,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Trường Gian Nguyên Đầu",
+    "level": 70,
+    "mons": [
+      {
+        "tid": 412,
+        "name": "ác Ni",
+        "level": 70,
+        "count": 358,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "name": "Hành Sơn",
+    "level": 70,
+    "mons": [
+      {
+        "tid": 24,
+        "name": "Kim Điêu",
+        "level": 70,
+        "count": 61,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 552,
+        "name": "Thứu thần",
+        "level": 70,
+        "count": 60,
+        "base_exp": 470,
+        "exp_matched": 470,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 26,
+        "name": "Kền Kền",
+        "level": 70,
+        "count": 60,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 164,
+    "name": "Thiên Tâm tháp tầng 1",
+    "level": 70,
+    "mons": [
+      {
+        "tid": 191,
+        "name": "Dong Nhan",
+        "level": 70,
+        "count": 21,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 70,
+        "count": 17,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 70,
+        "count": 12,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 70,
+        "count": 9,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 70,
+        "count": 12,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 70,
+        "count": 18,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 597,
+        "name": "Tong Dao Binh 1 Truong Bach Bac",
+        "level": 70,
+        "count": 14,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 165,
+    "name": "Thiên Tâm tháp tầng 2",
+    "level": 70,
+    "mons": [
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 70,
+        "count": 31,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 70,
+        "count": 15,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 191,
+        "name": "Dong Nhan",
+        "level": 70,
+        "count": 5,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 70,
+        "count": 7,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 70,
+        "count": 10,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 70,
+        "count": 3,
+        "base_exp": 1155,
+        "exp_matched": 1155,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 597,
+        "name": "Tong Dao Binh 1 Truong Bach Bac",
+        "level": 70,
+        "count": 11,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "name": "Đào Hoa Nguyên",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 26,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 25,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 15,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 10,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 23,
+        "name": "Xích Luyện Xà",
+        "level": 75,
+        "count": 7,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "name": "Mê Cung Đại Tù Động",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 8,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 4,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 23,
+        "name": "Xích Luyện Xà",
+        "level": 75,
+        "count": 3,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 3,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "name": "Sơn Bảo Động",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 17,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 13,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 6,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 3,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "name": "Linh Cốc Động",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 16,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 9,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 6,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 4,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 23,
+        "name": "Xích Luyện Xà",
+        "level": 75,
+        "count": 2,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 120,
+    "name": "Tường Vân Động Tầng 5",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 8,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 23,
+        "name": "Xích Luyện Xà",
+        "level": 75,
+        "count": 6,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 6,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 3,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 142,
+    "name": "Dược Vương Động Tầng 2",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 19,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 23,
+        "name": "Xích Luyện Xà",
+        "level": 75,
+        "count": 16,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 13,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 9,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 166,
+    "name": "Thiên Tâm tháp tầng 3",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 75,
+        "count": 14,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 75,
+        "count": 53,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 75,
+        "count": 23,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 75,
+        "count": 13,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 75,
+        "count": 9,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 597,
+        "name": "Tong Dao Binh 1 Truong Bach Bac",
+        "level": 75,
+        "count": 18,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 169,
+    "name": "Long Nhãn Động",
+    "level": 75,
+    "mons": [
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 75,
+        "count": 38,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 162,
+        "name": "Đoản Kích",
+        "level": 75,
+        "count": 12,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 154,
+        "name": "Lưu Lương",
+        "level": 75,
+        "count": 8,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 75,
+        "count": 1,
+        "base_exp": 1237,
+        "exp_matched": 1237,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 123,
+    "name": "Lão Hổ Động",
+    "level": 80,
+    "mons": [
+      {
+        "tid": 140,
+        "name": "Khoái Thối",
+        "level": 80,
+        "count": 43,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 149,
+        "name": "Trường Thương",
+        "level": 80,
+        "count": 43,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 80,
+        "count": 42,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 206,
+    "name": "Tần Lăng tầng 2",
+    "level": 80,
+    "mons": [
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 80,
+        "count": 8,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 80,
+        "count": 5,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 191,
+        "name": "Dong Nhan",
+        "level": 80,
+        "count": 15,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 80,
+        "count": 3,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 597,
+        "name": "Tong Dao Binh 1 Truong Bach Bac",
+        "level": 80,
+        "count": 18,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 80,
+        "count": 23,
+        "base_exp": 1275,
+        "exp_matched": 1275,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 80,
+        "count": 1,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 319,
+    "name": "Lâm Du Quan",
+    "level": 80,
+    "mons": [
+      {
+        "tid": 588,
+        "name": "Bôn Lôi",
+        "level": 80,
+        "count": 343,
+        "base_exp": 1200,
+        "exp_matched": 1200,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 589,
+        "name": "Ngân Nha",
+        "level": 80,
+        "count": 342,
+        "base_exp": 1300,
+        "exp_matched": 1300,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 1037,
+    "name": "Khu Chuẩn Bị Linh Lung Tháp",
+    "level": 80,
+    "mons": []
+  },
+  {
+    "id": 1038,
+    "name": "Linh Lung Tháp",
+    "level": 80,
+    "mons": []
+  },
+  {
+    "id": 10,
+    "name": "Nhạn Thạch Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 20,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 143,
+    "name": "Dược Vương Động Tầng 3",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 12,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 7,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 4,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 181,
+    "name": "Mê Cung Lưỡng Thủy Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 23,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 7,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 2,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 198,
+    "name": "Thanh khê Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 6,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 5,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 199,
+    "name": "Vũ Lăng Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 15,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 12,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 2,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 200,
+    "name": "Cổ Dương Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 12,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 5,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 201,
+    "name": "Mê Cung Băng Hà Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 23,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 17,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 16,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 3,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 202,
+    "name": "Mê Cung Phù Dung Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 13,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 9,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 5,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 203,
+    "name": "Vô Danh Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 23,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 7,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 2,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 204,
+    "name": "Phi Thiên Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 17,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 8,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 6,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 6,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 5,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 205,
+    "name": "Mê Cung Dương Trung Động",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 85,
+        "count": 27,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 85,
+        "count": 11,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 150,
+        "name": "Thanh Mi",
+        "level": 85,
+        "count": 3,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 85,
+        "count": 2,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 151,
+        "name": "Mãng Hán",
+        "level": 85,
+        "count": 1,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 207,
+    "name": "Tần Lăng tầng 3",
+    "level": 85,
+    "mons": [
+      {
+        "tid": 148,
+        "name": "Son Tac Dau Linh 2",
+        "level": 85,
+        "count": 21,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 598,
+        "name": "Kim Pho Tuong 2 Truong Bach Nam",
+        "level": 85,
+        "count": 28,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 192,
+        "name": "Nu Thich Khach",
+        "level": 85,
+        "count": 24,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 191,
+        "name": "Dong Nhan",
+        "level": 85,
+        "count": 5,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 594,
+        "name": "Son Tac Dau Linh1 Truong Bach B",
+        "level": 85,
+        "count": 17,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 176,
+        "name": "Quai Nhan",
+        "level": 85,
+        "count": 12,
+        "base_exp": 1387,
+        "exp_matched": 1387,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 144,
+    "name": "Dược Vương Động tầng 4",
+    "level": 90,
+    "mons": [
+      {
+        "tid": 142,
+        "name": "Giang Nam Son Tac Dau Linh",
+        "level": 90,
+        "count": 14,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 146,
+        "name": "Trung Nguyen Son Tac Dau Linh",
+        "level": 90,
+        "count": 6,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 140,
+        "name": "Tay Bac Son Tac Dau Linh",
+        "level": 90,
+        "count": 32,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 141,
+        "name": "Tay Nam Son Tac Dau Linh",
+        "level": 90,
+        "count": 14,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 144,
+        "name": "Hoa Bac Son Tac Dau Linh",
+        "level": 90,
+        "count": 10,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 143,
+        "name": "Dong Bac Son Tac Dau Linh",
+        "level": 90,
+        "count": 35,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 145,
+        "name": "Nam Bo Son Tac Dau Linh",
+        "level": 90,
+        "count": 20,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 224,
+    "name": "Sa Mạc Địa Biểu",
+    "level": 90,
+    "mons": [
+      {
+        "tid": 556,
+        "name": "Xích Luyện Xà",
+        "level": 90,
+        "count": 237,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 557,
+        "name": "Kên đất",
+        "level": 90,
+        "count": 237,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 558,
+        "name": "Bọ cạp",
+        "level": 90,
+        "count": 236,
+        "base_exp": 1425,
+        "exp_matched": 1425,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 320,
+    "name": "Chân Núi Trường Bạch",
+    "level": 90,
+    "mons": [
+      {
+        "tid": 590,
+        "name": "Đông Bắc hổ",
+        "level": 90,
+        "count": 198,
+        "base_exp": 1350,
+        "exp_matched": 1350,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 591,
+        "name": "Độc Bộ",
+        "level": 90,
+        "count": 198,
+        "base_exp": 1350,
+        "exp_matched": 1350,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 592,
+        "name": "Xích Chưởng",
+        "level": 90,
+        "count": 198,
+        "base_exp": 1400,
+        "exp_matched": 1400,
+        "exp_at_153": 1
+      },
+      {
+        "tid": 593,
+        "name": "Tuyết ảnh",
+        "level": 90,
+        "count": 198,
+        "base_exp": 1400,
+        "exp_matched": 1400,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 337,
+    "name": "Thuyền Phong Lăng Độ",
+    "level": 95,
+    "mons": []
+  },
+  {
+    "id": 75,
+    "name": "Xi Vưu Động",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 155,
+        "name": "Hắc Cân",
+        "level": 100,
+        "count": 108,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 156,
+        "name": "ảnh Côn",
+        "level": 100,
+        "count": 108,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "name": "Tiến Cúc Động",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 838,
+        "name": "Đoạt Mệnh Liêm",
+        "level": 100,
+        "count": 45,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      },
+      {
+        "tid": 147,
+        "name": "Đao khách",
+        "level": 100,
+        "count": 45,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 148,
+        "name": "Báo đốm",
+        "level": 100,
+        "count": 45,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      }
+    ]
+  },
+  {
+    "id": 124,
+    "name": "Hiên Viên Động",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 13,
+        "name": "Đại Tượng",
+        "level": 100,
+        "count": 35,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 14,
+        "name": "Voi Hoàng hà",
+        "level": 100,
+        "count": 35,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      }
+    ]
+  },
+  {
+    "id": 225,
+    "name": "Sa Mạc 1",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 561,
+        "name": "Lưu Vân",
+        "level": 100,
+        "count": 137,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 560,
+        "name": "Lưu Quang",
+        "level": 100,
+        "count": 137,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 917,
+        "name": "Lưu Phong",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 226,
+    "name": "Sa Mạc 2",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 561,
+        "name": "Lưu Vân",
+        "level": 100,
+        "count": 130,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 560,
+        "name": "Lưu Quang",
+        "level": 100,
+        "count": 130,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 917,
+        "name": "Lưu Phong",
+        "level": 100,
+        "count": 130,
+        "base_exp": 1,
+        "exp_matched": 1,
+        "exp_at_153": 1
+      }
+    ]
+  },
+  {
+    "id": 227,
+    "name": "Sa Mạc 3",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 534,
+        "name": "Tật Vũ",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 535,
+        "name": "Tật Phong",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 536,
+        "name": "Tật Vũ",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 537,
+        "name": "Tật Viêm",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      },
+      {
+        "tid": 538,
+        "name": "Tật Điện",
+        "level": 100,
+        "count": 136,
+        "base_exp": 1575,
+        "exp_matched": 1575,
+        "exp_at_153": 1158
+      }
+    ]
+  },
+  {
+    "id": 321,
+    "name": "Trường Bạch Sơn Nam 1",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 598,
+        "name": "Sương Đao",
+        "level": 100,
+        "count": 396,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1470
+      },
+      {
+        "tid": 599,
+        "name": "Lãnh Cung",
+        "level": 100,
+        "count": 396,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 600,
+        "name": "Giáng Chùy",
+        "level": 100,
+        "count": 396,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 601,
+        "name": "Sãn Vũ",
+        "level": 100,
+        "count": 395,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      }
+    ]
+  },
+  {
+    "id": 322,
+    "name": "Trường Bạch Sơn Bắc 1",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 594,
+        "name": "Đao Trảm",
+        "level": 100,
+        "count": 368,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1323
+      },
+      {
+        "tid": 595,
+        "name": "Lạc Quang",
+        "level": 100,
+        "count": 368,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 596,
+        "name": "Hàn Thương",
+        "level": 100,
+        "count": 368,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 597,
+        "name": "Đoạt Phách",
+        "level": 100,
+        "count": 367,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      }
+    ]
+  },
+  {
+    "id": 336,
+    "name": "Phong Lăng Độ",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 707,
+        "name": "Thần Tý",
+        "level": 100,
+        "count": 484,
+        "base_exp": 1400,
+        "exp_matched": 1400,
+        "exp_at_153": 1029
+      },
+      {
+        "tid": 708,
+        "name": "Lãnh Thương",
+        "level": 100,
+        "count": 484,
+        "base_exp": 1400,
+        "exp_matched": 1400,
+        "exp_at_153": 1029
+      }
+    ]
+  },
+  {
+    "id": 340,
+    "name": "Mạc Cao Quật (1)",
+    "level": 100,
+    "mons": [
+      {
+        "tid": 703,
+        "name": "Phi Sa",
+        "level": 100,
+        "count": 428,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 704,
+        "name": "Tẩu Thạch",
+        "level": 100,
+        "count": 428,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1103
+      },
+      {
+        "tid": 705,
+        "name": "Sa Đạo",
+        "level": 100,
+        "count": 427,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1470
+      },
+      {
+        "tid": 706,
+        "name": "Mạc Tặc",
+        "level": 100,
+        "count": 427,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1323
+      }
+    ]
+  },
+  {
+    "id": 480,
+    "name": "Thách Thức Ải 28",
+    "level": 100,
+    "mons": []
+  },
+  {
+    "id": 75,
+    "name": "Xi Vưu Động (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 582,
+        "name": "Lam Y Y",
+        "level": 110,
+        "count": 400,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "name": "Tiến Cúc Động (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 567,
+        "name": "Chung Linh Tú",
+        "level": 110,
+        "count": 400,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 124,
+    "name": "Hiên Viên Động (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 565,
+        "name": "Đoan Mộc Duệ",
+        "level": 110,
+        "count": 400,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 225,
+    "name": "Sa Mạc Sơn Động 1 (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 583,
+        "name": "Lam Y Y",
+        "level": 110,
+        "count": 450,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 226,
+    "name": "Sa Mạc Sơn Động 2 (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 745,
+        "name": "Hà Nhân Ngã",
+        "level": 110,
+        "count": 450,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 227,
+    "name": "Sa Mạc Sơn Động 3 (11x)",
+    "level": 110,
+    "mons": [
+      {
+        "tid": 563,
+        "name": "Gia Luật Tị Ly",
+        "level": 110,
+        "count": 450,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 321,
+    "name": "Trường Bạch Sơn Nam (12x)",
+    "level": 120,
+    "mons": [
+      {
+        "tid": 562,
+        "name": "Đạo Thanh Chân Nhân",
+        "level": 120,
+        "count": 500,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 322,
+    "name": "Trường Bạch Sơn Bắc (12x)",
+    "level": 120,
+    "mons": [
+      {
+        "tid": 568,
+        "name": "Hà Linh Phiêu",
+        "level": 120,
+        "count": 500,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 336,
+    "name": "Phong Lăng Độ (12x)",
+    "level": 120,
+    "mons": [
+      {
+        "tid": 744,
+        "name": "Thủy Tặc Đầu Lĩnh",
+        "level": 120,
+        "count": 450,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 340,
+    "name": "Mạc Cao Quật (12x)",
+    "level": 120,
+    "mons": [
+      {
+        "tid": 564,
+        "name": "Hoàn Nhan Tuyết Y",
+        "level": 120,
+        "count": 500,
+        "base_exp": 800000,
+        "exp_matched": 800000,
+        "exp_at_153": 668000
+      }
+    ]
+  },
+  {
+    "id": 1041,
+    "name": "Nguyệt Ca Đảo (12x)",
+    "level": 120,
+    "mons": [
+      {
+        "tid": 601,
+        "name": "Giới Luật Viện Thủ Tọa Trường Bạch Nam",
+        "level": 120,
+        "count": 117,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 597,
+        "name": "Tống Đao Binh 1 Trường Bạch Bắc",
+        "level": 120,
+        "count": 99,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 594,
+        "name": "Sơn Tặc Đầu Lĩnh1 Trường Bạch Bắc",
+        "level": 120,
+        "count": 97,
+        "base_exp": 1800,
+        "exp_matched": 1800,
+        "exp_at_153": 1503
+      },
+      {
+        "tid": 599,
+        "name": "Kim Cung Binh 2 Trường Bạch Nam",
+        "level": 120,
+        "count": 53,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 595,
+        "name": "Tống Phó Tướng 1 Trường Bạch Bắc",
+        "level": 120,
+        "count": 47,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 598,
+        "name": "Kim Phó Tướng 2 Trường Bạch Nam",
+        "level": 120,
+        "count": 44,
+        "base_exp": 2000,
+        "exp_matched": 2000,
+        "exp_at_153": 1670
+      },
+      {
+        "tid": 600,
+        "name": "Địa Hộ Pháp Trường Bạch Nam",
+        "level": 120,
+        "count": 39,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 596,
+        "name": "Kim Thương Quân 2 Trường Bạch Bắc",
+        "level": 120,
+        "count": 24,
+        "base_exp": 1500,
+        "exp_matched": 1500,
+        "exp_at_153": 1253
+      },
+      {
+        "tid": 1850,
+        "name": "Nguyệt Ca Đảo Chủ (Giai đoạn 1)",
+        "level": 120,
+        "count": 1,
+        "base_exp": 0,
+        "exp_matched": 0,
+        "exp_at_153": 0
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "name": "Biện Kinh",
+    "level": 10,
+    "mons": []
+  }
+]
