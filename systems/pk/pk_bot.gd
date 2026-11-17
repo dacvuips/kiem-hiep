@@ -219,8 +219,9 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	if to_aim.length() > 1.0:
 		avatar.face(to_aim.normalized())
 	_casting = true
-	avatar.play("attack" if physical else "cast", duration)
-	return avatar.get_action_duration() if duration <= 0.0 else duration
+	var dur := duration if duration > 0.0 else SectSkillController.action_seconds(physical, combat_stats)
+	avatar.play("attack" if physical else "cast", dur)
+	return dur
 
 func on_hit_target(target: Node, skill_info: Dictionary = {}) -> void:
 	if skill_controller != null and is_instance_valid(target) and target is Node2D:

@@ -22,6 +22,8 @@ var five_elements_damage_p: int = 0
 var hit_count: int = 1
 var projectile_count: int = 1
 var cooldown: float = 0.5
+## Độ dài động tác ra chiêu (giây, đã tính tốc độ đánh/xuất chiêu) — khoá không cho ra chiêu đánh khác (KNpc gốc).
+var action_time: float = 1.0
 var mana_cost: float = 5.0
 var projectile_speed: float = 300.0
 var range_multiplier: float = 1.0

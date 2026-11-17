@@ -100,11 +100,16 @@ func test_free_mana_stage_rules() -> void:
 	GameManager.field_map = {"id": 500, "name": "Tống Kim LOL", "tong_kim_lol": true}
 	check("Tống Kim LOL BẮT BUỘC tốn mana", GameManager.is_free_mana_stage(mock_player) == false)
 
-	# 12. Vượt Ải Stage (12 bàn - current_stage != null)
+	# 12. Vượt Ải Stage offline (current_stage != null hoặc survivor_mode) -> MIỄN PHÍ mana
+	GameModeManager.current_mode = GameModeManager.Mode.OFFLINE
+	GameManager.field_map = {"survivor_mode": true}
+	GameManager.game_mode = GameManager.GameMode.STAGE
+	check("Vượt Ải Survivor offline MIỄN PHÍ mana", GameManager.is_free_mana_stage(mock_player) == true)
 	GameManager.field_map = {}
 	GameManager.current_stage = StageData.new()
-	check("Vượt Ải Stage (current_stage) BẮT BUỘC tốn mana", GameManager.is_free_mana_stage(mock_player) == false)
+	check("Vượt Ải Stage offline (current_stage) MIỄN PHÍ mana", GameManager.is_free_mana_stage(mock_player) == true)
 	GameManager.current_stage = null
+	GameModeManager.current_mode = GameModeManager.Mode.ONLINE
 
 	# 13. Màn chơi khác (field_map rỗng)
 	GameManager.field_map = {}
@@ -190,7 +195,7 @@ func test_skill_cast_mana_deduction() -> void:
 		check("Ải Luyện KHÔNG bị trừ mana (mana vẫn nguyên 100)", p.mana == 100.0)
 
 		# Reset cooldown để test tiếp
-		controller._cooldowns.clear()
+		controller.clear_cooldowns()
 
 		# Case B: Tinh Anh -> KHÔNG trừ mana
 		GameManager.field_map = {"id": 121, "name": "Long Môn Trấn", "hell": {"tier": 10, "stars": 3}}
@@ -199,7 +204,7 @@ func test_skill_cast_mana_deduction() -> void:
 		check("Thi triển thành công ở Tinh Anh", cast_ok_hell)
 		check("Tinh Anh KHÔNG bị trừ mana (mana vẫn nguyên 100)", p.mana == 100.0)
 
-		controller._cooldowns.clear()
+		controller.clear_cooldowns()
 
 		# Case C: Tab Boss -> BỊ TRỪ MANA!
 		GameManager.field_map = {"id": 121, "name": "Long Môn Trấn", "boss": {"id": 1, "name": "Cổ Bách"}}
@@ -208,7 +213,7 @@ func test_skill_cast_mana_deduction() -> void:
 		check("Thi triển thành công ở Boss", cast_ok_boss)
 		check("Ở Boss BỊ TRỪ MANA đúng bằng mana_cost (%d -> %d)" % [cost, int(p.mana)], p.mana == 100.0 - cost)
 
-		controller._cooldowns.clear()
+		controller.clear_cooldowns()
 
 		# Case D: Ở Boss khi KHÔNG ĐỦ MANA -> Không cho cast!
 		p.mana = float(cost - 1)
@@ -216,7 +221,7 @@ func test_skill_cast_mana_deduction() -> void:
 		check("Không đủ mana ở Boss -> Thi triển thất bại", cast_fail_mana == false)
 		check("Mana không bị trừ âm", p.mana == float(cost - 1))
 
-		controller._cooldowns.clear()
+		controller.clear_cooldowns()
 
 		# Case E: Ải Luyện nhưng bật Đồ Sát (pk_mode = 1) -> BỊ TRỪ MANA!
 		GameManager.field_map = {"id": 121, "name": "Long Môn Trấn", "level": 10}
@@ -225,7 +230,7 @@ func test_skill_cast_mana_deduction() -> void:
 		var cast_ok_pk = controller._try_cast(skill_test, p, dummy_target)
 		check("Bật PK Đồ Sát ở Ải Luyện: BỊ TRỪ MANA", p.mana == 100.0 - cost)
 
-		controller._cooldowns.clear()
+		controller.clear_cooldowns()
 
 		# Case F: Chế độ Vượt Ải Stage (current_stage != null) -> BỊ TRỪ MANA!
 		GameManager.field_map = {}

@@ -28,13 +28,45 @@ var _cooldowns: Dictionary = {}  ## skill_id (String) -> giây còn lại
 var _cooldown_totals: Dictionary = {}  ## skill_id (String) -> cooldown gốc (để tính % cho UI)
 var _auto_attack_cooldowns: Dictionary = {}  ## skill_id (String) -> giãn cách kích hoạt tự động
 
+## ---- Khoá động tác (KNpc::DoAttack/DoMagic gốc) ----
+## VLTK gốc KHÔNG có hồi chiêu cho đa số chiêu đánh: nhịp ra đòn = độ dài động tác, đang ra chiêu thì không ra chiêu khác.
+## Ngoại công: AttackFrame = 18 (settings/npc/player/BaseValue.ini); nội công: CastFrame = 20 (KNpcSet không đọc CastFrame
+## từ ini nên player giữ mặc định 20 của KNpc). Số frame = frame × 100 / (tốc độ + 100), làm tròn xuống số chẵn.
+const BASE_ATTACK_FRAME := 18
+const BASE_CAST_FRAME := 20
+## false = mỗi skill hồi chiêu độc lập, không khoá động tác (chế độ Survivor ra mọi chiêu cùng lúc — có nhịp riêng).
+var use_action_lock := true
+var _action_lock: float = 0.0  ## giây còn lại của động tác đang diễn (riêng từng người thi triển)
+
+## Độ dài động tác ra chiêu (giây) như KNpc gốc: ngoại công dùng attackspeed_v, nội công dùng castspeed_v.
+static func action_seconds(physical: bool, stats: CombatantStats) -> float:
+	var base := BASE_ATTACK_FRAME if physical else BASE_CAST_FRAME
+	var speed := 0
+	if stats != null:
+		speed = stats.attack_speed if physical else stats.cast_speed
+	var frames := base * 100 / maxi(1, speed + 100)
+	frames -= frames % 2
+	return SkillDefinition.frames_to_seconds(maxi(1, frames))
+
+## Đang diễn động tác ra chiêu (chưa ra được chiêu đánh khác).
+func is_action_locked() -> bool:
+	return use_action_lock and _action_lock > 0.0
+
 func setup(sect_def: SectDefinition) -> void:
 	sect = sect_def
 	_cooldowns.clear()
 	_cooldown_totals.clear()
 	_auto_attack_cooldowns.clear()
+	_action_lock = 0.0
+
+## Xoá mọi hồi chiêu + khoá động tác (đổi map / test).
+func clear_cooldowns() -> void:
+	_cooldowns.clear()
+	_cooldown_totals.clear()
+	_action_lock = 0.0
 
 func tick(delta: float) -> void:
+	_action_lock = maxf(0.0, _action_lock - delta)
 	for id in _cooldowns.keys():
 		_cooldowns[id] = maxf(0.0, _cooldowns[id] - delta)
 	for id in _auto_attack_cooldowns.keys():
@@ -64,6 +96,9 @@ func get_default_main_skill() -> SkillDefinition:
 
 ## Đòn chính mặc định luôn dùng được (không cần học); skill khác phải học >= 1 cấp.
 func is_skill_usable(skill: SkillDefinition) -> bool:
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or (GameManager.field_map != null and GameManager.field_map.get("survivor_mode", false) == true)):
+		if PlayerStats.get_skill_star(skill.id) > 0:
+			return true
 	return skill.is_main_attack or skill.is_basic_attack or DEBUG_UNLOCK_ALL_SKILLS or _profile().get_skill_level(skill.id) > 0
 
 ## Luôn đủ PlayerProfile.HOTBAR_SLOT_COUNT phần tử theo đúng thứ tự ô người chơi đã gắn trong bảng
@@ -152,6 +187,11 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		return false
 	if _cooldowns.get(skill.id, 0.0) > 0.0:
 		return false
+	## Đang diễn động tác chiêu trước (hoặc đang lao/đánh liên hoàn cận chiến) -> chưa ra chiêu đánh khác. Buff bản thân
+	## và bật/tắt hào quang vẫn chạy nền như trước (không chờ, không khoá).
+	if use_action_lock and not self_buff and not toggle_aura:
+		if _action_lock > 0.0 or VltkSkillRunner.is_melee_busy(caster):
+			return false
 	## Đang choáng không ra chiêu được (mọi đường: phím, Auto, nút thanh skill).
 	var status: StatusEffectController = caster.get_node_or_null("StatusEffectController")
 	if status and status.is_stunned:
@@ -204,6 +244,8 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 	var cooldown := DEBUG_COOLDOWN if DEBUG_NO_COOLDOWN else stats.cooldown
 	_cooldowns[skill.id] = cooldown
 	_cooldown_totals[skill.id] = cooldown
+	if use_action_lock and not self_buff:
+		_action_lock = stats.action_time
 	if self_buff:
 		_play_vltk_precast(skill, caster)
 		_cast_support_buff(skill, caster)
@@ -328,8 +370,12 @@ func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D =
 func _learned_level(skill: SkillDefinition) -> int:
 	var prof := _profile()
 	var base_lvl := maxi(1, prof.get_skill_level(skill.id) if prof != null else 1)
-	if PlayerStats.level > 1:
-		base_lvl += int((PlayerStats.level - 1) / 2)
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or (GameManager.field_map != null and GameManager.field_map.get("survivor_mode", false) == true)):
+		var star := PlayerStats.get_skill_star(skill.id)
+		if star > 0:
+			base_lvl = maxi(base_lvl, star * 4)
+		if PlayerStats.level > 1:
+			base_lvl += int((PlayerStats.level - 1) / 2)
 	var caster := get_parent()
 	var c_stats: CombatantStats = caster.get("combat_stats") if caster else null
 	if c_stats != null:
@@ -569,7 +615,9 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSk
 		stats.damage = 0.0
 		stats.extra_damage_ranges = {}
 	stats.element = skill.element	
-	stats.cooldown = skill.cooldown / PlayerStats.attack_speed_multiplier
+	## Hồi chiêu riêng gốc (TimePerCast / skill_mintimepercast_v) không giảm theo tốc độ đánh; tốc độ đánh rút ngắn ĐỘNG TÁC.
+	stats.cooldown = skill.get_cooldown_at_level(learned_level)
+	stats.action_time = action_seconds(is_physical, combat_stats) / maxf(0.5, PlayerStats.attack_speed_multiplier)
 	stats.range_multiplier = PlayerStats.range_multiplier
 	stats.projectile_speed = 350.00
 	stats.vfx_hit_name = skill.vfx_hit_name

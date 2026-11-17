@@ -76,7 +76,7 @@ run_suite() {
 
 cd "$project"
 echo "== Bài test không cần server"
-for s in social_tests social_ui_tests auto_tests sect_join_tests target_tests; do
+for s in social_tests social_ui_tests auto_tests sect_join_tests target_tests save_security_tests cast_timing_tests; do
 	run_suite "$s" "$s.tscn"
 done
 

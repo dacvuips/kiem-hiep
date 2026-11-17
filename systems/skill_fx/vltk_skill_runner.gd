@@ -43,6 +43,10 @@ static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, s
 	ctx.world = caster.get_parent()
 	ctx.stats = stats
 	ctx.attacker_stats = caster.combat_stats if "combat_stats" in caster else null
+	if GameModeManager.is_offline() and GameManager.game_mode == GameManager.GameMode.STAGE:
+		ctx.star_level = PlayerStats.get_skill_star(skill.id) if (caster != null and caster.is_in_group("player")) else 1
+	else:
+		ctx.star_level = 1
 	## Người thi triển không phải nhân vật của mình (VD bot PK đánh người chơi) tự khai nhóm mục tiêu.
 	if "cast_target_group" in caster:
 		ctx.target_group = caster.cast_target_group
@@ -53,7 +57,8 @@ static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, s
 	play_cast_sound(caster, skill.vltk_skill_id)
 	if is_melee_supported(s):
 		SfxManager.play_skill_cast(stats, caster.global_position)
-		_run_melee(ctx, caster, aim_node.get_instance_id() if aim_node != null else 0, aim_point, level, s, skill.get_attack_radius_at_level(level))
+		var melee_rad: float = caster.get_skill_radius(skill) if caster.has_method("get_skill_radius") else skill.get_attack_radius_at_level(level)
+		_run_melee(ctx, caster, aim_node.get_instance_id() if aim_node != null else 0, aim_point, level, s, melee_rad)
 		return
 	var delay := 0.0
 	if caster.has_method("begin_skill_action"):
@@ -104,6 +109,22 @@ static func _melee_approach(ctx: VltkCastContext, caster: Node2D, target_id: int
 	return _melee_aim(target_id, aim["logic"])
 
 static func _run_melee(ctx: VltkCastContext, caster: Node2D, target_id: int, fallback_logic: Vector2, level: int, s: Dictionary, attack_radius: float) -> void:
+	caster.set_meta(MELEE_BUSY_META, Time.get_ticks_msec())
+	await _run_melee_form(ctx, caster, target_id, fallback_logic, level, s, attack_radius)
+	if is_instance_valid(caster):
+		caster.remove_meta(MELEE_BUSY_META)
+
+## Đang lao tới / đánh liên hoàn cận chiến (gốc: Npc còn ở trạng thái do_manyattack/do_runattack thì chưa ra chiêu khác).
+## Quá MELEE_BUSY_MAX_MS coi như đã xong (phòng coroutine bị bỏ dở).
+const MELEE_BUSY_META := &"vltk_melee_busy_ms"
+const MELEE_BUSY_MAX_MS := 6000
+
+static func is_melee_busy(caster: Node) -> bool:
+	if caster == null or not caster.has_meta(MELEE_BUSY_META):
+		return false
+	return Time.get_ticks_msec() - int(caster.get_meta(MELEE_BUSY_META)) < MELEE_BUSY_MAX_MS
+
+static func _run_melee_form(ctx: VltkCastContext, caster: Node2D, target_id: int, fallback_logic: Vector2, level: int, s: Dictionary, attack_radius: float) -> void:
 	match int(s["form"]):
 		MELEE_MANY_ATTACK:
 			var near := await _melee_approach(ctx, caster, target_id, fallback_logic, attack_radius)

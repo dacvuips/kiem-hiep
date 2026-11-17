@@ -94,7 +94,7 @@ vltk_attribs = {
 }
 base_damage = 5.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 144.0
 element = 3
 damage_growth_per_level = 2.3684
@@ -180,7 +180,7 @@ vltk_attribs = {
 }
 base_damage = 10.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 144.0
 element = 3
 damage_growth_per_level = 4.7368
@@ -241,7 +241,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -288,7 +288,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -346,7 +346,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -402,7 +402,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 6.00
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -452,7 +452,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 320.0
 element = 3
 damage_growth_per_level = 0.0
@@ -537,7 +537,7 @@ vltk_attribs = {
 }
 base_damage = 10.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 240.0
 element = 3
 damage_growth_per_level = 24.8421
@@ -615,7 +615,7 @@ vltk_attribs = {
 }
 base_damage = 70.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 240.0
 element = 3
 damage_growth_per_level = 15.2632
@@ -661,7 +661,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -714,7 +714,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 6.00
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -792,7 +792,7 @@ vltk_attribs = {
 }
 base_damage = 10.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 320.0
 element = 3
 damage_growth_per_level = 24.8421
@@ -856,7 +856,8 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 6.00
+cooldown = 0.00
+vltk_min_time_per_cast = PackedFloat32Array(1, 1080, 0, 20, 900, 0, 30, 810, 0, 40, 720, 0, 41, 720, 0)
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -936,7 +937,7 @@ vltk_attribs = {
 }
 base_damage = 6.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 416.0
 element = 3
 damage_growth_per_level = 19.5789
@@ -1009,7 +1010,7 @@ vltk_attribs = {
 }
 base_damage = 73.5
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 320.0
 element = 3
 damage_growth_per_level = 11.8816
@@ -1049,7 +1050,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
@@ -1121,7 +1122,7 @@ vltk_attribs = {
 }
 base_damage = 10.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 448.0
 element = 3
 damage_growth_per_level = 45.7692
@@ -1187,7 +1188,7 @@ vltk_attribs = {
 }
 base_damage = 15.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 448.0
 element = 3
 damage_growth_per_level = 15.0
@@ -1245,7 +1246,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0

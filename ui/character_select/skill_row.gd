@@ -22,6 +22,7 @@ func _build_stat_text(skill: SkillDefinition) -> String:
 		parts.append("ST %d" % int(skill.base_damage))
 	if skill.mana_cost > 0.0:
 		parts.append("Nội lực %d" % int(skill.mana_cost))
-	if skill.cooldown > 0.0:
-		parts.append("Hồi %.1fs" % skill.cooldown)
+	var cooldown := skill.get_cooldown_at_level(1)
+	if cooldown > 0.0:
+		parts.append("Hồi %.1fs" % cooldown)
 	return " · ".join(parts)

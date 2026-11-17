@@ -87,6 +87,8 @@ func get_weapon_limit_bbcode() -> String:
 ## số MÔ PHỎNG dùng cho combat cast (SectSkillController) — số "Tiêu hao nội lực" hiển thị THẬT
 ## cho người chơi (đúng VLTK gốc, tăng theo cấp) nằm trong stat_lines bên dưới.
 @export var mana_cost: float = 0.0
+## Hồi chiêu riêng (giây) = cột TimePerCast Skills.txt / 18 (tools/sync_skill_cooldowns.py). Không phải nhịp ra đòn —
+## xem SectSkillController.action_seconds (khoá động tác 18/20 frame như KNpc gốc).
 @export var cooldown: float = 1.0
 @export var range: float = 100.0
 @export var element: ElementTypes.ElementType = ElementTypes.ElementType.THO
@@ -120,6 +122,9 @@ func get_weapon_limit_bbcode() -> String:
 @export var is_aura: bool = false
 ## Cột IsPhysical Skills.txt (bIsPhysical gốc): 1 ngoại công, 0 nội công, -1 chưa ghép được dòng gốc.
 @export var vltk_is_physical: int = -1
+## Hồi chiêu RIÊNG theo cấp: skill_mintimepercast_v trong lua gốc (chỉ skill 120 có), mốc cấp kiểu vltk_attribs
+## PackedFloat32Array(cấp, frame, mã hàm, ...). Rỗng = dùng `cooldown` (cột TimePerCast Skills.txt / 18).
+@export var vltk_min_time_per_cast: PackedFloat32Array = PackedFloat32Array()
 ## Cột MisslesForm (eMisslesForm gốc): 0 tường, 1 thẳng, 2 toả, 3 vòng tròn, 4 ngẫu nhiên, 5 vùng,
 ## 6 TẠI MỤC TIÊU, 7 TẠI NGƯỜI THI TRIỂN.
 @export var vltk_missle_form: int = -1
@@ -186,11 +191,16 @@ func is_state_skill() -> bool:
 		return false
 	if not target_enemy:
 		return true
-	if vltk_attribs.is_empty():
+	if is_physical():
 		return false
 	for attrib_name in vltk_attribs:
-		if attrib_name in ["physicsdamage_v", "colddamage_v", "firedamage_v", "lightingdamage_v", "poisondamage_v"]:
+		if attrib_name in ["physicsdamage_v", "physicsenhance_p", "colddamage_v", "firedamage_v", "lightingdamage_v", "poisondamage_v", "magicdamage_v"]:
 			return false
+	var real := get_combat_damage_at_level(1)
+	if real.get("physics_enhance", -1.0) >= 0.0 or real.get("physics_flat", Vector2i.ZERO) != Vector2i.ZERO or not (real.get("elements", {}) as Dictionary).is_empty():
+		return false
+	if vltk_attribs.is_empty():
+		return false
 	return true
 
 ## Gói trạng thái của skill buff/bùa tại `level`: {"attribs": {tên: Vector3i(giá trị, 0, 0)}, "seconds":
@@ -262,6 +272,13 @@ func interpolate_at_level(value_at_level_1: float, value_at_max_level: float, at
 		return value_at_level_1
 	var t := clampf(float(at_level - 1) / float(max_level - 1), 0.0, 1.0)
 	return floorf(lerpf(value_at_level_1, value_at_max_level, t))
+
+## Hồi chiêu riêng (giây) của skill tại cấp `at_level` — KSkill::GetDelayPerCast gốc (NextCastTime), KHÔNG giảm theo
+## tốc độ đánh. Đa số chiêu đánh = 0: nhịp ra đòn do độ dài động tác (SectSkillController.action_seconds) quyết định.
+func get_cooldown_at_level(at_level: int) -> float:
+	if not vltk_min_time_per_cast.is_empty():
+		return frames_to_seconds(eval_level_points(vltk_min_time_per_cast, maxi(1, at_level)))
+	return cooldown
 
 ## Tiêu hao nội lực tại cấp `at_level` — đọc từ stat_lines (dòng "Tiêu hao nội lực") hoặc mana_cost mô phỏng.
 func get_mana_cost_at_level(at_level: int) -> int:

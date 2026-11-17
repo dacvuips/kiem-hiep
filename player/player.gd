@@ -1,12 +1,14 @@
 extends CharacterBody2D
 
 const DamageNumberScene := preload("res://effects/damage_number.tscn")
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
+const GuildTag = preload("res://ui/guild_tag.gd")
 
 const SPEED = 150.0
 const INVINCIBLE_DURATION = 3.0
 const INVINCIBLE_BLINKS = 3
 ## Vị trí (y) tên nhân vật khi đi bộ — ngay trên đầu nhân vật ghép — và độ nâng thêm khi cưỡi ngựa.
-const NAME_LABEL_Y = -58.0
+const NAME_LABEL_Y = -66.0
 const RIDE_HEAD_RAISE = 24.0
 ## Thu/phóng camera: < 1 = nhìn rộng hơn. 0.7 cho nhân vật cao ~8.5% chiều cao màn hình như ảnh chụp VLTK gốc (trước đây 1.0 ~ 12%).
 ## Mức đã chọn lưu trong GameSettings (cài đặt của máy), CAMERA_ZOOM là mặc định.
@@ -17,9 +19,9 @@ const ZOOM_MAX := GameSettings.ZOOM_MAX
 const ZOOM_STEP := 1.1
 const ZOOM_SMOOTHING := 12.0
 const HealthBarScene := preload("res://ui/HealthBar.tscn")
-## Thanh máu trên đầu: nằm ngay dưới tên (tên cao 18px), rộng gấp HP_BAR_WIDTH_SCALE thanh quái.
-const NAME_LABEL_HEIGHT := 18.0
-const HP_BAR_TOP_OFFSET := 13.0   ## khoảng từ gốc node HealthBar tới mép trên thanh (xem HealthBar.tscn)
+## Thanh máu trên đầu: nằm ngay dưới tên (tên cao 20px), rộng gấp HP_BAR_WIDTH_SCALE thanh quái.
+const NAME_LABEL_HEIGHT := 20.0
+const HP_BAR_TOP_OFFSET := 16.0   ## khoảng từ đáy nhãn tên tới gốc HealthBar (thanh vẽ từ y-13 -> cách tên 3px)
 const HP_BAR_WIDTH_SCALE := 1.4
 const HP_BAR_HEIGHT := 4.0          ## thanh quái cao 6px; thanh trên đầu người chơi mảnh hơn
 
@@ -65,6 +67,12 @@ var last_direction: Vector2 = Vector2.RIGHT
 var is_invincible: bool = false
 var has_moved: bool = false
 var spawn_position: Vector2 = Vector2.ZERO
+var profile: PlayerProfile:
+	get:
+		return GameManager.local_profile
+	set(value):
+		GameManager.local_profile = value
+
 ## Snapshot số liệu combat CHÍNH XÁC 100% VLTK (AttackRating/Defense/Damage/Kháng theo Ngũ Hành) —
 ## dựng từ PlayerProfile lúc _ready(), xem CombatantStats + CombatFormulas (systems/combat/).
 var combat_stats: CombatantStats
@@ -76,6 +84,8 @@ var camp: int = Camp.Type.BEGIN
 ## Bật PK: mới đánh/bùa được người chơi KHÁC màu (phe Sát thủ luôn đánh được).
 var pk_enabled: bool = false
 var _name_label: Label
+var _guild_tag: GuildTag
+var _guild_svc: GuildService
 var _match_level_tag: String = ""
 var _match_side: String = ""
 var _zoom_target: float = CAMERA_ZOOM
@@ -123,15 +133,25 @@ func reset_has_moved() -> void:
 	spawn_position = global_position
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	reset_has_moved()
 	var profile := GameManager.local_profile
+	if profile == null:
+		profile = SaveManager.load_profile()
+		if profile == null:
+			profile = PlayerProfile.new()
+			profile.display_name = "Đại Hiệp"
+			profile.level = 10
+			profile.sect_id = "vo_dang"
+		GameManager.local_profile = profile
+
 	combat_stats = profile.get_combat_stats() if profile else CombatantStats.new()
-	## HP tối đa hiển thị/dùng trong màn chơi lấy từ CombatantStats (VLTK gốc), KHÔNG dùng
-	## @export max_health cũ nữa — giữ @export chỉ để làm giá trị fallback khi chưa có profile
-	## (VD chạy thẳng scene này trong Editor để test).
-	if profile:
+	if profile and combat_stats != null and combat_stats.max_hp > 0:
 		max_health = float(combat_stats.max_hp)
 		max_mana = float(combat_stats.max_mana)
+	else:
+		max_health = 1200.0
+		max_mana = 600.0
 	health = max_health
 	mana = max_mana
 	range_indicator.set_radius(get_current_range())
@@ -162,6 +182,13 @@ func _ready() -> void:
 			profile.equipment_changed.connect(_on_profile_equipment_changed)
 	_build_name_label(profile.display_name if profile else "")
 	_build_head_health_bar()
+	if profile != null:
+		_guild_svc = SocialHub.of(profile).guild
+		if _guild_svc != null and not _guild_svc.changed.is_connected(refresh_guild_tag):
+			_guild_svc.changed.connect(refresh_guild_tag)
+	if NetClient != null and not NetClient.connected_to_world.is_connected(_on_net_connected_for_name):
+		NetClient.connected_to_world.connect(_on_net_connected_for_name)
+	PotionEffect.restore_profile_states(profile, self)
 	refresh_appearance()
 	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
 	_build_move_marker()
@@ -176,6 +203,12 @@ func _ready() -> void:
 		if not GameManager.stage_completed.is_connected(_on_stage_completed):
 			GameManager.stage_completed.connect(_on_stage_completed)
 		_apply_stage_settings(GameManager.current_stage)
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false)):
+		var agent_script = load("res://systems/survivor/survivor_combat_agent.gd")
+		if agent_script and not has_node("SurvivorCombatAgent"):
+			var agent = agent_script.new()
+			agent.name = "SurvivorCombatAgent"
+			add_child(agent)
 
 func _on_stats_reset() -> void:
 	if range_indicator:
@@ -200,34 +233,71 @@ func refresh_sect() -> void:
 func chat_anchor_y() -> float:
 	return _name_label.position.y if _name_label else NAME_LABEL_Y
 
-## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc.
+## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc (và dòng bang hội để tránh đè chữ).
 func set_name_label_visible(on: bool) -> void:
 	if _name_label:
 		_name_label.visible = on
+	if _guild_tag:
+		_guild_tag.set_suppressed(not on)
 
 func _build_name_label(display_name: String) -> void:
-	_name_label = Label.new()
+	if _name_label == null:
+		_name_label = Label.new()
+		_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var f := GameUi.game_font_bold() if GameUi else null
+		if f != null:
+			_name_label.add_theme_font_override("font", f)
+		_name_label.add_theme_font_size_override("font_size", 13)
+		_name_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.94))
+		_name_label.add_theme_constant_override("outline_size", 4)
+		_name_label.z_index = 12
+		add_child(_name_label)
 	_name_label.text = display_name
-	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name_label.add_theme_font_size_override("font_size", 12)
-	_name_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	_name_label.add_theme_constant_override("outline_size", 3)
-	_name_label.size = Vector2(160, 18)
-	_name_label.position = Vector2(-80, NAME_LABEL_Y)
-	add_child(_name_label)
-	_stall_sign = StallSign.new()
-	_stall_sign.place_above(NAME_LABEL_Y)
-	_stall_sign.clicked.connect(func() -> void:
-		var prof := GameManager.local_profile
-		if prof == null:
-			return
-		if prof.trade_open:
-			StallService.close_trade(prof)
-			if NetClient.is_in_world():
-				NetClient.send_stall(SocialServer.TRADE_CLOSE)
-			SaveManager.save_profile(prof)
-			notify("Đã tắt mở giao dịch."))
-	add_child(_stall_sign)
+	_name_label.size = Vector2(240, NAME_LABEL_HEIGHT)
+	_name_label.position = Vector2(-120, NAME_LABEL_Y)
+	if _guild_tag == null:
+		_guild_tag = GuildTag.new()
+		add_child(_guild_tag)
+	if _stall_sign == null:
+		_stall_sign = StallSign.new()
+		_stall_sign.z_index = 12
+		_stall_sign.clicked.connect(func() -> void:
+			var prof := GameManager.local_profile
+			if prof == null:
+				return
+			if prof.trade_open:
+				StallService.close_trade(prof)
+				if NetClient.is_in_world():
+					NetClient.send_stall(SocialServer.TRADE_CLOSE)
+				SaveManager.save_profile(prof)
+				notify("Đã tắt mở giao dịch."))
+		add_child(_stall_sign)
+	refresh_guild_tag()
+
+func _on_net_connected_for_name(_eid: int, _feet: Vector2, my_name: String) -> void:
+	var profile := GameManager.local_profile
+	if profile != null and profile.display_name.strip_edges() == "" and my_name.strip_edges() != "":
+		profile.display_name = my_name
+	refresh_nameplate()
+
+func refresh_guild_tag() -> void:
+	if _guild_tag == null:
+		return
+	var profile := GameManager.local_profile if GameManager else null
+	if profile != null and profile.guild is Dictionary and not profile.guild.is_empty():
+		var gname := str(profile.guild.get("name", ""))
+		var emblem := GuildEmblem.resolve_id(profile.guild)
+		_guild_tag.set_guild(gname, emblem)
+	else:
+		_guild_tag.set_guild("", 0)
+	_apply_name_y()
+
+func refresh_nameplate() -> void:
+	var profile := GameManager.local_profile if GameManager else null
+	if profile != null and _name_label != null:
+		var look: Dictionary = profile.get_equipped_look() if profile.has_method("get_equipped_look") else Equipment.get_appearance(profile.equipment, "female" if profile.gender == PlayerProfile.Gender.FEMALE else "male", profile.riding)
+		_update_name_label_disguise(look)
+	refresh_guild_tag()
 
 ## BÀY BÁN (StallService): Tính năng mở sạp hàng ngoài thành đã chuyển sang Chợ Giao Thương.
 var _stall_sign: StallSign
@@ -272,6 +342,10 @@ func _exit_tree() -> void:
 	if profile and profile.has_signal("equipment_changed"):
 		if profile.equipment_changed.is_connected(_on_profile_equipment_changed):
 			profile.equipment_changed.disconnect(_on_profile_equipment_changed)
+	if _guild_svc != null and _guild_svc.changed.is_connected(refresh_guild_tag):
+		_guild_svc.changed.disconnect(refresh_guild_tag)
+	if NetClient != null and NetClient.connected_to_world.is_connected(_on_net_connected_for_name):
+		NetClient.connected_to_world.disconnect(_on_net_connected_for_name)
 
 ## Mặc/tháo mũ, áo, vũ khí -> đổi hình nhân vật ngay (gọi kèm refresh_combat_stats sau mỗi lần đổi trang bị).
 ## Mới có bộ hình nam — nhân vật nữ tạm dùng hình nam cho tới khi nhập bộ nữ.
@@ -332,20 +406,20 @@ func _update_name_label_disguise(look: Dictionary) -> void:
 	if look.get("is_masked", false):
 		var d_title: String = str(look.get("disguise_title", "Dịch Dung"))
 		_name_label.text = "🎭 [%s]\n%s%s" % [d_title, _match_level_tag, profile.display_name]
-		_name_label.size = Vector2(200, 32)
-		_name_label.position.x = -100
+		_name_label.size = Vector2(240, 36)
+		_name_label.position.x = -120
 		var m_color: Color = look.get("modulate", Color(1.0, 0.85, 0.4))
 		_name_label.add_theme_color_override("font_color", m_color)
 	else:
 		_name_label.text = "%s%s" % [_match_level_tag, profile.display_name]
-		_name_label.size = Vector2(180, 18)
-		_name_label.position.x = -90
+		_name_label.size = Vector2(240, NAME_LABEL_HEIGHT)
+		_name_label.position.x = -120
 		if _match_side != "":
 			var side_col := Color(0.2, 0.6, 1.0) if _match_side == "song" else Color(1.0, 0.35, 0.2)
 			_name_label.add_theme_color_override("font_color", side_col)
 		else:
 			_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
-	_apply_name_y()
+	refresh_guild_tag()
 
 ## Đổi màu tên và tiền tố phe (VD đấu trường Thách Đấu / Lộn Xộn: [Phe Xanh], [Phe Đỏ]).
 func set_name_color(col: Color, prefix: String = "") -> void:
@@ -371,6 +445,7 @@ func reset_name_color() -> void:
 ## Thanh máu trên đầu, dưới tên — chạy theo signal health_changed (cùng nguồn với HUD góc trái).
 func _build_head_health_bar() -> void:
 	_head_hp_bar = HealthBarScene.instantiate()
+	_head_hp_bar.z_index = 11
 	_head_hp_bar.use_gradient_color = true  ## xanh -> vàng -> đỏ theo % máu
 	_head_hp_bar.bar_width = 40.0 * HP_BAR_WIDTH_SCALE   ## rộng bằng thanh cũ (40px x 1.4) nhưng không kéo giãn -> đầu bo tròn không méo
 	_head_hp_bar.bar_height = HP_BAR_HEIGHT
@@ -393,6 +468,11 @@ func _apply_name_y() -> void:
 	var raise := RIDE_HEAD_RAISE if avatar != null and avatar.is_riding() and not _is_jumping else 0.0
 	var label_h := _name_label.size.y
 	_name_label.position.y = NAME_LABEL_Y - (label_h - NAME_LABEL_HEIGHT) - raise - (_air_height if _is_jumping else 0.0)
+	if _guild_tag != null:
+		_guild_tag.place_above(_name_label.position.y)
+	if _stall_sign != null:
+		var top_y := _guild_tag.top_y() if (_guild_tag != null and _guild_tag.has_guild()) else _name_label.position.y
+		_stall_sign.place_above(top_y)
 	if _head_hp_bar != null:
 		_head_hp_bar.position = Vector2(0.0, _name_label.position.y + label_h + HP_BAR_TOP_OFFSET)
 
@@ -834,6 +914,10 @@ func _physics_process(delta: float) -> void:
 	if PlayerStats.hp_regen_percent > 0.0 and health < max_health and not _dead:
 		heal(max_health * PlayerStats.hp_regen_percent * delta)
 
+	# Tự hồi phục Nội Lực trong chế độ PUBG (1s hồi 30 mana)
+	if PubgManager.is_pubg_active() and not _dead and mana < max_mana:
+		restore_mana(30.0 * delta)
+
 	# Quản lý Hộ thể Mộng Điệp (Tân thủ <= 80 trong map luyện: hồi 100 HP & 100 MP mỗi 0.5s, aura Mộng Điệp, lên cấp 81 là hết)
 	var mong_diep_on := is_mong_diep_active()
 	if mong_diep_on != _last_mong_diep_active:
@@ -923,6 +1007,13 @@ func use_main_skill() -> void:
 	if _is_sitting:
 		_stand_up()
 
+	# Trong chế độ vượt ải / survivor: khi bấm đánh, thi triển toàn bộ các kỹ năng đã học đang sẵn sàng
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or (GameManager.field_map != null and GameManager.field_map.get("survivor_mode", false) == true)):
+		var agent = get_node_or_null("SurvivorCombatAgent")
+		if agent != null and agent.has_method("cast_all_ready_skills"):
+			agent.cast_all_ready_skills()
+			return
+
 	var main_skill := skill_controller.get_main_skill() if skill_controller else null
 	if main_skill == null:
 		return
@@ -964,6 +1055,10 @@ func use_main_skill() -> void:
 		update_facing(target_in_range.global_position - global_position)
 		if skill_controller.try_cast_main(self, target_in_range):
 			play_cast()
+		return
+
+	# Trong chế độ vượt ải / survivor: chỉ đánh quái khi quái đi vào trong vòng tầm đánh của skill
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false)):
 		return
 
 	# 2. Không có quái trong phạm vi thi triển: tìm quái gần nhất trên bản đồ để tiến tới
@@ -1153,7 +1248,9 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	_is_sitting = false
 	is_casting = true
 	var speed_mult: float = maxf(0.5, PlayerStats.attack_speed_multiplier)
-	var base_dur := duration if duration > 0.0 else avatar.get_action_duration()
+	## Độ dài động tác như gốc (ảnh SPR được kéo giãn cho vừa): 18 frame ngoại công / 20 frame nội công theo tốc độ đánh —
+	## khớp khoá động tác của SectSkillController.
+	var base_dur := duration if duration > 0.0 else SectSkillController.action_seconds(physical, combat_stats)
 	var act_duration := base_dur / speed_mult
 	avatar.play("attack" if physical else "cast", act_duration)
 	return act_duration
@@ -1221,7 +1318,7 @@ var _range_until_ms := 0
 
 func _on_skill_cast_for_range(skill_id: String) -> void:
 	var s := skill_controller.get_skill(skill_id)
-	if s != null and (s.vltk_attack_radius > 0 or s.vltk_attribs.has("skill_attackradius")):
+	if s != null and (s.vltk_attack_radius > 0 or s.vltk_attribs.has("skill_attackradius") or ("range" in s and s.range > 0)):
 		_range_skill = s
 		_range_until_ms = Time.get_ticks_msec() + RANGE_SHOW_MS
 
@@ -1238,7 +1335,7 @@ func get_skill_radius(skill: SkillDefinition) -> float:
 		lvl = skill_controller._learned_level(skill)
 	var radius := skill.get_attack_radius_at_level(lvl)
 	if radius <= 0.0:
-		radius = base_range
+		radius = skill.range if ("range" in skill and skill.range > 0.0) else base_range
 	return radius * PlayerStats.range_multiplier
 
 ## Tầm của đòn chính đang chọn — vòng chỉ tầm và Auto dùng tầm này.
@@ -1282,7 +1379,7 @@ func _tick_loop_skills(delta: float) -> void:
 			if not status_controller.has_state(skill.id):
 				skill_controller.try_cast_loop(skill, self, null)
 			continue
-		elif skill.target_enemy:
+		elif not skill.is_aura and not SectSkillController.is_self_buff(skill):
 			if is_attacking or is_casting:
 				continue
 			var target: Node2D = get_nearest_enemy(get_skill_radius(skill))
@@ -1312,6 +1409,16 @@ func on_loop_slot_updated(_index: int, skill_id: String) -> void:
 		skill_controller.try_cast_loop(skill, self, null)
 
 func get_current_range() -> float:
+	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or (GameManager.field_map != null and GameManager.field_map.get("survivor_mode", false) == true)):
+		var s_dict := SurvivorManager.active_skills if not SurvivorManager.active_skills.is_empty() else PlayerStats.survivor_skills
+		if not s_dict.is_empty():
+			var max_r := 0.0
+			for s_id in s_dict.keys():
+				var s := skill_controller.get_skill(str(s_id)) if skill_controller else null
+				if s != null and not s.is_aura and not SectSkillController.is_self_buff(s):
+					max_r = maxf(max_r, get_skill_radius(s))
+			if max_r > 0.0:
+				return max_r
 	return get_skill_radius(skill_controller.get_main_skill() if skill_controller else null)
 
 ## Quái gần nhất trong tầm `radius` (< 0 = tầm đòn chính). Khoảng cách theo chuẩn logic VLTK (dọc nhân đôi) nên vùng
@@ -1379,12 +1486,25 @@ func on_hit_target(target: Node, skill_info: Dictionary = {}) -> void:
 	if skill_controller != null and is_instance_valid(target) and target is Node2D:
 		skill_controller.trigger_auto_attack_skills(self, target as Node2D, skill_info)
 
+	# Survivor Perk: Hút máu (+0.5% mỗi cấp dựa vào sát thương)
+	var leech_ratio := SurvivorPerks.get_life_leech_ratio()
+	if leech_ratio > 0.0 and is_instance_valid(target):
+		var target_hp: float = float(target.get("max_health")) if target.get("max_health") != null else 100.0
+		var healed := maxf(1.0, target_hp * leech_ratio)
+		heal(healed)
+
 func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
 		damage_type: CombatFormulas.DamageType = CombatFormulas.DamageType.PHYSICS,
 		attacker_element: ElementTypes.ElementType = ElementTypes.ElementType.KIM,
 		mods: CombatFormulas.HitModifiers = null) -> void:
 	## Đang nhảy (bay trên không) hoặc GM God Mode: miễn nhiễm mọi sát thương.
 	if _dead or is_invincible or _is_jumping or (GmManager and GmManager.is_god_mode):
+		return
+
+	# Survivor Perk: Khiên Quán Quân Tinh Anh Sái chặn 100% đòn đánh
+	var shield_comp = get_node_or_null("SurvivorShieldComponent")
+	if shield_comp != null and shield_comp.has_method("try_absorb_hit") and shield_comp.try_absorb_hit():
+		spawn_miss_text()
 		return
 	if mods != null and mods.attacker_node != null:
 		last_attacker = mods.attacker_node
