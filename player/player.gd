@@ -501,6 +501,14 @@ func _is_valid_target(node: Variant) -> bool:
 		return false
 	if n.has_method("is_dead") and n.call("is_dead"):
 		return false
+	if "dead" in n and bool(n.get("dead")):
+		return false
+	if "is_dying" in n and bool(n.get("is_dying")):
+		return false
+	if "health" in n and float(n.get("health")) <= 0.0:
+		return false
+	if "current_health" in n and float(n.get("current_health")) <= 0.0:
+		return false
 	var my_side: String = ""
 	if "battle_side" in self and str(get("battle_side")) != "":
 		my_side = str(get("battle_side"))
@@ -524,6 +532,9 @@ func set_target(node: Variant, by_player := false) -> void:
 	selected_target = node as Node2D
 	if selected_target == null:
 		return
+	if by_player and _chase_main_target != null and _chase_main_target != selected_target:
+		var main_skill := skill_controller.get_main_skill() if skill_controller else null
+		_start_chase_main(selected_target, main_skill)
 	_target_ring = TargetRing.new()
 	selected_target.add_child(_target_ring)
 
@@ -561,6 +572,7 @@ func get_selected_target() -> Node2D:
 ## Chạy tới 1 điểm theo TOẠ ĐỘ MÀN HÌNH (VD cú chạm trong vùng joystick — MoveJoystick.tapped).
 func move_to_screen_position(screen_position: Vector2) -> void:
 	auto.on_manual_input()
+	_clear_chase_main()
 	var world := get_canvas_transform().affine_inverse() * screen_position
 	## Chạm 1 lần = tự tìm đường vòng vật cản như bấm chuột.
 	if VltkWorld.current == null or not walk_to_feet(world + Vector2(0, VltkWorld.FEET_OFFSET)):
