@@ -137,7 +137,7 @@ func run() -> void:
 				listed["room"] = r
 		if listed.is_empty():
 			await sleep(0.5)
-	check("/v1/field có phòng vừa tạo + địa chỉ field server", not listed.is_empty() and bool(listed.get("open")) and int(listed.room.get("port", 0)) == PORT
+	check("/v1/field có phòng vừa tạo + địa chỉ field server", not listed.is_empty() and listed.get("open") == true and int(listed.room.get("port", 0)) == PORT
 		and int(listed.room.get("map_id", 0)) == NORMAL_MAP, listed)
 	var entry := MapSelectWindow.join_entry(listed.get("room", {}))
 	check("tra ID ra đúng map để nạp", int(entry.get("id", 0)) == NORMAL_MAP and MapCatalog.is_playable(entry), entry.get("name"))

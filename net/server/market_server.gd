@@ -101,7 +101,7 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 				return
 			_dirty[str(r[1]["id"])] = true
 			_changed(c)
-			_done(c, "", "Đã treo bán (đã trừ thuế 3%%) — xem ở tab Của Tôi.")
+			_done(c, "", "Đã treo bán (đã trừ thuế 3%) — xem ở tab Của Tôi.")
 		"buy":
 			_busy_conns[c.character_id] = true
 			if c.trade:

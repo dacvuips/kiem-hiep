@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6levelskillupgradetest"]
+
+[ext_resource type="Script" path="res://tests/test_thu_thanh_level_and_skill_upgrade.gd" id="1_test"]
+
+[node name="TestLevelAndSkillUpgrade" type="Node2D"]
+script = ExtResource("1_test")

@@ -1,25 +1,30 @@
 extends Node2D
 class_name ArenaBorder
-## Hào quang sáng ở rìa ô vuông màn chơi (xem arena_border.gdshader). Gốc node = TÂM ô vuông; vẽ bằng 1 ColorRect + shader,
-## không có node/sprite nào khác -> rẻ cho mobile.
+## Đường viền / hào quang sáng ở rìa ô vuông giới hạn màn chơi PUBG
 
-const SHADER := preload("res://world/arena_border.gdshader")
-const GLOW_WIDTH := 150.0
+var _size: Vector2 = Vector2.ZERO
+var _color: Color = Color(1.0, 0.85, 0.3, 0.9)
 
-func setup(size: Vector2, color: Color) -> void:
+func setup(p_size: Vector2, p_color: Color) -> void:
 	for c in get_children():
 		c.queue_free()
-	var rect := ColorRect.new()
-	var full := size + Vector2.ONE * GLOW_WIDTH * 2.0
-	rect.size = full
-	rect.position = -full * 0.5
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = SHADER
-	mat.set_shader_parameter("half_size", size * 0.5)
-	mat.set_shader_parameter("rect_size", full)
-	mat.set_shader_parameter("glow_color", color)
-	mat.set_shader_parameter("glow_width", GLOW_WIDTH)
-	rect.material = mat
-	add_child(rect)
-	z_index = 20
+	_size = p_size
+	_color = p_color
+	var is_pubg: bool = GameManager != null and (GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false))
+	if is_pubg:
+		visible = true
+		queue_redraw()
+	else:
+		visible = false
+
+func _draw() -> void:
+	if not visible or _size == Vector2.ZERO:
+		return
+	var half := _size * 0.5
+	var rect := Rect2(-half, _size)
+	# Vẽ đường viền sáng phát quang giới hạn vùng chơi (140x80 region)
+	draw_rect(rect, Color(_color.r, _color.g, _color.b, 0.25), false, 12.0)
+	draw_rect(rect, Color(_color.r, _color.g, _color.b, 0.6), false, 6.0)
+	draw_rect(rect, Color(1.0, 1.0, 0.8, 0.95), false, 2.0)
+
+

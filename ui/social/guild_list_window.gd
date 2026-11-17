@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name GuildListWindow
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 ## "Xem tin Bang khác": bảng các bang hội đang có (tên, bang chủ, phe, nhân số, khuynh hướng, lời chào) và cờ chiêu mộ 🚩.
 ## Bang nào cắm cờ tuyển người thì hiển thị lá cờ 🚩 và cho phép xin vào; không có cờ thì không thể xin vào.
 ## Cũng dùng làm nội dung của màn Bang hội khi nhân vật CHƯA có bang (GuildListWindow.fill).
@@ -97,13 +98,14 @@ static func fill(into: Control, hub: SocialHub, host: Node, show_requirements: b
 			if m.guild_figure != GuildRules.Figure.MASTER or m.guild_name == "":
 				continue
 			var snap := SocialDirectory.guild_snapshot(profile, m.guild_name)
-			var is_recruiting := bool(m.recruit)
+			var is_recruiting: bool = m.recruit
 			if only_recruiting and not is_recruiting:
 				continue
 			count += 1
 			var g_data := {
 				"name": m.guild_name,
 				"camp": m.camp,
+				"emblem": GuildEmblem.resolve_id({"name": m.guild_name}),
 				"master": m.name,
 				"members": snap.get("members", []).size(),
 				"cap": SocialRules.tong_member_cap(int(snap.get("level", 1))),
@@ -186,7 +188,10 @@ static func _build_guild_entry(parent: Control, g: Dictionary, is_recruiting: bo
 		flag_badge.tooltip_text = "Bang hội này chưa cắm cờ tuyển người"
 		head.add_child(flag_badge)
 
-	## 2. Tên bang hội
+	## 2. Biểu tượng + Tên bang hội
+	var em_id := GuildEmblem.resolve_id(g)
+	if em_id > 0:
+		head.add_child(GuildEmblem.create_icon_rect(em_id, Vector2(20, 20)))
 	var name_l := SocialUi.label(str(g.get("name", "")), Camp.get_color(int(g.get("camp", 0))), 15)
 	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(name_l)

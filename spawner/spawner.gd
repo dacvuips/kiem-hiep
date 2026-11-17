@@ -78,6 +78,8 @@ func spawn_boss(boss_entry: EnemySpawnEntry) -> void:
 	_entity_parent().add_child(boss)
 	boss.global_position = get_boss_spawn_position()
 	boss.setup(boss_entry)
+	if "is_boss" in boss:
+		boss.is_boss = true
 	GameManager.notify_boss_spawned()
 	if boss.has_signal("died"):
 		boss.died.connect(_on_boss_died.bind(boss))
@@ -158,16 +160,24 @@ func _on_boss_died(_boss: Node = null) -> void:
 	if idx < 0 and cur_stage != null:
 		idx = StageRewards.get_stage_tier(cur_stage) - 1
 
+	var stars_info: Dictionary = {}
+	if cur_stage != null and cur_stage.has_method("evaluate_stars"):
+		stars_info = cur_stage.evaluate_stars(elapsed_time, PlayerStats.current_score, PlayerStats.enemies_killed)
+
 	if profile != null and idx >= 0:
 		if profile.stages_cleared <= idx:
 			profile.stages_cleared = idx + 1
-			SaveManager.save_profile(profile)
-			SaveManager.flush_online()
+		if not stars_info.is_empty():
+			profile.set_stage_stars(idx, int(stars_info.get("total_stars", 1)))
+		SaveManager.save_profile(profile)
+		SaveManager.flush_online()
 
 	# 4. Trao phần thưởng ngẫu nhiên theo từng màn (cấp càng cao thưởng càng xịn)
 	var rewards: Dictionary = {}
 	if profile != null:
 		rewards = StageRewards.roll_stage_rewards(cur_stage, profile, idx)
+	if not stars_info.is_empty():
+		rewards["stars_info"] = stars_info
 	GameManager.notify_stage_completed()
 	var p := tree.get_first_node_in_group("player")
 	if p and p.has_method("notify"):

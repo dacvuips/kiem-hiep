@@ -51,11 +51,18 @@ func _init() -> void:
 	custom_minimum_size = Vector2(716, 545)
 	_build_ui()
 	_refresh_ui()
-	if GmManager != null and GmManager.has_signal("profile_modified"):
-		GmManager.connect("profile_modified", func(p: PlayerProfile) -> void:
-			if p == null or p == _profile or p == GameManager.local_profile:
-				_refresh_ui()
-		)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func on_presented() -> void:
+	_refresh_ui()
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	var active := _get_active_profile()
+	if p == null or p == active or (GameManager != null and p == GameManager.local_profile):
+		_refresh_ui()
 
 func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 6)
@@ -653,9 +660,8 @@ func _open_buy_dialog(it_data: Dictionary) -> void:
 		var res: Dictionary = KyTranCacShop.buy_item(_get_active_profile(), item_id, n, price_real, item_name)
 		if res.get("ok", false):
 			var p_act := _get_active_profile()
-			var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
-			if p_act and tree and tree.root.has_node("SaveManager"):
-				tree.root.get_node("SaveManager").call("save_profile", p_act)
+			if p_act:
+				SaveManager.save_profile(p_act, true)
 			win.close_requested.emit()
 			_toast(str(res.get("message", "Mua thành công!")))
 			_refresh_ui()
@@ -733,9 +739,8 @@ func _open_cart_dialog() -> void:
 		var res: Dictionary = KyTranCacShop.buy_cart(_get_active_profile())
 		if res.get("ok", false):
 			var p_act := _get_active_profile()
-			var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
-			if p_act and tree and tree.root.has_node("SaveManager"):
-				tree.root.get_node("SaveManager").call("save_profile", p_act)
+			if p_act:
+				SaveManager.save_profile(p_act, true)
 			win.close_requested.emit()
 			_toast(str(res.get("message", "Thanh toán giỏ hàng thành công!")))
 			_refresh_ui()
@@ -756,11 +761,6 @@ func _open_cart_dialog() -> void:
 	btn_row.add_child(clear_btn)
 
 	var close_btn := SocialUi.stone_button(tr("Đóng"))
-	close_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	close_btn.pressed.connect(func() -> void: win.close_requested.emit())
-	btn_row.add_child(close_btn)
-
-	SocialWindow.present(self, win, &"ky_tran_cac_cart")
 	close_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close_btn.pressed.connect(func() -> void: win.close_requested.emit())
 	btn_row.add_child(close_btn)

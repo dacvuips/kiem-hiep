@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://gmtoggle001"]
+
+[ext_resource type="Script" path="res://tests/test_gm_toggle.gd" id="1_test"]
+
+[node name="TestGmToggle" type="Node"]
+script = ExtResource("1_test")

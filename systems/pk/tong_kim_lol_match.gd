@@ -42,7 +42,7 @@ func _ready() -> void:
 	if side != "jin":
 		side = "song"
 	team_size = clampi(int(room.get("team_size", 1)), 1, 5)
-	is_online = bool(field.get("pk_online", false)) or bool(field.get("pk", {}).get("online", false))
+	is_online = (field.get("pk_online", false) == true) or (field.get("pk", {}).get("online", false) == true)
 
 	# 1. Khởi tạo giao diện HUD 2 phe
 	client_hud = TongKimLolClient.new()

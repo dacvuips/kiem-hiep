@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://4kdspgcb0yi5"]
+
+[ext_resource type="Script" path="res://tests/test_offline_character_deletion.gd" id="1_test"]
+
+[node name="TestOfflineCharacterDeletion" type="Node"]
+script = ExtResource("1_test")

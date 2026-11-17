@@ -31,6 +31,8 @@ static var _desc: Dictionary = {}
 static var _magic_ranges: Dictionary = {}
 ## Bộ hoàng kim (Group) -> chỉ số các món trong bộ.
 static var _gold_groups: Dictionary = {}
+static var _sect_gold_indices: Array[int] = []
+static var _horse_base_indices: Array[int] = []
 ## detail -> particular -> level -> chỉ số trong _equipment
 static var _index: Dictionary = {}
 
@@ -41,6 +43,8 @@ static func _ensure_loaded() -> void:
 	_magic = _load_json(MAGIC_PATH)
 	for i in _equipment.size():
 		var e: Dictionary = _equipment[i]
+		if int(e.get("detail", -1)) == Detail.HORSE:
+			_horse_base_indices.append(i)
 		var by_particular: Dictionary = _index.get_or_add(int(e["detail"]), {})
 		var by_level: Dictionary = by_particular.get_or_add(int(e["particular"]), {})
 		if not by_level.has(int(e["level"])):
@@ -55,6 +59,16 @@ static func _ensure_gold_loaded() -> void:
 		var group := int(_gold[i]["group"])
 		if group > 0:
 			(_gold_groups.get_or_add(group, []) as Array).append(i)
+		if int(_gold[i].get("menpai", -1)) >= 0:
+			_sect_gold_indices.append(i)
+
+static func get_sect_gold_indices() -> Array[int]:
+	_ensure_gold_loaded()
+	return _sect_gold_indices
+
+static func get_horse_base_indices() -> Array[int]:
+	_ensure_loaded()
+	return _horse_base_indices
 
 static func find_gold_by_name(gold_name: String) -> int:
 	_ensure_gold_loaded()
@@ -195,6 +209,10 @@ static func get_gold(gold_index: int) -> Dictionary:
 	_ensure_gold_loaded()
 	return _gold[gold_index] if gold_index >= 0 and gold_index < _gold.size() else {}
 
+static func get_gold_count() -> int:
+	_ensure_gold_loaded()
+	return _gold.size()
+
 ## Chỉ số hoàng kim của dòng gốc `row` (cột "row" = số dòng trong goldequip.txt, AddGoldItem(0, row + 1) của script gốc). -1 nếu không có.
 static func gold_index_of_row(row: int) -> int:
 	_ensure_gold_loaded()
@@ -261,6 +279,16 @@ static func get_misc(misc_id: String) -> Dictionary:
 				"intro": "Lệnh bài thần kỳ giúp lập tức hoàn thành một nhiệm vụ Dã Tẩu.",
 				"icon": "wulinlingpai",
 				"price": 20000,
+				"stack": 100,
+				"width": 1,
+				"height": 1,
+			},
+			{
+				"id": "ky_datau_huy",
+				"name": "Lệnh Bài Hủy Dã Tẩu",
+				"intro": "Lệnh bài cho phép hủy miễn phí 1 nhiệm vụ Dã Tẩu khi hết lượt bỏ miễn phí ngày, giữ nguyên chuỗi nhiệm vụ không bị reset về #1.",
+				"icon": "xiakeling",
+				"price": 10000,
 				"stack": 100,
 				"width": 1,
 				"height": 1,

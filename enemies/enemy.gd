@@ -17,6 +17,9 @@ var possible_drops: Array[PickupData] = []
 ## _on_hit_area_body_entered). Xem CombatantStats + CombatFormulas (systems/combat/).
 var combat_stats: CombatantStats
 
+var is_boss: bool = false
+var is_elite: bool = false
+
 var health: float
 var target: Node2D
 ## Cấu hình spawn của quái này ở map hiện tại (chứa các hệ số nhân strength/vitality/level_add).
@@ -63,6 +66,7 @@ var _damage_batch_timer: float = 0.0
 var _base_sprite_scale: Vector2 = Vector2.ONE
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_mask &= ~32  ## Quái đi xuyên vật cản (obstacle layer)
 	_base_sprite_scale = sprite.scale
 	target = get_tree().get_first_node_in_group("player")
@@ -76,6 +80,8 @@ func _ready() -> void:
 func setup(entry: EnemySpawnEntry) -> void:
 	_entry = entry
 	var tier := entry.tier
+	is_boss = tier != null and ("Thủ Quan" in tier.tier_name or "Boss" in tier.tier_name)
+	is_elite = is_boss or (tier != null and "Tinh Anh" in tier.tier_name) or entry.vitality_multiplier > 1.5 or (tier != null and tier.enemy_scene != null and "Elite" in tier.enemy_scene.resource_path)
 	_build = entry.to_build()
 	camp = _build.camp
 	_accumulated_damage = 0.0
@@ -514,6 +520,7 @@ func die() -> void:
 		return
 	_is_dead = true
 	died.emit()
+	PlayerStats.add_kill(is_boss or is_elite, exp_drop)
 	_flush_damage_number()
 	_play_vltk_sound("die")
 	if _vltk_sprite != null:
@@ -546,6 +553,24 @@ func _trigger_kill_explosion() -> void:
 					e.take_damage(base_dmg * PlayerStats.explosion_damage_ratio)
 
 func spawn_random_drops() -> void:
+	if GameManager != null and (GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)):
+		var pubg_drops: Array = []
+		if randf() <= 0.90:
+			var gold_item := DropTable.roll_sect_gold_item()
+			if gold_item != null:
+				pubg_drops.append({"type": "item", "item": gold_item})
+		if randf() <= 0.50:
+			var pot := DropTable.roll_pharmacy_item()
+			if pot != null:
+				pubg_drops.append({"type": "item", "item": pot})
+		if randf() <= 0.20:
+			var horse := DropTable.roll_horse()
+			if horse != null:
+				pubg_drops.append({"type": "item", "item": horse})
+		if not pubg_drops.is_empty():
+			GroundDrop.spawn_drops(get_parent(), global_position, pubg_drops)
+		return
+
 	if possible_drops.is_empty():
 		return
 
@@ -560,13 +585,9 @@ func spawn_random_drops() -> void:
 			return
 
 func spawn_gem() -> void:
-	var gem_exp := exp_drop
-	var gem_tex := gem_texture
-	ObjectPool.acquire_deferred(GemScene, get_parent(), global_position, func(gem):
-		gem.exp_value = gem_exp
-		if gem_tex:
-			gem.get_node("Sprite").texture = gem_tex
-	)
+	var sdm = load("res://systems/survivor/survivor_drop_manager.gd")
+	if sdm and sdm.has_method("spawn_gem_for_enemy"):
+		sdm.spawn_gem_for_enemy(self)
 
 func _accumulate_damage(amount: float) -> void:
 	if amount <= 0.0:
@@ -644,7 +665,10 @@ func _try_drop_da_tau_scroll() -> void:
 			if not players.is_empty() and players[0].has_method("notify"):
 				var q: Variant = DaTauManager.get_current_quest(profile)
 				if q is Dictionary:
-					var s_name := "Địa đồ chí" if q.get("scroll_type", 1) == 1 else "Mật chí"
+					var s_type: int = int(q.get("scroll_type", q.get("map_type", 1)))
+					var s_name := "Địa đồ chí" if s_type == 1 else "Mật chí"
 					var cur_n: int = q.get("done_num", 0)
+					if int(q.get("type", 0)) == 2:
+						cur_n += DaTauManager.count_bag_scrolls(profile, s_type)
 					var req_n: int = q.get("need_num", 1)
 					players[0].notify("Nhặt được %s (%d/%d)" % [s_name, cur_n, req_n])

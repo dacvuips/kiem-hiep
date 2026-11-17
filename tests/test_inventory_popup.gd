@@ -41,8 +41,18 @@ func _ready() -> void:
 
 	# Test test buttons
 	assert(popup.has_node("%SortButton"), "SortButton exists")
+	assert(popup.has_node("%SellButton"), "SellButton exists")
 	assert(popup.has_node("%ShopButton"), "ShopButton exists")
 	assert(not popup.has_node("%TestCreateButton"), "TestCreateButton should not exist in Inventory UI (moved to GM)")
+
+	# Test SellButton Quick Sell Mode
+	var sell_btn: Button = popup.get_node("%SellButton")
+	assert(sell_btn.text == "Bán", "SellButton initial text is Bán")
+	assert(not popup._quick_sell_mode, "Quick sell mode initially false")
+
+	sell_btn.emit_signal("pressed")
+	assert(popup._quick_sell_mode, "Quick sell mode is active after click")
+	assert(sell_btn.text == "Đang Bán", "SellButton shows Đang Bán when active")
 
 	# Test adding masks via test button
 	popup._on_test_mask_pressed()
@@ -52,6 +62,23 @@ func _ready() -> void:
 			masks += 1
 	assert(masks == 5, "Added 5 masks successfully, found: " + str(masks))
 	print("Mask count in inv: ", masks)
+
+	# Nhấp vào 1 món đồ khi đang ở chế độ bán nhanh -> bán ngay lập tức
+	var item_to_sell = profile.inventory[0]
+	var initial_gold := profile.gold
+	var expected_sale_price: int = item_to_sell.get_sale_price()
+	var initial_inv_count := profile.inventory.size()
+
+	popup._on_item_pressed(item_to_sell)
+	assert(profile.inventory.size() == initial_inv_count - 1, "Item removed after quick sell")
+	assert(profile.gold == initial_gold + expected_sale_price, "Gold increased by sale price")
+	assert(popup._quick_sell_mode, "Quick sell mode remains active for chaining sells")
+	print("Quick sell test passed! Gold increased by: ", expected_sale_price)
+
+	# Bấm nút Bán lần nữa để tắt chế độ bán
+	sell_btn.emit_signal("pressed")
+	assert(not popup._quick_sell_mode, "Quick sell mode disabled after second click")
+	assert(sell_btn.text == "Bán", "SellButton text reverted to Bán")
 
 	# Test adding mantles via test button
 	popup._on_test_mantle_pressed()

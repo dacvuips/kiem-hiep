@@ -10,15 +10,22 @@ const ENABLED := true
 static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int) -> int:
 	if not ENABLED or profile == null or base_exp <= 0:
 		return 0
+	# Chế độ Vượt Ải / Survivor: quái rơi ngọc EXP trong trận, KHÔNG cộng exp vĩnh viễn vào profile nhân vật
+	if GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false):
+		return 0
 	var team := SocialHub.of(profile).team
 	var got := team.local_exp_for_kill(base_exp, monster_level)
 	if got <= 0:
 		return 0
 	var loop := Engine.get_main_loop()
 	var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+	var exp_p := 0
 	if player != null and "combat_stats" in player and player.combat_stats != null:
-		if player.combat_stats.exp_enhance_p > 0:
-			got = int(round(got * (1.0 + float(player.combat_stats.exp_enhance_p) / 100.0)))
+		exp_p = player.combat_stats.exp_enhance_p
+	if exp_p <= 0:
+		exp_p = profile.get_active_exp_enhance_p()
+	if exp_p > 0:
+		got = int(round(got * (1.0 + float(exp_p) / 100.0)))
 	var before := profile.level
 	profile.add_exp(got)
 	if profile.level != before:
@@ -26,10 +33,14 @@ static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int)
 		if player != null and player.has_method("refresh_combat_stats"):
 			player.refresh_combat_stats()
 		ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
+	else:
+		SaveManager.request_exp_save(profile, 5.0)
 	return got
 
 static func on_monster_killed(monster: VltkMonster) -> void:
 	if not ENABLED or monster == null:
+		return
+	if GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false) or monster.is_survivor_monster or monster.is_survivor_boss:
 		return
 	var base := MonsterData.stat_at_level(monster.data, "exp", monster.level)
 	if base <= 0:

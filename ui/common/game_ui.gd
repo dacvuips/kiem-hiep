@@ -162,6 +162,7 @@ const FALLBACK_FONT_PATHS: Array[String] = [
 	"res://assets/fonts/symbol_fallback.ttf",
 ]
 const PREGAME_SCENES := [
+	"res://ui/mode_select/ModeSelect.tscn",
 	"res://ui/login/Login.tscn",
 	"res://ui/account/Register.tscn",
 	"res://ui/account/ForgotPassword.tscn",

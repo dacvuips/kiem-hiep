@@ -242,7 +242,7 @@ class SortedMap extends VltkMap:
 		var paths: Array[String] = []
 		if ground_mode == "tiles" and int(info[2]) == 1:
 			paths.append(map_dir.path_join("tiles/%d_%d.%s" % [v.x, v.y, tile_ext]))
-		if int(info[3]) == 1:
+		if not hide_structures and int(info[3]) == 1:
 			var parsed := region_doc(v.x, v.y)              ## regions/X_Y.json hoặc mục của vùng trong file khối
 			for o in parsed.get("objects", []):
 				var p := _p(str(o["img"]))
@@ -259,8 +259,19 @@ class SortedMap extends VltkMap:
 			if ResourceLoader.exists(p):
 				ResourceLoader.load_threaded_request(p)
 				need.append(p)
+			elif FileAccess.file_exists(p):
+				var im := Image.load_from_file(p)
+				_tex_cache[p] = ImageTexture.create_from_image(im) if im != null else null
 			else:
-				_tex_cache[p] = null
+				var shared := "res://world/maps/shared_sprites/".path_join(p.get_file())
+				if ResourceLoader.exists(shared):
+					ResourceLoader.load_threaded_request(shared)
+					need.append(shared)
+				elif FileAccess.file_exists(shared):
+					var im := Image.load_from_file(shared)
+					_tex_cache[p] = ImageTexture.create_from_image(im) if im != null else null
+				else:
+					_tex_cache[p] = null
 		_pending["%d,%d" % [v.x, v.y]] = {"v": v, "info": info, "need": need}
 
 	## Vùng nào nạp xong hết ảnh thì dựng node (tối đa SHOW_PER_FRAME vùng/khung).
@@ -334,7 +345,8 @@ class SortedMap extends VltkMap:
 
 	## Quái thật do override này sinh -> bản gốc bỏ qua chúng.
 	func _spawn_filter(n: Dictionary) -> bool:
-		if (GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl() or GameManager.field_map.get("no_monsters", false)) and str(n.get("role", "")) == "monster":
+		var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+		if (GameManager.game_mode == GameManager.GameMode.STAGE or (VltkWorld.has_arena() and not is_pubg) or VltkWorld.is_brawl() or GameManager.field_map.get("no_monsters", false)) and str(n.get("role", "")) == "monster":
 			return false
 		if GameManager.field_map.get("no_monsters", false) and _is_real_monster(n):
 			return false
@@ -354,7 +366,8 @@ class SortedMap extends VltkMap:
 					made.append(m)
 
 	func _spawn_monster(n: Dictionary) -> VltkMonster:
-		if GameManager.field_map.get("no_monsters", false) or VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl():
+		var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+		if GameManager.field_map.get("no_monsters", false) or VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or (VltkWorld.has_arena() and not is_pubg) or VltkWorld.is_brawl():
 			return null
 		var uid := str(n.get("uid", ""))
 		if _live_monsters.has(uid) and is_instance_valid(_live_monsters[uid]):
@@ -469,15 +482,20 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if current == self:
 		current = null
+	if PubgManager.is_active:
+		PubgManager.end_match()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_sky_position()
+	if PubgManager.is_active:
+		var p := get_tree().get_first_node_in_group("player")
+		PubgManager.update_circle(delta, p)
 
 ## Dựng map (lần đầu) + đặt ô vuông của màn `stage` + đưa nhân vật vào giữa ô. Gọi 1 lần lúc vào màn.
 func setup_stage(stage: StageData) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	_ensure_map(player)
-	var center := stage.arena_center if stage.arena_center != Vector2.ZERO else _default_center()
+	var center := _default_center() if (stage.arena_center == Vector2.ZERO or GameManager.field_map.get("survivor_mode", false)) else stage.arena_center
 	arena_rect = Rect2(center - stage.arena_size * 0.5, stage.arena_size)
 	if arena_border == null:
 		arena_border = ArenaBorder.new()
@@ -487,8 +505,13 @@ func setup_stage(stage: StageData) -> void:
 	arena_border.setup(stage.arena_size, stage.arena_color)
 	_build_nav()
 	if player != null:
-		var corners := get_corner_spawn_positions(center)
-		var spawn_pos: Vector2 = corners.pick_random() if not corners.is_empty() else _free_position_near(center)
+		map.prepare_around(center)
+		var safe_pos := _open_position_near(center)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = _free_position_near(center)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = center
+		var spawn_pos := safe_pos
 		player.global_position = spawn_pos - Vector2(0, FEET_OFFSET)
 		respawn_point = spawn_pos
 		if player.has_method("reset_has_moved"):
@@ -724,12 +747,12 @@ static func clamp_to_arena(feet: Vector2) -> Vector2:
 ## Có đang trong chế độ PK Lộn Xộn không.
 static func is_brawl() -> bool:
 	var f: Dictionary = GameManager.field_map
-	return bool(f.get("brawl", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
+	return (f.get("brawl", false) == true) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
 
 ## Có đang trong chế độ Ải Tống Kim LOL không.
 static func is_tong_kim_lol() -> bool:
 	var f: Dictionary = GameManager.field_map
-	return bool(f.get("tong_kim_lol", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL
+	return (f.get("tong_kim_lol", false) == true) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL
 
 ## Dọn sạch toàn bộ quái trên map hiện tại.
 func clear_all_monsters() -> void:
@@ -757,6 +780,7 @@ func setup_main_map() -> void:
 
 	var is_lol := VltkWorld.is_tong_kim_lol()
 	var is_br := VltkWorld.is_brawl()
+	var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
 
 	var center := _default_center()
 	var safe_pos := Vector2.ZERO
@@ -804,8 +828,18 @@ func setup_main_map() -> void:
 			if safe_pos == Vector2.ZERO:
 				safe_pos = safe_c
 		center = safe_c
+	elif is_pubg:
+		var pubg_box: Rect2 = GameManager.field_map.get("arena_box", PubgManager.fixed_outer_boundary)
+		if pubg_box.has_area():
+			set_confine(pubg_box)
+		var sp: Vector2 = GameManager.field_map.get("spawn_pos", pubg_box.get_center())
+		map.prepare_around(sp)
+		safe_pos = _open_position_near(sp)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = sp
+		center = safe_pos
 	else:
-		if GameManager.field_map.has("boss"):
+		if GameManager.field_map.has("boss") and not (GameManager.field_map.get("survivor_mode", false) == true):
 			# Người chơi xuất hiện ở góc/rìa map để an toàn, không bị Boss đánh khi vừa vào
 			var corners := get_corner_spawn_positions(center)
 			var pick: Vector2 = corners.pick_random() if not corners.is_empty() else (center + Vector2(-1600.0, -1000.0))
@@ -827,9 +861,46 @@ func setup_main_map() -> void:
 		player.global_position = player_spawn
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+		if is_pubg:
+			var sq_size: int = int(GameManager.field_map.get("squad_size", 1))
+			if sq_size > 1:
+				if player.has_method("set_name_color"):
+					player.set_name_color(Color(0.2, 0.65, 1.0)) # Xanh dương
+				player.set("pubg_squad_id", 1)
+				_spawn_pubg_teammates(safe_pos)
+			# Mở 2 đợt chọn thẻ đầu game: Đợt 1 chọn Ngựa 8x, Đợt 2 chọn Vũ khí Cấp 10
+			var prof: PlayerProfile = null
+			if player and "profile" in player and player.profile != null:
+				prof = player.profile
+			elif GameManager and GameManager.local_profile != null:
+				prof = GameManager.local_profile
+			if prof != null:
+				var draft_script = load("res://ui/pubg/pubg_draft_popup.gd")
+				if draft_script and draft_script.has_method("open"):
+					draft_script.open(self, prof, func() -> void:
+						if is_instance_valid(player) and player.has_method("refresh_appearance"):
+							player.refresh_appearance()
+					)
 	if is_br or is_lol:
 		clear_all_monsters()
 	_spawn_boss_if_requested(player, center)
+
+func _spawn_pubg_teammates(center_pos: Vector2) -> void:
+	for member: Dictionary in PubgManager.current_squad_members:
+		if member.get("is_self", false):
+			continue
+		var rp := RemotePlayer.new()
+		rp.name = "Teammate_" + str(member["name"])
+		rp.eid = 90000 + randi() % 10000
+		rp.display_name = str(member["name"])
+		rp.level = 200
+		rp.camp = 0
+		var spawn_offset: Vector2 = member.get("pos", center_pos)
+		rp.global_position = spawn_offset - Vector2(0, FEET_OFFSET)
+		rp.set("pubg_squad_id", 1)
+		add_child(rp)
+		if rp.has_method("set_name_color"):
+			rp.set_name_color(Color(0.2, 0.65, 1.0)) # Xanh dương
 
 ## Danh sách toạ độ ở các góc (Tây Bắc, Đông Bắc, Tây Nam, Đông Nam) quanh `center`, cách xa Boss
 func get_corner_spawn_positions(center: Vector2) -> Array[Vector2]:

@@ -7,8 +7,9 @@ const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
 ## Bấm ra ngoài để tắt. Bố cục nằm trong ItemDetailPopup.tscn, khung/nút lấy từ GameUi (chỉ tên món giữ màu theo phẩm chất).
 
 const SCENE_PATH := "res://ui/items/ItemDetailPopup.tscn"
-## Chiều rộng chuẩn tối thiểu của khung popup (giữ khung ngang cân đối).
-const POPUP_WIDTH := 430.0
+## Chiều rộng chuẩn tối thiểu và tối đa của khung popup (giữ khung ngang cân đối, không bị kéo bè màn hình).
+const POPUP_WIDTH := 440.0
+const POPUP_MAX_WIDTH := 480.0
 ## Chiều cao tối đa phần mô tả — dài hơn thì cuộn.
 const BODY_MAX_HEIGHT := 380.0
 
@@ -28,6 +29,13 @@ static func open(parent: Node, bbcode: String, actions: Array, item: ItemInstanc
 	popup._extra = extra
 	parent.add_child(popup)
 	return popup
+
+static func close_all(tree: SceneTree) -> void:
+	if tree == null:
+		return
+	for p in tree.get_nodes_in_group(UiPopups.GROUP):
+		if p is ItemDetailPopup and is_instance_valid(p):
+			p.queue_free()
 
 func _ready() -> void:
 	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
@@ -62,15 +70,18 @@ func _ready() -> void:
 			ItemChatHelper.attach_to_chat(_item, get_tree().root)
 			queue_free())
 		%Actions.add_child(chat_b)
-	## Không tự động xuống hàng (autowrap) để các dòng thuộc tính luôn nằm trọn trên 1 dòng chuẩn VLTK.
-	## Chiều ngang popup tự động co giãn theo dòng dài nhất (tối thiểu POPUP_WIDTH).
+	## Chiều ngang popup co giãn nhẹ theo dòng dài nhất nhưng bị giới hạn chặt trong [POPUP_WIDTH, POPUP_MAX_WIDTH].
+	## Bật autowrap thông minh (AUTOWRAP_WORD_SMART) để các dòng mô tả dài (intro, hộp báu, kỹ năng...)
+	## tự động ngắt dòng xuống hàng gọn gàng, tuyệt đối không kéo dãn vỡ layout.
 	var body: RichTextLabel = %Body
 	var scroll: ScrollContainer = %BodyScroll
 	body.autowrap_mode = TextServer.AUTOWRAP_OFF
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	await get_tree().process_frame
 	var content_w: float = body.get_content_width()
-	scroll.custom_minimum_size.x = maxf(POPUP_WIDTH, content_w + 32.0)
+	scroll.custom_minimum_size.x = clampf(content_w + 32.0, POPUP_WIDTH, POPUP_MAX_WIDTH)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	await get_tree().process_frame
 	scroll.custom_minimum_size.y = minf(maxf(body.get_content_height() + 8.0, 60.0), BODY_MAX_HEIGHT)
 	TouchScrollHelperScript.attach(scroll, $Center/Row/Card as Control)
 

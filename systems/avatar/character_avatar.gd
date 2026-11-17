@@ -235,6 +235,8 @@ func _set_frame(frame: int) -> void:
 		_apply_frame()
 
 func _apply_frame() -> void:
+	if _data == null:
+		return
 	var frame := maxi(_frame, 0)
 	for id in _layers:
 		_update_region(_layers[id], _layer_file[id], frame)

@@ -60,7 +60,7 @@ func _update() -> void:
 	## Cột "nhịp" của bảng trạng thái = ĐỘ DÀI CẢ VÒNG hoạt ảnh tính bằng nhịp (KSprControl::GetNextFrame gốc:
 	## frame = frame_mỗi_hướng × thời_gian_đã_trôi / nhịp), không phải thời gian mỗi frame.
 	var cycle := float(maxi(1, int(_state.get("interval", 1))))
-	if not bool(_state.get("loop", true)) and _ticks >= cycle:
+	if _state.get("loop", true) != true and _ticks >= cycle:
 		_sprite.visible = false
 		return
 	var frame_in_dir := clampi(int(float(per_dir) * fmod(_ticks, cycle) / cycle), 0, per_dir - 1)
@@ -81,6 +81,14 @@ func _update() -> void:
 	_sprite.position = Vector2(offset[0], offset[1])
 	if "avatar" in target and target.avatar != null:
 		position = target.avatar.position + Vector2(0, 1)
+		if str(_state.get("type", "")) == "Head":
+			var jumping: bool = target.get("_is_jumping") == true
+			if target.avatar.has_method("is_riding") and target.avatar.is_riding() and not jumping:
+				position.y -= 24.0
+			if jumping:
+				var air_h = target.get("_air_height")
+				if air_h != null:
+					position.y -= float(air_h)
 	elif target.has_method("get_ground_position"):
 		position = target.to_local(target.get_ground_position()) + Vector2(0, 1)
 	else:
@@ -92,7 +100,7 @@ func _layer(frame_in_dir: int) -> int:
 		"Foot":
 			return Z_BEHIND
 		"Head":
-			return Z_FRONT + 1
+			return 10
 		"Body":
 			var back_start := int(_state.get("back_start", 0))
 			var back_end := int(_state.get("back_end", 0))

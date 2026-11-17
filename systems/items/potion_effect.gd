@@ -123,6 +123,30 @@ static func restores_mana(item: ItemInstance) -> bool:
 			return true
 	return false
 
+static func _extract_timed_buff(item: ItemInstance) -> Dictionary:
+	var buff := {}
+	var seconds := 0.0
+	for e in effects_of(item):
+		var attrib := str(e[0])
+		if attrib != "heal_v" and not TICK_ATTRIBS.has(attrib) and _known(attrib):
+			buff[attrib] = Vector3i(int(e[1]), 0, 0)
+			seconds = maxf(seconds, float(e[2]) / GAME_FPS)
+	return {"buff": buff, "seconds": seconds}
+
+static func is_timed_buff(item: ItemInstance) -> bool:
+	var res := _extract_timed_buff(item)
+	return not (res["buff"] as Dictionary).is_empty() and float(res["seconds"]) > 0.0
+
+static func _state_source_id(buff: Dictionary) -> String:
+	var key := buff.keys()
+	key.sort()
+	return "item:" + ",".join(key)
+
+static func _special_state_id(item: ItemInstance) -> int:
+	if item != null and SPECIAL_ITEM_EFFECTS.has(item.misc_id):
+		return int(SPECIAL_ITEM_EFFECTS[item.misc_id].get("state_id", 0))
+	return 0
+
 ## Uống 1 món: hồi sinh lực theo nhịp + buff thuộc tính có thời hạn. Trả false nếu món không dùng được.
 static func drink(player: Node, item: ItemInstance) -> bool:
 	if not usable(item):
@@ -143,36 +167,82 @@ static func drink(player: Node, item: ItemInstance) -> bool:
 			seconds = maxf(seconds, float(e[2]) / GAME_FPS)
 	var status: StatusEffectController = player.get_node_or_null("StatusEffectController")
 	if not buff.is_empty() and status != null:
-		var key := buff.keys()
-		key.sort()
-		var state_id := 0
-		if SPECIAL_ITEM_EFFECTS.has(item.misc_id):
-			state_id = int(SPECIAL_ITEM_EFFECTS[item.misc_id].get("state_id", 0))
-		status.apply_state("item:" + ",".join(key), buff, seconds, {
+		var state_id := _special_state_id(item)
+		status.apply_state(_state_source_id(buff), buff, seconds, {
 			"icon": ItemDatabase.get_icon(item.get_base()),
 			"name": item.get_display_name(),
-			"state_id": state_id
+			"state_id": state_id,
+			"misc_id": item.misc_id,
+			"persist": true,
 		})
 	return true
+
+## Khôi phục các buff đã lưu trên `profile` vào `StatusEffectController` khi nhân vật vào map đánh quái.
+static func restore_profile_states(profile: PlayerProfile, player: Node) -> void:
+	if profile == null or player == null:
+		return
+	var status: StatusEffectController = player.get_node_or_null("StatusEffectController")
+	if status == null:
+		return
+	for st in profile.active_states.duplicate(true):
+		if not st is Dictionary:
+			continue
+		var source_id := str(st.get("source_id", ""))
+		var rem := float(st.get("time", 0.0))
+		if source_id == "" or rem <= 0.0:
+			continue
+		var dur := maxf(float(st.get("duration", rem)), rem)
+		var attribs := {}
+		var raw_attribs: Variant = st.get("attribs", {})
+		if raw_attribs is Dictionary:
+			for k in raw_attribs:
+				var v: Variant = raw_attribs[k]
+				if v is Array and v.size() >= 3:
+					attribs[str(k)] = Vector3i(int(v[0]), int(v[1]), int(v[2]))
+				elif v is Vector3i:
+					attribs[str(k)] = v
+		var misc_id := str(st.get("misc_id", ""))
+		var rec := ItemDatabase.get_misc(misc_id) if misc_id != "" else {}
+		var icon: Texture2D = ItemDatabase.get_icon(rec) if not rec.is_empty() else null
+		var state_id := int(st.get("state_id", 0))
+		if state_id <= 0 and SPECIAL_ITEM_EFFECTS.has(misc_id):
+			state_id = int(SPECIAL_ITEM_EFFECTS[misc_id].get("state_id", 0))
+		var display_name := str(st.get("name", ""))
+		if display_name == "" and not rec.is_empty():
+			display_name = str(rec.get("name", ""))
+		status.apply_state(source_id, attribs, rem, {
+			"icon": icon,
+			"name": display_name,
+			"state_id": state_id,
+			"misc_id": misc_id,
+			"persist": true,
+		}, dur)
 
 ## Lý do KHÔNG dùng được món này lúc này ("" = dùng được):
 ##   - Thuốc Tống Kim (songjin_only) chỉ dùng trong Chiến trường Tống Kim.
 ##   - Đang có Tiên Thảo Lộ (nhân đôi EXP) không uống chồng để tránh lãng phí.
-static func block_reason(item: ItemInstance) -> String:
+static func block_reason(item: ItemInstance, profile: PlayerProfile = null) -> String:
 	if item == null or not item.is_misc():
 		return ""
-	if bool(item.get_base().get("songjin_only", false)) \
+	if item.get_base().get("songjin_only", false) == true \
 			and (GameManager.field_map.get("battle", {}) as Dictionary).is_empty() \
-			and not bool(GameManager.field_map.get("tong_kim_lol", false)):
+			and GameManager.field_map.get("tong_kim_lol", false) != true:
 		return "%s chỉ dùng được trong Chiến trường Tống Kim." % item.get_display_name()
-	var loop := Engine.get_main_loop()
-	var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
-	if player != null:
-		var status: StatusEffectController = player.get_node_or_null("StatusEffectController")
-		if status != null:
-			for e in effects_of(item):
-				if str(e[0]) == "expenhance_p" and status.has_state("item:expenhance_p"):
-					return "Các hạ đang còn thời gian nhân đôi kinh nghiệm."
+	var check_exp := false
+	for e in effects_of(item):
+		if str(e[0]) == "expenhance_p":
+			check_exp = true
+			break
+	if check_exp:
+		var prof := profile if profile != null else (GameManager.local_profile if GameManager != null else null)
+		if prof != null and prof.has_active_state("item:expenhance_p"):
+			return "Các hạ đang còn thời gian nhân đôi kinh nghiệm."
+		var loop := Engine.get_main_loop()
+		var player: Node = (loop as SceneTree).get_first_node_in_group("player") if loop is SceneTree else null
+		if player != null and (prof == null or (GameManager != null and prof == GameManager.local_profile)):
+			var status: StatusEffectController = player.get_node_or_null("StatusEffectController")
+			if status != null and status.has_state("item:expenhance_p"):
+				return "Các hạ đang còn thời gian nhân đôi kinh nghiệm."
 	return ""
 
 ## Uống 1 bình `item` trong túi của `profile`: bớt 1 (hết thì bỏ khỏi túi) + thêm hiệu ứng. Thuốc không chồng (mỗi bình 1 ô) -> online
@@ -180,7 +250,7 @@ static func block_reason(item: ItemInstance) -> String:
 static func consume(profile: PlayerProfile, player: Node, item: ItemInstance) -> bool:
 	if profile == null or not usable(item):
 		return false
-	var blocked := block_reason(item)
+	var blocked := block_reason(item, profile)
 	if blocked != "":
 		return false
 	var index := profile.inventory.find(item)
@@ -197,10 +267,28 @@ static func consume(profile: PlayerProfile, player: Node, item: ItemInstance) ->
 		if player != null and player.has_method("notify"):
 			player.notify("+%d Phúc Duyên" % fy)
 		return true
+	var timed := _extract_timed_buff(item)
+	var timed_buff: Dictionary = timed["buff"]
+	var timed_sec: float = float(timed["seconds"])
 	if player == null:
-		return false
-	if not drink(player, item):
-		return false
+		if timed_buff.is_empty() or timed_sec <= 0.0:
+			return false
+		profile.set_active_state(_state_source_id(timed_buff), timed_buff, timed_sec, timed_sec, {
+			"misc_id": item.misc_id,
+			"name": item.get_display_name(),
+			"state_id": _special_state_id(item),
+			"persist": true,
+		})
+	else:
+		if not drink(player, item):
+			return false
+		if not timed_buff.is_empty() and timed_sec > 0.0:
+			profile.set_active_state(_state_source_id(timed_buff), timed_buff, timed_sec, timed_sec, {
+				"misc_id": item.misc_id,
+				"name": item.get_display_name(),
+				"state_id": _special_state_id(item),
+				"persist": true,
+			})
 	if item.count > 1:
 		item.count -= 1
 	else:

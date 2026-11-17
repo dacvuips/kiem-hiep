@@ -12,9 +12,33 @@
 fallbacks = Array[Font]([ExtResource("1_font"), ExtResource("4_thai"), ExtResource("5_jp"), ExtResource("6_kr"), ExtResource("7_sc"), ExtResource("3_sym")])
 font_names = PackedStringArray("Tahoma", "Arial", "Segoe UI", "sans-serif")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.04, 0.03, 0.02, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.70, 0.30, 0.98)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 4
+
 [resource]
 default_font = SubResource("SystemFont_vltk")
 default_font_size = 16
 CheckButton/colors/button_checked_color = Color(0.96, 0.78, 0.22, 1)
 LineEdit/fonts/font = ExtResource("2_input")
 TextEdit/fonts/font = ExtResource("2_input")
+TooltipLabel/colors/font_color = Color(1, 0.95, 0.85, 1)
+TooltipLabel/colors/font_shadow_color = Color(0, 0, 0, 0.9)
+TooltipLabel/constants/shadow_offset_x = 1
+TooltipLabel/constants/shadow_offset_y = 1
+TooltipLabel/font_sizes/font_size = 13
+TooltipPanel/styles/panel = SubResource("StyleBoxFlat_tooltip")

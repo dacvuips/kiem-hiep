@@ -278,15 +278,6 @@ func _ready() -> void:
 	send_btn.pressed.connect(_send)
 	input_row.add_child(send_btn)
 
-	# Khởi tạo tin mẫu phong phú nếu chưa có lịch sử
-	if history.is_empty():
-		_push(ChatServer.WORLD, tr("Lệnh Hồ Xung"), "", tr("Hôm nay ai cùng ta tỉ thí kiếm pháp tại Hoa Sơn?"))
-		_push(ChatServer.WORLD, tr("Tiểu Long Nữ"), "", tr("Cổ Mộ phái chiêu mộ đệ tử, hoan nghênh chư vị đồng đạo."))
-		var demo_sword := ItemGenerator.generate_gold(0) if ItemDatabase.get_gold(0).size() > 0 else null
-		if demo_sword:
-			_push(ChatServer.WORLD, tr("Độc Cô Cầu Bại"), "", tr("Cần nhượng lại bảo kiếm %s cho cao thủ hữu duyên!") % ItemChatHelper.create_token(demo_sword))
-		_push(ChatServer.GUILD, tr("Bang Chủ"), "", tr("Tối nay 20h anh em tập hợp đánh Boss bang nhé!"))
-
 	# Hiệu ứng trượt ra mượt mà từ mép trái màn hình
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_panel, "offset_left", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)

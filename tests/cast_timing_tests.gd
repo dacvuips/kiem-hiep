@@ -10,6 +10,7 @@ func _ready() -> void:
 	test_action_seconds()
 	test_skill_cooldowns()
 	await test_action_lock()
+	test_server_cast_rate()
 	print("RESULT fail=", _fail)
 	get_tree().quit(1 if _fail > 0 else 0)
 
@@ -73,3 +74,39 @@ func test_action_lock() -> void:
 	check("Survivor (không khoá động tác) ra liền được", ctl._try_cast(skill, player, target))
 	player.queue_free()
 	target.queue_free()
+
+## Game server bác gói ra chiêu nhanh hơn nhịp gốc (GameServer._cast_allowed) — không cần mạng: gọi thẳng với kết nối giả.
+func test_server_cast_rate() -> void:
+	var gs: GameServer = load("res://net/server/game_server.gd").new()
+	var c := GameServer.Conn.new()
+	c.profile = PlayerProfile.new()
+	c.profile.set_sect(SectRegistry.get_by_id("thien_nhan_giao"))
+	ProfileGuard.refresh_cast_speed(c)
+	gs._now = 10.0
+	check("Server nhận chiêu 1x đầu tiên", gs._cast_allowed(c, 135, 1, false))
+	gs._now = 10.3
+	check("Server bác chiêu 1x sau 0,3 giây", not gs._cast_allowed(c, 135, 1, false))
+	gs._now = 10.6
+	check("Server nhận chiêu 1x sau ~0,6 giây (chừa trễ mạng)", gs._cast_allowed(c, 135, 1, false))
+	## Gửi đều mỗi 0,4 giây (nhịp cũ) trong 20 giây: chỉ nhận khoảng 1 gói / 0,8 giây.
+	var c2 := GameServer.Conn.new()
+	c2.profile = c.profile
+	var accepted := 0
+	for i in 50:
+		gs._now = 100.0 + i * 0.4
+		if gs._cast_allowed(c2, 135, 1, false):
+			accepted += 1
+	check("Spam 0,4 giây/lần 20 giây chỉ nhận <= 26 gói (nhận %d)" % accepted, accepted <= 26 and accepted >= 20)
+	## Hồi chiêu riêng: Thôi Sơn Điền Hải 2,22 giây.
+	var c3 := GameServer.Conn.new()
+	c3.profile = c.profile
+	gs._now = 200.0
+	check("Thôi Sơn Điền Hải lần đầu nhận", gs._cast_allowed(c3, 138, 1, false))
+	gs._now = 201.2
+	check("Thôi Sơn Điền Hải sau 1,2 giây bị bác (hồi 2,22 giây)", not gs._cast_allowed(c3, 138, 1, false))
+	gs._now = 202.0
+	check("Thôi Sơn Điền Hải sau 2,0 giây nhận (chừa sai số)", gs._cast_allowed(c3, 138, 1, false))
+	## Buff (cờ hỗ trợ) không bị khoá động tác.
+	gs._now = 202.05
+	check("Buff ngay sau chiêu đánh vẫn nhận", gs._cast_allowed(c3, 136, 1, true))
+	gs.free()

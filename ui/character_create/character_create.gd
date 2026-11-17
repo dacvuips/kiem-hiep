@@ -294,7 +294,7 @@ func _submit_character(enter_game_directly: bool) -> void:
 		return
 
 	var api := _get_account_api()
-	if api != null and api.is_logged_in():
+	if api != null and api.is_logged_in() and not GameModeManager.is_offline():
 		await _create_online(player_name, enter_game_directly)
 	else:
 		_create_offline(player_name, enter_game_directly)
@@ -302,25 +302,23 @@ func _submit_character(enter_game_directly: bool) -> void:
 func _create_offline(player_name: String, enter_game_directly: bool) -> void:
 	var gm := _get_game_manager()
 	var sm := _get_save_manager()
-	var is_new := gm == null or gm.local_profile == null
-	var profile: PlayerProfile = gm.local_profile if (gm != null and gm.local_profile) else PlayerProfile.new()
+	var profile := PlayerProfile.new()
 	profile.display_name = player_name
 	profile.gender = _gender
-	if profile.get_element() != _element or (not profile.has_sect() and profile.element < 0):
-		profile.choose_element(_element)
+	profile.choose_element(_element)
 	var need_gender := PlayerProfile.required_gender(int(_element))
 	if need_gender >= 0:
 		profile.gender = need_gender as PlayerProfile.Gender   ## hệ mà mọi phái cùng đòi 1 giới tính
-	if is_new:
-		profile.intro_completed = false
-		StarterKit.apply(profile)   ## quà tân thủ: cấp 10 + đồ trong túi (vào game là phải chọn phái)
-		var tm: Node = get_node_or_null("/root/TutorialManager")
-		if tm and tm.has_method("notify_character_created"):
-			tm.notify_character_created()
+	profile.intro_completed = false
+	StarterKit.apply(profile)   ## quà tân thủ: cấp 10 + đồ trong túi (vào game là phải chọn phái)
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("notify_character_created"):
+		tm.notify_character_created()
+	if sm != null:
+		sm.save_offline_profile(profile, target_slot)
+		sm.current_offline_slot = target_slot
 	if gm != null:
 		gm.local_profile = profile
-	if sm != null:
-		sm.save_profile(profile)
 	_show_message(tr("Đã tạo nhân vật %s — %s") % [player_name, profile.sect_name])
 
 	if enter_game_directly:

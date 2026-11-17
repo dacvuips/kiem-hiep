@@ -80,7 +80,7 @@ func test_profile_guard() -> void:
 	var cheat := sd.duplicate(true)
 	cheat["level"] = 90
 	cheat["strength"] = int(cheat["strength"]) + 500
-	var m := profile_guard.merge(sd, cheat)
+	var m: Dictionary = profile_guard.merge(sd, cheat)
 	check("ProfileGuard: không đổi được cấp", int(m.level) == 10)
 	check("ProfileGuard: cộng lố điểm tiềm năng bị trả về", int(m.strength) == int(sd.strength))
 	var legit := sd.duplicate(true)
@@ -93,7 +93,7 @@ func test_profile_guard() -> void:
 	var n1 := sd.duplicate(true)
 	n1["nation"] = Nation.Type.SONG
 	check("ProfileGuard: bỏ khoá phe Tống / Kim cũ", not profile_guard.merge(sd, n1).has("nation"))
-	var hit := profile_guard.max_hit(server)
+	var hit: float = profile_guard.max_hit(server)
 	check("ProfileGuard: trần sát thương hợp lý", hit >= profile_guard.MIN_CAP and hit < 100000.0, hit)
 	check("ProfileGuard: kinh nghiệm hạ quái", profile_guard.exp_for_kill(10, MonsterData.monster(1), 10, 100) >= 0)
 	## Đồ + tiền (C1)
@@ -109,7 +109,7 @@ func test_profile_guard() -> void:
 	(c1.inventory as Array)[0]["magic"] = [{"attrib": "damage_v", "value": [9999, 0, 0], "name": "x", "prefix": true}]
 	(c1.inventory as Array)[0]["rx"] = 5
 	c1["gold"] = 50000
-	var g := profile_guard.merge(od, c1)
+	var g: Dictionary = profile_guard.merge(od, c1)
 	check("ProfileGuard: bỏ món tự chế + bản nhân bản", (g.inventory as Array).size() == 1)
 	check("ProfileGuard: chỉ số món đồ giữ bản server", (g.inventory as Array)[0].magic == (od.inventory as Array)[0].magic)
 	check("ProfileGuard: vị trí món do chủ đổi được", int((g.inventory as Array)[0].rx) == 5)

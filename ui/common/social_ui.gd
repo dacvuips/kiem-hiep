@@ -94,14 +94,22 @@ static func info_box(header: String = "") -> Array:
 ## Thanh thông báo (xanh lá = tốt, đỏ = lỗi).
 static func banner(text: String, good := true) -> PanelContainer:
 	var panel := GameUi.panel(GameUi.BANNER_OK if good else GameUi.BANNER_BAD)
-	panel.add_child(label(text, LABEL_GREEN if good else LABEL_RED, 14, HORIZONTAL_ALIGNMENT_CENTER))
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var l := label(text, LABEL_GREEN if good else LABEL_RED, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_child(l)
 	return panel
 
 static func set_banner(panel: PanelContainer, text: String, good: bool) -> void:
 	panel.theme_type_variation = GameUi.BANNER_OK if good else GameUi.BANNER_BAD
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var l := panel.get_child(0) as Label
-	l.text = text
-	l.add_theme_color_override("font_color", LABEL_GREEN if good else LABEL_RED)
+	if l:
+		l.text = text
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.add_theme_color_override("font_color", LABEL_GREEN if good else LABEL_RED)
 
 ## Nút chính "đá" màu be.
 static func stone_button(text: String, min_size := Vector2(0, 40)) -> Button:

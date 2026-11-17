@@ -80,10 +80,16 @@ func _ready() -> void:
 		_slots.append(_make_slot(i, Vector2(i * (SLOT_SIZE + GAP), 0)))
 
 	refresh()
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
 
 	HudLayout.add_listener(apply_hud_layout)
 
 	apply_hud_layout()
+
+func _on_profile_changed(_p: PlayerProfile) -> void:
+	if is_instance_valid(self):
+		refresh()
 
 func _exit_tree() -> void:
 
@@ -252,6 +258,15 @@ func use_slot(i: int) -> void:
 
 		return
 
+	if ItemConsumer.is_town_portal(item):
+		var res := ItemConsumer.use_item(p, item, player, get_tree().current_scene)
+		if res.get("exit_to_hub", false):
+			_last_use = _now()
+			return
+		if not res.get("ok", false) and str(res.get("message", "")) != "" and player.has_method("notify"):
+			player.notify(str(res["message"]))
+		return
+
 	if not PotionEffect.consume(p, player, item):
 
 		return
@@ -287,7 +302,7 @@ func refresh() -> void:
 
 		var n := PotionEffect.count_in_inventory(p, mid)
 
-		_counts[i].text = str(n) if mid != "" else ""
+		_counts[i].text = str(n) if (mid != "" and n > 0) else ""
 
 		_icons[i].modulate = Color.WHITE if n > 0 or mid == "" else Color(0.45, 0.45, 0.45)
 
@@ -319,7 +334,7 @@ func _open_picker(i: int) -> void:
 
 	for it in p.inventory:
 
-		if not PotionEffect.usable(it) or seen.has(it.misc_id):
+		if not _is_quick_item(it) or seen.has(it.misc_id):
 
 			continue
 
@@ -341,7 +356,8 @@ func _open_picker(i: int) -> void:
 
 		row.add_child(icon)
 
-		var name_l := SocialUi.label("%s  ×%d" % [it.get_display_name(), PotionEffect.count_in_inventory(p, it.misc_id)], SocialUi.TEXT, 14)
+		var count_txt := "×%d" % PotionEffect.count_in_inventory(p, it.misc_id)
+		var name_l := SocialUi.label("%s  %s" % [it.get_display_name(), count_txt], SocialUi.TEXT, 14)
 
 		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -395,11 +411,14 @@ func _open_picker(i: int) -> void:
 
 		SocialWindow.present(host, win, &"quick_item_picker")
 
-## Thả món kéo từ hành trang: chỉ nhận thuốc / đan dùng được (PotionEffect.usable).
+static func _is_quick_item(item: ItemInstance) -> bool:
+	return PotionEffect.usable(item) or ItemConsumer.is_town_portal(item)
+
+## Thả món kéo từ hành trang: nhận thuốc / đan dùng được hoặc Thổ Địa Phù.
 
 func _can_drop(_at: Vector2, data: Variant, _i: int) -> bool:
 
-	return data is Dictionary and data.get("type") == ItemRoomView.DRAG_TYPE and PotionEffect.usable(data.get("item") as ItemInstance)
+	return data is Dictionary and data.get("type") == ItemRoomView.DRAG_TYPE and _is_quick_item(data.get("item") as ItemInstance)
 
 func _drop(_at: Vector2, data: Variant, i: int) -> void:
 

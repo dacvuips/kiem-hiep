@@ -154,6 +154,13 @@ var skill_points: int = 0
 ## đòn chính (đòn chính dùng được ngay ở cấp 0, cộng điểm để nâng sức mạnh).
 var skill_levels: Dictionary = {}
 
+## Tiến độ nâng cấp kỹ năng & điểm kỹ năng trong chế độ Thủ Thành (Zombies vs Plants JX1)
+var thu_thanh_level: int = 10
+var thu_thanh_exp: int = 0
+var thu_thanh_skill_levels: Dictionary = {}
+var thu_thanh_skill_points: int = 10
+var thu_thanh_selected_skills: Array = []
+
 const SKILL_POINTS_PER_LEVEL := 1
 
 ## Ô skill phụ ngoài màn chơi do người chơi TỰ GẮN (bảng Kỹ năng) — skill_id từng ô, "" = ô trống. 2 TRANG x 8 ô
@@ -213,6 +220,81 @@ func set_layout_offset(key: String, offset: Vector2) -> void:
 var active_aura_id: String = ""
 ## Hào quang đặc biệt do GM cấp (state_id trong states.json). 0 = không có.
 var gm_aura_state: int = 0
+## Các buff thuốc có thời hạn (Tiên Thảo Lộ, Thiên Sơn Bảo Lộ, đan dược...) lưu theo nhân vật để giữ khi
+## dùng từ Hub vào map hoặc khi chuyển map: [{"source_id", "misc_id", "attribs", "time", "duration", "name", "state_id"}].
+var active_states: Array = []
+
+func has_active_state(source_id: String) -> bool:
+	for st in active_states:
+		if st is Dictionary and str(st.get("source_id", "")) == source_id and float(st.get("time", 0.0)) > 0.0:
+			return true
+	return false
+
+func set_active_state(source_id: String, attribs: Dictionary, seconds: float, duration: float, meta: Dictionary = {}) -> void:
+	if source_id == "":
+		return
+	if seconds <= 0.0:
+		remove_active_state(source_id)
+		return
+	var ser_attribs := {}
+	for k in attribs:
+		var v: Variant = attribs[k]
+		if v is Vector3i:
+			ser_attribs[str(k)] = [v.x, v.y, v.z]
+		elif v is Array and v.size() >= 3:
+			ser_attribs[str(k)] = [int(v[0]), int(v[1]), int(v[2])]
+	var entry := {
+		"source_id": source_id,
+		"misc_id": str(meta.get("misc_id", "")),
+		"attribs": ser_attribs,
+		"time": seconds,
+		"duration": maxf(duration, seconds),
+		"name": str(meta.get("name", "")),
+		"state_id": int(meta.get("state_id", 0)),
+	}
+	for i in active_states.size():
+		if active_states[i] is Dictionary and str(active_states[i].get("source_id", "")) == source_id:
+			if entry["misc_id"] == "":
+				entry["misc_id"] = str(active_states[i].get("misc_id", ""))
+			if entry["name"] == "":
+				entry["name"] = str(active_states[i].get("name", ""))
+			if int(entry["state_id"]) <= 0:
+				entry["state_id"] = int(active_states[i].get("state_id", 0))
+			active_states[i] = entry
+			return
+	active_states.append(entry)
+
+func remove_active_state(source_id: String) -> void:
+	for i in range(active_states.size() - 1, -1, -1):
+		if active_states[i] is Dictionary and str(active_states[i].get("source_id", "")) == source_id:
+			active_states.remove_at(i)
+
+func get_active_exp_enhance_p() -> int:
+	var total := 0
+	for st in active_states:
+		if not st is Dictionary or float(st.get("time", 0.0)) <= 0.0:
+			continue
+		var attr: Variant = st.get("attribs", {})
+		if attr is Dictionary and attr.has("expenhance_p"):
+			var v: Variant = attr["expenhance_p"]
+			if v is Array and not v.is_empty():
+				total += int(v[0])
+			elif v is Vector3i:
+				total += v.x
+	return total
+
+func tick_active_states(delta: float) -> void:
+	if delta <= 0.0 or active_states.is_empty():
+		return
+	for i in range(active_states.size() - 1, -1, -1):
+		if not active_states[i] is Dictionary:
+			active_states.remove_at(i)
+			continue
+		var rem := float(active_states[i].get("time", 0.0)) - delta
+		if rem <= 0.0:
+			active_states.remove_at(i)
+		else:
+			active_states[i]["time"] = rem
 ## Khung "Tùy chỉnh kỹ năng" (bảng Kỹ năng): no_target = không có quái gần vẫn ra chiêu về phía trước mặt;
 ## face_direction = luôn ra chiêu theo hướng nhân vật đang quay (không tự nhắm quái gần nhất); tap_release = nút skill
 ## ra chiêu khi NHẢ tay (tắt = ra chiêu ngay lúc chạm). Chế độ Auto vẫn tự nhắm quái.
@@ -331,6 +413,15 @@ var max_stamina: int = 100
 
 ## Số ải đã vượt (0 = chưa vượt ải nào) — ải đang chơi tiếp theo là index này.
 var stages_cleared: int = 0
+## Lưu kết quả đánh giá 3 sao cho từng ải: stage_index (String) -> stars (int, 1..3)
+var stage_stars: Dictionary = {}
+
+func get_stage_stars(stage_index: int) -> int:
+	return int(stage_stars.get(str(stage_index), stage_stars.get(stage_index, 0)))
+
+func set_stage_stars(stage_index: int, stars: int) -> void:
+	var prev := get_stage_stars(stage_index)
+	stage_stars[str(stage_index)] = maxi(prev, clamp(stars, 1, 3))
 var herb_garden_level: int = 1
 var pending_quest_count: int = 0
 ## Trạng thái hệ thống Dã Tẩu (TaskLink) — lưu save
@@ -399,6 +490,8 @@ func set_sect(sect_def: SectDefinition) -> void:
 ## điểm kỹ năng để học/nâng skill phụ. Dùng while thay vì if để xử lý đúng khi cộng đủ EXP nhảy
 ## nhiều level cùng lúc trong 1 lần gọi. Giới hạn tối đa MAX_LEVEL (200).
 func add_exp(amount: int) -> void:
+	if amount > 0:
+		DaTauManager.on_exp_gained(self, amount)
 	if level >= MAX_LEVEL:
 		current_exp = 0
 		return
@@ -965,13 +1058,19 @@ func to_dict() -> Dictionary:
 		"energy": energy,
 		"potential_points": potential_points,
 		"skill_points": skill_points,
-		"skill_levels": skill_levels,
+		"skill_levels": skill_levels.duplicate(true),
+		"thu_thanh_level": thu_thanh_level,
+		"thu_thanh_exp": thu_thanh_exp,
+		"thu_thanh_skill_levels": thu_thanh_skill_levels.duplicate(),
+		"thu_thanh_skill_points": thu_thanh_skill_points,
+		"thu_thanh_selected_skills": thu_thanh_selected_skills.duplicate(),
 		"gold": gold,
 		"xu": xu,
 		"jade": jade,
 		"stamina": stamina,
 		"max_stamina": max_stamina,
 		"stages_cleared": stages_cleared,
+		"stage_stars": stage_stars.duplicate(),
 		"herb_garden_level": herb_garden_level,
 		"pending_quest_count": pending_quest_count,
 		"gem_slots": gem_slots,
@@ -982,6 +1081,7 @@ func to_dict() -> Dictionary:
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
 		"gm_aura_state": gm_aura_state,
+		"active_states": active_states.duplicate(true),
 		"skill_settings": skill_settings,
 		"auto": {"mode": auto_mode, "presets": auto_presets.map(func(a: AutoSettings) -> Dictionary: return a.to_dict()),
 			"log": auto_log},
@@ -1057,12 +1157,23 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var saved_skill_levels: Dictionary = data.get("skill_levels", {})
 	for skill_id in saved_skill_levels.keys():
 		profile.skill_levels[str(skill_id)] = int(saved_skill_levels[skill_id])
+	profile.thu_thanh_level = int(data.get("thu_thanh_level", 10))
+	profile.thu_thanh_exp = int(data.get("thu_thanh_exp", 0))
+	var saved_tt_levels: Dictionary = data.get("thu_thanh_skill_levels", {})
+	for skill_id in saved_tt_levels.keys():
+		profile.thu_thanh_skill_levels[str(skill_id)] = int(saved_tt_levels[skill_id])
+	profile.thu_thanh_skill_points = int(data.get("thu_thanh_skill_points", 10))
+	var saved_tt_selected: Array = data.get("thu_thanh_selected_skills", [])
+	profile.thu_thanh_selected_skills.clear()
+	for s_id in saved_tt_selected:
+		profile.thu_thanh_selected_skills.append(str(s_id))
 	profile.gold = int(data.get("gold", 0))
 	profile.xu = int(data.get("xu", 0))
 	profile.jade = int(data.get("jade", 0))
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))
 	profile.stages_cleared = int(data.get("stages_cleared", 0))
+	profile.stage_stars = data.get("stage_stars", {}).duplicate()
 	if data.has("intro_completed"):
 		profile.intro_completed = bool(data.get("intro_completed", false))
 	else:
@@ -1122,4 +1233,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.auto_log = (auto_data.get("log", []) as Array).filter(func(e: Variant) -> bool: return e is Dictionary)
 	var saved_da_tau: Variant = data.get("da_tau", {})
 	profile.da_tau = saved_da_tau.duplicate(true) if saved_da_tau is Dictionary else {}
+	var saved_states: Variant = data.get("active_states", [])
+	if saved_states is Array:
+		for st in saved_states:
+			if st is Dictionary and str(st.get("source_id", "")) != "" and float(st.get("time", 0.0)) > 0.0:
+				profile.active_states.append(st.duplicate(true))
 	return profile

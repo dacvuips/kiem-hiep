@@ -58,6 +58,10 @@ func grid_of_room(rid: int) -> MapGrid:
 	var r: Dictionary = _rooms_by_rid.get(rid, {})
 	return r.get("grid", gs.grid)
 
+func map_id_of_room(rid: int) -> int:
+	var r: Dictionary = _rooms_by_rid.get(rid, {})
+	return int(r.get("map_id", -1))
+
 # ---------------------------------------------------------------- tin từ game
 
 func on_field(c, b: StreamPeerBuffer) -> void:
@@ -310,11 +314,12 @@ func on_leave(c) -> void:
 	if c.entity:
 		c.entity.room_id = 0
 		c.entity.cell_base = Vector2i.ZERO
+	# Nếu trong phòng hết người (người cuối cùng rời đi), tự động xóa phòng ngay lập tức
+	if (r.members as Array).is_empty():
+		_close(r, "")
+		return
 	if r.get("guild", "") != "" or bool(r.get("is_boss", false)):
-		if (r.members as Array).is_empty():
-			_close(r, "")
-		else:
-			_broadcast(r)
+		_broadcast(r)
 		return
 	if int(r.host) == c.character_id:
 		_close(r, "Chủ phòng %s đã rời — phòng #%s đóng." % [r.host_name, id])

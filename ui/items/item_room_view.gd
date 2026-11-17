@@ -6,6 +6,7 @@ class_name ItemRoomView
 ## Dữ liệu nằm hết ở PlayerProfile (inventory + room_x/room_y của từng món); view chỉ vẽ + chuyển thao tác.
 
 signal item_pressed(item: ItemInstance)
+signal item_right_clicked(item: ItemInstance)
 signal changed
 
 ## Cỡ 1 ô (pixel) — cửa sổ hành trang đặt lại theo chiều cao màn hình trước khi setup().
@@ -103,6 +104,11 @@ func _make_widget(item: ItemInstance, ctx: Dictionary, rem_count: int = -1) -> I
 	if rem_count > 0:
 		b.set_count(rem_count)
 	b.pressed.connect(func() -> void: item_pressed.emit(item))
+	b.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			item_right_clicked.emit(item)
+			b.accept_event()
+	)
 	if interactive:
 		b.set_meta("draggable", true)
 		b.set_drag_forwarding(_drag_data.bind(item, b), _can_drop_forward.bind(b), _drop_forward.bind(b))

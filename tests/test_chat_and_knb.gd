@@ -93,6 +93,18 @@ func test_chat_commands() -> void:
 	check("Phải có Tiên Thảo hoàn", found_ttl_hoan)
 	check("Phải có Kim Nguyên Bảo vật phẩm", found_knb)
 
+	# Test /lead command
+	chat._handle_slash_command("/lead 25")
+	check("/lead 25 đặt cấp lãnh đạo thành 25", p.lead_level == 25, "Thực tế: %d" % p.lead_level)
+	chat._handle_slash_command("/lead +5")
+	check("/lead +5 tăng cấp lãnh đạo lên 30", p.lead_level == 30, "Thực tế: %d" % p.lead_level)
+
+	# Test /leadexp command
+	p.lead_level = 0
+	p.lead_exp = 0
+	chat._handle_slash_command("/leadexp 100")
+	check("/leadexp 100 thăng cấp lãnh đạo lên 1", p.lead_level == 1 and p.lead_exp == 100)
+
 	chat.queue_free()
 
 func test_kill_exp_display() -> void:
@@ -121,7 +133,8 @@ func test_kill_exp_display() -> void:
 	var last_msg: Dictionary = chat._messages.back()
 	check("Thông báo EXP phải là tin hệ thống", last_msg.get("is_system", false) == true)
 	var text: String = str(last_msg.get("text", ""))
-	check("Thông báo phải có tên quái Heo Rừng", text.contains("Heo Rừng"), text)
+	check("Thông báo không ghi tên quái Heo Rừng", not text.contains("Heo Rừng"), text)
+	check("Thông báo phải có chữ Nhận được", text.contains("Nhận được"), text)
 	check("Thông báo phải có chữ kinh nghiệm", text.contains("kinh nghiệm"), text)
 
 	m.free()

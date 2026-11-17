@@ -59,6 +59,7 @@ func _ready() -> void:
 	if _apple:
 		_apple.pressed.connect(func() -> void:
 			_toast(_message, "Đăng nhập Apple đang phát triển"))
+	_setup_offline_play_button()
 	for b: BaseButton in [_login, _create, _register_link, _forgot, _google, _facebook, _apple]:
 		if b:
 			b.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
@@ -101,6 +102,46 @@ func _ready() -> void:
 		api.logout()
 	elif api != null and api.has_saved_session():
 		_resume()
+
+func _setup_offline_play_button() -> void:
+	var offline_btn: BaseButton = get_node_or_null("%OfflineButton")
+	if offline_btn == null:
+		var btn := Button.new()
+		btn.name = "OfflineButton"
+		btn.text = tr("🎮 CHƠI OFFLINE (KHÔNG CẦN TÀI KHOẢN)")
+		btn.custom_minimum_size = Vector2(300, 44)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.add_theme_color_override("font_color", Color(0.98, 0.92, 0.55))
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.8))
+		btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		btn.add_theme_constant_override("outline_size", 4)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.12, 0.25, 0.2, 0.85)
+		sb.border_color = Color(0.3, 0.8, 0.5, 0.9)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(6)
+		sb.content_margin_left = 12
+		sb.content_margin_right = 12
+		btn.add_theme_stylebox_override("normal", sb)
+		var sb_hover := sb.duplicate() as StyleBoxFlat
+		sb_hover.bg_color = Color(0.18, 0.35, 0.28, 0.95)
+		sb_hover.border_color = Color(0.5, 1.0, 0.7, 1.0)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+
+		var target_parent: Node = get_node_or_null("Stage")
+		if target_parent != null:
+			btn.position = Vector2(686, 750)
+			target_parent.add_child(btn)
+		else:
+			btn.position = Vector2(40, 40)
+			add_child(btn)
+		offline_btn = btn
+
+	offline_btn.pressed.connect(func() -> void:
+		GameModeManager.set_mode(GameModeManager.Mode.OFFLINE)
+		_go("res://ui/character_roster/CharacterRoster.tscn")
+	)
 
 func _test_capture_policy() -> void:
 	await get_tree().create_timer(0.5).timeout

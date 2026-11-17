@@ -7,12 +7,30 @@ const REACH := 44.0                 ## đứng cách vật rớt chừng này (p
 const CLICK_RADIUS := 30.0
 const LIFETIME := 90.0
 const BLINK_TIME := 12.0
+const SCROLL_SHEET_PATH := "res://assets/items/ground/item_shenmituzhi.png"
+const SCROLL_FRAMES := 7
+const SCROLL_FPS := 1000.0 / 230.0  ## interval=230ms từ item_shenmituzhi.spr gốc
+
+static var _scroll_sheet: Texture2D = null
+static var _scroll_sheet_tried := false
+
+static func _get_scroll_sheet() -> Texture2D:
+	if not _scroll_sheet_tried:
+		_scroll_sheet_tried = true
+		if ResourceLoader.exists(SCROLL_SHEET_PATH):
+			_scroll_sheet = load(SCROLL_SHEET_PATH)
+		elif FileAccess.file_exists(SCROLL_SHEET_PATH):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(SCROLL_SHEET_PATH))
+			if img and not img.is_empty():
+				_scroll_sheet = ImageTexture.create_from_image(img)
+	return _scroll_sheet
 
 var amount: int = 0                 ## > 0 = tiền
 var item: ItemInstance = null
 var _time := 0.0
 var _want_pickup := false        ## đã bấm vào, đang đi tới để nhặt
 var _hover := false
+var _full_bag_cooldown: float = 0.0
 var _label := ""
 var _color := Color.WHITE
 var _icon: Texture2D
@@ -38,14 +56,19 @@ func setup_item(it: ItemInstance) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	if _full_bag_cooldown > 0.0:
+		_full_bag_cooldown -= delta
 	if _time >= LIFETIME:
 		queue_free()
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null:
 		var dist := _player_feet(player).distance_to(global_position)
-		# Đi ngang qua là có thể nhặt tiền tự động
-		if amount > 0 and dist <= REACH + 25.0:
+		# Đi ngang qua là có thể nhặt tiền và đồ vào hành trang tự động
+		var pickup_reach := REACH + 25.0
+		if GameManager.game_mode == GameManager.GameMode.STAGE or GameManager.field_map.get("survivor_mode", false):
+			pickup_reach = maxf(pickup_reach, float(PlayerStats.pickup_radius))
+		if dist <= pickup_reach and _full_bag_cooldown <= 0.0:
 			_pick_up(player)
 			return
 		if _want_pickup:
@@ -103,7 +126,7 @@ func _pick_up(player: Node) -> void:
 		_notice(player, "Theo luật nhặt đồ của tổ đội, chưa tới lượt bạn nhặt.")
 		return
 	if amount > 0:
-		if bool(GameManager.field_map.get("tong_kim_lol", false)):
+		if GameManager.field_map.get("tong_kim_lol", false) == true:
 			var s := TongKimLolState.instance()
 			if s:
 				s.add_gold(amount)
@@ -112,7 +135,23 @@ func _pick_up(player: Node) -> void:
 			profile.gold += amount
 			_notice(player, "Nhặt được %d lượng" % amount)
 	elif item != null:
+		if item.misc_id in ["6_1_206", "6_1_213"]:
+			var cur_map_id: int = int(GameManager.field_map.get("id", -1)) if GameManager else -1
+			var res := DaTauManager.try_collect_picked_scroll(profile, item.misc_id, cur_map_id)
+			if res.get("counted", false):
+				_notice(player, "Nhặt được %s (%d/%d) — Dã Tẩu đã ghi nhận" % [res.get("name", "Địa đồ chí"), res.get("done", 1), res.get("need", 1)])
+			elif res.get("bag_full", false):
+				_notice(player, "Hành trang đã đầy, không thể nhặt %s!" % res.get("name", "Địa đồ chí"))
+				_time = maxf(_time, LIFETIME - 5.0)
+				return
+			else:
+				_notice(player, "Nhặt được %s → +1 mảnh Sơn Hà Xã Tắc (Hiện có: %d)" % [res.get("name", item.get_display_name()), int(res.get("shxt_total", 1))])
+			team.advance_turn()
+			SaveManager.save_profile(profile)
+			queue_free()
+			return
 		if not profile.add_item(item):
+			_full_bag_cooldown = 2.0
 			_notice(player, "Hành trang đã đầy")
 			_time = maxf(_time, LIFETIME - 5.0)   ## để lại trên đất thêm chút nữa
 			return
@@ -136,6 +175,18 @@ func _draw() -> void:
 		draw_circle(Vector2(0, -10 + lift), 7.0, Color(0.35, 0.22, 0.02))
 		draw_circle(Vector2(0, -10 + lift), 5.5, _color)
 		draw_circle(Vector2(-1.5, -12 + lift), 1.8, Color(1, 1, 0.8, 0.85))
+	elif item != null and item.misc_id in ["6_1_206", "6_1_213", "6_1_196"] and _get_scroll_sheet() != null:
+		var sheet := _get_scroll_sheet()
+		var fw := sheet.get_width() / float(SCROLL_FRAMES)
+		var fh := float(sheet.get_height())
+		var frame := int(_time * SCROLL_FPS) % SCROLL_FRAMES
+		var s := minf(44.0 / fw, 44.0 / fh)
+		var dst_size := Vector2(fw * s, fh * s)
+		draw_texture_rect_region(
+			sheet,
+			Rect2(Vector2(-dst_size.x * 0.5, -dst_size.y + 4.0 + lift), dst_size),
+			Rect2(Vector2(frame * fw, 0.0), Vector2(fw, fh))
+		)
 	elif _icon != null:
 		var s := minf(32.0 / _icon.get_width(), 32.0 / _icon.get_height())
 		draw_texture_rect(_icon, Rect2(Vector2(-_icon.get_width() * s * 0.5, -_icon.get_height() * s - 4 + lift), _icon.get_size() * s), false)
@@ -154,6 +205,8 @@ static func spawn_drops(parent: Node, at: Vector2, drops: Array) -> void:
 		var drop_type: String = str(d.get("type", ""))
 		if drop_type == "money" or d.has("money") or (d.has("amount") and not d.has("item")):
 			var amt: int = int(d.get("amount", d.get("money", 0)))
+			if GameModeManager.is_offline() or GameManager.field_map.get("survivor_mode", false):
+				amt *= 10
 			g.setup_money(amt)
 		elif drop_type == "item" or d.has("item"):
 			var it = d.get("item", null)

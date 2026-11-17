@@ -74,25 +74,13 @@ static func push_system(bbcode: String) -> void:
 
 ## Gửi thông báo nhận kinh nghiệm khi diệt quái vào khung chat
 
-static func push_exp(monster_name: String, exp_amount: int) -> void:
+static func push_exp(_monster_name: String, exp_amount: int) -> void:
 
 	if exp_amount <= 0:
 
 		return
 
-	var nm := monster_name.strip_edges()
-
-	if nm.is_empty():
-
-		nm = "Quái"
-
-	var text := "[color=#ffaa00][Hệ thống][/color] Đánh bại [color=#ffff77]%s[/color], nhận được [color=#55ff55]+%s[/color] kinh nghiệm." % [
-
-		nm,
-
-		InventoryPopup.format_money(exp_amount)
-
-	]
+	var text := "[color=#ffaa00][Hệ thống][/color] Nhận được [color=#55ff55]+%s[/color] kinh nghiệm." % InventoryPopup.format_money(exp_amount)
 
 	push_system(text)
 
@@ -534,9 +522,69 @@ func _handle_slash_command(cmd: String) -> bool:
 
 		return true
 
+	if keyword in ["/lead", "/lanhdao"]:
+
+		if not GmManager.is_gm() and not OS.is_debug_build():
+
+			push_system("[color=#ff4444][Hệ thống][/color] Lệnh này chỉ dành cho GM (Quản trị viên).")
+
+			return true
+
+		if p:
+
+			if parts.size() > 1:
+
+				var arg_str := parts[1].strip_edges()
+
+				if arg_str.begins_with("+") or arg_str.begins_with("-"):
+
+					var delta := int(arg_str)
+
+					GmManager.add_player_lead_level(p, delta)
+
+				else:
+
+					var target_lead := int(arg_str)
+
+					GmManager.set_player_lead_level(p, target_lead)
+
+			else:
+
+				GmManager.add_player_lead_level(p, 5)
+
+			push_system("[color=#ffaa00][GM][/color] Cấp tài lãnh đạo hiện tại: [color=#55ff55]%d[/color] (Tối đa đội: %d người)." % [
+				p.lead_level, SocialRules.team_size(p.lead_level)
+			])
+
+		return true
+
+	if keyword in ["/leadexp", "/lanhdaoexp"]:
+
+		if not GmManager.is_gm() and not OS.is_debug_build():
+
+			push_system("[color=#ff4444][Hệ thống][/color] Lệnh này chỉ dành cho GM (Quản trị viên).")
+
+			return true
+
+		if p:
+
+			var exp_add := 5000
+
+			if parts.size() > 1 and parts[1].is_valid_int():
+
+				exp_add = maxi(1, int(parts[1]))
+
+			var gained := GmManager.add_player_lead_exp(p, exp_add)
+
+			push_system("[color=#ffaa00][GM][/color] Đã nhận [color=#55ff55]+%s[/color] exp tài lãnh đạo (Lên %d cấp, hiện cấp: %d)." % [
+				InventoryPopup.format_money(exp_add), gained, p.lead_level
+			])
+
+		return true
+
 	if keyword == "/help":
 
-		push_system("[color=#ffaa00][Hệ thống][/color] Lệnh có sẵn: [color=#ffff77]/knb [số][/color] (tạo KNB), [color=#ffff77]/ttl[/color] (tạo bình Tiên Thảo Lộ & KNB).")
+		push_system("[color=#ffaa00][Hệ thống][/color] Lệnh có sẵn: [color=#ffff77]/knb [số][/color] (KNB), [color=#ffff77]/xu [số][/color] (Xu), [color=#ffff77]/ttl[/color] (Tiên Thảo Lộ), [color=#ffff77]/lead [cấp|+số][/color] (Tài lãnh đạo), [color=#ffff77]/leadexp [exp][/color] (Exp lãnh đạo).")
 
 		return true
 

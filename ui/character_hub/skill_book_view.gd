@@ -103,6 +103,14 @@ func _init(profile: PlayerProfile, skills: Array[SkillDefinition]) -> void:
 	_refresh()
 	if not _skills.is_empty():
 		_select(_skills[0])
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 
 # ==============================================================================
@@ -677,6 +685,10 @@ func _get_grid_drag_data(_pos: Vector2, skill: SkillDefinition, source: Control)
 	if not skill.can_assign_to_hotbar():
 		_show_toast("Kỹ năng bị động — không thể gắn vào thanh kỹ năng")
 		return null
+	var learned_lv: int = _profile.get_skill_level(skill.id) if _profile != null else 0
+	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and learned_lv <= 0:
+		_show_toast("Chưa học kỹ năng này — học ít nhất 1 cấp để gắn")
+		return null
 	_dragged_source_slot = FROM_BOOK
 	source.set_drag_preview(SkillBarUI.make_drag_preview(skill))
 	return SkillBarUI.make_drag_data(skill.id, FROM_BOOK)
@@ -687,6 +699,10 @@ func _get_detail_drag_data(_pos: Vector2, source: Control) -> Variant:
 		return null
 	if not _selected.can_assign_to_hotbar():
 		_show_toast("Kỹ năng bị động — không thể gắn vào thanh kỹ năng")
+		return null
+	var learned_lv: int = _profile.get_skill_level(_selected.id) if _profile != null else 0
+	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and learned_lv <= 0:
+		_show_toast("Chưa học kỹ năng này — học ít nhất 1 cấp để gắn")
 		return null
 	_dragged_source_slot = FROM_BOOK
 	source.set_drag_preview(SkillBarUI.make_drag_preview(_selected))

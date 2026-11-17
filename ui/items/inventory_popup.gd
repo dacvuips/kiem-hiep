@@ -20,6 +20,7 @@ var _crafting_win: CompoundWindow = null
 var _style_tab_active: StyleBox = null
 var _style_tab_normal: StyleBox = null
 var _tt_btn: Button = null
+var _quick_sell_mode: bool = false
 
 ## Phát sau mỗi thay đổi hành trang (để cửa sổ đi kèm như Rương vẽ lại).
 signal profile_changed
@@ -49,10 +50,9 @@ func _ready() -> void:
 	GameUi.apply()
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null and gm.has_signal("profile_modified"):
-		gm.profile_modified.connect(func(p: PlayerProfile) -> void:
-			if p == null or p == _profile or p == GameManager.local_profile:
-				refresh()
-		)
+		gm.profile_modified.connect(_on_external_profile_changed)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_external_profile_changed)
 	var dim: ColorRect = %Dim
 	dim.color = GameUi.DIM
 	dim.visible = _modal
@@ -64,6 +64,12 @@ func _ready() -> void:
 	%TitleBar.gui_input.connect(_on_title_input)
 	%SortButton.text = tr(%SortButton.text)
 	%SortButton.pressed.connect(_on_sort_pressed)
+
+	## Nút Bán nhanh
+	if has_node("%SellButton"):
+		%SellButton.text = tr(%SellButton.text)
+		%SellButton.tooltip_text = tr("Bật/Tắt chế độ bán nhanh: Nhấp vào món đồ để bán ngay.")
+		%SellButton.pressed.connect(_toggle_quick_sell_mode)
 
 	## Hiệu thuốc
 	if has_node("%ShopButton"):
@@ -129,6 +135,7 @@ func _ready() -> void:
 	_room = ItemRoomView.new()
 	_room.cell = 37
 	_room.item_pressed.connect(_on_item_pressed)
+	_room.item_right_clicked.connect(_on_item_right_clicked)
 	_room.changed.connect(_commit)
 
 	if has_node("%InvScroll"):
@@ -172,6 +179,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		if has_node("%SortButton"):
 			%SortButton.text = tr("Sắp Xếp")
+		if has_node("%SellButton"):
+			%SellButton.text = tr("Đang Bán") if _quick_sell_mode else tr("Bán")
 		if has_node("%ShopButton"):
 			%ShopButton.text = tr("Hiệu Thuốc")
 		if is_instance_valid(_tt_btn):
@@ -210,6 +219,14 @@ func link_partner(handler: Callable, item_action: Callable) -> void:
 func unlink_partner() -> void:
 	_room.transfer_handler = Callable()
 	_partner_action = Callable()
+
+func _on_external_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		if GameManager != null and GameManager.local_profile != null and _profile == null:
+			_profile = GameManager.local_profile
+		refresh()
 
 func refresh() -> void:
 	_refresh()
@@ -262,29 +279,75 @@ static func format_money(value: int) -> String:
 		return str(rest)
 	return "%d vạn %d" % [van, rest] if rest > 0 else "%d vạn" % van
 
+func _on_item_right_clicked(item: ItemInstance) -> void:
+	if item == null or _profile == null:
+		return
+	ItemDetailPopup.close_all(get_tree())
+
+	# 1. Nếu có mở rương chứa đồ (StorageWindow) -> Cất vào rương ngay
+	var storage_win: StorageWindow = null
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StorageWindow and is_instance_valid(w):
+			storage_win = w
+			break
+	if storage_win != null:
+		var blocked := SecurityLock.check(_profile, SecurityLock.A_STORAGE)
+		if blocked != "":
+			_show_message(blocked, true)
+			return
+		var err := StorageService.store_item(_profile, item, storage_win._box)
+		if err != "":
+			_show_message(err, true)
+		else:
+			_show_message("Đã cất %s vào rương." % item.get_display_name())
+			_commit()
+			storage_win._refresh()
+		return
+
+	# 2. Nếu rương chứa đồ không mở:
+	var index := _profile.inventory.find(item)
+	if index < 0:
+		return
+
+	# 2a. Nếu là trang bị (vũ khí, áo, nón, đai, giày, phi phong, trang sức...) -> Mặc vào người ngay
+	if not item.is_misc():
+		_equip(index)
+		return
+
+	# 2b. Nếu là vật phẩm có thể dùng (thuốc, phù, rương báu, hộp quà, bí kíp, đan dược...) -> Dùng ngay
+	if ItemConsumer.is_usable(item):
+		_use(index)
+		return
+
 func _on_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
+	if _quick_sell_mode:
+		_sell(index)
+		return
 	var actions := []
 	if not item.is_misc():
 		actions.append(["Trang bị", _equip.bind(index)])
-	else:
+	elif ItemConsumer.is_usable(item):
 		var use_label := ItemConsumer.get_action_label(item)
-		actions.append([use_label, _use.bind(index)])
-	actions.append(["Vứt bỏ", _drop.bind(index)])
+		if use_label != "":
+			actions.append([use_label, _use.bind(index)])
 
-	if item.misc_id in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
-		actions.append(["Tiệm Ép Đồ", func() -> void: CompoundWindow.open(_get_host(), _profile, Callable())])
-	elif item.misc_id in ["6_1_2805", "6_1_1685", "6_1_1606"]:
-		actions.append(["Tiệm Đổi Viêm Đế", func() -> void: ViemDeWindow.open_reward_shop(_get_host(), _profile)])
+	# Thêm các nút tính năng đặc biệt của Lệnh bài / Tín vật sự kiện / Nguyên liệu ép đồ
+	var special_acts := ItemConsumer.get_special_actions(item, _get_host(), _profile, Callable(), _commit)
+	for sa in special_acts:
+		actions.append(sa)
 
-	if PotionEffect.usable(item):
-		for i in _profile.quick_items.size():
-			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if item.can_sell():
 		var label := "Bán (%s Lượng)" % format_money(item.get_sale_price())
-		actions.insert(1, [label, _sell.bind(index)])
+		actions.append([label, _sell.bind(index)])
+
+	actions.append(["Vứt bỏ", _drop.bind(index)])
+
+	if PotionEffect.usable(item) or ItemConsumer.is_town_portal(item):
+		for i in _profile.quick_items.size():
+			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if _partner_action.is_valid():
 		var extra: Array = _partner_action.call(item)
 		if not extra.is_empty():
@@ -338,8 +401,55 @@ func _execute_sell(index: int, item_name: String, sale_price: int) -> void:
 		return
 	_profile.inventory.remove_at(index)
 	_profile.gold += sale_price
+	if SfxManager != null and VltkSound != null:
+		SfxManager.play_ui(VltkSound.ui(VltkSound.UI_ITEM))
 	_show_message("Đã bán %s nhận được %s Lượng." % [item_name, format_money(sale_price)])
 	_commit()
+
+func _toggle_quick_sell_mode() -> void:
+	_set_quick_sell_mode(not _quick_sell_mode)
+
+func _set_quick_sell_mode(enabled: bool) -> void:
+	_quick_sell_mode = enabled
+	_update_sell_button_visual()
+	if _quick_sell_mode:
+		_show_message("Chế độ Bán: Nhấp chuột vào món đồ để bán nhanh (Bấm nút Bán để tắt).")
+	else:
+		_show_message("Đã tắt chế độ Bán.")
+
+func _update_sell_button_visual() -> void:
+	if not has_node("%SellButton"):
+		return
+	var btn := %SellButton as Button
+	if _quick_sell_mode:
+		btn.text = tr("Đang Bán")
+		var active_style := StyleBoxFlat.new()
+		active_style.bg_color = Color(0.65, 0.14, 0.08, 0.95)
+		active_style.border_color = Color(1.0, 0.55, 0.25, 1.0)
+		active_style.set_border_width_all(1)
+		active_style.set_corner_radius_all(6)
+		active_style.shadow_color = Color(0.95, 0.25, 0.1, 0.6)
+		active_style.shadow_size = 4
+		btn.add_theme_stylebox_override("normal", active_style)
+		btn.add_theme_stylebox_override("hover", active_style)
+		btn.add_theme_stylebox_override("pressed", active_style)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
+	else:
+		btn.text = tr("Bán")
+		btn.remove_theme_stylebox_override("normal")
+		btn.remove_theme_stylebox_override("hover")
+		btn.remove_theme_stylebox_override("pressed")
+		btn.remove_theme_color_override("font_color")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if (event as InputEventKey).keycode == KEY_ESCAPE:
+			if _quick_sell_mode:
+				_set_quick_sell_mode(false)
+				get_viewport().set_input_as_handled()
+				return
+			queue_free()
+			get_viewport().set_input_as_handled()
 
 func _open_viem_de_chest(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
@@ -399,6 +509,9 @@ func _use(index: int) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	var item := _profile.inventory[index]
 	var res := ItemConsumer.use_item(_profile, item, player, _get_host())
+	if res.get("exit_to_hub", false):
+		queue_free()
+		return
 	if res.has("message") and str(res["message"]) != "":
 		_show_message(str(res["message"]), not res.get("ok", false))
 	if res.get("ok", false):

@@ -47,6 +47,7 @@ var _atlas_img: Array = []            # the atlas pages as Images (for composing
 var _bake_pad := [0, 0, 0, 0]         # left, top, right, bottom: ground pictures hang this far outside their 512x512 region
 var objects_root := Node2D.new()
 var above_root := Node2D.new()
+var hide_structures: bool = false
 
 var _tiles := {}                # "x,y" -> Sprite2D
 var _objects := {}              # "x,y" -> Array[Node]
@@ -90,17 +91,22 @@ var _npcs_by_region := {}        # one-file-per-region maps: "x,y" -> NPC entrie
 
 
 func _ready() -> void:
+	if GameManager != null and GameManager.field_map is Dictionary and GameManager.field_map.get("thu_thanh_mode", false):
+		hide_structures = true
 	ground_root.name = "Ground"
 	ground_root.z_index = -100
 	objects_root.name = "Objects"
 	objects_root.y_sort_enabled = true
+	objects_root.visible = not hide_structures
 	above_root.name = "Above"
 	above_root.z_index = 100
 	above_root.y_sort_enabled = true
+	above_root.visible = not hide_structures
 	_g_base.name = "GroundBase"
 	_g_base.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_g_covers.name = "GroundCovers"
 	_g_flat.name = "GroundFlat"
+	_g_flat.visible = not hide_structures
 	ground_root.add_child(_g_base)
 	ground_root.add_child(_g_covers)
 	ground_root.add_child(_g_flat)
@@ -112,6 +118,11 @@ func _ready() -> void:
 
 func load_map(dir: String) -> void:
 	map_dir = dir
+	if GameManager != null and GameManager.field_map is Dictionary and GameManager.field_map.get("thu_thanh_mode", false):
+		hide_structures = true
+		objects_root.visible = false
+		above_root.visible = false
+		_g_flat.visible = false
 	var text := ""
 	if base_url != "":
 		text = await _remote_boot()
@@ -466,7 +477,19 @@ func _load_tex(path: String) -> Texture2D:
 				_tex_cache[path] = load(path)
 			elif path.contains("/sprites/"):
 				var shared := "res://world/maps/shared_sprites/".path_join(path.get_file())
-				_tex_cache[path] = load(shared) if ResourceLoader.exists(shared) else null
+				if ResourceLoader.exists(shared):
+					_tex_cache[path] = load(shared)
+				elif FileAccess.file_exists(shared):
+					var im: Image = Image.load_from_file(shared)
+					_tex_cache[path] = ImageTexture.create_from_image(im) if im != null else null
+				elif FileAccess.file_exists(path):
+					var im: Image = Image.load_from_file(path)
+					_tex_cache[path] = ImageTexture.create_from_image(im) if im != null else null
+				else:
+					_tex_cache[path] = null
+			elif FileAccess.file_exists(path):
+				var im: Image = Image.load_from_file(path)
+				_tex_cache[path] = ImageTexture.create_from_image(im) if im != null else null
 			else:
 				_tex_cache[path] = null
 	return _tex_cache[path]
@@ -675,34 +698,35 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 					cs.position = Vector2(float(c[1]), float(c[2]))
 					_insert_cover(cs, int(c[3]) * 1000000000000 + (int(c[4]) + 1000) * 1000000000 + int(c[5]))
 					made.append(cs)
-			for o in doc.get("objects", []):
-				var tex := _load_tex(_p(str(o["img"])))
-				if tex == null:
-					continue
-				var holder := Node2D.new()
-				var sp := Sprite2D.new()
-				sp.texture = tex
-				sp.centered = false
-				var layer: int = int(o["l"])
-				# the holder sits on the object's sort line; the sprite hangs off it
-				holder.position = Vector2(o["x"], o["sy"])
-				var oy := float(o["y"]) - float(o["sy"])
-				if layer == 0:
-					holder.position = Vector2(o["x"], o["y"])
-					oy = 0.0
-				if o.has("m"):      # LINE / TREE objects are sheared pictures: the matrix maps the bitmap onto the iso wall
-					var m: Array = o["m"]
-					sp.transform = Transform2D(Vector2(m[0], m[1]), Vector2(m[2], m[3]), Vector2(0, oy))
-				else:
-					sp.position = Vector2(0, oy)
-				holder.add_child(sp)
-				if layer == 0:
-					_g_flat.add_child(holder)
-				elif layer == 2:
-					above_root.add_child(holder)
-				else:
-					objects_root.add_child(holder)
-				made.append(holder)
+			if not hide_structures:
+				for o in doc.get("objects", []):
+					var tex := _load_tex(_p(str(o["img"])))
+					if tex == null:
+						continue
+					var holder := Node2D.new()
+					var sp := Sprite2D.new()
+					sp.texture = tex
+					sp.centered = false
+					var layer: int = int(o["l"])
+					# the holder sits on the object's sort line; the sprite hangs off it
+					holder.position = Vector2(o["x"], o["sy"])
+					var oy := float(o["y"]) - float(o["sy"])
+					if layer == 0:
+						holder.position = Vector2(o["x"], o["y"])
+						oy = 0.0
+					if o.has("m"):      # LINE / TREE objects are sheared pictures: the matrix maps the bitmap onto the iso wall
+						var m: Array = o["m"]
+						sp.transform = Transform2D(Vector2(m[0], m[1]), Vector2(m[2], m[3]), Vector2(0, oy))
+					else:
+						sp.position = Vector2(0, oy)
+					holder.add_child(sp)
+					if layer == 0:
+						_g_flat.add_child(holder)
+					elif layer == 2:
+						above_root.add_child(holder)
+					else:
+						objects_root.add_child(holder)
+					made.append(holder)
 	_spawn_npcs(rx, ry, made)
 	_objects[key] = made
 	region_loaded.emit(rx, ry)

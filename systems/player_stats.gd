@@ -6,10 +6,42 @@ signal upgrade_applied(upgrade: UpgradeData)
 signal stats_reset
 signal shield_changed(current: float, maximum: float)
 signal rerolls_changed(remaining: int)
+signal survivor_skills_changed(skills: Dictionary)
+
+## Hệ thống Kỹ năng Survivor Võ Lâm (GDD Survivor Action)
+var survivor_sect_id: String = ""
+var survivor_pool: Array[String] = []       ## Tối đa 6 kỹ năng môn phái chọn cho ván này
+var survivor_skills: Dictionary = {}        ## skill_id -> star_level (1..5 sao)
+
+func get_skill_star(skill_id: String) -> int:
+	return int(survivor_skills.get(skill_id, 0))
+
+func is_survivor_skill_maxed(skill_id: String) -> bool:
+	return get_skill_star(skill_id) >= 5
+
+func add_or_upgrade_survivor_skill(skill_id: String) -> int:
+	if survivor_skills.has(skill_id):
+		survivor_skills[skill_id] = mini(5, int(survivor_skills[skill_id]) + 1)
+	else:
+		if survivor_skills.size() < 6:
+			survivor_skills[skill_id] = 1
+		else:
+			return 0
+	survivor_skills_changed.emit(survivor_skills)
+	return int(survivor_skills[skill_id])
 
 var level: int = 1
 var current_exp: float = 0.0
 var exp_to_next_level: float = 500.0  ## Mốc 1x: x5 (Cấp 1 cần 500.0)
+var enemies_killed: int = 0
+var current_score: int = 0
+
+signal score_changed(score: int, kills: int)
+
+func add_kill(is_elite_or_boss: bool = false, exp_amount: float = 0.0) -> void:
+	enemies_killed += 1
+	current_score += (150 if is_elite_or_boss else 15) + int(exp_amount * 0.5)
+	score_changed.emit(current_score, enemies_killed)
 
 ## Gói 1: Chỉ số Kiếm Hiệp cơ bản
 var damage_multiplier: float = 1.0
@@ -129,6 +161,8 @@ func reset() -> void:
 	level = 1
 	current_exp = 0.0
 	exp_to_next_level = calculate_exp_for_level(1)
+	enemies_killed = 0
+	current_score = 0
 	damage_multiplier = 1.0
 	attack_speed_multiplier = 1.0
 	range_multiplier = 1.0
@@ -150,6 +184,13 @@ func reset() -> void:
 	explosion_radius = 130.0
 	rerolls_remaining = 2
 	applied_upgrade_ids.clear()
+	survivor_skills.clear()
+	survivor_pool.clear()
+	survivor_sect_id = ""
+	var sm_cls = load("res://systems/survivor/survivor_manager.gd")
+	if sm_cls != null and sm_cls.has_method("reset"):
+		sm_cls.reset()
+	survivor_skills_changed.emit(survivor_skills)
 	stats_reset.emit()
 	exp_changed.emit(current_exp, exp_to_next_level)
 	shield_changed.emit(current_shield, max_shield)

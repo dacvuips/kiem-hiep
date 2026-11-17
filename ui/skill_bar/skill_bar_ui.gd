@@ -72,6 +72,9 @@ var _base_offsets: Dictionary = {}
 
 var _page_swap: Button
 
+var _is_survivor_mode: bool = false
+var _survivor_skills_btn: Button = null
+
 ## Kéo nút chính để NGẮM HƯỚNG: giữ rồi kéo -> mũi tên dài chỉ hướng đánh trên bản đồ, skill đánh liên tục theo hướng đó tới khi thả.
 
 const AIM_DEAD_ZONE := 14.0
@@ -265,10 +268,15 @@ func _ready() -> void:
 		_loop_buttons[i].set_drag_forwarding(_get_slot_drag_data.bind(slot), _can_drop_on_slot.bind(slot), _drop_on_slot.bind(slot))
 
 	_jump_button.pressed.connect(_on_jump_pressed)
+	_jump_button.tooltip_text = "Khinh công / Nhảy (phím Space)"
 
 	_horse_button.pressed.connect(_on_horse_pressed)
+	_horse_button.tooltip_text = "Lên / Xuống ngựa (phím M)"
 
 	_sit_button.pressed.connect(_on_sit_pressed)
+	_sit_button.tooltip_text = "Ngồi thiền / Đứng dậy (phím V)"
+
+	_auto_button.tooltip_text = "Bật / Tắt Tự động đánh (phím Ctrl / Shift)"
 
 	_style_slot_button(_jump_button, "jump", true, 3.0)   ## icon nhảy gốc (MiTom_Pak_SPR ID_C950DFE5.spr, 1 khung, ảnh vuông)
 
@@ -458,6 +466,136 @@ func apply_layout() -> void:
 		_page_swap.offset_top = -SWAP_MARGIN - SWAP_SIZE
 		_page_swap.scale = Vector2.ONE
 
+	_apply_survivor_mode_visibility()
+
+func is_survivor_mode() -> bool:
+	if _is_survivor_mode:
+		return true
+	if GameManager != null:
+		if GameManager.field_map is Dictionary and bool(GameManager.field_map.get("survivor_mode", false)):
+			return true
+		if GameModeManager != null and GameModeManager.is_offline() and GameManager.game_mode == GameManager.GameMode.STAGE:
+			return true
+	if is_inside_tree():
+		var tree := get_tree()
+		if tree != null:
+			if tree.get_first_node_in_group("survivor_challenge") != null or (tree.current_scene != null and tree.current_scene.has_node("SurvivorWaveChallenge")):
+				return true
+	return false
+
+func enable_survivor_mode(enabled: bool) -> void:
+	_is_survivor_mode = enabled
+	_apply_survivor_mode_visibility()
+
+func _apply_survivor_mode_visibility() -> void:
+	if not is_inside_tree():
+		return
+	var in_survivor := is_survivor_mode()
+	if _main_button:
+		_main_button.visible = not in_survivor
+	for btn in _sub_buttons:
+		if btn:
+			btn.visible = not in_survivor
+	for btn in _loop_buttons:
+		if btn:
+			btn.visible = not in_survivor
+	for btn in _page_buttons:
+		if btn:
+			btn.visible = not in_survivor
+	if _page_swap:
+		_page_swap.visible = not in_survivor
+	if _auto_button:
+		_auto_button.visible = not in_survivor
+	if _auto_gear:
+		_auto_gear.visible = not in_survivor
+
+	if in_survivor:
+		_ensure_survivor_skills_button()
+		if _survivor_skills_btn:
+			_survivor_skills_btn.visible = true
+	else:
+		if _survivor_skills_btn:
+			_survivor_skills_btn.visible = false
+
+func _ensure_survivor_skills_button() -> void:
+	if _survivor_skills_btn != null and is_instance_valid(_survivor_skills_btn):
+		return
+
+	_survivor_skills_btn = Button.new()
+	_survivor_skills_btn.name = "SurvivorSelectedSkillsButton"
+	_survivor_skills_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_survivor_skills_btn.focus_mode = Control.FOCUS_NONE
+	_survivor_skills_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	var btn_w := 126.0
+	var btn_h := 44.0
+	_survivor_skills_btn.custom_minimum_size = Vector2(btn_w, btn_h)
+	_survivor_skills_btn.offset_left = -140.0
+	_survivor_skills_btn.offset_top = -148.0
+	_survivor_skills_btn.offset_right = -14.0
+	_survivor_skills_btn.offset_bottom = -104.0
+
+	# Nút hình chữ nhật phong cách kiếm hiệp, viền vàng kim tương đồng các nút khác
+	var normal_sb := StyleBoxFlat.new()
+	normal_sb.bg_color = Color(0.08, 0.1, 0.14, 0.95)
+	normal_sb.border_color = Color(0.85, 0.68, 0.28, 0.95)
+	normal_sb.set_border_width_all(2)
+	normal_sb.set_corner_radius_all(5)
+	_survivor_skills_btn.add_theme_stylebox_override("normal", normal_sb)
+	_survivor_skills_btn.add_theme_stylebox_override("focus", normal_sb)
+
+	var hover_sb := normal_sb.duplicate() as StyleBoxFlat
+	hover_sb.bg_color = Color(0.16, 0.2, 0.28, 0.98)
+	hover_sb.border_color = Color(1.0, 0.92, 0.45)
+	hover_sb.set_border_width_all(2)
+	_survivor_skills_btn.add_theme_stylebox_override("hover", hover_sb)
+	_survivor_skills_btn.add_theme_stylebox_override("pressed", hover_sb)
+
+	var hbox := HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_theme_constant_override("separation", 6)
+	_survivor_skills_btn.add_child(hbox)
+
+	var icon_lbl := Label.new()
+	icon_lbl.text = "⚡"
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 18)
+	icon_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	hbox.add_child(icon_lbl)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 0)
+	hbox.add_child(vbox)
+
+	var text_lbl := Label.new()
+	text_lbl.text = "Võ Công Đã Chọn"
+	text_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	text_lbl.add_theme_font_size_override("font_size", 11)
+	text_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	text_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	text_lbl.add_theme_constant_override("outline_size", 2)
+	vbox.add_child(text_lbl)
+
+	var hotkey_lbl := Label.new()
+	hotkey_lbl.text = "(phím V)"
+	hotkey_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hotkey_lbl.add_theme_font_size_override("font_size", 9)
+	hotkey_lbl.add_theme_color_override("font_color", Color(0.65, 0.80, 0.95))
+	vbox.add_child(hotkey_lbl)
+
+	_survivor_skills_btn.tooltip_text = "Xem toàn bộ chiêu thức tấn công & kỹ năng bổ trợ đã chọn (Phím V)"
+	_survivor_skills_btn.pressed.connect(func() -> void:
+		var sel_win_cls: GDScript = load("res://ui/hud/selected_skills_window.gd")
+		if sel_win_cls != null and sel_win_cls.has_method("toggle_window"):
+			sel_win_cls.toggle_window(self)
+	)
+
+	add_child(_survivor_skills_btn)
+
 func setup(player: Node) -> void:
 
 	_player = player
@@ -480,47 +618,35 @@ func refresh_sub_skills() -> void:
 
 	var main_skill: SkillDefinition = _player.skill_controller.get_main_skill()
 
-	_main_button.visible = main_skill != null
+	var in_survivor := is_survivor_mode()
+	_main_button.visible = (main_skill != null and not in_survivor)
 
 	if main_skill:
-
 		_main_button.setup(main_skill, true)
 
 	for i in _loop_buttons.size():
-
 		var loop_skill: SkillDefinition = _player.skill_controller.get_loop_skill(i)
-
 		_loop_buttons[i].setup(loop_skill, false)
-
 		if loop_skill == null:
-
 			_loop_buttons[i].text = "∞"  ## ô thi triển liên tục còn trống
-
 			_loop_buttons[i].add_theme_font_size_override("font_size", 20)
 
 	var skills: Array[SkillDefinition] = _player.skill_controller.get_sub_skills()
-
 	var start := _page_start()
-
 	for i in _sub_buttons.size():
-
 		_sub_buttons[i].setup(skills[start + i] if start + i < skills.size() else null, false)
 
 	var page := GameManager.local_profile.hotbar_page if GameManager.local_profile else 0
-
 	## "Chạm nhả": ra chiêu khi nhả tay; tắt = ra chiêu ngay lúc chạm.
-
 	var on_release := GameManager.local_profile != null and GameManager.local_profile.get_skill_setting("tap_release")
-
 	for b in [_main_button] + _sub_buttons:
-
 		(b as BaseButton).action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE if on_release \
-
 				else BaseButton.ACTION_MODE_BUTTON_PRESS
 
 	for p in _page_buttons.size():
-
 		_page_buttons[p].set_pressed_no_signal(p == page)
+
+	_apply_survivor_mode_visibility()
 
 ## Chỉ số hotbar của ô đầu trang đang chọn.
 

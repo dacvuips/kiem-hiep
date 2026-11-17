@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_tho_dia_phu_123"]
+
+[ext_resource type="Script" path="res://tests/test_tho_dia_phu_map_change.gd" id="1_test"]
+
+[node name="TestThoDiaPhuMapChange" type="Node"]
+script = ExtResource("1_test")

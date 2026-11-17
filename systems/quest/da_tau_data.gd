@@ -12,6 +12,10 @@ class_name DaTauData
 ## ===== GIỚI HẠN NGÀY =====
 const MAX_QUEST_PER_DAY := 50
 const FREE_SKIP_PER_DAY := 1
+const FREE_CANCEL_ITEM_ID := "ky_datau_huy"
+const FREE_CANCEL_ITEM_NAME := "Lệnh Bài Hủy Dã Tẩu"
+const INSTANT_COMPLETE_ITEM_ID := "ky_datau_hoanthanh"
+const INSTANT_COMPLETE_ITEM_NAME := "Lệnh Bài Hoàn Thành Dã Tẩu"
 
 ## ===== 20 BẬC LEVEL LINK =====
 ## level_link_index (0-based) → cấp tối thiểu để vào bậc đó
@@ -212,114 +216,109 @@ const FINDMAPS_DATA: Array[Dictionary] = [
 	{"task_id": 4231, "map_id": 322, "map_name": "Trường Bạch Sơn Bắc 1", "num": 3, "map_type": 2, "task_value": 2400000, "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 150, 200, 250, 300, 500, 600, 700, 800, 900], "godot_map_id": 322, "level_link_active": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]},
 ]
 
-## ===== DROP RATE ĐỊA ĐỒ / MẬT CHÍ THEO MAP =====
-## Tính từ TaskRate trong tasklink_findmaps.txt:
-##   diadochi = max(TaskRate) / 10000 * BASE_DIADOCHI_RATE
-##   matchi   = max(TaskRate) / 10000 * BASE_MATCHI_RATE
-## BASE_DIADOCHI_RATE = 0.08 (giết ~12 quái ra 1 cuộn)
-## BASE_MATCHI_RATE = 0.016 (5x hiếm hơn)
-## map_id (source) → {diadochi: float, matchi: float}
+## ===== DROP RATE MẬT ĐỒ / ĐỊA ĐỒ CHÍ / MẬT CHÍ THEO MAP (SOURCE GỐC) =====
+## Nguồn: settings/maplist.ini + settings/droprate/npcdroprate*.ini + goldennpc/*.ini (15 phái)
+##        và script/global/droprate/droprate<N>x.lua (Server gốc):
+##   diadochi (6_1_206 Thần bí đồ chí): droprate0x-1x = 1.5625% (1/16 * 25%), droprate2x-8x = 3.125% (1/16 * 50%),
+##                                      npcdroprate90.ini (9x+) = 7.50% (75000/1000000)
+##   matchi   (6_1_213 Thần Bí Lộ Chí): boss xanh nSel==8: <6x = 4.76% (1/21 mỗi lần rơi), 6x+ = 1.96% (1/51 mỗi lần rơi)
+##   matdo    (6_1_196 Mật đồ thần bí): npcdroprate10 = 0.606% (2000/330000), npcdroprate20-90 = 0.20% (2000/1000000), 110+ = 0.175%
+## map_id (source) → {diadochi: float, matchi: float, matdo: float}
 const DROP_RATES: Dictionary = {
-	8: {"diadochi": 0.06, "matchi": 0.012},
-	9: {"diadochi": 0.07, "matchi": 0.014},
-	10: {"diadochi": 0.085, "matchi": 0.017},
-	11: {"diadochi": 0.04, "matchi": 0.008},
-	20: {"diadochi": 0.04, "matchi": 0.008},
-	21: {"diadochi": 0.06, "matchi": 0.012},
-	24: {"diadochi": 0.07, "matchi": 0.014},
-	37: {"diadochi": 0.04, "matchi": 0.008},
-	38: {"diadochi": 0.07, "matchi": 0.014},
-	39: {"diadochi": 0.07, "matchi": 0.014},
-	40: {"diadochi": 0.07, "matchi": 0.014},
-	41: {"diadochi": 0.06, "matchi": 0.012},
-	42: {"diadochi": 0.07, "matchi": 0.014},
-	53: {"diadochi": 0.04, "matchi": 0.008},
-	55: {"diadochi": 0.07, "matchi": 0.014},
-	56: {"diadochi": 0.07, "matchi": 0.014},
-	66: {"diadochi": 0.07, "matchi": 0.014},
-	70: {"diadochi": 0.04, "matchi": 0.008},
-	72: {"diadochi": 0.07, "matchi": 0.014},
-	75: {"diadochi": 0.085, "matchi": 0.017},
-	76: {"diadochi": 0.07, "matchi": 0.014},
-	79: {"diadochi": 0.07, "matchi": 0.014},
-	90: {"diadochi": 0.06, "matchi": 0.012},
-	92: {"diadochi": 0.06, "matchi": 0.012},
-	93: {"diadochi": 0.085, "matchi": 0.017},
-	94: {"diadochi": 0.07, "matchi": 0.014},
-	114: {"diadochi": 0.07, "matchi": 0.014},
-	116: {"diadochi": 0.07, "matchi": 0.014},
-	117: {"diadochi": 0.07, "matchi": 0.014},
-	118: {"diadochi": 0.07, "matchi": 0.014},
-	119: {"diadochi": 0.07, "matchi": 0.014},
-	120: {"diadochi": 0.07, "matchi": 0.014},
-	121: {"diadochi": 0.04, "matchi": 0.008},
-	122: {"diadochi": 0.06, "matchi": 0.012},
-	123: {"diadochi": 0.07, "matchi": 0.014},
-	124: {"diadochi": 0.085, "matchi": 0.017},
-	132: {"diadochi": 0.07, "matchi": 0.014},
-	142: {"diadochi": 0.07, "matchi": 0.014},
-	143: {"diadochi": 0.085, "matchi": 0.017},
-	144: {"diadochi": 0.085, "matchi": 0.017},
-	162: {"diadochi": 0.04, "matchi": 0.008},
-	163: {"diadochi": 0.07, "matchi": 0.014},
-	164: {"diadochi": 0.07, "matchi": 0.014},
-	165: {"diadochi": 0.07, "matchi": 0.014},
-	166: {"diadochi": 0.07, "matchi": 0.014},
-	169: {"diadochi": 0.07, "matchi": 0.014},
-	176: {"diadochi": 0.04, "matchi": 0.008},
-	181: {"diadochi": 0.085, "matchi": 0.017},
-	182: {"diadochi": 0.07, "matchi": 0.014},
-	194: {"diadochi": 0.07, "matchi": 0.014},
-	196: {"diadochi": 0.07, "matchi": 0.014},
-	198: {"diadochi": 0.085, "matchi": 0.017},
-	199: {"diadochi": 0.085, "matchi": 0.017},
-	200: {"diadochi": 0.085, "matchi": 0.017},
-	201: {"diadochi": 0.085, "matchi": 0.017},
-	202: {"diadochi": 0.085, "matchi": 0.017},
-	203: {"diadochi": 0.085, "matchi": 0.017},
-	204: {"diadochi": 0.085, "matchi": 0.017},
-	205: {"diadochi": 0.085, "matchi": 0.017},
-	206: {"diadochi": 0.07, "matchi": 0.014},
-	207: {"diadochi": 0.085, "matchi": 0.017},
-	224: {"diadochi": 0.085, "matchi": 0.017},
-	225: {"diadochi": 0.085, "matchi": 0.017},
-	226: {"diadochi": 0.085, "matchi": 0.017},
-	227: {"diadochi": 0.085, "matchi": 0.017},
-	319: {"diadochi": 0.07, "matchi": 0.014},
-	320: {"diadochi": 0.085, "matchi": 0.017},
-	321: {"diadochi": 0.085, "matchi": 0.017},
-	322: {"diadochi": 0.085, "matchi": 0.017},
+	8:   {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	9:   {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	10:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	11:  {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	20:  {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	21:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	24:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	37:  {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	38:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	39:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	40:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	41:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	42:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	53:  {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	55:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	56:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	66:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	70:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	72:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	75:  {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	76:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	79:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	90:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	92:  {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	93:  {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	94:  {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	114: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	116: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	117: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	118: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	119: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	120: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	121: {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	122: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	123: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	124: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	132: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	142: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	143: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	144: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	162: {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	163: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	164: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	165: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	166: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	169: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	176: {"diadochi": 0.015625, "matchi": 0.0476, "matdo": 0.00606},
+	181: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	182: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	194: {"diadochi": 0.03125,  "matchi": 0.0476, "matdo": 0.002},
+	196: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	198: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	199: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	200: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	201: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	202: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	203: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	204: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	205: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	206: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	207: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	224: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	225: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	226: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	227: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	319: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	320: {"diadochi": 0.03125,  "matchi": 0.0196, "matdo": 0.002},
+	321: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
+	322: {"diadochi": 0.075,    "matchi": 0.0196, "matdo": 0.002},
 }
 
 ## ===== DỮ LIỆU NÂNG CẤP CHỈ SỐ (TYPE 5) =====
-## Nguồn: tasklink_upground.txt
-## NumericType: 2=Lực, 3=Nhanh nhẹn, 4=Sinh khí, 5=Nội công, 6=Mảnh Sơn Hà Xã Tắc
-## Trong Godot: 2=strength, 3=dexterity, 4=vitality, 5=energy
-## NumericValue: Giá trị cần có HIỆN TẠI để nhận nhiệm vụ
+## ===== DỮ LIỆU TÍCH LŨY KINH NGHIỆM (TYPE 5) =====
+## Nguồn: tasklink_upground.txt (NumericType 2: Trị kinh nghiệm cần tích lũy)
+## NumericValue: Lượng EXP cần đánh quái / vượt ải để tích lũy
 ## TaskValue2: Điểm thưởng khi hoàn thành
 const UPGROUND_DATA: Array[Dictionary] = [
-	{"task_id": 5001, "numeric_type": 2, "need_value": 5000,  "reward_pts": 20000,  "rates": [10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-	{"task_id": 5002, "numeric_type": 2, "need_value": 15000, "reward_pts": 45000,  "rates": [3000, 3500, 5000, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-	{"task_id": 5003, "numeric_type": 2, "need_value": 50000, "reward_pts": 80000,  "rates": [100, 200, 3000, 3000, 3000, 10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-	{"task_id": 5004, "numeric_type": 2, "need_value": 100000,"reward_pts": 120000, "rates": [0, 1, 500, 600, 700, 6000, 6000, 6000, 6000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-	{"task_id": 5005, "numeric_type": 2, "need_value": 200000,"reward_pts": 160000, "rates": [0, 0, 100, 120, 140, 3000, 3500, 4000, 4500, 5000, 10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0]},
-	{"task_id": 5006, "numeric_type": 2, "need_value": 500000,"reward_pts": 240000, "rates": [0, 0, 1, 2, 3, 1000, 1200, 1400, 1600, 1800, 6000, 6000, 6000, 6000, 6000, 0, 0, 0, 0, 0]},
-	{"task_id": 5013, "numeric_type": 3, "need_value": 1,     "reward_pts": 30000,  "rates": [2000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000]},
-	{"task_id": 5014, "numeric_type": 3, "need_value": 5,     "reward_pts": 100000, "rates": [300, 500, 1000, 1500, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]},
-	{"task_id": 5015, "numeric_type": 3, "need_value": 10,    "reward_pts": 300000, "rates": [10, 30, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]},
-	{"task_id": 5016, "numeric_type": 3, "need_value": 20,    "reward_pts": 1000000,"rates": [1, 5, 20, 40, 60, 100, 200, 300, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]},
-	{"task_id": 5021, "numeric_type": 4, "need_value": 1,     "reward_pts": 150000, "rates": [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000]},
-	{"task_id": 5022, "numeric_type": 4, "need_value": 5,     "reward_pts": 200000, "rates": [1000, 2000, 3000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]},
-	{"task_id": 5023, "numeric_type": 4, "need_value": 10,    "reward_pts": 600000, "rates": [10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]},
-	{"task_id": 5029, "numeric_type": 5, "need_value": 1,     "reward_pts": 2000000,"rates": [0, 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]},
+	{"task_id": 5001, "numeric_type": 2, "need_value": 5000,     "reward_pts": 20000,    "rates": [10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+	{"task_id": 5002, "numeric_type": 2, "need_value": 15000,    "reward_pts": 45000,    "rates": [3000, 3500, 5000, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+	{"task_id": 5003, "numeric_type": 2, "need_value": 50000,    "reward_pts": 80000,    "rates": [100, 200, 3000, 3000, 3000, 10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+	{"task_id": 5004, "numeric_type": 2, "need_value": 100000,   "reward_pts": 120000,   "rates": [0, 1, 500, 600, 700, 6000, 6000, 6000, 6000, 6000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+	{"task_id": 5005, "numeric_type": 2, "need_value": 200000,   "reward_pts": 160000,   "rates": [0, 0, 100, 120, 140, 3000, 3500, 4000, 4500, 5000, 10000, 9000, 8000, 7000, 6000, 0, 0, 0, 0, 0]},
+	{"task_id": 5006, "numeric_type": 2, "need_value": 500000,   "reward_pts": 240000,   "rates": [0, 0, 1, 2, 3, 1000, 1200, 1400, 1600, 1800, 6000, 6000, 6000, 6000, 6000, 0, 0, 0, 0, 0]},
+	{"task_id": 5007, "numeric_type": 2, "need_value": 1000000,  "reward_pts": 480000,   "rates": [0, 0, 0, 0, 0, 100, 120, 140, 160, 180, 3000, 3500, 4000, 4500, 5000, 10000, 9000, 8000, 7000, 6000]},
+	{"task_id": 5008, "numeric_type": 2, "need_value": 2000000,  "reward_pts": 1200000,  "rates": [0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 1000, 1200, 1400, 1600, 1800, 6000, 6000, 6000, 6000, 6000]},
+	{"task_id": 5009, "numeric_type": 2, "need_value": 5000000,  "reward_pts": 2800000,  "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 120, 140, 160, 180, 1000, 1200, 1400, 1600, 1800]},
+	{"task_id": 5010, "numeric_type": 2, "need_value": 10000000, "reward_pts": 6000000,  "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 200, 300, 400, 500, 600]},
+	{"task_id": 5011, "numeric_type": 2, "need_value": 20000000, "reward_pts": 16000000, "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 150, 200, 250, 300]},
+	{"task_id": 5012, "numeric_type": 2, "need_value": 50000000, "reward_pts": 30000000, "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 75, 100, 125, 150]},
 ]
 
 ## Tên chỉ số tương ứng với numeric_type (dùng để hiển thị UI)
 const NUMERIC_TYPE_NAMES: Dictionary = {
-	2: "Lực",
-	3: "Nhanh nhẹn",
-	4: "Sinh khí",
-	5: "Nội công",
+	2: "Kinh nghiệm",
 }
 
 ## ===== DỮ LIỆU SƠN HÀ XÃ TẮC ĐỒ (TYPE 6) =====
@@ -341,27 +340,38 @@ const WORLDMAPS_DATA: Array[Dictionary] = [
 	{"task_id": 6011, "num": 5000, "reward_pts": 100000000, "rates": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5]},
 ]
 
-## ===== MỐC TÍCH LŨY (11 MỐC THƯỞNG) =====
-## Mỗi mốc: sau khi tổng điểm da_tau_points đạt ngưỡng → nhận thưởng
-## Điểm da_tau_points = tổng TaskValue2 của các nhiệm vụ đã hoàn thành
+## ===== MỐC TÍCH LŨY THEO TỔNG SỐ NHIỆM VỤ (CHUẨN VLTK 1) =====
+## Mỗi mốc: sau khi tổng số nhiệm vụ đã hoàn thành (total_done) đạt ngưỡng → nhận thưởng thật vào hành trang
+const MILESTONE_VERSION := 2
+
 const AWARD_MILESTONES: Array[int] = [
-	15000, 45000, 80000, 150000, 350000,
-	1000000, 2400000, 7500000, 16000000, 36000000, 100000000
+	100, 300, 500, 1000, 2000, 3000, 4000, 6000, 8000
 ]
 
 ## Mô tả thưởng tại mỗi mốc (index tương ứng với AWARD_MILESTONES)
 const MILESTONE_REWARDS_DESC: Array[String] = [
-	"Mảnh Sơn Hà Xã Tắc ×1 + Lượng ×5000",
-	"Mảnh Sơn Hà Xã Tắc ×5 + Lượng ×20000",
-	"Mảnh Sơn Hà Xã Tắc ×10 + Kinh nghiệm ×100000",
-	"Hộp Vật Phẩm Thường + Lượng ×50000",
-	"Mảnh Sơn Hà Xã Tắc ×50 + Hộp Vật Phẩm Tốt",
-	"Hộp Vật Phẩm Tốt + Điểm Danh Vọng ×100",
-	"Hộp Vật Phẩm Quý + Mảnh Sơn Hà Xã Tắc ×200",
-	"Hộp Vật Phẩm Quý ×2 + Lượng ×500000",
-	"Rương Báu Vật + Mảnh Sơn Hà Xã Tắc ×1000",
-	"Rương Báu Vật ×2 + Hộp Vật Phẩm Quý ×2",
-	"Rương Rồng Vàng + Mảnh Sơn Hà Xã Tắc ×5000",
+	"Tiên Thảo Lộ ×2 + Lượng ×50.000",
+	"Lam Thủy Tinh ×1 + Tử Thủy Tinh ×1 + Lục Thủy Tinh ×1",
+	"Võ Lâm Mật Tịch ×1 + Lượng ×100.000",
+	"Tẩy Tủy Kinh ×1 + Võ Lâm Mật Tịch ×1",
+	"Trang Bị Hoàng Kim Nhu Tình / Hiệp Cốt (Ngẫu nhiên) + Tinh Hồng Bảo Thạch ×2",
+	"Trang Bị Hoàng Kim An Bang (Ngẫu nhiên) + Lượng ×500.000",
+	"Trang Bị Hoàng Kim Định Quốc (Ngẫu nhiên)",
+	"Ngựa Phi Vân ×1",
+	"Trang Bị Hoàng Kim Môn Phái (HKMP) + Danh Vọng ×200",
+]
+
+## Cấu hình phần thưởng thực tế cho từng mốc (index tương ứng với AWARD_MILESTONES)
+const MILESTONE_REWARDS: Array[Dictionary] = [
+	{"misc": [{"id": "6_1_71", "qty": 2}], "gold": 50000},
+	{"misc": [{"id": "4_238_1", "qty": 1}, {"id": "4_239_1", "qty": 1}, {"id": "4_240_1", "qty": 1}]},
+	{"misc": [{"id": "6_1_26", "qty": 1}], "gold": 100000},
+	{"misc": [{"id": "6_1_22", "qty": 1}, {"id": "6_1_26", "qty": 1}]},
+	{"gold_pool": [185, 186, 187, 188, 189, 190, 191, 192], "misc": [{"id": "4_353_1", "qty": 2}]},
+	{"gold_pool": [163, 164, 165, 166], "gold": 500000},
+	{"gold_pool": [158, 159, 160, 161, 162]},
+	{"horse": {"particular": 8, "level": 10}},
+	{"hkmp": true, "prestige": 200},
 ]
 
 ## ===== BẢNG THƯỞNG EXP CHUẨN JX1 (datau.lua: EXP_REWARDS * MONEY_RATE) =====
@@ -387,6 +397,7 @@ const DEFAULT_STATE: Dictionary = {
 	"da_tau_points": 0,     # Điểm tích lũy tổng (tính mốc thưởng)
 	"skip_today": 0,        # Số lượt bỏ đã dùng hôm nay
 	"claimed_milestones": [],# Mảng index mốc đã nhận thưởng
+	"milestone_version": MILESTONE_VERSION, # Phiên bản bảng mốc (v2 = mốc theo tổng nhiệm vụ VLTK 1)
 	"scroll_count": 0,      # Số cuộn đã nhặt cho quest hiện tại (Type 4)
 	"da_tau_points_session": 0, # Điểm Dã Tẩu (mảnh SHXT) hiện có (dùng cho Type 6)
 	"pending_options": [],      # 3 Lựa chọn phần thưởng (chọn 1 trong 3 chuẩn JX1)
@@ -401,6 +412,8 @@ const NPC_DIALOG: Dictionary = {
 	"quest_done": "Xuất sắc! Huynh đệ đã hoàn thành nhiệm vụ. Lão phu xin cảm ơn!",
 	"skip_ok":    "Nhiệm vụ này huynh đệ bỏ qua. Lần sau nhớ cố thêm!",
 	"skip_no":    "Huynh đệ đã dùng hết lượt bỏ qua hôm nay rồi!",
+	"cancel_free_item": "Huynh đệ đã dùng Lệnh Bài Hủy Dã Tẩu để hủy nhiệm vụ miễn phí. Chuỗi nhiệm vụ vẫn được giữ nguyên!",
+	"cancel_reset":     "Huynh đệ đã hủy nhiệm vụ mà không có vật phẩm miễn hủy. Chuỗi nhiệm vụ hôm nay đã trở về #1 để làm lại từ đầu!",
 	"max_today":  "Huynh đệ đã làm đủ %d nhiệm vụ hôm nay! Hãy nghỉ ngơi, ngày mai tiếp tục.",
 }
 
@@ -423,17 +436,66 @@ static func get_findmaps_for_level_link(level_link: int) -> Array[Dictionary]:
 			result.append(entry)
 	return result
 
-## Lấy drop rate Địa đồ cho map_id (source ID)
+## Lấy drop rate Địa đồ chí (6_1_206) cho map_id (source ID)
 static func get_diadochi_rate(map_id: int) -> float:
 	if DROP_RATES.has(map_id):
 		return DROP_RATES[map_id]["diadochi"]
-	return 0.06  # fallback mặc định
+	return 0.03125
 
-## Lấy drop rate Mật chí cho map_id (source ID)
+## Lấy drop rate Mật chí / Địa chí (6_1_213) cho map_id (source ID)
 static func get_matchi_rate(map_id: int) -> float:
 	if DROP_RATES.has(map_id):
 		return DROP_RATES[map_id]["matchi"]
-	return 0.012
+	return 0.0196
+
+const GOODS_DATA_PATH := "res://data/items/da_tau_goods.json"
+static var _showgoods_data: Array[Dictionary] = []
+static var _findgoods_data: Array[Dictionary] = []
+
+static func _ensure_goods_loaded() -> void:
+	if not _showgoods_data.is_empty() and not _findgoods_data.is_empty():
+		return
+	if not FileAccess.file_exists(GOODS_DATA_PATH):
+		return
+	var txt := FileAccess.get_file_as_string(GOODS_DATA_PATH)
+	var parsed: Variant = JSON.parse_string(txt)
+	if parsed is Dictionary:
+		var raw_show: Array = parsed.get("showgoods", [])
+		_showgoods_data.clear()
+		for item in raw_show:
+			if item is Dictionary:
+				_showgoods_data.append(item)
+		var raw_find: Array = parsed.get("findgoods", [])
+		_findgoods_data.clear()
+		for item in raw_find:
+			if item is Dictionary:
+				_findgoods_data.append(item)
+
+static func get_findgoods_for_level_link(level_link: int) -> Array[Dictionary]:
+	_ensure_goods_loaded()
+	var ll_idx := clampi(level_link - 1, 0, 19)
+	var result: Array[Dictionary] = []
+	for entry in _findgoods_data:
+		var rates: Array = entry.get("rates", [])
+		if rates.size() > ll_idx and int(rates[ll_idx]) > 0:
+			result.append(entry)
+	return result
+
+static func get_showgoods_for_level_link(level_link: int) -> Array[Dictionary]:
+	_ensure_goods_loaded()
+	var ll_idx := clampi(level_link - 1, 0, 19)
+	var result: Array[Dictionary] = []
+	for entry in _showgoods_data:
+		var rates: Array = entry.get("rates", [])
+		if rates.size() > ll_idx and int(rates[ll_idx]) > 0:
+			result.append(entry)
+	return result
+
+## Lấy drop rate Mật đồ thần bí (6_1_196) cho map_id (source ID)
+static func get_matdo_rate(map_id: int) -> float:
+	if DROP_RATES.has(map_id):
+		return DROP_RATES[map_id].get("matdo", 0.002)
+	return 0.002
 
 ## Trọng số chọn loại nhiệm vụ theo LevelLink (trả về type_id đã random)
 static func pick_quest_type(level_link: int, rng: RandomNumberGenerator) -> int:

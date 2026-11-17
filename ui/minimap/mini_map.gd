@@ -282,7 +282,7 @@ func _build() -> void:
 
 	_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	_view.tooltip_text = "Nhấp để mở bản đồ lớn"
+	_view.tooltip_text = "Nhấp để mở bản đồ lớn (phím Tab)"
 
 	_view.draw.connect(_draw_view)
 
@@ -773,6 +773,23 @@ func _draw_view() -> void:
 		var b := _world_to_view(r.end, zoom, src)
 
 		_view.draw_rect(Rect2(a, b - a), Color(GOLD, 0.9), false, 1.0)
+
+	## Đường bo PUBG trên minimap
+	if PubgManager.is_active:
+		if PubgManager.fixed_outer_boundary.has_area():
+			var fa := _world_to_view(PubgManager.fixed_outer_boundary.position, zoom, src)
+			var fb := _world_to_view(PubgManager.fixed_outer_boundary.end, zoom, src)
+			_view.draw_rect(Rect2(fa, fb - fa), Color(1.0, 0.85, 0.25, 0.95), false, 2.0)
+
+		if PubgManager.current_zone.has_area():
+			var ca := _world_to_view(PubgManager.current_zone.position, zoom, src)
+			var cb := _world_to_view(PubgManager.current_zone.end, zoom, src)
+			_view.draw_rect(Rect2(ca, cb - ca), Color(0.2, 0.75, 1.0, 0.95), false, 2.0)
+
+		if PubgManager.next_safe_zone.has_area():
+			var na := _world_to_view(PubgManager.next_safe_zone.position, zoom, src)
+			var nb := _world_to_view(PubgManager.next_safe_zone.end, zoom, src)
+			_view.draw_rect(Rect2(na, nb - na), Color(1.0, 1.0, 1.0, 0.85), false, 1.5)
 
 	## NPC hội thoại: chấm xanh + tên.
 

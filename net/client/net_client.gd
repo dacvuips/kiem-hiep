@@ -34,6 +34,7 @@ signal player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int, 
 signal enmity_state(state: int, other_eid: int, other_name: String, launcher: bool)
 signal pvp_hit(attacker_eid: int, hit: Dictionary)
 signal camp_changed(eid: int, camp: int, nation: int)
+signal player_guild_changed(eid: int, guild_name: String, guild_emblem: int)
 signal friend_invite(from_eid: int, from_name: String)
 signal friend_list(list: Array)
 signal view_equip(snapshot: Dictionary)
@@ -270,6 +271,16 @@ func send_craft(op: int, uids: Array, alt: Array) -> void:
 		return
 	var b := NetProto.writer(NetProto.C_CRAFT)
 	NetProto.put_str(b, JSON.stringify({"op": op, "uids": uids, "alt": alt}))
+	_send(b)
+
+## Dã Tẩu: server trao thưởng (claim_option / claim_milestone) trên hồ sơ của server rồi gửi S_NOTICE + S_PROFILE.
+func send_da_tau(op: String, args: Dictionary = {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var payload := args.duplicate()
+	payload["op"] = op
+	var b := NetProto.writer(NetProto.C_DA_TAU)
+	NetProto.put_str(b, JSON.stringify(payload))
 	_send(b)
 
 func send_battle(op: int, args := {}) -> void:
@@ -563,6 +574,11 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if fmsg is Dictionary:
 				field_message.emit(fmsg)
+		NetProto.S_PLAYER_GUILD:
+			var geid := b.get_u32()
+			var gname := NetProto.get_str(b)
+			var gemblem := b.get_u16()
+			player_guild_changed.emit(geid, gname, gemblem)
 		NetProto.S_GUILD_LIST:
 			var parsed: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 20))
 			guild_list.emit(parsed if parsed is Array else [])

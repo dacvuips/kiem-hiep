@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dncmd8sudwa8c"]
+
+[ext_resource type="Script" path="res://tests/test_skill_range_attack.gd" id="1_test"]
+
+[node name="TestSkillRangeAttack" type="Node"]
+script = ExtResource("1_test")

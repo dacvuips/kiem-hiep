@@ -89,7 +89,7 @@ static func from_dict(data: Dictionary) -> CombatantBuild:
 	b.sect_id = str(data.get("sect_id", ""))
 	b.camp = int(data.get("camp", b.camp))
 	b.active_aura_id = str(data.get("active_aura_id", ""))
-	b.riding = bool(data.get("riding", true))
+	b.riding = data.get("riding", true) == true
 	var saved_equipment: Dictionary = data.get("equipment", {})
 	for part in saved_equipment:
 		b.equipment[int(part)] = ItemInstance.from_dict(saved_equipment[part])

@@ -84,15 +84,11 @@ func _set_unusable(unusable: bool) -> void:
 		_unusable = unusable
 		queue_redraw()
 
-func _make_custom_tooltip(_for_text: String) -> Object:
-	if item_bbcode == "":
+static func create_tooltip(bbcode: String) -> Object:
+	if bbcode.is_empty():
 		return null
 	var panel := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.02, 0.03, 0.05, 0.92)
-	style.border_color = _ring_color if is_gold else Color(0.4, 0.4, 0.45)
-	style.set_border_width_all(1)
-	style.set_content_margin_all(8)
+	var style := StyleBoxEmpty.new()
 	panel.add_theme_stylebox_override("panel", style)
 	var label := RichTextLabel.new()
 	label.bbcode_enabled = true
@@ -101,9 +97,12 @@ func _make_custom_tooltip(_for_text: String) -> Object:
 	label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	label.custom_minimum_size = Vector2(300, 0)
 	label.add_theme_font_size_override("normal_font_size", 13)
-	label.text = item_bbcode
+	label.text = bbcode
 	panel.add_child(label)
 	return panel
+
+func _make_custom_tooltip(_for_text: String) -> Object:
+	return create_tooltip(item_bbcode)
 
 func _process(_delta: float) -> void:
 	queue_redraw()

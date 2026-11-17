@@ -35,14 +35,39 @@ static func apply(p: PlayerProfile) -> int:
 	for pot in POTIONS:
 		for i in int(pot[1]):
 			added += _add(p, ItemGenerator.generate_misc(str(pot[0])))
+	## Nhân vật hệ Hỏa: cấp cả 2 vũ khí Côn và Thương ngay khi vào game
+	if p.get_element() == ElementTypes.ElementType.HOA:
+		p.starter_kit |= WEAPON
+		var stick := _generate_weapon(ItemDatabase.Detail.MELEE, 2, p.get_element())
+		var spear := _generate_weapon(ItemDatabase.Detail.MELEE, 3, p.get_element())
+		if stick != null:
+			added += _add(p, stick)
+		if spear != null:
+			added += _add(p, spear)
 	return added
 
 ## Vũ khí tân thủ khi vừa gia nhập phái (1 lần): đúng loại vũ khí đòn chính của phái đòi hỏi (hạn chế vũ khí EqtLimit), cấp 1, hệ
 ## của nhân vật. Phái đánh tay không (quyền thủ) thì không có vũ khí. Trả món đã thêm (null = không phát).
+## Riêng phái Cái Bang & Thiên Nhẫn (hệ Hỏa): cấp CẢ 2 VŨ KHÍ Côn và Thương.
 static func give_sect_weapon(p: PlayerProfile) -> ItemInstance:
 	if p == null or p.starter_kit & WEAPON or not p.has_sect():
 		return null
 	p.starter_kit |= WEAPON
+
+	## Phái Cái Bang & Thiên Nhẫn (hệ Hỏa): cấp CẢ 2 vũ khí tân thủ (Côn và Thương)
+	if p.sect_id in ["cai_bang", "thien_nhan_giao"] or p.get_element() == ElementTypes.ElementType.HOA:
+		var stick := _generate_weapon(ItemDatabase.Detail.MELEE, 2, p.get_element())
+		var spear := _generate_weapon(ItemDatabase.Detail.MELEE, 3, p.get_element())
+		var primary: ItemInstance = stick if p.sect_id == "cai_bang" else spear
+		var secondary: ItemInstance = spear if p.sect_id == "cai_bang" else stick
+		var res: ItemInstance = null
+		if primary != null and _add(p, primary) > 0:
+			res = primary
+		if secondary != null and _add(p, secondary) > 0:
+			if res == null:
+				res = secondary
+		return res
+
 	var limit := weapon_limit_of(SectRegistry.get_by_id(p.sect_id))
 	var detail := -1
 	var particular := 0
@@ -56,11 +81,14 @@ static func give_sect_weapon(p: PlayerProfile) -> ItemInstance:
 		detail = ItemDatabase.Detail.MELEE   ## không hạn chế: kiếm
 	if detail < 0:
 		return null
+	var item := _generate_weapon(detail, particular, p.get_element())
+	return item if _add(p, item) > 0 else null
+
+static func _generate_weapon(detail: int, particular: int, element: int) -> ItemInstance:
 	var levels := ItemDatabase.get_levels(detail, particular)
 	if levels.is_empty():
 		return null
-	var item := ItemGenerator.generate(detail, particular, int(levels[0]), p.get_element(), [])
-	return item if _add(p, item) > 0 else null
+	return ItemGenerator.generate(detail, particular, int(levels[0]), element, [])
 
 ## Phái mới bản 15 phái: skill không ghi EqtLimit -> vũ khí riêng của phái (ItemDatabase.WEAPON_PARTICULAR_NAMES: ám khí 3 = Cầm
 ## của Tiêu Dao, 4 = Cung của Dương Gia).

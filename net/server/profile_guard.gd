@@ -34,6 +34,14 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	## Giữ gm_aura_state nếu server đã có mà bản client gửi lên là 0 / rỗng
 	if int(merged.get("gm_aura_state", 0)) == 0 and int(server_data.get("gm_aura_state", 0)) > 0:
 		merged["gm_aura_state"] = int(server_data["gm_aura_state"])
+	## stage_stars: giữ lại và hợp nhất số sao đã đạt của các ải
+	if server_data.has("stage_stars") and server_data["stage_stars"] is Dictionary:
+		var server_stars: Dictionary = server_data["stage_stars"]
+		var client_stars: Dictionary = merged.get("stage_stars", {}) if merged.get("stage_stars") is Dictionary else {}
+		var merged_stars := server_stars.duplicate()
+		for stage_id in client_stars:
+			merged_stars[stage_id] = maxi(int(merged_stars.get(stage_id, 0)), int(client_stars[stage_id]))
+		merged["stage_stars"] = merged_stars
 	if trust:
 		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):
@@ -64,8 +72,75 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 			if server_data.has(k):
 				merged[k] = server_data[k]
 	var sold_gold := _guard_items(server_data, merged)
+	merged["active_states"] = _guard_active_states(server_data, client_data, merged)
 	merged["_money_from_server"] = _guard_money(server_data, merged, pending_gold, sold_gold)
 	return merged
+
+static func _count_misc_in_inv(data: Dictionary) -> Dictionary:
+	var counts := {}
+	for it in data.get("inventory", []):
+		if it is Dictionary:
+			var mid := str(it.get("mid", it.get("misc_id", "")))
+			if mid != "":
+				counts[mid] = int(counts.get(mid, 0)) + maxi(1, int(it.get("count", 1)))
+	return counts
+
+static func _guard_active_states(server_data: Dictionary, client_data: Dictionary, merged: Dictionary) -> Array:
+	var server_by_src := {}
+	var s_states: Variant = server_data.get("active_states", [])
+	if s_states is Array:
+		for st in s_states:
+			if st is Dictionary and str(st.get("source_id", "")) != "" and float(st.get("time", 0.0)) > 0.0:
+				server_by_src[str(st["source_id"])] = st
+	var s_counts := _count_misc_in_inv(server_data)
+	var m_counts := _count_misc_in_inv(client_data)
+	var out: Array = []
+	var seen := {}
+	var c_states: Variant = merged.get("active_states", [])
+	if c_states is Array:
+		for st in c_states:
+			if not st is Dictionary:
+				continue
+			var src := str(st.get("source_id", ""))
+			var rem := float(st.get("time", 0.0))
+			if src == "" or rem <= 0.0 or seen.has(src):
+				continue
+			if server_by_src.has(src):
+				var sst: Dictionary = server_by_src[src]
+				var copy := sst.duplicate(true)
+				copy["time"] = clampf(rem, 0.0, float(sst.get("time", rem)) + 1.0)
+				if float(copy["time"]) > 0.0:
+					out.append(copy)
+					seen[src] = true
+				continue
+			var mid := str(st.get("misc_id", ""))
+			if not PotionEffect.SPECIAL_ITEM_EFFECTS.has(mid):
+				continue
+			var cfg: Dictionary = PotionEffect.SPECIAL_ITEM_EFFECTS[mid]
+			if not cfg.has("effects"):
+				continue
+			if int(s_counts.get(mid, 0)) <= int(m_counts.get(mid, 0)):
+				continue
+			var attribs := {}
+			var max_sec := 0.0
+			for e in cfg["effects"]:
+				attribs[str(e[0])] = [int(e[1]), 0, 0]
+				max_sec = maxf(max_sec, float(e[2]) / PotionEffect.GAME_FPS)
+			if max_sec <= 0.0 or attribs.is_empty():
+				continue
+			var rec := ItemDatabase.get_misc(mid)
+			out.append({
+				"source_id": src,
+				"misc_id": mid,
+				"attribs": attribs,
+				"time": minf(rem, max_sec),
+				"duration": max_sec,
+				"name": str(rec.get("name", st.get("name", ""))),
+				"state_id": int(cfg.get("state_id", 0)),
+			})
+			seen[src] = true
+			s_counts[mid] = int(s_counts[mid]) - 1
+	return out
 
 ## Môn phái + hệ: game chỉ được GIA NHẬP 1 lần (server thấy Vô Môn Phái + đủ PlayerProfile.NEWBIE_LEVEL + phái đúng hệ đã chọn
 ## lúc tạo nhân vật); còn lại giữ bản server. Hệ luôn theo server.
@@ -112,6 +187,17 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> int:
 			return null
 		seen[uid] = true
 		if not known.has(uid):
+			var mid := str(it.get("mid", it.get("misc_id", "")))
+			if mid != "" and PotionShop.all_items().has(mid):
+				var gen := ItemGenerator.generate_misc(mid)
+				if gen != null:
+					var out: Dictionary = gen.to_dict()
+					out["uid"] = uid
+					for k in ItemInstance.OWNER_FIELDS:
+						if it.has(k):
+							out[k] = it[k]
+					_guard_lock({}, out)
+					return out
 			return null
 		var out: Dictionary = (known[uid] as Dictionary).duplicate(true)
 		for k in ItemInstance.OWNER_FIELDS:
@@ -258,6 +344,27 @@ const SPEED_TOLERANCE := 1.3
 
 ## Tốc độ di chuyển tối đa server chấp nhận cho nhân vật này (px/giây): tốc chạy thật (trang bị, ngựa, chỉ số TEST — fastwalkrun_p)
 ## có dư; không thấp hơn GameServer.MAX_SPEED (lao chiêu / nhảy không phụ thuộc tốc chạy).
+## Tốc độ đánh / xuất chiêu (attackspeed_v / castspeed_v) của nhân vật -> c.attack_speed / c.cast_speed (GameServer._cast_allowed).
+## `c` là GameServer.Conn (để không kiểu tránh phụ thuộc vòng).
+static func refresh_cast_speed(c) -> void:
+	if c.profile == null:
+		return
+	var st: CombatantStats = c.profile.get_combat_stats()
+	c.attack_speed = st.attack_speed
+	c.cast_speed = st.cast_speed
+
+## Skill của phái nhân vật theo SkillId gốc (gói C_CAST gửi vltk_skill_id); null = không có / không phải skill phái.
+static func skill_by_vltk_id(profile: PlayerProfile, vltk_id: int) -> SkillDefinition:
+	if profile == null or vltk_id <= 0:
+		return null
+	var sect := SectRegistry.get_by_id(profile.sect_id)
+	if sect == null:
+		return null
+	for skill in sect.skills:
+		if skill.vltk_skill_id == vltk_id:
+			return skill
+	return null
+
 static func max_speed(profile: PlayerProfile) -> float:
 	var run := PLAYER_BASE_SPEED * (1.0 + profile.get_combat_stats().move_speed_p / 100.0)
 	return maxf(GameServer.MAX_SPEED, run * SPEED_TOLERANCE)

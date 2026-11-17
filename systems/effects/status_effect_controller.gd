@@ -130,12 +130,25 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int, att
 
 ## Áp 1 bộ trạng thái thuộc tính (buff lên mình / bùa lên địch) trong `seconds` giây.
 ## `meta` cho phần hiển thị (StateVisuals): {"icon": Texture2D, "name": String, "is_debuff": bool, "state_id": int}.
-func apply_state(source_id: String, attribs: Dictionary, seconds: float, meta: Dictionary = {}) -> void:
+func apply_state(source_id: String, attribs: Dictionary, seconds: float, meta: Dictionary = {}, total_duration: float = -1.0) -> void:
 	if (attribs.is_empty() and int(meta.get("state_id", 0)) <= 0) or seconds <= 0.0:
 		return
-	_states[source_id] = {"attribs": attribs, "time": seconds, "duration": seconds, "meta": meta}
+	var dur := total_duration if total_duration > 0.0 else seconds
+	_states[source_id] = {"attribs": attribs, "time": seconds, "duration": maxf(dur, seconds), "meta": meta}
+	_sync_profile_state(source_id, _states[source_id])
 	_ensure_visuals()
 	stats_changed.emit()
+
+func _sync_profile_state(source_id: String, st: Dictionary) -> void:
+	if not (source_id.begins_with("item:") or ((st.get("meta", {}) as Dictionary).get("persist", false) == true)):
+		return
+	var owner_node := get_parent()
+	if owner_node == null or not owner_node.is_in_group("player"):
+		return
+	var prof := GameManager.local_profile if GameManager != null else null
+	if prof == null:
+		return
+	prof.set_active_state(source_id, st["attribs"], float(st["time"]), float(st["duration"]), st["meta"])
 
 ## Trạng thái đang dính cho phần hiển thị: [{"meta", "time", "duration"}, ...].
 func get_state_display_list() -> Array:
@@ -169,13 +182,23 @@ func get_state_attrib_sources() -> Array[Dictionary]:
 func _tick_states(delta: float) -> void:
 	if _states.is_empty():
 		return
+	var owner_node := get_parent()
+	var prof: PlayerProfile = GameManager.local_profile if (owner_node != null and owner_node.is_in_group("player") and GameManager != null) else null
 	var expired := []
 	for source_id in _states:
 		_states[source_id]["time"] -= delta
-		if _states[source_id]["time"] <= 0.0:
+		var rem := float(_states[source_id]["time"])
+		if rem <= 0.0:
 			expired.append(source_id)
+		elif prof != null and (source_id.begins_with("item:") or ((_states[source_id].get("meta", {}) as Dictionary).get("persist", false) == true)):
+			for pst in prof.active_states:
+				if pst is Dictionary and str(pst.get("source_id", "")) == source_id:
+					pst["time"] = rem
+					break
 	for source_id in expired:
 		_states.erase(source_id)
+		if prof != null:
+			prof.remove_active_state(source_id)
 	if not expired.is_empty():
 		stats_changed.emit()
 

@@ -207,5 +207,25 @@ func _ready() -> void:
 	assert(GameManager.local_profile.sect_id == "", "sect_id của Vô Môn Phái phải rỗng")
 	print("PASS: Chuyển đổi thành công toàn bộ %d môn phái và về Vô Môn Phái" % sects.size())
 
+	# 11.8 Kiểm tra GM tăng tài lãnh đạo & kinh nghiệm lãnh đạo
+	GameManager.local_profile.lead_level = 0
+	GameManager.local_profile.lead_exp = 0
+	GmManager.set_player_lead_level(GameManager.local_profile, 20)
+	assert(GameManager.local_profile.lead_level == 20, "Đặt cấp lãnh đạo 20 thành công")
+	assert(SocialRules.team_size(GameManager.local_profile.lead_level) == 4, "Cấp lãnh đạo 20 cho phép tổ đội 4 người")
+
+	GmManager.add_player_lead_level(GameManager.local_profile, 10)
+	assert(GameManager.local_profile.lead_level == 30, "Cộng thêm 10 cấp lãnh đạo thành công (hiện có 30)")
+	assert(SocialRules.team_size(GameManager.local_profile.lead_level) == 5, "Cấp lãnh đạo 30 cho phép tổ đội 5 người")
+
+	GmManager.set_player_lead_level(GameManager.local_profile, 100)
+	assert(GameManager.local_profile.lead_level == 100, "Đặt max cấp lãnh đạo 100 thành công")
+
+	GameManager.local_profile.lead_level = 0
+	GameManager.local_profile.lead_exp = 0
+	var gained_lead := GmManager.add_player_lead_exp(GameManager.local_profile, 100)
+	assert(gained_lead == 1 and GameManager.local_profile.lead_level == 1, "Thêm 100 exp lãnh đạo phải lên cấp 1")
+	print("PASS: GM tăng cấp tài lãnh đạo, kinh nghiệm lãnh đạo và max cấp hoạt động xuất sắc")
+
 	print("--- TOÀN BỘ CÁC MỤC KIỂM THỬ HỆ THỐNG GM ĐÃ VƯỢT QUA XUẤT SẮC! ---")
 	get_tree().quit(0)

@@ -89,6 +89,58 @@ func _ready() -> void:
 	stage_title.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))
 	vbox.add_child(stage_title)
 
+	# Đánh giá 3 Sao (Mục 4 GDD)
+	var stars_info: Dictionary = _rewards.get("stars_info", {})
+	if not stars_info.is_empty():
+		var stars_box := PanelContainer.new()
+		var sb_style := StyleBoxFlat.new()
+		sb_style.bg_color = Color(0.04, 0.05, 0.06, 0.95)
+		sb_style.border_color = Color(0.85, 0.72, 0.28)
+		sb_style.set_border_width_all(1)
+		sb_style.set_corner_radius_all(8)
+		sb_style.set_content_margin_all(10)
+		stars_box.add_theme_stylebox_override("panel", sb_style)
+		vbox.add_child(stars_box)
+
+		var stars_vbox := VBoxContainer.new()
+		stars_vbox.add_theme_constant_override("separation", 6)
+		stars_box.add_child(stars_vbox)
+
+		# 3 ngôi sao lớn
+		var total_stars: int = int(stars_info.get("total_stars", 1))
+		var stars_header := Label.new()
+		var star_icons := ""
+		for s_idx in range(3):
+			star_icons += "⭐ " if s_idx < total_stars else "☆ "
+		stars_header.text = "THÀNH TÍCH: %s (%d/3 SAO)" % [star_icons.strip_edges(), total_stars]
+		stars_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		stars_header.add_theme_font_size_override("font_size", 18)
+		stars_header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		stars_vbox.add_child(stars_header)
+
+		# 3 tiêu chí chi tiết
+		var star_time_ok: bool = stars_info.get("star_time", false) == true
+		var star_score_ok: bool = stars_info.get("star_score", false) == true
+		var star_kills_ok: bool = stars_info.get("star_kills", false) == true
+
+		var row_time := Label.new()
+		row_time.text = "%s Thời gian: %d/%d giây" % ["✓" if star_time_ok else "✗", int(stars_info.get("time_taken", 0)), int(stars_info.get("target_time", 180))]
+		row_time.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if star_time_ok else Color(0.7, 0.7, 0.7))
+		row_time.add_theme_font_size_override("font_size", 12)
+		stars_vbox.add_child(row_time)
+
+		var row_score := Label.new()
+		row_score.text = "%s Điểm thành tích: %d/%d điểm" % ["✓" if star_score_ok else "✗", int(stars_info.get("score", 0)), int(stars_info.get("target_score", 1000))]
+		row_score.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if star_score_ok else Color(0.7, 0.7, 0.7))
+		row_score.add_theme_font_size_override("font_size", 12)
+		stars_vbox.add_child(row_score)
+
+		var row_kills := Label.new()
+		row_kills.text = "%s Quái tiêu diệt: %d/%d con" % ["✓" if star_kills_ok else "✗", int(stars_info.get("kills", 0)), int(stars_info.get("target_kills", 50))]
+		row_kills.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if star_kills_ok else Color(0.7, 0.7, 0.7))
+		row_kills.add_theme_font_size_override("font_size", 12)
+		stars_vbox.add_child(row_kills)
+
 	var sub := Label.new()
 	sub.text = "Đại hiệp đã xuất sắc đánh bại Thủ Quan! Dưới đây là phần thưởng nhận được:"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -173,7 +225,7 @@ func _ready() -> void:
 		))
 
 	# Cảnh báo nếu túi đầy
-	if bool(_rewards.get("bag_full", false)):
+	if _rewards.get("bag_full", false) == true:
 		var warn := Label.new()
 		warn.text = "⚠ Hành trang của đại hiệp đã đầy! Một số vật phẩm tạm thời chưa thể đưa vào túi."
 		warn.add_theme_font_size_override("font_size", 12)

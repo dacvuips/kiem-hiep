@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://7t6mccupt4od"]
+
+[ext_resource type="Script" path="res://tests/test_shared_account_different_characters.gd" id="1_test"]
+
+[node name="TestSharedAccountDifferentCharacters" type="Node"]
+script = ExtResource("1_test")

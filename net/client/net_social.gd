@@ -78,6 +78,7 @@ func _on_profile(data: Dictionary) -> void:
 	if profile.da_tau.is_empty() and not old_da_tau.is_empty():
 		profile.da_tau = old_da_tau
 	profile_applied.emit()
+	SaveManager.notify_profile_changed(profile)
 
 func _hub() -> SocialHub:
 	return SocialHub.of(GameManager.local_profile) if GameManager.local_profile else null

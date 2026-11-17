@@ -46,7 +46,7 @@ var _speed_b0 := 0
 var _speed := 0.0
 
 func _ready() -> void:
-	if OS.has_feature("editor") or OS.has_feature("web"):
+	if OS.has_feature("editor") or OS.has_feature("web") or OS.has_feature("ios"):
 		get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
 		return
 	_base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
@@ -405,6 +405,8 @@ func _boot(installed: Dictionary) -> void:
 		["WebContentManager", "res://systems/boot/web_content_manager.gd"],
 		["GmManager", "res://systems/gm/gm_manager.gd"],
 		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
+		["FarmManager", "res://systems/son_trang/farm_manager.gd"],
+		["SceneTransition", "res://ui/common/scene_transition.gd"],
 	]
 	for al in autoloads:
 		var node_name: String = al[0]
@@ -430,8 +432,8 @@ func _boot(installed: Dictionary) -> void:
 					push_warning("Launcher: Không thể khởi tạo singleton %s từ %s" % [node_name, script_path])
 
 	await get_tree().process_frame
-	print("Launcher: Chuyển cảnh sang màn hình đăng nhập...")
-	get_tree().change_scene_to_file.call_deferred("res://ui/login/Login.tscn")
+	print("Launcher: Chuyển cảnh sang màn hình chọn chế độ (ModeSelect)...")
+	get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
 
 func _restart_via_java() -> void:
 	pass

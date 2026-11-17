@@ -14,7 +14,13 @@ class_name MapSelectWindow
 ## ở khung trên màn chơi — FieldClient); hàng "ID phòng" dưới cùng: nhập ID của người khác -> tra phòng (GET /v1/field) -> vào đúng map
 ## đó cùng họ. Chưa đăng nhập: chơi một mình như cũ (offline).
 
-const TABS := ["Luyện", "Tinh anh", "Ải", "Boss"]
+const TABS := ["Luyện", "Thủ Thành", "Tinh anh", "Ải", "Boss"]
+const TABS_OFFLINE := ["Luyện", "Thủ Thành", "Tinh anh", "Ải"]
+
+static func get_tabs() -> Array:
+	if GameModeManager.is_offline():
+		return ["Luyện", "Thủ Thành", "Tinh anh", "Ải"]
+	return ["Luyện", "Thủ Thành", "Tinh anh", "Ải", "Boss"]
 const THUMB_SIZE := Vector2(168, 104)
 const LIST_SIZE := Vector2(620, 440)
 const LinhLungThapScript = preload("res://systems/challenge/linh_lung_thap_challenge.gd")
@@ -25,9 +31,15 @@ var _on_play: Callable
 var _host: Node
 var _tab := 0
 var _tier := 1
+var _thu_thanh_tier := 1
+var _tabs_container: HBoxContainer
 var _tab_buttons: Array[Button] = []
 var _tier_buttons: Array[Button] = []
+var _thu_thanh_tier_buttons: Array[Button] = []
 var _content: HBoxContainer
+var _map_list_scroll: ScrollContainer
+var _thu_thanh_list_scroll: ScrollContainer
+var _hell_list_scroll: ScrollContainer
 var _join_row: Control
 var _join_edit: LineEdit
 var _join_button: Button
@@ -49,35 +61,42 @@ var _battle_poll_acc := 0.0
 var _boss_card_views: Array[Dictionary] = []
 var _boss_timer: Timer
 
+func _get_profile() -> PlayerProfile:
+	if GameManager != null and GameManager.local_profile != null:
+		return GameManager.local_profile
+	return _profile
+
 static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> MapSelectWindow:
 	var win := MapSelectWindow.new(profile, on_play, host)
-	return SocialWindow.present(host, win, &"map_select") as MapSelectWindow
+	var presented := SocialWindow.present(host, win, &"map_select") as MapSelectWindow
+	if presented != null and is_instance_valid(presented):
+		presented._profile = profile if profile != null else (GameManager.local_profile if GameManager != null else null)
+		presented._on_play = on_play
+		presented._host = host
+		if presented.has_method("on_presented"):
+			presented.on_presented()
+	return presented
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: Node = null) -> void:
 	super._init("Vượt Ải", "", 800.0)
 	_profile = profile
 	_on_play = on_play
 	_host = host
-	_tier = MapCatalog.normal_tier_for_level(profile.level if profile else 1)
+	var is_admin: bool = AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var normal_tier: int = MapCatalog.normal_tier_for_level(char_level)
+	if not is_admin:
+		var max_tier := clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+		_tier = mini(normal_tier, max_tier)
+	else:
+		_tier = normal_tier
 
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 8)
-	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
-	for i in TABS.size():
-		var b := GameUi.button(TABS[i], GameUi.TAB)
-		b.custom_minimum_size = Vector2(130, 38)
-		b.pressed.connect(_select_tab.bind(i))
-		if i == 1:
-			var purple_normal := Color(0.85, 0.45, 1.0)
-			var purple_hover := Color(0.92, 0.60, 1.0)
-			var purple_pressed := Color(1.0, 0.80, 1.0)
-			b.add_theme_color_override("font_color", purple_normal)
-			b.add_theme_color_override("font_hover_color", purple_hover)
-			b.add_theme_color_override("font_pressed_color", purple_pressed)
-			b.add_theme_color_override("font_focus_color", purple_pressed)
-		tabs.add_child(b)
-		_tab_buttons.append(b)
-	body.add_child(tabs)
+	_tabs_container = HBoxContainer.new()
+	_tabs_container.add_theme_constant_override("separation", 8)
+	_tabs_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	_setup_tabs()
+	body.add_child(_tabs_container)
 
 	_content = HBoxContainer.new()
 	_content.add_theme_constant_override("separation", 10)
@@ -86,25 +105,115 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: 
 	_build_join_row()
 	_select_tab(0)
 
+func _setup_tabs() -> void:
+	if _tabs_container == null:
+		return
+	for c in _tabs_container.get_children():
+		_tabs_container.remove_child(c)
+		c.queue_free()
+	_tab_buttons.clear()
+
+	var tab_names := get_tabs()
+	for i in tab_names.size():
+		var t_name: String = tab_names[i]
+		var b := GameUi.button(t_name, GameUi.TAB)
+		b.custom_minimum_size = Vector2(120, 38)
+		b.pressed.connect(_select_tab.bind(i))
+		if t_name == "Tinh anh":
+			var purple_normal := Color(0.85, 0.45, 1.0)
+			var purple_hover := Color(0.92, 0.60, 1.0)
+			var purple_pressed := Color(1.0, 0.80, 1.0)
+			b.add_theme_color_override("font_color", purple_normal)
+			b.add_theme_color_override("font_hover_color", purple_hover)
+			b.add_theme_color_override("font_pressed_color", purple_pressed)
+			b.add_theme_color_override("font_focus_color", purple_pressed)
+		elif t_name == "Thủ Thành":
+			var green_normal := Color(0.45, 0.95, 0.45)
+			var green_hover := Color(0.65, 1.0, 0.65)
+			var green_pressed := Color(0.85, 1.0, 0.85)
+			b.add_theme_color_override("font_color", green_normal)
+			b.add_theme_color_override("font_hover_color", green_hover)
+			b.add_theme_color_override("font_pressed_color", green_pressed)
+			b.add_theme_color_override("font_focus_color", green_pressed)
+			b.tooltip_text = tr("Chế độ Thủ Thành môn phái (1x - 12x)")
+		_tabs_container.add_child(b)
+		_tab_buttons.append(b)
+
+func _ready() -> void:
+	# Lắng nghe sự kiện bật/tắt quyền GM để làm mới giao diện khóa/mở ngay lập tức
+	var api := get_node_or_null("/root/AccountApi")
+	if api != null and api.has_signal("gm_mode_toggled"):
+		if not api.gm_mode_toggled.is_connected(_on_gm_mode_toggled):
+			api.gm_mode_toggled.connect(_on_gm_mode_toggled)
+
+	# Lắng nghe thay đổi hồ sơ nhân vật (thay đổi cấp độ / exp)
+	var gm := get_node_or_null("/root/GmManager")
+	if gm != null and gm.has_signal("profile_modified"):
+		if not gm.profile_modified.is_connected(_on_profile_modified):
+			gm.profile_modified.connect(_on_profile_modified)
+	var sm := get_node_or_null("/root/SaveManager")
+	if sm != null and sm.has_signal("profile_changed"):
+		if not sm.profile_changed.is_connected(_on_profile_modified):
+			sm.profile_changed.connect(_on_profile_modified)
+
+func _on_gm_mode_toggled(_active: bool) -> void:
+	if is_inside_tree() and visible:
+		on_presented()
+
+func _on_profile_modified(_p: PlayerProfile = null) -> void:
+	if is_inside_tree() and visible:
+		on_presented()
+
+func on_presented() -> void:
+	# Khi cửa sổ được mở lại, kiểm tra lại quyền GM hiện tại để cập nhật khóa mốc & map
+	var is_admin: bool = AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var normal_tier: int = MapCatalog.normal_tier_for_level(char_level)
+	if not is_admin:
+		var max_tier := clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+		_tier = mini(normal_tier, max_tier)
+		_thu_thanh_tier = mini(normal_tier, max_tier)
+	else:
+		_tier = normal_tier
+		_thu_thanh_tier = normal_tier
+	_setup_tabs()
+	var max_idx := maxi(0, _tab_buttons.size() - 1)
+	if _tab > max_idx:
+		_tab = 0
+	_select_tab(_tab)
+
 func _select_tab(i: int) -> void:
+	var tabs := get_tabs()
+	if i < 0 or i >= tabs.size():
+		i = 0
 	_tab = i
 	_boss_card_views.clear()
 	for k in _tab_buttons.size():
 		GameUi.set_active(_tab_buttons[k], k == i)
 	for c in _content.get_children():
+		_content.remove_child(c)
 		c.queue_free()
 	_tier_buttons.clear()
-	_join_row.visible = (i in [0, 1])   ## phòng train chung: tab Thường + Địa Ngục
-	if i == 0:
-		_build_normal()
-		return
-	if i == 1:
-		_build_hell()
-		return
-	if i == 2:
-		_build_ai()
-		return
-	_build_boss()
+	_thu_thanh_tier_buttons.clear()
+	_hell_tier_buttons.clear()
+	_map_list_scroll = null
+	_thu_thanh_list_scroll = null
+	_hell_list_scroll = null
+	var selected_tab: String = tabs[i]
+	_join_row.visible = (selected_tab in ["Luyện", "Tinh anh"]) and _online()   ## phòng train chung: tab Luyện + Tinh anh khi có mạng
+	match selected_tab:
+		"Luyện":
+			_build_normal()
+		"Thủ Thành":
+			_build_thu_thanh()
+		"Tinh anh":
+			_build_hell()
+		"Ải":
+			_build_ai()
+		"Boss":
+			if not GameModeManager.is_offline():
+				_build_boss()
 
 # ---------------------------------------------------------------- tab Ải (Thách Thức Thời Gian)
 
@@ -124,17 +233,19 @@ func _build_ai() -> void:
 	_build_linh_lung_thap(list)
 	_build_honor_defense(list)
 	_build_stages_challenge(list)
-	_build_time_challenge(list)
-	_build_phong_lang_do(list)
-	_build_tong_kim_lol(list)
-	_build_battle(list)
+	if not GameModeManager.is_offline():
+		_build_time_challenge(list)
+		_build_phong_lang_do(list)
+		_build_tong_kim_lol(list)
+		_build_battle(list)
 
 func _get_hub() -> Node:
 	if _host != null and is_instance_valid(_host):
 		return _host
-	var tree := get_tree()
-	if tree != null and tree.current_scene != null:
-		return tree.current_scene
+	if is_inside_tree():
+		var tree := get_tree()
+		if tree != null and tree.current_scene != null:
+			return tree.current_scene
 	var ml := Engine.get_main_loop() as SceneTree
 	if ml != null and ml.current_scene != null:
 		return ml.current_scene
@@ -459,6 +570,15 @@ func _build_stages_challenge(parent: Control) -> void:
 	row.add_child(select_btn)
 
 	var next_btn := SocialUi.stone_button(tr("Vào Bàn %d") % (current_stage_idx + 1), Vector2(170, 44))
+	var is_admin_stage := AccountApi.is_gm()
+	var next_stage_req_lvl := (int(current_stage_idx / 3) + 1) * 10
+	if current_stage_idx < stages_arr.size() and "required_level" in stages_arr[current_stage_idx]:
+		next_stage_req_lvl = int(stages_arr[current_stage_idx].required_level)
+	var has_level_for_next := is_admin_stage or (_profile != null and _profile.level >= next_stage_req_lvl)
+	if not has_level_for_next:
+		next_btn.disabled = true
+		next_btn.text = "🔒 Cần Cấp %d" % next_stage_req_lvl
+		next_btn.tooltip_text = tr("Cần đạt cấp %d trở lên để vào bàn này!") % next_stage_req_lvl
 	next_btn.pressed.connect(func() -> void:
 		var parent_node := _get_hub()
 		var hub_stages: Array[StageData] = []
@@ -471,6 +591,18 @@ func _build_stages_challenge(parent: Control) -> void:
 			_play({"stage": selected_stage, "name": selected_stage.stage_name})
 	)
 	row.add_child(next_btn)
+
+	if GameModeManager.is_offline():
+		var td_btn := SocialUi.stone_button(tr("🛡️ Thủ Thành (1x-12x)"), Vector2(240, 44))
+		td_btn.tooltip_text = tr("Chuyển sang tab Thủ Thành (1x - 12x)")
+		td_btn.pressed.connect(func() -> void:
+			var tab_names := get_tabs()
+			for idx in tab_names.size():
+				if tab_names[idx] == "Thủ Thành":
+					_select_tab(idx)
+					break
+		)
+		row.add_child(td_btn)
 
 func _build_time_challenge(parent: Control) -> void:
 	var r := TimeChallenge.rules()
@@ -857,7 +989,7 @@ func _render_battle() -> void:
 	if _battle_status == null or not is_instance_valid(_battle_status):
 		return
 	var cd := _cooldown_left()
-	var open := bool(_battle.get("open", false))
+	var open: bool = _battle.get("open", false) == true
 	if not AccountApi.is_logged_in():
 		_battle_status.text = "Chiến trường chỉ có khi chơi trên máy chủ (đăng nhập tài khoản)."
 		_battle_sides.text = ""
@@ -883,7 +1015,7 @@ func _join_battle(side: String) -> void:
 		return
 	_battle_clicked_at = Time.get_ticks_msec()
 	_battle_msg.text = ""
-	if not bool(_battle.get("open", false)):
+	if not (_battle.get("open", false) == true):
 		_battle_msg.text = "Chiến trường chưa mở."
 	elif str(_battle.get("phase", "")) == "ended":
 		_battle_msg.text = "Trận này đã kết thúc, xin chờ trận sau."
@@ -915,11 +1047,24 @@ func _build_normal() -> void:
 	tiers.add_theme_constant_override("separation", 6)
 	tiers.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tier_scroll.add_child(tiers)
+	var is_admin: bool = AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+
 	for t in range(1, MapCatalog.TIER_COUNT + 1):
-		var count := MapCatalog.in_tier(t).size()
-		var b := GameUi.button("%dx" % t if count > 0 else "%dx  —" % t, GameUi.TAB)
+		var count: int = MapCatalog.in_tier(t).size()
+		var is_tier_unlocked: bool = is_admin or (t <= max_unlocked_tier)
+		var b_text := "%dx" % t if count > 0 else "%dx  —" % t
+		if not is_tier_unlocked:
+			b_text = "🔒 %dx" % t
+		var b := GameUi.button(b_text, GameUi.TAB)
 		b.custom_minimum_size.y = 34
-		b.pressed.connect(_select_tier.bind(t))
+		if not is_tier_unlocked:
+			b.disabled = true
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % (t * 10)
+		else:
+			b.pressed.connect(_select_tier.bind(t))
 		tiers.add_child(b)
 		_tier_buttons.append(b)
 	_content.add_child(tier_scroll)
@@ -930,24 +1075,33 @@ func _build_normal() -> void:
 	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	list_scroll.custom_minimum_size = LIST_SIZE
 	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map_list_scroll = list_scroll
 	_content.add_child(list_scroll)
+
+	# Đảm bảo mốc được chọn không vượt quá mốc đã mở khóa
+	if not is_admin and _tier > max_unlocked_tier:
+		_tier = max_unlocked_tier
+
 	_select_tier(_tier)
 	## Danh sách mốc dài hơn khung -> cuộn tới mốc đang chọn (sau khi khung đã xếp chỗ).
-	var active: Button = _tier_buttons[_tier - 1]
-	(func() -> void:
-		if is_instance_valid(tier_scroll) and is_instance_valid(active):
-			tier_scroll.ensure_control_visible(active)).call_deferred()
+	if _tier - 1 >= 0 and _tier - 1 < _tier_buttons.size():
+		var active: Button = _tier_buttons[_tier - 1]
+		(func() -> void:
+			if is_instance_valid(tier_scroll) and is_instance_valid(active):
+				tier_scroll.ensure_control_visible(active)).call_deferred()
 
 func _select_tier(t: int) -> void:
 	_tier = t
 	for k in _tier_buttons.size():
 		GameUi.set_active(_tier_buttons[k], k + 1 == t)
-	var scroll := _content.get_node_or_null("MapList") as ScrollContainer
+	var scroll: ScrollContainer = _map_list_scroll
+	if scroll == null or not is_instance_valid(scroll):
+		scroll = _content.get_node_or_null("MapList") as ScrollContainer
 	if scroll == null:
 		return
 	for c in scroll.get_children():
-		if c is Control:
-			c.queue_free()
+		scroll.remove_child(c)
+		c.queue_free()
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 8)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -982,14 +1136,210 @@ func _map_card(m: Dictionary) -> Control:
 	info.add_child(mons)
 
 	var playable := MapCatalog.is_playable(m)
-	var play := SocialUi.stone_button(tr("Vào") if playable else tr("Chưa có"), Vector2(96, 40))
-	play.disabled = not playable
-	play.tooltip_text = "" if playable else tr("Bản đồ này chưa được xuất (tools/export_training_maps.py)")
+	var is_admin := AccountApi.is_gm()
+	var prof := _get_profile()
+	var req_lvl := int(m.get("level", 1))
+	var has_level := is_admin or (prof != null and prof.level >= req_lvl)
+
+	var btn_txt := tr("Vào")
+	var play := SocialUi.stone_button(btn_txt if playable else tr("Chưa có"), Vector2(140, 40))
+	if not playable:
+		play.disabled = true
+		play.tooltip_text = tr("Bản đồ này chưa được xuất (tools/export_training_maps.py)")
+	elif not has_level:
+		play.disabled = true
+		play.text = "🔒 Cấp %d" % req_lvl
+		play.tooltip_text = tr("Cần đạt cấp %d trở lên để vào bản đồ này!") % req_lvl
+	else:
+		play.disabled = false
+		play.tooltip_text = ""
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	play.add_to_group("tutorial_enter_btn")
 	play.pressed.connect(_enter_field.bind(m))
 	row.add_child(play)
 	return card
+
+# ---------------------------------------------------------------- tab Thủ Thành (Zombies vs Plants 1x - 12x)
+
+func _build_thu_thanh() -> void:
+	_thu_thanh_tier_buttons.clear()
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 8)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.add_child(page)
+
+	# Banner tiêu đề chế độ Thủ Thành (Zombies vs Plants)
+	var banner := GameUi.panel(GameUi.PANEL)
+	var b_box := VBoxContainer.new()
+	b_box.add_theme_constant_override("separation", 3)
+	banner.add_child(b_box)
+	var title_lbl := SocialUi.label(tr("🛡️ THỦ THÀNH MÔN PHÁI (1X - 12X)"), SocialUi.TITLE, 17, HORIZONTAL_ALIGNMENT_CENTER)
+	title_lbl.add_theme_color_override("font_color", Color(0.45, 0.95, 0.45))
+	b_box.add_child(title_lbl)
+	var desc_lbl := SocialUi.label(tr("Đấu trường phòng thủ 11x5 ô · 14 kỹ năng môn phái · Bảo vệ Xe Lương Thảo · 18 đợt quái dồn dập & Đại Boss Hoàng Kim!"),
+			SocialUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER)
+	b_box.add_child(desc_lbl)
+	page.add_child(banner)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(row)
+
+	# Cột mốc cấp độ 1x..12x
+	var tier_scroll := ScrollContainer.new()
+	tier_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tier_scroll.custom_minimum_size = Vector2(110, LIST_SIZE.y - 70)
+	var tiers := VBoxContainer.new()
+	tiers.add_theme_constant_override("separation", 6)
+	tiers.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tier_scroll.add_child(tiers)
+
+	var is_admin: bool = AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+
+	for t in range(1, MapCatalog.TIER_COUNT + 1):
+		var count: int = MapCatalog.in_tier(t).size()
+		var is_tier_unlocked: bool = is_admin or (t <= max_unlocked_tier)
+		var b_text := "%dx" % t if count > 0 else "%dx  —" % t
+		if not is_tier_unlocked:
+			b_text = "🔒 %dx" % t
+		var b := GameUi.button(b_text, GameUi.TAB)
+		b.custom_minimum_size.y = 34
+		if not is_tier_unlocked:
+			b.disabled = true
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % (t * 10)
+		else:
+			b.pressed.connect(_select_thu_thanh_tier.bind(t))
+		tiers.add_child(b)
+		_thu_thanh_tier_buttons.append(b)
+	row.add_child(tier_scroll)
+	TouchScrollHelperScript.attach(tier_scroll, tier_scroll)
+
+	# Cột danh sách map thủ thành
+	var list_scroll := ScrollContainer.new()
+	list_scroll.name = "ThuThanhList"
+	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	list_scroll.custom_minimum_size = Vector2(LIST_SIZE.x - 120, LIST_SIZE.y - 70)
+	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_thu_thanh_list_scroll = list_scroll
+	row.add_child(list_scroll)
+
+	if not is_admin and _thu_thanh_tier > max_unlocked_tier:
+		_thu_thanh_tier = max_unlocked_tier
+
+	_select_thu_thanh_tier(_thu_thanh_tier)
+	if _thu_thanh_tier - 1 >= 0 and _thu_thanh_tier - 1 < _thu_thanh_tier_buttons.size():
+		var active: Button = _thu_thanh_tier_buttons[_thu_thanh_tier - 1]
+		(func() -> void:
+			if is_instance_valid(tier_scroll) and is_instance_valid(active):
+				tier_scroll.ensure_control_visible(active)).call_deferred()
+
+func _select_thu_thanh_tier(t: int) -> void:
+	_thu_thanh_tier = t
+	for k in _thu_thanh_tier_buttons.size():
+		GameUi.set_active(_thu_thanh_tier_buttons[k], k + 1 == t)
+	var scroll: ScrollContainer = _thu_thanh_list_scroll
+	if scroll == null or not is_instance_valid(scroll):
+		scroll = _content.find_child("ThuThanhList", true, false) as ScrollContainer
+	if scroll == null:
+		return
+	for c in scroll.get_children():
+		scroll.remove_child(c)
+		c.queue_free()
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 8)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	TouchScrollHelperScript.attach(scroll, scroll)
+	var maps := MapCatalog.in_tier(t)
+	if maps.is_empty():
+		list.add_child(SocialUi.label(tr("Chưa có bản đồ thủ thành %dx.") % t, SocialUi.MUTED, 14))
+		return
+	for m in maps:
+		list.add_child(_thu_thanh_card(m))
+
+func _thu_thanh_card(m: Dictionary) -> Control:
+	var card := GameUi.panel(GameUi.PANEL)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+
+	row.add_child(_minimap_frame(m))
+
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 4)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var title_lbl := SocialUi.label(tr("Thủ Thành — %s") % str(m["name"]), SocialUi.TITLE, 17)
+	title_lbl.add_theme_color_override("font_color", Color(0.45, 0.95, 0.45))
+	info.add_child(title_lbl)
+	info.add_child(SocialUi.label(tr("Cấp quái: %d · 18 đợt quái & Boss Hoàng Kim") % int(m["level"]), SocialUi.LABEL_BLUE, 13))
+
+	var names: Array[String] = []
+	for mon in m.get("monsters", []):
+		names.append("%s (Lv%d)" % [mon["name"], int(mon["level"])])
+	var mons := SocialUi.label(tr("Quái:") + " " + (", ".join(names) if not names.is_empty() else tr("Quái sơn tặc")), SocialUi.TEXT, 13)
+	mons.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(mons)
+
+	var is_admin := AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
+	var req_lvl := int(m.get("level", 1))
+
+	var level_allowed := true
+	if not is_admin:
+		if char_tier == 1:
+			level_allowed = (map_tier <= 1)
+		elif char_tier == 2:
+			level_allowed = (map_tier <= 2)
+		else:
+			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+
+	var play := SocialUi.stone_button(tr("🛡️ Vào Thủ Thành"), Vector2(160, 42))
+	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if not level_allowed:
+		play.disabled = true
+		play.text = "🔒 Cấp %d" % req_lvl
+		play.tooltip_text = tr("Cần đạt cấp %d trở lên để vào Thủ Thành bản đồ này!") % req_lvl
+	else:
+		play.disabled = false
+		play.tooltip_text = tr("Bắt đầu trận chiến Thủ Thành trên bản đồ %s!") % str(m["name"])
+	play.pressed.connect(_enter_thu_thanh.bind(m))
+	row.add_child(play)
+	return card
+
+func _enter_thu_thanh(m: Dictionary) -> void:
+	var is_admin := AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
+	var req_lvl := int(m.get("level", 1))
+
+	var level_allowed := true
+	if not is_admin:
+		if char_tier == 1:
+			level_allowed = (map_tier <= 1)
+		elif char_tier == 2:
+			level_allowed = (map_tier <= 2)
+		else:
+			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+
+	if not level_allowed:
+		var hub := _get_hub()
+		if hub and hub.has_method("_show_toast"):
+			hub._show_toast(tr("⚠️ Cấp độ của bạn chưa đủ (%d/%d) để vào bản đồ này!") % [char_level, req_lvl])
+		return
+
+	var e := m.duplicate(true)
+	e["thu_thanh_mode"] = true
+	_play(e)
 
 # ---------------------------------------------------------------- tab Địa Ngục
 
@@ -1025,10 +1375,22 @@ func _build_hell() -> void:
 	tiers.add_theme_constant_override("separation", 8)
 	tiers.custom_minimum_size.x = 110
 	row.add_child(tiers)
+	var is_admin: bool = AccountApi.is_gm()
+	var char_level: int = _profile.level if _profile else 1
+	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, 12)
+
 	for t in MapCatalog.HELL_TIERS:
-		var b := _hell_button("%dx" % t, Vector2(110, 52), 20)
+		var is_tier_unlocked: bool = is_admin or (t <= max_unlocked_tier)
+		var b_text := "%dx" % t
+		if not is_tier_unlocked:
+			b_text = "🔒 %dx" % t
+		var b := _hell_button(b_text, Vector2(110, 52), 20)
 		b.toggle_mode = true
-		b.pressed.connect(_select_hell_tier.bind(t))
+		if not is_tier_unlocked:
+			b.disabled = true
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc tinh anh này!") % (t * 10)
+		else:
+			b.pressed.connect(_select_hell_tier.bind(t))
 		tiers.add_child(b)
 		_hell_tier_buttons.append(b)
 	tiers.add_child(SocialUi.label("Quái cấp\n%d - %d" % [MapCatalog.hell_level(MapCatalog.HELL_TIERS[0]),
@@ -1038,6 +1400,7 @@ func _build_hell() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(LIST_SIZE.x, LIST_SIZE.y - 96)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hell_list_scroll = scroll
 	row.add_child(scroll)
 	_select_hell_tier(_hell_tier)
 
@@ -1064,12 +1427,14 @@ func _select_hell_tier(t: int) -> void:
 	_hell_tier = t
 	for k in _hell_tier_buttons.size():
 		_hell_tier_buttons[k].set_pressed_no_signal(MapCatalog.HELL_TIERS[k] == t)
-	var scroll := _content.find_child("HellList", true, false) as ScrollContainer
+	var scroll: ScrollContainer = _hell_list_scroll
+	if scroll == null or not is_instance_valid(scroll):
+		scroll = _content.find_child("HellList", true, false) as ScrollContainer
 	if scroll == null:
 		return
 	for c in scroll.get_children():
-		if c is Control:
-			c.queue_free()
+		scroll.remove_child(c)
+		c.queue_free()
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1138,9 +1503,22 @@ func _hell_card(m: Dictionary) -> Control:
 	if _profile and _profile.level < int(m["level"]) - 10:
 		info.add_child(SocialUi.label(tr("⚠ Cấp của bạn quá thấp — khuyến nghị cấp %d trở lên.") % (int(m["level"]) - 10), HELL_HOT, 12))
 
+	var is_admin := AccountApi.is_gm()
+	var req_lvl := int(m.get("level", 100))
+	var has_level := is_admin or (_profile != null and _profile.level >= req_lvl)
+
 	var play := _hell_button(tr("Khiêu chiến"), Vector2(120, 48), 16)
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	play.disabled = not MapCatalog.is_playable(m)
+	if not MapCatalog.is_playable(m):
+		play.disabled = true
+		play.tooltip_text = tr("Bản đồ này chưa được xuất (tools/export_training_maps.py)")
+	elif not has_level:
+		play.disabled = true
+		play.text = "🔒 Cấp %d" % req_lvl
+		play.tooltip_text = tr("Cần đạt cấp %d trở lên để vào bản đồ tinh anh này!") % req_lvl
+	else:
+		play.disabled = false
+		play.tooltip_text = ""
 	row.add_child(play)
 
 	var paint := func(n: int) -> void:
@@ -1216,7 +1594,7 @@ func _build_join_row() -> void:
 ## Địa chỉ field server + danh sách phòng; {} nếu field server không chạy.
 func _fetch_field() -> Dictionary:
 	var r: Dictionary = await AccountApi.field(ServerSelectScreen.selected_server_id)
-	if not r.ok or not r.data is Dictionary or not bool(r.data.get("open", false)):
+	if not r.ok or not r.data is Dictionary or not (r.data.get("open", false) == true):
 		return {}
 	return r.data
 
@@ -1227,17 +1605,51 @@ static func _field_server(st: Dictionary, room := {}) -> Dictionary:
 	return {"host": str(st.get("host", "127.0.0.1")), "port": int(st.get("port", 7807)), "ws_url": str(st.get("ws_url", "")),
 		"name": "Phòng train chung"}
 
-## Bấm Vào / Khiêu chiến: đã đăng nhập -> tạo phòng train chung; field server không chạy thì hỏi chơi một mình.
+## Bấm Vào / Khiêu chiến: đã đăng nhập -> tạo phòng train chung; offline -> vào Thủ Thành (Plants vs Zombies).
 func _enter_field(m: Dictionary) -> void:
-	if not _online():
-		_play(m)
+	var is_admin := AccountApi.is_gm()
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
+	var req_lvl := int(m.get("level", 1))
+
+	# Quy tắc điều kiện cấp độ (Section 2.2):
+	# 1x: Được vào bản đồ 1x
+	# 2x: Được vào bản đồ 1x–2x; không được vào 3x trở lên
+	# 3x trở lên: Được vào bản đồ có cấp yêu cầu <= cấp nhân vật
+	# Nguyên tắc: Không cho phép vào bản đồ có cấp yêu cầu cao hơn cấp nhân vật.
+	var level_allowed := true
+	if not is_admin:
+		if char_tier == 1:
+			level_allowed = (map_tier <= 1)
+		elif char_tier == 2:
+			level_allowed = (map_tier <= 2)
+		else:
+			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+
+	if not level_allowed:
+		var hub := _get_hub()
+		if hub and hub.has_method("_show_toast"):
+			hub._show_toast(tr("⚠️ Cấp độ của bạn chưa đủ (%d/%d) để vào bản đồ này!") % [char_level, req_lvl])
+		return
+
+	if not _online() or GameModeManager.is_offline():
+		var e := m.duplicate(true)
+		e["survivor_mode"] = true
+		e["no_monsters"] = true
+		_play(e)
 		return
 	var st := await _fetch_field()
 	if not is_inside_tree():
 		return
 	if st.is_empty():
 		SocialWindow.confirm(self, "Phòng train chung", "Máy chủ phòng train chung chưa mở — vào chơi một mình (không có ID phòng)?",
-				func() -> void: _play(m))
+				func() -> void:
+					var e := m.duplicate(true)
+					e["survivor_mode"] = true
+					e["no_monsters"] = true
+					_play(e))
 		return
 	var hell: Dictionary = m.get("hell", {})
 	var e := m.duplicate(true)
@@ -1484,7 +1896,7 @@ func _boss_card(boss: Dictionary) -> Control:
 	return card
 
 func _tick_boss_timers() -> void:
-	if not is_inside_tree() or _tab != 3:
+	if not is_inside_tree() or _tab != 3 or GameModeManager.is_offline():
 		return
 	for item in _boss_card_views:
 		var boss: Dictionary = item["boss"]

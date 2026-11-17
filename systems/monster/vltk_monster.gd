@@ -42,6 +42,14 @@ var gold_boss: bool = false
 var small_gold_boss: bool = false
 ## BOSS SÁT THỦ (Nhiếp Thí Trần truy nã): thưởng trang bị danh dự.
 var killer_boss: bool = false
+## CHẾ ĐỘ SURVIVOR VƯỢT ẢI (Đợt quái & Boss khổng lồ)
+var is_survivor_monster: bool = false
+var is_survivor_boss: bool = false
+var scale_factor: float = 1.0:
+	set(v):
+		scale_factor = v
+		if _sprite != null:
+			_apply_scale_factor()
 ## Độ khó ĐỊA NGỤC (1-5 sao, 0 = map thường): máu, sát thương và tỉ lệ rơi đồ nhân số sao (DropTable.roll_hell). Đặt TRƯỚC khi add_child.
 var hell_stars: int = 0
 ## false = quái đứng yên (tắt AI) — để xem hình hoặc để người chơi tập đánh.
@@ -52,6 +60,7 @@ var health: float = 1.0
 var max_health: float = 1.0
 var drop_multiplier: int = 1
 var exp_multiplier: float = 1.0
+var damage_multiplier: float = 1.0
 var damage_range_override: Vector2 = Vector2.ZERO
 var status_controller: StatusEffectController
 ## Phe trong Chiến Trường / MOBA Tống Kim LOL ("song", "jin" hoặc "")
@@ -144,6 +153,7 @@ static func spawn(parent: Node, id: int, lvl: int, world_pos: Vector2, with_ai: 
 	return node
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("enemies")
 	collision_layer = 4
 	collision_mask = 32
@@ -179,7 +189,9 @@ func _ready() -> void:
 	_name_plate.setup(str(data.get("name", "")).strip_edges(), clampi(int(data.get("series", 0)), 0, 4) as ElementTypes.ElementType, blue_boss, gold_boss or small_gold_boss)
 	_name_plate.place_above(_health_bar)
 	_update_side_color()
-	if gold_boss:
+	if scale_factor != 1.0:
+		_apply_scale_factor()
+	elif gold_boss:
 		_sprite.scale = Vector2(1.25, 1.25)
 	elif small_gold_boss:
 		_sprite.scale = Vector2(1.15, 1.15)
@@ -192,6 +204,19 @@ func _ready() -> void:
 	if battle_side != "":
 		add_to_group("side_" + battle_side)
 	_enter(State.IDLE, "stand")
+
+func _apply_scale_factor() -> void:
+	if _sprite == null or scale_factor == 1.0:
+		return
+	_sprite.scale = Vector2(scale_factor, scale_factor)
+	var h := _sprite.get_height() * scale_factor
+	if _health_bar != null:
+		_health_bar.position = Vector2(0, -h - 15.0)
+	if _name_plate != null:
+		_name_plate.position = Vector2(0, -h - 45.0)
+	for child in get_children():
+		if child is CollisionShape2D and child.shape is CircleShape2D:
+			(child.shape as CircleShape2D).radius = clampf(10.0 * (scale_factor * 0.4), 10.0, 50.0)
 
 ## SCRIPT CẤP GỐC (npclevelscript qua MonsterData.level_table): engine gốc gọi lúc sinh quái với HỆ + CẤP của điểm sinh ->
 ## chiêu Skill1-4 + cấp chiêu Level1-4 (VD animal.lua: cận chiến ngũ hành 419..423 theo hệ), tham số AI; chỉ số (máu, chính xác,
@@ -399,6 +424,11 @@ func _physics_process(delta: float) -> void:
 			elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
 				var pillar := get_tree().get_first_node_in_group("honor_pillar") as Node2D
 				target = pillar
+	elif is_survivor_monster or is_survivor_boss:
+		if target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
+			var p_node := get_tree().get_first_node_in_group("player") as Node2D
+			if p_node and is_instance_valid(p_node) and not (p_node.has_method("is_dead") and p_node.is_dead()):
+				target = p_node
 	elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()) or (target.is_in_group("player") and target.get("has_moved") == false):
 		target = null
 		if battle_side != "":
@@ -841,7 +871,7 @@ func _ai_think() -> void:
 			target = null
 			_walk_to(_origin_logic)
 			return
-	elif not is_lane_creep and not is_honor_defense_creep and not gold_boss:
+	elif not is_lane_creep and not is_honor_defense_creep and not gold_boss and not is_survivor_monster and not is_survivor_boss:
 		var base_active := float(data.get("active", 700))
 		var active := base_active * 2.0 if target != null else base_active
 		var from_origin := here.distance_to(_origin_logic)
@@ -872,7 +902,7 @@ func _ai_think() -> void:
 				enemy = target
 			else:
 				target = null
-		elif is_honor_defense_creep:
+		elif is_honor_defense_creep or is_survivor_monster or is_survivor_boss:
 			enemy = target
 		else:
 			# Tầm duy trì mục tiêu có độ trễ (hysteresis), không ngắt ngay ở mép tầm đánh gây giật lùi
@@ -1232,7 +1262,7 @@ func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	if is_moba_general:
 		boss_mult = maxf(boss_mult, 8.0)
 	var hell_mult := float(_hell_mult())
-	var total_mult := boss_mult * hell_mult * moba_damage_multiplier
+	var total_mult := boss_mult * hell_mult * moba_damage_multiplier * damage_multiplier
 
 	if has_physics and (lo > 0.0 or hi > 0.0):
 		lo *= total_mult
@@ -1408,7 +1438,21 @@ func grant_rewards(with_drops := true) -> void:
 		var roll_count: int = maxi(1, drop_multiplier)
 		for _drop_idx in range(roll_count):
 			var drops: Array
-			if gold_boss:
+			if GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false):
+				# Chế độ PUBG: Quái có tỉ lệ rớt đồ Hoàng Kim Môn Phái 90%
+				if randf() <= 0.90:
+					var gold_item := DropTable.roll_sect_gold_item()
+					if gold_item != null:
+						drops.append({"type": "item", "item": gold_item})
+				if randf() <= 0.50:
+					var pot := DropTable.roll_pharmacy_item()
+					if pot != null:
+						drops.append({"type": "item", "item": pot})
+				if randf() <= 0.20:
+					var horse := DropTable.roll_horse()
+					if horse != null:
+						drops.append({"type": "item", "item": horse})
+			elif gold_boss:
 				drops = DropTable.roll_gold_boss(level, int(_build.element))
 				if _drop_idx == 0:
 					ChatBox.push_system("[color=#ffd700][Võ Lâm Minh Chủ][/color] Hào kiệt đã kích sát thành công [Hoàng Kim] %s!" % str(data.get("name", "Boss")))
@@ -1426,6 +1470,9 @@ func grant_rewards(with_drops := true) -> void:
 				drops = DropTable.roll_blue_boss(level, int(_build.element), luck) if blue_boss else DropTable.roll(level, int(_build.element), luck)
 			if not drops.is_empty():
 				GroundDrop.spawn_drops(get_parent(), position, drops)
+	if is_survivor_monster or is_survivor_boss or GameManager.field_map.get("survivor_mode", false):
+		SurvivorDropManager.spawn_gem_for_enemy(self)
+		SurvivorManager.add_kill(200 if (is_survivor_boss or gold_boss) else 10)
 	if net_eid != 0:
 		return   ## online: kinh nghiệm do game server tính và báo (S_PROGRESS)
 	KillRewards.on_monster_killed(self)

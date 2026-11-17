@@ -43,7 +43,7 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
-	NetProto.C_SHOP_BUY, NetProto.C_CRAFT]
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU]
 
 class Conn:
 	var key := ""
@@ -71,6 +71,14 @@ class Conn:
 	var last_pvp_from := 0
 	var last_pvp_at := -100.0
 	var cast_window := 0.0
+	## Nhịp ra chiêu theo gốc (_cast_allowed): mốc được ra chiêu đánh tiếp, mốc hết hồi chiêu riêng từng skill (vltk id -> giây),
+	## tốc độ đánh / xuất chiêu của nhân vật (attackspeed_v / castspeed_v, cập nhật cùng max_hit), số gói ra chiêu bị bác.
+	var next_action_at := 0.0
+	var skill_ready_at: Dictionary = {}
+	var attack_speed := 0
+	var cast_speed := 0
+	var cast_rejects := 0
+	var cast_reject_logged_at := -100.0
 	var damage_window := 0.0
 	## Bản dữ liệu nhân vật của SERVER (PlayerProfile.to_dict) — nguồn sự thật về cấp / kinh nghiệm khi online.
 	var data: Dictionary = {}
@@ -190,6 +198,7 @@ var _drain_next_notice := 0.0
 var _shutting_down := false
 
 func _ready() -> void:
+	DaTauManager.server_mode = true
 	Engine.max_fps = 120
 	build_info = load_build_info()
 	_started_unix = int(Time.get_unix_time_from_system())
@@ -206,7 +215,7 @@ func _ready() -> void:
 	test_mode = _env("GAME_TEST_MODE", "0") == "1"
 	if test_mode:
 		push_warning("GAME_TEST_MODE=1: mỗi quái chết rớt thêm tiền (chỉ dùng khi kiểm thử)")
-	dev_trust_client = _env("GAME_DEV_TRUST_CLIENT", "1") == "1"
+	dev_trust_client = _env("GAME_DEV_TRUST_CLIENT", "0") == "1"   ## mặc định TẮT: thiếu biến = máy thật, mọi dữ liệu phải qua ProfileGuard
 	if dev_trust_client:
 		push_warning("GAME_DEV_TRUST_CLIENT=1: nhận nguyên hồ sơ game gửi (chỉ dùng khi phát triển, KHÔNG bật trên máy chủ thật)")
 	add_child(account)
@@ -370,6 +379,12 @@ func _simulate(_dt: float) -> void:
 	for c: Conn in _conns.values():
 		if c.state == ConnState.WAIT_HELLO and _now - c.since > HELLO_TIMEOUT:
 			_kick(c, "timeout", "Hết thời gian chờ vào game")
+		elif c.state == ConnState.IN_WORLD and not c.hub and c.profile != null and not c.profile.active_states.is_empty():
+			var had := c.profile.active_states.size()
+			c.profile.tick_active_states(_dt)
+			if c.profile.active_states.size() != had:
+				c.data["active_states"] = c.profile.active_states.duplicate(true)
+				c.dirty = true
 	## Quái chỉ "thức" trong 3x3 ô quanh người chơi = đúng vùng người đó NHÌN THẤY. Quái xa hơn 1 ô (>= 1024 px) không ai thấy và cũng
 	## không phát hiện được ai (tầm nhìn quái ~400) — cho ngủ để khỏi tốn CPU / băng thông đi tuần vô ích.
 	var awake := {}
@@ -619,6 +634,7 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 				var r := PotionShop.buy(c.profile, mid, b.get_u8() if b.get_available_bytes() >= 1 else 1)
 				if r["ok"]:
 					profile_changed(c)
+					_save(c)
 				notice(c, str(r["message"]))
 		NetProto.C_CRAFT:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
@@ -634,7 +650,11 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 						_str_list(a.get("alt", []), Compound.MAX_ALT))
 					if r["ok"]:
 						profile_changed(c)
+						_save(c)
 					notice(c, str(r["message"]))
+		NetProto.C_DA_TAU:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
+				_on_da_tau(c, NetProto.get_str(b, 4096))
 		NetProto.C_BATTLE:
 			if battle and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				battle.on_battle(c, b)
@@ -746,6 +766,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	_last_status_poll = -INF   ## hỏi ngay quà chờ (nạp thẻ trên web) cho nhân vật vừa vào
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.max_speed = ProfileGuard.max_speed(c.profile)
+	ProfileGuard.refresh_cast_speed(c)
 	var e := ServerEntity.new()
 	e.eid = _next_eid
 	_next_eid += 1
@@ -919,6 +940,8 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 	var skill_id := b.get_u16()
 	var level := clampi(b.get_u8(), 1, 63)
 	var cast_flags := b.get_u8() & NetProto.CAST_SUPPORT
+	if not _cast_allowed(c, skill_id, level, cast_flags != 0):
+		return
 	var target_eid := b.get_u32()
 	var aim := NetProto.get_state_pos(b)
 	if aim.distance_to(c.entity.pos) > NetProto.AOI_CELL * 1.5:
@@ -936,6 +959,38 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 				var vc: Conn = _players_by_eid.get(v.eid)
 				if vc and vc != c and vc.known.has(c.entity.eid):
 					_send(vc, out)
+
+## NHỊP RA CHIÊU như VLTK gốc (SectSkillController): chiêu đánh phải chờ hết động tác chiêu trước (18 frame ngoại công / 20 frame
+## nội công theo tốc độ đánh), skill có hồi chiêu riêng (TimePerCast / skill_mintimepercast_v) phải chờ hết hồi. Gói đến sớm bị
+## bác -> người xung quanh không thấy chiêu. Chừa CAST_SLACK giây cho trễ mạng / gói dồn và chỉ đòi CAST_RATE_TOLERANCE nhịp
+## (buff tạm tăng tốc đánh server chưa biết). Mốc sau tính từ mốc trước nên gói dồn không làm tăng nhịp trung bình.
+## Sát thương lên quái (C_DAMAGE) không gắn với chiêu nào (độc, phản đòn, hào quang cũng gửi) nên vẫn chỉ giới hạn trần 1 đòn + số gói/giây.
+const CAST_SLACK := 0.25
+const CAST_RATE_TOLERANCE := 0.8
+const CAST_REJECT_LOG_SECONDS := 30.0
+
+func _cast_allowed(c: Conn, skill_id: int, level: int, support: bool) -> bool:
+	var skill: SkillDefinition = ProfileGuard.skill_by_vltk_id(c.profile, skill_id) if c.profile else null
+	var cooldown := skill.get_cooldown_at_level(level) if skill else 0.0
+	var ok := true
+	if cooldown > 0.0 and _now + CAST_SLACK < float(c.skill_ready_at.get(skill_id, 0.0)):
+		ok = false
+	## Buff / bùa / hào quang chạy nền ở game (không khoá động tác) -> chỉ xét hồi chiêu riêng.
+	if not support and _now + CAST_SLACK < c.next_action_at:
+		ok = false
+	if not ok:
+		c.cast_rejects += 1
+		if _now - c.cast_reject_logged_at >= CAST_REJECT_LOG_SECONDS:
+			c.cast_reject_logged_at = _now
+			push_warning("Nhân vật %d ra chiêu nhanh hơn nhịp gốc (skill %d) — đã bác %d gói" % [c.character_id, skill_id, c.cast_rejects])
+		return false
+	if cooldown > 0.0:
+		c.skill_ready_at[skill_id] = _now + cooldown * CAST_RATE_TOLERANCE
+	if not support:
+		var physical := skill.is_physical() if skill else true   ## skill lạ: dùng nhịp ngắn nhất (18 frame)
+		var action := SectSkillController.action_seconds_at_speed(physical, c.attack_speed if physical else c.cast_speed)
+		c.next_action_at = maxf(c.next_action_at, _now) + action * CAST_RATE_TOLERANCE
+	return true
 
 func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
@@ -1026,7 +1081,11 @@ func _on_monster_killed(m: ServerMonster) -> void:
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	if c.profile == null:
 		return
-	_give_exp(c, ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share))
+	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
+	var exp_p := c.profile.get_active_exp_enhance_p()
+	if exp_p > 0:
+		got = int(round(got * (1.0 + float(exp_p) / 100.0)))
+	_give_exp(c, got)
 
 func _give_exp(c: Conn, got: int) -> void:
 	if got <= 0 or c.profile == null or c.profile.level >= PlayerProfile.MAX_LEVEL:
@@ -1046,6 +1105,7 @@ func _give_exp(c: Conn, got: int) -> void:
 		c.entity.touch()
 		c.max_hit = ProfileGuard.max_hit(c.profile)
 		c.max_speed = ProfileGuard.max_speed(c.profile)
+		ProfileGuard.refresh_cast_speed(c)
 		refresh_camp(c)
 	var b := NetProto.writer(NetProto.S_PROGRESS)
 	b.put_u32(got)
@@ -1103,6 +1163,7 @@ func _apply_profile(c: Conn, client: Dictionary, ack: int) -> void:
 	c.profile = p
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.max_speed = ProfileGuard.max_speed(c.profile)
+	ProfileGuard.refresh_cast_speed(c)
 	c.dirty = true
 	if c.entity:
 		var new_look := look_from_profile(c.data)
@@ -1132,6 +1193,47 @@ func notice(c: Conn, text: String) -> void:
 	var b := NetProto.writer(NetProto.S_NOTICE)
 	NetProto.put_str(b, text)
 	_send(c, b)
+
+## Dã Tẩu: trao thưởng nhiệm vụ / mốc tích lũy trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
+func _on_da_tau(c: Conn, raw: String) -> void:
+	if c.profile == null:
+		return
+	if not c.pending_profile.is_empty():
+		_apply_profile(c, c.pending_profile, c.pending_ack)
+	var a = JSON.parse_string(raw)
+	if not (a is Dictionary):
+		return
+	var d := a as Dictionary
+	var op := str(d.get("op", ""))
+	match op:
+		"claim_option":
+			var idx := int(d.get("idx", -1))
+			if not DaTauManager.check_quest_complete(c.profile):
+				notice(c, "Nhiệm vụ Dã Tẩu chưa hoàn thành.")
+				return
+			DaTauManager.validate_pending_options(c.profile)
+			var res := DaTauManager.claim_reward_option(c.profile, idx)
+			if str(res.get("error", "")) == "inventory_full":
+				notice(c, "⚠️ Hành trang không đủ chỗ trống! Hãy dọn bớt ô trống rồi chọn thưởng lại.")
+				return
+			if res.get("ok", false):
+				profile_changed(c)
+				_save(c)
+				notice(c, DaTauManager.format_reward_option_notice(res))
+			else:
+				notice(c, "Không thể nhận phần thưởng Dã Tẩu.")
+		"claim_milestone":
+			var idx := int(d.get("idx", -1))
+			var res := DaTauManager.claim_milestone(c.profile, idx)
+			if str(res.get("error", "")) == "inventory_full":
+				notice(c, "⚠️ Hành trang không đủ chỗ trống! Hãy dọn bớt ô trống rồi bấm Nhận Thưởng lại.")
+				return
+			if res.get("ok", false):
+				profile_changed(c)
+				_save(c)
+				notice(c, DaTauManager.format_milestone_notice(res))
+			else:
+				notice(c, "Không thể nhận thưởng mốc Dã Tẩu.")
 
 # ---------------------------------------------------------------- đồ rơi
 
@@ -1211,13 +1313,19 @@ func _on_pickup(c: Conn, id: int) -> void:
 		b.put_u32(int(d.amount))
 	else:
 		var item := ItemInstance.from_dict(d.item)
-		if not c.profile.add_item(item):
-			c.grant_seq -= 1
-			notice(c, "Hành trang đã đầy")
-			return
-		c.grants.append({"seq": c.grant_seq, "amount": 0, "item": item.to_dict()})
-		b.put_u8(1)
-		NetProto.put_str(b, JSON.stringify(item.to_dict()))
+		if item.misc_id in ["6_1_206", "6_1_213"]:
+			var cur_map_id := field.map_id_of_room(c.entity.room_id) if field else -1
+			DaTauManager.try_collect_picked_scroll(c.profile, item.misc_id, cur_map_id)
+			b.put_u8(1)
+			NetProto.put_str(b, JSON.stringify(item.to_dict()))
+		else:
+			if not c.profile.add_item(item):
+				c.grant_seq -= 1
+				notice(c, "Hành trang đã đầy")
+				return
+			c.grants.append({"seq": c.grant_seq, "amount": 0, "item": item.to_dict()})
+			b.put_u8(1)
+			NetProto.put_str(b, JSON.stringify(item.to_dict()))
 	c.data = c.profile.to_dict()
 	c.dirty = true
 	_send(c, b)
@@ -1257,6 +1365,18 @@ func refresh_camp(c: Conn) -> void:
 	b.put_u8(c.entity.nation)
 	send_to_viewers(c, b)
 
+func _guild_packet(e: ServerEntity) -> StreamPeerBuffer:
+	var b := NetProto.writer(NetProto.S_PLAYER_GUILD)
+	b.put_u32(e.eid)
+	NetProto.put_str(b, e.guild_name)
+	b.put_u16(e.guild_emblem)
+	return b
+
+func send_player_guild(c: Conn) -> void:
+	if c == null or c.entity == null:
+		return
+	send_to_viewers(c, _guild_packet(c.entity))
+
 ## Gửi gói cho chính `c` + mọi người đang thấy `c` (dùng cho thông tin chỉ nằm trong gói xuất hiện: phe, biển quầy...).
 func send_to_viewers(c: Conn, b: StreamPeerBuffer) -> void:
 	_send(c, b)
@@ -1270,6 +1390,7 @@ func profile_changed(c: Conn) -> void:
 	c.dirty = true
 	c.max_hit = ProfileGuard.max_hit(c.profile)
 	c.max_speed = ProfileGuard.max_speed(c.profile)
+	ProfileGuard.refresh_cast_speed(c)
 	if c.entity:
 		var new_look := look_from_profile(c.data)
 		if new_look != c.entity.look:
@@ -1629,6 +1750,7 @@ func _send_snapshots() -> void:
 		var spawns := NetProto.writer(NetProto.S_SPAWNS)
 		spawns.put_u16(0)
 		var n_spawn := 0
+		var spawned_guilds: Array[ServerEntity] = []
 		var gone: Array[int] = []
 		if center != c.view_cell:
 			c.view_cell = center
@@ -1639,6 +1761,8 @@ func _send_snapshots() -> void:
 							known[e.eid] = 0
 							e.write_spawn(spawns)
 							n_spawn += 1
+							if e.kind == NetProto.KIND_PLAYER and e.guild_name != "":
+								spawned_guilds.append(e)
 			for eid: int in known:
 				if not _in_view(c, eid, center):
 					gone.append(eid)
@@ -1651,6 +1775,8 @@ func _send_snapshots() -> void:
 							known[e.eid] = 0
 							e.write_spawn(spawns)
 							n_spawn += 1
+							if e.kind == NetProto.KIND_PLAYER and e.guild_name != "":
+								spawned_guilds.append(e)
 					for eid: int in aoi.left_from(cell):
 						if known.has(eid) and not _in_view(c, eid, center):
 							gone.append(eid)
@@ -1665,6 +1791,8 @@ func _send_snapshots() -> void:
 			spawns.seek(1)
 			spawns.put_u16(n_spawn)
 			_send(c, spawns)
+		for ge: ServerEntity in spawned_guilds:
+			_send(c, _guild_packet(ge))
 		var states := NetProto.writer(NetProto.S_STATE)
 		states.put_u32(now_ms)
 		states.put_u16(0)   ## số mục — ghi lại sau

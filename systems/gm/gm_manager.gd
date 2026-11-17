@@ -113,6 +113,10 @@ func _ready() -> void:
 func is_gm() -> bool:
 	return AccountApi.is_gm()
 
+## Kiểm tra tài khoản có quyền hạn GM gốc không (kể cả khi đang tạm tắt chế độ GM)
+func has_gm_permission() -> bool:
+	return AccountApi.has_gm_permission()
+
 ## Ghi nhận thao tác GM vào Audit Log
 func log_action(action: String, target: String, detail: String = "") -> void:
 	var entry := {
@@ -201,7 +205,7 @@ func set_player_aura(target_data: Dictionary, state_id: int) -> bool:
 	var aura_info := AuraDatabase.get_by_state(state_id)
 	var aura_name: String = str(aura_info.get("name", "State #%d" % state_id)) if state_id > 0 else "Không Có"
 	var target_name: String = str(target_data.get("name", "Người chơi"))
-	var is_self: bool = bool(target_data.get("is_self", false))
+	var is_self: bool = target_data.get("is_self", false) == true
 
 	# 1. Nếu là bản thân hoặc profile cục bộ
 	if is_self or (target_data.get("profile") != null and target_data.get("profile") == GameManager.local_profile):
@@ -484,6 +488,60 @@ func set_player_level(target_profile: PlayerProfile, target_level: int) -> void:
 		player.refresh_combat_stats()
 	log_action("SET_LEVEL", target_profile.display_name, "Cấp cũ: %d -> Cấp mới: %d" % [old_lv, target_level])
 	profile_modified.emit(target_profile)
+
+## Đặt cấp tài lãnh đạo trực tiếp (0 - 100)
+func set_player_lead_level(target_profile: PlayerProfile, target_lead_level: int) -> void:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return
+	var old_lead := target_profile.lead_level
+	var max_lead := SocialRules.max_lead_level()
+	if max_lead <= 0:
+		max_lead = 100
+	target_profile.lead_level = clampi(target_lead_level, 0, max_lead)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("SET_LEAD_LEVEL", target_profile.display_name, "Cấp lãnh đạo cũ: %d -> Cấp mới: %d" % [old_lead, target_profile.lead_level])
+	profile_modified.emit(target_profile)
+
+## Tăng/giảm số cấp tài lãnh đạo
+func add_player_lead_level(target_profile: PlayerProfile, delta: int) -> void:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null or delta == 0:
+		return
+	var old_lead := target_profile.lead_level
+	var max_lead := SocialRules.max_lead_level()
+	if max_lead <= 0:
+		max_lead = 100
+	target_profile.lead_level = clampi(target_profile.lead_level + delta, 0, max_lead)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("ADD_LEAD_LEVEL", target_profile.display_name, "Cộng %+d cấp lãnh đạo (Trước: %d, Sau: %d)" % [delta, old_lead, target_profile.lead_level])
+	profile_modified.emit(target_profile)
+
+## Tăng điểm kinh nghiệm tài lãnh đạo (tự động thăng cấp theo bảng KPlayer::AddLeadExp)
+func add_player_lead_exp(target_profile: PlayerProfile, exp_amount: int) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null or exp_amount <= 0:
+		return 0
+	var old_lead := target_profile.lead_level
+	var gained := ExpRules.add_lead_exp(target_profile, exp_amount)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("ADD_LEAD_EXP", target_profile.display_name, "Cộng %+d kinh nghiệm lãnh đạo (Lên %d cấp, Cấp hiện tại: %d, Exp: %d)" % [
+		exp_amount, gained, target_profile.lead_level, target_profile.lead_exp
+	])
+	profile_modified.emit(target_profile)
+	return gained
 
 # ==============================================================================
 # 2. QUẢN TRỊ NGƯỜI CHƠI & TÌM KIẾM
@@ -1040,7 +1098,7 @@ func find_bosses() -> Array[Dictionary]:
 
 	for node in tree.get_nodes_in_group("monsters"):
 		if node is VltkMonster:
-			var is_b: bool = node.gold_boss or node.small_gold_boss or bool(node.data.get("is_boss", false))
+			var is_b: bool = node.gold_boss or node.small_gold_boss or (node.data.get("is_boss", false) == true)
 			if is_b:
 				var b_pos: Vector2 = node.global_position
 				result.append({

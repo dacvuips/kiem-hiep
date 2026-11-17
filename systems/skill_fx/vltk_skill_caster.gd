@@ -68,26 +68,44 @@ static func _cast_missiles(ctx: VltkCastContext, s: Dictionary, des: Vector2, ta
 	var dir := maxi(0, VltkMath.dir_between(src, des))
 	var child_kind := int(VltkSkillData.missile_for(s).get("move_kind", -1))
 	var single := int(s["child_num"]) == 1
+	var res_count := 0
 	match form:
 		Form.WALL:
 			var wdir := wrapi(dir + VltkMath.MAX_DIR / 4, 0, VltkMath.MAX_DIR)
 			var at := des if int(s["param1"]) == 0 or int(s["param2"]) == 0 else src
-			return _wall(ctx, s, wdir, at, target, wait, null)
+			res_count = _wall(ctx, s, wdir, at, target, wait, null)
 		Form.LINE:
 			if single and child_kind in [VltkMissile.MoveKind.LINE, VltkMissile.MoveKind.PARABOLA]:
-				return _extractive_line(ctx, s, dir, src, des, target, wait)
-			return _line(ctx, s, dir, src, target, wait, null)
+				res_count = _extractive_line(ctx, s, dir, src, des, target, wait)
+			else:
+				res_count = _line(ctx, s, dir, src, target, wait, null)
 		Form.SPREAD:
 			if single and child_kind == VltkMissile.MoveKind.LINE:
-				return _extractive_line(ctx, s, dir, src, des, target, wait)
-			return _spread(ctx, s, dir, src, target, wait, null)
+				res_count = _extractive_line(ctx, s, dir, src, des, target, wait)
+			else:
+				res_count = _spread(ctx, s, dir, src, target, wait, null)
 		Form.CIRCLE:
-			return _circle(ctx, s, dir, src if int(s["param1"]) == 0 else des, target, wait, null)
+			res_count = _circle(ctx, s, dir, src if int(s["param1"]) == 0 else des, target, wait, null)
 		Form.ZONE, Form.AT_FIRER:
-			return _zone(ctx, s, dir, src, target, wait, null)
+			res_count = _zone(ctx, s, dir, src, target, wait, null)
 		Form.AT_TARGET:
-			return _zone(ctx, s, dir, des, target, wait, null)
-	return 0
+			res_count = _zone(ctx, s, dir, des, target, wait, null)
+
+	# Survivor Perk: Bắn đạn ngược hướng ra sau lưng (Hồi Mã Thương)
+	if from_missile == null and ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player"):
+		_emit_rear_bullets(ctx, s, dir, src, wait)
+
+	return res_count
+
+static func _emit_rear_bullets(ctx: VltkCastContext, s: Dictionary, dir: int, src: Vector2, wait: int) -> void:
+	var rear_count := SurvivorPerks.get_rear_bullet_count()
+	if rear_count <= 0 or ctx == null:
+		return
+	var rear_dir := wrapi(dir + VltkMath.MAX_DIR / 2, 0, VltkMath.MAX_DIR)
+	for i in rear_count:
+		var step := (1 if (i % 2 == 1) else -1) * int((i + 1) / 2)
+		var sub_dir := wrapi(rear_dir + step * 2, 0, VltkMath.MAX_DIR)
+		_emit(ctx, s, 200 + i, src, sub_dir, null, wait, null)
 
 ## GetMissleGenerateTime: thời điểm xuất hiện (nhịp) của viên thứ i, tính cả WaitTime của skill.
 static func generate_time(s: Dictionary, i: int) -> int:
@@ -122,16 +140,21 @@ static func _emit(ctx: VltkCastContext, s: Dictionary, i: int, pos: Vector2, mis
 	_cast(ctx, child, pos, null, t, parent)
 	return null
 
-static func _get_extra_projectiles(_ctx: VltkCastContext) -> int:
-	## Bỏ chức năng tăng/x2 lượng đạn khi lên cấp — giữ đúng số tia đạn chuẩn theo dữ liệu kỹ năng VLTK
-	return 0
+static func _get_extra_projectiles(ctx: VltkCastContext, base_num: int = 1) -> int:
+	var extra := 0
+	if ctx != null and ctx.star_level > 1:
+		extra += base_num * (ctx.star_level - 1)
+	if ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player"):
+		extra += PlayerStats.extra_projectile_count
+	return extra
 
 static func _offset(dir: int, dist: float) -> Vector2:
 	return Vector2(VltkMath.dir_cos(dir) * dist, VltkMath.dir_sin(dir) * dist) / 1024.0
 
 ## CastWall: Param1 = khoảng cách giữa 2 đạn; Param2 != 0 thì đạn quay về hướng ban đầu (bay tới trước).
 static func _wall(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
+	var base_n := int(s["child_num"])
+	var num := base_n + _get_extra_projectiles(ctx, base_n)
 	var each := int(s["param1"])
 	var cur := -each * num / 2
 	var count := 0
@@ -144,7 +167,8 @@ static func _wall(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, t
 
 ## CastLine: Param1 = khoảng cách mỗi đạn dọc hướng bay; Param2 != 0 = xếp so le 2 bên vuông góc.
 static func _line(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
+	var base_n := int(s["child_num"])
+	var num := base_n + _get_extra_projectiles(ctx, base_n)
 	var each := int(s["param1"])
 	var count := 0
 	var side := 0
@@ -174,7 +198,7 @@ static func _extractive_line(ctx: VltkCastContext, s: Dictionary, dir: int, src:
 		_cast(ctx, VltkSkillData.skill(int(s["child"]), int(s["level"])), des, null, wait + generate_time(s, 0), null)
 		return 0
 	var total_count := 0
-	var extra := _get_extra_projectiles(ctx)
+	var extra := _get_extra_projectiles(ctx, 1)
 	var total_shots := 1 + extra
 	for i in total_shots:
 		var cur_dir := dir
@@ -198,7 +222,8 @@ static func _extractive_line(ctx: VltkCastContext, s: Dictionary, dir: int, src:
 
 ## CastCircle: num đạn chia đều 64 hướng, cách tâm Param2.
 static func _circle(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := maxi(1, int(s["child_num"]) + _get_extra_projectiles(ctx))
+	var base_n := int(s["child_num"])
+	var num := maxi(1, base_n + _get_extra_projectiles(ctx, base_n))
 	var first := int(s["param2"])
 	var per := VltkMath.MAX_DIR / num
 	var count := 0
@@ -211,7 +236,8 @@ static func _circle(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2,
 ## CastSpread: toả quạt, Param1 = góc giữa 2 đạn (đơn vị 1/64 vòng), Param2 = quãng đầu; có mục tiêu thì xoay quanh
 ## đúng vector tới mục tiêu.
 static func _spread(ctx: VltkCastContext, s: Dictionary, dir: int, ref: Vector2, target: Node2D, wait: int, parent: VltkMissile) -> int:
-	var num := int(s["child_num"]) + _get_extra_projectiles(ctx)
+	var base_n := int(s["child_num"])
+	var num := base_n + _get_extra_projectiles(ctx, base_n)
 	var first := int(s["param2"])
 	var step := int(s["param1"])
 	var radius := num / 2

@@ -8,7 +8,7 @@ class_name MarketWindow
 ##                 + danh sách người chơi quanh đây.
 ## Luật chợ: MarketBook. Online hỏi MarketServer (C_MARKET / S_MARKET), chơi một mình hỏi OfflineMarket — cùng định dạng trả lời.
 
-const ICON_GOLD := "res://assets/items/icons/tongqian.png"
+const ICON_GOLD := "res://assets/ui/bo_icon_nhan_vat/tai_nguyen/ico_vang.png"   ## Ngân Lượng (vạn lượng)
 const ICON_JADE := "res://assets/items/icons/obj_item_cardg.png"   ## Kim Nguyên Bảo
 const ELEMENT_NAMES := ["Kim", "Mộc", "Thủy", "Hỏa", "Thổ"]
 const CARD_SIZE := Vector2(0, 66)
@@ -76,8 +76,19 @@ func _init(hub: SocialHub = null) -> void:
 	body.add_child(_msg)
 	NetClient.market_received.connect(_on_market)
 	NetClient.profile_received.connect(_on_profile)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_save_profile_changed)
 	_hub.notice.connect(_on_notice)
 	_show_tab(Tab.MARKET)
+
+func on_presented() -> void:
+	_after_profile()
+
+func _on_save_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_after_profile()
 
 func _exit_tree() -> void:
 	if NetClient.market_received.is_connected(_on_market):
@@ -207,7 +218,7 @@ func _build_market() -> Control:
 		levels.append("%s %d" % [tr("Cấp"), i])
 	_f_level = _option(row1, "Cấp", levels)
 	_f_attrib = _option(row1, "Thuộc Tính", [tr("Toàn bộ")] + MarketBook.attrib_options().keys().map(func(a: String) -> String: return tr(a)))
-	_f_cur = _option(row1, "Tiền", [tr("Toàn bộ"), tr("Lượng"), tr("KNB")])
+	_f_cur = _option(row1, "Tiền", [tr("Toàn bộ"), tr("Ngân Lượng"), "KNB"])
 
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 6)
@@ -569,8 +580,8 @@ func _on_bag_item(item: ItemInstance) -> void:
 	var cur := [MarketBook.CUR_GOLD]
 	var cur_row := HBoxContainer.new()
 	cur_row.add_theme_constant_override("separation", 8)
-	var gold_b := GameUi.button("Lượng", GameUi.TAB)
-	var jade_b := GameUi.button("KNB", GameUi.TAB)
+	var gold_b := GameUi.button(tr("Ngân Lượng"), GameUi.TAB)
+	var jade_b := GameUi.button("Kim Nguyên Bảo (KNB)", GameUi.TAB)
 	for b in [gold_b, jade_b]:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cur_row.add_child(b)
@@ -611,7 +622,7 @@ func _on_bag_item(item: ItemInstance) -> void:
 			v = max_val
 			edit.text = str(max_val)
 			edit.caret_column = edit.text.length()
-		preview.text = MarketBook.price_text(v, cur[0]) if v > 0 else ("Nhập số lượng (tối đa 2 tỷ)" if cur[0] == MarketBook.CUR_GOLD else "Nhập số KNB (tối đa 10 triệu)")
+		preview.text = MarketBook.price_text(v, cur[0]) if v > 0 else ("Nhập số ngân lượng (tối đa 2 tỷ)" if cur[0] == MarketBook.CUR_GOLD else "Nhập số KNB (tối đa 10 triệu)")
 		var fee := MarketBook.listing_fee(v, cur[0])
 		var total_avail: int = _profile.gold + _profile.storage_gold
 		if v > 0:

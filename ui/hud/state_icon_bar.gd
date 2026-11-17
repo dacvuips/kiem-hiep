@@ -3,10 +3,13 @@ class_name StateIconBar
 ## Hàng biểu tượng buff/bùa/hào quang của NGƯỜI CHƠI, đặt ngay dưới thanh máu/nội lực góc trên trái (PlayerStatusHud).
 ## Tự ẩn khi không có gì. Hiển thị thời gian đếm ngược kết thúc cho bùa và buff có thời hạn.
 
-const ICON_SIZE := 26.0
-const GAP := 4.0
+const ICON_SIZE := 28.0
+const GAP := 6.0
 const COLOR_TEXT_DEBUFF := Color(1.0, 0.45, 0.45)
 const COLOR_TEXT_BUFF := Color(1.0, 0.88, 0.3)
+const COLOR_BG := Color(0.06, 0.08, 0.06, 0.85)
+const COLOR_BORDER_BUFF := Color(0.83, 0.68, 0.21, 0.92)
+const COLOR_BORDER_DEBUFF := Color(0.9, 0.3, 0.3, 0.92)
 
 var _player: Node
 var _controller: StatusEffectController
@@ -14,13 +17,19 @@ var _controller: StatusEffectController
 func setup(player: Node) -> void:
 	_player = player
 	_controller = player.get_node_or_null("StatusEffectController")
-	custom_minimum_size = Vector2(0, ICON_SIZE + 16.0)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	custom_minimum_size = Vector2(0, ICON_SIZE + 18.0)
 	visible = false
 
 func _process(_delta: float) -> void:
 	if _player == null or not is_instance_valid(_player):
 		return
-	var has_any := not _entries().is_empty()
+	var list := _entries()
+	var has_any := not list.is_empty()
+	if has_any:
+		var need_w := list.size() * (ICON_SIZE + GAP)
+		if absf(custom_minimum_size.x - need_w) > 0.5:
+			custom_minimum_size = Vector2(need_w, ICON_SIZE + 18.0)
 	if visible != has_any:
 		visible = has_any
 	if has_any:
@@ -45,7 +54,7 @@ func _entries() -> Array:
 			out.append({
 				"icon": meta.get("icon"),
 				"name": str(meta.get("name", "?")),
-				"debuff": bool(meta.get("is_debuff", false)),
+				"debuff": meta.get("is_debuff", false) == true,
 				"ratio": clampf(time_left / maxf(duration, 0.001), 0.0, 1.0),
 				"time": time_left,
 			})
@@ -56,13 +65,17 @@ func _draw() -> void:
 	for e in _entries():
 		var rect := Rect2(x, 1.0, ICON_SIZE, ICON_SIZE)
 		var is_aura: bool = e["ratio"] < 0.0
+		var is_debuff: bool = e.get("debuff", false) == true
+		var border := COLOR_BORDER_DEBUFF if is_debuff else COLOR_BORDER_BUFF
+		draw_rect(rect, COLOR_BG, true)
 		var icon: Texture2D = e["icon"]
 		if icon:
-			draw_texture_rect(icon, rect, false)
+			var pad := 2.0
+			draw_texture_rect(icon, Rect2(rect.position + Vector2(pad, pad), rect.size - Vector2(pad * 2.0, pad * 2.0)), false)
 		else:
-			draw_rect(rect, Color(0.18, 0.16, 0.14, 0.85))
-			draw_string(ThemeDB.fallback_font, rect.position + Vector2(7, 18), str(e["name"]).substr(0, 1).to_upper(),
+			draw_string(ThemeDB.fallback_font, rect.position + Vector2(8, 19), str(e["name"]).substr(0, 1).to_upper(),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+		draw_rect(rect, border, false, 1.2)
 
 		# Thời gian kết thúc cho bùa / buff có thời hạn
 		var time_left: float = float(e.get("time", -1.0))
@@ -71,9 +84,9 @@ func _draw() -> void:
 			if time_text != "":
 				var font: Font = ThemeDB.fallback_font
 				var font_size := 11
-				var text_pos := Vector2(rect.position.x - 2.0, rect.position.y + ICON_SIZE + 11.0)
-				var text_w := ICON_SIZE + 4.0
-				var text_color: Color = COLOR_TEXT_DEBUFF if e.get("debuff", false) else COLOR_TEXT_BUFF
+				var text_pos := Vector2(rect.position.x - 3.0, rect.position.y + ICON_SIZE + 12.0)
+				var text_w := ICON_SIZE + 6.0
+				var text_color: Color = COLOR_TEXT_DEBUFF if is_debuff else COLOR_TEXT_BUFF
 				draw_string_outline(font, text_pos, time_text, HORIZONTAL_ALIGNMENT_CENTER, text_w, font_size, 3, Color.BLACK)
 				draw_string(font, text_pos, time_text, HORIZONTAL_ALIGNMENT_CENTER, text_w, font_size, text_color)
 
@@ -83,7 +96,9 @@ static func _format_time(time_left: float) -> String:
 	if time_left <= 0.0:
 		return ""
 	if time_left >= 3600.0:
-		return "%dh" % ceili(time_left / 3600.0)
+		var h := int(time_left) / 3600
+		var m := (int(time_left) % 3600) / 60
+		return "%dh%02d" % [h, m] if m > 0 else "%dh" % h
 	if time_left >= 60.0:
 		var m := int(time_left) / 60
 		var s := int(time_left) % 60

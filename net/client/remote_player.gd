@@ -5,6 +5,7 @@ class_name RemotePlayer
 ## Gốc node = THÂN (giống Player: chân = gốc + FEET_OFFSET) để sắp độ sâu cùng nhà/cây như Player.
 
 const CharacterAura = preload("res://systems/effects/character_aura.gd")
+const GuildTag = preload("res://ui/guild_tag.gd")
 
 const INTERP_DELAY_MS := 140.0
 const FEET_OFFSET := 30.0
@@ -22,6 +23,9 @@ var status_controller: StatusEffectController
 var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
 var _label: Label
+var _guild_tag: GuildTag
+var guild_name := ""
+var guild_emblem := 0
 var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo giờ server
 var _action := ""
 var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở giao dịch...)
@@ -63,17 +67,25 @@ func setup(info: Dictionary) -> void:
 	add_child(aura)
 	_label = Label.new()
 	_label.text = Nation.decorate_name(display_name, nation)
+	var f := GameUi.game_font_bold() if GameUi else null
+	if f != null:
+		_label.add_theme_font_override("font", f)
 	_label.add_theme_font_size_override("font_size", 13)
 	_label.add_theme_color_override("font_color", _camp_color())
-	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
 	_label.add_theme_constant_override("outline_size", 4)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.size = Vector2(160, 18)
-	_label.position = Vector2(-80, -66)
+	_label.size = Vector2(240, 20)
+	_label.position = Vector2(-120, -66)
+	_label.z_index = 12
 	add_child(_label)
+	_guild_tag = GuildTag.new()
+	add_child(_guild_tag)
 	_sign = StallSign.new()
+	_sign.z_index = 12
 	_sign.clicked.connect(_on_sign_clicked)
 	add_child(_sign)
+	set_guild(str(info.get("guild_name", "")), int(info.get("guild_emblem", 0)))
 	set_look(info.look)
 	set_stall_title(str(info.get("stall_title", "")))
 	position = info.pos - Vector2(0, FEET_OFFSET)
@@ -97,6 +109,8 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		mods: CombatFormulas.HitModifiers = null) -> void:
 	if not pk_enemy or is_dead():
 		return
+	if PubgManager.is_active and int(get("pubg_squad_id")) == 1:
+		return # Đồng đội trong cùng squad PUBG không thể gây sát thương cho nhau
 	var est_dmg := (min_damage + max_damage) / 2
 	_accumulate_damage(float(est_dmg))
 	if avatar and _action != "attack" and _action != "die":
@@ -133,10 +147,19 @@ func _camp_color() -> Color:
 func chat_anchor_y() -> float:
 	return _label.position.y if _label else -66.0
 
-## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc.
+## ChatBubble đang hiện lời nói thay chỗ tên -> ẩn nhãn tên gốc (và dòng bang hội để tránh đè chữ).
 func set_name_label_visible(on: bool) -> void:
 	if _label:
 		_label.visible = on
+	if _guild_tag:
+		_guild_tag.set_suppressed(not on)
+
+func set_guild(gname: String, emblem_id: int = 0) -> void:
+	guild_name = gname.strip_edges()
+	guild_emblem = emblem_id
+	if _guild_tag:
+		_guild_tag.set_guild(guild_name, guild_emblem)
+	_refresh_nameplate()
 
 ## Đổi màu tên và tiền tố phe (VD đấu trường Thách Đấu / Lộn Xộn: [Phe Xanh], [Phe Đỏ]).
 func set_name_color(col: Color, prefix: String = "") -> void:
@@ -199,8 +222,8 @@ func _refresh_nameplate() -> void:
 		if d_title == "":
 			d_title = "Dịch Dung"
 		_label.text = "🎭 [%s]\n%s" % [d_title, base_name]
-		_label.size = Vector2(200, 32)
-		_label.position.x = -100
+		_label.size = Vector2(240, 36)
+		_label.position.x = -120
 		if pk_enemy:
 			_label.add_theme_color_override("font_color", PK_ENEMY_COLOR)
 		else:
@@ -208,14 +231,17 @@ func _refresh_nameplate() -> void:
 			_label.add_theme_color_override("font_color", m_color)
 	else:
 		_label.text = base_name
-		_label.size = Vector2(160, 18)
-		_label.position.x = -80
+		_label.size = Vector2(240, 20)
+		_label.position.x = -120
 		refresh_name_color()
 
 	var base_y := -90.0 if int(_look.get("horse", -1)) >= 0 else -66.0
-	_label.position.y = base_y - (_label.size.y - 18.0)
+	_label.position.y = base_y - (_label.size.y - 20.0)
+	if _guild_tag:
+		_guild_tag.place_above(_label.position.y)
 	if _sign:
-		_sign.place_above(_label.position.y)
+		var top_y := _guild_tag.top_y() if (_guild_tag and _guild_tag.has_guild()) else _label.position.y
+		_sign.place_above(top_y)
 
 func _refresh_aura_sprite(state_id: int) -> void:
 	if state_id == _aura_sprite_state and (state_id == 0 or _aura_sprite != null):

@@ -366,6 +366,17 @@ func _init() -> void:
 
 	body.add_child(bottom_row)
 	NetClient.server_notice.connect(_on_notice)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func on_presented() -> void:
+	_on_profile_changed(null)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 func _ready() -> void:
 	_switch_tab(Tab.DISTILL)
@@ -1400,7 +1411,7 @@ func _make() -> void:
 	var uids := _slots.map(func(it: ItemInstance) -> String: return it.ensure_uid())
 	var alt := _alts.map(func(it: ItemInstance) -> String: return it.ensure_uid())
 
-	if NetClient.is_in_world() and not NetClient.is_hub:
+	if NetClient.is_in_world():
 		NetClient.send_craft(op, uids, alt)
 		_slots = []
 		for s in _current_slot_defs():

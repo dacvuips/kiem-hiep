@@ -157,6 +157,10 @@ func get_display_name() -> String:
 
 ## Thường trắng, có dòng magic xanh lam (đồ xanh VLTK), hoàng kim vàng.
 func get_quality_color() -> Color:
+	if misc_id in ["6_1_206", "6_1_213", "4_351_1"]:
+		return Color(1.0, 0.85, 0.3)
+	if misc_id == "6_1_196":
+		return Color(0.55, 0.88, 1.0)
 	if misc_id == "6_1_147":
 		if item_level >= 8:
 			return Color(1.0, 0.78, 0.25)

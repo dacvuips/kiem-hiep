@@ -84,15 +84,14 @@ func _go_home() -> void:
 		player.revive_at_start()
 		queue_free()
 		return
+	var pubg_cls = load("res://systems/pubg/pubg_manager.gd")
+	if pubg_cls and pubg_cls.is_active:
+		pubg_cls.end_match(GameManager.local_profile)
 	if GameManager.local_profile != null:
-		if AccountApi.is_gm():
-			## GM: lưu toàn bộ tiến trình (cấp, đồ, kỹ năng từ TEST đều được giữ lại)
-			SaveManager.save_profile(GameManager.local_profile)
-			await SaveManager.flush_online()
-		else:
-			## Người thường: KHÔNG lưu bản chết — khôi phục hồ sơ về trạng thái trước trận
-			SaveManager.restore_profile_from_save()
-			await SaveManager.flush_online()
+		## Lưu toàn bộ đồ đạc, vật phẩm, tiền bạc đã nhặt được vào hành trang khi về thành
+		SaveManager.flush_exp_save()
+		SaveManager.save_profile(GameManager.local_profile)
+		await SaveManager.flush_online()
 	var transition: Node = get_tree().root.get_node_or_null("SceneTransition") if get_tree() != null and get_tree().root != null else null
 	if transition != null and transition.has_method("change_scene"):
 		transition.change_scene(HUB_SCENE_PATH, "Về Thành Dưỡng Sức")

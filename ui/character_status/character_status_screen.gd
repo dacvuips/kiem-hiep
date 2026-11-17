@@ -72,12 +72,17 @@ func _ready() -> void:
 
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null and gm.has_signal("profile_modified"):
-		gm.profile_modified.connect(func(p: PlayerProfile) -> void:
-			if p == null or p == _profile or p == GameManager.local_profile:
-				refresh()
-		)
+		gm.profile_modified.connect(_on_external_profile_changed)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_external_profile_changed)
 
 	refresh()
+
+func _on_external_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		refresh()
 
 ## Khối trên cùng: Tên/Xưng hiệu, Phúc duyên/Danh vọng, Đẳng cấp/Xếp hạng — giá trị màu TRẮNG/kem
 ## (COLOR_INFO) và ĐẬM, khác khối chỉ số bên dưới dùng cam/vàng (COLOR_VALUE), đúng phân cấp màu
@@ -504,6 +509,16 @@ func _style_equipment_slots() -> void:
 		slot.add_theme_color_override("font_outline_color", Color.BLACK)
 		slot.add_theme_constant_override("outline_size", 3)
 		slot.pressed.connect(_on_equip_slot_pressed.bind(part))
+		slot.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+				if _profile != null and _profile.equipment.has(part):
+					ItemDetailPopup.close_all(get_tree())
+					if _profile.unequip(part):
+						SaveManager.save_profile(_profile)
+						_refresh_equipment_slots()
+						profile_changed.emit()
+				slot.accept_event()
+		)
 		(slot as ItemSlotButton).filled_backdrop = Color(0.06, 0.05, 0.04, 0.96)
 
 ## Ô có đồ: hiện tên đồ màu theo phẩm chất + tooltip mô tả (dòng ẩn chưa kích hoạt xám); ô trống: trong.

@@ -40,10 +40,14 @@ var _action_lock: float = 0.0  ## giây còn lại của động tác đang di�
 
 ## Độ dài động tác ra chiêu (giây) như KNpc gốc: ngoại công dùng attackspeed_v, nội công dùng castspeed_v.
 static func action_seconds(physical: bool, stats: CombatantStats) -> float:
-	var base := BASE_ATTACK_FRAME if physical else BASE_CAST_FRAME
 	var speed := 0
 	if stats != null:
 		speed = stats.attack_speed if physical else stats.cast_speed
+	return action_seconds_at_speed(physical, speed)
+
+## Như action_seconds nhưng nhận thẳng tốc độ (attackspeed_v nếu ngoại công, castspeed_v nếu nội công) — server dùng số đã lưu sẵn.
+static func action_seconds_at_speed(physical: bool, speed: int) -> float:
+	var base := BASE_ATTACK_FRAME if physical else BASE_CAST_FRAME
 	var frames := base * 100 / maxi(1, speed + 100)
 	frames -= frames % 2
 	return SkillDefinition.frames_to_seconds(maxi(1, frames))

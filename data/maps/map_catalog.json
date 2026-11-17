@@ -46,8 +46,9 @@
         }
       ],
       "dir": "res://world/maps/map_20",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 53,
@@ -94,8 +95,9 @@
         }
       ],
       "dir": "res://world/maps/map_53",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 54,
@@ -124,8 +126,9 @@
         }
       ],
       "dir": "res://world/maps/map_54",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 121,
@@ -172,8 +175,9 @@
         }
       ],
       "dir": "res://world/maps/map_121",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 2,
@@ -207,8 +211,9 @@
       "folder": "res://world/maps/map_2",
       "monster_summary": "62 Heo rừng, 63 Nhím",
       "npc_count": 129,
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 11,
@@ -243,8 +248,9 @@
         }
       ],
       "dir": "res://world/maps/map_11",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 162,
@@ -279,8 +285,9 @@
         }
       ],
       "dir": "res://world/maps/map_162",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 176,
@@ -315,8 +322,9 @@
         }
       ],
       "dir": "res://world/maps/map_176",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 21,
@@ -349,8 +357,9 @@
         75472.0,
         64264.0
       ],
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 70,
@@ -379,8 +388,9 @@
         }
       ],
       "dir": "res://world/maps/map_70",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 140,
@@ -409,8 +419,9 @@
         }
       ],
       "dir": "res://world/maps/map_140",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
     },
     {
       "id": 90,
@@ -439,8 +450,9 @@
         }
       ],
       "dir": "res://world/maps/map_90",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 92,
@@ -469,8 +481,9 @@
         }
       ],
       "dir": "res://world/maps/map_92",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 41,
@@ -499,8 +512,9 @@
         }
       ],
       "dir": "res://world/maps/map_41",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 122,
@@ -529,8 +543,9 @@
         }
       ],
       "dir": "res://world/maps/map_122",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 24,
@@ -566,8 +581,9 @@
       ],
       "dir": "res://world/maps/map_24",
       "vuotai": "vuotai/huong_thuy_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 38,
@@ -603,8 +619,9 @@
       ],
       "dir": "res://world/maps/map_38",
       "vuotai": "vuotai/thiet_thap_tang_1",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 39,
@@ -646,8 +663,9 @@
       ],
       "dir": "res://world/maps/map_39",
       "vuotai": "vuotai/thiet_thap_tang_2",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 40,
@@ -689,8 +707,9 @@
       ],
       "dir": "res://world/maps/map_40",
       "vuotai": "vuotai/thiet_thap_tang_3",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 42,
@@ -738,8 +757,9 @@
       ],
       "dir": "res://world/maps/map_42",
       "vuotai": "vuotai/thien_tam_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 66,
@@ -781,8 +801,9 @@
       ],
       "dir": "res://world/maps/map_66",
       "vuotai": "vuotai/day_dong_dinh_ho_tang_1",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 116,
@@ -834,8 +855,9 @@
         50424
       ],
       "vuotai": "vuotai/tuong_van_dong_tang_1",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 132,
@@ -883,8 +905,9 @@
       ],
       "dir": "res://world/maps/map_132",
       "vuotai": "vuotai/bang_huyet_me_cung",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 182,
@@ -932,8 +955,9 @@
       ],
       "dir": "res://world/maps/map_182",
       "vuotai": "vuotai/me_cung_nghiet_long_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 194,
@@ -981,8 +1005,9 @@
       ],
       "dir": "res://world/maps/map_194",
       "vuotai": "vuotai/me_cung_ngoc_hoa_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 8,
@@ -1040,8 +1065,9 @@
         52888
       ],
       "folder": "res://world/maps/map_8",
-      "drop_diadochi_rate": 0.06,
-      "drop_matchi_rate": 0.012
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 125,
@@ -1070,8 +1096,9 @@
         }
       ],
       "dir": "res://world/maps/map_125",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 163,
@@ -1100,8 +1127,9 @@
         }
       ],
       "dir": "res://world/maps/map_163",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 79,
@@ -1143,8 +1171,9 @@
       ],
       "dir": "res://world/maps/map_79",
       "vuotai": "vuotai/mat_dao_nha_mon_tuong_duong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 114,
@@ -1186,8 +1215,9 @@
       ],
       "dir": "res://world/maps/map_114",
       "vuotai": "vuotai/108_la_han_tran",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 117,
@@ -1229,8 +1259,9 @@
       ],
       "dir": "res://world/maps/map_117",
       "vuotai": "vuotai/tuong_van_dong_tang_2",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 118,
@@ -1260,8 +1291,9 @@
       ],
       "dir": "res://world/maps/map_118",
       "vuotai": "vuotai/tuong_van_dong_tang_3",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 119,
@@ -1297,8 +1329,9 @@
       ],
       "dir": "res://world/maps/map_119",
       "vuotai": "vuotai/tuong_van_dong_tang_4",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 196,
@@ -1340,8 +1373,9 @@
       ],
       "dir": "res://world/maps/map_196",
       "vuotai": "vuotai/duong_giac_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 9,
@@ -1358,8 +1392,9 @@
         }
       ],
       "dir": "res://world/maps/map_9",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 56,
@@ -1388,8 +1423,9 @@
         }
       ],
       "dir": "res://world/maps/map_56",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 164,
@@ -1443,8 +1479,9 @@
       ],
       "dir": "res://world/maps/map_164",
       "folder": "res://world/maps/map_164",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 165,
@@ -1498,8 +1535,9 @@
       ],
       "dir": "res://world/maps/map_165",
       "folder": "res://world/maps/map_165",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 55,
@@ -1541,8 +1579,9 @@
       ],
       "dir": "res://world/maps/map_55",
       "vuotai": "vuotai/dao_hoa_nguyen",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 72,
@@ -1578,8 +1617,9 @@
       ],
       "dir": "res://world/maps/map_72",
       "vuotai": "vuotai/me_cung_dai_tu_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 76,
@@ -1615,8 +1655,9 @@
       ],
       "dir": "res://world/maps/map_76",
       "vuotai": "vuotai/son_bao_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 94,
@@ -1658,8 +1699,9 @@
       ],
       "dir": "res://world/maps/map_94",
       "vuotai": "vuotai/linh_coc_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 120,
@@ -1695,8 +1737,9 @@
       ],
       "dir": "res://world/maps/map_120",
       "vuotai": "vuotai/tuong_van_dong_tang_5",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 142,
@@ -1732,8 +1775,9 @@
       ],
       "dir": "res://world/maps/map_142",
       "vuotai": "vuotai/duoc_vuong_dong_tang_2",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 166,
@@ -1781,8 +1825,9 @@
       ],
       "dir": "res://world/maps/map_166",
       "folder": "res://world/maps/map_166",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 169,
@@ -1822,8 +1867,9 @@
         47224
       ],
       "vuotai": "vuotai/long_nhan_dong",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 123,
@@ -1852,8 +1898,9 @@
         }
       ],
       "dir": "res://world/maps/map_123",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 206,
@@ -1911,8 +1958,9 @@
         52088
       ],
       "folder": "res://world/maps/map_206",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 319,
@@ -1935,8 +1983,9 @@
         }
       ],
       "dir": "res://world/maps/map_319",
-      "drop_diadochi_rate": 0.07,
-      "drop_matchi_rate": 0.014
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 1037,
@@ -1950,8 +1999,9 @@
         99,
         100
       ],
-      "drop_diadochi_rate": 0.08,
-      "drop_matchi_rate": 0.016
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 1038,
@@ -1969,8 +2019,9 @@
         99,
         99
       ],
-      "drop_diadochi_rate": 0.08,
-      "drop_matchi_rate": 0.016
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 10,
@@ -2000,8 +2051,9 @@
       ],
       "dir": "res://world/maps/map_10",
       "vuotai": "vuotai/nhan_thach_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 143,
@@ -2041,8 +2093,9 @@
         51840
       ],
       "vuotai": "vuotai/duoc_vuong_dong_tang_3",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 181,
@@ -2088,8 +2141,9 @@
         48408
       ],
       "vuotai": "vuotai/me_cung_luong_thuy_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 198,
@@ -2135,8 +2189,9 @@
         49016
       ],
       "vuotai": "vuotai/thanh_khe_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 199,
@@ -2172,8 +2227,9 @@
       ],
       "dir": "res://world/maps/map_199",
       "vuotai": "vuotai/vu_lang_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 200,
@@ -2209,8 +2265,9 @@
       ],
       "dir": "res://world/maps/map_200",
       "vuotai": "vuotai/co_duong_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 201,
@@ -2252,8 +2309,9 @@
       ],
       "dir": "res://world/maps/map_201",
       "vuotai": "vuotai/me_cung_bang_ha_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 202,
@@ -2295,8 +2353,9 @@
       ],
       "dir": "res://world/maps/map_202",
       "vuotai": "vuotai/me_cung_phu_dung_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 203,
@@ -2338,8 +2397,9 @@
       ],
       "dir": "res://world/maps/map_203",
       "vuotai": "vuotai/vo_danh_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 204,
@@ -2381,8 +2441,9 @@
       ],
       "dir": "res://world/maps/map_204",
       "vuotai": "vuotai/phi_thien_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 205,
@@ -2424,8 +2485,9 @@
       ],
       "dir": "res://world/maps/map_205",
       "vuotai": "vuotai/me_cung_duong_trung_dong",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 207,
@@ -2473,8 +2535,9 @@
       ],
       "dir": "res://world/maps/map_207",
       "folder": "res://world/maps/map_207",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 144,
@@ -2528,8 +2591,9 @@
       ],
       "dir": "res://world/maps/map_144",
       "folder": "res://world/maps/map_144",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 224,
@@ -2558,8 +2622,9 @@
         }
       ],
       "dir": "res://world/maps/map_224",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 320,
@@ -2594,8 +2659,9 @@
         }
       ],
       "dir": "res://world/maps/map_320",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 337,
@@ -2605,8 +2671,9 @@
       "monster_count": 0,
       "monsters": [],
       "dir": "res://world/maps/map_337",
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 75,
@@ -2629,8 +2696,9 @@
         }
       ],
       "dir": "res://world/maps/map_75",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 93,
@@ -2659,8 +2727,9 @@
         }
       ],
       "dir": "res://world/maps/map_93",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 124,
@@ -2683,8 +2752,9 @@
         }
       ],
       "dir": "res://world/maps/map_124",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 225,
@@ -2713,8 +2783,9 @@
         }
       ],
       "dir": "res://world/maps/map_225",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 226,
@@ -2743,8 +2814,9 @@
         }
       ],
       "dir": "res://world/maps/map_226",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 227,
@@ -2785,8 +2857,9 @@
         }
       ],
       "dir": "res://world/maps/map_227",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 321,
@@ -2821,8 +2894,9 @@
         }
       ],
       "dir": "res://world/maps/map_321",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 322,
@@ -2857,8 +2931,9 @@
         }
       ],
       "dir": "res://world/maps/map_322",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 336,
@@ -2881,8 +2956,9 @@
         }
       ],
       "dir": "res://world/maps/map_336",
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.00175
     },
     {
       "id": 340,
@@ -2917,8 +2993,9 @@
         }
       ],
       "dir": "res://world/maps/map_340",
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 480,
@@ -2936,8 +3013,9 @@
         99,
         101
       ],
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.00175
     },
     {
       "id": 75,
@@ -2954,8 +3032,9 @@
         }
       ],
       "dir": "res://world/maps/map_75",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 93,
@@ -2972,8 +3051,9 @@
         }
       ],
       "dir": "res://world/maps/map_93",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 124,
@@ -2990,8 +3070,9 @@
         }
       ],
       "dir": "res://world/maps/map_124",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 225,
@@ -3008,8 +3089,9 @@
         }
       ],
       "dir": "res://world/maps/map_225",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 226,
@@ -3026,8 +3108,9 @@
         }
       ],
       "dir": "res://world/maps/map_226",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 227,
@@ -3044,8 +3127,9 @@
         }
       ],
       "dir": "res://world/maps/map_227",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 321,
@@ -3062,8 +3146,9 @@
         }
       ],
       "dir": "res://world/maps/map_321",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 322,
@@ -3080,8 +3165,9 @@
         }
       ],
       "dir": "res://world/maps/map_322",
-      "drop_diadochi_rate": 0.085,
-      "drop_matchi_rate": 0.017
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 336,
@@ -3098,8 +3184,9 @@
         }
       ],
       "dir": "res://world/maps/map_336",
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.00175
     },
     {
       "id": 340,
@@ -3116,8 +3203,9 @@
         }
       ],
       "dir": "res://world/maps/map_340",
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.075,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.002
     },
     {
       "id": 1041,
@@ -3191,8 +3279,9 @@
         46976
       ],
       "order": 0,
-      "drop_diadochi_rate": 0.09,
-      "drop_matchi_rate": 0.018
+      "drop_diadochi_rate": 0.03125,
+      "drop_matchi_rate": 0.0196,
+      "drop_matdo_rate": 0.00175
     },
     {
       "id": 37,
@@ -3203,8 +3292,143 @@
       "monsters": [],
       "dir": "res://world/maps/map_37",
       "folder": "res://world/maps/map_37",
-      "drop_diadochi_rate": 0.04,
-      "drop_matchi_rate": 0.008
+      "drop_diadochi_rate": 0.015625,
+      "drop_matchi_rate": 0.0476,
+      "drop_matdo_rate": 0.00606
+    },
+    {
+      "id": 44,
+      "name": "Chiến Trường Tống Kim (Đại Bản Đồ)",
+      "kind": "Battlefield",
+      "level": 90,
+      "monster_count": 20063,
+      "monsters": [
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 14,
+          "count": 64
+        },
+        {
+          "t": 903,
+          "name": "Mông Cổ Lv90",
+          "level": 97,
+          "count": 59
+        },
+        {
+          "t": 903,
+          "name": "Mông Cổ Lv90",
+          "level": 96,
+          "count": 58
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 12,
+          "count": 54
+        },
+        {
+          "t": 902,
+          "name": "Mông Cổ Lv80",
+          "level": 86,
+          "count": 52
+        },
+        {
+          "t": 901,
+          "name": "Mông Cổ Lv70",
+          "level": 75,
+          "count": 49
+        },
+        {
+          "t": 903,
+          "name": "Mông Cổ Lv90",
+          "level": 94,
+          "count": 49
+        },
+        {
+          "t": 11,
+          "name": "Heo Rừng",
+          "level": 1,
+          "count": 48
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 13,
+          "count": 48
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 15,
+          "count": 48
+        },
+        {
+          "t": 901,
+          "name": "Mông Cổ Lv70",
+          "level": 76,
+          "count": 48
+        },
+        {
+          "t": 8,
+          "name": "Sói Tuyết",
+          "level": 1,
+          "count": 47
+        },
+        {
+          "t": 901,
+          "name": "Mông Cổ Lv70",
+          "level": 78,
+          "count": 47
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 10,
+          "count": 46
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 18,
+          "count": 46
+        },
+        {
+          "t": 5,
+          "name": "Sói Xám",
+          "level": 17,
+          "count": 46
+        },
+        {
+          "t": 900,
+          "name": "Mông Cổ Lv60",
+          "level": 65,
+          "count": 46
+        },
+        {
+          "t": 6,
+          "name": "Sói Lửa",
+          "level": 35,
+          "count": 45
+        },
+        {
+          "t": 901,
+          "name": "Mông Cổ Lv70",
+          "level": 74,
+          "count": 45
+        },
+        {
+          "t": 902,
+          "name": "Mông Cổ Lv80",
+          "level": 85,
+          "count": 45
+        }
+      ],
+      "dir": "res://world/maps/map_tongkim1",
+      "folder": "res://world/maps/map_tongkim1",
+      "drop_diadochi_rate": 0.05,
+      "drop_matchi_rate": 0.02,
+      "drop_matdo_rate": 0.005
     }
   ]
 }

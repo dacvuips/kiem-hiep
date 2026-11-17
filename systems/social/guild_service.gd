@@ -1,5 +1,6 @@
 extends RefCounted
 class_name GuildService
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 ## BANG HỘI — theo KPlayerTong / KTongData / Tong_Setting.ini của VLTK gốc (xem docs/vltk_social_systems_reference.md).
 ## Dữ liệu bang nằm TRONG PlayerProfile.guild (Dictionary, lưu cùng nhân vật) vì chưa có server chung; khi online, `guild` là bản sao
 ## server gửi xuống và các hàm dưới đây chuyển thành lệnh gửi server. Mọi hàm hành động trả về "" nếu thành công, hoặc lời báo lỗi.
@@ -37,6 +38,9 @@ func data() -> Dictionary:
 
 func guild_name() -> String:
 	return str(profile.guild.get("name", ""))
+
+func emblem_id() -> int:
+	return GuildEmblem.resolve_id(profile.guild) if in_guild() else 0
 
 func _say(text: String, good := false) -> String:
 	message.emit(text, good)
@@ -146,9 +150,10 @@ func create_blockers(team: TeamService = null) -> Array[String]:
 		out.append("Bạn chưa đủ %d phúc duyên." % int(c["fuyuan"]))
 	return out
 
-func create(guild_title: String, camp: int, team: TeamService = null) -> String:
+func create(guild_title: String, camp: int, team: TeamService = null, emblem: int = 1) -> String:
+	var em := GuildEmblem.clamp_id(emblem)
 	if NetClient.is_in_world():
-		NetClient.send_guild(GuildServer.G_CREATE, {"title": guild_title, "camp": camp})
+		NetClient.send_guild(GuildServer.G_CREATE, {"title": guild_title, "camp": camp, "emblem": em})
 		return ""
 	if not GuildRules.is_valid_name(guild_title):
 		return _say("Tên bang hội không hợp lệ (1-%d ký tự)." % int(SocialRules.tong()["name_max_length"]))
@@ -163,7 +168,7 @@ func create(guild_title: String, camp: int, team: TeamService = null) -> String:
 	profile.gold -= cost
 	var now := SecurityLock.now()
 	profile.guild = {
-		"name": guild_title.strip_edges(), "camp": camp, "level": 1, "exp": 0, "fund": 0, "notice": "", "recruit": true,
+		"name": guild_title.strip_edges(), "camp": camp, "emblem": em, "level": 1, "exp": 0, "fund": 0, "notice": "", "recruit": true,
 		"accept_level": 0, "created_at": now, "members": [], "applies": [], "log": [],
 	}
 	_add_local(GuildRules.Figure.MASTER)
@@ -455,6 +460,19 @@ func rename(new_name: String) -> String:
 		m.guild_name = n
 	_log("Bang hội đổi tên từ %s thành %s." % [old, n])
 	_say("Đã đổi tên bang hội.", true)
+	changed.emit()
+	return ""
+
+func set_emblem(new_emblem: int) -> String:
+	var em := GuildEmblem.clamp_id(new_emblem)
+	if NetClient.is_in_world():
+		NetClient.send_guild(GuildServer.G_EMBLEM, {"emblem": em})
+		return ""
+	if not in_guild() or not is_master():
+		return _say("Chỉ Bang chủ mới đổi được biểu tượng bang hội.")
+	profile.guild["emblem"] = em
+	_log("Bang hội đổi biểu tượng thành %s." % GuildEmblem.emblem_name(em), "event")
+	_say("Đã đổi biểu tượng bang hội (%s)." % GuildEmblem.emblem_name(em), true)
 	changed.emit()
 	return ""
 

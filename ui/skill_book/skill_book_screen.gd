@@ -107,6 +107,14 @@ func _ready() -> void:
 	_build_wheel()
 	_refresh()
 	_select(_skills[0] if not _skills.is_empty() else null)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 ## Ô tick "Tùy chỉnh kỹ năng" <-> PlayerProfile.skill_settings (lưu ngay). Trong trận, đóng bảng thì thanh skill
 ## áp lại (chạm nhả) — xem SkillBarUI.refresh_sub_skills / Player.get_cast_target.

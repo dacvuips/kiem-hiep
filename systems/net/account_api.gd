@@ -64,11 +64,30 @@ func username() -> String:
 func get_base_url() -> String:
 	return base_url
 
-## Kiểm tra tài khoản có quyền GM (được server xác nhận trong dữ liệu tài khoản)
-func is_gm() -> bool:
+## Cờ bật/tắt kích hoạt quyền GM tạm thời (dành cho tài khoản GM muốn test như người chơi bình thường)
+var gm_mode_enabled: bool = true
+signal gm_mode_toggled(active: bool)
+
+## Kiểm tra tài khoản có quyền hạn GM gốc (dù đang tắt hay bật chế độ GM)
+func has_gm_permission() -> bool:
 	if is_logged_in():
 		return bool(account.get("is_gm", false))
 	return OS.is_debug_build()
+
+## Kiểm tra tài khoản có đang hoạt động ở chế độ GM không
+func is_gm() -> bool:
+	if not gm_mode_enabled:
+		return false
+	return has_gm_permission()
+
+## Bật/tắt chế độ GM cho tài khoản GM (trả về true nếu thành công, false nếu không có quyền)
+func toggle_gm_mode() -> bool:
+	if not has_gm_permission():
+		return false
+	gm_mode_enabled = not gm_mode_enabled
+	gm_mode_toggled.emit(gm_mode_enabled)
+	print("[AccountApi] Chế độ GM đã chuyển thành: %s" % ("BẬT" if gm_mode_enabled else "TẮT (như người chơi bình thường)"))
+	return true
 
 # ---------------------------------------------------------------- tài khoản
 

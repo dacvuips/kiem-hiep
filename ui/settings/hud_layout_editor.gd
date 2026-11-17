@@ -93,7 +93,7 @@ func _build_top_bar() -> void:
 	title_box.add_child(tip_lbl)
 	hbox.add_child(title_box)
 
-	var btn_reset := SocialUi.stone_button("↺ Mặc Định")
+	var btn_reset := SocialUi.stone_button(tr("Mặc Định"))
 	btn_reset.custom_minimum_size = Vector2(90, 32)
 	btn_reset.pressed.connect(_on_reset_all)
 	hbox.add_child(btn_reset)

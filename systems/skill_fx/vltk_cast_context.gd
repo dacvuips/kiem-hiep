@@ -13,6 +13,7 @@ var stats: ResolvedSkillStats = null
 var attacker_stats: CombatantStats = null
 ## Nhóm node bị đạn va chạm/gây sát thương (quái: "enemies").
 var target_group: StringName = &"enemies"
+var star_level: int = 1
 
 ## Cache mảng mục tiêu theo từng physics frame (Zero-Allocation GC):
 ## Tránh gọi get_nodes_in_group() hàng nghìn lần mỗi giây khi có nhiều đạn bay cùng lúc.

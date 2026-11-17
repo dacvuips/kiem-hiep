@@ -199,7 +199,7 @@ func get_host() -> Node:
 	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
 	return tree.current_scene if tree != null else null
 
-const MAJOR_HUBS: Array[StringName] = [&"pk", &"map_select", &"ranking", &"events", &"guild", &"storage", &"ky_tran_cac", &"settings", &"sect_choice", &"tien_trang", &"compound"]
+const MAJOR_HUBS: Array[StringName] = [&"pk", &"map_select", &"ranking", &"events", &"guild", &"storage", &"ky_tran_cac", &"settings", &"sect_choice", &"tien_trang", &"compound", &"pubg"]
 
 static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
@@ -207,6 +207,8 @@ static func present(host: Node, win: SocialWindow, window_kind: StringName = &""
 		for w in tree.get_nodes_in_group("social_windows"):
 			if w is SocialWindow and w.kind == window_kind and is_instance_valid(w):
 				(w as SocialWindow).bring_to_front()
+				if w.has_method("on_presented"):
+					w.call("on_presented")
 				win.queue_free()
 				return w
 		if window_kind in MAJOR_HUBS:

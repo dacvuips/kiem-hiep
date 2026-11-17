@@ -68,7 +68,7 @@ static func monster(id: int) -> Dictionary:
 
 ## Kiểm tra quái id có phải là Boss không.
 static func is_boss(id: int) -> bool:
-	return bool(monster(id).get("is_boss", false))
+	return monster(id).get("is_boss", false) == true
 
 ## Lấy phân loại Boss: "gold", "small_gold", "killer", "challenge", "songjin", "world", "general"
 static func boss_type(id: int) -> String:
@@ -127,7 +127,7 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 	if not table.is_empty():
 		d["level_table"] = table
 
-	var is_boss_monster := bool(data.get("is_boss", false)) or is_boss(id) or str(data.get("boss_type", "")) != "" or "Boss" in str(data.get("name", "")) or bool(data.get("keep_skills", false)) or (id >= 1289 and id <= 1320)
+	var is_boss_monster: bool = (data.get("is_boss", false) == true) or is_boss(id) or str(data.get("boss_type", "")) != "" or "Boss" in str(data.get("name", "")) or (data.get("keep_skills", false) == true) or (id >= 1289 and id <= 1320)
 
 	# Kiểm tra xem quái có phải quái tầm xa hay cận chiến
 	var base_skills: Array = data.get("skills", [])
@@ -162,7 +162,7 @@ static func apply_level_script(data: Dictionary, id: int, level: int) -> Diction
 			if t_lv > 0:
 				slv = t_lv
 
-		var is_pure_ranged := bool(data.get("pure_ranged", false)) or id == 635
+		var is_pure_ranged: bool = (data.get("pure_ranged", false) == true) or id == 635
 		if is_pure_ranged:
 			# Cung thủ thuần tầm xa (như Cung binh MOBA)
 			var ranged_skill: int = RANGED_SERIES_SKILLS[series]

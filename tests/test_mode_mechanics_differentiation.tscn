@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c748282a0d331"]
+
+[ext_resource type="Script" path="res://tests/test_mode_mechanics_differentiation.gd" id="1_test"]
+
+[node name="TestModeMechanicsDifferentiation" type="Node"]
+script = ExtResource("1_test")

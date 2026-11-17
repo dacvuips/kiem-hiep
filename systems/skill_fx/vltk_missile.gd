@@ -66,6 +66,11 @@ var _effects: Array = []       ## [{end: nhịp kết thúc (theo _cur_life), ta
 var _acc := 0.0
 var _anim: Dictionary = {}
 
+## Survivor Perks runtime
+var survivor_pierce_left: int = 0
+var survivor_bounce_left: int = 0
+var _hit_nodes: Array[Node] = []
+
 @onready var _sprite: Sprite2D = $Sprite
 
 ## Sinh 1 viên đạn của skill `skill_lv` tại `logic_pos` (KSkill::Cast* + CreateMissle). null nếu skill không có đạn.
@@ -106,6 +111,19 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	_acc = 0.0
 	_cur_life = 0
 	_start_life = start_life
+	_hit_nodes.clear()
+	survivor_pierce_left = 0
+	survivor_bounce_left = 0
+	scale = Vector2.ONE
+
+	if ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player"):
+		survivor_pierce_left = SurvivorPerks.get_pierce_count()
+		survivor_bounce_left = SurvivorPerks.get_bounce_count()
+		var b_scale := SurvivorPerks.get_bullet_scale()
+		if b_scale > 1.0:
+			scale = Vector2(b_scale, b_scale)
+			data["dmg_range"] = int(float(data.get("dmg_range", 1)) * b_scale)
+			data["collide_range"] = int(float(data.get("collide_range", 1)) * b_scale)
 	var range_mult := 1.0
 	if ctx != null and ctx.stats != null and ctx.stats.range_multiplier > 0.0:
 		range_mult = ctx.stats.range_multiplier
@@ -179,6 +197,9 @@ func _activate() -> bool:
 		if _prepare_fly():
 			status = Phase.FLY
 			_play_sound(Phase.FLY, logic)  ## KMissle: PlaySound(MS_DoFly) lúc bắt đầu bay
+			## Đạn đứng yên (STAND) có vùng va chạm: kiểm tra ngay khi bắt đầu bay để không bỏ lọt va chạm
+			if _move_kind == MoveKind.STAND:
+				_check_collision()
 		else:
 			_do_vanish()
 			return false
@@ -369,6 +390,8 @@ func _process_collision_at(center: Vector2, dmg_range: int) -> int:
 	for h in hits:
 		var target: Node2D = h[2]
 		count += 1
+		if not _hit_nodes.has(target):
+			_hit_nodes.append(target)
 		var follow := target if int(data.get("col_follow", 0)) else null
 		_spawn_effect(Phase.COLLISION, VltkMath.logic_of(target), follow, target)
 		ctx.deal_damage(target, skill)
@@ -382,6 +405,31 @@ func _do_collision() -> void:
 		return
 	if int(skill.get("collide_event", 0)):
 		_on_event("collide")
+
+	# Survivor Perk: Kiểm tra Đạn Dội (Bounce sang quái khác)
+	if ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player") and survivor_bounce_left > 0:
+		var next_target := _find_bounce_target()
+		if next_target != null:
+			survivor_bounce_left -= 1
+			_hit_nodes.append(next_target)
+			var des := VltkMath.logic_of(next_target)
+			var dist := int(logic.distance_to(des))
+			if dist > 0:
+				x_factor = (int(des.x - logic.x) << 10) / dist
+				y_factor = (int(des.y - logic.y) << 10) / dist
+				dir = maxi(0, VltkMath.dir_between(logic, des))
+			follow_target = next_target
+			_move_kind = MoveKind.LINE
+			_cur_life = maxi(_start_life + 1, _cur_life - 18) # Kéo dài thời gian sống
+			status = Phase.FLY
+			return
+
+	# Survivor Perk: Kiểm tra Đạn Xuyên (Pierce qua quái)
+	if ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player") and survivor_pierce_left > 0:
+		survivor_pierce_left -= 1
+		status = Phase.FLY
+		return
+
 	if int(data.get("col_vanish", 0)):
 		_spawn_effect(Phase.VANISH, logic)
 		_do_vanish()
@@ -389,6 +437,20 @@ func _do_collision() -> void:
 		if _effects_all_ended():
 			_spawn_effect(Phase.COLLISION, logic)
 		status = Phase.FLY
+
+func _find_bounce_target() -> Node2D:
+	if ctx == null:
+		return null
+	var best: Node2D = null
+	var best_d := 450.0 * 450.0
+	for t in ctx.targets():
+		if not _is_target(t) or _hit_nodes.has(t):
+			continue
+		var d := (VltkMath.logic_of(t) - logic).length_squared()
+		if d < best_d and d > 10.0:
+			best_d = d
+			best = t
+	return best
 
 ## KMissle::DoVanish (sự kiện Vanished bắn trước khi đạn biến mất).
 func _do_vanish() -> void:

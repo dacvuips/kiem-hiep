@@ -89,6 +89,7 @@ func _init(profile: PlayerProfile = null) -> void:
 	_box_view.transfer_handler = _transfer
 	_box_view.changed.connect(_refresh)
 	_box_view.item_pressed.connect(_show_item)
+	_box_view.item_right_clicked.connect(_on_box_item_right_clicked)
 	_lock_btn.pressed.connect(_on_lock_button)
 	pw_btn.pressed.connect(func() -> void: SecurityWindow.open(get_host(), _profile))
 	_expand_btn.pressed.connect(_on_expand)
@@ -104,7 +105,18 @@ func _init(profile: PlayerProfile = null) -> void:
 	buttons.add_child(close)
 	close.pressed.connect(func() -> void: close_requested.emit())
 	close_requested.connect(_release_inventory)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
 	_refresh()
+
+func on_presented() -> void:
+	_on_profile_changed(null)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 ## Mở (hoặc dùng lại khung đang mở) khung Hành trang thường và ghép với rương.
 func open_inventory() -> void:
@@ -238,6 +250,16 @@ func _on_lock_button() -> void:
 	else:
 		_say(SecurityLock.lock(_profile), "Đã khoá rương.")
 		_refresh()
+
+func _on_box_item_right_clicked(item: ItemInstance) -> void:
+	if item == null or _profile == null:
+		return
+	ItemDetailPopup.close_all(get_tree())
+	var err := StorageService.take_item(_profile, item)
+	_say(err, "Đã lấy %s ra hành trang." % item.get_display_name())
+	_refresh()
+	if is_instance_valid(_inventory):
+		_inventory.refresh()
 
 func _show_item(item: ItemInstance) -> void:
 	var actions := [["Lấy ra hành trang", func() -> void:

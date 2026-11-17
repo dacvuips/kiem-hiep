@@ -740,7 +740,7 @@ func _check(text: String, key: String) -> CheckBox:
 	cb.add_theme_color_override("font_color", SocialUi.TEXT)
 	cb.add_theme_color_override("font_pressed_color", SocialUi.TEXT)
 	cb.add_theme_color_override("font_hover_color", SocialUi.GOLD)
-	cb.button_pressed = bool(_s.get(key))
+	cb.button_pressed = _s.get(key) == true
 	cb.toggled.connect(func(on: bool) -> void:
 		_s.set(key, on)
 		_changed())

@@ -7,7 +7,7 @@ class_name SettingsWindow
 ##   - Lăn chuột để zoom camera bật/tắt + thanh trượt mức zoom (GameSettings; áp ngay lên camera nhân vật).
 ##   - Cấu hình vị trí & kích thước giao diện gameplay (HUD) — lưu máy, không phụ thuộc tài khoản.
 ##   - Mở từ màn chơi (on_exit hợp lệ): thêm nút "Thoát về Character Hub".
-##   - Mở từ CharacterHub (is_hub): thêm nút "Trở Về Chọn Nhân Vật", "Trở Về Chọn Server" và "Thoát Game".
+##   - Mở từ CharacterHub (is_hub): thêm nút "Trở Về Chọn Nhân Vật", "Trở Về Chọn Server" (chỉ khi Online) và "Thoát Game".
 
 const ZOOM_STEP := 0.025
 
@@ -339,7 +339,7 @@ func _refresh_texts() -> void:
 	if _btn_visual != null:
 		_btn_visual.text = tr("🎨 Chế Độ Kéo Thả Trực Quan Trên Màn Hình")
 	if _reset_all_btn != null:
-		_reset_all_btn.text = tr("↺ Khôi Phục Toàn Bộ Mặc Định")
+		_reset_all_btn.text = tr("Khôi Phục Toàn Bộ Mặc Định")
 	if _hud_close_btn != null:
 		_hud_close_btn.text = tr("Đóng")
 
@@ -393,7 +393,7 @@ func _build_hud_tab() -> void:
 	bottom_row.add_theme_constant_override("separation", 8)
 	_hud_container.add_child(bottom_row)
 
-	_reset_all_btn = SocialUi.stone_button(tr("↺ Khôi Phục Toàn Bộ Mặc Định"))
+	_reset_all_btn = SocialUi.stone_button(tr("Khôi Phục Toàn Bộ Mặc Định"))
 	_reset_all_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_reset_all_btn.custom_minimum_size.y = 38
 	_reset_all_btn.pressed.connect(_on_reset_all_hud)
@@ -437,18 +437,24 @@ func _build_hub_system_section() -> void:
 	_char_btn.pressed.connect(_on_character_select_clicked)
 	sys_buttons.add_child(_char_btn)
 
-	_server_btn = SocialUi.stone_button(tr("Trở Về Chọn Server"))
-	_server_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_server_btn.pressed.connect(_on_server_select_clicked)
-	sys_buttons.add_child(_server_btn)
+	if not GameModeManager.is_offline():
+		_server_btn = SocialUi.stone_button(tr("Trở Về Chọn Server"))
+		_server_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_server_btn.pressed.connect(_on_server_select_clicked)
+		sys_buttons.add_child(_server_btn)
 
-	var quit_row := HBoxContainer.new()
-	quit_row.add_theme_constant_override("separation", 8)
-	_basic_container.add_child(quit_row)
-	_quit_btn = SocialUi.stone_button(tr("Thoát Game"))
-	_quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_quit_btn.pressed.connect(_on_quit_game_clicked)
-	quit_row.add_child(_quit_btn)
+		var quit_row := HBoxContainer.new()
+		quit_row.add_theme_constant_override("separation", 8)
+		_basic_container.add_child(quit_row)
+		_quit_btn = SocialUi.stone_button(tr("Thoát Game"))
+		_quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_quit_btn.pressed.connect(_on_quit_game_clicked)
+		quit_row.add_child(_quit_btn)
+	else:
+		_quit_btn = SocialUi.stone_button(tr("Thoát Game"))
+		_quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_quit_btn.pressed.connect(_on_quit_game_clicked)
+		sys_buttons.add_child(_quit_btn)
 
 func setup_hub_actions(p_on_server: Callable = Callable(), p_on_quit: Callable = Callable(), p_on_character: Callable = Callable()) -> void:
 	on_server_select = p_on_server
@@ -464,7 +470,7 @@ func _on_character_select_clicked() -> void:
 		if GameManager.local_profile != null:
 			SaveManager.save_profile(GameManager.local_profile)
 			await SaveManager.flush_online()
-		if AccountApi.is_logged_in():
+		if AccountApi.is_logged_in() or GameModeManager.is_offline():
 			get_tree().change_scene_to_file("res://ui/character_roster/CharacterRoster.tscn")
 			return
 		get_tree().change_scene_to_file("res://ui/character_select/CharacterSelect.tscn")

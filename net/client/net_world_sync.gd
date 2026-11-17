@@ -16,6 +16,7 @@ const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "cha
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
+var _remote_guilds: Dictionary = {} ## eid -> {name, emblem}
 ## Kết nối tới máy chủ game KHÁC máy chủ đã chọn (chiến trường Tống Kim: {host, port, ws_url, name}) — {} = máy chủ đã chọn.
 var server_override: Dictionary = {}
 var _monsters: Dictionary = {}    ## eid -> VltkMonster (chế độ online)
@@ -32,6 +33,8 @@ static var current: NetWorldSync
 ## Danh sách bang trên server (S_GUILD_LIST) cho màn xin vào bang.
 
 static func is_online_mode() -> bool:
+	if GameModeManager.is_offline():
+		return false
 	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0 and not ServerSelectScreen.selected_server.is_empty()
 
 func _ready() -> void:
@@ -55,6 +58,7 @@ func _ready() -> void:
 		var rp := remote_of(eid)
 		if rp:
 			rp.set_camp(new_camp, new_nation))
+	NetClient.player_guild_changed.connect(_on_player_guild_changed)
 	NetClient.enmity_state.connect(_on_enmity)
 	NetClient.pvp_hit.connect(_on_pvp_hit)
 	NetClient.view_equip.connect(_on_view_equip)
@@ -135,6 +139,8 @@ func _on_profile_applied() -> void:
 		player.refresh_combat_stats()
 		if player.has_method("_refresh_aura_sprite"):
 			player._refresh_aura_sprite()
+		if player.has_method("refresh_nameplate"):
+			player.refresh_nameplate()
 
 func _on_drops(list: Array) -> void:
 	for d in list:
@@ -163,9 +169,20 @@ func _on_picked(id: int, amount: int, item: Dictionary) -> void:
 			_notify("Nhặt được %d lượng" % amount)
 		elif not item.is_empty():
 			var it := ItemInstance.from_dict(item)
-			if not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
-				profile.add_item(it)
-			_notify("Nhặt được %s" % it.get_display_name())
+			if it.misc_id in ["6_1_206", "6_1_213"]:
+				var cur_map_id := int(GameManager.field_map.get("id", -1)) if GameManager else -1
+				var res := DaTauManager.try_collect_picked_scroll(profile, it.misc_id, cur_map_id)
+				if res.get("counted", false):
+					_notify("Nhặt được %s (%d/%d) — Dã Tẩu đã ghi nhận" % [res.get("name", "Địa đồ chí"), res.get("done", 1), res.get("need", 1)])
+				elif res.get("bag_full", false):
+					_notify("Hành trang đã đầy, không thể nhặt %s!" % res.get("name", "Địa đồ chí"))
+					return
+				else:
+					_notify("Nhặt được %s → +1 mảnh Sơn Hà Xã Tắc (Hiện có: %d)" % [res.get("name", it.get_display_name()), int(res.get("shxt_total", 1))])
+			else:
+				if not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
+					profile.add_item(it)
+				_notify("Nhặt được %s" % it.get_display_name())
 		SaveManager.save_profile(profile)
 	_on_drop_gone(id)
 
@@ -271,16 +288,21 @@ func _on_progress(gained: int, level: int, current_exp: int) -> void:
 		var mname := _last_killed_monster_name if _last_killed_monster_name != "" else "Quái"
 		ChatBox.push_exp(mname, gained)
 		_last_killed_monster_name = ""
-	if profile.level != before and player and is_instance_valid(player):
-		player.refresh_combat_stats()
-		ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
-		_notify("Lên cấp %d!" % profile.level)
+	if profile.level != before:
+		if player and is_instance_valid(player):
+			player.refresh_combat_stats()
+			ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
+			_notify("Lên cấp %d!" % profile.level)
+		SaveManager.notify_profile_changed(profile)
+	else:
+		SaveManager.request_exp_save(profile, 5.0)
 
 func _on_disconnected(code: String, message: String) -> void:
 	SaveManager.mark_version_unknown()
 	for r in _remotes.values():
 		r.queue_free()
 	_remotes.clear()
+	_remote_guilds.clear()
 	for m in _monsters.values():
 		if is_instance_valid(m):
 			m.queue_free()
@@ -360,7 +382,26 @@ func _on_spawn(info: Dictionary) -> void:
 	_parent().add_child(r)
 	r.setup(info)
 	_remotes[r.eid] = r
+	if _remote_guilds.has(r.eid):
+		var gd: Dictionary = _remote_guilds[r.eid]
+		r.set_guild(str(gd.get("name", "")), int(gd.get("emblem", 0)))
 	_apply_enmity(r.eid)
+
+func _on_player_guild_changed(eid: int, gname: String, gemblem: int) -> void:
+	if gname == "":
+		_remote_guilds.erase(eid)
+	else:
+		_remote_guilds[eid] = {"name": gname, "emblem": gemblem}
+	if eid == NetClient.my_eid and player and is_instance_valid(player):
+		var lp := GameManager.local_profile
+		if lp != null and gname == "" and not lp.guild.is_empty():
+			lp.guild = {}
+		if player.has_method("refresh_nameplate"):
+			player.refresh_nameplate()
+		return
+	var r := remote_of(eid)
+	if r:
+		r.set_guild(gname, gemblem)
 
 func _spawn_monster(info: Dictionary) -> void:
 	var eid := int(info.eid)
@@ -375,7 +416,7 @@ func _spawn_monster(info: Dictionary) -> void:
 	m.data = data.duplicate()
 	m.data["series"] = int(info.series)
 	m.level = maxi(1, int(info.level))
-	m.blue_boss = bool(info.blue)
+	m.blue_boss = info.get("blue") == true
 	## Phòng Địa Ngục (phòng train chung): sát thương quái ×sao tính ở máy mình như bản offline (máu do server giữ).
 	m.hell_stars = int((GameManager.field_map.get("hell", {}) as Dictionary).get("stars", 0))
 	m.ai_enabled = false
@@ -419,12 +460,13 @@ func _on_monster_killed(k: Dictionary) -> void:
 			_last_killed_monster_name = str(rec.get("name", "Quái"))
 	if m == null or not is_instance_valid(m):
 		return
-	m.grant_rewards(bool(k.last_hit))
+	m.grant_rewards(k.get("last_hit") == true)
 
 func _on_despawn(eid: int) -> void:
 	var node: Node = _monster_of(eid) if _monsters.has(eid) else remote_of(eid)
 	_monsters.erase(eid)
 	_remotes.erase(eid)
+	_remote_guilds.erase(eid)
 	if node == null:
 		return
 	if player and player.get_selected_target() == node:

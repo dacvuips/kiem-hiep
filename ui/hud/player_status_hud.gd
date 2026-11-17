@@ -23,6 +23,8 @@ func setup(player: Node) -> void:
 	%NameLabel.get_parent().visible = false
 	%HealthBar.visible = false
 	%ManaBar.visible = false
+	offset_top = 110.0
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	refresh()
 

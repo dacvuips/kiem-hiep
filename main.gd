@@ -41,6 +41,7 @@ var _ky_tran_cac_window: KyTranCacWindow
 const DEFAULT_MUSIC_MAP_ID := 1
 
 const PkRoomBadge = preload("res://ui/hud/pk_room_badge.gd")
+const SelectedSkillsWindow = preload("res://ui/hud/selected_skills_window.gd")
 
 func _play_stage_music(stage: StageData) -> void:
 
@@ -55,6 +56,10 @@ func _exit_tree() -> void:
 	MusicManager.stop()
 
 	PlayerStats.reset()
+
+	var pubg_cls = load("res://systems/pubg/pubg_manager.gd")
+	if pubg_cls and pubg_cls.is_active:
+		pubg_cls.end_match(GameManager.local_profile)
 
 	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
 
@@ -94,6 +99,15 @@ func _ready() -> void:
 
 			break
 
+	if GameManager.local_profile == null:
+		GameManager.local_profile = SaveManager.load_profile()
+		if GameManager.local_profile == null:
+			var default_p := PlayerProfile.new()
+			default_p.display_name = "Đại Hiệp"
+			default_p.level = 10
+			default_p.sect_id = "vo_dang"
+			GameManager.local_profile = default_p
+
 	var free_roam := GameManager.game_mode == GameManager.GameMode.MAIN_MAP
 
 	var stage: StageData = GameManager.current_stage if GameManager.current_stage else stage_for_testing
@@ -107,6 +121,12 @@ func _ready() -> void:
 		load_stage(stage)
 
 		_play_stage_music(stage)
+
+	var is_thu_thanh: bool = (GameManager.field_map is Dictionary and GameManager.field_map.get("thu_thanh_mode", false) == true)
+	if is_thu_thanh:
+		if has_node("UI"):
+			$UI.visible = false
+		return
 
 	var player := get_tree().get_first_node_in_group("player")
 
@@ -167,6 +187,32 @@ func _ready() -> void:
 	var tm_intro: Node = get_node_or_null("/root/TutorialManager")
 	if tm_intro and tm_intro.has_method("is_in_intro_flow") and tm_intro.is_in_intro_flow():
 		tm_intro.continue_in_game_tutorial(self)
+	elif (GameManager.field_map is Dictionary and GameManager.field_map.get("survivor_mode", false) == true) or (GameModeManager.is_offline() and GameManager.current_stage != null):
+		var p_prof := GameManager.local_profile
+		var s_id: String = p_prof.sect_id if p_prof != null and p_prof.sect_id != "" else "vo_dang"
+		var w_class: int = Equipment.get_weapon_class(p_prof.equipment) if p_prof != null else -1
+		SurvivorManager.init_pool(s_id, w_class)
+		var level_up_ui: Node = get_node_or_null("LevelUpUi")
+		if level_up_ui == null:
+			level_up_ui = get_node_or_null("UI/LevelUpUI")
+		if level_up_ui and level_up_ui.has_method("show_initial_skill_selection"):
+			level_up_ui.show_initial_skill_selection.call_deferred()
+
+	if GameManager.field_map is Dictionary and (GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)):
+		_open_pubg_draft_popup()
+
+func _open_pubg_draft_popup() -> void:
+	var prof: PlayerProfile = GameManager.local_profile
+	var player_node := get_tree().get_first_node_in_group("player") as Node2D
+	var draft_script: GDScript = load("res://ui/pubg/pubg_draft_popup.gd")
+	if draft_script and draft_script.has_method("open"):
+		draft_script.open(self, prof, func() -> void:
+			if is_instance_valid(player_node):
+				if player_node.has_method("refresh_combat_stats"):
+					player_node.refresh_combat_stats()
+				elif player_node.has_method("refresh_appearance"):
+					player_node.refresh_appearance()
+		)
 
 ## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
 
@@ -213,16 +259,30 @@ func _enter_main_map() -> void:
 	VltkWorld.net_monsters = online
 
 	if VltkWorld.current != null:
-
-		if not field.is_empty():
-
+		if not field.is_empty() and field.has("dir"):
 			VltkWorld.current.map_dir = str(field["dir"])
-
+		elif VltkWorld.current.map_dir == "" or not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(VltkWorld.current.map_dir)):
+			VltkWorld.current.map_dir = "res://world/maps/map_20"
 		VltkWorld.current.setup_main_map()
+
+	## Chế độ Thủ Thành (Zombies vs Plants JX1): Bàn cờ 11x5, hiệp khách, Xe Lương Thảo, 5 đợt quái
+	if field.get("thu_thanh_mode", false):
+		var tt_script: GDScript = load("res://systems/challenge/thu_thanh_challenge.gd")
+		if tt_script != null:
+			var tt = tt_script.new()
+			tt.name = "ThuThanhChallenge"
+			add_child(tt)
+		if has_node("UI"):
+			$UI.visible = false
+
+	elif field.get("survivor_mode", false):
+		var survivor_challenge := SurvivorWaveChallenge.new()
+		survivor_challenge.name = "SurvivorWaveChallenge"
+		add_child(survivor_challenge)
 
 	## Thách Thức Thời Gian (tab "Ải" của màn Vượt Ải): đấu trường map 480, quái theo từng ải.
 
-	if field.get("challenge", false):
+	elif field.get("challenge", false):
 
 		var challenge := TimeChallenge.new()
 
@@ -697,7 +757,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 			return
 
-		elif event.keycode == KEY_M or event.keycode == KEY_TAB:
+		elif event.keycode == KEY_TAB:
 
 			_toggle_map_panel()
 
@@ -711,6 +771,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 			get_viewport().set_input_as_handled()
 
+			return
+
+		elif event.keycode == KEY_V:
+			_toggle_selected_skills_window()
+			get_viewport().set_input_as_handled()
 			return
 
 		elif event.keycode == KEY_F12:
@@ -747,6 +812,10 @@ func is_any_menu_window_open() -> bool:
 
 		return true
 
+	if SelectedSkillsWindow.instance != null and is_instance_valid(SelectedSkillsWindow.instance):
+
+		return true
+
 	return false
 
 func _update_stage_pause() -> void:
@@ -768,6 +837,9 @@ func _update_stage_pause() -> void:
 		return
 
 	tree.paused = is_any_menu_window_open()
+
+func _toggle_selected_skills_window() -> void:
+	SelectedSkillsWindow.toggle_window(self)
 
 func _toggle_skill_book() -> void:
 
@@ -1015,6 +1087,8 @@ func _build_side_menu() -> void:
 
 	var skill_btn := menu.add_entry("skills", "", "Kỹ năng (phím G)", _toggle_skill_book)
 	skill_btn.add_to_group("tutorial_skill_menu_btn")
+
+	menu.add_entry("", "⚡", "Võ công đã chọn (phím V)", _toggle_selected_skills_window)
 
 	menu.add_entry("itemex", "Kỳ", "Kỳ Trân Các (phím F11)", _toggle_ky_tran_cac)
 
@@ -1951,6 +2025,10 @@ func _on_exit_confirmed() -> void:
 	if tree != null:
 
 		tree.paused = false
+
+	var pubg_cls = load("res://systems/pubg/pubg_manager.gd")
+	if pubg_cls and pubg_cls.is_active:
+		pubg_cls.end_match(GameManager.local_profile)
 
 	if GameManager.local_profile != null:
 

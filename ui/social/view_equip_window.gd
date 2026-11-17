@@ -221,7 +221,7 @@ func _ready() -> void:
 func _apply_look() -> void:
 	if _avatar == null or _snap.is_empty():
 		return
-	var gender := "female" if bool(_snap["female"]) else "male"
+	var gender := "female" if _snap.get("female", false) == true else "male"
 	var equipment: Dictionary = _snap["equipment"]
 	var look := Equipment.get_appearance(equipment, gender, equipment.has(Equipment.Part.HORSE))
 	var final_gender: String = str(look.get("gender", gender))

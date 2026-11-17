@@ -9,6 +9,8 @@ var name := ""
 var level := 1
 var camp := 0
 var stall_title := ""           ## tên quầy đang bày bán ("" = không bày) — biển trên đầu, bấm vào xem hàng
+var guild_name := ""            ## tên bang hội ("" = chưa vào bang)
+var guild_emblem := 0           ## ID biểu tượng bang hội (GuildEmblem)
 var nation := 0                  ## Nation.Type — phe Tống / Kim (khác phe với người xem thì tên đỏ)
 var pos := Vector2.ZERO          ## toạ độ chân
 var dir := 0                     ## 0..7 như CharacterAvatar

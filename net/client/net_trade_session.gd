@@ -38,8 +38,8 @@ func apply_state(mine: Dictionary, theirs: Dictionary) -> void:
 
 func _fill(side: TradeSide, d: Dictionary) -> void:
 	side.money = int(d.money)
-	side.locked = bool(d.locked)
-	side.ok = bool(d.ok)
+	side.locked = d.get("locked") == true
+	side.ok = d.get("ok") == true
 	side.ok_at_ms = now_ms - int(d.ok_age_ms)
 	side.room.inventory.clear()   ## giữ nguyên đối tượng phòng (TradeWindow đang tham chiếu)
 	for item_dict in d.items:

@@ -156,6 +156,30 @@ func use_any_feed(consume: bool = false) -> String:
 			return k
 	return ""
 
+const CAMPFIRE_POSITIONS: Array[Vector2] = [
+	Vector2(49280.0, 48000.0), # Đống Lửa Nông Trại [192/187]
+	Vector2(50048.0, 49536.0), # Đống Lửa Chuồng Trại [195/193]
+	Vector2(45952.0, 47488.0), # Đống Lửa Bến Hồ [179/185]
+	Vector2(50080.0, 50560.0)  # Đống Lửa Bờ Biển [195/197]
+]
+const CAMPFIRE_RADIUS := 650.0
+
+func _is_player_near_campfire() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or not is_instance_valid(tree):
+		return false
+	var gm = tree.root.get_node_or_null("GameManager") if tree.root else null
+	if gm == null or not gm.has_method("is_manor_mode") or not gm.is_manor_mode():
+		return false
+	var player: Node2D = tree.get_first_node_in_group("player") as Node2D
+	if player == null or not is_instance_valid(player):
+		return false
+	var p_pos := player.global_position
+	for c_pos in CAMPFIRE_POSITIONS:
+		if p_pos.distance_to(c_pos) <= CAMPFIRE_RADIUS:
+			return true
+	return false
+
 func _process(delta: float) -> void:
 	# Cập nhật đàn gia súc (tiêu hao đói & thời gian thu hoạch)
 	if livestock_mgr != null:
@@ -168,12 +192,15 @@ func _process(delta: float) -> void:
 		# Cứ mỗi 1 giây ở gần đống lửa trong Sơn Trang -> sinh 2000 exp
 		if campfire_timer >= 1.0:
 			campfire_timer = 0.0
-			_tick_campfire_reward()
+			if _is_player_near_campfire():
+				_tick_campfire_reward()
 			campfire_updated.emit(campfire_fuel)
 
 func _tick_campfire_reward() -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	var gm = tree.root.get_node_or_null("GameManager") if (tree and tree.root) else null
+	if gm == null or not gm.has_method("is_manor_mode") or not gm.is_manor_mode():
+		return
 	if gm != null and "local_profile" in gm and gm.local_profile != null:
 		# Nhận EXP nhân vật: 2000 exp mỗi 1s (theo thời tiết x2 khi có tuyết rơi)
 		var mult := 1.0
