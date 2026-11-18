@@ -76,7 +76,7 @@ run_suite() {
 
 cd "$project"
 echo "== Bài test không cần server"
-for s in social_tests social_ui_tests auto_tests sect_join_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests; do
+for s in social_tests social_ui_tests auto_tests sect_join_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests bot_body_tests; do
 	run_suite "$s" "$s.tscn"
 done
 
@@ -97,6 +97,8 @@ start_server world GAME_TEST_MODE=1 GAME_ENET_PORT=7917 GAME_WS_PORT=7918
 start_server field7 GAME_FIELD=1 GAME_FIELD_INDEX=7 GAME_ENET_PORT=7927 GAME_WS_PORT=7928
 start_server field8 GAME_FIELD=1 GAME_FIELD_INDEX=8 GAME_ENET_PORT=7937 GAME_WS_PORT=7938
 run_suite "net_tests" net_tests.tscn GAME_ENET_PORT=7917 DEV_TRUST_CLIENT_SAVES="$(env_get DEV_TRUST_CLIENT_SAVES)" NET_TEST_RESTART=1
+## Bot người chơi phía server (GAME_TEST_MODE: lệnh "/testbot" sinh bot cạnh mình).
+run_suite "bot_online_tests" bot_online_tests.tscn GAME_ENET_PORT=7917
 run_suite "field_tests (2 tiến trình)" field_tests.tscn GAME_ENET_PORT=7927 FIELD_PORT2=7937 FIELD_INDEX=7 FIELD_INDEX2=8
 ## Chiến Trường Sinh Tồn chạy trên server thế giới: bản thử riêng luôn mở giờ, 2 đội là đủ, tìm trận 3 giây.
 start_server pubg GAME_ENET_PORT=7957 GAME_WS_PORT=7958 PUBG_ALWAYS_OPEN=1 PUBG_MIN_SQUADS=2 PUBG_SEARCH_SEC=3

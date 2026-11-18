@@ -236,6 +236,9 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	c.pvp_msgs += 1
 	if c.pvp_msgs > MAX_PVP_HITS_PER_SEC:
 		return
+	if gs.bots != null and gs.bots.is_bot(eid):
+		gs.bots.on_player_hit(c, eid, bytes)   ## đánh bot: server tự tính đòn (bot không có máy)
+		return
 	var t = gs.conn_of_eid(eid)
 	var battle_hit: bool = gs.battle != null and gs.battle.allows_hit(c, t)   ## chiến trường: 2 phe đánh nhau lúc khai chiến
 	var arena_hit: bool = t != null and gs.arena != null and gs.arena.allows_hit(c, t)   ## đấu trường PK: 2 người đấu cùng phòng

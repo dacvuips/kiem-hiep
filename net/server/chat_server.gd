@@ -35,6 +35,19 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		c.entity.touch()
 		gs.profile_changed(c)
 		return
+	## CHỈ khi GAME_TEST_MODE=1: "/testbot [phái] [cấp]" sinh 1 bot (BotDuelBrain) cạnh mình, đánh mình — thử bot người chơi.
+	if gs.test_mode and text.begins_with("/testbot"):
+		var parts := text.split(" ", false)
+		var bp := PlayerProfile.new()
+		bp.display_name = "Bot %d" % (gs.bots.bots.size() + 1)
+		bp.sect_id = parts[1] if parts.size() > 1 else "thieu_lam"
+		bp.level = clampi(int(parts[2]) if parts.size() > 2 else 90, 1, PlayerProfile.MAX_LEVEL)
+		LonXonRules.refresh_skills(bp)
+		LonXonRules.give_potions(bp)
+		var spot: Vector2 = gs.grid_of(c.entity).free_near(c.entity.pos + Vector2(120, 0))
+		var bot := gs.bots.spawn(bp, spot if spot != Vector2.ZERO else c.entity.pos, c.entity.room_id, c.entity.cell_base, BotDuelBrain.new(c.entity.eid))
+		gs.notice(c, "testbot %d" % bot.eid)
+		return
 	## CHỈ khi GAME_TEST_MODE=1: "/testrestart N" khởi động lại êm sau N giây (như lệnh từ web Admin) — thử lưu dữ liệu khi khởi động lại.
 	if gs.test_mode and text.begins_with("/testrestart "):
 		gs.start_drain(clampi(int(text.get_slice(" ", 1)), 3, 60), "thử nghiệm", c.entity.name)

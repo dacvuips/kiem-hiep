@@ -161,6 +161,8 @@ var arena: ArenaServer
 var field: FieldServer
 ## Chiến Trường Sinh Tồn (chỉ server thế giới): đội chờ từ Hub + các trận PUBG — PubgServer.
 var pubg: PubgServer
+## Bot người chơi do server điều khiển (Lộn Xộn / PUBG) — BotManager.
+var bots: BotManager
 ## Lộn Xộn (chỉ server thế giới): các host hỗn chiến tự do — LonXonServer.
 var lonxon: LonXonServer
 var map_dir := DEFAULT_MAP_DIR
@@ -237,6 +239,7 @@ func _ready() -> void:
 		field = FieldServer.new(self)   ## map của tiến trình chỉ là "sảnh" chờ vào phòng: không sinh quái
 	else:
 		_spawn_monsters()
+	bots = BotManager.new(self)
 	social = SocialServer.new(self)
 	chat = ChatServer.new(self)
 	guild = GuildServer.new(self)
@@ -341,6 +344,8 @@ func _process(delta: float) -> void:
 			pubg.tick(step)
 		if lonxon:
 			lonxon.tick(step)
+		if bots:
+			bots.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -453,6 +458,8 @@ func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "", base
 ## Quái bắt đầu ra chiêu: báo cho mọi người đang thấy quái (máy người bị nhắm chạy đòn thật).
 ## Dùng lưới AOI thay vì duyệt toàn bộ kết nối — O(ô) thay vì O(n người chơi).
 func monster_attack(m: ServerMonster, slot: int, target: ServerEntity) -> void:
+	if target is ServerBot and bots:
+		bots.on_monster_attack(m, target)   ## bot không có máy: server tính đòn quái vào bot
 	var b := NetProto.writer(NetProto.S_MATTACK)
 	b.put_u32(m.eid)
 	b.put_u8(slot)
@@ -1000,8 +1007,12 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 	var aim := NetProto.get_state_pos(b)
 	if aim.distance_to(c.entity.pos) > NetProto.AOI_CELL * 1.5:
 		aim = c.entity.pos
+	broadcast_cast(c.entity, skill_id, level, cast_flags, target_eid, aim)
+
+## Hình ảnh ra chiêu của thực thể `e` (người chơi / bot) cho mọi người đang thấy `e` (trừ chính chủ nếu là người chơi).
+func broadcast_cast(e: ServerEntity, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
 	var out := NetProto.writer(NetProto.S_CAST)
-	out.put_u32(c.entity.eid)
+	out.put_u32(e.eid)
 	out.put_u16(skill_id)
 	out.put_u8(level)
 	out.put_u8(cast_flags)
@@ -1009,9 +1020,9 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 	NetProto.put_state_pos(out, aim)
 	for dx in range(-1, 2):
 		for dy in range(-1, 2):
-			for v: ServerEntity in aoi.bucket(c.entity.cell + Vector2i(dx, dy)).values():
+			for v: ServerEntity in aoi.bucket(e.cell + Vector2i(dx, dy)).values():
 				var vc: Conn = _players_by_eid.get(v.eid)
-				if vc and vc != c and vc.known.has(c.entity.eid):
+				if vc and vc.entity != e and vc.known.has(e.eid):
 					_send(vc, out)
 
 ## NHỊP RA CHIÊU như VLTK gốc (SectSkillController): chiêu đánh phải chờ hết động tác chiêu trước (18 frame ngoại công / 20 frame
@@ -1937,6 +1948,45 @@ func can_see(viewer: Conn, e: ServerEntity) -> bool:
 	return arena == null or arena.can_see(viewer, e)
 
 ## Bản đồ vật cản nơi thực thể đứng: map phòng PK/train chung của nó, không thì map của tiến trình.
+## ---------------------------------------------------------------- bot người chơi (BotManager)
+
+## eid mới cho thực thể do server tạo (bot).
+func alloc_eid() -> int:
+	var id := _next_eid
+	_next_eid += 1
+	return id
+
+func entity_of(eid: int) -> ServerEntity:
+	return _entities.get(eid)
+
+## Bot vào thế giới: là 1 thực thể KIND_PLAYER trong AOI (người thật thấy như người chơi khác), không có kết nối.
+func add_bot_entity(b: ServerBot) -> void:
+	_entities[b.eid] = b
+	aoi.update(b)
+
+func remove_bot_entity(b: ServerBot) -> void:
+	aoi.remove(b)
+	_entities.erase(b.eid)
+
+## Đòn của bot `attacker_eid` tới máy người chơi `c` (máy đó tự né / kháng / trừ máu như PvP thường).
+func send_pvp_hit(c: Conn, attacker_eid: int, raw: PackedByteArray) -> void:
+	var out := NetProto.writer(NetProto.S_PVP_HIT)
+	out.put_u32(attacker_eid)
+	out.put_u32(raw.size())
+	out.put_data(raw)
+	_send(c, out)
+
+## Bot đánh quái (như C_DAMAGE của người chơi): khựng, trừ máu, quái chết thì thưởng / rơi đồ như thường.
+func bot_damage_monster(b: ServerBot, m: ServerMonster, amount: float) -> void:
+	if m.is_dead() or not near(m, b, MAX_HIT_DISTANCE):
+		return
+	var hurt_action := NetProto.monster_action_index("hurt")
+	if m.hp > 0 and m.action != hurt_action:
+		m.action = hurt_action
+		m.touch()
+	if m.receive_damage(b.eid, amount, true):
+		_on_monster_killed(m)
+
 func grid_of(e: ServerEntity) -> MapGrid:
 	if arena:
 		var ag: MapGrid = arena.grid_of(e)
