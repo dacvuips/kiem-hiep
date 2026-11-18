@@ -97,6 +97,8 @@ static func is_usable(item: ItemInstance) -> bool:
 		return true
 	if is_summon_token(item):
 		return true
+	if LonXonRules.book_tier(mid) > 0:
+		return true
 	return false
 
 static func get_action_label(item: ItemInstance) -> String:
@@ -139,6 +141,19 @@ static func get_special_actions(item: ItemInstance, host: Node, profile: PlayerP
 		return []
 	var mid := item.misc_id
 	var actions: Array = []
+
+	# 0. ĐẠI THÀNH BÍ KÍP (Lộn Xộn): mỗi kỹ năng cùng tầng 1 nút "Học <tên>"
+	var book_tier := LonXonRules.book_tier(mid)
+	if book_tier > 0 and profile != null:
+		for sk in LonXonRules.book_candidates(profile, book_tier):
+			var sid := sk.id
+			actions.append(["Học %s (%d/%d)" % [sk.skill_name, profile.get_skill_level(sid), sk.max_level], func() -> void:
+				var r := use_book(profile, item, sid)
+				if host != null and host.has_method("_show_toast"):
+					host.call("_show_toast", str(r.get("message", "")))
+				if on_changed.is_valid():
+					on_changed.call()
+			])
 
 	# 1. PHONG LĂNG ĐỘ (4_489_1: Lệnh bài Phong Lăng Độ, 6_1_2745: Lệnh Bài Thủy Tặc)
 	if mid in ["4_489_1", "6_1_2745"]:
@@ -286,6 +301,29 @@ static func _consume_one(profile: PlayerProfile, item: ItemInstance, index: int)
 	else:
 		profile.inventory.remove_at(index)
 
+## Dùng 1 cuốn Đại Thành Bí Kíp cho `skill_id` ("" = kỹ năng cùng tầng có cấp thấp nhất còn học được).
+static func use_book(profile: PlayerProfile, item: ItemInstance, skill_id: String) -> Dictionary:
+	var tier := LonXonRules.book_tier(item.misc_id if item != null else "")
+	var index := profile.inventory.find(item) if profile != null else -1
+	if tier <= 0 or index < 0:
+		return {"ok": false, "message": "Vật phẩm không còn trong hành trang."}
+	if skill_id == "":
+		skill_id = LonXonRules.default_book_skill(profile, tier)
+		if skill_id == "":
+			var why := LonXonRules.book_block_reason(profile, tier, "")
+			if LonXonRules.in_match:
+				why = "Không có kỹ năng %dx nào học được lúc này (chưa đủ cấp hoặc đã tối đa)." % tier
+			return {"ok": false, "message": why}
+	var err := LonXonRules.learn_from_book(profile, tier, skill_id)
+	if err != "":
+		return {"ok": false, "message": err}
+	_consume_one(profile, item, index)
+	var sk_name := skill_id
+	for sk in LonXonRules.book_candidates(profile, tier):
+		if sk.id == skill_id:
+			sk_name = sk.skill_name
+	return {"ok": true, "message": "Lĩnh hội Đại Thành Bí Kíp %dx: [%s] đạt cấp %d." % [tier, sk_name, profile.get_skill_level(skill_id)]}
+
 static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = null, host: Node = null) -> Dictionary:
 	if profile == null or item == null:
 		return {"ok": false, "message": "Thông tin vật phẩm không hợp lệ."}
@@ -296,6 +334,10 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 	
 	var mid := item.misc_id
 	var item_name := item.get_display_name()
+
+	# 0. ĐẠI THÀNH BÍ KÍP (Lộn Xộn): bấm Dùng = học kỹ năng cùng tầng đang có cấp thấp nhất
+	if LonXonRules.book_tier(mid) > 0:
+		return use_book(profile, item, "")
 
 	# 1. SÁT THỦ GIẢN LỄ HỘP (6_1_2339)
 	if mid == "6_1_2339":

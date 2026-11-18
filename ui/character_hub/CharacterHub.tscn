@@ -704,6 +704,27 @@ text = "PUBG"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="LonXonButton" type="Button" parent="Stage/TopBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 698.0
+offset_top = 10.0
+offset_right = 828.0
+offset_bottom = 54.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "Lộn Xộn — hỗn chiến tự do, chết hồi sinh, rớt hết đồ"
+theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.04, 0.01, 1)
+theme_override_colors/font_pressed_color = Color(0.05, 0.02, 0, 1)
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("ktc_btn_normal")
+theme_override_styles/hover = SubResource("ktc_btn_hover")
+theme_override_styles/pressed = SubResource("ktc_btn_pressed")
+theme_override_styles/focus = SubResource("ktc_btn_focus")
+text = "Lộn Xộn"
+
 [node name="KyTranCacTopButton" type="Button" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0

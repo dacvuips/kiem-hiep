@@ -130,6 +130,8 @@ func _ready() -> void:
 		var pubg_btn: TextureButton = %PubgButton
 		_setup_pubg_button(pubg_btn)
 		pubg_btn.pressed.connect(func() -> void: PubgWindow.open(self, _profile, _enter_field_map))
+	if has_node("%LonXonButton"):
+		%LonXonButton.pressed.connect(func() -> void: LonXonWindow.open(self, _profile, _enter_field_map))
 	if has_node("%ManorButton"):
 		var manor_btn: TextureButton = %ManorButton
 		_setup_manor_button(manor_btn)
@@ -2379,6 +2381,9 @@ func _apply_mode_ui() -> void:
 	if has_node("%PubgButton"):
 		%PubgButton.visible = false
 		%PubgButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%LonXonButton"):
+		%LonXonButton.visible = false
+		%LonXonButton.process_mode = Node.PROCESS_MODE_DISABLED
 	if has_node("%FrameCurrencyXu"):
 		%FrameCurrencyXu.visible = false
 		%FrameCurrencyXu.process_mode = Node.PROCESS_MODE_DISABLED

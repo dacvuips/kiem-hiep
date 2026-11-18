@@ -89,6 +89,26 @@ static func roll_sect_gold_item() -> ItemInstance:
 	var g_idx: int = indices[randi() % indices.size()]
 	return ItemGenerator.generate_gold_random(g_idx)
 
+## Đồ Hoàng Kim THƯỜNG (không thuộc bộ Hoàng Kim Môn Phái) — Lộn Xộn tách 2 loại này ra 2 tỉ lệ riêng.
+static var _normal_gold_cache: Array[int] = []
+
+static func roll_normal_gold_item() -> ItemInstance:
+	if _normal_gold_cache.is_empty():
+		var sect := {}
+		for i in ItemDatabase.get_sect_gold_indices():
+			sect[i] = true
+		for i in ItemDatabase.get_gold_count():
+			if not sect.has(i):
+				_normal_gold_cache.append(i)
+	if _normal_gold_cache.is_empty():
+		return roll_sect_gold_item()
+	return ItemGenerator.generate_gold_random(_normal_gold_cache[randi() % _normal_gold_cache.size()])
+
+## 1 món trang bị xanh theo cấp nhân vật (bảng cấp 0x..10x như quái cùng cấp). series < 0 = ngũ hành ngẫu nhiên.
+static func roll_blue_for_level(level: int, series: int = -1) -> ItemInstance:
+	var s := series if series >= 0 else randi_range(0, 4)
+	return _roll_blue_item(TIERS[tier_of(level)], s)
+
 ## Sinh ngẫu nhiên 1 con ngựa
 static func roll_horse(series: int = -1) -> ItemInstance:
 	var indices := ItemDatabase.get_horse_base_indices()

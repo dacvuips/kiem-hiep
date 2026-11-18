@@ -4,8 +4,15 @@ class_name PubgDraftPopup
 ## - Đợt 1: Chọn 1 trong 5 Thần Mã 8x (Ô Vân Đạp Tuyết, Chiếu Dạ Ngọc Sư Tử, Xích Thố, Tuyệt Ảnh, Đích Lô)
 ## - Đợt 2: Chọn 1 trong 14 Loại Vũ Khí Cấp 10 (Kiếm, Đao, Côn, Thương, Chùy, Song đao, Triền thủ, Đao thuẫn, Thuẫn đao, Phi tiêu, Phi đao, Tụ tiễn, Cầm, Cung)
 
+## Bộ thẻ 5x (màn Lộn Xộn, `tier = 5`): 5 ngựa cấp 5 + 14 vũ khí cấp 5 (yêu cầu cấp 36) — dùng được ngay ở cấp 50.
 signal draft_completed
 
+const TIER_PUBG := 8
+const TIER_LONXON := 5
+## Lựa chọn gần nhất của bộ thẻ 5x {horse 1-5, weapon 0-13} — LonXon client gửi lên server (bộ 8x dùng PubgManager.pending_draft).
+static var lonxon_pending_draft: Dictionary = {}
+
+var _tier: int = TIER_PUBG
 var _profile: PlayerProfile
 var _on_finish: Callable
 var _step: int = 1 # 1: Chọn Ngựa, 2: Chọn Vũ Khí
@@ -54,6 +61,41 @@ const HORSES_8X := [
 	}
 ]
 
+## 5 ngựa 5x (Detail = 10, Particular = 0..4, Level 5 — mọi ngựa yêu cầu cấp 10). "level" = số thẻ 1..5 (như HORSES_8X).
+const HORSES_5X := [
+	{"level": 1, "particular": 0, "name": "Hoàng Phiêu", "color": Color(1.0, 0.85, 0.4)},
+	{"level": 2, "particular": 1, "name": "Tử Lưu", "color": Color(0.8, 0.55, 1.0)},
+	{"level": 3, "particular": 2, "name": "Ngọc Hoa Thông", "color": Color(0.92, 0.95, 1.0)},
+	{"level": 4, "particular": 3, "name": "Hắc Kỳ", "color": Color(0.6, 0.65, 0.75)},
+	{"level": 5, "particular": 4, "name": "Hồng Ly", "color": Color(1.0, 0.45, 0.4)},
+]
+
+static func horse_cards(tier: int) -> Array:
+	return HORSES_5X if tier == TIER_LONXON else HORSES_8X
+
+## Cấp vũ khí của bộ thẻ: 8x -> cấp 10, 5x -> cấp 5.
+static func weapon_level(tier: int) -> int:
+	return 5 if tier == TIER_LONXON else 10
+
+## Tên vũ khí thẻ `index`: bộ 8x lấy tên đặt sẵn, bộ khác lấy tên gốc trong bảng đồ ở cấp tương ứng.
+static func weapon_name(index: int, tier: int) -> String:
+	var w_data: Dictionary = WEAPONS_10[clampi(index, 0, WEAPONS_10.size() - 1)]
+	if tier != TIER_LONXON:
+		return str(w_data["name"])
+	var base := ItemDatabase.get_base(ItemDatabase.find_base(int(w_data["detail"]), int(w_data["particular"]), weapon_level(tier)))
+	return str(base.get("name", w_data["name"]))
+
+## Dòng chỉ số gốc của 1 món (để mô tả thẻ ngựa 5x — chỉ số đúng theo bảng đồ).
+static func _base_lines(item: ItemInstance) -> String:
+	if item == null:
+		return ""
+	var out: Array[String] = []
+	for b in item.base_values:
+		var t := ItemText.plain(ItemText.format_attrib(str(b[0]), [int(b[1])]))
+		if t != "":
+			out.append("• " + t)
+	return "\n".join(out)
+
 ## Danh sách 14 Loại Vũ Khí Cấp 10 (giống hệt bảng danh mục VLTK)
 const WEAPONS_10 := [
 	{"detail": 0, "particular": 0, "cat": "Vũ khí — Kiếm", "name": "Huyền Thiết Kiếm", "desc": "Trọng kiếm sắc bén, thích hợp Võ Đang, Côn Lôn, Hoa Sơn, Thúy Yên, Đoàn Thị"},
@@ -73,7 +115,10 @@ const WEAPONS_10 := [
 ]
 
 ## Thần mã 8x của thẻ `horse_lv` (1-5): ngựa cấp 80 tốc chạy +100% + dòng riêng theo tên. Dùng chung máy người chơi + PubgServer.
-static func make_horse(horse_lv: int, elem: int) -> ItemInstance:
+static func make_horse(horse_lv: int, elem: int, tier: int = TIER_PUBG) -> ItemInstance:
+	if tier == TIER_LONXON:
+		var h: Dictionary = HORSES_5X[clampi(horse_lv, 1, HORSES_5X.size()) - 1]
+		return ItemGenerator.generate(10, int(h["particular"]), 5, elem, [])
 	horse_lv = clampi(horse_lv, 1, HORSES_8X.size())
 	var horse_item := ItemGenerator.generate(10, 5, horse_lv, elem, [10, 10, 10, 10, 10])
 
@@ -107,12 +152,32 @@ static func make_horse(horse_lv: int, elem: int) -> ItemInstance:
 				horse_item.base_values.append(["coldres_p", 25])
 	return horse_item
 
-## Vũ khí trắng cấp 10 thứ `index` trong WEAPONS_10 (không dòng ma pháp).
-static func make_weapon(index: int, elem: int) -> ItemInstance:
+## Vũ khí trắng thứ `index` trong WEAPONS_10 (không dòng ma pháp), cấp theo bộ thẻ (8x: cấp 10, 5x: cấp 5).
+static func make_weapon(index: int, elem: int, tier: int = TIER_PUBG) -> ItemInstance:
 	var w_data: Dictionary = WEAPONS_10[clampi(index, 0, WEAPONS_10.size() - 1)]
-	return ItemGenerator.generate(int(w_data["detail"]), int(w_data["particular"]), 10, elem, [])
+	return ItemGenerator.generate(int(w_data["detail"]), int(w_data["particular"]), weapon_level(tier), elem, [])
 
-static func open(host: Node, profile: PlayerProfile, on_finish: Callable = Callable()) -> PubgDraftPopup:
+## Cộng tối thiểu điểm tiềm năng vào Sức / Thân cho đủ yêu cầu của `weapon` (nếu đủ điểm). Trả về {"str", "dex"} đã cộng
+## ({} nếu không cần / không đủ điểm). Phần còn lại người chơi tự cộng.
+static func auto_meet_weapon(profile: PlayerProfile, weapon: ItemInstance) -> Dictionary:
+	if profile == null or weapon == null:
+		return {}
+	var need_str := 0
+	var need_dex := 0
+	for r in weapon.get_requirements():
+		match str(r[0]):
+			"requirestr":
+				need_str = maxi(0, int(r[1]) - profile.strength)
+			"requiredex":
+				need_dex = maxi(0, int(r[1]) - profile.dexterity)
+	if need_str + need_dex == 0 or need_str + need_dex > profile.potential_points:
+		return {}
+	profile.strength += need_str
+	profile.dexterity += need_dex
+	profile.potential_points -= need_str + need_dex
+	return {"str": need_str, "dex": need_dex}
+
+static func open(host: Node, profile: PlayerProfile, on_finish: Callable = Callable(), tier: int = TIER_PUBG) -> PubgDraftPopup:
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
 	if tree != null:
 		for node in tree.get_nodes_in_group("pubg_draft_popup"):
@@ -121,6 +186,7 @@ static func open(host: Node, profile: PlayerProfile, on_finish: Callable = Calla
 
 	var popup := PubgDraftPopup.new()
 	popup.add_to_group("pubg_draft_popup")
+	popup._tier = tier
 	popup._profile = profile
 	popup._on_finish = on_finish
 
@@ -215,8 +281,12 @@ func _ready() -> void:
 # ==============================================================================
 func _render_step_1_horses() -> void:
 	_step = 1
-	_title_label.text = "🐎 CHIẾN TRƯỜNG SINH TỒN — CHỌN CHIẾN MÃ 8X (ĐỢT 1/2)"
-	_sub_label.text = "Hãy chọn 1 trong 5 chiến mã Ô Vân Đạp Tuyết cấp 80 để cưỡi và tăng tốc độ di chuyển trong trận:"
+	if _tier == TIER_LONXON:
+		_title_label.text = "🐎 LỘN XỘN — CHỌN NGỰA 5X (ĐỢT 1/2)"
+		_sub_label.text = "Hãy chọn 1 trong 5 con ngựa 5x để cưỡi ngay — dùng được ở cấp 50:"
+	else:
+		_title_label.text = "🐎 CHIẾN TRƯỜNG SINH TỒN — CHỌN CHIẾN MÃ 8X (ĐỢT 1/2)"
+		_sub_label.text = "Hãy chọn 1 trong 5 chiến mã Ô Vân Đạp Tuyết cấp 80 để cưỡi và tăng tốc độ di chuyển trong trận:"
 
 	for c in _cards_container.get_children():
 		c.queue_free()
@@ -229,7 +299,7 @@ func _render_step_1_horses() -> void:
 	h_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_cards_container.add_child(h_grid)
 
-	for h_data in HORSES_8X:
+	for h_data in horse_cards(_tier):
 		var card := _create_horse_card(h_data)
 		h_grid.add_child(card)
 
@@ -264,7 +334,8 @@ func _create_horse_card(h_data: Dictionary) -> Control:
 	icon_rect.custom_minimum_size = Vector2(64, 64)
 	icon_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	var base_entry := ItemDatabase.get_base(ItemDatabase.find_base(10, 5, int(h_data["level"])))
+	var is_5x := _tier == TIER_LONXON
+	var base_entry := ItemDatabase.get_base(ItemDatabase.find_base(10, int(h_data["particular"]), 5) if is_5x else ItemDatabase.find_base(10, 5, int(h_data["level"])))
 	if not base_entry.is_empty():
 		icon_rect.texture = ItemDatabase.get_icon(base_entry, true)
 	vb.add_child(icon_rect)
@@ -279,7 +350,7 @@ func _create_horse_card(h_data: Dictionary) -> Control:
 	vb.add_child(name_lbl)
 
 	var sub_tier := Label.new()
-	sub_tier.text = "Ngựa Cấp 80 (8x)"
+	sub_tier.text = "Ngựa Cấp 5 (5x)" if is_5x else "Ngựa Cấp 80 (8x)"
 	sub_tier.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_tier.add_theme_font_size_override("font_size", 12)
 	sub_tier.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
@@ -287,7 +358,11 @@ func _create_horse_card(h_data: Dictionary) -> Control:
 
 	# Mô tả thuộc tính
 	var desc_lbl := Label.new()
-	desc_lbl.text = str(h_data["desc"])
+	if is_5x:
+		var lines := _base_lines(make_horse(int(h_data["level"]), 0, TIER_LONXON))
+		desc_lbl.text = "Ngựa thường cấp 5, cưỡi được ngay.\n" + lines
+	else:
+		desc_lbl.text = str(h_data["desc"])
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_lbl.add_theme_font_size_override("font_size", 12)
 	desc_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
@@ -310,7 +385,7 @@ func _on_horse_selected(h_data: Dictionary) -> void:
 
 	var horse_lv: int = int(h_data.get("level", 1))
 	_chosen_horse = horse_lv
-	var horse_item := make_horse(horse_lv, int(_profile.get_element()) if _profile.has_method("get_element") else 0)
+	var horse_item := make_horse(horse_lv, int(_profile.get_element()) if _profile.has_method("get_element") else 0, _tier)
 
 	if horse_item != null:
 		_profile.equipment[Equipment.Part.HORSE] = horse_item
@@ -341,10 +416,12 @@ func _on_horse_selected(h_data: Dictionary) -> void:
 # ==============================================================================
 func _render_step_2_weapons() -> void:
 	_step = 2
+	var is_5x := _tier == TIER_LONXON
 	if _title_label != null:
-		_title_label.text = "⚔️ CHIẾN TRƯỜNG SINH TỒN — CHỌN LOẠI VŨ KHÍ CẤP 10 (ĐỢT 2/2)"
+		_title_label.text = "⚔️ LỘN XỘN — CHỌN LOẠI VŨ KHÍ 5X (ĐỢT 2/2)" if is_5x else "⚔️ CHIẾN TRƯỜNG SINH TỒN — CHỌN LOẠI VŨ KHÍ CẤP 10 (ĐỢT 2/2)"
 	if _sub_label != null:
-		_sub_label.text = "Hãy chọn vũ khí trắng cấp 10 khởi đầu phù hợp với kỹ năng và môn phái của bạn:"
+		_sub_label.text = ("Hãy chọn vũ khí trắng cấp 5 (yêu cầu cấp 36) phù hợp môn phái — thiếu Sức / Thân thì tự cộng điểm tiềm năng cho đủ:"
+			if is_5x else "Hãy chọn vũ khí trắng cấp 10 khởi đầu phù hợp với kỹ năng và môn phái của bạn:")
 
 	if _cards_container == null:
 		return
@@ -397,7 +474,9 @@ func _create_weapon_card(index: int, w_data: Dictionary) -> Control:
 	panel.custom_minimum_size = Vector2(118.0, 140.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	panel.tooltip_text = "%s - Cấp 10\n%s" % [w_data["name"], w_data.get("desc", "")]
+	var w_lv := weapon_level(_tier)
+	var w_name := weapon_name(index, _tier)
+	panel.tooltip_text = "%s - Cấp %d\n%s" % [w_name, w_lv, w_data.get("desc", "")]
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -409,14 +488,14 @@ func _create_weapon_card(index: int, w_data: Dictionary) -> Control:
 	icon_rect.custom_minimum_size = Vector2(56, 56)
 	icon_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	var base_entry := ItemDatabase.get_base(ItemDatabase.find_base(int(w_data["detail"]), int(w_data["particular"]), 10))
+	var base_entry := ItemDatabase.get_base(ItemDatabase.find_base(int(w_data["detail"]), int(w_data["particular"]), w_lv))
 	if not base_entry.is_empty():
 		icon_rect.texture = ItemDatabase.get_icon(base_entry, true)
 	vbox.add_child(icon_rect)
 
 	# 2. Tên vũ khí (Vũ khí trắng: chữ màu trắng trang nhã)
 	var name_lbl := Label.new()
-	name_lbl.text = str(w_data["name"])
+	name_lbl.text = w_name
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_lbl.add_theme_font_size_override("font_size", 13)
@@ -425,7 +504,7 @@ func _create_weapon_card(index: int, w_data: Dictionary) -> Control:
 
 	# 3. Cấp độ: "Cấp 10"
 	var lv_lbl := Label.new()
-	lv_lbl.text = "Cấp 10"
+	lv_lbl.text = "Cấp %d" % w_lv
 	lv_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lv_lbl.add_theme_font_size_override("font_size", 11)
 	lv_lbl.add_theme_color_override("font_color", Color(0.75, 0.80, 0.85))
@@ -498,9 +577,14 @@ func _on_weapon_confirmed() -> void:
 	if _selected_weapon_idx < 0 or _selected_weapon_idx >= WEAPONS_10.size():
 		_selected_weapon_idx = 0
 
-	var weapon_item := make_weapon(_selected_weapon_idx, int(_profile.get_element()) if _profile.has_method("get_element") else 0)
+	var weapon_item := make_weapon(_selected_weapon_idx, int(_profile.get_element()) if _profile.has_method("get_element") else 0, _tier)
 	## Online: đồ do server sinh (hồ sơ tạm của trận) — báo lựa chọn để server trang bị đúng món (đồ máy tự sinh server không nhận).
-	PubgManager.pending_draft = {"horse": _chosen_horse, "weapon": _selected_weapon_idx}
+	var draft := {"horse": _chosen_horse, "weapon": _selected_weapon_idx}
+	if _tier == TIER_LONXON:
+		lonxon_pending_draft = draft
+		auto_meet_weapon(_profile, weapon_item)   ## 5x: tự cộng Sức / Thân vừa đủ cầm vũ khí (server làm lại y hệt)
+	else:
+		PubgManager.pending_draft = draft
 
 	if weapon_item != null:
 		_profile.equipment[Equipment.Part.WEAPON] = weapon_item

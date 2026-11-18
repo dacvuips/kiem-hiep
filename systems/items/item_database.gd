@@ -362,6 +362,20 @@ static func get_misc(misc_id: String) -> Dictionary:
 		]
 		for c_it in custom_ky_items:
 			_misc[str(c_it["id"])] = c_it
+		## Đại Thành Bí Kíp của màn Lộn Xộn (LonXonRules.BOOK_IDS) — mỗi cuốn +1 cấp 1 kỹ năng đúng tầng, chỉ dùng trong Lộn Xộn.
+		for tier in LonXonRules.BOOK_IDS:
+			var bid: String = LonXonRules.BOOK_IDS[tier]
+			_misc[bid] = {
+				"id": bid,
+				"name": "Đại Thành Bí Kíp %dx" % tier,
+				"intro": "Bí kíp chỉ dùng được trong màn Lộn Xộn. Mỗi cuốn tăng 1 cấp cho 1 kỹ năng %dx của môn phái (cần đủ đẳng cấp yêu cầu của kỹ năng)." % tier,
+				"icon": "obj_item_lection",
+				"price": 0,
+				"stack": 50,
+				"width": 1,
+				"height": 1,
+				"source": "lonxon",
+			}
 	return _misc.get(misc_id, {})
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
