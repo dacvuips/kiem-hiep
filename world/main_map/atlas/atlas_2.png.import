@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://xchh0iha7sw8"
-path="res://.godot/imported/atlas_2.png-f499d5935d5425895bfd03eab9be0960.ctex"
+path="res://.godot/imported/atlas_2.png-f1325c76e5cf2d5307a13ef1e76ec72e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://world/maps/map_tongkim1/atlas/atlas_2.png"
-dest_files=["res://.godot/imported/atlas_2.png-f499d5935d5425895bfd03eab9be0960.ctex"]
+source_file="res://world/main_map/atlas/atlas_2.png"
+dest_files=["res://.godot/imported/atlas_2.png-f1325c76e5cf2d5307a13ef1e76ec72e.ctex"]
 
 [params]
 

@@ -507,6 +507,9 @@ func _build_mine() -> Control:
 	bag_scroll.add_child(_bag_view)
 	TouchScrollHelperScript.attach(bag_scroll, right[0] as Control)
 	right[1].add_child(bag_scroll)
+	var money := CurrencyStrip.new(func() -> PlayerProfile: return _profile, _refresh_bag, 0.72)
+	money.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	right[1].add_child(money)
 	var tip_lbl := SocialUi.label(tr("Chạm vật phẩm để định giá bán"), SocialUi.TEXT, 13, HORIZONTAL_ALIGNMENT_CENTER)
 	tip_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right[1].add_child(tip_lbl)

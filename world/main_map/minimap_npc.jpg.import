@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cu043lcqxwe5k"
-path="res://.godot/imported/minimap_npc.jpg-97c040d56bf1b0db8fd891885e03d0f1.ctex"
+path="res://.godot/imported/minimap_npc.jpg-80e786ed7de06d71840dbaeb4f5be2de.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://world/maps/map_tongkim1/minimap_npc.jpg"
-dest_files=["res://.godot/imported/minimap_npc.jpg-97c040d56bf1b0db8fd891885e03d0f1.ctex"]
+source_file="res://world/main_map/minimap_npc.jpg"
+dest_files=["res://.godot/imported/minimap_npc.jpg-80e786ed7de06d71840dbaeb4f5be2de.ctex"]
 
 [params]
 

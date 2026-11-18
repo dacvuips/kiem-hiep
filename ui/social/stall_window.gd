@@ -53,6 +53,9 @@ func _init(hub: SocialHub = null) -> void:
 	_bag_view.cell = 37
 	scroll.add_child(_bag_view)
 	left[1].add_child(scroll)
+	var money := CurrencyStrip.new(func() -> PlayerProfile: return _profile, _refresh, 0.72)
+	money.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	left[1].add_child(money)
 	cols.add_child(left[0])
 
 	var right := SocialUi.section("🏷 Hàng trên quầy")

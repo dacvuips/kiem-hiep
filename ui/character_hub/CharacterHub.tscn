@@ -704,105 +704,6 @@ text = "PUBG"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 696.0
-offset_top = 14.0
-offset_right = 836.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_coin_gold")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="GoldValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyGold"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "998.800"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="GoldPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyGold"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/TopBar"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 844.0
-offset_top = 14.0
-offset_right = 984.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_gold")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="XuValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyXu"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "0"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="XuPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyXu"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/TopBar"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 992.0
-offset_top = 14.0
-offset_right = 1132.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_jade")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="JadeValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyJade"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "0"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="JadePlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyJade"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
 [node name="KyTranCacTopButton" type="Button" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
@@ -1797,6 +1698,105 @@ theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Hiệu Thuốc"
+
+[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 658.0
+offset_right = 158.0
+offset_bottom = 698.0
+mouse_filter = 2
+texture = ExtResource("cur_coin_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "998.800"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 166.0
+offset_top = 658.0
+offset_right = 306.0
+offset_bottom = 698.0
+mouse_filter = 2
+texture = ExtResource("cur_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="XuValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="XuPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 314.0
+offset_top = 658.0
+offset_right = 454.0
+offset_bottom = 698.0
+mouse_filter = 2
+texture = ExtResource("cur_jade")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="JadeValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="JadePlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
 
 [node name="CenterPanel" type="Control" parent="Stage"]
 unique_name_in_owner = true
