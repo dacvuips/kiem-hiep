@@ -349,7 +349,10 @@ func _update_schedule_label() -> void:
 	if _lbl_schedule == null or not is_instance_valid(_lbl_schedule):
 		return
 	var now := PubgManager.now_sec_of_day()
-	if PubgManager.schedule_bypass:
+	if PubgManager.is_gm():
+		_lbl_schedule.text = "🕗 Giờ mở: %s   —   ✦ QUYỀN GM: ĐANG MỞ (Bất chấp thời gian)" % PubgManager.schedule_text()
+		_lbl_schedule.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	elif PubgManager.schedule_bypass:
 		_lbl_schedule.text = "🕗 Giờ mở: %s   —   ĐANG MỞ (bỏ giới hạn giờ trên máy dev)" % PubgManager.schedule_text()
 		_lbl_schedule.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
 	elif PubgManager.is_open_at(now):

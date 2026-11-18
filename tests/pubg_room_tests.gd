@@ -107,6 +107,20 @@ func _ready() -> void:
 	check("Còn 30 phút nữa đóng lúc 21:30", PubgManager.secs_until_close(21 * 3600 + 1800) == 1800)
 	if not PubgManager.is_open_at(PubgManager.now_sec_of_day()):
 		PubgManager.schedule_bypass = false
+		if AccountApi != null:
+			AccountApi.gm_mode_enabled = false
+			check("Người thường ngoài giờ mở -> is_open() = false", not PubgManager.is_open() and PubgManager.closed_reason() != "")
+			check("Người thường ngoài giờ mở -> _check_open() = false", not win._check_open())
+			for c in win.get_children():
+				if c is SocialWindow:
+					c.queue_free()
+
+			AccountApi.gm_mode_enabled = true
+			check("GM ngoài giờ mở -> is_open() = true (Bất chấp thời gian)", PubgManager.is_open() and PubgManager.closed_reason() == "")
+			check("GM ngoài giờ mở -> _check_open() = true", win._check_open())
+			win._update_schedule_label()
+			check("GM dòng giờ hiển thị QUYỀN GM", win._lbl_schedule != null and win._lbl_schedule.text.contains("QUYỀN GM: ĐANG MỞ"))
+
 		var before := PubgManager.rooms.size()
 		win._on_start_pressed()
 		check("Ngoài giờ mở -> không tạo phòng / không tìm trận", PubgManager.rooms.size() == before and not win._is_searching and not win._in_waiting_room)

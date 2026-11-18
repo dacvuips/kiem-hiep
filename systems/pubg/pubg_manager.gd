@@ -231,8 +231,16 @@ static func secs_until_close(sec: int) -> int:
 		return 0
 	return OPEN_DURATION_MIN * 60 - posmod(sec - _open_start_sec(), 86400)
 
+static func is_gm() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root:
+		var api = tree.root.get_node_or_null("AccountApi")
+		if api != null and api.has_method("is_gm"):
+			return api.is_gm()
+	return false
+
 static func is_open() -> bool:
-	return schedule_bypass or is_open_at(now_sec_of_day())
+	return schedule_bypass or is_gm() or is_open_at(now_sec_of_day())
 
 static func schedule_text() -> String:
 	var end := _open_start_sec() + OPEN_DURATION_MIN * 60
