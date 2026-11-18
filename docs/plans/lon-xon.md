@@ -216,4 +216,11 @@ Lên cấp do **server** quyết (client không tự cộng cấp) → gửi l�
   mô tả lấy chỉ số gốc từ bảng đồ), 14 vũ khí cấp 5 (tên gốc, yêu cầu cấp 36); `make_horse/make_weapon(..., tier)` cho server dùng lại;
   `auto_meet_weapon(profile, weapon)` tự cộng Sức/Thân vừa đủ cầm vũ khí; lựa chọn 5x ghi vào `PubgDraftPopup.lonxon_pending_draft`
   (không đụng `PubgManager.pending_draft`). PUBG giữ nguyên (test_pubg_button_and_modal, pubg_server_logic_tests, pubg_room_tests đạt).
-- [ ] Bước 2 – 4 ở trên (server LonXonServer, client vào trận, test online).
+- [x] Bước 2 (2026-11-18): `net/server/lon_xon_server.gd` trên server thế giới (cạnh PubgServer). `C_LONXON = 32` / `S_LONXON = 44`;
+  op `STATE` (xem host / bảng), `JOIN {host}` (từ Hub), `QUIT`, `DRAFT {horse, weapon}`. 5 host slot 8..12, room_id 8_000_001..5,
+  khung ngẫu nhiên, quái sinh khi host có người đầu tiên (~1.200–1.300 quái / host, hồi sinh theo nhịp thường).
+  GameServer: `Conn.lonxon_host`, hồ sơ tạm không lưu / không nhận EXP / không nhận quà web, chặn gói như PUBG, `scatter_drops`
+  (đồ không chủ, `lifetime` riêng cho Lệnh Bài), nhặt Lệnh Bài -> cộng bộ đếm không vào túi, C_REVIVE chỉ nhận sau 5 giây.
+  RelationServer: cùng host đánh nhau tự do; SocialServer: chặn giao dịch. `tests/lon_xon_server_logic_tests.tscn` 56/56.
+  Chưa: kiểm tra tầm đánh theo hệ số bán kính Lệnh Bài (MAX_HIT_DISTANCE 1200 hiện đủ rộng), tăng AOI theo tầm nhìn.
+- [ ] Bước 3 (client: NetClient + LonXonManager + HUD) và Bước 4 (test online với bot thật).

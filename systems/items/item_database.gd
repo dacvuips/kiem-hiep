@@ -376,6 +376,17 @@ static func get_misc(misc_id: String) -> Dictionary:
 				"height": 1,
 				"source": "lonxon",
 			}
+		_misc[LonXonRules.TOKEN_ITEM_ID] = {
+			"id": LonXonRules.TOKEN_ITEM_ID,
+			"name": "Lệnh Bài Lộn Xộn",
+			"intro": "Rớt ra khi có người bị hạ trong màn Lộn Xộn. Mỗi Lệnh Bài đang giữ: +1000 điểm, nhân vật to hơn 10%, bán kính skill +5%, tầm nhìn +10%.",
+			"icon": "wulinlingpai",
+			"price": 0,
+			"stack": 9999,
+			"width": 1,
+			"height": 1,
+			"source": "lonxon",
+		}
 	return _misc.get(misc_id, {})
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.

@@ -241,6 +241,8 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	var arena_hit: bool = t != null and gs.arena != null and gs.arena.allows_hit(c, t)   ## đấu trường PK: 2 người đấu cùng phòng
 	var field_boss_hit: bool = t != null and gs.field != null and gs.field.allows_boss_pvp(c, t)   ## bản đồ săn Boss: tự do PK
 	var pubg_hit: bool = t != null and gs.pubg != null and gs.pubg.allows_hit(c, t)   ## PUBG: khác đội cùng trận
+	if not pubg_hit and t != null and gs.lonxon != null and gs.lonxon.allows_hit(c, t):
+		pubg_hit = true   ## Lộn Xộn: mỗi người 1 phe, cùng host đánh nhau tự do (bỏ qua tân thủ / tổ đội như PUBG)
 	var pk_hit: bool = t != null and (
 		(c.entity.flags & NetProto.FLAG_PK) != 0 or
 		(t.entity.flags & NetProto.FLAG_PK) != 0

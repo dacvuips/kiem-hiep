@@ -38,6 +38,9 @@ const TOKEN_SCALE_CAP := 10          ## hiệu ứng to / bán kính tính tối
 const TOKEN_VIEW_CAP := 5            ## tầm nhìn tính tối đa 5 Lệnh Bài (AOI + hiệu năng)
 const TOKEN_OWNER_LOCK_SEC := 10.0   ## chủ không nhặt lại Lệnh Bài của mình trong chừng này giây
 const BOARD_SIZE := 5
+## Lệnh Bài dưới đất là 1 món misc (hiện như đồ rơi thường), số Lệnh Bài = count. Nhặt lên KHÔNG vào túi: server cộng vào bộ đếm.
+const TOKEN_ITEM_ID := "lonxon_lenh_bai"
+const TOKEN_DROP_LIFETIME := 300.0   ## Lệnh Bài nằm đất lâu hơn đồ thường
 
 ## Đang ở trong 1 trận Lộn Xộn trên máy này (LonXonManager bật/tắt) — Đại Thành Bí Kíp chỉ dùng được khi true.
 static var in_match := false

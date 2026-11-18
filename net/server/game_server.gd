@@ -43,7 +43,7 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
-	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG]
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON]
 
 class Conn:
 	var key := ""
@@ -92,6 +92,8 @@ class Conn:
 	var handoff: Conn
 	## Đang trong trận Chiến Trường Sinh Tồn (room_id trận, PubgServer): hồ sơ là bản TẠM cấp 200 — không bao giờ lưu.
 	var pubg_match := 0
+	## Đang trong 1 host Lộn Xộn (room_id host, LonXonServer): hồ sơ là bản TẠM — không bao giờ lưu.
+	var lonxon_host := 0
 	## Xã hội (SocialServer)
 	var trade = null                    ## SocialServer.Trade đang tham gia
 	var team = null                     ## SocialServer.Team đang ở
@@ -157,6 +159,8 @@ var arena: ArenaServer
 var field: FieldServer
 ## Chiến Trường Sinh Tồn (chỉ server thế giới): đội chờ từ Hub + các trận PUBG — PubgServer.
 var pubg: PubgServer
+## Lộn Xộn (chỉ server thế giới): các host hỗn chiến tự do — LonXonServer.
+var lonxon: LonXonServer
 var map_dir := DEFAULT_MAP_DIR
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
@@ -247,6 +251,7 @@ func _ready() -> void:
 		market = MarketServer.new(self)
 		market.load_all()
 		pubg = PubgServer.new(self)
+		lonxon = LonXonServer.new(self)
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	awake_radius = clampi(int(_env("GAME_AWAKE_RADIUS", "1")), 1, 3)
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
@@ -332,6 +337,8 @@ func _process(delta: float) -> void:
 			field.tick(step)
 		if pubg:
 			pubg.tick(step)
+		if lonxon:
+			lonxon.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -492,6 +499,8 @@ func _drop(c: Conn) -> void:
 			market.on_leave(c)
 		if pubg:
 			pubg.on_leave(c)
+		if lonxon:
+			lonxon.on_leave(c)
 	_conns.erase(c.key)
 	if c.entity and c.character_id != 0:
 		c.dirty = true   ## vị trí lúc thoát luôn phải lưu
@@ -564,6 +573,8 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		return
 	if c.pubg_match != 0 and not PubgServer.MATCH_ALLOWED.has(type):
 		return   ## trong trận PUBG: không giao dịch / chợ / bày bán / mua / chế tạo (đồ hồ sơ tạm không được lọt ra)
+	if c.lonxon_host != 0 and not LonXonServer.MATCH_ALLOWED.has(type):
+		return   ## trong host Lộn Xộn: như PUBG
 	match type:
 		NetProto.C_HELLO:
 			if c.state == ConnState.WAIT_HELLO:
@@ -678,6 +689,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_PUBG:
 			if pubg and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				pubg.on_pubg(c, b)
+		NetProto.C_LONXON:
+			if lonxon and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				lonxon.on_lonxon(c, b)
 		NetProto.C_PING:
 			if b.get_available_bytes() >= 4:
 				var r := NetProto.writer(NetProto.S_PONG)
@@ -769,7 +783,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
 	c.dirty = true
 	c.char_version = int(ch.get("version", 0))
-	if take_over and take_over.pubg_match != 0:
+	if take_over and (take_over.pubg_match != 0 or take_over.lonxon_host != 0):
 		take_over = null   ## phiên cũ đang trong trận PUBG: dữ liệu RAM là hồ sơ TẠM — không chép sang (bản thật nằm ở DB)
 	if take_over:   ## dữ liệu trong RAM của phiên cũ mới nhất (có thể chưa kịp lưu)
 		c.data = take_over.data
@@ -779,6 +793,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		c.seen_web_grants = take_over.seen_web_grants
 		c.unsaved_web_grants = take_over.unsaved_web_grants
 	var in_pubg := pubg != null and not c.hub and pubg.on_hello(c)   ## đã ghép trận PUBG: thay bằng hồ sơ tạm cấp 200
+	var in_lonxon := lonxon != null and not c.hub and not in_pubg and lonxon.on_hello(c)   ## đã giữ chỗ Lộn Xộn: hồ sơ tạm cấp 50
 	c.last_save = _now
 	_last_status_poll = -INF   ## hỏi ngay quà chờ (nạp thẻ trên web) cho nhân vật vừa vào
 	c.max_hit = ProfileGuard.max_hit(c.profile)
@@ -792,7 +807,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	e.level = c.profile.level   ## (cột level của bảng nhân vật có thể cũ: quà tân thủ vừa nâng cấp ở trên, chưa lưu)
 	e.camp = c.profile.get_current_camp()
 	e.nation = Nation.Type.NONE   ## phe Tống / Kim chỉ có trong trận (refresh_camp)
-	e.look = look_from_profile(c.data if in_pubg else data)   ## PUBG: tay trắng như hồ sơ tạm
+	e.look = look_from_profile(c.data if in_pubg or in_lonxon else data)   ## PUBG / Lộn Xộn: tay trắng như hồ sơ tạm
 	e.flags = NetProto.FLAG_RIDING if int(e.look.horse) >= 0 else 0
 	if battle:   ## chiến trường: chưa có phe thì đứng tạm ở điểm xuất phát (vị trí đã lưu là vị trí ngoài thế giới)
 		e.pos = grid.open_spawn_near(grid.default_center())
@@ -805,6 +820,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.entity = e
 	if in_pubg:
 		pubg.place(c)   ## vào phòng của trận + điểm thả của đội
+	if in_lonxon:
+		lonxon.place(c)   ## vào phòng của host + chỗ ngẫu nhiên trong khung
 	_players_by_eid[e.eid] = c
 	if c.hub:
 		e.room_id = -1   ## sảnh: không vào lưới tầm nhìn, không "gần" ai (GameServer.near so room_id)
@@ -834,6 +851,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		battle.on_join_world(c)
 	if in_pubg:
 		pubg.on_entered(c)
+	if in_lonxon:
+		lonxon.on_entered(c)
 	print("%s: %s (%s) eid %d — online %d" % ["Vào sảnh" if c.hub else "Vào map", e.name, c.username, e.eid, _by_character.size()])
 
 ## Chỗ đứng lúc thoát (khoá "pos" do _save ghi). Chưa có / ra ngoài map / kẹt trong vùng kín -> điểm xuất phát thông thoáng;
@@ -900,6 +919,8 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 			arena.on_died(c)
 		if c.pubg_match != 0:
 			pubg.on_died(c)   ## PUBG: bị loại (không tính trị PK)
+		elif c.lonxon_host != 0:
+			lonxon.on_died(c, _recent_pvp_killer(c))   ## Lộn Xộn: rớt hết đồ + Lệnh Bài, chờ hồi sinh (không tính trị PK)
 		else:
 			relation.on_died(c)
 	## Bày bán = ngồi yên tại chỗ: rời chỗ / lên ngựa / nhảy / chết thì tự dọn quầy, còn lại người khác luôn thấy đang ngồi.
@@ -933,6 +954,8 @@ func _on_revive(c: Conn) -> void:
 	if (e.flags & NetProto.FLAG_DEAD) == 0:
 		return
 	if pubg and pubg.on_revive(c):   ## PUBG: đã bị loại, không hồi sinh
+		return
+	if lonxon and lonxon.on_revive(c):   ## Lộn Xộn: đủ 5 giây mới hồi sinh, chỗ ngẫu nhiên trong khung
 		return
 	e.flags &= ~NetProto.FLAG_DEAD
 	if battle and battle.on_revive(c):   ## chiến trường: về hậu doanh phe mình
@@ -1089,6 +1112,10 @@ func _on_monster_killed(m: ServerMonster) -> void:
 			rolls = DropTable.roll_gold_boss(m.level, m.series)
 	elif pubg and pubg.has_room(m.room_id):   ## quái trong trận PUBG
 		rolls = PubgServer.roll_drops()
+	elif lonxon and lonxon.has_room(m.room_id):   ## quái trong host Lộn Xộn: theo cấp người hạ + người hạ +5 cấp
+		var lx_killer: Conn = _players_by_eid.get(m.last_hitter)
+		rolls = lonxon.roll_drops(lx_killer)
+		lonxon.on_monster_killed(lx_killer)
 	elif m.hell_stars > 0:   ## quái phòng Địa Ngục
 		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
 	else:
@@ -1107,7 +1134,7 @@ func _on_monster_killed(m: ServerMonster) -> void:
 
 ## Kinh nghiệm do server cộng vào bản nhân vật của server rồi báo game (S_PROGRESS).
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
-	if c.profile == null or c.pubg_match != 0:   ## PUBG: cấp 200 cố định, không nhận kinh nghiệm
+	if c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:   ## PUBG / Lộn Xộn: cấp do luật trận, không nhận kinh nghiệm
 		return
 	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
 	var exp_p := c.profile.get_active_exp_enhance_p()
@@ -1116,7 +1143,7 @@ func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	_give_exp(c, got)
 
 func _give_exp(c: Conn, got: int) -> void:
-	if got <= 0 or c.profile == null or c.pubg_match != 0 or c.profile.level >= PlayerProfile.MAX_LEVEL:
+	if got <= 0 or c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0 or c.profile.level >= PlayerProfile.MAX_LEVEL:
 		return
 	got = int(got * exp_mult)
 	var before := c.profile.level
@@ -1296,6 +1323,34 @@ func _broadcast_drops(at: Vector2, ids: Array, base := Vector2i.ZERO) -> void:
 		if c:
 			_send(c, b)
 
+## Rải `list` ([{item: dict, ...trường thêm của đồ rơi (lifetime = giây nằm đất)}]) quanh `where` thành đồ rơi không chủ (ai cũng
+## nhặt ngay) rồi báo người ở gần. Dùng cho Lộn Xộn (chết rớt hết đồ + Lệnh Bài).
+func scatter_drops(where: ServerEntity, list: Array, radius: float) -> Array:
+	var ids: Array = []
+	var n := list.size()
+	for i in n:
+		var entry: Dictionary = list[i]
+		var ang := TAU * float(i) / maxf(1.0, float(n)) + randf_range(-0.2, 0.2)
+		var r := radius * (0.35 + 0.65 * randf()) if n > 1 else 0.0
+		var p := where.pos + Vector2(cos(ang), sin(ang) * 0.5) * r
+		var id := _add_drop(p, 0, 0, entry.get("item", {}), where)
+		var d: Dictionary = _drops[id]
+		for k in entry:
+			if k == "lifetime":
+				d.until = _now + float(entry[k])
+			elif k != "item":
+				d[k] = entry[k]
+		ids.append(id)
+	_broadcast_drops(where.pos, ids, where.cell_base)
+	return ids
+
+## Tên người vừa đánh `c` (trong KILL_CREDIT_SECONDS giây) — "" nếu không có.
+func _recent_pvp_killer(c: Conn) -> String:
+	if c.last_pvp_from == 0 or _now - c.last_pvp_at > RelationServer.KILL_CREDIT_SECONDS:
+		return ""
+	var k: Conn = conn_of_eid(c.last_pvp_from)
+	return k.entity.name if k and k.entity else ""
+
 func _drop_gone(id: int) -> void:
 	var d: Dictionary = _drops.get(id, {})
 	_drops.erase(id)
@@ -1329,6 +1384,14 @@ func _on_pickup(c: Conn, id: int) -> void:
 				return
 		elif int(d.owner) != c.entity.eid:
 			notice(c, "Đồ này của người khác, chưa nhặt được")
+			return
+	if lonxon and c.lonxon_host != 0:
+		var lx := lonxon.on_pickup(c, d)   ## Lệnh Bài: cộng bộ đếm, không vào túi
+		if lx == "ok":
+			_drop_gone(id)
+			return
+		if lx != "":
+			notice(c, lx)
 			return
 	var b := NetProto.writer(NetProto.S_PICKED)
 	c.grant_seq += 1
@@ -1368,7 +1431,7 @@ func _on_discard(c: Conn, uid: String) -> void:
 			if SecurityLock.is_item_locked(it):
 				return
 			## Đồ Hoàng Kim chỉ vứt được trong trận PUBG (hồ sơ tạm) — ngoài trận luôn chặn (không tin client).
-			if PubgManager.discard_block_reason(it, c.pubg_match != 0) != "":
+			if PubgManager.discard_block_reason(it, c.pubg_match != 0 or c.lonxon_host != 0) != "":
 				return
 			c.profile.inventory.remove_at(i)
 			c.data = c.profile.to_dict()
@@ -1544,7 +1607,7 @@ func _poll_status() -> void:
 	var gr: Variant = r.get("grants", {})
 	if gr is Dictionary:
 		for c: Conn in _conns.values():
-			if c.state == ConnState.IN_WORLD and c.pubg_match == 0 and gr.has(str(c.character_id)):   ## PUBG: nhận khi về Hub
+			if c.state == ConnState.IN_WORLD and c.pubg_match == 0 and c.lonxon_host == 0 and gr.has(str(c.character_id)):   ## PUBG / Lộn Xộn: nhận khi về Hub
 				_apply_web_grants(c, gr[str(c.character_id)])
 
 ## Nguyên bảo đổi từ Xu trên web: cộng vào bản nhân vật của server, gửi bản chuẩn xuống game, lưu ngay (kèm id quà để đánh dấu).
@@ -1591,8 +1654,8 @@ func _save_due() -> void:
 ## Lưu tuần tự: đang có lần lưu chạy thì xếp hàng, lưu xong sẽ lưu tiếp bản mới nhất (2 lần lưu chồng nhau cùng version
 ## thì 1 lần bị từ chối -> mất dữ liệu).
 func _save(c: Conn) -> void:
-	if c.pubg_match != 0:
-		c.dirty = false   ## hồ sơ tạm của trận PUBG: không bao giờ ghi đè nhân vật thật
+	if c.pubg_match != 0 or c.lonxon_host != 0:
+		c.dirty = false   ## hồ sơ tạm của trận PUBG / host Lộn Xộn: không bao giờ ghi đè nhân vật thật
 		return
 	if c.saving:
 		c.save_queued = true
@@ -1876,6 +1939,8 @@ func grid_of(e: ServerEntity) -> MapGrid:
 			return ag
 	if pubg and e.room_id != 0 and pubg.has_room(e.room_id):
 		return pubg.grid_of_room(e.room_id)
+	if lonxon and e.room_id != 0 and lonxon.has_room(e.room_id):
+		return lonxon.grid_of_room(e.room_id)
 	return field.grid_of_room(e.room_id) if field and e.room_id != 0 else grid
 
 ## 2 thực thể cùng chỗ (cùng phòng train chung) và cách nhau không quá `dist` px — dùng cho mọi kiểm tra "đứng gần".
