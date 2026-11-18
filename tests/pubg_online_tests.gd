@@ -199,7 +199,7 @@ func run() -> void:
 		or fc.known.values().any(func(k) -> bool: return k.kind == NetProto.KIND_MONSTER))
 	var st := last(fa, "mstate")
 	check("Trạng thái trận: 4 người, 2 đội, đồng đội = mình + B", int(st.get("alive_players", 0)) == 4 and int(st.get("alive_squads", 0)) == 2 \
-		and (st.squad_eids as Array).has(fb.eid), st)
+		and PubgClient.eid_list(st.get("squad_eids", [])).has(fb.eid), st)
 
 	## --- 4. Chọn thẻ (server sinh ngựa + vũ khí) ---
 	var before_v := int(fa.profile.get("vitality", 0))

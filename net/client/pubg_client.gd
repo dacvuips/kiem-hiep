@@ -79,9 +79,17 @@ func _on_message(msg: Dictionary) -> void:
 		"result":
 			_on_result(msg)
 
+## eid trong JSON (S_PUBG) về dạng float (1174.0); Array.has(1174) của Godot 4 KHÔNG coi 1174.0 == 1174 -> ép int hết.
+static func eid_list(v: Variant) -> Array:
+	var out: Array = []
+	if v is Array:
+		for e in v:
+			out.append(int(e))
+	return out
+
 func _on_state(s: Dictionary) -> void:
-	_squad_eids = s.get("squad_eids", [])
-	_enemy_eids = s.get("enemy_eids", [])
+	_squad_eids = eid_list(s.get("squad_eids", []))
+	_enemy_eids = eid_list(s.get("enemy_eids", []))
 	if not _out:
 		_info.text = "👥 Còn %d người · %d/%d đội" % [int(s.get("alive_players", 0)), int(s.get("alive_squads", 0)), int(s.get("squads", 0))]
 	_apply_flags()

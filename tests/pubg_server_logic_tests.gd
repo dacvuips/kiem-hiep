@@ -234,3 +234,8 @@ func run() -> void:
 	r2.get_u8()
 	ps2.on_pubg(e, r2)
 	check("Ngoài giờ mở -> từ chối tạo đội (trong giờ -> cho)", (e.last("reject") != {}) != open_now, [open_now, e.msgs])
+
+	## eid qua JSON (S_PUBG "mstate") thành float -> client phải ép int mới tìm được đồng đội / địch
+	var js: Dictionary = JSON.parse_string(JSON.stringify({"squad_eids": [1174, 1175]}))
+	var squad := PubgClient.eid_list(js.get("squad_eids"))
+	check("mstate: eid float từ JSON -> int, has(eid) đúng", squad.has(1174) and squad.has(1175) and typeof(squad[0]) == TYPE_INT, js)
