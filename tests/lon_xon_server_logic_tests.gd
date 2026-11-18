@@ -206,6 +206,7 @@ func run() -> void:
 	check("Bảng: An đứng đầu 1000 điểm", board.get("top", []).size() >= 1 and str(board.top[0].name) == "An" and int(board.top[0].score) == 1000)
 	check("Bảng: người 0 điểm không vào top", board.top.size() == 1)
 	check("Số hạng 1 trên đầu An", int(board.get("badges", {}).get(str(a.entity.eid), 0)) == 1)
+	check("Bảng gửi số Lệnh Bài từng người (để vẽ to)", int(board.get("sizes", {}).get(str(a.entity.eid), 0)) == 1 and not board.sizes.has(str(b.entity.eid)))
 	check("Host khác không nhận bảng host 2", c3.last("board").get("top", []).is_empty())
 
 	# --- Hồi sinh

@@ -47,6 +47,8 @@ signal arena_message(msg: Dictionary)
 signal field_message(msg: Dictionary)
 ## Chiến Trường Sinh Tồn (PubgServer trên game server thế giới): tin S_PUBG — xem PubgServer.
 signal pubg_message(msg: Dictionary)
+## Lộn Xộn (LonXonServer trên game server thế giới): tin S_LONXON — xem LonXonServer.
+signal lonxon_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -307,6 +309,15 @@ func send_pubg(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:
 		return
 	var b := NetProto.writer(NetProto.C_PUBG)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b)
+
+## Lộn Xộn: op LonXonServer.OP_* + tham số json. Gửi được cả từ Hub (xem / vào host) lẫn trong host.
+func send_lonxon(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_LONXON)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
@@ -581,6 +592,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var pmsg := NetProto.get_json(b)
 			if not pmsg.is_empty():
 				pubg_message.emit(pmsg)
+		NetProto.S_LONXON:
+			var lmsg := NetProto.get_json(b)
+			if not lmsg.is_empty():
+				lonxon_message.emit(lmsg)
 		NetProto.S_ARENA:
 			var amsg := NetProto.unpack_arena_msg(b)
 			if not amsg.is_empty():

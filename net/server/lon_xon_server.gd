@@ -15,7 +15,7 @@ class_name LonXonServer
 ##
 ## Tin game -> server: C_LONXON u8 op + str json. Server -> game: S_LONXON json {op: ...}:
 ##   "hosts" {hosts: [{host, players, cap}]}          "match" {host, rid, box, spawn}         "reject" {msg}       "none"
-##   "board" {top: [{name, score, tokens}], badges: {eid: hạng}}                               "tokens" {n, score}
+##   "board" {top: [{name, score, tokens, eid}], badges: {eid: hạng}, sizes: {eid: Lệnh Bài}}   "tokens" {n, score}
 ##   "died" {respawn_in, items, tokens, killer}        "respawn" {}                           "level" {level, gained}
 
 const OP_STATE := 1
@@ -407,11 +407,14 @@ func _board_msg(h: Dictionary) -> Dictionary:
 	for e in LonXonRules.top_n(entries):
 		top.append({"name": e.name, "score": e.score, "tokens": e.tokens, "eid": e.eid})
 	var badges := {}
+	var sizes := {}   ## eid -> số Lệnh Bài đang giữ (máy người chơi vẽ người đó to hơn)
 	var by_cid := LonXonRules.rank_badges(entries)
 	for e in entries:
 		if by_cid.has(e.cid):
 			badges[str(e.eid)] = int(by_cid[e.cid])
-	return {"op": "board", "top": top, "badges": badges}
+		if int(e.tokens) > 0:
+			sizes[str(e.eid)] = int(e.tokens)
+	return {"op": "board", "top": top, "badges": badges, "sizes": sizes}
 
 func _broadcast_board(h: Dictionary) -> void:
 	var msg := _board_msg(h)

@@ -223,4 +223,13 @@ Lên cấp do **server** quyết (client không tự cộng cấp) → gửi l�
   (đồ không chủ, `lifetime` riêng cho Lệnh Bài), nhặt Lệnh Bài -> cộng bộ đếm không vào túi, C_REVIVE chỉ nhận sau 5 giây.
   RelationServer: cùng host đánh nhau tự do; SocialServer: chặn giao dịch. `tests/lon_xon_server_logic_tests.tscn` 56/56.
   Chưa: kiểm tra tầm đánh theo hệ số bán kính Lệnh Bài (MAX_HIT_DISTANCE 1200 hiện đủ rộng), tăng AOI theo tầm nhìn.
-- [ ] Bước 3 (client: NetClient + LonXonManager + HUD) và Bước 4 (test online với bot thật).
+- [x] Bước 3 (2026-11-18): máy người chơi.
+  `NetClient.send_lonxon` / `lonxon_message`; `systems/lon_xon/lon_xon_manager.gd` (tin "match" -> mục map `lon_xon` / `lonxon_online`,
+  sao lưu + trả hồ sơ thật); `LonXonWindow` online (số người từng host, khoá host đầy, Bắt Đầu -> OP_JOIN -> vào map; offline báo chỉ
+  chơi online); `main.gd` thêm `LonXonClient` khi `lonxon_online`; `VltkWorld` khung + điểm vào như PUBG (không bo, không thẻ 8x);
+  `net/client/lon_xon_client.gd`: popup thẻ 5x lúc vào + mỗi lần hồi sinh, đếm ngược 5 giây rồi gửi C_REVIVE tới khi server báo
+  "respawn", Top 5 góc trên trái, số hạng 1/2/3 trên đầu, Lệnh Bài -> `avatar.scale`, `Player.skill_radius_mult`, `Player.view_mult`
+  (camera, không lưu vào cài đặt); người khác to theo `sizes` của bảng; nút "Rời Lộn Xộn". `tests/lon_xon_client_tests.tscn` (37 mục).
+- [ ] Bước 4 (test online với bot thật qua server tài khoản — chưa chạy vì server tài khoản 8080 tắt) + chạy thử bằng tay.
+- [ ] Còn mở: server kiểm tra tầm đánh theo hệ số Lệnh Bài, AOI rộng theo tầm nhìn; tên nhân vật chưa dời lên khi nhân vật to ra
+  (số hạng đã dời); vùng nổ (AOE) của skill chưa nhân hệ số — mới nhân tầm đánh / tầm chỉ mục tiêu.

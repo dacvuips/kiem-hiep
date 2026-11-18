@@ -2,12 +2,17 @@ extends SocialWindow
 class_name LonXonWindow
 ## Modal "Lộn Xộn" — hỗn chiến tự do (mỗi người 1 phe, không tổ đội) trên khung Tống Kim 1 như PUBG nhưng KHÔNG có vòng bo,
 ## không giới hạn thời gian: chết -> 5 giây hồi sinh trong khung, bị hạ thì rớt hết đồ (trang bị + túi) ra đất.
-## Server dựng sẵn LonXonServer.HOST_COUNT host; người chơi chọn 1 host rồi bấm Bắt Đầu.
-## Kế hoạch đầy đủ: docs/plans/lon-xon.md. Phần server chưa làm -> nút Bắt Đầu chỉ báo "đang xây dựng".
+## Server dựng sẵn LonXonRules.HOST_COUNT host; người chơi chọn 1 host rồi bấm Bắt Đầu (kế hoạch: docs/plans/lon-xon.md).
+## ONLINE (đã đăng nhập, Hub nối server thế giới): mở cửa sổ gửi OP_STATE lấy số người từng host, Bắt Đầu gửi OP_JOIN {host},
+## server trả "match" -> vào map (LonXonManager.start_online). Offline: Lộn Xộn chỉ chơi online.
 
-const HOST_COUNT := 5
-const HOST_CAPACITY := 50
+const HOST_COUNT := LonXonRules.HOST_COUNT
+const HOST_CAPACITY := LonXonRules.HOST_CAPACITY
 const WIN_W := 900.0
+
+var _online := false
+var _joining := false
+var _status: Label
 
 var _profile: PlayerProfile
 var _on_play: Callable
@@ -53,7 +58,42 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_content_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content_box.add_theme_constant_override("separation", 12)
 	scroll.add_child(_content_box)
+	_online = NetWorldSync.is_online_mode() and NetClient.is_in_world()
 	_select_tab(0)
+	if _online:
+		NetClient.lonxon_message.connect(_on_lonxon_message)
+		NetClient.send_lonxon(LonXonServer.OP_STATE)
+
+func _exit_tree() -> void:
+	if NetClient.lonxon_message.is_connected(_on_lonxon_message):
+		NetClient.lonxon_message.disconnect(_on_lonxon_message)
+
+func _on_lonxon_message(msg: Dictionary) -> void:
+	match str(msg.get("op", "")):
+		"hosts":
+			for h in msg.get("hosts", []):
+				var i := int(h.get("host", 0)) - 1
+				if i >= 0 and i < _host_players.size():
+					_host_players[i] = int(h.get("players", 0))
+			if _tab == 0:
+				_refresh_hosts()
+		"match":
+			if not _joining:
+				return
+			_joining = false
+			var entry := LonXonManager.start_online(_profile, msg)
+			queue_free()
+			if _on_play.is_valid():
+				_on_play.call(entry)
+		"reject":
+			_joining = false
+			_set_status("")
+			SocialWindow.confirm(self, "Không vào được", str(msg.get("msg", "")), Callable())
+			NetClient.send_lonxon(LonXonServer.OP_STATE)
+
+func _set_status(text: String) -> void:
+	if _status != null and is_instance_valid(_status):
+		_status.text = text
 
 func _select_tab(idx: int) -> void:
 	_tab = idx
@@ -100,6 +140,10 @@ func _render_play() -> void:
 	start.pressed.connect(_on_start_pressed)
 	row.add_child(start)
 
+	_status = _label("" if _online else "⚠️ Lộn Xộn chỉ chơi online — hãy đăng nhập và chọn máy chủ.", Color(1.0, 0.6, 0.35))
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_content_box.add_child(_status)
+
 	var note := _label("Vào trận là hồ sơ tạm cấp 50 + chọn ngựa 5x và vũ khí 5x, hạ 1 quái +5 cấp (tối đa 200) — không ảnh hưởng nhân vật thật.", Color(0.65, 0.68, 0.68))
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_content_box.add_child(note)
@@ -118,8 +162,14 @@ func _refresh_hosts() -> void:
 		b.disabled = cnt >= HOST_CAPACITY
 
 func _on_start_pressed() -> void:
-	## TODO(Lộn Xộn): gửi C_LONXON {op: join, host: _selected_host}; server trả "match" -> _on_play(LonXonManager.start_online(...)).
-	SocialWindow.confirm(self, "Đang Xây Dựng", "🌀 Chế độ Lộn Xộn đang được xây dựng phía máy chủ.\nHost đã chọn: Host %d." % _selected_host, Callable())
+	if not _online:
+		SocialWindow.confirm(self, "Chỉ chơi online", "🌀 Lộn Xộn chỉ chơi online. Hãy đăng nhập và chọn máy chủ rồi thử lại.", Callable())
+		return
+	if _joining:
+		return
+	_joining = true
+	_set_status("⏳ Đang vào Host %d…" % _selected_host)
+	NetClient.send_lonxon(LonXonServer.OP_JOIN, {"host": _selected_host})
 
 # ------------------------------------------------------------------ tab Luật Chơi
 func _render_rules() -> void:

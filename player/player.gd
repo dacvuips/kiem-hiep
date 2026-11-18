@@ -480,6 +480,11 @@ func _apply_name_y() -> void:
 
 ## Đang gõ vào ô nhập (chat, đặt tên...) thì phím không điều khiển nhân vật (không chạy / nhảy / ra chiêu khi gõ chữ).
 ## Đặt mức zoom camera (camera trượt mượt tới) và lưu vào cài đặt máy — lăn chuột và thanh trượt trong Cài đặt đều qua đây.
+## Hệ số tầm nhìn của chế độ chơi (Lộn Xộn: Lệnh Bài) — > 1 thì camera thu nhỏ bản đồ (thấy rộng hơn). Không lưu vào cài đặt.
+var view_mult := 1.0
+## Hệ số tầm đánh skill của chế độ chơi (Lộn Xộn: Lệnh Bài) — riêng từng nhân vật, không dùng PlayerStats chung.
+var skill_radius_mult := 1.0
+
 func set_camera_zoom(z: float) -> void:
 	_zoom_target = clampf(z, ZOOM_MIN, ZOOM_MAX)
 	GameSettings.set_camera_zoom(_zoom_target)
@@ -812,8 +817,9 @@ func _physics_process(delta: float) -> void:
 	if _dead:
 		return
 	var camera_zoom: float = $Camera2D.zoom.x
-	if not is_equal_approx(camera_zoom, _zoom_target):
-		$Camera2D.zoom = Vector2.ONE * lerpf(camera_zoom, _zoom_target, minf(1.0, ZOOM_SMOOTHING * delta))
+	var want_zoom := _zoom_target / maxf(view_mult, 0.1)
+	if not is_equal_approx(camera_zoom, want_zoom):
+		$Camera2D.zoom = Vector2.ONE * lerpf(camera_zoom, want_zoom, minf(1.0, ZOOM_SMOOTHING * delta))
 	var input_vector := _key_vector("move_left", "move_right", "move_up", "move_down")
 	if input_vector != Vector2.ZERO:
 		if _has_move_target:
@@ -1329,14 +1335,14 @@ func _display_range() -> float:
 
 func get_skill_radius(skill: SkillDefinition) -> float:
 	if skill == null:
-		return base_range * PlayerStats.range_multiplier
+		return base_range * PlayerStats.range_multiplier * skill_radius_mult
 	var lvl := 1
 	if skill_controller != null and skill_controller.has_method("_learned_level"):
 		lvl = skill_controller._learned_level(skill)
 	var radius := skill.get_attack_radius_at_level(lvl)
 	if radius <= 0.0:
 		radius = skill.range if ("range" in skill and skill.range > 0.0) else base_range
-	return radius * PlayerStats.range_multiplier
+	return radius * PlayerStats.range_multiplier * skill_radius_mult
 
 ## Tầm của đòn chính đang chọn — vòng chỉ tầm và Auto dùng tầm này.
 ## Ô THI TRIỂN LIÊN TỤC: mỗi LOOP_CHECK_INTERVAL giây thử ra chiêu skill trong các ô (mỗi lượt tối đa 1 skill):

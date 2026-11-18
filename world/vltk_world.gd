@@ -785,6 +785,7 @@ func setup_main_map() -> void:
 	var is_lol := VltkWorld.is_tong_kim_lol()
 	var is_br := VltkWorld.is_brawl()
 	var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+	var is_lonxon: bool = GameManager.field_map.get("lon_xon", false)   ## Lộn Xộn: khung + điểm vào như PUBG (không bo, không thẻ 8x)
 
 	var center := _default_center()
 	var safe_pos := Vector2.ZERO
@@ -832,7 +833,7 @@ func setup_main_map() -> void:
 			if safe_pos == Vector2.ZERO:
 				safe_pos = safe_c
 		center = safe_c
-	elif is_pubg:
+	elif is_pubg or is_lonxon:
 		var pubg_box: Rect2 = GameManager.field_map.get("arena_box", PubgManager.fixed_outer_boundary)
 		if pubg_box.has_area():
 			set_confine(pubg_box)
