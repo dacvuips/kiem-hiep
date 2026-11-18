@@ -229,7 +229,9 @@ func random_spot(h: Dictionary) -> Vector2:
 	var box: Rect2 = h.box
 	var g := _grid()
 	if test_spawn and g != null:
-		return g.open_spawn_near(box.get_center() + Vector2(randf_range(-60, 60), randf_range(-30, 30)))
+		## Test: mọi người đứng chung 1 chỗ cạnh con quái đầu tiên của host (khung ngẫu nhiên — tâm khung có thể không có quái gần).
+		var anchor: Vector2 = (h.monsters[0] as ServerMonster).pos + Vector2(160, 0) if not (h.monsters as Array).is_empty() else box.get_center()
+		return g.open_spawn_near(anchor + Vector2(randf_range(-40, 40), randf_range(-20, 20)))
 	for i in 8:
 		var p := box.position + Vector2(randf_range(0.1, 0.9) * box.size.x, randf_range(0.1, 0.9) * box.size.y)
 		var s: Vector2 = g.free_near(p) if g != null else p

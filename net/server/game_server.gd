@@ -94,6 +94,8 @@ class Conn:
 	var pubg_match := 0
 	## Đang trong 1 host Lộn Xộn (room_id host, LonXonServer): hồ sơ là bản TẠM — không bao giờ lưu.
 	var lonxon_host := 0
+	## Kết nối đã đứt (đang dọn trong _drop): không gửi gì tới nữa (ENet báo lỗi peer null).
+	var gone := false
 	## Xã hội (SocialServer)
 	var trade = null                    ## SocialServer.Trade đang tham gia
 	var team = null                     ## SocialServer.Team đang ở
@@ -484,6 +486,7 @@ func _on_peer_disconnected(id: int, p: MultiplayerPeer) -> void:
 		_drop(c)
 
 func _drop(c: Conn) -> void:
+	c.gone = true
 	if not c.pending_profile.is_empty():
 		_apply_profile(c, c.pending_profile, c.pending_ack)
 	if c.entity:
@@ -519,6 +522,8 @@ func _drop(c: Conn) -> void:
 		print("Rời map: %s (%s)" % [c.entity.name, c.username])
 
 func _send(c: Conn, b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
+	if c.gone:
+		return
 	_m_bytes += b.data_array.size()
 	_m_packets += 1
 	var p := c.peer
