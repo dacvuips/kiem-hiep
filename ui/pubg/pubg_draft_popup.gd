@@ -10,6 +10,7 @@ var _profile: PlayerProfile
 var _on_finish: Callable
 var _step: int = 1 # 1: Chọn Ngựa, 2: Chọn Vũ Khí
 var _selected_weapon_idx: int = 0
+var _chosen_horse: int = 1
 var _weapon_cards: Array[PanelContainer] = []
 var _weapon_status_labels: Array[Label] = []
 
@@ -70,6 +71,46 @@ const WEAPONS_10 := [
 	{"detail": 1, "particular": 3, "cat": "Ám khí — Cầm", "name": "Thiên Cầm", "desc": "Cầm âm ma mị gảy nốt sát phạt, thích hợp Tiêu Dao"},
 	{"detail": 1, "particular": 4, "cat": "Ám khí — Cung", "name": "Cung Dương Môn C10", "desc": "Cung tên thiện xạ bách bộ xuyên dương, thích hợp Dương Gia Cung"}
 ]
+
+## Thần mã 8x của thẻ `horse_lv` (1-5): ngựa cấp 80 tốc chạy +100% + dòng riêng theo tên. Dùng chung máy người chơi + PubgServer.
+static func make_horse(horse_lv: int, elem: int) -> ItemInstance:
+	horse_lv = clampi(horse_lv, 1, HORSES_8X.size())
+	var horse_item := ItemGenerator.generate(10, 5, horse_lv, elem, [10, 10, 10, 10, 10])
+
+	if horse_item != null:
+		# Đảm bảo tốc độ chạy +100% đúng chuẩn như thông tin hiển thị trên thẻ chọn
+		var found_spd := false
+		for b in horse_item.base_values:
+			if b[0] == "fastwalkrun_p":
+				b[1] = 100
+				found_spd = true
+				break
+		if not found_spd:
+			horse_item.base_values.append(["fastwalkrun_p", 100])
+
+		# Thêm thuộc tính đặc thù theo danh xưng thần mã 8x
+		match horse_lv:
+			1: # Ô Vân Đạp Tuyết: Né tránh +15%, Kháng tất cả +15%
+				horse_item.base_values.append(["defense_p", 15])
+				horse_item.base_values.append(["allres_p", 15])
+			2: # Xích Thố: Sinh lực tối đa +1000, Kháng Hỏa +25%
+				horse_item.base_values.append(["lifemax_v", 1000])
+				horse_item.base_values.append(["fireres_p", 25])
+			3: # Tuyệt Ảnh: Bỏ qua né tránh, Kháng Độc +25%
+				horse_item.base_values.append(["ignoredefense_p", 20])
+				horse_item.base_values.append(["poisonres_p", 25])
+			4: # Đích Lô: Tấn công chính xác +20%, Kháng Lôi +25%
+				horse_item.base_values.append(["attackrating_p", 20])
+				horse_item.base_values.append(["lightingres_p", 25])
+			5: # Chiếu Dạ Ngọc Sư Tử: Băng sát nội công +150, Kháng Băng +25%
+				horse_item.base_values.append(["colddamage_v", 150])
+				horse_item.base_values.append(["coldres_p", 25])
+	return horse_item
+
+## Vũ khí trắng cấp 10 thứ `index` trong WEAPONS_10 (không dòng ma pháp).
+static func make_weapon(index: int, elem: int) -> ItemInstance:
+	var w_data: Dictionary = WEAPONS_10[clampi(index, 0, WEAPONS_10.size() - 1)]
+	return ItemGenerator.generate(int(w_data["detail"]), int(w_data["particular"]), 10, elem, [])
 
 static func open(host: Node, profile: PlayerProfile, on_finish: Callable = Callable()) -> PubgDraftPopup:
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
@@ -267,40 +308,11 @@ func _on_horse_selected(h_data: Dictionary) -> void:
 	if _profile == null:
 		return
 
-	# Tạo Ngựa cấp 80 (detail 10, particular 5, level 1..5)
 	var horse_lv: int = int(h_data.get("level", 1))
-	var elem: int = int(_profile.get_element()) if _profile.has_method("get_element") else 0
-	var horse_item := ItemGenerator.generate(10, 5, horse_lv, elem, [10, 10, 10, 10, 10])
+	_chosen_horse = horse_lv
+	var horse_item := make_horse(horse_lv, int(_profile.get_element()) if _profile.has_method("get_element") else 0)
 
 	if horse_item != null:
-		# Đảm bảo tốc độ chạy +100% đúng chuẩn như thông tin hiển thị trên thẻ chọn
-		var found_spd := false
-		for b in horse_item.base_values:
-			if b[0] == "fastwalkrun_p":
-				b[1] = 100
-				found_spd = true
-				break
-		if not found_spd:
-			horse_item.base_values.append(["fastwalkrun_p", 100])
-
-		# Thêm thuộc tính đặc thù theo danh xưng thần mã 8x
-		match horse_lv:
-			1: # Ô Vân Đạp Tuyết: Né tránh +15%, Kháng tất cả +15%
-				horse_item.base_values.append(["defense_p", 15])
-				horse_item.base_values.append(["allres_p", 15])
-			2: # Xích Thố: Sinh lực tối đa +1000, Kháng Hỏa +25%
-				horse_item.base_values.append(["lifemax_v", 1000])
-				horse_item.base_values.append(["fireres_p", 25])
-			3: # Tuyệt Ảnh: Bỏ qua né tránh, Kháng Độc +25%
-				horse_item.base_values.append(["ignoredefense_p", 20])
-				horse_item.base_values.append(["poisonres_p", 25])
-			4: # Đích Lô: Tấn công chính xác +20%, Kháng Lôi +25%
-				horse_item.base_values.append(["attackrating_p", 20])
-				horse_item.base_values.append(["lightingres_p", 25])
-			5: # Chiếu Dạ Ngọc Sư Tử: Băng sát nội công +150, Kháng Băng +25%
-				horse_item.base_values.append(["colddamage_v", 150])
-				horse_item.base_values.append(["coldres_p", 25])
-
 		_profile.equipment[Equipment.Part.HORSE] = horse_item
 		_profile.riding = true
 		if GameManager and GameManager.local_profile:
@@ -486,13 +498,9 @@ func _on_weapon_confirmed() -> void:
 	if _selected_weapon_idx < 0 or _selected_weapon_idx >= WEAPONS_10.size():
 		_selected_weapon_idx = 0
 
-	var w_data: Dictionary = WEAPONS_10[_selected_weapon_idx]
-	var detail: int = int(w_data["detail"])
-	var particular: int = int(w_data["particular"])
-	var elem: int = int(_profile.get_element()) if _profile.has_method("get_element") else 0
-
-	# Sinh vũ khí trắng Cấp 10 (không có dòng ma pháp / magic_levels = [])
-	var weapon_item := ItemGenerator.generate(detail, particular, 10, elem, [])
+	var weapon_item := make_weapon(_selected_weapon_idx, int(_profile.get_element()) if _profile.has_method("get_element") else 0)
+	## Online: đồ do server sinh (hồ sơ tạm của trận) — báo lựa chọn để server trang bị đúng món (đồ máy tự sinh server không nhận).
+	PubgManager.pending_draft = {"horse": _chosen_horse, "weapon": _selected_weapon_idx}
 
 	if weapon_item != null:
 		_profile.equipment[Equipment.Part.WEAPON] = weapon_item

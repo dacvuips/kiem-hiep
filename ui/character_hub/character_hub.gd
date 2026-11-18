@@ -268,6 +268,8 @@ func _ready() -> void:
 	_ask_sect_if_needed.call_deferred()
 
 	HubSession.attach(self)
+	if NetWorldSync.is_online_mode():
+		NetClient.pubg_message.connect(_on_pubg_hub_message)   ## ghép được trận PUBG (kể cả đã đóng cửa sổ PUBG) -> vào trận
 
 	for arg in (OS.get_cmdline_args() + OS.get_cmdline_user_args()):
 		if arg == "--capture-screenshot":
@@ -705,7 +707,7 @@ func refresh() -> void:
 	if _profile == null or not is_inside_tree() or not has_node("%GoldValueLabel"):
 		return
 
-	# Thanh tiền tệ top
+	# Dải tiền tệ dưới khung Hành trang
 	%GoldValueLabel.text = _format_number(_profile.gold)
 	if has_node("%XuValueLabel"):
 		%XuValueLabel.text = _format_number(_profile.xu)
@@ -2060,6 +2062,13 @@ func _on_back_pressed() -> void:
 		return
 	get_tree().change_scene_to_file(SELECT_SCENE_PATH)
 
+## PubgServer báo đã ghép trận (đội chờ của mình vừa được đưa vào 1 trận): chuẩn bị trận online rồi vào map Tống Kim 1.
+func _on_pubg_hub_message(msg: Dictionary) -> void:
+	if str(msg.get("op", "")) != "match" or PubgManager.is_active or _profile == null:
+		return
+	_show_toast("⚔️ Đã tìm được trận Chiến Trường Sinh Tồn — đang vào trận…")
+	_enter_field_map(PubgManager.start_online_match(_profile, msg))
+
 func _enter_field_map(entry: Variant) -> void:
 	var map_entry: Dictionary = {}
 	if entry is int:
@@ -2299,38 +2308,18 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	if stage == null:
 		return
 
-	# 1. TopBar & Cụm Tiền tệ
+	# 1. TopBar: nút Kỳ Trân Các bám mép phải (Lượng/Xu/KNB đã chuyển xuống dưới khung Hành trang — InventoryView)
 	var top_bar := stage.get_node_or_null("TopBar") as Control
 	if top_bar:
 		top_bar.size.x = vw
-		var gold := top_bar.get_node_or_null("FrameCurrencyGold") as Control
-		var xu := top_bar.get_node_or_null("FrameCurrencyXu") as Control
-		var jade := top_bar.get_node_or_null("FrameCurrencyJade") as Control
 		var ktc := top_bar.get_node_or_null("KyTranCacTopButton") as Control
 		var stam := top_bar.get_node_or_null("FrameCurrencyStamina") as Control
-		if GameModeManager.is_offline():
-			if gold:
-				gold.offset_left = 992.0 + extra_w
-				gold.offset_right = 1132.0 + extra_w
-			if ktc:
-				ktc.offset_left = 1140.0 + extra_w
-				ktc.offset_right = 1256.0 + extra_w
-		else:
-			if gold:
-				gold.offset_left = 696.0 + extra_w
-				gold.offset_right = 836.0 + extra_w
-			if xu:
-				xu.offset_left = 844.0 + extra_w
-				xu.offset_right = 984.0 + extra_w
-			if jade:
-				jade.offset_left = 992.0 + extra_w
-				jade.offset_right = 1132.0 + extra_w
-			if ktc:
-				ktc.offset_left = 1140.0 + extra_w
-				ktc.offset_right = 1256.0 + extra_w
-			elif stam:
-				stam.offset_left = 1140.0 + extra_w
-				stam.offset_right = 1256.0 + extra_w
+		if ktc:
+			ktc.offset_left = 1140.0 + extra_w
+			ktc.offset_right = 1256.0 + extra_w
+		elif stam:
+			stam.offset_left = 1140.0 + extra_w
+			stam.offset_right = 1256.0 + extra_w
 
 	# 2. RightPanel bám sát mép phải
 	var right_panel := stage.get_node_or_null("RightPanel") as Control

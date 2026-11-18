@@ -18,6 +18,13 @@ var _lbl_schedule: Label
 var _schedule_accum: float = 0.0
 var _current_room_id: String = ""
 var _mock_rooms: Array[Dictionary] = []
+## ONLINE (đã đăng nhập, Hub nối server thế giới): đội chờ / tìm trận chạy trên PubgServer — cửa sổ chỉ gửi lệnh + vẽ lại theo tin
+## S_PUBG. Offline giữ nguyên bản giả lập trên máy (PubgManager.rooms).
+var _online := false
+var _online_chat: Array = []
+var _pending_join_code := ""
+var _search_found := 0
+var _search_waited := 0
 
 # Trạng thái Phòng Chờ & Tìm Trận 50 người
 var _in_waiting_room: bool = false
@@ -83,7 +90,9 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	is_full_width = false
 	custom_minimum_size = Vector2(WIN_W, 660.0)
 
-	_init_mock_rooms()
+	_online = NetWorldSync.is_online_mode()
+	if not _online:
+		_init_mock_rooms()
 	_load_saved_build()
 
 	_tabs_header = HBoxContainer.new()
@@ -121,6 +130,11 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_scroll.add_child(_content_box)
 
 	_select_tab(0)
+	if _online:
+		## Server trả "room" nếu mình đang ở 1 đội (mở lại cửa sổ -> về đúng đội đó), "none" nếu chưa.
+		NetClient.pubg_message.connect(_on_pubg_message)
+		NetClient.send_pubg(PubgServer.OP_STATE)
+		return
 	# Như các game lớn: mở lại cửa sổ khi đang ở trong 1 phòng chờ -> quay về đúng phòng đó
 	var mine := _find_room_with_self()
 	if not mine.is_empty():
@@ -137,6 +151,11 @@ func _find_room_with_self() -> Dictionary:
 
 ## Đóng cửa sổ khi đang tìm trận: hủy tìm (phòng không bị kẹt ở "Đang Tìm Trận"), vẫn giữ chỗ trong phòng chờ.
 func _exit_tree() -> void:
+	if _online:
+		## Online: đóng cửa sổ vẫn giữ chỗ trong đội / hàng chờ trên server (tìm được trận thì Character Hub tự vào trận).
+		if NetClient.pubg_message.is_connected(_on_pubg_message):
+			NetClient.pubg_message.disconnect(_on_pubg_message)
+		return
 	if _is_searching:
 		_stop_search()
 
@@ -181,6 +200,9 @@ func _save_build_to_file() -> void:
 		f.store_string(JSON.stringify(data, "\t"))
 
 func _process(delta: float) -> void:
+	if _online:
+		_online_process(delta)
+		return
 	if not _is_searching:
 		_schedule_accum += delta
 		if _schedule_accum >= 1.0:
@@ -635,6 +657,9 @@ func _on_start_pressed() -> void:
 
 func _select_and_start_mode(mode_id: int) -> void:
 	_selected_mode = clampi(mode_id, 1, 4)
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_CREATE, {"mode": _selected_mode, "fill": _fill_on, "quick": _selected_mode <= 1})
+		return
 	if _selected_mode <= 1:
 		_on_quick_play()
 	else:
@@ -828,6 +853,12 @@ func _on_join_by_code() -> void:
 	var code := PubgManager.normalize_room_code(_edit_join_code.text)
 	if code == "":
 		SocialWindow.confirm(self, "Thông Báo", "Hãy nhập mã phòng của chủ phòng (VD: PUBG-1024).", Callable())
+		return
+	if _online:
+		if not _check_open():
+			return
+		_pending_join_code = code
+		NetClient.send_pubg(PubgServer.OP_JOIN, {"code": code})
 		return
 	var r := PubgManager.find_room(code)
 	if r.is_empty():
@@ -1140,7 +1171,7 @@ func _create_empty_card(card_w: float, room_id: String, i_am_leader: bool) -> Co
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_color_override("font_color", Color(0.6, 0.65, 0.65))
 	v.add_child(l)
-	if i_am_leader and not _is_searching:
+	if i_am_leader and not _is_searching and not _online:
 		var add_bot := Button.new()
 		add_bot.text = "🤖 Thêm đồng đội máy"
 		add_bot.add_theme_font_size_override("font_size", 12)
@@ -1271,6 +1302,10 @@ func _on_chat_send() -> void:
 	if text == "":
 		return
 	_chat_input.clear()
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_CHAT, {"text": text, "to": _chat_target})
+		_chat_input.grab_focus()
+		return
 	var room_ref: Dictionary = _current_room
 	if _chat_target != "":
 		var target := _member_by_name(_current_room, _chat_target)
@@ -1424,6 +1459,11 @@ func _on_add_bot_member() -> void:
 	_render_content()
 
 func _on_kick_member(m_name: String) -> void:
+	if _online:
+		var who := _member_by_name(_current_room, m_name)
+		if not who.is_empty():
+			NetClient.send_pubg(PubgServer.OP_KICK, {"cid": int(who.get("cid", 0))})
+		return
 	var list := _members(_current_room)
 	for i in range(list.size() - 1, -1, -1):
 		if str(list[i].get("name", "")) == m_name and not bool(list[i].get("is_self", false)):
@@ -1433,6 +1473,9 @@ func _on_kick_member(m_name: String) -> void:
 	_render_content()
 
 func _on_toggle_ready() -> void:
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_READY, {"ready": not _is_ready})
+		return
 	_is_ready = not _is_ready
 	_refresh_self_member(_current_room)
 	_room_system_msg(_current_room, "%s %s." % [_esc(_my_name()), "đã sẵn sàng" if _is_ready else "hủy sẵn sàng"])
@@ -1455,6 +1498,15 @@ func _leader_is_bot(room: Dictionary) -> bool:
 	return false
 
 func _on_toggle_password() -> void:
+	if _online:
+		if bool(_current_room.get("has_password", false)):
+			NetClient.send_pubg(PubgServer.OP_PASSWORD, {"password": ""})
+		else:
+			SocialWindow.prompt(self, "Đặt Mật Khẩu Đội", "Nhập mật khẩu (người vào bằng mã phải nhập đúng):", func(pass_val: String) -> void:
+				if pass_val.strip_edges() != "":
+					NetClient.send_pubg(PubgServer.OP_PASSWORD, {"password": pass_val.strip_edges()})
+			, "", false)
+		return
 	if str(_current_room.get("password", "")).strip_edges() != "":
 		_current_room["password"] = ""
 		_room_system_msg(_current_room, "Chủ phòng đã bỏ mật khẩu phòng.")
@@ -1470,6 +1522,9 @@ func _on_toggle_password() -> void:
 	, "", false)
 
 func _on_toggle_fill() -> void:
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_FILL, {"on": not bool(_current_room.get("fill", false))})
+		return
 	var on := not bool(_current_room.get("fill", false))
 	_current_room["fill"] = on
 	_room_system_msg(_current_room, "Chủ phòng đã %s tự ghép đội." % ("bật" if on else "tắt"))
@@ -1483,6 +1538,9 @@ func _all_ready(room: Dictionary) -> bool:
 
 func _start_matchmaking() -> void:
 	if not _check_open():
+		return
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_SEARCH)
 		return
 	var incoming_count: int = maxi(1, _members(_current_room).size())
 	var cur_rid: String = str(_current_room.get("id", ""))
@@ -1585,6 +1643,12 @@ func _do_enter_backfill_match(room_data: Dictionary, incoming_count: int) -> voi
 		GameManager.enter_field_map(field_entry)
 
 func _on_cancel_search() -> void:
+	if _online:
+		if bool(_current_room.get("quick", false)):
+			_on_leave_waiting_room()
+		else:
+			NetClient.send_pubg(PubgServer.OP_CANCEL)
+		return
 	# Solo không có phòng chờ: hủy tìm là quay về màn Vào Trận
 	if bool(_current_room.get("quick", false)):
 		_on_leave_waiting_room()
@@ -1604,6 +1668,10 @@ func _stop_search() -> void:
 		_current_room["status_text"] = _current_room["status"]
 
 func _on_leave_waiting_room() -> void:
+	if _online:
+		NetClient.send_pubg(PubgServer.OP_LEAVE)
+		_back_to_lobby()
+		return
 	_stop_search()
 	_leave_room_data(_current_room)
 	_is_ready = false
@@ -1677,3 +1745,139 @@ func _do_enter_match(room_data: Dictionary) -> void:
 		_on_play.call(field_entry)
 	elif GameManager and GameManager.has_method("enter_field_map"):
 		GameManager.enter_field_map(field_entry)
+
+# ==============================================================================
+# ONLINE — đội chờ / tìm trận trên PubgServer (server thế giới). Server là nguồn sự thật: mỗi tin "room" vẽ lại phòng chờ.
+# ==============================================================================
+
+func _on_pubg_message(msg: Dictionary) -> void:
+	match str(msg.get("op", "")):
+		"room":
+			_apply_server_room(msg.get("room", {}))
+		"none":
+			if _in_waiting_room:
+				_back_to_lobby()
+			if str(msg.get("msg", "")) != "":
+				SocialWindow.confirm(self, "Thông Báo", str(msg["msg"]), Callable())
+		"chat_log":
+			_online_chat.clear()
+			for line in msg.get("lines", []):
+				_online_chat.append(_chat_bbcode(line))
+			if _in_waiting_room:
+				_current_room["chat"] = _online_chat
+				if _chat_log != null and is_instance_valid(_chat_log):
+					_chat_log.clear()
+					for l in _online_chat:
+						_chat_log.append_text(str(l) + "\n")
+		"chat":
+			var bb := _chat_bbcode(msg.get("line", {}))
+			_online_chat.append(bb)
+			if _online_chat.size() > 100:
+				_online_chat.pop_front()
+			if _in_waiting_room and _chat_log != null and is_instance_valid(_chat_log):
+				_chat_log.append_text(bb + "\n")
+		"searching":
+			_search_found = int(msg.get("found", 0))
+			_search_waited = int(msg.get("waited", 0))
+			_update_online_search_labels(int(msg.get("cap", 50)), int(msg.get("squads", 0)), int(msg.get("need_squads", 2)),
+				int(msg.get("max_wait", 60)))
+		"reject":
+			var code := str(msg.get("code", ""))
+			if code == "password" and _pending_join_code != "":
+				var jc := _pending_join_code
+				SocialWindow.prompt(self, "Mật Khẩu Đội", "Đội %s yêu cầu mật khẩu:" % jc, func(pw: String) -> void:
+					NetClient.send_pubg(PubgServer.OP_JOIN, {"code": jc, "password": pw.strip_edges()})
+				, "", true)
+			else:
+				SocialWindow.confirm(self, "Thông Báo", str(msg.get("msg", "Không thực hiện được.")), Callable())
+		"match":
+			## Character Hub nhận cùng tin này và vào trận (_on_pubg_hub_message) — cửa sổ chỉ việc đóng.
+			close_requested.emit()
+			queue_free()
+
+## Đổi bản đội của server sang dạng phòng của cửa sổ (giữ nguyên phần vẽ của bản offline).
+func _apply_server_room(sr: Dictionary) -> void:
+	if sr.is_empty():
+		return
+	var members: Array = []
+	var leader_name := ""
+	for m in sr.get("members", []):
+		var mm: Dictionary = (m as Dictionary).duplicate()
+		mm["is_bot"] = false
+		members.append(mm)
+		if bool(mm.get("leader", false)):
+			leader_name = str(mm.get("name", ""))
+	var room := {"id": str(sr.get("id", "")), "name": "Đội của %s" % leader_name, "mode": int(sr.get("mode", 1)),
+		"fill": bool(sr.get("fill", false)), "quick": bool(sr.get("quick", false)), "password": str(sr.get("password", "")),
+		"has_password": bool(sr.get("has_password", false)), "leader": leader_name, "host": leader_name, "members": members,
+		"players": members.size(), "players_count": members.size(), "max_players": int(sr.get("mode", 1)),
+		"status": PubgManager.STATUS_SEARCHING if bool(sr.get("searching", false)) else "", "chat": _online_chat}
+	var was_in := _in_waiting_room
+	var was_searching := _is_searching
+	var keep_text := ""
+	if _chat_input != null and is_instance_valid(_chat_input):
+		keep_text = _chat_input.text
+	_in_waiting_room = true
+	_current_room = room
+	_current_room_id = str(room["id"])
+	var me := _self_index(room)
+	_is_ready = me >= 0 and bool(members[me].get("ready", false))
+	_is_searching = bool(sr.get("searching", false))
+	_search_waited = int(sr.get("waited", 0))
+	if not was_in:
+		_chat_target = ""
+	set_process(true)
+	_render_content()
+	if keep_text != "" and _chat_input != null and is_instance_valid(_chat_input):
+		_chat_input.text = keep_text
+		_chat_input.caret_column = keep_text.length()
+	if _is_searching and not was_searching:
+		_update_online_search_labels(int(sr.get("cap", 50)), 0, 2, int(sr.get("max_wait", 60)))
+
+func _chat_bbcode(line: Variant) -> String:
+	if not (line is Dictionary):
+		return str(line)
+	var l: Dictionary = line
+	if bool(l.get("system", false)):
+		return "[color=#9aa8a8][i]⚙ %s[/i][/color]" % str(l.get("text", ""))
+	var from := str(l.get("from", ""))
+	var to := str(l.get("to", ""))
+	var text := _esc(str(l.get("text", "")))
+	if to != "":
+		if from == _my_name():
+			return "[color=#ff8fd8][Mật] Bạn → [/color]%s[color=#ff8fd8]: %s[/color]" % [_name_link(to, "#ffb0e6"), text]
+		return "[color=#ff8fd8][Mật] [/color]%s[color=#ff8fd8] → Bạn: %s[/color]" % [_name_link(from, "#ffb0e6"), text]
+	return "%s: %s" % [_name_link(from, "#5ccfff" if from == _my_name() else "#e8e0c8"), text]
+
+func _back_to_lobby() -> void:
+	_is_ready = false
+	_is_searching = false
+	_in_waiting_room = false
+	_current_room = {}
+	_current_room_id = ""
+	_online_chat.clear()
+	_render_content()
+
+## Đếm giây chờ giữa 2 tin "searching" của server (1 tin/giây) cho mượt.
+func _online_process(delta: float) -> void:
+	_schedule_accum += delta
+	if _schedule_accum < 1.0:
+		return
+	_schedule_accum = 0.0
+	if not _in_waiting_room:
+		_update_schedule_label()
+	elif _is_searching:
+		_search_waited += 1
+
+func _update_online_search_labels(cap: int, squads: int, need_squads: int, max_wait: int) -> void:
+	var found := maxi(_search_found, _members(_current_room).size())
+	if _lbl_countdown != null and is_instance_valid(_lbl_countdown):
+		if _search_waited >= max_wait and squads < need_squads:
+			_lbl_countdown.text = "⏱️ Đã chờ %02d:%02d — đang chờ thêm đội (cần ít nhất %d đội)" % [_search_waited / 60, _search_waited % 60, need_squads]
+		else:
+			_lbl_countdown.text = "⏱️ Đã chờ %02d:%02d  —  tối đa %02d:%02d" % [_search_waited / 60, _search_waited % 60, max_wait / 60, max_wait % 60]
+	if _lbl_players_found != null and is_instance_valid(_lbl_players_found):
+		_lbl_players_found.text = "👥 Đang tìm: %d / %d người chơi (%d đội) — người thật cùng máy chủ" % [found, cap, maxi(squads, 1)]
+	if _progress_bar != null and is_instance_valid(_progress_bar):
+		_progress_bar.max_value = float(cap)
+		_progress_bar.value = float(found)

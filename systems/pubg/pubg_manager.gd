@@ -37,6 +37,13 @@ static var is_active: bool = false
 static var backup_profile_data: Dictionary = {}
 static var current_squad_size: int = 1
 static var current_squad_members: Array[Dictionary] = []
+## Trận ONLINE (PubgServer): hồ sơ tạm do server giữ, đồng đội / đối thủ là người thật (NetWorldSync), vòng bo theo seed của server.
+static var online: bool = false
+## Lựa chọn ở popup chọn thẻ đầu trận {horse, weapon} — online: PubgClient gửi lên server (OP_DRAFT) để server trang bị.
+static var pending_draft: Dictionary = {}
+## Server đã xác nhận kết nối hiện tại là kết nối CỦA TRẬN (tin "match"/"mstate" tới trên kết nối thường). Chỉ khi đó máy mới gửi hồ sơ
+## (đang là hồ sơ tạm) lên — gửi nhầm vào kết nối thế giới thường thì server sẽ gộp hồ sơ tạm vào nhân vật thật.
+static var match_confirmed: bool = false
 
 static func is_pubg_active() -> bool:
 	if is_active:
@@ -589,67 +596,8 @@ static func start_match(profile: PlayerProfile, room: Dictionary) -> Dictionary:
 	# 1. Sao lưu toàn bộ trạng thái profile gốc (Hành trang, Trang bị, Level, Điểm tiềm năng/kỹ năng)
 	backup_profile_data = profile.to_dict().duplicate(true)
 
-	# 2. Thiết lập profile cho PUBG: Cấp 200
-	profile.level = 200
-
-	# 2.1. Điểm tiềm năng: Trở về ban đầu hết nếu chưa sét mặc định
-	load_build()
-	profile.apply_start_stats() # Trở về 4 chỉ số gốc ban đầu theo ngũ hành môn phái
-	if has_custom_build and not pubg_potential_stats.is_empty():
-		# Đã sét mặc định: cộng thêm các điểm tiềm năng đã lưu
-		var add_str: int = int(pubg_potential_stats.get("str", pubg_potential_stats.get("strength", 0)))
-		var add_dex: int = int(pubg_potential_stats.get("dex", pubg_potential_stats.get("dexterity", 0)))
-		var add_vit: int = int(pubg_potential_stats.get("vit", pubg_potential_stats.get("vitality", 0)))
-		var add_eng: int = int(pubg_potential_stats.get("eng", pubg_potential_stats.get("energy", 0)))
-		profile.strength += add_str
-		profile.dexterity += add_dex
-		profile.vitality += add_vit
-		profile.energy += add_eng
-		profile.potential_points = int(pubg_potential_stats.get("stat_left", 0))
-	else:
-		# Chưa sét mặc định: Trở về ban đầu hết, 995 điểm tiềm năng đưa vào potential_points để tự do cộng
-		profile.potential_points = 995
-
-	# 2.2. Điểm kỹ năng: Trong chế độ PUBG, TOÀN BỘ KỸ NĂNG PHẢI MAX HẾT
-	profile.skill_levels.clear()
-	var sect: SectDefinition = SectRegistry.get_by_id(profile.sect_id) if (profile.sect_id != "" and SectRegistry) else null
-	if sect != null and not sect.skills.is_empty():
-		for sk in sect.skills:
-			if sk != null and sk.id != "":
-				var max_lv: int = sk.max_level if sk.max_level > 0 else 20
-				profile.skill_levels[sk.id] = max_lv
-	else:
-		# Trường hợp chưa gia nhập phái hoặc test: max các chiêu thức hiện có
-		for sk_id in profile.skill_levels.keys():
-			profile.skill_levels[sk_id] = 20
-	profile.skill_points = 0
-
-	# Đảm bảo gán skill vào thanh hotbar nếu hotbar đang trống
-	var has_hotbar := false
-	for h_id in profile.hotbar_skill_ids:
-		if h_id != "":
-			has_hotbar = true
-			break
-	if not has_hotbar and sect != null:
-		var slot_idx: int = 0
-		for sk in sect.skills:
-			if sk.can_assign_to_hotbar() and not sk.is_basic_attack:
-				if slot_idx < profile.hotbar_skill_ids.size():
-					profile.hotbar_skill_ids[slot_idx] = sk.id
-					slot_idx += 1
-
-	# Xóa sạch trang bị và hành trang hiện tại để vào game với trạng thái tay không (sinh tồn)
-	profile.inventory.clear()
-	profile.equipment.clear()
-	if profile.has_method("recalc_stats"):
-		profile.recalc_stats()
-
-	# Cấp sẵn 50 bình Hồi Thiên Tái Tạo Đơn (1_8_0_4) và gắn vào ô thuốc 1 (slot 0)
-	var potion := ItemGenerator.generate_misc("1_8_0_4", 0, 0, 1)
-	if potion != null:
-		potion.count = 50
-		profile.add_item(potion)
-	profile.quick_items = ["1_8_0_4", "", "", ""]
+	# 2. Hồ sơ PUBG: cấp 200, điểm tiềm năng theo build đã lưu, max kỹ năng, tay trắng + 50 bình thuốc
+	apply_match_build(profile, true)
 	if SaveManager != null and SaveManager.has_signal("profile_changed"):
 		SaveManager.profile_changed.emit(profile)
 
@@ -717,6 +665,72 @@ static func start_match(profile: PlayerProfile, room: Dictionary) -> Dictionary:
 	}
 
 	return field_entry
+
+## Biến hồ sơ thành nhân vật PUBG: cấp 200, 4 chỉ số gốc + điểm tiềm năng (build đã lưu trên máy nếu use_saved_build, không thì
+## 995 điểm tự cộng), max mọi kỹ năng phái, xoá túi + trang bị, 50 bình Hồi Thiên Tái Tạo Đơn ở ô thuốc 1.
+## Dùng chung: bản offline (start_match) và PubgServer (online — hồ sơ tạm của server, KHÔNG BAO GIỜ lưu).
+static func apply_match_build(profile: PlayerProfile, use_saved_build: bool) -> void:
+	profile.level = 200
+
+	# 2.1. Điểm tiềm năng: Trở về ban đầu hết nếu chưa sét mặc định
+	if use_saved_build:
+		load_build()
+	profile.apply_start_stats() # Trở về 4 chỉ số gốc ban đầu theo ngũ hành môn phái
+	if use_saved_build and has_custom_build and not pubg_potential_stats.is_empty():
+		# Đã sét mặc định: cộng thêm các điểm tiềm năng đã lưu
+		var add_str: int = int(pubg_potential_stats.get("str", pubg_potential_stats.get("strength", 0)))
+		var add_dex: int = int(pubg_potential_stats.get("dex", pubg_potential_stats.get("dexterity", 0)))
+		var add_vit: int = int(pubg_potential_stats.get("vit", pubg_potential_stats.get("vitality", 0)))
+		var add_eng: int = int(pubg_potential_stats.get("eng", pubg_potential_stats.get("energy", 0)))
+		profile.strength += add_str
+		profile.dexterity += add_dex
+		profile.vitality += add_vit
+		profile.energy += add_eng
+		profile.potential_points = int(pubg_potential_stats.get("stat_left", 0))
+	else:
+		# Chưa sét mặc định: Trở về ban đầu hết, 995 điểm tiềm năng đưa vào potential_points để tự do cộng
+		profile.potential_points = 995
+
+	# 2.2. Điểm kỹ năng: Trong chế độ PUBG, TOÀN BỘ KỸ NĂNG PHẢI MAX HẾT
+	profile.skill_levels.clear()
+	var sect: SectDefinition = SectRegistry.get_by_id(profile.sect_id) if (profile.sect_id != "" and SectRegistry) else null
+	if sect != null and not sect.skills.is_empty():
+		for sk in sect.skills:
+			if sk != null and sk.id != "":
+				var max_lv: int = sk.max_level if sk.max_level > 0 else 20
+				profile.skill_levels[sk.id] = max_lv
+	else:
+		# Trường hợp chưa gia nhập phái hoặc test: max các chiêu thức hiện có
+		for sk_id in profile.skill_levels.keys():
+			profile.skill_levels[sk_id] = 20
+	profile.skill_points = 0
+
+	# Đảm bảo gán skill vào thanh hotbar nếu hotbar đang trống
+	var has_hotbar := false
+	for h_id in profile.hotbar_skill_ids:
+		if h_id != "":
+			has_hotbar = true
+			break
+	if not has_hotbar and sect != null:
+		var slot_idx: int = 0
+		for sk in sect.skills:
+			if sk.can_assign_to_hotbar() and not sk.is_basic_attack:
+				if slot_idx < profile.hotbar_skill_ids.size():
+					profile.hotbar_skill_ids[slot_idx] = sk.id
+					slot_idx += 1
+
+	# Xóa sạch trang bị và hành trang hiện tại để vào game với trạng thái tay không (sinh tồn)
+	profile.inventory.clear()
+	profile.equipment.clear()
+	if profile.has_method("recalc_stats"):
+		profile.recalc_stats()
+
+	# Cấp sẵn 50 bình Hồi Thiên Tái Tạo Đơn (1_8_0_4) và gắn vào ô thuốc 1 (slot 0)
+	var potion := ItemGenerator.generate_misc("1_8_0_4", 0, 0, 1)
+	if potion != null:
+		potion.count = 50
+		profile.add_item(potion)
+	profile.quick_items = ["1_8_0_4", "", "", ""]
 
 ## Sinh vòng bo an toàn nhỏ hơn bên trong vùng hiện tại
 ## Bắt đầu vòng bo cho 1 trận: vòng 0 phủ kín khung chơi, tính sẵn vòng 1 (hiện trên minimap ngay từ đầu).
@@ -859,9 +873,50 @@ static func _apply_zone_damage(n: Variant) -> void:
 	elif node.has_method("take_damage"):
 		node.take_damage(dmg)
 
+## Vào trận ONLINE theo tin "match" của PubgServer. KHÔNG sửa hồ sơ ở đây: Hub còn gửi hồ sơ lên server lúc rời màn —
+## hồ sơ tạm (cấp 200, tay trắng) chỉ được dựng khi đã ở trong trận (PubgClient), không thì server gộp nhầm vào nhân vật thật.
+## Trả về mục map cho Character Hub._enter_field_map.
+static func start_online_match(profile: PlayerProfile, msg: Dictionary) -> Dictionary:
+	is_active = true
+	online = true
+	match_confirmed = false
+	pending_draft = {}
+	backup_profile_data = profile.to_dict().duplicate(true) if profile != null else {}
+	current_squad_size = clampi(int(msg.get("mode", 1)), 1, 4)
+	active_room = {"id": "Trận #%d" % int(msg.get("rid", 0)), "mode": current_squad_size, "online": true}
+	var b: Array = msg.get("box", [0, 0, 0, 0])
+	fixed_outer_boundary = Rect2(float(b[0]), float(b[1]), float(b[2]), float(b[3]))
+	sync_zone(int(msg.get("seed", 0)), float(msg.get("elapsed", 0.0)))
+	var sp_arr: Array = msg.get("spawn", [])
+	var spawn_pos: Vector2 = Vector2(float(sp_arr[0]), float(sp_arr[1])) if sp_arr.size() >= 2 else fixed_outer_boundary.get_center()
+	current_squad_members.clear()
+	for n in msg.get("squad", []):
+		current_squad_members.append({"name": str(n), "is_self": profile != null and str(n) == profile.display_name,
+			"color": Color(0.2, 0.65, 1.0), "squad_id": 1, "pos": spawn_pos})
+	return {
+		"id": 44, "name": "Chiến Trường Sinh Tồn (PUBG)", "title": "Chiến Trường Sinh Tồn (PUBG)", "kind": "Battlefield",
+		"dir": TONGKIM1_DIR, "folder": TONGKIM1_DIR, "pubg": true, "is_pubg": true, "pubg_online": true,
+		"arena_box": fixed_outer_boundary, "arena_center": fixed_outer_boundary.get_center(), "arena_size": fixed_outer_boundary.size,
+		"spawn_pos": spawn_pos, "start": [int(spawn_pos.x / REGION_PX), int(spawn_pos.y / REGION_PX)],
+		"squad_size": current_squad_size, "room_id": active_room["id"], "no_monsters": false,
+		"total_match_players": int(msg.get("players", 1)),
+	}
+
+## Dựng lại vòng bo y hệt server: cùng khung + seed, tua tới `elapsed` giây kể từ đầu trận (vào trễ / nối lại vẫn khớp).
+static func sync_zone(seed_value: int, elapsed: float) -> void:
+	start_zone(fixed_outer_boundary, seed_value)
+	var left := maxf(0.0, elapsed)
+	while left > 0.0 and zone_index < ZONE_COUNT:
+		var step := minf(left, 1.0)
+		tick_zone(step)
+		left -= step
+
 ## Kết thúc trận đấu PUBG: Khôi phục lại toàn bộ dữ liệu gốc, xoá toàn bộ đồ nhặt được trong trận, rời phòng
 static func end_match(profile: PlayerProfile = null) -> void:
 	is_active = false
+	online = false
+	match_confirmed = false
+	pending_draft = {}
 	active_bot_nodes.clear()
 	var target_profile: PlayerProfile = profile
 	if target_profile == null and GameManager and "local_profile" in GameManager:

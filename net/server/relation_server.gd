@@ -240,17 +240,18 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	var battle_hit: bool = gs.battle != null and gs.battle.allows_hit(c, t)   ## chiến trường: 2 phe đánh nhau lúc khai chiến
 	var arena_hit: bool = t != null and gs.arena != null and gs.arena.allows_hit(c, t)   ## đấu trường PK: 2 người đấu cùng phòng
 	var field_boss_hit: bool = t != null and gs.field != null and gs.field.allows_boss_pvp(c, t)   ## bản đồ săn Boss: tự do PK
+	var pubg_hit: bool = t != null and gs.pubg != null and gs.pubg.allows_hit(c, t)   ## PUBG: khác đội cùng trận
 	var pk_hit: bool = t != null and (
 		(c.entity.flags & NetProto.FLAG_PK) != 0 or
 		(t.entity.flags & NetProto.FLAG_PK) != 0
 	)
-	if not (_fighting(c, t) or battle_hit or arena_hit or pk_hit or field_boss_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
+	if not (_fighting(c, t) or battle_hit or arena_hit or pk_hit or field_boss_hit or pubg_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
 	## Tân thủ (Camp.Type.BEGIN) được bảo vệ tuyệt đối theo luật VLTK gốc (KNpcSet::GetRelation)
-	if c.profile.get_current_camp() == Camp.Type.BEGIN or t.profile.get_current_camp() == Camp.Type.BEGIN:
+	if not pubg_hit and (c.profile.get_current_camp() == Camp.Type.BEGIN or t.profile.get_current_camp() == Camp.Type.BEGIN):
 		return
 	## Cùng tổ đội không gây sát thương lên nhau
-	if c.team != null and t.team != null and c.team == t.team:
+	if not pubg_hit and c.team != null and t.team != null and c.team == t.team:
 		return
 	if not GameServer.near(t.entity, c.entity, GameServer.MAX_HIT_DISTANCE):
 		return

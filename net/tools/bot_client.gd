@@ -45,6 +45,7 @@ var battle_msgs: Array = []       ## gói S_BATTLE nhận được (chiến trư
 var battle_state: Dictionary = {} ## gói "state" mới nhất
 var field_msgs: Array = []        ## gói S_FIELD nhận được (phòng train chung)
 var market_msgs: Array = []       ## gói S_MARKET nhận được (Chợ Giao Thương)
+var pubg_msgs: Array = []         ## gói S_PUBG nhận được (Chiến Trường Sinh Tồn)
 var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HELLO_HUB) như Character Hub
 var _token := ""
 var _character_id := 0
@@ -97,6 +98,13 @@ func _send(b: StreamPeerBuffer, ch: int) -> void:
 ## Chiến trường Tống Kim: op = BattleServer.OP_*.
 func battle(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Chiến Trường Sinh Tồn: op PubgServer.OP_* + tham số.
+func pubg(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_PUBG)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b, NetProto.CH_RELIABLE)
@@ -471,6 +479,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var mk: Variant = NetProto.get_json(b)
 			if mk is Dictionary:
 				market_msgs.append(mk)
+		NetProto.S_PUBG:
+			var pmsg := NetProto.get_json(b)
+			if not pmsg.is_empty():
+				pubg_msgs.append(pmsg)
 		NetProto.S_FIELD:
 			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if fmsg is Dictionary:

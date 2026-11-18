@@ -43,7 +43,7 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
-	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU]
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG]
 
 class Conn:
 	var key := ""
@@ -90,6 +90,8 @@ class Conn:
 	var save_queued := false
 	## Bị đá vì đăng nhập nơi khác: phiên mới nhận dữ liệu + version; lần lưu đang chạy của phiên cũ chuyển version sang đây.
 	var handoff: Conn
+	## Đang trong trận Chiến Trường Sinh Tồn (room_id trận, PubgServer): hồ sơ là bản TẠM cấp 200 — không bao giờ lưu.
+	var pubg_match := 0
 	## Xã hội (SocialServer)
 	var trade = null                    ## SocialServer.Trade đang tham gia
 	var team = null                     ## SocialServer.Team đang ở
@@ -153,6 +155,8 @@ var battle: BattleServer
 var arena: ArenaServer
 ## Phòng train chung (GAME_FIELD=1): mỗi phòng 1 bản map luyện công / Địa Ngục + quái riêng, vào bằng ID 6 số — FieldServer.
 var field: FieldServer
+## Chiến Trường Sinh Tồn (chỉ server thế giới): đội chờ từ Hub + các trận PUBG — PubgServer.
+var pubg: PubgServer
 var map_dir := DEFAULT_MAP_DIR
 ## Hỏi server tài khoản trạng thái khoá / cấm chat của người đang online mỗi chừng này giây.
 var STATUS_POLL_SECONDS := 30.0
@@ -242,6 +246,7 @@ func _ready() -> void:
 	if battle == null and arena == null and field == null:
 		market = MarketServer.new(self)
 		market.load_all()
+		pubg = PubgServer.new(self)
 	STATUS_POLL_SECONDS = float(_env("GAME_STATUS_POLL", "30"))
 	awake_radius = clampi(int(_env("GAME_AWAKE_RADIUS", "1")), 1, 3)
 	var enet_port := int(_env("GAME_ENET_PORT", "7777"))
@@ -325,6 +330,8 @@ func _process(delta: float) -> void:
 			arena.tick(step)
 		if field:
 			field.tick(step)
+		if pubg:
+			pubg.tick(step)
 		for c: Conn in _conns.values():
 			if not c.pending_profile.is_empty() and c.trade == null and _now - c.last_profile_at >= 1.0 / MAX_PROFILE_PER_SEC:
 				_apply_profile(c, c.pending_profile, c.pending_ack)
@@ -483,6 +490,8 @@ func _drop(c: Conn) -> void:
 			field.on_leave(c)
 		if market:
 			market.on_leave(c)
+		if pubg:
+			pubg.on_leave(c)
 	_conns.erase(c.key)
 	if c.entity and c.character_id != 0:
 		c.dirty = true   ## vị trí lúc thoát luôn phải lưu
@@ -553,6 +562,8 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 	var type := b.get_u8()
 	if c.hub and not HUB_ALLOWED.has(type):
 		return
+	if c.pubg_match != 0 and not PubgServer.MATCH_ALLOWED.has(type):
+		return   ## trong trận PUBG: không giao dịch / chợ / bày bán / mua / chế tạo (đồ hồ sơ tạm không được lọt ra)
 	match type:
 		NetProto.C_HELLO:
 			if c.state == ConnState.WAIT_HELLO:
@@ -664,6 +675,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_FIELD:
 			if field and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				field.on_field(c, b)
+		NetProto.C_PUBG:
+			if pubg and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				pubg.on_pubg(c, b)
 		NetProto.C_PING:
 			if b.get_available_bytes() >= 4:
 				var r := NetProto.writer(NetProto.S_PONG)
@@ -755,6 +769,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
 	c.dirty = true
 	c.char_version = int(ch.get("version", 0))
+	if take_over and take_over.pubg_match != 0:
+		take_over = null   ## phiên cũ đang trong trận PUBG: dữ liệu RAM là hồ sơ TẠM — không chép sang (bản thật nằm ở DB)
 	if take_over:   ## dữ liệu trong RAM của phiên cũ mới nhất (có thể chưa kịp lưu)
 		c.data = take_over.data
 		c.profile = take_over.profile
@@ -762,6 +778,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		c.grant_seq = take_over.grant_seq
 		c.seen_web_grants = take_over.seen_web_grants
 		c.unsaved_web_grants = take_over.unsaved_web_grants
+	var in_pubg := pubg != null and not c.hub and pubg.on_hello(c)   ## đã ghép trận PUBG: thay bằng hồ sơ tạm cấp 200
 	c.last_save = _now
 	_last_status_poll = -INF   ## hỏi ngay quà chờ (nạp thẻ trên web) cho nhân vật vừa vào
 	c.max_hit = ProfileGuard.max_hit(c.profile)
@@ -775,7 +792,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	e.level = c.profile.level   ## (cột level của bảng nhân vật có thể cũ: quà tân thủ vừa nâng cấp ở trên, chưa lưu)
 	e.camp = c.profile.get_current_camp()
 	e.nation = Nation.Type.NONE   ## phe Tống / Kim chỉ có trong trận (refresh_camp)
-	e.look = look_from_profile(data)
+	e.look = look_from_profile(c.data if in_pubg else data)   ## PUBG: tay trắng như hồ sơ tạm
 	e.flags = NetProto.FLAG_RIDING if int(e.look.horse) >= 0 else 0
 	if battle:   ## chiến trường: chưa có phe thì đứng tạm ở điểm xuất phát (vị trí đã lưu là vị trí ngoài thế giới)
 		e.pos = grid.open_spawn_near(grid.default_center())
@@ -786,6 +803,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	else:
 		e.pos = take_over.entity.pos if take_over and take_over.entity else saved_pos(data)
 	c.entity = e
+	if in_pubg:
+		pubg.place(c)   ## vào phòng của trận + điểm thả của đội
 	_players_by_eid[e.eid] = c
 	if c.hub:
 		e.room_id = -1   ## sảnh: không vào lưới tầm nhìn, không "gần" ai (GameServer.near so room_id)
@@ -813,6 +832,8 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		_save(c)
 	if battle:
 		battle.on_join_world(c)
+	if in_pubg:
+		pubg.on_entered(c)
 	print("%s: %s (%s) eid %d — online %d" % ["Vào sảnh" if c.hub else "Vào map", e.name, c.username, e.eid, _by_character.size()])
 
 ## Chỗ đứng lúc thoát (khoá "pos" do _save ghi). Chưa có / ra ngoài map / kẹt trong vùng kín -> điểm xuất phát thông thoáng;
@@ -877,7 +898,10 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 			battle.on_died(c)
 		if arena:
 			arena.on_died(c)
-		relation.on_died(c)
+		if c.pubg_match != 0:
+			pubg.on_died(c)   ## PUBG: bị loại (không tính trị PK)
+		else:
+			relation.on_died(c)
 	## Bày bán = ngồi yên tại chỗ: rời chỗ / lên ngựa / nhảy / chết thì tự dọn quầy, còn lại người khác luôn thấy đang ngồi.
 	if c.stall_open:
 		if dist > 1.0 or (flags & (NetProto.FLAG_RIDING | NetProto.FLAG_JUMPING | NetProto.FLAG_DEAD)) != 0:
@@ -907,6 +931,8 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 func _on_revive(c: Conn) -> void:
 	var e := c.entity
 	if (e.flags & NetProto.FLAG_DEAD) == 0:
+		return
+	if pubg and pubg.on_revive(c):   ## PUBG: đã bị loại, không hồi sinh
 		return
 	e.flags &= ~NetProto.FLAG_DEAD
 	if battle and battle.on_revive(c):   ## chiến trường: về hậu doanh phe mình
@@ -1061,6 +1087,8 @@ func _on_monster_killed(m: ServerMonster) -> void:
 			rolls = DropTable.roll_killer_boss(m.level, m.series)
 		else:
 			rolls = DropTable.roll_gold_boss(m.level, m.series)
+	elif pubg and pubg.has_room(m.room_id):   ## quái trong trận PUBG
+		rolls = PubgServer.roll_drops()
 	elif m.hell_stars > 0:   ## quái phòng Địa Ngục
 		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
 	else:
@@ -1079,7 +1107,7 @@ func _on_monster_killed(m: ServerMonster) -> void:
 
 ## Kinh nghiệm do server cộng vào bản nhân vật của server rồi báo game (S_PROGRESS).
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
-	if c.profile == null:
+	if c.profile == null or c.pubg_match != 0:   ## PUBG: cấp 200 cố định, không nhận kinh nghiệm
 		return
 	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
 	var exp_p := c.profile.get_active_exp_enhance_p()
@@ -1088,7 +1116,7 @@ func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	_give_exp(c, got)
 
 func _give_exp(c: Conn, got: int) -> void:
-	if got <= 0 or c.profile == null or c.profile.level >= PlayerProfile.MAX_LEVEL:
+	if got <= 0 or c.profile == null or c.pubg_match != 0 or c.profile.level >= PlayerProfile.MAX_LEVEL:
 		return
 	got = int(got * exp_mult)
 	var before := c.profile.level
@@ -1339,8 +1367,8 @@ func _on_discard(c: Conn, uid: String) -> void:
 		if it.uid == uid:
 			if SecurityLock.is_item_locked(it):
 				return
-			## Đồ Hoàng Kim chỉ vứt trong trận PUBG — server online chưa có trận PUBG nên luôn chặn (không tin client).
-			if PubgManager.discard_block_reason(it, false) != "":
+			## Đồ Hoàng Kim chỉ vứt được trong trận PUBG (hồ sơ tạm) — ngoài trận luôn chặn (không tin client).
+			if PubgManager.discard_block_reason(it, c.pubg_match != 0) != "":
 				return
 			c.profile.inventory.remove_at(i)
 			c.data = c.profile.to_dict()
@@ -1516,7 +1544,7 @@ func _poll_status() -> void:
 	var gr: Variant = r.get("grants", {})
 	if gr is Dictionary:
 		for c: Conn in _conns.values():
-			if c.state == ConnState.IN_WORLD and gr.has(str(c.character_id)):
+			if c.state == ConnState.IN_WORLD and c.pubg_match == 0 and gr.has(str(c.character_id)):   ## PUBG: nhận khi về Hub
 				_apply_web_grants(c, gr[str(c.character_id)])
 
 ## Nguyên bảo đổi từ Xu trên web: cộng vào bản nhân vật của server, gửi bản chuẩn xuống game, lưu ngay (kèm id quà để đánh dấu).
@@ -1563,6 +1591,9 @@ func _save_due() -> void:
 ## Lưu tuần tự: đang có lần lưu chạy thì xếp hàng, lưu xong sẽ lưu tiếp bản mới nhất (2 lần lưu chồng nhau cùng version
 ## thì 1 lần bị từ chối -> mất dữ liệu).
 func _save(c: Conn) -> void:
+	if c.pubg_match != 0:
+		c.dirty = false   ## hồ sơ tạm của trận PUBG: không bao giờ ghi đè nhân vật thật
+		return
 	if c.saving:
 		c.save_queued = true
 		return
@@ -1843,6 +1874,8 @@ func grid_of(e: ServerEntity) -> MapGrid:
 		var ag: MapGrid = arena.grid_of(e)
 		if ag != null:
 			return ag
+	if pubg and e.room_id != 0 and pubg.has_room(e.room_id):
+		return pubg.grid_of_room(e.room_id)
 	return field.grid_of_room(e.room_id) if field and e.room_id != 0 else grid
 
 ## 2 thực thể cùng chỗ (cùng phòng train chung) và cách nhau không quá `dist` px — dùng cho mọi kiểm tra "đứng gần".

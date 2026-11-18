@@ -871,7 +871,8 @@ func setup_main_map() -> void:
 				if player.has_method("set_name_color"):
 					player.set_name_color(Color(0.2, 0.65, 1.0)) # Xanh dương
 				player.set("pubg_squad_id", 1)
-				_spawn_pubg_teammates(safe_pos)
+				if not bool(GameManager.field_map.get("pubg_online", false)):   ## online: đồng đội là người thật (NetWorldSync)
+					_spawn_pubg_teammates(safe_pos)
 			# Mở 2 đợt chọn thẻ đầu game: Đợt 1 chọn Ngựa 8x, Đợt 2 chọn Vũ khí Cấp 10
 			var prof: PlayerProfile = null
 			if player and "profile" in player and player.profile != null:

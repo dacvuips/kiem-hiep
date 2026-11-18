@@ -98,6 +98,9 @@ start_server field7 GAME_FIELD=1 GAME_FIELD_INDEX=7 GAME_ENET_PORT=7927 GAME_WS_
 start_server field8 GAME_FIELD=1 GAME_FIELD_INDEX=8 GAME_ENET_PORT=7937 GAME_WS_PORT=7938
 run_suite "net_tests" net_tests.tscn GAME_ENET_PORT=7917 DEV_TRUST_CLIENT_SAVES="$(env_get DEV_TRUST_CLIENT_SAVES)" NET_TEST_RESTART=1
 run_suite "field_tests (2 tiến trình)" field_tests.tscn GAME_ENET_PORT=7927 FIELD_PORT2=7937 FIELD_INDEX=7 FIELD_INDEX2=8
+## Chiến Trường Sinh Tồn chạy trên server thế giới: bản thử riêng luôn mở giờ, 2 đội là đủ, tìm trận 3 giây.
+start_server pubg GAME_ENET_PORT=7957 GAME_WS_PORT=7958 PUBG_ALWAYS_OPEN=1 PUBG_MIN_SQUADS=2 PUBG_SEARCH_SEC=3
+run_suite "pubg_online_tests" pubg_online_tests.tscn GAME_ENET_PORT=7957
 if [ "$BATTLE" = 1 ]; then
 	## Chiến trường báo trạng thái theo mã máy chủ (1 chiến trường / máy chủ): tạm dừng chiến trường Docker để /v1/battle là của bản thử.
 	docker_battle="$(cd "$SERVER_REPO" && docker compose ps -q battle 2>/dev/null)"

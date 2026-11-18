@@ -45,6 +45,8 @@ signal battle_message(msg: Dictionary)
 signal arena_message(msg: Dictionary)
 ## Phòng train chung Vượt Ải: tin S_FIELD {op: room | reject, ...} (FieldClient).
 signal field_message(msg: Dictionary)
+## Chiến Trường Sinh Tồn (PubgServer trên game server thế giới): tin S_PUBG — xem PubgServer.
+signal pubg_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -296,6 +298,15 @@ func send_arena(op: int, args := {}) -> void:
 	if status != Status.IN_WORLD:
 		return
 	var b := NetProto.writer(NetProto.C_ARENA)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b)
+
+## Chiến Trường Sinh Tồn: op PubgServer.OP_* + tham số json. Gửi được cả từ Hub (kết nối sảnh) lẫn trong trận.
+func send_pubg(op: int, args := {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_PUBG)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b)
@@ -566,6 +577,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var msg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if msg is Dictionary:
 				battle_message.emit(msg)
+		NetProto.S_PUBG:
+			var pmsg := NetProto.get_json(b)
+			if not pmsg.is_empty():
+				pubg_message.emit(pmsg)
 		NetProto.S_ARENA:
 			var amsg := NetProto.unpack_arena_msg(b)
 			if not amsg.is_empty():

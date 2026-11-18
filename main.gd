@@ -254,7 +254,9 @@ func _enter_main_map() -> void:
 
 	var room: Dictionary = field.get("field", {})
 
-	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty() or pk_online or not room.is_empty()
+	## Chiến Trường Sinh Tồn online (PubgServer trên server thế giới): nối như map thường, server đưa vào trận — PubgClient.
+	var pubg_online := bool(field.get("pubg_online", false)) and NetWorldSync.is_online_mode()
+	var online := (NetWorldSync.is_online_mode() and field.is_empty()) or not battle.is_empty() or pk_online or not room.is_empty() or pubg_online
 
 	VltkWorld.net_monsters = online
 
@@ -538,6 +540,10 @@ func _enter_main_map() -> void:
 	if pk_online:
 
 		add_child(ArenaClient.create(pk))
+
+	if pubg_online:
+
+		add_child(PubgClient.create())
 
 	if not room.is_empty():
 

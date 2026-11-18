@@ -406,6 +406,10 @@ func save_profile(profile: PlayerProfile, flush_immediately: bool = false) -> vo
 	# Bảo vệ: Không ghi đè hồ sơ nhân vật thật khi đang trong trận đấu PUBG (Chiến trường sinh tồn)
 	var pubg_cls = load("res://systems/pubg/pubg_manager.gd")
 	if pubg_cls and pubg_cls.is_active:
+		## Trận ONLINE đã được server xác nhận: gửi hồ sơ tạm cho KẾT NỐI CỦA TRẬN (mặc đồ nhặt được, cộng điểm...) — server không
+		## bao giờ lưu hồ sơ này. Còn lại (offline, đang chuyển cảnh, kết nối Hub...) không gửi / không lưu gì.
+		if pubg_cls.online and pubg_cls.match_confirmed and NetClient.is_in_world() and not NetClient.is_hub:
+			NetClient.send_profile(profile.to_dict())
 		return
 	if GameModeManager.is_offline():
 		save_offline_profile(profile)

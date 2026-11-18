@@ -134,6 +134,8 @@ func _invite(c, t, need_open: bool) -> void:
 			err = "Bạn đang trọng thương, không thể giao dịch."
 		elif t.entity.hp <= 0:
 			err = "Đối phương đang trọng thương, không thể nhận giao dịch."
+		elif c.pubg_match != 0 or t.pubg_match != 0:
+			err = "Đối phương đang ở Chiến Trường Sinh Tồn, không thể giao dịch."
 		elif c.trade or t.trade:
 			err = "Bạn hoặc đối phương đang trong một giao dịch."
 		elif need_open and not t.trade_open:
