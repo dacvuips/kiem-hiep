@@ -238,7 +238,11 @@ func run() -> void:
 	# --- Rời host: đồ + Lệnh Bài rớt, bỏ chỗ
 	gs.drops.clear()
 	lx.handle(b, LonXonServer.OP_QUIT, {})
-	check("Bình rời: bị mời ra", b.kicked == "lonxon_end" and b.lonxon_host == 0)
+	check("Bình rời: bị mời ra, kết nối vẫn mang dấu hồ sơ tạm (không lưu)", b.kicked == "lonxon_end" and b.lonxon_host == LonXonServer.LEFT
+		and not lx.in_host(b) and not b.dirty)
+	var n_drops := gs.drops.size()
+	lx.on_leave(b)   ## kết nối đóng sau khi bị mời ra: không rớt đồ / Lệnh Bài lần 2
+	check("Bình rời: đóng kết nối không rớt lần 2", gs.drops.size() == n_drops)
 	check("Bình rời: Lệnh Bài rớt (1 + 1)", _token_drop_ids().size() == 1 and int(gs.drops[_token_drop_ids()[0]].item.count) == 2)
 	check("Bình rời: bỏ chỗ trong host", not h.members.has(2) and not lx.host_of.has(2))
 

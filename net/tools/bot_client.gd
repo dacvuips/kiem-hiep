@@ -46,6 +46,7 @@ var battle_state: Dictionary = {} ## gói "state" mới nhất
 var field_msgs: Array = []        ## gói S_FIELD nhận được (phòng train chung)
 var market_msgs: Array = []       ## gói S_MARKET nhận được (Chợ Giao Thương)
 var pubg_msgs: Array = []         ## gói S_PUBG nhận được (Chiến Trường Sinh Tồn)
+var lonxon_msgs: Array = []       ## gói S_LONXON nhận được (Lộn Xộn)
 var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HELLO_HUB) như Character Hub
 var _token := ""
 var _character_id := 0
@@ -105,6 +106,13 @@ func battle(op: int, args := {}) -> void:
 ## Chiến Trường Sinh Tồn: op PubgServer.OP_* + tham số.
 func pubg(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_PUBG)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Lộn Xộn: op LonXonServer.OP_* + tham số.
+func lonxon(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_LONXON)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b, NetProto.CH_RELIABLE)
@@ -483,6 +491,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var pmsg := NetProto.get_json(b)
 			if not pmsg.is_empty():
 				pubg_msgs.append(pmsg)
+		NetProto.S_LONXON:
+			var lmsg := NetProto.get_json(b)
+			if not lmsg.is_empty():
+				lonxon_msgs.append(lmsg)
 		NetProto.S_FIELD:
 			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if fmsg is Dictionary:

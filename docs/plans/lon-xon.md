@@ -230,6 +230,13 @@ Lên cấp do **server** quyết (client không tự cộng cấp) → gửi l�
   `net/client/lon_xon_client.gd`: popup thẻ 5x lúc vào + mỗi lần hồi sinh, đếm ngược 5 giây rồi gửi C_REVIVE tới khi server báo
   "respawn", Top 5 góc trên trái, số hạng 1/2/3 trên đầu, Lệnh Bài -> `avatar.scale`, `Player.skill_radius_mult`, `Player.view_mult`
   (camera, không lưu vào cài đặt); người khác to theo `sizes` của bảng; nút "Rời Lộn Xộn". `tests/lon_xon_client_tests.tscn` (37 mục).
-- [ ] Bước 4 (test online với bot thật qua server tài khoản — chưa chạy vì server tài khoản 8080 tắt) + chạy thử bằng tay.
+- [x] Bước 4 (2026-11-18): `tests/lon_xon_online_tests.tscn` — bot thật qua ENet + server tài khoản, 35/35: Hub xem / giữ chỗ host,
+  vào host hồ sơ tạm cấp 50, thấy người cùng host / không thấy host khác, thẻ 5x, hạ quái +5 cấp + rơi đồ, chặn giao dịch, chết rớt
+  hết đồ + Lệnh Bài, hồi sinh sớm bị từ chối / đủ 5 giây được, nhặt Lệnh Bài + bảng Top 5, rời host, về Hub hồ sơ thật nguyên vẹn.
+  `server/test.sh` bật server thử cổng 7967 với `LONXON_TEST_SPAWN=1` (vào / hồi sinh sát tâm khung — chỉ để test).
+  Sửa nhờ test online: (1) nạp lưới Tống Kim 1 mất ~5,5 giây và chặn cả server -> nạp sẵn lúc server thế giới khởi động (dùng chung
+  PUBG); (2) rời host từng LƯU HỒ SƠ TẠM đè nhân vật thật (đặt `lonxon_host = 0` trước khi ngắt) -> giữ dấu `LonXonServer.LEFT`,
+  không rớt đồ / Lệnh Bài 2 lần.
+- [ ] Chạy thử bằng tay trong game (giao diện, cảm giác to / camera / đếm ngược).
 - [ ] Còn mở: server kiểm tra tầm đánh theo hệ số Lệnh Bài, AOI rộng theo tầm nhìn; tên nhân vật chưa dời lên khi nhân vật to ra
   (số hạng đã dời); vùng nổ (AOE) của skill chưa nhân hệ số — mới nhân tầm đánh / tầm chỉ mục tiêu.

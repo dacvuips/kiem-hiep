@@ -45,9 +45,21 @@ var drafted := {}        ## character_id -> true (đã chọn thẻ 5x của l�
 var grid: MapGrid
 var _board_in := 0.0
 var _tick_in := 0.0
+## Chỉ cho bài test online (LONXON_TEST_SPAWN=1): mọi người vào / hồi sinh sát tâm khung host (bot đi bộ không phải băng cả khung).
+var test_spawn := false
 
 func _init(server) -> void:
 	gs = server
+	if gs.has_method("_env"):
+		test_spawn = gs._env("LONXON_TEST_SPAWN", "0") == "1"
+	if test_spawn:
+		print("Lộn Xộn: LONXON_TEST_SPAWN=1 — vào / hồi sinh sát tâm khung (chỉ dùng khi test)")
+	## Nạp sẵn lưới Tống Kim 1 lúc server khởi động (~5 giây): nạp giữa chừng lúc người đầu tiên vào host làm cả server khựng
+	## (mọi người khác mất phản hồi). Dùng chung với PUBG.
+	if gs is Node:
+		var t0 := Time.get_ticks_msec()
+		_grid()
+		print("Lộn Xộn: nạp sẵn bản đồ Tống Kim 1 (%d ms)" % (Time.get_ticks_msec() - t0))
 
 func _grid() -> MapGrid:
 	if grid == null:
@@ -72,8 +84,12 @@ func host_by_index(n: int) -> Dictionary:
 
 # ---------------------------------------------------------------- tra cứu cho GameServer
 
+## Conn.lonxon_host: > 0 = room_id host đang ở; LEFT = đã rời host nhưng kết nối này vẫn mang hồ sơ TẠM (GameServer kiểm `!= 0`
+## để không bao giờ lưu / nhận quà vào hồ sơ đó — kết nối sắp bị đóng); 0 = không liên quan Lộn Xộn.
+const LEFT := -1
+
 func in_host(c) -> bool:
-	return c != null and int(c.get("lonxon_host")) != 0
+	return c != null and int(c.get("lonxon_host")) > 0
 
 func has_room(rid: int) -> bool:
 	return hosts.has(rid)
@@ -212,6 +228,8 @@ func place(c) -> void:
 func random_spot(h: Dictionary) -> Vector2:
 	var box: Rect2 = h.box
 	var g := _grid()
+	if test_spawn and g != null:
+		return g.open_spawn_near(box.get_center() + Vector2(randf_range(-60, 60), randf_range(-30, 30)))
 	for i in 8:
 		var p := box.position + Vector2(randf_range(0.1, 0.9) * box.size.x, randf_range(0.1, 0.9) * box.size.y)
 		var s: Vector2 = g.free_near(p) if g != null else p
@@ -342,12 +360,15 @@ func on_leave(c) -> void:
 		return
 	_leave(c, "Rời Lộn Xộn")
 
-## Rời host (thoát / bỏ trận / mất kết nối): đồ + Lệnh Bài rớt ra đất như chết, bỏ chỗ.
+## Rời host (thoát / bỏ trận / mất kết nối): đồ + Lệnh Bài rớt ra đất như chết, bỏ chỗ. Kết nối giữ dấu LEFT (hồ sơ tạm: không lưu).
 func _leave(c, _why: String) -> void:
+	if not in_host(c):
+		return
 	if not dead_at.has(c.character_id):
 		_drop_everything(c)
 	_remove_member(c.character_id)
-	c.lonxon_host = 0
+	c.lonxon_host = LEFT
+	c.dirty = false
 	if c.entity:
 		c.entity.room_id = 0
 		c.entity.cell_base = Vector2i.ZERO

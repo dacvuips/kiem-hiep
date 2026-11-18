@@ -101,6 +101,9 @@ run_suite "field_tests (2 tiến trình)" field_tests.tscn GAME_ENET_PORT=7927 F
 ## Chiến Trường Sinh Tồn chạy trên server thế giới: bản thử riêng luôn mở giờ, 2 đội là đủ, tìm trận 3 giây.
 start_server pubg GAME_ENET_PORT=7957 GAME_WS_PORT=7958 PUBG_ALWAYS_OPEN=1 PUBG_MIN_SQUADS=2 PUBG_SEARCH_SEC=3
 run_suite "pubg_online_tests" pubg_online_tests.tscn GAME_ENET_PORT=7957
+## Lộn Xộn chạy trên server thế giới: bản thử cho mọi người vào sát tâm khung host (bot đi bộ không phải băng cả khung).
+start_server lonxon GAME_ENET_PORT=7967 GAME_WS_PORT=7968 LONXON_TEST_SPAWN=1
+run_suite "lon_xon_online_tests" lon_xon_online_tests.tscn GAME_ENET_PORT=7967
 if [ "$BATTLE" = 1 ]; then
 	## Chiến trường báo trạng thái theo mã máy chủ (1 chiến trường / máy chủ): tạm dừng chiến trường Docker để /v1/battle là của bản thử.
 	docker_battle="$(cd "$SERVER_REPO" && docker compose ps -q battle 2>/dev/null)"
