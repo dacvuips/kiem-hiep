@@ -42,6 +42,10 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 		for stage_id in client_stars:
 			merged_stars[stage_id] = maxi(int(merged_stars.get(stage_id, 0)), int(client_stars[stage_id]))
 		merged["stage_stars"] = merged_stars
+	## Ủy thác: mốc giờ + báo cáo chỉ server ghi (kể cả chế độ dev) — game sửa mốc lùi = EXP ủy thác ảo.
+	merged["uy_thac_seen"] = int(server_data.get("uy_thac_seen", 0))
+	merged["uy_thac_report"] = (server_data["uy_thac_report"] as Dictionary).duplicate() if server_data.get("uy_thac_report") is Dictionary else {}
+	merged["uy_thac_bank"] = (server_data["uy_thac_bank"] as Dictionary).duplicate() if server_data.get("uy_thac_bank") is Dictionary else {}
 	if trust:
 		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):

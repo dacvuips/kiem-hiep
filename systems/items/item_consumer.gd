@@ -339,6 +339,13 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 	if LonXonRules.book_tier(mid) > 0:
 		return use_book(profile, item, "")
 
+	# 0a. BẠCH CÂU HOÀN (Ủy thác): chỉ online — server cộng giờ vào quỹ ủy thác.
+	if UyThac.is_item(mid):
+		if GameModeManager.is_offline() or not NetClient.is_in_world():
+			return {"ok": false, "message": "Ủy thác chỉ dùng được khi chơi Online."}
+		NetClient.send_uy_thac("use", {"uid": item.uid})
+		return {"ok": false, "message": ""}
+
 	# 1. SÁT THỦ GIẢN LỄ HỘP (6_1_2339)
 	if mid == "6_1_2339":
 		_consume_one(profile, item, index)

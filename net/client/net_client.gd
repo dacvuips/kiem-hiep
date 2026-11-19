@@ -269,6 +269,16 @@ func send_shop_buy(misc_id: String, count: int) -> void:
 	b.put_u8(clampi(count, 1, PotionShop.MAX_COUNT))
 	_send(b)
 
+## Ủy thác: op "buy" {mid, n} / "use" {uid} — server làm trên hồ sơ của nó rồi gửi S_NOTICE + S_PROFILE.
+func send_uy_thac(op: String, args: Dictionary = {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var payload := args.duplicate()
+	payload["op"] = op
+	var b := NetProto.writer(NetProto.C_UY_THAC)
+	NetProto.put_str(b, JSON.stringify(payload))
+	_send(b)
+
 ## Chế tạo (Compound): server làm trên hồ sơ của nó rồi gửi S_NOTICE (kết quả) + S_PROFILE.
 func send_craft(op: int, uids: Array, alt: Array) -> void:
 	if status != Status.IN_WORLD:

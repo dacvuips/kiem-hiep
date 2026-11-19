@@ -32,6 +32,9 @@ const MAX_DAMAGE_PER_SEC := 30
 const MAX_HIT_DISTANCE := 1200.0
 ## Lưu nhân vật lên server tài khoản tối đa mỗi chừng này giây (khi có thay đổi) + lúc thoát.
 const SAVE_INTERVAL := 60.0
+## Ủy thác: lưu nhịp (kể cả không đổi gì) để mốc uy_thac_seen trên DB không cũ quá UyThac.MIN_SECS — nhân vật còn online ở
+## máy chủ khác (sảnh <-> map) không bị tính là đã rời game.
+const UY_THAC_HEARTBEAT := 300.0
 const MAX_PROFILE_PER_SEC := 2
 ## Đồ rơi: nằm trên đất chừng này giây; chủ (người hạ quái) được nhặt trước OWNER_SECONDS giây, sau đó ai cũng nhặt được.
 const DROP_LIFETIME := 90.0
@@ -43,7 +46,7 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
-	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON]
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON, NetProto.C_UY_THAC]
 
 class Conn:
 	var key := ""
@@ -689,6 +692,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_DA_TAU:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
 				_on_da_tau(c, NetProto.get_str(b, 4096))
+		NetProto.C_UY_THAC:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
+				_on_uy_thac(c, NetProto.get_str(b, 512))
 		NetProto.C_BATTLE:
 			if battle and c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				battle.on_battle(c, b)
@@ -806,6 +812,11 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		c.unsaved_web_grants = take_over.unsaved_web_grants
 	var in_pubg := pubg != null and not c.hub and pubg.on_hello(c)   ## đã ghép trận PUBG: thay bằng hồ sơ tạm cấp 200
 	var in_lonxon := lonxon != null and not c.hub and not in_pubg and lonxon.on_hello(c)   ## đã giữ chỗ Lộn Xộn: hồ sơ tạm cấp 50
+	## Ủy thác: cộng EXP thời gian rời game theo giờ SERVER (hồ sơ thật, không phải hồ sơ tạm PUBG / Lộn Xộn).
+	var uy_thac := {}
+	if not take_over and not in_pubg and not in_lonxon:
+		uy_thac = UyThac.settle(c.profile, int(Time.get_unix_time_from_system()))
+		c.data = c.profile.to_dict()
 	c.last_save = _now
 	_last_status_poll = -INF   ## hỏi ngay quà chờ (nạp thẻ trên web) cho nhân vật vừa vào
 	c.max_hit = ProfileGuard.max_hit(c.profile)
@@ -857,7 +868,9 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		notice(c, "Nhận %d vật phẩm từ Quản trị viên (xem hành trang)." % admin_items)
 	if starter_items > 0 and not take_over:
 		notice(c, "Nhận quà tân thủ: %d vật phẩm (xem hành trang)." % starter_items)
-	if (admin_items > 0 or starter_items > 0) and not take_over:
+	if not uy_thac.is_empty():
+		notice(c, UyThac.format_notice(uy_thac))
+	if (admin_items > 0 or starter_items > 0 or not uy_thac.is_empty()) and not take_over:
 		_save(c)
 	if battle:
 		battle.on_join_world(c)
@@ -1267,6 +1280,31 @@ func notice(c: Conn, text: String) -> void:
 
 ## Dã Tẩu: trao thưởng nhiệm vụ / mốc tích lũy trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
 func _on_da_tau(c: Conn, raw: String) -> void:
+## Ủy thác: mua / dùng Bạch Câu Hoàn trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
+func _on_uy_thac(c: Conn, raw: String) -> void:
+	if c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:
+		return   ## hồ sơ tạm PUBG / Lộn Xộn: không đụng
+	if c.trade != null or c.profile.stall_open:
+		notice(c, "Đang giao dịch / bày bán, không thể dùng.")
+		return
+	if not c.pending_profile.is_empty():
+		_apply_profile(c, c.pending_profile, c.pending_ack)
+	var a = JSON.parse_string(raw)
+	if not (a is Dictionary):
+		return
+	var r := {}
+	match str(a.get("op", "")):
+		"buy":
+			r = UyThac.buy(c.profile, str(a.get("mid", "")), int(a.get("n", 1)))
+		"use":
+			r = UyThac.use(c.profile, str(a.get("uid", "")))
+		_:
+			return
+	if r.get("ok", false):
+		profile_changed(c)
+		_save(c)
+	notice(c, str(r.get("message", "")))
+
 	if c.profile == null:
 		return
 	if not c.pending_profile.is_empty():
@@ -1664,7 +1702,8 @@ func save_now(c: Conn) -> void:
 
 func _save_due() -> void:
 	for c: Conn in _conns.values():
-		if c.state == ConnState.IN_WORLD and c.dirty and not c.saving and _now - c.last_save >= SAVE_INTERVAL:
+		if c.state == ConnState.IN_WORLD and not c.saving and ((c.dirty and _now - c.last_save >= SAVE_INTERVAL)
+				or _now - c.last_save >= UY_THAC_HEARTBEAT):
 			_save(c)
 
 ## Lưu tuần tự: đang có lần lưu chạy thì xếp hàng, lưu xong sẽ lưu tiếp bản mới nhất (2 lần lưu chồng nhau cùng version
@@ -1682,6 +1721,9 @@ func _save(c: Conn) -> void:
 		c.data["pos"] = [snappedf(c.entity.pos.x, 0.1), snappedf(c.entity.pos.y, 0.1)]
 	c.last_save = _now
 	var char_id := c.character_id
+	c.data["uy_thac_seen"] = int(Time.get_unix_time_from_system())   ## nhân vật còn trong game tới lúc này (UyThac)
+	if c.profile:
+		c.profile.uy_thac_seen = int(c.data["uy_thac_seen"])
 	_saving_chars[char_id] = int(_saving_chars.get(char_id, 0)) + 1
 	var sent_grants: Array = c.unsaved_web_grants.duplicate()
 	var r: Dictionary = await account.save_character(char_id, c.char_version, c.data, sent_grants)

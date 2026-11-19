@@ -1657,6 +1657,8 @@ func _on_event_action(event_id: String) -> void:
 			PkWindow.open(self, _profile, _enter_field_map)
 		"hoa_dang":
 			LanternWindow.open(self, _profile)
+		"uy_thac":
+			UyThacWindow.open(self, _profile, _on_quit_game_pressed)
 		"escort":
 			var pk_win := PkWindow.open(self, _profile, _enter_field_map)
 			pk_win._select_mode(PkRules.Mode.VAN_TIEU)

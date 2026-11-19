@@ -1058,11 +1058,20 @@ func to_dict() -> Dictionary:
 		"energy": energy,
 		"potential_points": potential_points,
 		"skill_points": skill_points,
+## Ủy thác (UyThac): mốc giờ (giây unix) lần cuối nhân vật còn trong game + báo cáo lần ủy thác gần nhất.
+## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
+var uy_thac_seen: int = 0
+var uy_thac_report: Dictionary = {}
+## Quỹ giờ ủy thác (giây) theo hệ số EXP ("1.0" / "1.5" / "2.0") — cộng khi dùng Bạch Câu Hoàn (UyThac.use).
+var uy_thac_bank: Dictionary = {}
 		"skill_levels": skill_levels.duplicate(true),
 		"thu_thanh_level": thu_thanh_level,
 		"thu_thanh_exp": thu_thanh_exp,
 		"thu_thanh_skill_levels": thu_thanh_skill_levels.duplicate(),
 		"thu_thanh_skill_points": thu_thanh_skill_points,
+		"uy_thac_seen": uy_thac_seen,
+		"uy_thac_report": uy_thac_report.duplicate(),
+		"uy_thac_bank": uy_thac_bank.duplicate(),
 		"thu_thanh_selected_skills": thu_thanh_selected_skills.duplicate(),
 		"gold": gold,
 		"xu": xu,
@@ -1169,6 +1178,12 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.thu_thanh_selected_skills.append(str(s_id))
 	profile.gold = int(data.get("gold", 0))
 	profile.xu = int(data.get("xu", 0))
+	profile.uy_thac_seen = int(data.get("uy_thac_seen", 0))
+	profile.uy_thac_report = (data.get("uy_thac_report") as Dictionary).duplicate() if data.get("uy_thac_report") is Dictionary else {}
+	if data.get("uy_thac_bank") is Dictionary:
+		for k in data["uy_thac_bank"]:
+			if int(data["uy_thac_bank"][k]) > 0:
+				profile.uy_thac_bank[str(k)] = int(data["uy_thac_bank"][k])
 	profile.jade = int(data.get("jade", 0))
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))

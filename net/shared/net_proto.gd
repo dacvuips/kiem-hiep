@@ -56,6 +56,7 @@ const C_SHOP_BUY := 28    ## str misc_id, u8 count — mua ở Hiệu thuốc (P
 const C_CRAFT := 29       ## str json {op, uids, alt} — Chế tạo (Compound.run trên hồ sơ của server) -> S_NOTICE + S_PROFILE
 const C_PUBG := 31       ## u8 op (PubgServer.OP_*) + str json — Chiến Trường Sinh Tồn: đội chờ (từ Hub) + trong trận
 const C_LONXON := 32     ## u8 op (LonXonServer.OP_*) + str json — Lộn Xộn: xem host / vào host (từ Hub) + trong trận
+const C_UY_THAC := 33    ## str json {op: "buy" {mid, n} | "use" {uid}} — Ủy thác (Bạch Câu Hoàn, UyThac trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_DA_TAU := 30      ## str json {op, ...} — Dã Tẩu (claim_option / claim_milestone trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 

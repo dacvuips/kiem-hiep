@@ -387,6 +387,10 @@ static func get_misc(misc_id: String) -> Dictionary:
 			"height": 1,
 			"source": "lonxon",
 		}
+		## Bạch Câu Hoàn (UyThac): chồng được như thuốc.
+		for mid in UyThac.ITEMS:
+			if _misc.has(mid):
+				_misc[mid]["stack"] = maxi(int(_misc[mid].get("stack", 0)), UyThac.STACK)
 	return _misc.get(misc_id, {})
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
