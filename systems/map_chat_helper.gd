@@ -121,18 +121,24 @@ static func teleport_to_room_or_map(room_id: String, host: Node) -> void:
 			var st: Dictionary = r_data.data
 			var target_room: Dictionary = {}
 			for r in st.get("rooms", []):
-				if r is Dictionary and str(r.get("id", "")) == id:
+				if r is Dictionary and str(r.get("id", "")) == id and str(r.get("kind", "")) == "":
 					target_room = r
 					break
 
 			if not target_room.is_empty():
 				var entry := MapSelectWindow.join_entry(target_room)
 				if not entry.is_empty() and MapCatalog.is_playable(entry):
-					entry["field"] = {
-						"server": MapSelectWindow._field_server(st, target_room),
-						"action": {"op": "join", "room": id, "map_id": int(target_room["map_id"]), "tier": int(target_room.get("tier", 0))}
-					}
-					_execute_enter_map(entry, tree)
+					var go := func(password: String) -> void:
+						entry["field"] = {
+							"server": MapSelectWindow._field_server(st, target_room),
+							"action": {"op": "join", "room": id, "map_id": int(target_room["map_id"]), "tier": int(target_room.get("tier", 0)),
+								"password": FieldServer.clean_password(password)}
+						}
+						_execute_enter_map(entry, tree)
+					if bool(target_room.get("locked", false)):
+						SocialWindow.prompt(host, "Phòng #%s 🔒" % id, "Nhập mật khẩu phòng", go, "", true)
+					else:
+						go.call("")
 					return
 
 	# 2. Thử tìm xem có phải map ID thông thường (từ MapCatalog)

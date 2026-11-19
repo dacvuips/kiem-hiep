@@ -16,12 +16,15 @@ class_name FieldServer
 ##
 ## Tin game -> server: C_FIELD u8 op + str json; server -> game: S_FIELD str json {op: "room" | "reject", ...}.
 
-const OP_CREATE := 1      ## {map_id, tier (0 = Thường, 10-12 = Địa Ngục), stars}
-const OP_JOIN := 2        ## {room, map_id, tier}
+const OP_CREATE := 1      ## {map_id, tier (0 = Thường, 10-12 = Địa Ngục), stars, password ("" = phòng mở)}
+const OP_JOIN := 2        ## {room, map_id, tier, password}
 const OP_GUILD := 3       ## {guild, map_id}
 const OP_BOSS := 4        ## {boss_id, map_id, boss_name}
 
 const MAX_MEMBERS := 8
+## Mật khẩu phòng (chủ phòng đặt lúc tạo, tuỳ chọn): chỉ giữ trong RAM của field server — danh sách gửi lên server tài khoản chỉ có
+## cờ "locked", không bao giờ có mật khẩu.
+const PASSWORD_MAX := 16
 const REPORT_EVERY := 2.0
 ## Vùng ô AOI mỗi phòng chiếm (theo trục y): map lớn nhất cỡ vài chục ô 1024px — 4096 ô là dư.
 const ROOM_CELLS := 4096
@@ -73,9 +76,10 @@ func on_field(c, b: StreamPeerBuffer) -> void:
 		return
 	match op:
 		OP_CREATE:
-			_create(c, int(args.get("map_id", 0)), int(args.get("tier", 0)), int(args.get("stars", 1)))
+			_create(c, int(args.get("map_id", 0)), int(args.get("tier", 0)), int(args.get("stars", 1)), clean_password(args.get("password", "")))
 		OP_JOIN:
-			_join(c, str(args.get("room", "")).strip_edges(), int(args.get("map_id", 0)), int(args.get("tier", 0)))
+			_join(c, str(args.get("room", "")).strip_edges(), int(args.get("map_id", 0)), int(args.get("tier", 0)),
+				clean_password(args.get("password", "")))
 		OP_GUILD:
 			_guild_enter(c, str(args.get("guild", "")).strip_edges(), int(args.get("map_id", 987)))
 		OP_BOSS:
@@ -91,7 +95,11 @@ static func map_entry(map_id: int, tier: int) -> Dictionary:
 			return m
 	return {}
 
-func _create(c, map_id: int, tier: int, stars: int) -> void:
+## Mật khẩu phòng đã chuẩn hoá: bỏ khoảng trắng 2 đầu, tối đa PASSWORD_MAX ký tự.
+static func clean_password(v: Variant) -> String:
+	return str(v).strip_edges().left(PASSWORD_MAX) if v is String else ""
+
+func _create(c, map_id: int, tier: int, stars: int, password := "") -> void:
 	var m := map_entry(map_id, tier)
 	if m.is_empty() or not MapCatalog.is_playable(m):
 		_reject(c, "Bản đồ này không mở phòng được.")
@@ -118,17 +126,22 @@ func _create(c, map_id: int, tier: int, stars: int) -> void:
 	var r := {"id": id, "rid": int(id), "map_id": map_id, "name": str(m["name"]), "tier": tier,
 		"stars": clampi(stars, 1, MapCatalog.HELL_MAX_STARS) if hell else 0, "level": int(m["level"]), "dir": str(m["dir"]),
 		"grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS), "spawn": grid.open_spawn_near(spawn_center),
-		"host": c.character_id, "host_name": c.entity.name, "members": [], "monsters": []}
+		"host": c.character_id, "host_name": c.entity.name, "members": [], "monsters": [], "password": password}
 	rooms[id] = r
 	_rooms_by_rid[r.rid] = r
 	_spawn_monsters(r)
-	print("Mở phòng #%s: %s%s — chủ %s, %d quái" % [id, r.name, " Địa Ngục %d★" % r.stars if hell else "", r.host_name, r.monsters.size()])
+	print("Mở phòng #%s: %s%s — chủ %s, %d quái%s" % [id, r.name, " Địa Ngục %d★" % r.stars if hell else "", r.host_name, r.monsters.size(),
+		", có mật khẩu" if password != "" else ""])
 	_enter(c, r)
 
-func _join(c, id: String, map_id: int, tier: int) -> void:
+func _join(c, id: String, map_id: int, tier: int, password := "") -> void:
 	var r: Dictionary = rooms.get(id, {})
-	if r.is_empty():
+	if r.is_empty() or str(r.get("guild", "")) != "" or bool(r.get("is_boss", false)):
 		_reject(c, "Không có phòng #%s (phòng đã đóng hoặc sai ID)." % id)
+		return
+	var need := str(r.get("password", ""))
+	if need != "" and password != need:
+		_reject(c, "Phòng #%s có mật khẩu — %s." % [id, "sai mật khẩu" if password != "" else "hãy nhập mật khẩu"], "bad_password")
 		return
 	if int(r.map_id) != map_id or int(r.tier) != tier:
 		_reject(c, "Phòng #%s đang ở bản đồ khác — hãy nhập lại ID." % id)
@@ -366,7 +379,7 @@ func _room_msg(r: Dictionary, op: String) -> Dictionary:
 			names.append(m.entity.name)
 	return {"op": op, "id": r.id, "map_id": r.map_id, "name": r.name, "tier": r.tier, "stars": r.stars, "host": r.host_name,
 		"members": names, "max": int(r.get("max", MAX_MEMBERS)), "guild": str(r.get("guild", "")),
-		"boss_name": str(r.get("boss_name", "")), "is_boss": bool(r.get("is_boss", false))}
+		"boss_name": str(r.get("boss_name", "")), "is_boss": bool(r.get("is_boss", false)), "locked": str(r.get("password", "")) != ""}
 
 ## Danh sách người trong phòng đổi: báo mọi người trong phòng.
 func _broadcast(r: Dictionary) -> void:
@@ -376,8 +389,8 @@ func _broadcast(r: Dictionary) -> void:
 		if m:
 			_send(m, msg)
 
-func _reject(c, text: String) -> void:
-	_send(c, {"op": "reject", "msg": text})
+func _reject(c, text: String, code := "") -> void:
+	_send(c, {"op": "reject", "msg": text, "code": code})
 
 func _send(c, msg: Dictionary) -> void:
 	var b := NetProto.writer(NetProto.S_FIELD)
@@ -388,7 +401,9 @@ func _report() -> void:
 	var list := []
 	for id in rooms:
 		var r: Dictionary = rooms[id]
+		var kind := "guild" if str(r.get("guild", "")) != "" else ("boss" if bool(r.get("is_boss", false)) else "")
 		list.append({"id": id, "map_id": r.map_id, "tier": r.tier, "stars": r.stars, "host": r.host_name,
-			"members": (r.members as Array).size(), "max": MAX_MEMBERS})
+			"members": (r.members as Array).size(), "max": int(r.get("max", MAX_MEMBERS)), "locked": str(r.get("password", "")) != "",
+			"kind": kind})
 	gs.account.report_field({"server_id": gs.account.server_id, "index": index, "host": public_host, "port": public_port, "ws_url": public_ws,
 		"open": true, "players": gs.online_count(), "rooms": list})

@@ -13,6 +13,8 @@ class_name MapSelectWindow
 ## PHÒNG TRAIN CHUNG (tab Thường / Địa Ngục, lúc đã đăng nhập): vào map = tạo phòng trên field server (FieldServer cấp ID 6 số, hiện
 ## ở khung trên màn chơi — FieldClient); hàng "ID phòng" dưới cùng: nhập ID của người khác -> tra phòng (GET /v1/field) -> vào đúng map
 ## đó cùng họ. Chưa đăng nhập: chơi một mình như cũ (offline).
+## Tab Luyện / Tinh anh lúc online có 2 tab con: "Bản đồ" (bấm Vào -> hỏi mật khẩu phòng, để trống = phòng mở) và "Danh sách phòng"
+## (mọi phòng đang chơi của tab đó: ID, bản đồ, cấp, số người, 🔒 nếu có mật khẩu, nút Vào — như nhập ID nhưng bấm thẳng trên danh sách).
 
 const TABS := ["Luyện", "Thủ Thành", "Tinh anh", "Ải", "Boss"]
 const TABS_OFFLINE := ["Luyện", "Thủ Thành", "Tinh anh", "Ải"]
@@ -45,6 +47,17 @@ var _join_row: Control
 var _join_edit: LineEdit
 var _join_button: Button
 var _join_msg: Label
+## Tab con của Luyện / Tinh anh (chỉ hiện khi online): false = "Bản đồ", true = "Danh sách phòng".
+var _room_view := false
+var _sub_bar: HBoxContainer
+var _sub_buttons: Array[Button] = []
+var _rooms_box: VBoxContainer
+var _rooms_msg: Label
+var _rooms_hell := false
+var _rooms_timer: Timer
+var _rooms_loading := false
+const ROOMS_POLL := 4.0
+const ROOM_COLS := [110.0, 260.0, 150.0, 110.0, 60.0]   ## ID · Bản đồ · Cấp · Người · 🔒 (cột cuối = nút Vào)
 
 const BATTLE_POLL := 3.0
 const BATTLE_COOLDOWN := 10.0
@@ -99,6 +112,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: 
 	_tabs_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	_setup_tabs()
 	body.add_child(_tabs_container)
+	_build_sub_bar()
 
 	_content = HBoxContainer.new()
 	_content.add_theme_constant_override("separation", 10)
@@ -204,8 +218,17 @@ func _select_tab(i: int) -> void:
 	_map_list_scroll = null
 	_thu_thanh_list_scroll = null
 	_hell_list_scroll = null
+	_rooms_box = null
+	_rooms_msg = null
 	var selected_tab: String = tabs[i]
-	_join_row.visible = (selected_tab in ["Luyện", "Tinh anh"]) and _online()   ## phòng train chung: tab Luyện + Tinh anh khi có mạng
+	var shared_tab: bool = (selected_tab in ["Luyện", "Tinh anh"]) and _online()   ## phòng train chung: tab Luyện + Tinh anh khi có mạng
+	_join_row.visible = shared_tab
+	_sub_bar.visible = shared_tab
+	for k in _sub_buttons.size():
+		GameUi.set_active(_sub_buttons[k], (k == 1) == _room_view)
+	if shared_tab and _room_view:
+		_build_rooms(selected_tab == "Tinh anh")
+		return
 	match selected_tab:
 		"Luyện":
 			_build_normal()
@@ -1656,10 +1679,17 @@ func _enter_field(m: Dictionary) -> void:
 					_play(e))
 		return
 	var hell: Dictionary = m.get("hell", {})
-	var e := m.duplicate(true)
-	e["field"] = {"server": _field_server(st), "action": {"op": "create", "map_id": int(m["id"]), "tier": int(hell.get("tier", 0)),
-		"stars": int(hell.get("stars", 0))}}
-	_play(e)
+	var create := func(password: String) -> void:
+		var e := m.duplicate(true)
+		e["field"] = {"server": _field_server(st), "action": {"op": "create", "map_id": int(m["id"]), "tier": int(hell.get("tier", 0)),
+			"stars": int(hell.get("stars", 0)), "password": FieldServer.clean_password(password)}}
+		_play(e)
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("is_in_intro_flow") and tm.is_in_intro_flow():
+		create.call("")   ## đang hướng dẫn tân thủ: vào thẳng, không hỏi mật khẩu
+		return
+	SocialWindow.prompt(self, tr("Mật khẩu phòng"), tr("Để trống = ai có ID cũng vào được (tối đa %d ký tự)") % FieldServer.PASSWORD_MAX,
+		create)
 
 ## "Vào chơi chung": tra phòng theo ID -> nạp đúng map (Thường / Địa Ngục + số sao của phòng) -> vào phòng.
 func _join_by_id() -> void:
@@ -1678,22 +1708,188 @@ func _join_by_id() -> void:
 		return
 	var room: Dictionary = {}
 	for r in st.get("rooms", []):
-		if r is Dictionary and str(r.get("id", "")) == id:
+		if r is Dictionary and str(r.get("id", "")) == id and str(r.get("kind", "")) == "":
 			room = r
-	var reason := ""
-	var entry := {} if room.is_empty() else join_entry(room)
-	if room.is_empty():
-		reason = "Không có phòng #%s (phòng đã đóng hoặc sai ID)." % id
-	elif int(room.get("members", 0)) >= int(room.get("max", FieldServer.MAX_MEMBERS)):
-		reason = "Phòng #%s đã đủ người." % id
-	elif entry.is_empty() or not MapCatalog.is_playable(entry):
-		reason = "Máy bạn chưa có bản đồ của phòng #%s." % id
+	var reason := join_problem(room, id)
 	if reason != "":
 		_join_msg.text = reason
 		return
-	entry["field"] = {"server": _field_server(st, room), "action": {"op": "join", "room": id, "map_id": int(room["map_id"]),
-		"tier": int(room.get("tier", 0))}}
-	_play(entry)
+	_join_room(st, room)
+
+## Lý do không vào được phòng ("" = vào được): đã đóng / đủ người / máy chưa có map.
+static func join_problem(room: Dictionary, id: String) -> String:
+	if room.is_empty():
+		return "Không có phòng #%s (phòng đã đóng hoặc sai ID)." % id
+	if int(room.get("members", 0)) >= int(room.get("max", FieldServer.MAX_MEMBERS)):
+		return "Phòng #%s đã đủ người." % id
+	var entry := join_entry(room)
+	if entry.is_empty() or not MapCatalog.is_playable(entry):
+		return "Máy bạn chưa có bản đồ của phòng #%s." % id
+	return ""
+
+## Vào 1 phòng của danh sách /v1/field (nhập ID hoặc bấm Vào ở "Danh sách phòng"): phòng có 🔒 thì hỏi mật khẩu trước —
+## field server kiểm, sai thì báo lỗi và về Hub (FieldClient).
+func _join_room(st: Dictionary, room: Dictionary) -> void:
+	var id := str(room.get("id", ""))
+	var go := func(password: String) -> void:
+		var entry := join_entry(room)
+		entry["field"] = {"server": _field_server(st, room), "action": {"op": "join", "room": id, "map_id": int(room["map_id"]),
+			"tier": int(room.get("tier", 0)), "password": FieldServer.clean_password(password)}}
+		_play(entry)
+	if bool(room.get("locked", false)):
+		SocialWindow.prompt(self, tr("Phòng #%s 🔒") % id, tr("Nhập mật khẩu phòng"), go, "", true)
+	else:
+		go.call("")
+
+# ---------------------------------------------------------------- tab con "Bản đồ" / "Danh sách phòng"
+
+func _build_sub_bar() -> void:
+	_sub_bar = HBoxContainer.new()
+	_sub_bar.add_theme_constant_override("separation", 6)
+	body.add_child(_sub_bar)
+	for k in 2:
+		var b := GameUi.button(tr("Bản đồ") if k == 0 else tr("Danh sách phòng"), GameUi.TAB)
+		b.custom_minimum_size = Vector2(150, 32)
+		b.pressed.connect(func() -> void:
+			_room_view = k == 1
+			_select_tab(_tab))
+		_sub_bar.add_child(b)
+		_sub_buttons.append(b)
+	_rooms_timer = Timer.new()
+	_rooms_timer.wait_time = ROOMS_POLL
+	_rooms_timer.timeout.connect(func() -> void:
+		if _rooms_box != null and is_instance_valid(_rooms_box) and is_visible_in_tree():
+			_refresh_rooms())
+	add_child(_rooms_timer)
+	_rooms_timer.autostart = true
+
+## Danh sách phòng đang chơi của tab Luyện (hell = false) hoặc Tinh anh (hell = true).
+func _build_rooms(hell: bool) -> void:
+	_rooms_hell = hell
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", 6)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_content.add_child(page)
+
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 10)
+	page.add_child(top)
+	_rooms_msg = SocialUi.label(tr("Đang tải danh sách phòng…"), SocialUi.MUTED, 13)
+	_rooms_msg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(_rooms_msg)
+	var refresh := SocialUi.small_button(tr("Làm mới"))
+	refresh.pressed.connect(_refresh_rooms)
+	top.add_child(refresh)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	var head_pad := MarginContainer.new()   ## lề ngang = lề trong thẻ của từng dòng để cột tiêu đề thẳng hàng
+	head_pad.add_theme_constant_override("margin_left", 10)
+	head_pad.add_child(head)
+	page.add_child(head_pad)
+	var titles := [tr("ID phòng"), tr("Bản đồ"), tr("Cấp map"), tr("Số người"), tr("Khoá")]
+	for k in titles.size():
+		var l := SocialUi.label(titles[k], SocialUi.LABEL_BLUE, 14, HORIZONTAL_ALIGNMENT_LEFT if k == 1 else HORIZONTAL_ALIGNMENT_CENTER)
+		l.custom_minimum_size.x = ROOM_COLS[k]
+		head.add_child(l)
+	page.add_child(SocialUi.divider())
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(LIST_SIZE.x, LIST_SIZE.y - 110)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(scroll)
+	_rooms_box = VBoxContainer.new()
+	_rooms_box.add_theme_constant_override("separation", 6)
+	_rooms_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_rooms_box)
+	TouchScrollHelperScript.attach(scroll, scroll)
+	_refresh_rooms()
+
+## Phòng hiện ở danh sách của tab: chỉ phòng train Vượt Ải (không Tổng Đà / Săn Boss), đúng loại Thường / Tinh anh; xếp theo cấp map.
+static func rooms_for_tab(rooms: Array, hell: bool) -> Array:
+	var out := []
+	for r in rooms:
+		if r is Dictionary and str(r.get("kind", "")) == "" and (int(r.get("tier", 0)) != 0) == hell:
+			out.append(r)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var la := int(join_entry(a).get("level", 0))
+		var lb := int(join_entry(b).get("level", 0))
+		return la < lb if la != lb else str(a.get("id", "")) < str(b.get("id", "")))
+	return out
+
+## Chữ cột "Cấp map": Luyện = nhóm 1x..12x + cấp quái; Tinh anh = nhóm + số sao.
+static func room_level_text(room: Dictionary) -> String:
+	var tier := int(room.get("tier", 0))
+	if tier != 0:
+		return "%dx  %s" % [tier, "★".repeat(clampi(int(room.get("stars", 1)), 1, MapCatalog.HELL_MAX_STARS))]
+	var level := int(join_entry(room).get("level", 0))
+	return "%dx  ·  Lv%d" % [MapCatalog.tier_of_level(level), level]
+
+func _refresh_rooms() -> void:
+	if _rooms_loading or _rooms_box == null or not is_instance_valid(_rooms_box):
+		return
+	var box := _rooms_box
+	var hell := _rooms_hell
+	_rooms_loading = true
+	var st := await _fetch_field()
+	_rooms_loading = false
+	if not is_instance_valid(box) or box != _rooms_box or not box.is_inside_tree():
+		return
+	for c in box.get_children():
+		box.remove_child(c)
+		c.queue_free()
+	if st.is_empty():
+		_rooms_msg.text = tr("Máy chủ phòng train chung chưa mở.")
+		return
+	var rooms := rooms_for_tab(st.get("rooms", []), hell)
+	if rooms.is_empty():
+		_rooms_msg.text = tr("Chưa có phòng nào — sang tab Bản đồ bấm Vào để mở phòng mới.")
+	else:
+		_rooms_msg.text = tr("%d phòng đang chơi") % rooms.size()
+	for r in rooms:
+		box.add_child(_room_row(st, r))
+
+## 1 dòng danh sách phòng: ID · tên map (di chuột xem chủ phòng) · cấp map · số người · 🔒 · nút Vào.
+func _room_row(st: Dictionary, room: Dictionary) -> Control:
+	var card := GameUi.panel(GameUi.PANEL)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	card.add_child(row)
+	var id := str(room.get("id", ""))
+	var entry := join_entry(room)
+	var members := int(room.get("members", 0))
+	var cap := int(room.get("max", FieldServer.MAX_MEMBERS))
+	var locked := bool(room.get("locked", false))
+	var cells := [
+		[id, SocialUi.TITLE, HORIZONTAL_ALIGNMENT_CENTER],
+		[str(entry.get("name", "#%d" % int(room.get("map_id", 0)))), SocialUi.TEXT, HORIZONTAL_ALIGNMENT_LEFT],
+		[room_level_text(room), HELL_TEXT if int(room.get("tier", 0)) != 0 else SocialUi.LABEL_BLUE, HORIZONTAL_ALIGNMENT_CENTER],
+		["%d/%d" % [members, cap], SocialUi.MUTED if members >= cap else SocialUi.TEXT, HORIZONTAL_ALIGNMENT_CENTER],
+		["🔒" if locked else "", SocialUi.TITLE, HORIZONTAL_ALIGNMENT_CENTER],
+	]
+	for k in cells.size():
+		var l := SocialUi.label(cells[k][0], cells[k][1], 15, cells[k][2])
+		l.custom_minimum_size.x = ROOM_COLS[k]
+		l.clip_text = true
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(l)
+	var name_label := row.get_child(1) as Label
+	name_label.tooltip_text = tr("Chủ phòng: %s") % str(room.get("host", "?"))
+	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+	var go := SocialUi.stone_button(tr("Vào"), Vector2(120, 36))
+	var problem := join_problem(room, id)
+	if problem != "":
+		go.disabled = true
+		go.tooltip_text = problem
+	go.pressed.connect(func() -> void: _join_room(st, room))
+	row.add_child(go)
+	return card
 
 ## Mục map (GameManager.field_map) của 1 phòng trong danh sách /v1/field: map Thường, hoặc map Địa Ngục đúng nhóm + số sao. {} = không có.
 static func join_entry(room: Dictionary) -> Dictionary:

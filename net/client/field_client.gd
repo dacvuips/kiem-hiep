@@ -40,7 +40,8 @@ func _send_action() -> void:
 	var action: Dictionary = field.get("action", {})
 	var args := {"map_id": int(action.get("map_id", 0)), "tier": int(action.get("tier", 0)), "stars": int(action.get("stars", 0)),
 		"room": str(action.get("room", "")), "guild": str(action.get("guild", "")),
-		"boss_id": int(action.get("boss_id", 0)), "boss_name": str(action.get("boss_name", ""))}
+		"boss_id": int(action.get("boss_id", 0)), "boss_name": str(action.get("boss_name", "")),
+		"password": str(action.get("password", ""))}
 	var op_type: int = FieldServer.OP_CREATE
 	if str(action.get("op", "")) == "join":
 		op_type = FieldServer.OP_JOIN
@@ -67,7 +68,11 @@ func _on_message(msg: Dictionary) -> void:
 		"state":
 			_show(msg)
 		"reject":
-			_leave(str(msg.get("msg", "Không vào được phòng.")))
+			var why := str(msg.get("msg", "Không vào được phòng."))
+			if str(field.get("action", {}).get("op", "")) == "join":
+				_back_to_hub(why)   ## vào phòng người khác bị từ chối (sai mật khẩu, đầy, đã đóng): về Hub, không chơi một mình map của họ
+			else:
+				_leave(why)
 
 func _show(s: Dictionary) -> void:
 	var boss_name: String = str(s.get("boss_name", ""))
@@ -86,7 +91,7 @@ func _show(s: Dictionary) -> void:
 		_info.tooltip_text = ", ".join(members)
 		_copy.visible = false
 		return
-	_title.text = "Phòng #%s" % s.get("id", room_id)
+	_title.text = ("Phòng #%s 🔒" if bool(s.get("locked", false)) else "Phòng #%s") % s.get("id", room_id)
 	var stars := int(s.get("stars", 0))
 	var where := str(s.get("name", ""))
 	if stars > 0:
@@ -151,6 +156,28 @@ func _leave(message: String) -> void:
 				if p.has_method("reset_has_moved"):
 					p.reset_has_moved()
 	return
+
+## Báo lý do, chờ LEAVE_DELAY giây rồi ngắt mạng và về Character Hub.
+func _back_to_hub(message: String) -> void:
+	if _leaving or not is_inside_tree():
+		return
+	_leaving = true
+	_title.text = "Không vào được phòng"
+	_info.text = message
+	_copy.visible = false
+	if _share:
+		_share.visible = false
+	_say(message)
+	await get_tree().create_timer(LEAVE_DELAY).timeout
+	if not is_inside_tree():
+		return
+	NetClient.disconnect_from_server()
+	get_tree().paused = false
+	var transition: Node = get_tree().root.get_node_or_null("SceneTransition")
+	if transition != null and transition.has_method("change_scene"):
+		transition.change_scene(HUB_SCENE, "Về Thành")
+	else:
+		get_tree().change_scene_to_file(HUB_SCENE)
 
 func _say(text: String) -> void:
 	var player := get_tree().get_first_node_in_group("player")
