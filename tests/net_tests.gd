@@ -327,6 +327,12 @@ func test_team() -> void:
 	check("C3: đội trưởng thấy R xin vào", await wait_until(func() -> bool: return p.team.get("applicants", []).has(r.eid), 3.0), r.notices)
 	p.team_op(SocialServer.TEAM_ACCEPT, r.eid)
 	check("C3: R vào đội (3 người)", await wait_until(func() -> bool: return r.team.get("members", []).size() == 3, 3.0), p.notices)
+	## Máu tổ đội (khung danh sách tổ đội góc trái): Q báo còn 40% -> đội trưởng P nhận S_TEAM_HP có máu Q, cùng phòng.
+	q.send_hp(40)
+	check("C3: đội trưởng thấy máu đồng đội (S_TEAM_HP)", await wait_until(func() -> bool:
+		return p.team_hp.has(q.eid) and int(p.team_hp[q.eid][0]) == 40 and bool(p.team_hp[q.eid][1]), 3.0), p.team_hp)
+	check("C3: S_TEAM_HP có đủ 3 thành viên", r.team_hp.size() >= 3, r.team_hp)
+	q.send_hp(100)
 	## Cả đội đứng gần quái, P hạ quái -> Q, R cũng nhận kinh nghiệm.
 	var m := p.nearest_monster()
 	if m == 0:

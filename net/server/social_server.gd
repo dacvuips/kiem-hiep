@@ -44,6 +44,7 @@ class Team:
 	var pick_mode := TeamService.Pick.FREE
 	var turn := 0
 	var applicants: Array = []     ## Conn
+	var hp_sig := ""               ## máu + phòng các thành viên lần gửi S_TEAM_HP trước ("" = gửi lại ở nhịp tới)
 	func captain():
 		return members[0]
 
@@ -61,6 +62,10 @@ var gs: GameServer
 var _invites: Dictionary = {}          ## "from_eid:to_eid" -> Dictionary thông tin lời mời
 var _team_invites: Dictionary = {}     ## "captain_eid:to_eid" -> hết hạn
 var _trade_rejections: Dictionary = {} ## "from_cid:to_cid" -> {"count": int, "cooldown_until": float}
+var _team_hp_clock := 0.0
+
+## Nhịp gửi máu đồng đội (S_TEAM_HP) — chỉ gửi khi máu / phòng của ai đó đổi.
+const TEAM_HP_INTERVAL := 0.33
 
 static func _format_cooldown_time(sec: int) -> String:
 	if sec >= 60:
@@ -95,6 +100,11 @@ func tick(dt: float, now: float) -> void:
 		if c.trade and not seen.has(c.trade):
 			seen[c.trade] = true
 			(c.trade as Trade).session.tick(dt)
+	_team_hp_clock += dt
+	if _team_hp_clock >= TEAM_HP_INTERVAL:
+		_team_hp_clock = 0.0
+		for t in _all_teams():
+			_send_team_hp(t)
 
 # ---------------------------------------------------------------- giao dịch
 
@@ -450,8 +460,29 @@ func _disband(t: Team, msg: String) -> void:
 	t.applicants.clear()
 
 func _send_team(t: Team) -> void:
+	t.hp_sig = ""   ## đội vừa đổi người: nhịp tới gửi lại máu cho cả đội
 	for m in t.members:
 		_send_team_to(m, t)
+
+## Máu (%) mọi thành viên cho từng người trong đội — khung danh sách tổ đội góc trái. Đồng đội ngoài tầm nhìn / khác phòng vẫn có máu
+## (snapshot vị trí chỉ gửi người trong tầm). Chỉ gửi khi máu hoặc phòng của ai đó đổi so với lần trước.
+func _send_team_hp(t: Team) -> void:
+	if t.members.size() < 2:
+		return
+	var sig := ""
+	for m in t.members:
+		sig += "%d:%d:%d," % [m.entity.eid, m.entity.hp, m.entity.room_id] if m.entity else "-,"
+	if sig == t.hp_sig:
+		return
+	t.hp_sig = sig
+	for c in t.members:
+		var b := NetProto.writer(NetProto.S_TEAM_HP)
+		b.put_u8(t.members.size())
+		for m in t.members:
+			b.put_u32(m.entity.eid if m.entity else 0)
+			b.put_u8(clampi(m.entity.hp, 0, 100) if m.entity else 100)
+			b.put_u8(1 if c.entity and m.entity and m.entity.room_id == c.entity.room_id else 0)
+		gs.send(c, b)
 
 func _send_team_to(c, t: Team) -> void:
 	var b := NetProto.writer(NetProto.S_TEAM_STATE)

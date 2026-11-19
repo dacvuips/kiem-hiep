@@ -51,6 +51,7 @@ func _ready() -> void:
 	NetClient.trade_state.connect(_on_trade_state)
 	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.team_state.connect(_on_team_state)
+	NetClient.team_hp.connect(_on_team_hp)
 	NetClient.team_invite.connect(_on_team_invite)
 	NetClient.guild_received.connect(_on_guild)
 	NetClient.guild_list.connect(func(list: Array) -> void:
@@ -131,6 +132,11 @@ func _on_team_state(st: Dictionary) -> void:
 	var hub := _hub()
 	if hub:
 		hub.team.apply_net_state(st)
+
+func _on_team_hp(list: Array) -> void:
+	var hub := _hub()
+	if hub:
+		hub.team.apply_net_hp(list)
 
 func _on_team_invite(captain_eid: int, captain_name: String) -> void:
 	var p := GameManager.local_profile

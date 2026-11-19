@@ -13,6 +13,7 @@ class_name TeamService
 ## Trạng thái nằm trên thể hiện (online: server là nơi giữ đội, lớp này chỉ là ảnh chụp phía người chơi).
 
 signal changed
+signal hp_changed                         ## máu đồng đội đổi (online: S_TEAM_HP) — khung danh sách tổ đội vẽ lại thanh máu
 signal message(text: String, good: bool)
 
 enum Pick { SELF, FREE, CAPTAIN, ALTERNATE }
@@ -60,6 +61,8 @@ var auto_refuse_invite := false
 var applicants: Array[MockPlayer] = []
 var rng := RandomNumberGenerator.new()
 var _turn := 0                            ## chỉ số người đang tới lượt nhặt (0 = đội trưởng, i+1 = members[i])
+var member_hp: Dictionary = {}            ## id thành viên -> % máu 0..100 (online, từ server; offline người chơi giả = đầy máu)
+var member_near: Dictionary = {}          ## id thành viên -> cùng phòng / map với mình (false = ở xa, khung tô mờ)
 
 func _init(p: PlayerProfile) -> void:
 	profile = p
@@ -102,6 +105,21 @@ func apply_net_state(st: Dictionary) -> void:
 			m.level = int(a.level)
 			applicants.append(m)
 	changed.emit()
+
+## Online: máu đồng đội server gửi định kỳ (S_TEAM_HP).
+func apply_net_hp(list: Array) -> void:
+	for d in list:
+		member_hp[int(d.eid)] = int(d.hp)
+		member_near[int(d.eid)] = bool(d.near)
+	hp_changed.emit()
+
+## % máu của 1 thành viên (chưa có tin = đầy máu).
+func hp_of(m: Member) -> int:
+	return int(member_hp.get(m.id, 100))
+
+## Thành viên đang cùng phòng / map với mình (offline: luôn đúng).
+func is_near(m: Member) -> bool:
+	return bool(member_near.get(m.id, true))
 
 func in_team() -> bool:
 	return captain != null

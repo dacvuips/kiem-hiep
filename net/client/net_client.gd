@@ -26,6 +26,7 @@ signal market_received(data: Dictionary)
 signal stall_items(seller_eid: int, title: String, items: Array)
 signal stall_sign(eid: int, title: String)
 signal team_state(state: Dictionary)
+signal team_hp(list: Array)   ## [{eid, hp (0..100), near}] — máu đồng đội (S_TEAM_HP)
 signal team_invite(captain_eid: int, captain_name: String)
 signal guild_received(data: Dictionary)
 signal guild_list(list: Array)
@@ -388,6 +389,14 @@ func send_view_equip(eid: int) -> void:
 	b.put_u32(eid)
 	_send(b)
 
+## Báo % máu của mình (gọi khi đổi) — server chuyển cho đồng đội + người xung quanh để vẽ thanh máu.
+func send_hp(percent: int) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_HP)
+	b.put_u8(clampi(percent, 0, 100))
+	_send(b)
+
 func send_team(op: int, arg := 0, arg2 := 0) -> void:
 	var b := NetProto.writer(NetProto.C_TEAM)
 	b.put_u8(op)
@@ -590,6 +599,13 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				for i in b.get_u8():
 					st.applicants.append({"eid": b.get_u32(), "name": NetProto.get_str(b), "level": b.get_u16()})
 			team_state.emit(st)
+		NetProto.S_TEAM_HP:
+			var thp := []
+			for i in b.get_u8():
+				if b.get_available_bytes() < 6:
+					break
+				thp.append({"eid": b.get_u32(), "hp": b.get_u8(), "near": b.get_u8() != 0})
+			team_hp.emit(thp)
 		NetProto.S_GUILD:
 			var raw := NetProto.get_str(b, 1 << 20)
 			var parsed: Variant = JSON.parse_string(raw) if raw != "" else null

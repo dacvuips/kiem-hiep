@@ -692,6 +692,10 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_DA_TAU:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
 				_on_da_tau(c, NetProto.get_str(b, 4096))
+		NetProto.C_HP:
+			## Máy người chơi báo % máu của mình: chỉ để VẼ (thanh máu tổ đội, thanh máu trên đầu người khác) — không dùng tính sát thương.
+			if c.state == ConnState.IN_WORLD and c.entity and b.get_available_bytes() >= 1:
+				c.entity.hp = mini(b.get_u8(), 100)
 		NetProto.C_UY_THAC:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
 				_on_uy_thac(c, NetProto.get_str(b, 512))

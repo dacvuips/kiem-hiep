@@ -28,6 +28,7 @@ var trade: Dictionary = {}        ## trạng thái giao dịch mới nhất {par
 var trade_ended: Array = []       ## [{ok, msg}]
 var stall: Dictionary = {}        ## {seller, title, items}
 var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
+var team_hp: Dictionary = {}      ## eid đồng đội -> [hp %, near] (S_TEAM_HP mới nhất)
 var team_invites: Array = []      ## [captain_eid]
 var chats: Array = []             ## [{channel, from, to, text}]
 var guild: Dictionary = {}        ## bang của mình (S_GUILD)
@@ -261,6 +262,12 @@ func say(channel: int, text: String, to := "") -> void:
 func heard(text: String) -> bool:
 	return chats.any(func(c: Dictionary) -> bool: return str(c.text) == text)
 
+## Báo % máu của mình (C_HP) — như máy người chơi thật.
+func send_hp(percent: int) -> void:
+	var b := NetProto.writer(NetProto.C_HP)
+	b.put_u8(percent)
+	_send(b, NetProto.CH_RELIABLE)
+
 func team_op(op: int, arg := 0, arg2 := 0) -> void:
 	var b := NetProto.writer(NetProto.C_TEAM)
 	b.put_u8(op)
@@ -402,6 +409,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TRADE_END:
 			var ok := b.get_u8() != 0
 			trade_ended.append({"ok": ok, "msg": NetProto.get_str(b)})
+		NetProto.S_TEAM_HP:
+			for i in b.get_u8():
+				var hp_eid := b.get_u32()
+				team_hp[hp_eid] = [b.get_u8(), b.get_u8() != 0]
 		NetProto.S_TEAM_STATE:
 			var st := {"in_team": b.get_u8() != 0, "members": [], "applicants": []}
 			if st.in_team:

@@ -11,6 +11,12 @@ const INTERP_DELAY_MS := 140.0
 const FEET_OFFSET := 30.0
 const MAX_BUFFER := 20
 const DamageNumberScene := preload("res://effects/damage_number.tscn")
+const HealthBarScene := preload("res://ui/HealthBar.tscn")
+## Thanh máu dưới tên — cùng cỡ thanh trên đầu nhân vật mình (player.gd: 40 x 1.4 px, cao 4, cách đáy tên 16).
+const HP_BAR_WIDTH := 56.0
+const HP_BAR_HEIGHT := 4.0
+const HP_BAR_TOP_OFFSET := 16.0
+
 
 var eid := 0
 var display_name := ""
@@ -23,6 +29,9 @@ var status_controller: StatusEffectController
 var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
 var _label: Label
+var _hp_bar: Node2D             ## HealthBar dưới tên — % máu theo snapshot server (máy người đó báo C_HP)
+var hp := 100                   ## % máu mới nhất 0..100
+var _hp_shown := -1             ## % đang vẽ trên thanh (-1 = chưa vẽ: HealthBar có thể chưa _ready khi setup chạy)
 var _guild_tag: GuildTag
 var guild_name := ""
 var guild_emblem := 0
@@ -79,6 +88,14 @@ func setup(info: Dictionary) -> void:
 	_label.position = Vector2(-120, -66)
 	_label.z_index = 12
 	add_child(_label)
+	## VLTK gốc (KNpc::PaintLife): người chơi khác cũng có thanh máu dưới tên, xanh >= 50%, vàng >= 25%, đỏ dưới 25%.
+	_hp_bar = HealthBarScene.instantiate()
+	_hp_bar.z_index = 11
+	_hp_bar.use_gradient_color = true
+	_hp_bar.bar_width = HP_BAR_WIDTH
+	_hp_bar.bar_height = HP_BAR_HEIGHT
+	_hp_bar.rounded = true
+	add_child(_hp_bar)
 	_guild_tag = GuildTag.new()
 	add_child(_guild_tag)
 	_sign = StallSign.new()
@@ -140,8 +157,26 @@ func take_damage(amount: float) -> void:
 
 ## Màu tên theo phe như nhân vật của mình (Camp.COLORS: Tân thủ trắng, Chính phái cam, Tà phái tím, Trung lập xanh...).
 ## Phe địch trong Chiến trường Tống Kim tô đỏ qua pk_enemy (BattleClient).
+## Chung tổ đội với mình: VLTK gốc (KNpc::SetCurrentCamp / SetTempCurrentCamp) cho cả đội mang PHE HIỆN TẠI của đội trưởng
+## -> tên đồng đội tô màu phe đội trưởng.
 func _camp_color() -> Color:
-	return Camp.get_color(camp)
+	var cap_camp := team_captain_camp()
+	return Camp.get_color(cap_camp if cap_camp != NO_TEAM_CAMP else camp)
+
+const NO_TEAM_CAMP := -999
+
+## Phe đội trưởng nếu người này cùng tổ đội với mình, NO_TEAM_CAMP nếu không.
+func team_captain_camp() -> int:
+	var p := GameManager.local_profile
+	if p == null:
+		return NO_TEAM_CAMP
+	var team := SocialHub.of(p).team
+	if not team.in_team():
+		return NO_TEAM_CAMP
+	for m in team.all_members():
+		if m.id == eid and not m.is_local:
+			return team.captain.camp
+	return NO_TEAM_CAMP
 
 ## Độ cao nhãn tên (cưỡi ngựa thì cao hơn) — ChatBubble hiện lời nói ngay trên đó.
 func chat_anchor_y() -> float:
@@ -242,6 +277,8 @@ func _refresh_nameplate() -> void:
 	if _sign:
 		var top_y := _guild_tag.top_y() if (_guild_tag and _guild_tag.has_guild()) else _label.position.y
 		_sign.place_above(top_y)
+	if _hp_bar:
+		_hp_bar.position = Vector2(0.0, _label.position.y + _label.size.y + HP_BAR_TOP_OFFSET)
 
 func _refresh_aura_sprite(state_id: int) -> void:
 	if state_id == _aura_sprite_state and (state_id == 0 or _aura_sprite != null):
@@ -401,6 +438,10 @@ func _apply(st: Dictionary) -> void:
 			var main_scene = get_tree().current_scene
 			if main_scene and main_scene.get("_pk_mode") != 1:
 				set_pk_enemy(false)
+	hp = clampi(int(st.get("hp", hp)), 0, 100)
+	if hp != _hp_shown and _hp_bar and _hp_bar.is_node_ready():
+		_hp_shown = hp
+		_hp_bar.set_health(float(hp), 100.0)
 	var dir := int(st.dir)
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))

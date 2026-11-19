@@ -1105,6 +1105,7 @@ func _build_side_menu() -> void:
 	menu.add_entry("itemex", "Kỳ", "Kỳ Trân Các (phím F11)", _toggle_ky_tran_cac)
 
 	_build_pk_hud()
+	$UI.add_child(TeamListHud.new())   ## khung danh sách tổ đội góc trái, ngay dưới hàng nút PK
 
 	## Nút Cài đặt: góc trên phải, sát bên trái mini map. Nút "Thoát về Character Hub" nằm trong khung Cài đặt.
 
