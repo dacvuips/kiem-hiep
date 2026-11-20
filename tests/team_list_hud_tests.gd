@@ -108,5 +108,19 @@ func _ready() -> void:
 	check("rời đội: tên người cũ về màu phe của họ", name_col.call(rp) == Camp.get_color(Camp.Type.EVIL), name_col.call(rp))
 	NetClient.my_eid = 0
 
+	## Nối server mới (Sảnh -> map / sang phòng train ở tiến trình khác): server không mang đội theo -> client xoá đội cũ.
+	var social := NetSocial.create(func(_t: String) -> void: pass)
+	add_child(social)
+	team.apply_net_state({"in_team": true, "captain": 7, "open": true, "pick": 1, "turn": 0, "applicants": [], "members": [
+		{"eid": 7, "name": "Nguyễn Minh Nguy", "level": 10, "camp": 0, "lead": 10, "sect": ""},
+		{"eid": 9, "name": "Lý Hạo Nhiên", "level": 10, "camp": 0, "lead": 0, "sect": ""}]})
+	await frames()
+	check("trước khi nối lại: đang có đội", team.in_team() and hud.visible)
+	NetClient.connected_to_world.emit(21, Vector2.ZERO, "DoiTruongThu")
+	await frames()
+	check("nối server mới: xoá đội cũ, khung ẩn", not team.in_team() and not hud.visible)
+	social.queue_free()
+	NetClient.my_eid = 0
+
 	print("RESULT %d đạt, %d hỏng" % [_pass, _fail])
 	get_tree().quit(1 if _fail > 0 else 0)

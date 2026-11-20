@@ -52,6 +52,13 @@ func _ready() -> void:
 	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.team_state.connect(_on_team_state)
 	NetClient.team_hp.connect(_on_team_hp)
+	## Mỗi kết nối mới (Sảnh -> map, đổi phòng train sang tiến trình server khác) bắt đầu KHÔNG có đội: server không mang đội theo
+	## kết nối cũ (ngắt kết nối = rời đội). Xoá ảnh chụp đội cũ, kẻo giao diện vẫn hiện "Nhóm 2/3" trong khi server không coi là
+	## đồng đội (không nhặt được đồ của nhau, không chia kinh nghiệm).
+	NetClient.connected_to_world.connect(func(_eid: int, _feet: Vector2, _name: String) -> void:
+		var hub := _hub()
+		if hub and hub.team.in_team():
+			hub.team.apply_net_state({"in_team": false}))
 	NetClient.team_invite.connect(_on_team_invite)
 	NetClient.guild_received.connect(_on_guild)
 	NetClient.guild_list.connect(func(list: Array) -> void:

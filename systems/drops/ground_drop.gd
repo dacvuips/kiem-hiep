@@ -73,6 +73,8 @@ func _process(delta: float) -> void:
 	_time += delta
 	if _full_bag_cooldown > 0.0:
 		_full_bag_cooldown -= delta
+	if _net_pick_wait > 0.0:
+		_net_pick_wait -= delta
 	if _time >= LIFETIME:
 		queue_free()
 		return
@@ -127,12 +129,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Online: đồ rơi do game server tạo (net_id != 0) — nhặt = xin server; server đồng ý (S_PICKED) thì NetWorldSync mới cộng.
 var net_id: int = 0
+## Online: đi ngang qua đồ chưa được nhặt (của người ngoài đội / chưa tới lượt) thì mỗi khung hình đều xin nhặt -> server báo lỗi
+## liên tục. Giãn cách lần xin kế tiếp NET_PICK_RETRY giây.
+const NET_PICK_RETRY := 1.0
+var _net_pick_wait := 0.0
 
 func _pick_up(player: Node) -> void:
 	var profile := GameManager.local_profile
 	if profile == null:
 		return
 	if net_id != 0:
+		if _net_pick_wait > 0.0:
+			return
+		_net_pick_wait = NET_PICK_RETRY
 		NetClient.send_pickup(net_id)
 		return
 	## Tổ đội: chế độ nhặt đồ (đội trưởng nhặt / luân phiên) quyết định mình có được nhặt lúc này không.
