@@ -18,14 +18,13 @@ const GAP_BELOW_BAR := 8.0
 const HP_SEND_INTERVAL := 0.2      ## nhịp kiểm tra máu mình để báo server (chỉ gửi khi % đổi)
 const PAD := 6.0                   ## lề trong của khung lớn
 const ROW_WIDTH := WIDTH - PAD * 2.0
-const FRAME_BG := Color(0.035, 0.040, 0.040, 0.45)       ## nền khung lớn — bán trong suốt
-const FRAME_BORDER := Color(0.24, 0.24, 0.21, 0.55)
+const FRAME_BG := Color(0.035, 0.040, 0.040, 0.22)       ## nền khung lớn — bán trong suốt
+const FRAME_BORDER := Color(0.24, 0.24, 0.21, 0.45)
 const ROW_HOVER := Color(1.0, 1.0, 1.0, 0.07)            ## dòng đang trỏ / bấm: sáng nhẹ, không viền
 
 var _profile: PlayerProfile = null
 var _team: TeamService = null
-var _header: Label
-var _list: VBoxContainer           ## tiêu đề + các dòng, nằm trong khung lớn
+var _list: VBoxContainer           ## các dòng đồng đội, nằm trong khung lớn
 var _rows: Array = []              ## [{id, name: Label, bar: HpBar, button: Button}]
 var _anchor: Control = null        ## hàng nút PK của main.gd — khung bám ngay bên dưới
 var _player: Node = null
@@ -72,13 +71,6 @@ func _ready() -> void:
 	_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_list.add_theme_constant_override("separation", 2)
 	add_child(_list)
-	_header = Label.new()
-	_header.add_theme_color_override("font_color", GameUi.TITLE)
-	_header.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_header.add_theme_constant_override("outline_size", 3)
-	_header.add_theme_font_size_override("font_size", 12)
-	_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_list.add_child(_header)
 	_place()
 
 func _process(delta: float) -> void:
@@ -127,7 +119,6 @@ func _rebuild() -> void:
 	visible = not shown.is_empty()
 	if not visible:
 		return
-	_header.text = "Tổ đội %d/%d" % [_team.total(), _team.capacity()]
 	for m in shown:
 		_rows.append(_make_row(m, m == _team.captain))
 	reset_size()
