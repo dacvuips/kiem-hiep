@@ -2,7 +2,7 @@ extends Node
 class_name NetWorldSync
 ## Nối map MAIN_MAP với game server khi chơi online (main.gd thêm node này nếu đã đăng nhập + đã chọn nhân vật trên server):
 ##   - kết nối NetClient, đặt nhân vật mình ở vị trí server cấp;
-##   - gửi vị trí / hướng / động tác của mình tối đa NetProto.CLIENT_SEND_RATE lần/giây (đứng yên thì 1 lần/giây);
+##   - gửi vị trí / hướng / động tác của mình tối đa NetProto.CLIENT_SEND_RATE lần/giây kèm giờ lấy mẫu (đứng yên thì 1 lần/giây);
 ##   - tạo / cập nhật / xóa RemotePlayer cho người chơi khác trong tầm nhìn;
 ##   - bị server kéo về (đi quá nhanh / xuyên vật cản) thì đặt lại vị trí.
 
@@ -46,6 +46,7 @@ func _ready() -> void:
 	NetClient.entity_look.connect(_on_look)
 	NetClient.position_corrected.connect(_on_corrected)
 	NetClient.monster_attack.connect(_on_monster_attack)
+	NetClient.monster_states.connect(_on_monster_states)
 	NetClient.player_cast.connect(_on_player_cast)
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
@@ -321,6 +322,14 @@ func _on_disconnected(code: String, message: String) -> void:
 			GameManager.field_map = {}
 			get_tree().change_scene_to_file.call_deferred(HUB_SCENE)
 		return
+	if code == "version":
+		## Lệch giao thức game <-> máy chủ (VD máy chủ chưa build lại): KHÔNG đăng xuất — phiên đăng nhập vẫn tốt,
+		## đăng xuất làm người chơi tưởng "phiên hết hạn". Về Hub, Hub tự báo lại lý do.
+		_reconnect_in = -1.0
+		if is_inside_tree():
+			GameManager.field_map = {}
+			get_tree().change_scene_to_file.call_deferred(HUB_SCENE)
+		return
 	if code not in FATAL:
 		_reconnect_in = RECONNECT_DELAY
 	else:
@@ -422,8 +431,13 @@ func _spawn_monster(info: Dictionary) -> void:
 	m.ai_enabled = false
 	m.position = info.pos
 	_parent().add_child(m)
-	m.net_push_state(NetClient.server_now_ms() - VltkMonster.NET_INTERP_DELAY_MS, info)
+	m.net_push_state(NetClient.server_now_ms() - NetClient.interp_delay_ms(NetClient.Interp.MONSTER), info, false)
 	_monsters[eid] = m
+
+func _on_monster_states(m_eid: int, states: Array) -> void:
+	var m: VltkMonster = _monster_of(m_eid)
+	if m and is_instance_valid(m):
+		m.net_apply_states(states)
 
 func _on_monster_attack(m_eid: int, slot: int, target_eid: int, dir64: int) -> void:
 	var m: VltkMonster = _monster_of(m_eid)
@@ -449,6 +463,32 @@ func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int
 		elif _monsters.has(target_eid):
 			target_node = _monster_of(target_eid)
 	VltkSkillRunner.replay(r, skill_id, level, target_node, VltkMath.to_logic(aim))
+	## Buff vùng của đồng đội cùng phe (Thanh Phong phù, Bất Động Minh Vương...): mình đứng trong vùng thì tự nhận.
+	if (cast_flags & NetProto.CAST_SUPPORT) != 0 and player != null and is_instance_valid(player):
+		var sk := SectSkillController.skill_by_vltk_id(skill_id)
+		if sk != null and not sk.is_aura:
+			SectSkillController.receive_ally_support(player, r, sk, level, false)
+
+## Nhịp hào quang hỗ trợ của người chơi khác (10 frame như KNpc::ProcessState gốc): đồng đội cùng phe đang bật hào quang
+## và mình đứng trong vùng đạn skill con (10 ô, Phổ Độ Chúng Sinh 14) -> nhận chỉ số hào quang ~1 giây, nhịp sau làm mới.
+var _ally_aura_time := 0.0
+
+func _tick_ally_auras(delta: float) -> void:
+	_ally_aura_time += delta
+	if _ally_aura_time < SectSkillController.AURA_TICK:
+		return
+	_ally_aura_time = fmod(_ally_aura_time, SectSkillController.AURA_TICK)
+	if player == null or not is_instance_valid(player) or (player.has_method("is_dead") and player.is_dead()):
+		return
+	for r: RemotePlayer in _remotes.values():
+		if r == null or not is_instance_valid(r):
+			continue
+		var aura := r.get_aura()
+		if aura.x <= 0 or aura.y <= 0:
+			continue
+		var sk := SectSkillController.skill_by_vltk_id(aura.x)
+		if sk != null and sk.is_aura and not sk.target_enemy:
+			SectSkillController.receive_ally_support(player, r, sk, aura.y, true)
 
 func _on_monster_killed(k: Dictionary) -> void:
 	var m: VltkMonster = _monster_of(int(k.eid))
@@ -502,6 +542,7 @@ func _process(delta: float) -> void:
 	if look != _last_look:
 		_last_look = look
 		NetClient.send_look(look)
+	_tick_ally_auras(delta)
 	_send_timer -= delta
 	_heartbeat -= delta
 	if _send_timer > 0.0:

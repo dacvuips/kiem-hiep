@@ -26,6 +26,11 @@ var draggable: bool:
 	set(v):
 		_draggable_explicit = v
 
+## Vị trí mở mặc định: 0 = giữa màn hình (lệch theo số khung đang mở), -1 = sát mép TRÁI, 1 = sát mép PHẢI
+## (VD bảng Nhân vật bên trái + Hành trang bên phải ở map đánh quái). Đặt trước khi add_child.
+var default_side: int = 0
+const SIDE_MARGIN := 4.0
+
 var _dragging: bool = false
 var _frameless: bool = false
 ## Nút X (chế độ frameless: nằm đè góc trên phải — màn gọi có thể dời offset cho khớp ảnh khung).
@@ -130,8 +135,13 @@ func _ready() -> void:
 	for w in get_tree().get_nodes_in_group(GROUP):
 		if w is DraggableWindow and is_instance_valid(w) and w.is_inside_tree() and w.visible and not w.is_docked and w != self:
 			open_floating += 1
-	var offset := Vector2(24, 24) * open_floating
-	position = ((get_viewport_rect().size - size) * 0.5 + offset).round()
+	var screen := get_viewport_rect().size
+	if default_side != 0:
+		var x := SIDE_MARGIN if default_side < 0 else screen.x - size.x - SIDE_MARGIN
+		position = Vector2(x, (screen.y - size.y) * 0.5).round()
+	else:
+		var offset := Vector2(24, 24) * open_floating
+		position = ((screen - size) * 0.5 + offset).round()
 	_clamp_to_screen()
 	visible = true
 	bring_to_front()

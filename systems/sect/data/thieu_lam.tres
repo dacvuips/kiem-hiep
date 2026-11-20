@@ -431,6 +431,7 @@ suffix = "%"
 target_skill_id = "thieu_lam_dat_ma_do_giang"
 [sub_resource type="Resource" id="SubResource_40"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 110, 0, 25, 125, 0, 27, 133, 0)
 label = "Tăng sát thương kỹ năng liên kết #3"
 value_at_level_1 = 1.0
 value_at_max_level = 133.0
@@ -438,6 +439,7 @@ suffix = "%"
 target_skill_id = "thieu_lam_dai_luc_kim_cang_chuong"
 [sub_resource type="Resource" id="SubResource_41"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 110, 0, 25, 125, 0, 27, 133, 0)
 label = "Tăng sát thương kỹ năng liên kết #4"
 value_at_level_1 = 1.0
 value_at_max_level = 133.0
@@ -526,9 +528,9 @@ vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 180
 vltk_state_special_id = 45
-vltk_damage_range = 1
-vltk_range_damage = 0
-vltk_hit_friend = 0
+vltk_damage_range = 10
+vltk_range_damage = 1
+vltk_hit_friend = 1
 vltk_attribs = {
 "adddefense_v": [PackedFloat32Array(1, 40, 0, 20, 800, 0), PackedFloat32Array(1, 18, 0, 2, 18, 0), PackedFloat32Array()],
 "addphysicsdamage_p": [PackedFloat32Array(1, 11, 0, 20, 135, 0), PackedFloat32Array(1, 18, 0, 2, 18, 0), PackedFloat32Array(1, 6, 0, 2, 6, 0)],
@@ -1167,12 +1169,14 @@ damage_growth_per_level = 15.1579
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_98"), SubResource("SubResource_99"), SubResource("SubResource_100"), SubResource("SubResource_101"), SubResource("SubResource_102")])
 [sub_resource type="Resource" id="SubResource_104"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 5, 0, 15, 40, 0, 20, 45, 0, 21, 45, 0)
 label = "Phản độc"
 value_at_level_1 = 5.0
 value_at_max_level = 45.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_105"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 5, 0, 15, 50, 0, 20, 56, 0, 21, 57, 0)
 label = "Tự động phản kích"
 value_at_level_1 = 5.0
 value_at_max_level = 57.0
@@ -1234,6 +1238,7 @@ value_at_max_level = 99.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_110"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 42, 0, 23, 49, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 18.0
 value_at_max_level = 49.0
@@ -1245,6 +1250,7 @@ value_at_max_level = 266.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_112"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 8, 0, 21, 10, 0, 22, 10, 0)
 label = "Làm choáng"
 value_at_level_1 = 1.0
 value_at_max_level = 10.0
@@ -1330,6 +1336,7 @@ value_at_max_level = 197.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_120"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 25, 0, 23, 27, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 18.0
 value_at_max_level = 27.0
@@ -1394,6 +1401,7 @@ value_at_max_level = 193.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_125"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 55, 0, 23, 66, 0, 26, 72, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 18.0
 value_at_max_level = 72.0

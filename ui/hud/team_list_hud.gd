@@ -12,9 +12,10 @@ class_name TeamListHud
 
 const WIDTH := 178.0
 const ROW_HEIGHT := 32.0
-const DEFAULT_TOP := 112.0         ## khi không tìm thấy hàng nút PK (TopLeftActionBar ở main.gd: y 72..104)
+const DEFAULT_TOP := 168.0         ## dưới hàng nút PK (y 72..104) và hàng biểu tượng buff/bùa (PlayerStatusHud y 110..158)
 const DEFAULT_LEFT := 12.0
-const GAP_BELOW_BAR := 8.0
+const BUFF_BAR_HEIGHT := 54.0      ## khoảng chiều cao dành cho hàng biểu tượng buff/bùa (StateIconBar)
+const GAP_BELOW_BAR := 10.0
 const HP_SEND_INTERVAL := 0.2      ## nhịp kiểm tra máu mình để báo server (chỉ gửi khi % đổi)
 const PAD := 6.0                   ## lề trong của khung lớn
 const ROW_WIDTH := WIDTH - PAD * 2.0
@@ -124,13 +125,17 @@ func _rebuild() -> void:
 	reset_size()
 	_refresh_hp()
 
-## Vào / rời đội, đổi đội trưởng: tô lại tên người chơi khác trên map (đồng đội mang màu phe đội trưởng — RemotePlayer._camp_color).
+## Vào / rời đội, đổi đội trưởng: tô lại tên người chơi khác trên map (đồng đội mang màu phe đội trưởng — RemotePlayer._camp_color)
+## và bản thân nhân vật chính (Player).
 func _refresh_world_name_colors() -> void:
 	if not is_inside_tree():
 		return
 	for n in get_tree().get_nodes_in_group("other_players"):
 		if n is RemotePlayer:
 			(n as RemotePlayer).refresh_name_color()
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("refresh_name_color"):
+		player.refresh_name_color()
 
 func _make_row(m: TeamService.Member, is_captain: bool) -> Dictionary:
 	var btn := Button.new()
@@ -212,7 +217,7 @@ func _place() -> void:
 	var pos := Vector2(DEFAULT_LEFT, DEFAULT_TOP)
 	if _anchor and _anchor.is_visible_in_tree():
 		var r := _anchor.get_global_rect()
-		pos = Vector2(r.position.x, r.end.y + GAP_BELOW_BAR)   ## get_global_rect đã tính scale của hàng nút
+		pos = Vector2(r.position.x, r.end.y + BUFF_BAR_HEIGHT + GAP_BELOW_BAR)   ## chừa chỗ cho hàng buff/bùa (StateIconBar) bên dưới hàng nút PK
 	if not position.is_equal_approx(pos):
 		position = pos
 

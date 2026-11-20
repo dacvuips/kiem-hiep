@@ -28,6 +28,8 @@ var hidden := false               ## đã chết xong + ẩn, chờ hồi sinh
 var dead_at := 0.0
 var contributors: Dictionary = {} ## eid người chơi -> tổng sát thương (để chia thưởng)
 var last_hitter := 0
+## Hình bùa đang dính (chỉ để người chơi VẼ, server không tính thuộc tính): state_id -> thời điểm hết (giây, GameServer._now).
+var vis_states: Dictionary = {}
 
 var _action_name := "stand"
 var _state_frames := 0.0
@@ -43,6 +45,8 @@ var _skill_ready: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0]  ## ô 4 = đánh th�
 var _opened_eid := 0
 var _max_radius := -1.0
 var _target_eid := 0
+## Quái hiền (MonsterData.is_passive): eid kẻ vừa đánh nó — chỉ đánh lại kẻ này, 0 = chưa bị ai đánh.
+var _provoked_eid := 0
 ## Chiến trường Tống Kim: quái của 1 phe (Nguyên Soái) — chỉ đánh / bị đánh bởi người phe kia. "" = quái thường.
 var battle_side := ""
 ## Quái phòng ĐỊA NGỤC (FieldServer): 1-5 sao — máu ×sao ở đây; sát thương ×sao tính ở máy người bị đánh (VltkMonster.hell_stars,
@@ -125,6 +129,7 @@ func reset() -> void:
 	flags = 0
 	_skill_ready = [0.0, 0.0, 0.0, 0.0, 0.0]
 	_opened_eid = 0
+	_provoked_eid = 0
 	_next_ai_time = 0.0
 	_enter(State.IDLE, "stand")
 	hp = 100
@@ -141,6 +146,8 @@ func is_dead() -> bool:
 
 func _enter(s: State, action_name: String) -> void:
 	state = s
+	if s == State.DEAD:
+		vis_states.clear()
 	_action_name = action_name
 	action = NetProto.monster_action_index(action_name)
 	_state_frames = 0.0
@@ -295,11 +302,12 @@ func _ai_think(gs: GameServer) -> void:
 		_cur_active = active * 0.5
 	if _cur_active < from_origin:
 		_target_eid = 0
+		_provoked_eid = 0
 		_walk_to(_origin_logic)
 		return
 	_cur_active = active
 	var search_vis := _vision * 1.5 if _target_eid != 0 else _vision
-	var enemy := gs.nearest_player(pos, search_vis, battle_side, cell_base)
+	var enemy: ServerEntity = _provoker(gs, here) if MonsterData.is_passive(data, level) 			else gs.nearest_player(pos, search_vis, battle_side, cell_base)
 	if enemy == null:
 		_target_eid = 0
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):
@@ -332,6 +340,16 @@ func _ai_think(gs: GameServer) -> void:
 		_begin_attack(gs, slot, enemy)
 	else:
 		_walk_to(there)
+
+## Quái hiền: kẻ đã đánh nó nếu còn sống, cùng phòng và chưa chạy quá xa; không thì quên luôn.
+func _provoker(gs: GameServer, here: Vector2) -> ServerEntity:
+	if _provoked_eid == 0:
+		return null
+	var e := gs.entity_of(_provoked_eid)
+	if e == null or (e.flags & NetProto.FLAG_DEAD) != 0 or e.room_id != room_id 			or here.distance_to(VltkMath.to_logic(e.pos)) > maxf(_vision * 1.6, 750.0):
+		_provoked_eid = 0
+		return null
+	return e
 
 func _patrol() -> void:
 	var off := Vector2.ZERO
@@ -373,6 +391,8 @@ func receive_damage(attacker_eid: int, amount: float, staggers: bool) -> bool:
 	cur_hp -= amount
 	contributors[attacker_eid] = float(contributors.get(attacker_eid, 0.0)) + amount
 	last_hitter = attacker_eid
+	if MonsterData.is_passive(data, level):
+		_provoked_eid = attacker_eid
 	hp = clampi(ceili(cur_hp / max_hp * 100.0), 0, 100)
 	touch()
 	if cur_hp <= 0.0:

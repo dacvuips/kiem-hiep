@@ -59,6 +59,7 @@
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_cong_thanh_chien.png" id="btn_ctc_tex"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_son_trang.png" id="btn_st_tex"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_da_tau.png" id="btn_da_tau_tex"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_lon_xon.png" id="btn_lon_xon_tex"]
 
 
 [sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
@@ -704,26 +705,18 @@ text = "PUBG"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="LonXonButton" type="Button" parent="Stage/TopBar"]
+[node name="LonXonButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 698.0
-offset_top = 10.0
+offset_top = 2.0
 offset_right = 828.0
-offset_bottom = 54.0
-focus_mode = 0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
 tooltip_text = "Lộn Xộn — hỗn chiến tự do, chết hồi sinh, rớt hết đồ"
-theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
-theme_override_colors/font_hover_color = Color(0.08, 0.04, 0.01, 1)
-theme_override_colors/font_pressed_color = Color(0.05, 0.02, 0, 1)
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("ktc_btn_normal")
-theme_override_styles/hover = SubResource("ktc_btn_hover")
-theme_override_styles/pressed = SubResource("ktc_btn_pressed")
-theme_override_styles/focus = SubResource("ktc_btn_focus")
-text = "Lộn Xộn"
+texture_normal = ExtResource("btn_lon_xon_tex")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="KyTranCacTopButton" type="Button" parent="Stage/TopBar"]
 unique_name_in_owner = true
@@ -1573,7 +1566,7 @@ layout_mode = 0
 offset_left = 12.0
 offset_top = 36.0
 offset_right = 515.0
-offset_bottom = 574.0
+offset_bottom = 528.0
 theme_override_constants/separation = 10
 
 [node name="GridFrame" type="PanelContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body"]
@@ -1720,19 +1713,31 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Hiệu Thuốc"
 
-[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+[node name="SecurityButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Khóa"
+
+[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 658.0
-offset_right = 158.0
-offset_bottom = 698.0
+offset_left = 12.0
+offset_top = 536.0
+offset_right = 152.0
+offset_bottom = 576.0
 mouse_filter = 2
 texture = ExtResource("cur_coin_gold")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="GoldValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyGold"]
+[node name="GoldValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyGold"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 36.0
@@ -1743,7 +1748,7 @@ label_settings = SubResource("cur_text")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="GoldPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyGold"]
+[node name="GoldPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyGold"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 104.0
@@ -1753,19 +1758,19 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
 
-[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 166.0
-offset_top = 658.0
-offset_right = 306.0
-offset_bottom = 698.0
+offset_left = 160.0
+offset_top = 536.0
+offset_right = 300.0
+offset_bottom = 576.0
 mouse_filter = 2
 texture = ExtResource("cur_gold")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="XuValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyXu"]
+[node name="XuValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyXu"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 36.0
@@ -1776,7 +1781,7 @@ label_settings = SubResource("cur_text")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="XuPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyXu"]
+[node name="XuPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyXu"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 104.0
@@ -1786,19 +1791,19 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
 
-[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/LeftPanel/InventoryView"]
+[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 314.0
-offset_top = 658.0
-offset_right = 454.0
-offset_bottom = 698.0
+offset_left = 308.0
+offset_top = 536.0
+offset_right = 448.0
+offset_bottom = 576.0
 mouse_filter = 2
 texture = ExtResource("cur_jade")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="JadeValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/FrameCurrencyJade"]
+[node name="JadeValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyJade"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 36.0
@@ -1809,7 +1814,7 @@ label_settings = SubResource("cur_text")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="JadePlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/FrameCurrencyJade"]
+[node name="JadePlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyJade"]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 104.0

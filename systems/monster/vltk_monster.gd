@@ -76,6 +76,8 @@ var battle_side: String = "":
 			add_to_group("side_" + battle_side)
 
 var last_attacker_side: String = ""
+## Quái hiền (MonsterData.is_passive, cấp ≤ 10): chỉ đuổi đánh người chơi sau khi bị người chơi đánh.
+var _provoked := false
 var _name_plate: NamePlate = null
 
 func _update_side_color() -> void:
@@ -134,6 +136,7 @@ var hp_override: int = 0
 var _net_buffer: Array = []       ## [{t, pos, dir, action, hp, flags}] theo giờ server
 var _net_real_attack := false     ## đòn đang ra nhắm vào chính mình -> gây sát thương thật
 var _last_predicted_dmg_ms: int = 0 ## thời điểm gần nhất client gây sát thương (chống rubberband máu)
+const NET_HP_RESYNC_MS := 800        ## không đánh quá lâu chừng này -> thanh máu lấy lại theo server
 const NET_INTERP_DELAY_MS := 140.0
 
 ## Tạo quái `monster_id` (STT Npcs.txt) cấp `lvl` tại `world_pos`. null nếu không có dữ liệu.
@@ -173,6 +176,7 @@ func _ready() -> void:
 	status_controller.name = "StatusEffectController"
 	add_child(status_controller)
 	status_controller.stats_changed.connect(refresh_combat_stats)
+	status_controller.state_applied.connect(_on_state_applied)
 
 	_health_bar = HealthBarScene.instantiate()
 	add_child(_health_bar)
@@ -385,7 +389,7 @@ func _physics_process(delta: float) -> void:
 	_game_time += frames
 	if _replan_cooldown > 0.0:
 		_replan_cooldown -= delta
-	if _accumulated_damage > 0.0:
+	if _damage_batch_timer > 0.0:
 		_damage_batch_timer -= delta
 		if _damage_batch_timer <= 0.0:
 			_flush_damage_number()
@@ -450,6 +454,8 @@ func _physics_process(delta: float) -> void:
 					var p_node := get_tree().get_first_node_in_group("player") as Node2D
 					if p_node and is_instance_valid(p_node) and not (p_node.has_method("is_dead") and p_node.is_dead()) and int(data.get("ai_mode", 0)) > 0:
 						if p_node.get("has_moved") == false:
+							target = null
+						elif MonsterData.is_passive(data, level) and not _provoked:
 							target = null
 						else:
 							var vis_range: float = maxf(float(data.get("vision", 400)), 450.0)
@@ -898,6 +904,7 @@ func _ai_think() -> void:
 			_cur_active = base_active * 0.5
 		if _cur_active < from_origin:
 			target = null
+			_provoked = false
 			_walk_to(_origin_logic)
 			return
 		_cur_active = base_active
@@ -931,6 +938,7 @@ func _ai_think() -> void:
 				enemy = target
 			else:
 				target = null
+				_provoked = false
 	if enemy == null:
 		if is_lane_creep and not lane_waypoints.is_empty():
 			_march_lane(here)
@@ -1316,10 +1324,18 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 			elif TongKimLolState.current != null:
 				last_attacker_side = TongKimLolState.current.team_side
 
+		if mods.attacker_node.is_in_group("player"):
+			_provoke(mods.attacker_node as Node2D)
+
 		# Bị boss đồng minh hỗ trợ đánh: chuyển mục tiêu sang đánh boss hỗ trợ ngay lập tức
 		if is_instance_valid(mods.attacker_node) and not (mods.attacker_node.has_method("is_dead") and mods.attacker_node.is_dead()):
 			if mods.attacker_node.is_in_group("ally_boss") or mods.attacker_node.is_in_group("support_boss") or mods.attacker_node.get("is_ally_boss") == true or mods.attacker_node.get("is_support_boss") == true:
 				target = mods.attacker_node as Node2D
+
+	elif attacker_stats != null:
+		var hitter := get_tree().get_first_node_in_group("player") as Node2D
+		if hitter != null and "combat_stats" in hitter and attacker_stats == hitter.combat_stats:
+			_provoke(hitter)
 
 	var atk_stats := attacker_stats if attacker_stats != null else CombatantStats.new()
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), atk_stats,
@@ -1339,11 +1355,21 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		return
 	_apply_damage(float(final_damage), staggers)
 
+## Quái hiền bị người chơi đánh: nhớ lại và quay sang đánh người đó.
+func _provoke(hitter: Node2D) -> void:
+	if hitter == null or battle_side != "" or not MonsterData.is_passive(data, level):
+		return
+	_provoked = true
+	if target == null or not is_instance_valid(target):
+		target = hitter
+
 func take_damage(amount: float, attacker_node: Node = null) -> void:
 	if _state != State.DEAD:
 		if attacker_node != null and is_instance_valid(attacker_node) and not (attacker_node.has_method("is_dead") and attacker_node.is_dead()):
 			if attacker_node.is_in_group("ally_boss") or attacker_node.is_in_group("support_boss") or attacker_node.get("is_ally_boss") == true or attacker_node.get("is_support_boss") == true:
 				target = attacker_node as Node2D
+			elif attacker_node.is_in_group("player"):
+				_provoke(attacker_node as Node2D)
 		if net_eid != 0:
 			_net_damage(amount, true)
 			return
@@ -1480,9 +1506,46 @@ func grant_rewards(with_drops := true) -> void:
 # ---------------------------------------------------------------- online (quái của game server)
 
 ## Bản tin vị trí / động tác từ server.
-func net_push_state(server_ms: float, st: Dictionary) -> void:
+## Tiền tố nguồn của bùa nhận từ server — không báo ngược lên lại.
+const NET_STATE_PREFIX := "net_state:"
+
+## ONLINE: mình vừa áp bùa có hình lên quái -> báo server để người khác đang thấy quái này cũng vẽ hình bùa.
+func _on_state_applied(source_id: String, seconds: float, meta: Dictionary) -> void:
+	if net_eid == 0 or source_id.begins_with(NET_STATE_PREFIX):
+		return
+	var sid := int(meta.get("state_id", 0))
+	if sid > 0 and not VltkSkillData.state(sid).is_empty():
+		NetClient.send_monster_state(net_eid, sid, seconds)
+
+## ONLINE: hình bùa người khác áp lên quái (S_MSTATE). Chỉ để VẼ — không thuộc tính, không ảnh hưởng chỉ số.
+func net_apply_states(states: Array) -> void:
+	if status_controller == null or _state == State.DEAD:
+		return
+	for e in states:
+		var sid := int(e[0])
+		var sec := float(e[1])
+		if sid > 0 and sec > 0.0:
+			status_controller.apply_state(NET_STATE_PREFIX + str(sid), {}, sec, {"state_id": sid, "is_debuff": true})
+
+## measure = false: mẫu dựng lúc xuất hiện (giờ = hiện tại - độ trễ vẽ) — không đưa vào đo độ muộn (sẽ tự đẩy độ trễ lên mãi).
+func net_push_state(server_ms: float, st: Dictionary, measure: bool = true) -> void:
+	if measure:
+		NetClient.note_sample(NetClient.Interp.MONSTER, server_ms)
 	var item := st.duplicate()
 	item["t"] = server_ms
+	## Máu theo mẫu MỚI NHẤT (người khác đánh là thấy tụt ngay, không chờ lượt vẽ trễ); chỉ hạ, không tăng (đã trừ trước).
+	if _state != State.DEAD and st.has("hp"):
+		var server_hp := max_health * float(st.hp) / 100.0
+		if server_hp < health:
+			health = server_hp
+			_health_bar.set_health(health)
+	## Đứng yên rồi mới đi: chèn mốc "vẫn ở chỗ cũ" ngay trước mẫu mới (bắt đầu bước đúng nhịp, không trượt quãng nghỉ).
+	if not _net_buffer.is_empty():
+		var last: Dictionary = _net_buffer[-1]
+		if server_ms - float(last.t) > NetProto.SNAPSHOT_MS * 2.5:
+			var hold := last.duplicate()
+			hold["t"] = server_ms - NetProto.SNAPSHOT_MS
+			_net_buffer.append(hold)
 	_net_buffer.append(item)
 	if _net_buffer.size() > 20:
 		_net_buffer.pop_front()
@@ -1501,11 +1564,11 @@ func _net_damage(amount: float, staggers: bool) -> void:
 	_accumulate_damage(amount)
 	_last_predicted_dmg_ms = Time.get_ticks_msec()
 	## Trừ trước trên thanh máu theo cơ chế Client Prediction (VLTK gốc): không có delay
+	## KHÔNG tự cho chết khi máu dự đoán về 0: chờ server báo FLAG_DEAD (~1 nhịp mạng). Server có thể bỏ / giảm đòn (giới hạn đòn/giây,
+	## max_hit, xa quá) -> quái vẫn sống; nếu máy này đã xoá xác thì server tưởng mình còn thấy, không gửi lại -> "người kia thấy, mình không".
 	health = maxf(0.0, health - amount)
 	_health_bar.set_health(health)
-	if health <= 0.0:
-		die()
-	elif _state == State.ATTACK:
+	if _state == State.ATTACK:
 		_fired = true
 		_enter(State.HURT, "hurt")
 	elif staggers and _state != State.DEAD:
@@ -1523,12 +1586,12 @@ func _process_net(delta: float) -> void:
 		_tick_attack()   ## diễn hết đòn đang ra (bắn ở 60%) rồi mới theo động tác server
 		_sprite.set_pose(_action, _dir64, _progress(false))
 	if _net_buffer.is_empty():
-		if _net_last_vel.length_squared() > 1.0:
+		if _action == "walk" and _net_last_vel.length_squared() > 1.0:
 			global_position += _net_last_vel * delta
 			_net_last_vel = _net_last_vel.lerp(Vector2.ZERO, delta * 8.0)
 		return
 
-	var delay := NetClient.adaptive_interp_delay_ms() if NetClient.has_method("adaptive_interp_delay_ms") else NET_INTERP_DELAY_MS
+	var delay := NetClient.interp_delay_ms(NetClient.Interp.MONSTER)
 	var render_t := NetClient.server_now_ms() - delay
 	while _net_buffer.size() >= 2 and float(_net_buffer[1].t) <= render_t:
 		_net_buffer.pop_front()
@@ -1547,14 +1610,19 @@ func _process_net(delta: float) -> void:
 	else:
 		## Khi chưa nhận được gói mới: dead-reckoning ngoại suy theo vận tốc cũ trong tối đa 150ms
 		var overshoot := (render_t - float(a.t)) / 1000.0
-		if overshoot > 0.0 and _net_last_vel.length_squared() > 1.0:
-			feet = (a.pos as Vector2) + _net_last_vel * clampf(overshoot, 0.0, 0.15)
+		var walking := NetProto.monster_action_name(int(a.action)) == "walk"   ## dừng rồi thì không trượt quá
+		if walking and overshoot > 0.0 and _net_last_vel.length_squared() > 1.0:
+			feet = (a.pos as Vector2) + _net_last_vel * clampf(overshoot, 0.0, NetProto.SNAPSHOT_MS / 1000.0)
 			_net_last_vel = _net_last_vel.lerp(Vector2.ZERO, delta * 4.0)
 
 	global_position = feet
 
 	var server_hp := max_health * float(a.hp) / 100.0
-	health = minf(health, server_hp)
+	## Vừa đánh: giữ máu dự đoán (chỉ hạ). Quá NET_HP_RESYNC_MS không đánh: theo máu server (dự đoán sai thì thanh máu hồi lại đúng).
+	if Time.get_ticks_msec() - _last_predicted_dmg_ms > NET_HP_RESYNC_MS:
+		health = server_hp
+	else:
+		health = minf(health, server_hp)
 	_health_bar.set_health(health)
 	if (int(a.flags) & NetProto.FLAG_DEAD) != 0 or int(a.hp) == 0:
 		die()
@@ -1587,14 +1655,19 @@ func _tick_dead(delta: float, frames: float) -> void:
 func _accumulate_damage(amount: float) -> void:
 	if amount <= 0.0:
 		return
-	if _accumulated_damage <= 0.0:
+	## Đòn đầu hiện số NGAY (trúng là thấy); đòn tới dồn trong DAMAGE_BATCH_INTERVAL thì gộp 1 số cho đỡ rối.
+	if _damage_batch_timer <= 0.0:
 		_damage_batch_timer = DAMAGE_BATCH_INTERVAL
+		_spawn_number(amount, false)
+		return
 	_accumulated_damage += amount
 
 func _flush_damage_number() -> void:
 	if _accumulated_damage > 0.0:
 		_spawn_number(_accumulated_damage, false)
 		_accumulated_damage = 0.0
+		_damage_batch_timer = DAMAGE_BATCH_INTERVAL   ## vẫn đang dồn đòn: giữ nhịp gộp
+	else:
 		_damage_batch_timer = 0.0
 
 func _spawn_number(amount: float, miss: bool) -> void:

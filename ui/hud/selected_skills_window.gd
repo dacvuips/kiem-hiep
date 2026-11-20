@@ -598,7 +598,7 @@ static func get_selected_attack_skills() -> Array[Dictionary]:
 
 		for sid in ids_to_check:
 			var sk := _find_skill(sid)
-			if sk == null or sk.is_aura or sk.is_passive:
+			if sk == null or sk.is_aura or sk.category == SkillDefinition.SkillCategory.PASSIVE:
 				continue
 			var lvl: int = prof.get_skill_level(sid)
 			if lvl <= 0 and not sk.is_basic_attack and not sk.is_main_attack:
@@ -655,7 +655,7 @@ static func get_selected_support_skills() -> Array[Dictionary]:
 				if sk == null:
 					continue
 				var lvl: int = prof.get_skill_level(sk.id)
-				if lvl > 0 and (sk.is_aura or sk.is_passive or SectSkillController.is_self_buff(sk)):
+				if lvl > 0 and (sk.is_aura or sk.category == SkillDefinition.SkillCategory.PASSIVE or SectSkillController.is_self_buff(sk)):
 					var calc_star: int = mini(5, int((lvl - 1) / 4) + 1)
 					results.append({
 						"id": sk.id,

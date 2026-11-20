@@ -8,7 +8,7 @@ class_name MapSelectWindow
 ##         Chiến Trường Tống Kim (BattleServer): số người / điểm mỗi phe + giai đoạn (server tài khoản /v1/battle, làm mới mỗi
 ##         BATTLE_POLL giây), chọn phe Tống / Kim — lệch quân thì không cho vào; bấm xong phải chờ BATTLE_COOLDOWN giây mới bấm lại.
 ##   - Địa Ngục: map 10x / 11x / 12x (quái cấp 100 / 110 / 120 — MapCatalog.hell_maps), mỗi map chọn 1-5 sao: máu, sát thương,
-##     tỉ lệ rơi đồ của quái nhân số sao; 5 sao đồ rơi ra luôn đủ dòng magic (DropTable.roll_hell). Giao diện tông đỏ máu.
+##     tỉ lệ rơi đồ của quái nhân số sao; mỗi quái 20% rơi đồ đủ 6 dòng (DropTable.roll_hell). Giao diện tông đỏ máu.
 ## Vào map: gọi on_play(entry) — Character Hub lo đổi cảnh (đóng cửa sổ trước khi gọi).
 ## PHÒNG TRAIN CHUNG (tab Thường / Địa Ngục, lúc đã đăng nhập): vào map = tạo phòng trên field server (FieldServer cấp ID 6 số, hiện
 ## ở khung trên màn chơi — FieldClient); hàng "ID phòng" dưới cùng: nhập ID của người khác -> tra phòng (GET /v1/field) -> vào đúng map
@@ -102,7 +102,7 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable(), host: 
 	var char_level: int = prof.level if prof else 1
 	var normal_tier: int = MapCatalog.normal_tier_for_level(char_level)
 	if not is_admin:
-		var max_tier := clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+		var max_tier := mini(MapCatalog.unlocked_tier(char_level), MapCatalog.TIER_COUNT)
 		_tier = mini(normal_tier, max_tier)
 	else:
 		_tier = normal_tier
@@ -189,7 +189,7 @@ func on_presented() -> void:
 	var char_level: int = prof.level if prof else 1
 	var normal_tier: int = MapCatalog.normal_tier_for_level(char_level)
 	if not is_admin:
-		var max_tier := clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+		var max_tier := mini(MapCatalog.unlocked_tier(char_level), MapCatalog.TIER_COUNT)
 		_tier = mini(normal_tier, max_tier)
 		_thu_thanh_tier = mini(normal_tier, max_tier)
 	else:
@@ -1077,7 +1077,7 @@ func _build_normal() -> void:
 	var is_admin: bool = AccountApi.is_gm()
 	var prof := _get_profile()
 	var char_level: int = prof.level if prof else 1
-	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+	var max_unlocked_tier: int = 12 if is_admin else mini(MapCatalog.unlocked_tier(char_level), MapCatalog.TIER_COUNT)
 
 	for t in range(1, MapCatalog.TIER_COUNT + 1):
 		var count: int = MapCatalog.in_tier(t).size()
@@ -1089,7 +1089,7 @@ func _build_normal() -> void:
 		b.custom_minimum_size.y = 34
 		if not is_tier_unlocked:
 			b.disabled = true
-			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % (t * 10)
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % MapCatalog.min_level_for_tier(t)
 		else:
 			b.pressed.connect(_select_tier.bind(t))
 		tiers.add_child(b)
@@ -1165,7 +1165,7 @@ func _map_card(m: Dictionary) -> Control:
 	var playable := MapCatalog.is_playable(m)
 	var is_admin := AccountApi.is_gm()
 	var prof := _get_profile()
-	var req_lvl := int(m.get("level", 1))
+	var req_lvl := MapCatalog.min_level_for_tier(MapCatalog.tier_of_level(int(m.get("level", 10))))
 	var has_level := is_admin or (prof != null and prof.level >= req_lvl)
 
 	var btn_txt := tr("Vào")
@@ -1225,7 +1225,7 @@ func _build_thu_thanh() -> void:
 	var is_admin: bool = AccountApi.is_gm()
 	var prof := _get_profile()
 	var char_level: int = prof.level if prof else 1
-	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, MapCatalog.TIER_COUNT)
+	var max_unlocked_tier: int = 12 if is_admin else mini(MapCatalog.unlocked_tier(char_level), MapCatalog.TIER_COUNT)
 
 	for t in range(1, MapCatalog.TIER_COUNT + 1):
 		var count: int = MapCatalog.in_tier(t).size()
@@ -1237,7 +1237,7 @@ func _build_thu_thanh() -> void:
 		b.custom_minimum_size.y = 34
 		if not is_tier_unlocked:
 			b.disabled = true
-			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % (t * 10)
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc này!") % MapCatalog.min_level_for_tier(t)
 		else:
 			b.pressed.connect(_select_thu_thanh_tier.bind(t))
 		tiers.add_child(b)
@@ -1315,18 +1315,13 @@ func _thu_thanh_card(m: Dictionary) -> Control:
 	var is_admin := AccountApi.is_gm()
 	var prof := _get_profile()
 	var char_level: int = prof.level if prof else 1
-	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var char_tier: int = MapCatalog.unlocked_tier(char_level)
 	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
-	var req_lvl := int(m.get("level", 1))
+	var req_lvl := MapCatalog.min_level_for_tier(map_tier)
 
 	var level_allowed := true
 	if not is_admin:
-		if char_tier == 1:
-			level_allowed = (map_tier <= 1)
-		elif char_tier == 2:
-			level_allowed = (map_tier <= 2)
-		else:
-			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+		level_allowed = map_tier <= char_tier
 
 	var play := SocialUi.stone_button(tr("🛡️ Vào Thủ Thành"), Vector2(160, 42))
 	play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1345,18 +1340,13 @@ func _enter_thu_thanh(m: Dictionary) -> void:
 	var is_admin := AccountApi.is_gm()
 	var prof := _get_profile()
 	var char_level: int = prof.level if prof else 1
-	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var char_tier: int = MapCatalog.unlocked_tier(char_level)
 	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
-	var req_lvl := int(m.get("level", 1))
+	var req_lvl := MapCatalog.min_level_for_tier(map_tier)
 
 	var level_allowed := true
 	if not is_admin:
-		if char_tier == 1:
-			level_allowed = (map_tier <= 1)
-		elif char_tier == 2:
-			level_allowed = (map_tier <= 2)
-		else:
-			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+		level_allowed = map_tier <= char_tier
 
 	if not level_allowed:
 		var hub := _get_hub()
@@ -1404,7 +1394,7 @@ func _build_hell() -> void:
 	row.add_child(tiers)
 	var is_admin: bool = AccountApi.is_gm()
 	var char_level: int = _profile.level if _profile else 1
-	var max_unlocked_tier: int = 12 if is_admin else clampi(int(char_level / 10), 1, 12)
+	var max_unlocked_tier: int = 12 if is_admin else MapCatalog.unlocked_tier(char_level)
 
 	for t in MapCatalog.HELL_TIERS:
 		var is_tier_unlocked: bool = is_admin or (t <= max_unlocked_tier)
@@ -1415,7 +1405,7 @@ func _build_hell() -> void:
 		b.toggle_mode = true
 		if not is_tier_unlocked:
 			b.disabled = true
-			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc tinh anh này!") % (t * 10)
+			b.tooltip_text = tr("Cần đạt cấp %d trở lên để mở mốc tinh anh này!") % MapCatalog.min_level_for_tier(t)
 		else:
 			b.pressed.connect(_select_hell_tier.bind(t))
 		tiers.add_child(b)
@@ -1446,7 +1436,7 @@ func _hell_banner() -> Control:
 	title.add_theme_constant_override("outline_size", 6)
 	v.add_child(title)
 	v.add_child(SocialUi.label(tr("Màn chơi TINH ANH — độ khó cao dành cho cao thủ."), Color(0.85, 0.60, 1.0), 13, HORIZONTAL_ALIGNMENT_CENTER))
-	v.add_child(SocialUi.label(tr("Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)"),
+	v.add_child(SocialUi.label(tr("Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  Mỗi quái 20% rơi đồ đủ 6 dòng (thuộc tính ngẫu nhiên)"),
 		HELL_TEXT, 12, HORIZONTAL_ALIGNMENT_CENTER))
 	return panel
 
@@ -1531,7 +1521,7 @@ func _hell_card(m: Dictionary) -> Control:
 		info.add_child(SocialUi.label(tr("⚠ Cấp của bạn quá thấp — khuyến nghị cấp %d trở lên.") % (int(m["level"]) - 10), HELL_HOT, 12))
 
 	var is_admin := AccountApi.is_gm()
-	var req_lvl := int(m.get("level", 100))
+	var req_lvl := MapCatalog.min_level_for_tier(MapCatalog.tier_of_level(int(m.get("level", 100))))
 	var has_level := is_admin or (_profile != null and _profile.level >= req_lvl)
 
 	var play := _hell_button(tr("Khiêu chiến"), Vector2(120, 48), 16)
@@ -1637,23 +1627,14 @@ func _enter_field(m: Dictionary) -> void:
 	var is_admin := AccountApi.is_gm()
 	var prof := _get_profile()
 	var char_level: int = prof.level if prof else 1
-	var char_tier: int = clampi(int(char_level / 10), 1, 12)
+	var char_tier: int = MapCatalog.unlocked_tier(char_level)
 	var map_tier: int = MapCatalog.tier_of_level(int(m.get("level", 10)))
-	var req_lvl := int(m.get("level", 1))
+	var req_lvl := MapCatalog.min_level_for_tier(map_tier)
 
-	# Quy tắc điều kiện cấp độ (Section 2.2):
-	# 1x: Được vào bản đồ 1x
-	# 2x: Được vào bản đồ 1x–2x; không được vào 3x trở lên
-	# 3x trở lên: Được vào bản đồ có cấp yêu cầu <= cấp nhân vật
-	# Nguyên tắc: Không cho phép vào bản đồ có cấp yêu cầu cao hơn cấp nhân vật.
+	# Điều kiện cấp: cấp 1-10 vào 1x, 11-20 vào tới 2x, 21-30 vào tới 3x ... (MapCatalog.unlocked_tier).
 	var level_allowed := true
 	if not is_admin:
-		if char_tier == 1:
-			level_allowed = (map_tier <= 1)
-		elif char_tier == 2:
-			level_allowed = (map_tier <= 2)
-		else:
-			level_allowed = (map_tier <= char_tier) and (char_level >= req_lvl)
+		level_allowed = map_tier <= char_tier
 
 	if not level_allowed:
 		var hub := _get_hub()
@@ -1661,22 +1642,24 @@ func _enter_field(m: Dictionary) -> void:
 			hub._show_toast(tr("⚠️ Cấp độ của bạn chưa đủ (%d/%d) để vào bản đồ này!") % [char_level, req_lvl])
 		return
 
-	if not _online() or GameModeManager.is_offline():
+	if GameModeManager.is_offline():
 		var e := m.duplicate(true)
 		e["survivor_mode"] = true
 		e["no_monsters"] = true
 		_play(e)
 		return
+
+	if not _online():
+		_play(m)
+		return
+
 	var st := await _fetch_field()
 	if not is_inside_tree():
 		return
 	if st.is_empty():
 		SocialWindow.confirm(self, "Phòng train chung", "Máy chủ phòng train chung chưa mở — vào chơi một mình (không có ID phòng)?",
 				func() -> void:
-					var e := m.duplicate(true)
-					e["survivor_mode"] = true
-					e["no_monsters"] = true
-					_play(e))
+					_play(m))
 		return
 	var hell: Dictionary = m.get("hell", {})
 	var create := func(password: String) -> void:
@@ -1727,8 +1710,8 @@ static func join_problem(room: Dictionary, id: String) -> String:
 		return "Máy bạn chưa có bản đồ của phòng #%s." % id
 	return ""
 
-## Vào 1 phòng của danh sách /v1/field (nhập ID hoặc bấm Vào ở "Danh sách phòng"): phòng có 🔒 thì hỏi mật khẩu trước —
-## field server kiểm, sai thì báo lỗi và về Hub (FieldClient).
+## Vào 1 phòng của danh sách /v1/field (nhập ID hoặc bấm Vào ở "Danh sách phòng"): phòng có 🔒 thì hỏi mật khẩu trước và kiểm
+## ngay qua /v1/field/check — sai thì báo trong hộp nhập, không nạp map. Field server vẫn kiểm lại khi vào thật (FieldClient).
 func _join_room(st: Dictionary, room: Dictionary) -> void:
 	var id := str(room.get("id", ""))
 	var go := func(password: String) -> void:
@@ -1737,9 +1720,19 @@ func _join_room(st: Dictionary, room: Dictionary) -> void:
 			"tier": int(room.get("tier", 0)), "password": FieldServer.clean_password(password)}}
 		_play(entry)
 	if bool(room.get("locked", false)):
-		SocialWindow.prompt(self, tr("Phòng #%s 🔒") % id, tr("Nhập mật khẩu phòng"), go, "", true)
+		SocialWindow.prompt_checked(self, tr("Phòng #%s 🔒") % id, tr("Nhập mật khẩu phòng"),
+			func(password: String) -> String: return await _check_room_password(id, password), go, true)
 	else:
 		go.call("")
+
+## "" = đúng mật khẩu (hoặc server tài khoản cũ chưa có /v1/field/check, mạng lỗi -> để field server tự kiểm); khác = lý do báo ngay.
+func _check_room_password(id: String, password: String) -> String:
+	var r: Dictionary = await AccountApi.field_check(ServerSelectScreen.selected_server_id, id, FieldServer.clean_password(password))
+	if r.ok and r.data is Dictionary:
+		return "" if bool(r.data.get("ok", false)) else str(r.data.get("msg", "Sai mật khẩu phòng."))
+	if str(r.get("code", "")) == "rate_limited":
+		return str(r.get("message", "Thao tác quá nhanh, vui lòng thử lại sau ít phút"))
+	return ""
 
 # ---------------------------------------------------------------- tab con "Bản đồ" / "Danh sách phòng"
 

@@ -35,12 +35,16 @@ static func encode_for_player(bot: ServerBot, hit: Dictionary) -> PackedByteArra
 	return PvpHit.encode(bot.stats, int(hit.min), int(hit.max), int(hit.type), int(hit.element), hit.mods)
 
 ## Đòn (chỉ số người đánh + min/max + loại + hệ + mods) vào bot. Trả về sát thương thực (>= 0) hoặc MISSED. KHÔNG tự trừ máu.
+## Áp luôn hiệu ứng của đòn lên bot (bùa / làm chậm / độc / choáng) như HitResolver + StatusEffectController của người chơi.
 static func resolve_on_bot(bot: ServerBot, attacker: CombatantStats, min_damage: int, max_damage: int, damage_type: int,
-		element: int, mods: CombatFormulas.HitModifiers, is_pk := true, from_monster := false) -> int:
+		element: int, mods: CombatFormulas.HitModifiers, is_pk := true, from_monster := false, from_eid := 0, monster_elite := false) -> int:
 	if mods == null:
 		mods = CombatFormulas.HitModifiers.new()
 	if mods.is_state_only:
-		return 0   ## bùa thuần: bước 2 (trạng thái trên bot)
+		if bot.is_jumping(bot.now_cache):
+			return MISSED
+		bot.add_state(mods.state_source_id, mods.state_attribs, mods.state_seconds, bot.now_cache, true)   ## bùa thuần
+		return 0
 	var ignore_def: int = maxi(attacker.ignore_defense_p if attacker else 0, mods.ignore_defense_percent)
 	if mods.use_attack_rating and not CombatFormulas.roll_hit(attacker.attack_rating, bot.stats.defense, ignore_def):
 		return MISSED
@@ -48,7 +52,8 @@ static func resolve_on_bot(bot: ServerBot, attacker: CombatantStats, min_damage:
 	var parts: Dictionary = mods.extra_damages.duplicate()
 	var main: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main + Vector2i(min_damage, max_damage)
-	parts = CombatFormulas.apply_server_damage_scaling(parts, element)
+	if not from_monster or monster_elite:   ## quái map thường: đúng bảng C++; chỉ ải Tinh anh mới nhân hệ số server
+		parts = CombatFormulas.apply_server_damage_scaling(parts, element)
 	if from_monster:
 		for t in parts.keys():
 			var p: Vector2i = parts[t]
@@ -56,19 +61,21 @@ static func resolve_on_bot(bot: ServerBot, attacker: CombatantStats, min_damage:
 	var dealt := {}
 	var final := CombatFormulas.resolve_multi_damage(attacker, bot.stats, int(bot.cur_hp), parts, element as ElementTypes.ElementType,
 		mods, dealt, int(bot.mana))
+	if not bot.is_jumping(bot.now_cache):
+		bot.apply_hit_effects(mods, dealt, bot.now_cache, from_eid)
 	return maxi(final, 0)
 
 ## Gói C_PVP_HIT của người thật (đã PvpHit.decode + sanitize) vào bot.
-static func resolve_pvp_packet_on_bot(bot: ServerBot, d: Dictionary) -> int:
+static func resolve_pvp_packet_on_bot(bot: ServerBot, d: Dictionary, from_eid := 0) -> int:
 	var attacker := CombatantStats.new()
 	PvpHit._load(attacker, d["as"])
 	var mods := CombatFormulas.HitModifiers.new()
 	PvpHit._load(mods, d["mods"])
-	return resolve_on_bot(bot, attacker, int(d["min"]), int(d["max"]), int(d["type"]), int(d["el"]), mods)
+	return resolve_on_bot(bot, attacker, int(d["min"]), int(d["max"]), int(d["type"]), int(d["el"]), mods, true, false, from_eid)
 
 ## Đòn của bot `a` vào bot `b`.
 static func bot_vs_bot(a: ServerBot, b: ServerBot, hit: Dictionary) -> int:
-	return resolve_on_bot(b, a.stats, int(hit.min), int(hit.max), int(hit.type), int(hit.element), hit.mods)
+	return resolve_on_bot(b, a.stats, int(hit.min), int(hit.max), int(hit.type), int(hit.element), hit.mods, true, false, a.eid)
 
 ## Sát thương đòn bot lên quái server (quái không có kháng chi tiết ở server: dùng phòng thủ + hệ của quái).
 static func damage_vs_monster(bot: ServerBot, m: ServerMonster, hit: Dictionary) -> int:
@@ -92,4 +99,4 @@ static func monster_hit_on_bot(m: ServerMonster, bot: ServerBot) -> int:
 	var hi := maxi(lo, MonsterData.stat_at_level(m.data, "max_damage", m.level))
 	if hi <= 0:
 		return MISSED
-	return resolve_on_bot(bot, a, lo, hi, CombatFormulas.DamageType.PHYSICS, m.series, null, false, true)
+	return resolve_on_bot(bot, a, lo, hi, CombatFormulas.DamageType.PHYSICS, m.series, null, false, true, 0, m.hell_stars > 0)

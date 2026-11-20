@@ -668,6 +668,7 @@ damage_growth_per_level = 47.7368
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_47"), SubResource("SubResource_48"), SubResource("SubResource_49"), SubResource("SubResource_50"), SubResource("SubResource_51")])
 [sub_resource type="Resource" id="SubResource_53"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 100, 0, 10, 230, 0, 15, 370, 0, 20, 550, 0, 21, 550, 0)
 label = "Giảm thiểu sát thương gánh chịu"
 value_at_level_1 = 100.0
 value_at_max_level = 550.0

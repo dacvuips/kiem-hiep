@@ -9,6 +9,8 @@ signal effect_expired(effect_id: String)
 ## Bộ trạng thái thuộc tính (buff/bùa) vừa thêm/hết hạn — chủ (Player/Enemy) nghe signal này để dựng
 ## lại combat_stats bằng CombatantStats.build(..., get_state_attrib_sources()).
 signal stats_changed
+## Vừa áp 1 trạng thái (buff/bùa) — quái online nghe để báo bùa lên server cho người khác thấy hình.
+signal state_applied(source_id: String, seconds: float, meta: Dictionary)
 
 var _active_effects: Dictionary = {}  ## effect_id -> StatusEffect
 ## Trạng thái THUỘC TÍNH (m_StateSkillList gốc) — source_id (VD id skill buff) -> {"attribs":
@@ -138,6 +140,7 @@ func apply_state(source_id: String, attribs: Dictionary, seconds: float, meta: D
 	_sync_profile_state(source_id, _states[source_id])
 	_ensure_visuals()
 	stats_changed.emit()
+	state_applied.emit(source_id, seconds, meta)
 
 func _sync_profile_state(source_id: String, st: Dictionary) -> void:
 	if not (source_id.begins_with("item:") or ((st.get("meta", {}) as Dictionary).get("persist", false) == true)):

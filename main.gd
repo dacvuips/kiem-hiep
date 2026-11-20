@@ -35,6 +35,10 @@ var _status_window: CharacterStatusWindow
 var _inventory_window: InventoryPopup
 
 var _ky_tran_cac_window: KyTranCacWindow
+var _key_guide_window: KeyGuideWindow = null
+var _settings_window: SettingsWindow = null
+var _guild_window: GuildWindow = null
+var _friend_window: FriendWindow = null
 
 ## Map VLTK dùng để lấy nhạc nền khi StageData không khai báo vltk_map_id — tạm, thay bằng map thật của màn.
 
@@ -166,6 +170,10 @@ func _ready() -> void:
 	HudLayout.add_listener(_apply_hud_layout)
 
 	_apply_hud_layout()   ## 4 ô thuốc nhanh ngay trên cụm nút skill
+	if skill_bar_ui != null:
+		skill_bar_ui.sit_follows_bar = true
+		skill_bar_ui.layout_applied.connect(_queue_fit_bars_to_skill_buttons)
+		skill_bar_ui.apply_layout()
 
 	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
 	if loc_mgr and loc_mgr.has_signal("locale_changed"):
@@ -694,140 +702,183 @@ func _process(delta: float) -> void:
 	time_label.text = "%02d:%02d" % [minutes, seconds]
 
 func _unhandled_key_input(event: InputEvent) -> void:
-
 	if not (OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo):
-
 		return
 
-	if event.keycode == KEY_F8:
-
-		## Chép toạ độ (pixel map) của nhân vật để dán vào StageData.arena_center khi đặt ô vuông màn chơi.
-
-		var p := get_tree().get_first_node_in_group("player") as Node2D
-
-		if p:
-
-			var feet := p.global_position + Vector2(0, VltkWorld.FEET_OFFSET)
-
-			var text := "Vector2(%d, %d)" % [roundi(feet.x), roundi(feet.y)]
-
-			DisplayServer.clipboard_set(text)
-
-			print("arena_center = ", text, "  (đã chép vào clipboard)")
-
-	elif event.keycode == KEY_F5:
-
-		var player := get_tree().get_first_node_in_group("player")
-
-		if player:
-
-			SaveManager.save_game(player)
-
-			print("Đã lưu game.")
-
-	elif event.keycode == KEY_F6:
-
-		var player := get_tree().get_first_node_in_group("player")
-
-		if player and SaveManager.load_game(player):
-
-			print("Đã tải game.")
-
+	if event.ctrl_pressed:
+		if event.keycode == KEY_F8:
+			## Chép toạ độ (pixel map) của nhân vật để dán vào StageData.arena_center khi đặt ô vuông màn chơi.
+			var p := get_tree().get_first_node_in_group("player") as Node2D
+			if p:
+				var feet := p.global_position + Vector2(0, VltkWorld.FEET_OFFSET)
+				var text := "Vector2(%d, %d)" % [roundi(feet.x), roundi(feet.y)]
+				DisplayServer.clipboard_set(text)
+				print("arena_center = ", text, "  (đã chép vào clipboard)")
+			get_viewport().set_input_as_handled()
+			return
+		elif event.keycode == KEY_F5:
+			var player := get_tree().get_first_node_in_group("player")
+			if player:
+				SaveManager.save_game(player)
+				print("Đã lưu game (Ctrl+F5).")
+			get_viewport().set_input_as_handled()
+			return
+		elif event.keycode == KEY_F6:
+			var player := get_tree().get_first_node_in_group("player")
+			if player and SaveManager.load_game(player):
+				print("Đã tải game (Ctrl+F6).")
+			get_viewport().set_input_as_handled()
+			return
+		elif event.keycode == KEY_F10:
+			DebugDataBrowser.open(self, func() -> void: pass)
+			get_viewport().set_input_as_handled()
+			return
 	elif event.keycode == KEY_F10:
-
 		DebugDataBrowser.open(self, func() -> void: pass)
+		get_viewport().set_input_as_handled()
+		return
 
-## Mở bảng "Kỹ Năng Võ Công" ngay trong trận (tái dùng phím open_gem_menu vốn dùng cho
+func _typing() -> bool:
+	var f := get_viewport().gui_get_focus_owner()
+	return f is LineEdit or f is TextEdit
 
-## GemSocketScreen cũ, đã gỡ bỏ cùng gem_system) — pause game trong lúc xem/học skill khi ở chế độ ải.
-
+## Mở / Tắt các bảng giao diện theo chuẩn phím tắt VLTK PC:
+## F1: Trợ giúp / Bảng hướng dẫn phím tắt (KeyGuideWindow)
+## F2: Cài đặt hệ thống (SettingsWindow)
+## F3 / C: Bảng thuộc tính nhân vật & Trang bị (CharacterStatusWindow)
+## F4 / B / I: Bảng hành trang (InventoryPopup)
+## F5 / K / G: Bảng kỹ năng võ công (SkillBookScreen)
+## F6: Bang Hội (GuildWindow)
+## F7 / T / O: Bật / tắt chế độ Giao dịch
+## F8: Danh sách Hảo hữu (FriendWindow)
+## F9: Chuyển chế độ PK
+## F11: Kỳ Trân Các (KyTranCacWindow)
+## F12: GM Control / Cài đặt
+## P: Bật / Tắt giao diện Tổ đội (TeamWindow)
+## Tab: Bật / Tắt bản đồ khu vực
+## Esc: Đóng bảng trên cùng / Mở Cài đặt hệ thống
 func _unhandled_input(event: InputEvent) -> void:
-
 	if event is InputEventKey and event.pressed and not event.echo:
+		var key_ev := event as InputEventKey
+		var typing := _typing()
 
-		if event.keycode == KEY_F9:
-
-			_toggle_pk_menu(_pk_button if is_instance_valid(_pk_button) else _pk_hud_btn)
-
+		# Phím Escape: đóng cửa sổ đang mở, nếu không có cửa sổ thì mở Cài đặt
+		if key_ev.keycode == KEY_ESCAPE:
+			if not _close_top_menu_window():
+				_toggle_settings_window()
 			get_viewport().set_input_as_handled()
-
 			return
 
-		elif event.keycode == KEY_P:
-
-			_toggle_team_window()
-
+		# F1: Bảng Trợ giúp / Hướng dẫn phím tắt
+		if key_ev.keycode == KEY_F1:
+			_toggle_key_guide_window()
 			get_viewport().set_input_as_handled()
-
 			return
 
-		elif event.keycode == KEY_F4:
+		# F2: Cài đặt hệ thống
+		elif key_ev.keycode == KEY_F2:
+			_toggle_settings_window()
+			get_viewport().set_input_as_handled()
+			return
 
+		# F3 hoặc C: Bảng thuộc tính nhân vật & Trang bị
+		elif key_ev.keycode == KEY_F3 or (not typing and key_ev.keycode == KEY_C):
+			_toggle_status_window()
+			get_viewport().set_input_as_handled()
+			return
+
+		# F4 hoặc B / I: Bảng hành trang / Rương đồ cá nhân
+		elif key_ev.keycode == KEY_F4 or (not typing and (key_ev.keycode == KEY_B or key_ev.keycode == KEY_I)):
+			_toggle_inventory_window()
+			get_viewport().set_input_as_handled()
+			return
+
+		# F5 hoặc K / G: Bảng kỹ năng võ công (Skill Book)
+		elif key_ev.keycode == KEY_F5 or (not typing and (key_ev.keycode == KEY_K or key_ev.keycode == KEY_G)):
+			_toggle_skill_book()
+			get_viewport().set_input_as_handled()
+			return
+
+		# F6: Bang Hội
+		elif key_ev.keycode == KEY_F6:
+			_toggle_guild_window()
+			get_viewport().set_input_as_handled()
+			return
+
+		# F7 hoặc T / O: Bật / tắt chế độ Giao dịch
+		elif key_ev.keycode == KEY_F7 or (not typing and (key_ev.keycode == KEY_T or key_ev.keycode == KEY_O)):
 			_toggle_trade_mode()
-
 			get_viewport().set_input_as_handled()
-
 			return
 
-		elif event.keycode == KEY_TAB:
-
-			_toggle_map_panel()
-
+		# F8: Danh sách Hảo hữu
+		elif key_ev.keycode == KEY_F8:
+			_toggle_friend_window()
 			get_viewport().set_input_as_handled()
-
 			return
 
-		elif event.keycode == KEY_F11:
+		# F9: Chuyển chế độ PK (Luyện Công / Phe / Đồ Sát / Bang)
+		elif key_ev.keycode == KEY_F9:
+			_toggle_pk_menu(_pk_button if is_instance_valid(_pk_button) else _pk_hud_btn)
+			get_viewport().set_input_as_handled()
+			return
 
+		# F11: Kỳ Trân Các
+		elif key_ev.keycode == KEY_F11:
 			_toggle_ky_tran_cac()
-
-			get_viewport().set_input_as_handled()
-
-			return
-
-		elif event.keycode == KEY_V:
-			_toggle_selected_skills_window()
 			get_viewport().set_input_as_handled()
 			return
 
-		elif event.keycode == KEY_F12:
-
+		# F12: Quản trị GM (nếu có quyền), hoặc Cài đặt hệ thống
+		elif key_ev.keycode == KEY_F12:
 			if AccountApi.is_gm():
-
 				_open_gm_window()
+			else:
+				_toggle_settings_window()
+			get_viewport().set_input_as_handled()
+			return
 
-				get_viewport().set_input_as_handled()
+		# P: Bật / Tắt giao diện Tổ đội (Party)
+		elif not typing and key_ev.keycode == KEY_P:
+			_toggle_team_window()
+			get_viewport().set_input_as_handled()
+			return
 
-				return
+		# TAB: Bật / Tắt Bản đồ toàn cảnh
+		elif key_ev.keycode == KEY_TAB:
+			_toggle_map_panel()
+			get_viewport().set_input_as_handled()
+			return
 
 	if event.is_action_pressed("open_gem_menu"):
-
 		_toggle_skill_book()
 
 var _sect_prompt: SectPrompt
 
 func _is_stage_mode() -> bool:
-
 	return GameManager.current_stage != null or GameManager.game_mode == GameManager.GameMode.STAGE
 
 func is_any_menu_window_open() -> bool:
-
 	if _skill_book_open or is_instance_valid(_skill_book_screen):
-
 		return true
-
 	if is_instance_valid(_status_window) and not _status_window.is_queued_for_deletion():
-
 		return true
-
 	if is_instance_valid(_inventory_window) and not _inventory_window.is_queued_for_deletion():
-
 		return true
-
+	if is_instance_valid(_key_guide_window) and not _key_guide_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_settings_window) and not _settings_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_guild_window) and not _guild_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_friend_window) and not _friend_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_team_window) and not _team_window.is_queued_for_deletion():
+		return true
+	if is_instance_valid(_ky_tran_cac_window) and not _ky_tran_cac_window.is_queued_for_deletion():
+		return true
 	if SelectedSkillsWindow.instance != null and is_instance_valid(SelectedSkillsWindow.instance):
-
 		return true
-
 	return false
 
 func _update_stage_pause() -> void:
@@ -849,6 +900,118 @@ func _update_stage_pause() -> void:
 		return
 
 	tree.paused = is_any_menu_window_open()
+
+func _close_top_menu_window() -> bool:
+	if is_instance_valid(_key_guide_window):
+		_key_guide_window.close_requested.emit()
+		_key_guide_window = null
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_settings_window):
+		_settings_window.close_requested.emit()
+		_settings_window = null
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_guild_window):
+		_guild_window.close_requested.emit()
+		_guild_window = null
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_friend_window):
+		_friend_window.close_requested.emit()
+		_friend_window = null
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_team_window):
+		_team_window.queue_free()
+		_team_window = null
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_ky_tran_cac_window):
+		var win := _ky_tran_cac_window
+		_ky_tran_cac_window = null
+		win.queue_free()
+		_update_stage_pause()
+		return true
+	if _skill_book_open or is_instance_valid(_skill_book_screen):
+		if is_instance_valid(_skill_book_screen):
+			_skill_book_screen._on_close_pressed()
+		else:
+			_skill_book_open = false
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_status_window):
+		var win := _status_window
+		_status_window = null
+		win.queue_free()
+		_update_stage_pause()
+		return true
+	if is_instance_valid(_inventory_window):
+		var win := _inventory_window
+		_inventory_window = null
+		win.queue_free()
+		_update_stage_pause()
+		return true
+	return false
+
+func _toggle_key_guide_window() -> void:
+	if is_instance_valid(_key_guide_window):
+		_key_guide_window.close_requested.emit()
+		_key_guide_window = null
+		_update_stage_pause()
+		return
+	_key_guide_window = KeyGuideWindow.open(self)
+	if _key_guide_window:
+		_key_guide_window.close_requested.connect(func() -> void:
+			_key_guide_window = null
+			_update_stage_pause()
+		)
+	_update_stage_pause()
+
+func _toggle_settings_window() -> void:
+	if is_instance_valid(_settings_window):
+		_settings_window.close_requested.emit()
+		_settings_window = null
+		_update_stage_pause()
+		return
+	_settings_window = SettingsWindow.open(self, _on_exit_button_pressed)
+	if _settings_window:
+		_settings_window.close_requested.connect(func() -> void:
+			_settings_window = null
+			_update_stage_pause()
+		)
+	_update_stage_pause()
+
+func _toggle_guild_window() -> void:
+	if is_instance_valid(_guild_window):
+		_guild_window.close_requested.emit()
+		_guild_window = null
+		_update_stage_pause()
+		return
+	var p := GameManager.local_profile
+	if p:
+		_guild_window = GuildWindow.open(self, SocialHub.of(p))
+		if _guild_window:
+			_guild_window.close_requested.connect(func() -> void:
+				_guild_window = null
+				_update_stage_pause()
+			)
+	_update_stage_pause()
+
+func _toggle_friend_window() -> void:
+	if is_instance_valid(_friend_window):
+		_friend_window.close_requested.emit()
+		_friend_window = null
+		_update_stage_pause()
+		return
+	if GameManager.local_profile:
+		_friend_window = FriendWindow.open(self, GameManager.local_profile)
+		if _friend_window:
+			_friend_window.close_requested.connect(func() -> void:
+				_friend_window = null
+				_update_stage_pause()
+			)
+	_update_stage_pause()
 
 func _toggle_selected_skills_window() -> void:
 	SelectedSkillsWindow.toggle_window(self)
@@ -1084,6 +1247,13 @@ var _pk_hud_btn: Button
 var _pk_mode: int = 0
 
 var _bottom_action_bar: HBoxContainer
+## Hàng nút thao tác: mép phải (= mép phải nút Ngồi cũ trong SkillBarUI.tscn), ô Ngồi 52px, 3 nút tròn + 3 khe 6px.
+const BOTTOM_BAR_RIGHT := -357.0 + SkillBarUI.CLUSTER_SHIFT_X
+## Mép phải hàng nút tiện ích — đi theo cụm nút skill (SkillBarUI.CLUSTER_SHIFT_X) để khỏi chồng.
+const SIDE_MENU_RIGHT := -360.0 + SkillBarUI.CLUSTER_SHIFT_X
+const BOTTOM_BAR_SIT_SLOT := 52.0
+const BOTTOM_BAR_WIDTH := 3 * SideMenu.SLOT + BOTTOM_BAR_SIT_SLOT + 3 * 6
+var _pk_frames: Array[Texture2D] = []
 
 ## Cột nút tiện ích bên phải — SideMenu (hàng ngang góc trên phải): Nhân vật, Hành trang, Kỹ năng, Cài đặt.
 
@@ -1093,14 +1263,15 @@ func _build_side_menu() -> void:
 
 	menu.name = "SideMenu"
 
-	menu.add_entry("status", "", "Nhân vật", _toggle_status_window)
+	menu.add_entry("status", "", "Nhân vật (phím F3 / C)", _toggle_status_window)
 
-	menu.add_entry("items", "", "Hành trang", _toggle_inventory_window)
+	menu.add_entry("items", "", "Hành trang (phím F4 / B)", _toggle_inventory_window)
 
-	var skill_btn := menu.add_entry("skills", "", "Kỹ năng (phím G)", _toggle_skill_book)
+	var skill_btn := menu.add_entry("skills", "", "Kỹ năng (phím F5 / K / G)", _toggle_skill_book)
 	skill_btn.add_to_group("tutorial_skill_menu_btn")
 
-	menu.add_entry("", "⚡", "Võ công đã chọn (phím V)", _toggle_selected_skills_window)
+	if GameModeManager.is_offline():   ## chỉ offline mới có cửa sổ "Võ công đã chọn"
+		menu.add_entry("", "⚡", "Võ công đã chọn", _toggle_selected_skills_window)
 
 	menu.add_entry("itemex", "Kỳ", "Kỳ Trân Các (phím F11)", _toggle_ky_tran_cac)
 
@@ -1109,7 +1280,7 @@ func _build_side_menu() -> void:
 
 	## Nút Cài đặt: góc trên phải, sát bên trái mini map. Nút "Thoát về Character Hub" nằm trong khung Cài đặt.
 
-	var exit_button := SideMenu.make_button("", "⚙", "Cài đặt: nhạc nền, zoom camera, thoát", func() -> void:
+	var exit_button := SideMenu.make_button("", "⚙", "Cài đặt (phím F2 / Esc): nhạc nền, zoom camera, thoát", func() -> void:
 
 		SettingsWindow.open(self, _on_exit_button_pressed))
 
@@ -1139,11 +1310,11 @@ func _build_side_menu() -> void:
 
 	menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
-	menu.offset_right = -360.0
+	menu.offset_right = SIDE_MENU_RIGHT
 
 	var count := menu.get_child_count()
 
-	menu.offset_left = -360.0 - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP)
+	menu.offset_left = SIDE_MENU_RIGHT - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP)
 
 	menu.offset_top = -58.0
 
@@ -1177,33 +1348,77 @@ func _build_bottom_action_bar() -> void:
 
 	_bottom_action_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	_trade_button = SideMenu.make_button("exchange", "🤝", "Bật giao dịch (phím F4)", _toggle_trade_mode)
+	_trade_button = SideMenu.make_button("exchange", "🤝", "Bật giao dịch (phím F7 / T)", _toggle_trade_mode)
+	SideMenu.make_bare(_trade_button)   ## ảnh giao dịch gốc đã là nút tròn: bỏ nền đen, cho to bằng nút Ngồi
 
-	_pk_button = SideMenu.make_button("pk", "", "Chế độ PK (phím F9): Chọn Luyện Công / Chiến Đấu / Đồ Sát", func() -> void: _toggle_pk_menu(_pk_button))
+	## Nút PK: KHÔNG dùng 3 khung ảnh pk.png làm thường / rê chuột / bấm — 3 khung đó là 3 TRẠNG THÁI PK
+	## (gốc Player_PK::UpdateData: SetFrame 0 Luyện công, 1 Chiến đấu, 2 Đồ sát, 3 Bang chiến). _refresh_pk_ui đổi ảnh.
+	_pk_button = SideMenu.make_button("", "", "Chế độ PK (phím F9): Chọn Luyện Công / Chiến Đấu / Đồ Sát", func() -> void: _toggle_pk_menu(_pk_button))
+	_pk_frames = SideMenu._frames("pk")
+	var pk_icon := TextureRect.new()
+	pk_icon.name = "PkIcon"
+	pk_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	pk_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pk_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pk_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pk_button.add_child(pk_icon)
+	## Ảnh pk.png gốc đã là nút tròn: bỏ nền đen + viền, icon to đúng bằng ô nút (SLOT) cũ.
+	SideMenu.make_bare(_pk_button, 0.0)
+	## Ô trống giữ chỗ cho nút Ngồi (SitButton nằm trong SkillBarUI, đặt đúng vào ô này).
+	var sit_slot := Control.new()
+	sit_slot.name = "SitSlot"
+	sit_slot.custom_minimum_size = Vector2(BOTTOM_BAR_SIT_SLOT, SideMenu.SLOT)
+	sit_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_team_button = SideMenu.make_button("party", "👥", "Tổ Đội (phím P)", _toggle_team_window)
 
+	## Thứ tự: Giao dịch, [Ngồi], Tổ đội, PK — nút PK ngoài cùng bên phải (chỗ nút Ngồi cũ).
 	_bottom_action_bar.add_child(_trade_button)
 
-	_bottom_action_bar.add_child(_pk_button)
+	_bottom_action_bar.add_child(sit_slot)
 
 	_bottom_action_bar.add_child(_team_button)
+
+	_bottom_action_bar.add_child(_pk_button)
 
 	_refresh_trade_button()
 
 	_refresh_pk_ui()
 
-	# Căn sát bên trái nút Ngồi (SitButton offset_left = -409, height 52)
-	# Hàng trên (Giao dịch, PK, Tổ đội) thẳng hàng y = -112.0 đến -66.0
-	_bottom_action_bar.offset_right = -412.0
+	# Hàng trên (Giao dịch, Ngồi, Tổ đội, PK) thẳng hàng y = -112.0 đến -66.0, mép phải = mép phải nút Ngồi cũ
+	_bottom_action_bar.offset_right = BOTTOM_BAR_RIGHT
 
-	_bottom_action_bar.offset_left = -412.0 - (3 * SideMenu.SLOT + 2 * 6)
+	_bottom_action_bar.offset_left = BOTTOM_BAR_RIGHT - BOTTOM_BAR_WIDTH
 
 	_bottom_action_bar.offset_top = -112.0
 
 	_bottom_action_bar.offset_bottom = -66.0
 
 	$UI.add_child(_bottom_action_bar)
+
+var _fit_bars_pending := false
+
+## Nút Ngồi thuộc cụm thao tác (Giao dịch / Ngồi / Tổ đội / PK): kéo / đổi cỡ cụm thì nút Ngồi đi theo.
+func _queue_fit_bars_to_skill_buttons() -> void:
+	if _fit_bars_pending:
+		return
+	_fit_bars_pending = true
+	await get_tree().process_frame   ## chờ container xếp xong con mới đọc được toạ độ thật
+	_fit_bars_pending = false
+	_fit_bars_to_skill_buttons()
+
+func _fit_bars_to_skill_buttons() -> void:
+	if skill_bar_ui == null or not is_instance_valid(skill_bar_ui):
+		return
+	if _bottom_action_bar == null or not is_instance_valid(_bottom_action_bar):
+		return
+	var slot := _bottom_action_bar.get_node_or_null("SitSlot") as Control
+	if slot == null:
+		return
+	## Nút Ngồi vuông, cạnh = ô Ngồi (52) x cỡ cụm, canh giữa ô.
+	var r := slot.get_global_rect()
+	var side := BOTTOM_BAR_SIT_SLOT * _bottom_action_bar.scale.x
+	skill_bar_ui.place_sit_at(Rect2(r.get_center() - Vector2(side, side) * 0.5, Vector2(side, side)))
 
 func _apply_hud_layout() -> void:
 
@@ -1269,9 +1484,9 @@ func _apply_hud_layout() -> void:
 
 		side_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
-		side_menu.offset_right = -360.0 + side_ox
+		side_menu.offset_right = SIDE_MENU_RIGHT + side_ox
 
-		side_menu.offset_left = -360.0 - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP) * side_scale + side_ox
+		side_menu.offset_left = SIDE_MENU_RIGHT - (count * SideMenu.SLOT + (count - 1) * SideMenu.GAP) * side_scale + side_ox
 
 		side_menu.offset_top = -58.0 + side_oy
 
@@ -1291,15 +1506,17 @@ func _apply_hud_layout() -> void:
 
 		var bar_scale: float = float(bar_data.get("scale", 1.0))
 
-		_bottom_action_bar.offset_right = -412.0 + bar_ox
+		_bottom_action_bar.offset_right = BOTTOM_BAR_RIGHT + bar_ox
 
-		_bottom_action_bar.offset_left = -412.0 - (3 * SideMenu.SLOT + 2 * 6) * bar_scale + bar_ox
+		_bottom_action_bar.offset_left = BOTTOM_BAR_RIGHT - BOTTOM_BAR_WIDTH * bar_scale + bar_ox
 
 		_bottom_action_bar.offset_top = -112.0 + bar_oy
 
 		_bottom_action_bar.offset_bottom = -66.0 + bar_oy
 
 		_bottom_action_bar.scale = Vector2.ONE * bar_scale
+
+	_queue_fit_bars_to_skill_buttons()
 
 	# Joystick
 
@@ -1484,11 +1701,11 @@ func _refresh_trade_button() -> void:
 
 	if is_open:
 
-		_trade_button.tooltip_text = "Đang mở giao dịch (F4)\nNgười chơi khác có thể giao dịch trực tiếp với bạn.\n(Bấm để tắt mở giao dịch)"
+		_trade_button.tooltip_text = "Đang mở giao dịch (F7 / T)\nNgười chơi khác có thể giao dịch trực tiếp với bạn.\n(Bấm để tắt mở giao dịch)"
 
 	else:
 
-		_trade_button.tooltip_text = "Bật giao dịch (F4)\nBật mở giao dịch để người chơi khác có thể giao dịch trực tiếp với bạn.\n(Chọn người chơi rồi bấm để xin giao dịch)"
+		_trade_button.tooltip_text = "Bật giao dịch (F7 / T)\nBật mở giao dịch để người chơi khác có thể giao dịch trực tiếp với bạn.\n(Chọn người chơi rồi bấm để xin giao dịch)"
 
 func _toggle_team_window() -> void:
 
@@ -1732,7 +1949,12 @@ func _refresh_pk_ui() -> void:
 
 		_pk_button.text = ""
 
-		SideMenu.set_active(_pk_button, _pk_mode != 0)
+		## Không vẽ vòng vàng khi bật PK: ảnh nút (khung Luyện công / Chiến đấu / Đồ sát) đã cho biết chế độ.
+		var pk_icon := _pk_button.get_node_or_null("PkIcon") as TextureRect
+		if pk_icon != null and not _pk_frames.is_empty():
+			## Gốc có khung 3 cho Bang chiến; ảnh pk.spr chỉ có 3 khung -> dùng khung Chiến đấu ánh tím.
+			pk_icon.texture = _pk_frames[mini(mini(_pk_mode, 2), _pk_frames.size() - 1)] if _pk_mode != 3 else _pk_frames[mini(1, _pk_frames.size() - 1)]
+			pk_icon.modulate = Color(0.85, 0.6, 1.0) if _pk_mode == 3 else Color.WHITE
 
 		match _pk_mode:
 

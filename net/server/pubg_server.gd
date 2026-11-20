@@ -36,7 +36,7 @@ const OP_QUIT := 12       ## bỏ trận (trong trận)
 const OP_DRAFT := 13      ## {horse 1-5, weapon 0-13, build {str, dex, vit, eng}} — chọn thẻ đầu trận (1 lần)
 
 ## Gói được gửi khi đang trong trận — chặn giao dịch / chợ / bày bán / mua / chế tạo... để đồ của hồ sơ tạm không lọt ra ngoài.
-const MATCH_ALLOWED := [NetProto.C_MOVE, NetProto.C_CAST, NetProto.C_DAMAGE, NetProto.C_PROFILE, NetProto.C_PICKUP,
+const MATCH_ALLOWED := [NetProto.C_MOVE, NetProto.C_CAST, NetProto.C_DAMAGE, NetProto.C_MSTATE, NetProto.C_PROFILE, NetProto.C_PICKUP,
 	NetProto.C_DISCARD, NetProto.C_LOOK, NetProto.C_REVIVE, NetProto.C_PING, NetProto.C_PVP_HIT, NetProto.C_CHAT,
 	NetProto.C_PUBG, NetProto.C_VIEW_EQUIP]
 

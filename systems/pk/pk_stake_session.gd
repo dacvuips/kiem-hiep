@@ -90,6 +90,8 @@ func offer_item(team_code: String, item: ItemInstance, profile: PlayerProfile) -
 		return "Vật phẩm không có trong hành trang."
 	if SecurityLock.is_item_locked(item) or item.lock_state == ItemInstance.LOCK_CHARACTER:
 		return "Vật phẩm đang bị khoá bảo vệ, không thể đem cược."
+	if item.lock_trade:
+		return "Vật phẩm khoá, không thể đem cược."
 	var spot := side.room.find_free_spot_any(item.get_size())
 	if spot.z < 0:
 		return "Khung đặt cược của bên bạn đã đầy ô."

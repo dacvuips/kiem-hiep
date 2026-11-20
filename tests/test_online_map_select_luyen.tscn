@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6v2j5l8x3n0p"]
+
+[ext_resource type="Script" path="res://tests/test_online_map_select_luyen.gd" id="1_test"]
+
+[node name="TestOnlineMapSelectLuyen" type="Node"]
+script = ExtResource("1_test")

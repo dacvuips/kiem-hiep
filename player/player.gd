@@ -168,6 +168,7 @@ func _ready() -> void:
 	var sect := SectRegistry.get_by_id(profile.sect_id) if profile else null
 	skill_controller.setup(sect)
 	skill_controller.skill_cast.connect(_on_skill_cast_for_range)
+	skill_controller.skill_cast.connect(_on_skill_cast_abrade)
 	for i in PlayerProfile.LOOP_SLOT_COUNT:
 		if i < skill_controller.loop_enabled.size() and skill_controller.loop_enabled[i]:
 			var s := skill_controller.get_loop_skill(i)
@@ -190,7 +191,7 @@ func _ready() -> void:
 		NetClient.connected_to_world.connect(_on_net_connected_for_name)
 	PotionEffect.restore_profile_states(profile, self)
 	refresh_appearance()
-	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
+	set_camp(get_effective_camp())
 	_build_move_marker()
 	add_child(RouteDots.new(self))
 	auto = AutoController.new(self)
@@ -218,7 +219,7 @@ func _on_stats_reset() -> void:
 ## CombatTargeting đọc `camp` mỗi lần quét.
 func set_camp(new_camp: int) -> void:
 	camp = new_camp
-	if _name_label:
+	if _name_label and _match_side == "":
 		_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
 
 ## Vừa gia nhập môn phái (SectPrompt): nạp skill của phái mới + dựng lại chỉ số + phe (màu tên).
@@ -226,7 +227,7 @@ func refresh_sect() -> void:
 	var profile := GameManager.local_profile
 	skill_controller.setup(SectRegistry.get_by_id(profile.sect_id) if profile else null)
 	refresh_combat_stats()
-	set_camp(profile.get_current_camp() if profile else Camp.Type.BEGIN)
+	set_camp(get_effective_camp())
 
 ## Tên nhân vật trên đầu, tô màu theo phe (giống VLTK) — đặt ngay trên thanh máu.
 ## Độ cao nhãn tên hiện tại (đổi khi cưỡi ngựa / nhảy) — ChatBubble hiện lời nói ngay trên đó.
@@ -384,6 +385,22 @@ func get_current_look() -> Dictionary:
 	if cur_aura == 0 and gm_aura > 0:
 		cur_aura = gm_aura
 	final_look["aura_state"] = cur_aura
+	## Hào quang đang bật (số skill + cấp thật) — máy đồng đội cùng phe đứng gần tự nhận chỉ số hào quang hỗ trợ.
+	final_look["aura_skill"] = 0
+	final_look["aura_level"] = 0
+	if profile.active_aura_id != "" and skill_controller != null:
+		var aura_skill: SkillDefinition = skill_controller._find_skill(profile.active_aura_id)
+		if aura_skill != null and aura_skill.is_aura and aura_skill.vltk_skill_id > 0:
+			final_look["aura_skill"] = aura_skill.vltk_skill_id
+			final_look["aura_level"] = skill_controller._learned_level(aura_skill)
+	## Hình buff/bùa đang dính (đã có hình trong dữ liệu) — gửi cho người khác thấy; hào quang đi riêng qua aura_state.
+	var states := []
+	if status_controller:
+		for st in status_controller.get_state_display_list():
+			var sid := int(st["meta"].get("state_id", 0))
+			if sid > 0 and sid != cur_aura and not states.has(sid) and not VltkSkillData.state(sid).is_empty():
+				states.append(sid)
+	final_look["states"] = NetProto.sanitize_states(states)
 	return final_look
 
 func set_match_level_tag(lvl: int, side: String = "") -> void:
@@ -442,6 +459,26 @@ func reset_name_color() -> void:
 		else:
 			_name_label.add_theme_color_override("font_color", Camp.get_color(camp))
 
+## Phe hiệu lực: theo đội trưởng nếu đang trong tổ đội (VLTK gốc: SetTempCurrentCamp), trừ khi đang bật PK Đồ sát / Bang chiến.
+func get_effective_camp() -> int:
+	if pk_mode == 2:
+		return Camp.Type.FREE
+	if pk_mode == 3:
+		return Camp.Type.TONGWAR
+	var p := GameManager.local_profile
+	if p:
+		var team := SocialHub.of(p).team
+		if team and team.in_team() and team.captain != null:
+			return team.captain.camp
+		return p.get_current_camp()
+	return camp
+
+## Cập nhật lại phe và màu tên (vào/rời tổ đội, đổi đội trưởng, đổi phái...)
+func refresh_name_color() -> void:
+	var cur_camp := get_effective_camp()
+	set_camp(cur_camp)
+	reset_name_color()
+
 ## Thanh máu trên đầu, dưới tên — chạy theo signal health_changed (cùng nguồn với HUD góc trái).
 func _build_head_health_bar() -> void:
 	_head_hp_bar = HealthBarScene.instantiate()
@@ -453,6 +490,7 @@ func _build_head_health_bar() -> void:
 	add_child(_head_hp_bar)
 	health_changed.connect(_on_health_changed_head_bar)
 	_on_health_changed_head_bar(health, max_health)
+	_apply_pk_hp_bar_color()
 	_apply_name_y()
 
 func _on_health_changed_head_bar(current: float, maximum: float) -> void:
@@ -611,6 +649,9 @@ func set_target(node: Variant, by_player := false) -> void:
 		return
 	_target_ring = TargetRing.new()
 	selected_target.add_child(_target_ring)
+	## Vòng nằm ở CHÂN (trùng aura): người chơi khác / bot PK có gốc node ở thân, chân lệch xuống FEET_OFFSET.
+	if selected_target.has_method("get_ground_position"):
+		_target_ring.position = selected_target.to_local(selected_target.get_ground_position())
 
 ## Skill vừa ra chiêu vào `node`: nếu là quái/người chơi khác thật (không phải điểm ngắm ảo) thì chọn làm mục tiêu.
 func mark_cast_target(node: Variant) -> void:
@@ -873,6 +914,7 @@ func _physics_process(delta: float) -> void:
 	var noclip: bool = GmManager.is_noclip if GmManager else false
 	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, _is_jumping, noclip)
 	move_and_slide()
+	_tick_move_abrade()
 	if not has_moved:
 		if global_position.distance_squared_to(spawn_position) > 100.0 or velocity.length_squared() > 10.0 or is_attacking or is_casting:
 			has_moved = true
@@ -895,9 +937,8 @@ func _physics_process(delta: float) -> void:
 		play_attack()
 
 	range_indicator.set_radius(_display_range())
-	## Phe đổi (lên cấp 10 hết Tân thủ, vào/rời bang...): đổi màu tên theo.
-	var lp := GameManager.local_profile
-	var cur_camp: int = lp.get_current_camp() if lp else camp
+	## Phe đổi (lên cấp 10 hết Tân thủ, vào/rời bang, vào/rời tổ đội...): đổi màu tên theo.
+	var cur_camp: int = get_effective_camp()
 	if cur_camp != camp:
 		set_camp(cur_camp)
 
@@ -962,7 +1003,7 @@ func _physics_process(delta: float) -> void:
 	if not is_auto_mode and _key_pressed("attack_skill"):
 		use_main_skill()
 
-	## Phím skill_1-4 = 4 ô đầu của trang thanh skill đang chọn.
+	## Phím skill_1-4 (bàn phím 5-8; 1-4 dành cho 4 ô thuốc QuickItemBar) = 4 ô đầu của trang thanh skill đang chọn.
 	var page_start: int = GameManager.local_profile.hotbar_page * PlayerProfile.HOTBAR_SLOTS_PER_PAGE 			if GameManager.local_profile else 0
 	for i in range(4):
 		if _key_pressed("skill_%d" % (i + 1)):
@@ -1322,6 +1363,36 @@ const RANGE_SHOW_MS := 3000
 var _range_skill: SkillDefinition = null
 var _range_until_ms := 0
 
+## ---- Độ bền trang bị (ItemDurability, KItemList::Abrade gốc) — OFFLINE tính ở đây; online do game server tính trên hồ sơ của nó
+## và gửi S_ITEM_DUR / S_PROFILE về (máy người chơi không tự trừ để khỏi lệch).
+const _NO_REGION := Vector2i(-2147483647, -2147483647)
+var _abrade_region := _NO_REGION
+
+func _on_skill_cast_abrade(_skill_id: String) -> void:
+	_apply_abrade(ItemDurability.Kind.ATTACK)   ## KNpc::DoSkill: mỗi lần ra chiêu
+
+func _tick_move_abrade() -> void:
+	var region := ItemDurability.region_of(global_position)
+	if region == _abrade_region:
+		return
+	var first := _abrade_region == _NO_REGION
+	_abrade_region = region
+	if not first:
+		_apply_abrade(ItemDurability.Kind.MOVE)   ## đổi vùng bản đồ (KNpc -> PlayerChangeRegion gốc)
+
+func _apply_abrade(kind: int) -> void:
+	var prof := GameManager.local_profile
+	if prof == null or NetWorldSync.is_online_mode():
+		return
+	var changes := ItemDurability.abrade(prof, kind)
+	if changes.is_empty():
+		return
+	for ch in changes:
+		var msg := ItemDurability.change_message(ch)
+		if msg != "":
+			ChatBox.push_system("[color=#ff6060]%s[/color]" % msg)
+	SaveManager.save_profile(prof)
+
 func _on_skill_cast_for_range(skill_id: String) -> void:
 	var s := skill_controller.get_skill(skill_id)
 	if s != null and (s.vltk_attack_radius > 0 or s.vltk_attribs.has("skill_attackradius") or ("range" in s and s.range > 0)):
@@ -1486,7 +1557,19 @@ func apply_hot(total_heal: float, duration: float) -> void:
 ## mods: phần phụ của đòn skill — xem Enemy.take_damage_from() / CombatFormulas.HitModifiers.
 var last_attacker: Node = null
 var last_attacker_name: String = ""
-var pk_mode: int = 0
+## 0 Luyện công, 1 Chiến đấu phe, 2 Đồ sát, 3 Bang chiến (Main.set_pk_mode gán).
+var pk_mode: int = 0:
+	set(v):
+		pk_mode = v
+		_apply_pk_hp_bar_color()
+
+## Màu ống máu theo trạng thái PK — đúng KNpc::PaintLife gốc: Đồ sát (238,18,137), Bang chiến (170,30,255);
+## Luyện công / Chiến đấu giữ màu theo % máu (xanh -> vàng -> đỏ).
+const PK_HP_BAR_COLORS := {2: Color8(238, 18, 137), 3: Color8(170, 30, 255)}
+
+func _apply_pk_hp_bar_color() -> void:
+	if _head_hp_bar != null and is_instance_valid(_head_hp_bar):
+		_head_hp_bar.set_fixed_color(PK_HP_BAR_COLORS.get(pk_mode, Color(0, 0, 0, 0)))
 
 func on_hit_target(target: Node, skill_info: Dictionary = {}) -> void:
 	if skill_controller != null and is_instance_valid(target) and target is Node2D:
@@ -1642,6 +1725,7 @@ func die() -> void:
 	died.emit()
 	if suppress_death_popup:
 		return
+	_apply_abrade(ItemDurability.Kind.DEFEND)   ## KNpc::DeathPunish: chết ngoài trận đặc biệt -> đồ phòng thủ tụt + % theo trị PK
 	GameManager.notify_game_over()
 	DeathPopup.show_for(self)
 
@@ -1860,6 +1944,9 @@ func toggle_ride() -> String:
 	_horse_ready_at_ms = now + int(HORSE_SWITCH_COOLDOWN * 1000.0)
 	profile.riding = not profile.riding
 	refresh_combat_stats()  ## chỉ số ngựa chỉ có hiệu lực khi cưỡi; kèm dựng lại hình
+	## Lưu ngay: online, server tính ngoại hình người khác thấy từ hồ sơ (riding) — chờ lần lưu sau thì có lúc
+	## server dựng lại hình từ bản cũ, người khác thấy mình lên/xuống ngựa sai.
+	SaveManager.save_profile(profile, true)
 	return ""
 
 func is_riding() -> bool:

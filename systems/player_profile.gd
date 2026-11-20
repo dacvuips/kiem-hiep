@@ -176,45 +176,58 @@ const LOOP_SLOT_COUNT := 1
 var loop_skill_ids: Array[String] = []
 ## Trang thanh skill đang chọn (0/1).
 var hotbar_page: int = 0
-## Vị trí các nút skill do người chơi tự sắp xếp: khoá ("main", "s0".."s7", "loop0", nút tiện ích "sit" / "jump" / "horse") -> [dx, dy] = độ dời (pixel HUD) so với vị trí
-## mặc định trong SkillBarUI.tscn. Thiếu khoá = đúng chỗ mặc định. Dùng chung cho cụm nút trong trận và bảng Kỹ Năng Võ Công.
-var skill_layout: Dictionary = {}
-## Ô trên cụm nút skill: bật / tắt + cỡ (bảng Kỹ năng -> Sắp xếp). Khoá như skill_layout -> {"on": bool, "size": tỉ lệ}.
-## Thiếu khoá = mặc định: DEFAULT_HIDDEN_SLOTS tắt, còn lại bật, cỡ 1.
-var skill_slots: Dictionary = {}
+## Vị trí / bật-tắt / cỡ các nút trên cụm nút skill do người chơi tự sắp xếp: cài đặt của MÁY, lưu ở
+## user://settings.cfg qua SkillSlotPrefs — KHÔNG nằm trong hồ sơ nhân vật, không gửi lên server.
+## Khoá: "main", "s0".."s7", "loop0", nút tiện ích "sit" / "jump" / "horse". Độ dời [dx, dy] tính so với vị trí mặc định
+## trong SkillBarUI.tscn. Thiếu khoá = mặc định: đúng chỗ, DEFAULT_HIDDEN_SLOTS tắt, còn lại bật, cỡ 1.
 const DEFAULT_HIDDEN_SLOTS := ["s4", "s5", "s7"]
 const SKILL_SLOT_MIN_SIZE := 0.6
 const SKILL_SLOT_MAX_SIZE := 1.6
 
 func is_skill_slot_on(key: String) -> bool:
-	var v: Variant = skill_slots.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.slots.get(key)
 	if v is Dictionary and (v as Dictionary).has("on"):
 		return bool(v["on"])
 	return not DEFAULT_HIDDEN_SLOTS.has(key)
 
 func set_skill_slot_on(key: String, on: bool) -> void:
-	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	SkillSlotPrefs.ensure_loaded()
+	var slots: Dictionary = SkillSlotPrefs.slots
+	var v: Dictionary = slots.get(key, {}) if slots.get(key) is Dictionary else {}
 	v["on"] = on
-	skill_slots[key] = v
+	slots[key] = v
+	SkillSlotPrefs.save()
 
 func get_skill_slot_size(key: String) -> float:
-	var v: Variant = skill_slots.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.slots.get(key)
 	return clampf(float(v.get("size", 1.0)), SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE) if v is Dictionary else 1.0
 
 func set_skill_slot_size(key: String, size: float) -> void:
-	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	SkillSlotPrefs.ensure_loaded()
+	var slots: Dictionary = SkillSlotPrefs.slots
+	var v: Dictionary = slots.get(key, {}) if slots.get(key) is Dictionary else {}
 	v["size"] = snappedf(clampf(size, SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE), 0.05)
-	skill_slots[key] = v
+	slots[key] = v
+	SkillSlotPrefs.save()
 
 func get_layout_offset(key: String) -> Vector2:
-	var v: Variant = skill_layout.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.layout.get(key)
 	return Vector2(float(v[0]), float(v[1])) if v is Array and v.size() >= 2 else Vector2.ZERO
 
 func set_layout_offset(key: String, offset: Vector2) -> void:
+	SkillSlotPrefs.ensure_loaded()
 	if offset.length() < 0.5:
-		skill_layout.erase(key)
+		SkillSlotPrefs.layout.erase(key)
 	else:
-		skill_layout[key] = [snappedf(offset.x, 0.1), snappedf(offset.y, 0.1)]
+		SkillSlotPrefs.layout[key] = [snappedf(offset.x, 0.1), snappedf(offset.y, 0.1)]
+	SkillSlotPrefs.save()
+
+## Về bố cục mặc định (nút "Mặc định" ở bảng Kỹ năng -> Sắp xếp).
+func reset_skill_layout() -> void:
+	SkillSlotPrefs.reset()
 ## Hào quang đang BẬT (skill is_aura — La Hán Trận, Thất Tinh Trận...): bấm skill để bật/tắt, chỉ 1 hào quang cùng
 ## lúc như chuột phải VLTK gốc. "" = không bật. Thuộc tính hào quang cộng vào chỉ số khi đang bật (CombatantBuild).
 var active_aura_id: String = ""
@@ -268,6 +281,42 @@ func remove_active_state(source_id: String) -> void:
 	for i in range(active_states.size() - 1, -1, -1):
 		if active_states[i] is Dictionary and str(active_states[i].get("source_id", "")) == source_id:
 			active_states.remove_at(i)
+
+## Tổng % tăng kinh nghiệm (expenhance_p) của nhân vật: dòng trên đồ đang mặc (chỉ dòng đã kích hoạt, như chỉ số)
+## + thuốc / trạng thái đang có (Tiên Thảo Lộ...). Server dùng khi cộng kinh nghiệm giết quái.
+func get_exp_enhance_p() -> int:
+	var total := get_active_exp_enhance_p()
+	for source in Equipment.get_attrib_sources(equipment, int(get_element())):
+		var v: Variant = source.get("expenhance_p")
+		if v is Vector3i:
+			total += v.x
+	return total
+
+## Xoá mọi món HẾT HẠN SỬ DỤNG (ItemInstance.expire_at) khỏi hành trang, đồ đang mặc và rương. Trả tên các món đã xoá.
+## Offline: GameManager kiểm định kỳ; online: chỉ game server gọi (lúc vào game + định kỳ) rồi gửi bản chuẩn xuống.
+func remove_expired_items(at: int = -1) -> Array[String]:
+	var now_s := at if at >= 0 else int(Time.get_unix_time_from_system())
+	var gone: Array[String] = []
+	for i in range(inventory.size() - 1, -1, -1):
+		var it: ItemInstance = inventory[i]
+		if it != null and it.is_expired(now_s):
+			gone.append(it.get_display_name())
+			inventory.remove_at(i)
+	var took_off := false
+	for part in equipment.keys():
+		var worn: ItemInstance = equipment[part]
+		if worn != null and worn.is_expired(now_s):
+			gone.append(worn.get_display_name())
+			equipment.erase(part)
+			took_off = true
+	for i in range(storage.inventory.size() - 1, -1, -1):
+		var st: ItemInstance = storage.inventory[i]
+		if st != null and st.is_expired(now_s):
+			gone.append(st.get_display_name())
+			storage.inventory.remove_at(i)
+	if took_off:
+		equipment_changed.emit()
+	return gone
 
 func get_active_exp_enhance_p() -> int:
 	var total := 0
@@ -677,6 +726,38 @@ func add_item(item: ItemInstance) -> bool:
 	inventory.append(item)
 	return true
 
+## Hai món gộp chung 1 chồng được không: cùng mã vật phẩm khác, cấp, hệ, trạng thái khoá; chưa đặt giá bán.
+static func can_stack(a: ItemInstance, b: ItemInstance) -> bool:
+	return a != null and b != null and a != b and a.is_misc() and a.misc_id == b.misc_id \
+		and a.item_level == b.item_level and a.series == b.series and a.lock_state == b.lock_state \
+		and a.lock_trade == b.lock_trade and a.lock_sell == b.lock_sell and a.lock_drop == b.lock_drop and a.expire_at == b.expire_at \
+		and a.trade_price == 0 and b.trade_price == 0 and ItemDatabase.max_stack(a.misc_id) > 1
+
+## Thêm vào túi, GỘP vào các chồng cùng loại còn chỗ trước (tối đa ItemDatabase.max_stack), phần dư mới chiếm ô mới.
+## true = đã nhận hết. false = hết chỗ: `item.count` còn lại số chưa nhận được (phần đã gộp vẫn giữ trong túi).
+func add_item_stacked(item: ItemInstance) -> bool:
+	if item == null:
+		return false
+	var cap := ItemDatabase.max_stack(item.misc_id) if item.is_misc() else 1
+	if cap > 1:
+		for it in inventory:
+			if item.count <= 0:
+				break
+			if it.count < cap and can_stack(it, item):
+				var take := mini(cap - it.count, item.count)
+				it.count += take
+				item.count -= take
+		while item.count > cap:   ## dư hơn 1 chồng: tách thành chồng đầy ở ô mới
+			var part := ItemInstance.from_dict(item.to_dict())
+			part.uid = ItemInstance.new_uid()
+			part.count = cap
+			if not add_item(part):
+				return false
+			item.count -= cap
+		if item.count <= 0:
+			return true
+	return add_item(item)
+
 ## Sinh đồ web Admin tặng (admin_grants) vào hành trang — trả số món đã thêm; món không đủ chỗ / hỏng thì giữ / bỏ.
 func apply_admin_grants() -> int:
 	var added := 0
@@ -857,6 +938,8 @@ func equip_from_inventory(index: int) -> String:
 	var item := inventory[index]
 	if item.trade_price > 0:
 		return "Vật phẩm đang được đặt giá bán, không thể mặc"
+	if ItemDurability.is_broken(item):
+		return "Trang bị đã hỏng, hãy đến thợ rèn sửa trước khi mặc"   ## KItemList::CanEquip gốc: độ bền 0 không mặc được
 	var parts: Array = Equipment.DETAIL_TO_PARTS.get(item.get_detail(), [])
 	if parts.is_empty():
 		return "Không mặc được món này"
@@ -1027,11 +1110,20 @@ var server_seen: int = 0
 ## Quà tân thủ (StarterKit): bit STARTER_ITEMS = đã nhận đồ + lên cấp khởi đầu, STARTER_WEAPON = đã nhận vũ khí sau khi vào phái.
 ## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
 var starter_kit: int = 0
+## Ủy thác (UyThac): mốc giờ (giây unix) lần cuối nhân vật còn trong game + báo cáo lần ủy thác gần nhất.
+## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
+var uy_thac_seen: int = 0
+var uy_thac_report: Dictionary = {}
+## Quỹ giờ ủy thác (giây) theo hệ số EXP ("1.0" / "1.5" / "2.0") — cộng khi dùng Bạch Câu Hoàn (UyThac.use).
+var uy_thac_bank: Dictionary = {}
 
 func to_dict() -> Dictionary:
 	return {
 		"server_seen": server_seen,
 		"starter_kit": starter_kit,
+		"uy_thac_seen": uy_thac_seen,
+		"uy_thac_report": uy_thac_report.duplicate(),
+		"uy_thac_bank": uy_thac_bank.duplicate(),
 		"name": display_name,
 		"gender": gender,
 		"level": level,
@@ -1049,6 +1141,7 @@ func to_dict() -> Dictionary:
 		"element": element,
 		"camp": camp,
 		"show_mask": show_mask,
+		"riding": riding,   ## đang cưỡi / đã xuống ngựa — server tính ngoại hình (look_from_profile) từ đây
 		"custom_avatar": custom_avatar,
 		"inventory": inventory.map(func(it: ItemInstance) -> Dictionary: return it.to_dict()),
 		"equipment": _equipment_to_dict(),
@@ -1058,20 +1151,11 @@ func to_dict() -> Dictionary:
 		"energy": energy,
 		"potential_points": potential_points,
 		"skill_points": skill_points,
-## Ủy thác (UyThac): mốc giờ (giây unix) lần cuối nhân vật còn trong game + báo cáo lần ủy thác gần nhất.
-## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
-var uy_thac_seen: int = 0
-var uy_thac_report: Dictionary = {}
-## Quỹ giờ ủy thác (giây) theo hệ số EXP ("1.0" / "1.5" / "2.0") — cộng khi dùng Bạch Câu Hoàn (UyThac.use).
-var uy_thac_bank: Dictionary = {}
 		"skill_levels": skill_levels.duplicate(true),
 		"thu_thanh_level": thu_thanh_level,
 		"thu_thanh_exp": thu_thanh_exp,
 		"thu_thanh_skill_levels": thu_thanh_skill_levels.duplicate(),
 		"thu_thanh_skill_points": thu_thanh_skill_points,
-		"uy_thac_seen": uy_thac_seen,
-		"uy_thac_report": uy_thac_report.duplicate(),
-		"uy_thac_bank": uy_thac_bank.duplicate(),
 		"thu_thanh_selected_skills": thu_thanh_selected_skills.duplicate(),
 		"gold": gold,
 		"xu": xu,
@@ -1085,8 +1169,6 @@ var uy_thac_bank: Dictionary = {}
 		"gem_slots": gem_slots,
 		"hotbar_skill_ids": hotbar_skill_ids,
 		"hotbar_page": hotbar_page,
-		"skill_layout": skill_layout,
-		"skill_slots": skill_slots.duplicate(true),
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
 		"gm_aura_state": gm_aura_state,
@@ -1147,7 +1229,14 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.camp = -1
 	profile.server_seen = int(data.get("server_seen", 0))
 	profile.starter_kit = int(data.get("starter_kit", 0))
+	profile.uy_thac_seen = int(data.get("uy_thac_seen", 0))
+	profile.uy_thac_report = (data.get("uy_thac_report") as Dictionary).duplicate() if data.get("uy_thac_report") is Dictionary else {}
+	if data.get("uy_thac_bank") is Dictionary:
+		for k in data["uy_thac_bank"]:
+			if int(data["uy_thac_bank"][k]) > 0:
+				profile.uy_thac_bank[str(k)] = int(data["uy_thac_bank"][k])
 	profile.show_mask = bool(data.get("show_mask", true))
+	profile.riding = bool(data.get("riding", true))   ## bản lưu cũ chưa có khoá này: như trước (có ngựa = cưỡi)
 	profile.custom_avatar = str(data.get("custom_avatar", ""))
 	if profile.custom_avatar.strip_edges() == "" and profile.display_name != "":
 		profile.custom_avatar = CustomAvatarHelper.get_avatar_base64_cache(profile.display_name)
@@ -1178,12 +1267,6 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.thu_thanh_selected_skills.append(str(s_id))
 	profile.gold = int(data.get("gold", 0))
 	profile.xu = int(data.get("xu", 0))
-	profile.uy_thac_seen = int(data.get("uy_thac_seen", 0))
-	profile.uy_thac_report = (data.get("uy_thac_report") as Dictionary).duplicate() if data.get("uy_thac_report") is Dictionary else {}
-	if data.get("uy_thac_bank") is Dictionary:
-		for k in data["uy_thac_bank"]:
-			if int(data["uy_thac_bank"][k]) > 0:
-				profile.uy_thac_bank[str(k)] = int(data["uy_thac_bank"][k])
 	profile.jade = int(data.get("jade", 0))
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))
@@ -1207,12 +1290,10 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.loop_skill_ids[i] = str(saved_loop[i])
 	profile.main_skill_id = str(data.get("main_skill_id", ""))
 	profile.hotbar_page = clampi(int(data.get("hotbar_page", 0)), 0, HOTBAR_PAGES - 1)
-	var saved_layout: Variant = data.get("skill_layout", {})
-	if saved_layout is Dictionary:
-		profile.skill_layout = saved_layout.duplicate(true)
-	var saved_skill_slots: Variant = data.get("skill_slots", {})
-	if saved_skill_slots is Dictionary:
-		profile.skill_slots = saved_skill_slots.duplicate(true)
+	## Bố cục nút skill giờ là cài đặt của máy (SkillSlotPrefs). File hồ sơ cũ còn "skill_layout" / "skill_slots" thì chuyển
+	## sang máy 1 lần (chỉ ở client có màn hình — server headless không giữ cài đặt giao diện), không đọc vào hồ sơ nữa.
+	if (data.has("skill_layout") or data.has("skill_slots")) and DisplayServer.get_name() != "headless":
+		SkillSlotPrefs.import_legacy(data.get("skill_layout"), data.get("skill_slots"))
 	profile.active_aura_id = str(data.get("active_aura_id", ""))
 	profile.gm_aura_state = int(data.get("gm_aura_state", 0))
 	profile.storage_extra = clampi(int(data.get("storage_extra", 0)), 0, 5)

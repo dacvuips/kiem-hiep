@@ -157,7 +157,23 @@ func apply_settings() -> void:
 	if profile == null:
 		return
 	var s := settings()
-	SocialHub.of(profile).team.auto_refuse_invite = s.team_on and s.accept_mode == 0
+	var team := SocialHub.of(profile).team
+	## Thiết lập tổ đội chỉ có hiệu lực khi auto đang chạy (lưu thiết lập lúc auto tắt thì chưa áp).
+	team.auto_team = running and s.team_on
+	team.auto_refuse_invite = team.auto_team and s.accept_mode == 0
+
+## Tắt thiết lập tổ đội của auto (dừng auto / rời màn chơi): lời mời vào đội lại hỏi người chơi như thường.
+func _release_team() -> void:
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var team := SocialHub.of(profile).team
+	team.auto_team = false
+	team.auto_refuse_invite = false
+
+func _exit_tree() -> void:
+	if running:
+		_release_team()
 
 func _start() -> void:
 	running = true
@@ -173,6 +189,7 @@ func _start() -> void:
 
 func _stop() -> void:
 	running = false
+	_release_team()
 	_drop_target()
 	_loot = null
 	if _resting and player.is_sitting():

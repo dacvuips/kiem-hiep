@@ -42,7 +42,7 @@ const WHEEL_TOOLS := [["sit", "sit", Vector2(-383, -38), 52.0, "Ngồi"], ["jump
 	["horse", "horse", Vector2(-315, -44), 64.0, "Ngựa"]]
 var _wheel_page_buttons: Array[Button] = []
 var _wheel_swap: Button
-## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào PlayerProfile.skill_layout, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
+## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào SkillSlotPrefs, lưu trên máy, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
 var _arranging := false
 ## Sắp xếp: ô đang chọn (bấm không kéo) để thêm / ẩn / đổi cỡ — NO_DRAG = chưa chọn.
 var _selected_slot := NO_DRAG
@@ -445,8 +445,7 @@ func _set_arranging(on: bool) -> void:
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ — tắt \"Sắp xếp\" để gắn kỹ năng" if on else "Đã lưu vị trí các nút")
 
 func _reset_layout() -> void:
-	_profile.skill_layout.clear()
-	_profile.skill_slots.clear()
+	_profile.reset_skill_layout()
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
@@ -494,7 +493,7 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 	parent.add_child(holder)
 	var icon := TextureRect.new()
 	icon.name = "Icon"
-	icon.material = SkillButton.make_circle_mask_material()
+	icon.material = SkillButton.make_icon_fit_material()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -557,7 +556,7 @@ func _refresh_wheel() -> void:
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
 			## Nút Nhảy là ô tròn cắt icon như nút skill (SkillBarUI._style_jump_button); Ngồi / Ngựa giữ ảnh tròn gốc.
-			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
+			icon.material = SkillButton.make_icon_fit_material() if str(tool[0]) == "jump" else null
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
@@ -573,7 +572,7 @@ func _refresh_wheel() -> void:
 				("Ô thi triển liên tục — kỹ năng gắn vào đây tự ra chiêu mỗi khi hồi xong" if slot >= LOOP_BASE \
 				else "Ô trống — kéo kỹ năng vào đây")
 
-## Ô tắt hiện mờ, cỡ ô theo PlayerProfile.skill_slots (scale quanh tâm).
+## Ô tắt hiện mờ, cỡ ô theo SkillSlotPrefs (scale quanh tâm).
 func _apply_slot_looks() -> void:
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]

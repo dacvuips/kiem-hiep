@@ -353,6 +353,13 @@ const LIFE_CAP_LEVEL_10 := 200
 const LEVEL_KEYS := {"life": "Life", "exp": "Exp", "attack_rating": "AttackRating", "defense": "Defense",
 	"min_damage": "MinDamage", "max_damage": "MaxDamage"}
 
+## Quái cấp ≤ 10 (làng tân thủ: Kim Miêu, Hươu đốm, Heo trắng…; không phải boss) là quái HIỀN: không tự tìm người chơi, chỉ đánh lại kẻ vừa đánh mình.
+## Dùng chung cho VltkMonster (offline) và ServerMonster (online).
+const PASSIVE_MAX_LEVEL := 10
+
+static func is_passive(m: Dictionary, level: int) -> bool:
+	return level <= PASSIVE_MAX_LEVEL and not bool(m.get("is_boss", false))
+
 static func stat_at_level(m: Dictionary, stat: String, level: int) -> int:
 	var table: Dictionary = m.get("level_table", {})
 	if not table.is_empty() and LEVEL_KEYS.has(stat):

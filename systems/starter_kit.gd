@@ -14,6 +14,8 @@ const ITEMS := 1                   ## bit của PlayerProfile.starter_kit
 const WEAPON := 2
 const START_LEVEL := 10            ## = PlayerProfile.NEWBIE_LEVEL: vào game là đủ cấp chọn phái
 const GOLD_ROWS := [176, 177, 178, 179, 180, 181, 182, 183, 184, 513]   ## AddGoldItem 177..185 (Kim Phong) + 514 (nhẫn tân thủ)
+## Đồ Hoàng Kim tân thủ: VẬT PHẨM KHOÁ (không giao dịch / bán / vứt) + hạn sử dụng GOLD_EXPIRE_DAYS ngày kể từ lúc phát (yêu cầu người dùng).
+const GOLD_EXPIRE_DAYS := 30
 const HORSE := [ItemDatabase.Detail.HORSE, 2, 9]                       ## Túc Sương
 ## [mã thuốc, số bình]: Kim Sáng Dược (trung) hồi sinh lực, Ngưng Thần đan (trung) hồi nội lực — thuốc không chồng nên mỗi bình 1 ô.
 const POTIONS := [["1_0_0_2", 10], ["1_1_0_2", 10]]
@@ -28,7 +30,11 @@ static func apply(p: PlayerProfile) -> int:
 		p.level_up()
 	var added := 0
 	for row in GOLD_ROWS:
-		added += _add(p, ItemGenerator.generate_gold(ItemDatabase.gold_index_of_row(row)))
+		var gold := ItemGenerator.generate_gold(ItemDatabase.gold_index_of_row(row))
+		if gold != null:
+			gold.set_bound(true, true, true)
+			gold.set_expire_days(GOLD_EXPIRE_DAYS)
+		added += _add(p, gold)
 	var horse := ItemDatabase.find_base(HORSE[0], HORSE[1], HORSE[2])
 	if horse >= 0:
 		added += _add(p, ItemGenerator.generate(HORSE[0], HORSE[1], HORSE[2], p.get_element(), []))

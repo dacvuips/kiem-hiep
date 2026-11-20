@@ -367,7 +367,32 @@ func on_team(c, b: StreamPeerBuffer) -> void:
 			if t:
 				gs.notice(c, "Bạn đang ở trong một tổ đội.")
 				return
-			if cap == null or cap.team == null or cap.team.captain() != cap:
+			if cap == null:
+				gs.notice(c, "Người chơi không còn ở gần.")
+				return
+			if cap.team == null:
+				## Đối phương chưa có đội: tự động lập đội cho mình và gửi lời mời vào đội (S_TEAM_INVITE) tới đối phương
+				if SocialRules.team_member_cap(c.profile.lead_level) >= 1:
+					t = Team.new()
+					t.members = [c]
+					c.team = t
+					is_cap = true
+					_send_team(t)
+					var err := _join_error(t, cap)
+					if err != "":
+						gs.notice(c, err)
+						return
+					_team_invites["%d:%d" % [c.entity.eid, cap.entity.eid]] = gs.now() + 20.0
+					var w := NetProto.writer(NetProto.S_TEAM_INVITE)
+					w.put_u32(c.entity.eid)
+					NetProto.put_str(w, c.entity.name)
+					gs.send(cap, w)
+					gs.notice(c, "Tạo tổ đội thành công. Đã gửi lời mời vào đội tới %s." % cap.entity.name)
+					return
+				else:
+					gs.notice(c, "Người này chưa lập đội, và bạn chưa đủ cấp lãnh đạo để lập đội.")
+					return
+			if cap.team.captain() != cap:
 				gs.notice(c, "Người này không phải đội trưởng đang nhận người.")
 				return
 			var ct: Team = cap.team
@@ -383,6 +408,11 @@ func on_team(c, b: StreamPeerBuffer) -> void:
 			gs.notice(c, "Đã gửi lời xin vào đội của %s." % cap.entity.name)
 			gs.notice(cap, "%s (cấp %d) xin vào đội." % [c.entity.name, c.profile.level])
 			_send_team(ct)
+			var w := NetProto.writer(NetProto.S_TEAM_APPLY)
+			w.put_u32(c.entity.eid)
+			NetProto.put_str(w, c.entity.name)
+			w.put_u16(c.profile.level)
+			gs.send(cap, w)
 		TEAM_ACCEPT, TEAM_REJECT:
 			var who = gs.conn_of_eid(arg)
 			if not is_cap or who == null or not t.applicants.has(who):

@@ -184,7 +184,23 @@ Bot không biết vị trí người ngoài tầm nhìn (không "hack map").
   quái nhắm được bot; RelationServer chuyển đòn vào bot cho BotManager. Lệnh thử `/testbot [phái] [cấp]` (chỉ GAME_TEST_MODE).
   Test: `bot_body_tests` 37/37, `bot_online_tests` 10/10 (bot client thật), Lộn Xộn / PUBG online vẫn đạt.
   Lưu ý: quái chỉ "thức" quanh người thật — bot cày quái xa người thật thì quái không đánh lại (đỡ tốn CPU).
-- [ ] Bước 2 — bộ não chiến đấu (mục 2b).
+- [x] **Bước 2 (2026-11-19)** — `BotCombatBrain` (mục 2b): bộ chiêu tự phân loại, hào quang ngay khi vào, buff trước khi đánh, bùa,
+  khống chế (chỉ khi không yếu hơn hẳn đòn mạnh nhất), đòn vùng khi đông, cận chiến vòng quanh / đánh xa thả diều, né theo đường đạn
+  (hồi né 2,5 / 1,5 / 1 giây, không né giữa động tác, cận chiến đứng đổi đòn), nhảy đuổi khi đối thủ chạy thật (xa dần 3 lượt) và máu
+  < 60%, bơm máu (giữ 2 bình), ngồi thiền, rút khi yếu, phân tâm / ngắm lệch / nhịp tay theo độ khó; bước di chuyển đủ dài để không
+  chạy-dừng. Trạng thái trên bot (buff / bùa / hào quang / làm chậm / độc / choáng), đòn trúng theo đường đạn / vùng nổ.
+  Lệnh thử `/testbots N [độ khó]` (BotArenaPolicy: hỗn chiến, chết 5 giây sống lại) + `/testbotstats`.
+  Test: `bot_brain_tests` 23/23 (bot Khó thắng bot Dễ cùng sức 14–18 / 20 trận), `bot_bench_tests` 18/18.
+  **Số đo (máy dev, server thử + bot client cùng máy, 2026-11-19):**
+  | | 20 bot | 60 bot |
+  |---|---|---|
+  | Ping khứ hồi | 17 ms (như khi chưa có bot) | 17 ms |
+  | Vị trí bot lúc chạy | 111 ms / lần (= nhịp server 9 lần / giây), lệch 8 ms, 0 bước giật | 111 ms, lệch 8–19 ms, 0–1 bước giật |
+  | Tick server | tb ~1,1 ms, max ~3 ms | tb ~2,8 ms, max 5–8 ms (ngân sách 55,6 ms) |
+  | Băng thông tới 1 người xem | ~3 KB/s | ~5,5 KB/s |
+  Sinh 40 bot cùng lúc làm 1 tick vọt ~60 ms (tạo bộ chiêu) — BotDirector (bước 3) phải sinh rải rác.
+  Hỗn chiến đông người thì bot Khó chỉ nhỉnh hơn bot Dễ (ai bị nhiều người đánh hội đồng là chính); đấu tay đôi thì Khó hơn rõ.
+- [ ] Bước 3 — kịch bản Lộn Xộn + BotDirector.
 
 ## 6. Cần chốt (đang theo mặc định bên phải)
 

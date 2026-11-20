@@ -30,6 +30,7 @@ var stall: Dictionary = {}        ## {seller, title, items}
 var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
 var team_hp: Dictionary = {}      ## eid đồng đội -> [hp %, near] (S_TEAM_HP mới nhất)
 var team_invites: Array = []      ## [captain_eid]
+var team_applies: Array = []      ## [{eid, name, level}]
 var chats: Array = []             ## [{channel, from, to, text}]
 var guild: Dictionary = {}        ## bang của mình (S_GUILD)
 var guild_list: Array = []
@@ -48,6 +49,7 @@ var field_msgs: Array = []        ## gói S_FIELD nhận được (phòng train 
 var market_msgs: Array = []       ## gói S_MARKET nhận được (Chợ Giao Thương)
 var pubg_msgs: Array = []         ## gói S_PUBG nhận được (Chiến Trường Sinh Tồn)
 var lonxon_msgs: Array = []       ## gói S_LONXON nhận được (Lộn Xộn)
+var pongs: Array = []             ## thời gian khứ hồi (ms) của các lần ping()
 var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HELLO_HUB) như Character Hub
 var _token := ""
 var _character_id := 0
@@ -109,6 +111,12 @@ func pubg(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_PUBG)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Đo độ trễ: gửi C_PING kèm mốc thời gian, S_PONG về thì ghi thời gian khứ hồi vào `pongs`.
+func ping() -> void:
+	var b := NetProto.writer(NetProto.C_PING)
+	b.put_u32(Time.get_ticks_msec())
 	_send(b, NetProto.CH_RELIABLE)
 
 ## Lộn Xộn: op LonXonServer.OP_* + tham số.
@@ -351,6 +359,7 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				b.get_u8()
 				var fl := b.get_u8()
 				var hp := b.get_u8()
+				b.get_u8()   ## tuổi mẫu (NetProto v4)
 				states_received += 1
 				if known.has(id):
 					known[id].pos = pos
@@ -476,6 +485,11 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TEAM_INVITE:
 			team_invites.append(b.get_u32())
 			NetProto.get_str(b)
+		NetProto.S_TEAM_APPLY:
+			var ae := b.get_u32()
+			var an := NetProto.get_str(b)
+			var al := b.get_u16()
+			team_applies.append({"eid": ae, "name": an, "level": al})
 		NetProto.S_STALL_SIGN:
 			var se := b.get_u32()
 			var stt := NetProto.get_str(b)
@@ -502,6 +516,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var pmsg := NetProto.get_json(b)
 			if not pmsg.is_empty():
 				pubg_msgs.append(pmsg)
+		NetProto.S_PONG:
+			var sent := b.get_u32()
+			b.get_u32()
+			pongs.append(Time.get_ticks_msec() - sent)
 		NetProto.S_LONXON:
 			var lmsg := NetProto.get_json(b)
 			if not lmsg.is_empty():

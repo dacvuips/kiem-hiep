@@ -229,8 +229,13 @@ class DamageResult:
 ## m_nPKDamageRate, KNpc.cpp:2592 nhân vào damage khi cả 2 bên là kind_player).
 const PK_DAMAGE_RATE_PERCENT := 20
 ## Hệ số chung sát thương QUÁI gây ra cho người chơi / đồng minh (KHÔNG có trong gốc — chỉnh cân bằng riêng của game).
-## 50 = mọi đòn của quái (cận chiến, đạn, va chạm, kể cả độc/sát thương ngũ hành đi kèm) còn 1/2. Quái đánh quái giữ nguyên.
-const MONSTER_DAMAGE_RATE_PERCENT := 50
+## 100 = đúng bảng C++ gốc (lực tay MinDamage/MaxDamage + PhysicalDamageBase, không nhân thêm). Quái đánh quái giữ nguyên.
+const MONSTER_DAMAGE_RATE_PERCENT := 100
+
+## Quái đánh người: hệ số server thật (apply_server_damage_scaling, vật lý ~x5) CHỈ áp cho quái ải Tinh anh (hell_stars > 0);
+## map thường dùng đúng số mã nguồn C++. Đòn của người chơi / bot vào quái vẫn luôn qua hệ số này như cũ.
+static func monster_uses_server_scaling(attacker: Node) -> bool:
+	return attacker != null and is_instance_valid(attacker) and int(attacker.get("hell_stars") if "hell_stars" in attacker else 0) > 0
 
 ## Node có phải quái (VltkMonster hoặc Enemy cũ enemies/enemy.gd) không.
 static func is_monster(node: Node) -> bool:

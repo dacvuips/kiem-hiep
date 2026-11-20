@@ -345,10 +345,6 @@ func _init() -> void:
 	_grid.add_theme_constant_override("v_separation", 4)
 	_grid_scroll.add_child(_grid)
 
-	var money := CurrencyStrip.new(func() -> PlayerProfile: return _profile, _refresh, 0.72)
-	money.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	body.add_child(money)
-
 	_message = SocialUi.label("", SocialUi.WARN, 12)
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_message)

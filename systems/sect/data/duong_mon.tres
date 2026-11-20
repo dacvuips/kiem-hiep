@@ -1052,6 +1052,7 @@ stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_91"), Su
 is_hotbar = true
 [sub_resource type="Resource" id="SubResource_101"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 15, 0, 20, 115, 0)
 label = "Sát thương vật lý - ngoại công"
 value_at_level_1 = 15.0
 value_at_max_level = 115.0
@@ -1520,6 +1521,7 @@ value_at_level_1 = 448.0
 value_at_max_level = 512.0
 [sub_resource type="Resource" id="SubResource_150"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 40, 0, 20, 80, 0, 23, 92, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 40.0
 value_at_max_level = 92.0
@@ -1594,6 +1596,7 @@ value_at_level_1 = 448.0
 value_at_max_level = 512.0
 [sub_resource type="Resource" id="SubResource_157"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 35, 0, 20, 100, 0, 23, 120, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 35.0
 value_at_max_level = 120.0
@@ -1671,6 +1674,7 @@ value_at_level_1 = 448.0
 value_at_max_level = 512.0
 [sub_resource type="Resource" id="SubResource_165"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 36, 0, 20, 90, 0, 23, 107, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 36.0
 value_at_max_level = 107.0
@@ -1740,6 +1744,7 @@ value_at_max_level = 8.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_171"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 45, 0)
 label = "Tăng sát thương kỹ năng liên kết #1"
 value_at_level_1 = 1.0
 value_at_max_level = 45.0
@@ -1747,6 +1752,7 @@ suffix = "%"
 target_skill_id = "duong_mon_nhiep_hon_nguyet_anh"
 [sub_resource type="Resource" id="SubResource_172"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 35, 0)
 label = "Tăng sát thương kỹ năng liên kết #2"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
@@ -1754,6 +1760,7 @@ suffix = "%"
 target_skill_id = "duong_mon_bao_vu_le_hoa"
 [sub_resource type="Resource" id="SubResource_173"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 40, 0)
 label = "Tăng sát thương kỹ năng liên kết #3"
 value_at_level_1 = 1.0
 value_at_max_level = 40.0
@@ -1761,6 +1768,7 @@ suffix = "%"
 target_skill_id = "duong_mon_cuu_cung_phi_tinh"
 [sub_resource type="Resource" id="SubResource_174"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 35, 0)
 label = "Tăng sát thương kỹ năng liên kết #4"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
@@ -1768,6 +1776,7 @@ suffix = "%"
 target_skill_id = "duong_mon_tan_hoa_tieu"
 [sub_resource type="Resource" id="SubResource_175"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 35, 0)
 label = "Tăng sát thương kỹ năng liên kết #5"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
@@ -1775,6 +1784,7 @@ suffix = "%"
 target_skill_id = "duong_mon_tieu_ly_phi_dao"
 [sub_resource type="Resource" id="SubResource_176"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 35, 0)
 label = "Tăng sát thương kỹ năng liên kết #6"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0
@@ -1782,6 +1792,7 @@ suffix = "%"
 target_skill_id = "duong_mon_thien_la_dia_vong"
 [sub_resource type="Resource" id="SubResource_177"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 38, 0)
 label = "Tăng sát thương kỹ năng liên kết #7"
 value_at_level_1 = 1.0
 value_at_max_level = 38.0
@@ -1789,6 +1800,7 @@ suffix = "%"
 target_skill_id = "duong_mon_vo_anh_xuyen"
 [sub_resource type="Resource" id="SubResource_178"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 30, 0)
 label = "Tăng sát thương kỹ năng liên kết #8"
 value_at_level_1 = 1.0
 value_at_max_level = 30.0
@@ -1796,6 +1808,7 @@ suffix = "%"
 target_skill_id = "duong_mon_thiet_lien_tu_sat"
 [sub_resource type="Resource" id="SubResource_179"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 35, 0)
 label = "Tăng sát thương kỹ năng liên kết #9"
 value_at_level_1 = 1.0
 value_at_max_level = 35.0

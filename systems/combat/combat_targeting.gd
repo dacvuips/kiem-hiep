@@ -13,8 +13,11 @@ static func is_player(node: Node) -> bool:
 	return node != null and node.is_in_group("player")
 
 static func get_camp(node: Node) -> int:
-	if node != null and "camp" in node:
-		return int(node.camp)
+	if node != null:
+		if node.has_method("get_effective_camp"):
+			return int(node.call("get_effective_camp"))
+		if "camp" in node:
+			return int(node.camp)
 	return Camp.Type.ANIMAL
 
 ## Quan hệ của `b` nhìn từ phía `a`. Giữa 2 người chơi khác phe: chỉ là ĐỊCH khi `a` đang bật PK
@@ -55,6 +58,34 @@ static func find_in_radius(relative_to: Node, center: Vector2, radius: float, en
 				continue
 			seen[node] = true
 			if node.global_position.distance_to(center) > radius:
+				continue
+			var rel := get_relation(relative_to, node)
+			if (enemies and rel == Camp.Relation.ENEMY) or (allies and rel == Camp.Relation.ALLY):
+				out.append(node)
+	return out
+
+## Nhân vật `node` có đứng trong vùng đạn VLTK tâm `center` (toạ độ màn hình, CHÂN) không — NGUYÊN VĂN
+## KMissle::ProcessCollision gốc: quét hình VUÔNG ±DmgRange/2 ô quanh ô chứa tâm, ô logic 32×32 với y logic = 2 × y
+## màn hình -> trên màn hình vùng rộng gấp đôi cao (DmgRange 10: ngang ±176px, dọc ±88px). DmgRange 1 = chỉ đúng ô tâm.
+static func in_vltk_cells(center: Vector2, node: Node2D, dmg_range: int) -> bool:
+	@warning_ignore("integer_division")
+	var half := dmg_range / 2
+	var c := VltkMath.cell_of(VltkMath.to_logic(center))
+	var n := VltkMath.cell_of(VltkMath.logic_of(node))
+	return absi(n.x - c.x) <= half and absi(n.y - c.y) <= half
+
+## Như find_in_radius nhưng vùng theo ô đạn VLTK (in_vltk_cells) — dùng cho buff đồng đội / hào quang hỗ trợ.
+static func find_in_cells(relative_to: Node, center: Vector2, dmg_range: int, enemies: bool, allies: bool) -> Array[Node2D]:
+	var out: Array[Node2D] = []
+	if relative_to == null or not relative_to.is_inside_tree() or dmg_range <= 0:
+		return out
+	var seen := {}
+	for group in COMBATANT_GROUPS:
+		for node in relative_to.get_tree().get_nodes_in_group(group):
+			if not (node is Node2D) or seen.has(node) or not is_instance_valid(node) or node.is_queued_for_deletion():
+				continue
+			seen[node] = true
+			if not in_vltk_cells(center, node, dmg_range):
 				continue
 			var rel := get_relation(relative_to, node)
 			if (enemies and rel == Camp.Relation.ENEMY) or (allies and rel == Camp.Relation.ALLY):

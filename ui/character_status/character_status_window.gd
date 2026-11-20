@@ -23,6 +23,7 @@ func _ready() -> void:
 	layer = DraggableWindow.WINDOW_LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var window := DraggableWindow.new("Nhân vật", true)
+	window.default_side = -1   ## mặc định bám mép trái — Hành trang mở bám mép phải
 	window.close_requested.connect(queue_free)
 	## Dời nút X vào trong thanh tiêu đề gỗ của ảnh khung (góc phải, trước tua rua đỏ).
 	window.close_button.offset_left = -88

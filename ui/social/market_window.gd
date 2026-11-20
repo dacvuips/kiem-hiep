@@ -579,6 +579,9 @@ func _on_bag_item(item: ItemInstance) -> void:
 	if SecurityLock.is_item_locked(item) or item.lock_state == ItemInstance.LOCK_CHARACTER:
 		_say("Món đồ đang bị khoá, không treo bán được.", false)
 		return
+	if item.lock_trade:
+		_say("Vật phẩm khoá, không treo bán được.", false)
+		return
 	var win := SocialWindow.new("Định giá bán", _short_name(item), 380.0)
 	var cur := [MarketBook.CUR_GOLD]
 	var cur_row := HBoxContainer.new()

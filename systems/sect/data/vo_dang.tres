@@ -101,7 +101,7 @@ req_level = 10
 vltk_skill_id = 153
 icon = ExtResource("vicon_vo_dang_no_loi_chi")
 description = "Chỉ pháp nhập môn, vận sét đánh lên đối thủ."
-school_text = "Chỉ pháp (Ngoại công)"
+school_text = "Chỉ pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 1.0
@@ -181,6 +181,7 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_13"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 20, 0, 15, 250, 0, 20, 915, 0)
 label = "Tăng sát thương Lôi pháp"
 value_at_level_1 = 20.0
 value_at_max_level = 915.0
@@ -349,7 +350,7 @@ req_level = 50
 vltk_skill_id = 157
 icon = ExtResource("vicon_vo_dang_toa_vong_vo_nga")
 description = "Nhập định quên thân, dựng khiên nội lực bảo hộ bản thân."
-school_text = "Nội công (Nội công)"
+school_text = "Quyền pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 25.0
@@ -471,9 +472,9 @@ vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 180
 vltk_state_special_id = 20
-vltk_damage_range = 1
-vltk_range_damage = 0
-vltk_hit_friend = 0
+vltk_damage_range = 10
+vltk_range_damage = 1
+vltk_hit_friend = 1
 vltk_attribs = {
 "adddefense_v": [PackedFloat32Array(1, 97, 0, 20, 800, 0), PackedFloat32Array(1, 18, 0, 20, 18, 0), PackedFloat32Array()],
 "attackratingenhance_p": [PackedFloat32Array(1, 24, 0, 20, 450, 0), PackedFloat32Array(1, 18, 0, 2, 18, 0), PackedFloat32Array()]
@@ -605,7 +606,7 @@ req_level = 30
 vltk_skill_id = 164
 icon = ExtResource("vicon_vo_dang_bac_cap_nhi_phuc")
 description = "Một chỉ bức bách, sét đánh làm đối phương choáng váng."
-school_text = "Chỉ pháp (Ngoại công)"
+school_text = "Chỉ pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 5.0
@@ -687,7 +688,7 @@ req_level = 60
 vltk_skill_id = 165
 icon = ExtResource("vicon_vo_dang_vo_nga_vo_kiem")
 description = "Kiếm ý đến độ vô ngã vô kiếm, phóng ra nhiều đạo kiếm khí mang sét."
-school_text = "Kiếm pháp (Ngoại công)"
+school_text = "Kiếm pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 1.0
@@ -937,7 +938,7 @@ req_level = 80
 vltk_skill_id = 365
 icon = ExtResource("vicon_vo_dang_thien_dia_vo_cuc")
 description = "Hợp nhất thiên địa vô cực, giáng sét đánh xuống một vùng rộng."
-school_text = "Nội công (Ngoại công)"
+school_text = "Quyền pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 5.0
@@ -970,7 +971,7 @@ skill_name = "Kiếm Khí Tung Hoành"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_kiem_khi_tung_hoanh")
 description = "Kiếm khí tung hoành khắp bốn phương. Dữ liệu tồn tại trong bản gốc nhưng không kích hoạt trong bản live tham chiếu, cần cân bằng lại."
-school_text = "Kiếm pháp (Ngoại công)"
+school_text = "Kiếm pháp (Nội công)"
 is_active = true
 category = 0
 req_level = 50
@@ -1070,7 +1071,7 @@ skill_name = "Nộ Lôi Liên Hoàn Kích"
 is_hidden = true
 icon = ExtResource("vicon_vo_dang_no_loi_lien_hoan_kich")
 description = "Liên tiếp giáng sét đánh dồn dập vào đối phương. Dữ liệu tồn tại trong bản gốc nhưng không kích hoạt trong bản live tham chiếu, cần cân bằng lại."
-school_text = "Chỉ pháp (Ngoại công)"
+school_text = "Chỉ pháp (Nội công)"
 is_active = true
 category = 0
 req_level = 50
@@ -1354,6 +1355,7 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_101"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 10, 0, 20, 30, 0, 23, 36, 0, 26, 36, 0)
 label = "Làm choáng"
 value_at_level_1 = 10.0
 value_at_max_level = 36.0
@@ -1361,6 +1363,7 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_102"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 72, 0, 20, 180, 0, 23, 214, 0, 26, 231, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 72.0
 value_at_max_level = 231.0
@@ -1392,7 +1395,7 @@ req_level = 150
 vltk_skill_id = 1078
 icon = ExtResource("vicon_vo_dang_tao_hoa_thai_thanh")
 description = "Đạo pháp tối cao, tạo hóa hư không giáng sét thái thanh xuống trần."
-school_text = "Nội công (Ngoại công)"
+school_text = "Quyền pháp (Nội công)"
 is_active = true
 category = 0
 base_damage = 6.0
@@ -1448,6 +1451,7 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_110"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 40, 0, 20, 72, 0, 23, 82, 0, 26, 87, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 40.0
 value_at_max_level = 87.0
@@ -1503,6 +1507,7 @@ suffix = "%"
 
 [sub_resource type="Resource" id="SubResource_113"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 24, 0, 23, 31, 0, 26, 34, 0)
 label = "Làm choáng"
 value_at_level_1 = 1.0
 value_at_max_level = 24.0

@@ -127,8 +127,60 @@ func _ready() -> void:
 	NetClient.connected_to_world.emit(21, Vector2.ZERO, "DoiTruongThu")
 	await frames()
 	check("nối server mới: xoá đội cũ, khung ẩn", not team.in_team() and not hud.visible)
+	## Mất kết nối giữa chừng: server đã cho rời đội -> xoá ngay, không đợi nối lại.
+	var two := [{"eid": 7, "name": "Nguyễn Minh Nguy", "level": 10, "camp": 0, "lead": 10, "sect": ""},
+		{"eid": 9, "name": "Lý Hạo Nhiên", "level": 10, "camp": 0, "lead": 0, "sect": ""}]
+	team.apply_net_state({"in_team": true, "captain": 7, "open": true, "pick": 1, "turn": 0, "applicants": [], "members": two})
+	await frames()
+	NetClient.disconnected.emit("disconnected", "")
+	await frames()
+	check("mất kết nối: xoá đội cũ", not team.in_team() and not hud.visible)
+	## Rời màn chơi (NetSocial bị gỡ cùng màn) = đóng kết nối -> về Sảnh không còn đội cũ.
+	team.apply_net_state({"in_team": true, "captain": 7, "open": true, "pick": 1, "turn": 0, "applicants": [], "members": two})
+	await frames()
 	social.queue_free()
+	await frames()
+	check("rời màn chơi: xoá đội cũ", not team.in_team() and team.member_hp.is_empty())
 	NetClient.my_eid = 0
+
+	## Offline: về Sảnh = rời đội người chơi giả (reset_local bỏ cả dấu team_tag của họ).
+	team.create_team()
+	var mock: MockPlayer = SocialDirectory.players(p)[0]
+	mock.invite_accept_rate = 1.0
+	mock.camp = Camp.Type.BEGIN
+	team.invite(mock)
+	check("offline: có đội 2 người", team.total() == 2 and mock.team_tag != "", team.total())
+	team.reset_local()
+	check("offline về Sảnh: rời đội, người chơi giả rảnh lại", not team.in_team() and mock.team_tag == "")
+
+	## Player (nhân vật của mình): vào đội của đội trưởng phe khác thì tên mình đổi màu theo đội trưởng, rời đội thì về màu phái.
+	var evil_profile := PlayerProfile.new()
+	evil_profile.display_name = "ToiLaTaPhai"
+	evil_profile.level = 50
+	evil_profile.sect_id = "ngu_doc_giao"
+	GameManager.local_profile = evil_profile
+	var my_player = preload("res://player/player.tscn").instantiate()
+	add_child(my_player)
+	await frames()
+	var my_name_col = func() -> Color: return my_player._name_label.get_theme_color("font_color")
+	check("player chưa vào đội: màu tên môn phái gốc (Tà phái tím)", my_name_col.call() == Camp.get_color(Camp.Type.EVIL), my_name_col.call())
+
+	## Vào đội có đội trưởng Trung lập (Xanh lá)
+	var my_team := SocialHub.of(evil_profile).team
+	NetClient.my_eid = 55
+	my_team.apply_net_state({"in_team": true, "captain": 77, "open": true, "pick": 1, "turn": 0, "applicants": [], "members": [
+		{"eid": 77, "name": "DoiTruongTrungLap", "level": 60, "camp": Camp.Type.BALANCE, "lead": 20, "sect": ""},
+		{"eid": 55, "name": "ToiLaTaPhai", "level": 50, "camp": Camp.Type.EVIL, "lead": 0, "sect": "ngu_doc_giao"}]})
+	await frames()
+	check("player đã vào đội: màu tên đổi theo đội trưởng (Trung lập xanh)", my_name_col.call() == Camp.get_color(Camp.Type.BALANCE), my_name_col.call())
+	check("player combat targeting: camp hiệu lực theo đội trưởng", CombatTargeting.get_camp(my_player) == Camp.Type.BALANCE, CombatTargeting.get_camp(my_player))
+
+	## Rời đội
+	my_team.apply_net_state({"in_team": false})
+	await frames()
+	check("player rời đội: màu tên trở về phái gốc (Tà phái tím)", my_name_col.call() == Camp.get_color(Camp.Type.EVIL), my_name_col.call())
+	check("player combat targeting: camp hiệu lực trở về phái gốc", CombatTargeting.get_camp(my_player) == Camp.Type.EVIL, CombatTargeting.get_camp(my_player))
+	my_player.queue_free()
 
 	print("RESULT %d đạt, %d hỏng" % [_pass, _fail])
 	get_tree().quit(1 if _fail > 0 else 0)

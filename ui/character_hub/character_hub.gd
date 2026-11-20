@@ -76,6 +76,9 @@ var _style_nav_normal: StyleBox
 var _style_tab_active: StyleBox
 var _style_tab_normal: StyleBox
 var _quick_sell_mode: bool = false
+## Chế độ Sửa (nút "Sửa" cạnh "Bán"): bấm trang bị (trong túi hoặc đang mặc) thì thợ rèn sửa món đó (RepairActions).
+var _repair_mode: bool = false
+var _repair_btn: Button
 const PORTRAIT_TURN_SECONDS := 1.5
 var _portrait_timer: Timer
 var _disguise_banner: PanelContainer
@@ -106,7 +109,9 @@ func _ready() -> void:
 			if GameModeManager.is_offline():
 				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH)
 				return
-			elif OS.has_feature("editor") or OS.is_debug_build():
+			elif _is_test_mode:
+				## Hồ sơ giả "HoaHieu" CHỈ cho chạy test (--test-*). Online mà mất hồ sơ (bị đá phiên...) thì về Danh sách /
+				## Đăng nhập như bản phát hành — không cho chơi bằng hồ sơ giả.
 				_create_mock_profile()
 			else:
 				var api := _get_account_api()
@@ -131,7 +136,10 @@ func _ready() -> void:
 		_setup_pubg_button(pubg_btn)
 		pubg_btn.pressed.connect(func() -> void: PubgWindow.open(self, _profile, _enter_field_map))
 	if has_node("%LonXonButton"):
-		%LonXonButton.pressed.connect(func() -> void: LonXonWindow.open(self, _profile, _enter_field_map))
+		var lx_btn = %LonXonButton
+		if lx_btn is TextureButton:
+			_setup_lon_xon_button(lx_btn)
+		lx_btn.pressed.connect(func() -> void: LonXonWindow.open(self, _profile, _enter_field_map))
 	if has_node("%ManorButton"):
 		var manor_btn: TextureButton = %ManorButton
 		_setup_manor_button(manor_btn)
@@ -199,6 +207,7 @@ func _ready() -> void:
 				)
 		else:
 			%GmButton.queue_free()
+	_layout_bottom_left_buttons()
 
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null:
@@ -269,6 +278,10 @@ func _ready() -> void:
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 	_ask_sect_if_needed.call_deferred()
 
+	## Về Sảnh = rời tổ đội (offline: bỏ đội người chơi giả; online: kết nối map đã đóng nên server đã cho rời đội).
+	## Đội lập ngay ở Sảnh (online) vẫn giữ trong lúc ở Sảnh — lệnh này chỉ chạy lúc mở Sảnh, trước khi nối server.
+	if _profile != null:
+		SocialHub.of(_profile).team.reset_local()
 	HubSession.attach(self)
 	if NetWorldSync.is_online_mode():
 		NetClient.pubg_message.connect(_on_pubg_hub_message)   ## ghép được trận PUBG (kể cả đã đóng cửa sổ PUBG) -> vào trận
@@ -817,12 +830,14 @@ func refresh() -> void:
 
 	if has_node("%SecurityButton"):
 		var sec_btn: Button = %SecurityButton
-		if not SecurityLock.has_password(_profile):
-			sec_btn.text = "Đặt Khóa"
-		elif SecurityLock.is_locked(_profile):
+		## Khoá bảo vệ (khoá rương gốc — KPlayer::SetLockState/CheckSavePw): chưa có mật mã -> bấm để đặt; đang khoá -> nhập mật mã để mở;
+		## đang mở -> bấm để khoá lại ngay.
+		if SecurityLock.is_locked(_profile):
 			sec_btn.text = "🔒 Mở Khóa"
+			sec_btn.tooltip_text = "Đang khoá bảo vệ: không giao dịch, mua bán, bày bán, vứt đồ, mở rương. Bấm để nhập mật mã mở khoá."
 		else:
-			sec_btn.text = "🔓 Đang Mở"
+			sec_btn.text = "Khóa"
+			sec_btn.tooltip_text = "Đặt mật mã khoá bảo vệ." if not SecurityLock.has_password(_profile) 				else "Bấm để khoá bảo vệ ngay (giống khoá rương)."
 
 func _sync_world_rank() -> void:
 	if _profile == null:
@@ -1157,6 +1172,8 @@ func _setup_inventory_view() -> void:
 		%SellButton.text = tr(%SellButton.text)
 		%SellButton.tooltip_text = tr("Bật/Tắt chế độ bán nhanh: Nhấp vào món đồ để bán ngay.")
 		%SellButton.pressed.connect(_toggle_quick_sell_mode)
+		_repair_btn = RepairActions.make_button(%SellButton)
+		_repair_btn.pressed.connect(func() -> void: _set_repair_mode(not _repair_mode))
 	if has_node("%ShopButton"):
 		%ShopButton.text = tr(%ShopButton.text)
 		%ShopButton.pressed.connect(func() -> void:
@@ -1172,7 +1189,12 @@ func _setup_inventory_view() -> void:
 		%SecurityButton.text = tr(%SecurityButton.text)
 		%SecurityButton.pressed.connect(func() -> void:
 			if not SecurityLock.has_password(_profile):
-				SecurityWindow.open(self, _profile)
+				var win := SecurityWindow.open(self, _profile)
+				if win != null:
+					win.tree_exited.connect(func() -> void:
+						if is_instance_valid(self):
+							refresh()
+					)
 			elif SecurityLock.is_locked(_profile):
 				KeypadWindow.ask(self, "Mở khóa bảo vệ", "Nhập mật mã để mở khóa.", func(code: String) -> void:
 					var err := SecurityLock.unlock(_profile, code)
@@ -1441,12 +1463,16 @@ func _on_equip_slot_pressed(part: int) -> void:
 	if item == null:
 		_set_view("equipment")
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _after_repair, _show_toast)
+		return
 	var series := _profile.get_element() if _profile.has_method("get_element") else _sect_element()
 	var counts := Equipment.get_active_counts(_profile.equipment, series)
 	var desc := ItemText.build(item, _profile, counts.get(part, 0), part, false)
 	var actions: Array = [
 		["Tháo đồ", func() -> void: _unequip_item(part, item)]
 	]
+	actions.append_array(RepairActions.for_item(_profile, item, _after_repair, _show_toast))
 	ItemDetailPopup.open(self, desc, actions, item)
 
 func _unequip_item(part: int, item: ItemInstance) -> void:
@@ -1465,6 +1491,8 @@ func _set_view(view: String) -> void:
 		return
 	if _quick_sell_mode and not (view in ["character", "equipment", "crafting"]):
 		_set_quick_sell_mode(false)
+	if _repair_mode and not (view in ["character", "equipment", "crafting"]):
+		_set_repair_mode(false)
 	_current_view = view
 	var show_char: bool = (view == "character")
 	%InfoBox.visible = show_char
@@ -1657,8 +1685,6 @@ func _on_event_action(event_id: String) -> void:
 			PkWindow.open(self, _profile, _enter_field_map)
 		"hoa_dang":
 			LanternWindow.open(self, _profile)
-		"uy_thac":
-			UyThacWindow.open(self, _profile, _on_quit_game_pressed)
 		"escort":
 			var pk_win := PkWindow.open(self, _profile, _enter_field_map)
 			pk_win._select_mode(PkRules.Mode.VAN_TIEU)
@@ -1783,12 +1809,16 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _after_repair, _show_toast)
+		return
 	if _quick_sell_mode:
 		_sell_item_from_inv(index)
 		return
 	var actions: Array = []
 	if not item.is_misc():
 		actions.append(["Trang bị", func() -> void: _equip_item_from_inv(index)])
+		actions.append_array(RepairActions.for_item(_profile, item, _after_repair, _show_toast))
 	elif ItemConsumer.is_usable(item):
 		var use_label := ItemConsumer.get_action_label(item)
 		if use_label != "":
@@ -1852,6 +1882,8 @@ func _drop_item_from_inv(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "" and item.lock_drop:
+		blocked = "Vật phẩm khoá, không thể vứt ra đất."
 	if blocked == "":
 		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":
@@ -1870,6 +1902,8 @@ func _sell_item_from_inv(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không thể bán."
+	if blocked == "" and item.lock_sell:
+		blocked = "Vật phẩm khoá, không thể bán cho cửa hàng."
 	if blocked != "":
 		_show_toast(blocked, true)
 		return
@@ -1881,20 +1915,7 @@ func _sell_item_from_inv(index: int) -> void:
 	var item_name: String = str(item.get_display_name())
 
 	if item.is_gold() or item.is_purple():
-		var popup := ConfirmationDialog.new()
-		popup.title = "Xác nhận bán"
-		popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, InventoryPopup.format_money(sale_price)]
-		popup.ok_button_text = "Bán"
-		popup.cancel_button_text = "Hủy"
-		add_child(popup)
-		popup.confirmed.connect(func() -> void:
-			_execute_sell_from_inv(index, item_name, sale_price)
-			popup.queue_free()
-		)
-		popup.canceled.connect(func() -> void:
-			popup.queue_free()
-		)
-		popup.popup_centered()
+		InventoryPopup.confirm_sell(self, item, sale_price, func() -> void: _execute_sell_from_inv(index, item_name, sale_price))
 		return
 
 	_execute_sell_from_inv(index, item_name, sale_price)
@@ -1915,7 +1936,24 @@ func _execute_sell_from_inv(index: int, item_name: String, sale_price: int) -> v
 func _toggle_quick_sell_mode() -> void:
 	_set_quick_sell_mode(not _quick_sell_mode)
 
+func _after_repair() -> void:
+	SaveManager.flush_online()
+	refresh()
+	_refresh_inventory_view()
+
+func _set_repair_mode(enabled: bool) -> void:
+	_repair_mode = enabled
+	RepairActions.set_button_active(_repair_btn, enabled)
+	if enabled:
+		if _quick_sell_mode:
+			_set_quick_sell_mode(false)
+		_show_toast(RepairActions.mode_hint(_profile))
+	else:
+		_show_toast("Đã tắt chế độ Sửa.")
+
 func _set_quick_sell_mode(enabled: bool) -> void:
+	if enabled and _repair_mode:
+		_set_repair_mode(false)
 	_quick_sell_mode = enabled
 	_update_sell_button_visual()
 	if _quick_sell_mode:
@@ -2091,7 +2129,8 @@ func _enter_field_map(entry: Variant) -> void:
 		return
 
 	var is_admin := AccountApi.is_gm()
-	var req_lvl := int(map_entry.get("level", 1))
+	## Cấp 11-20 vào được map 2x, 21-30 vào 3x ... (MapCatalog.unlocked_tier), không đòi bằng cấp quái.
+	var req_lvl := MapCatalog.min_level_for_tier(MapCatalog.tier_of_level(int(map_entry.get("level", 1))))
 	if not is_admin and _profile != null and _profile.level < req_lvl:
 		_show_toast(tr("⚠️ Cấp độ của bạn chưa đủ (%d/%d) để vào bản đồ này!") % [_profile.level, req_lvl])
 		return
@@ -2140,6 +2179,20 @@ func _setup_pubg_button(btn: TextureButton) -> void:
 	else:
 		if btn.has_node("PubgLabel"):
 			btn.get_node("PubgLabel").visible = true
+
+func _setup_lon_xon_button(btn: TextureButton) -> void:
+	btn.tooltip_text = "Lộn Xộn — hỗn chiến tự do, chết hồi sinh, rớt hết đồ"
+	if btn.texture_normal == null:
+		var path := "res://ui/character_hub/btn_lon_xon.png"
+		var tex: Texture2D = null
+		if ResourceLoader.exists(path):
+			tex = load(path)
+		elif FileAccess.file_exists(path):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+		if tex != null:
+			btn.texture_normal = tex
 
 func _setup_manor_button(btn: TextureButton) -> void:
 	btn.tooltip_text = "Sơn Trang"
@@ -2312,7 +2365,7 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	if stage == null:
 		return
 
-	# 1. TopBar: nút Kỳ Trân Các bám mép phải (Lượng/Xu/KNB đã chuyển xuống dưới khung Hành trang — InventoryView)
+	# 1. TopBar: nút Kỳ Trân Các bám mép phải (Lượng/Xu/KNB nằm TRONG khung Hành trang — InvBox, dưới lưới ô)
 	var top_bar := stage.get_node_or_null("TopBar") as Control
 	if top_bar:
 		top_bar.size.x = vw
@@ -2414,15 +2467,20 @@ func _apply_mode_ui() -> void:
 		%SocialButton.visible = false
 		%SocialButton.process_mode = Node.PROCESS_MODE_DISABLED
 
-	# Căn chỉnh nút Hướng Dẫn
-	if has_node("%GuideButton"):
-		var is_gm_visible: bool = has_node("%GmButton") and is_instance_valid(%GmButton) and %GmButton.visible
-		if is_gm_visible:
-			%GuideButton.offset_left = 116.0
-			%GuideButton.offset_right = 226.0
-		else:
-			%GuideButton.offset_left = 18.0
-			%GuideButton.offset_right = 128.0
+	_layout_bottom_left_buttons()
+
+## Xếp nhóm nút góc trái BottomBar (GM, Chat, Cộng đồng, Hướng Dẫn...) sát lề trái,
+## bỏ qua nút đang ẩn/đã xoá — không có GM thì Chat dồn về x=18.
+func _layout_bottom_left_buttons() -> void:
+	var x := 18.0
+	for btn_name in ["GmButton", "ChatButton", "SocialButton", "GuideButton", "TestIntroButton"]:
+		var btn := get_node_or_null("%" + btn_name) as Control
+		if btn == null or not is_instance_valid(btn) or btn.is_queued_for_deletion() or not btn.visible:
+			continue
+		var w := btn.offset_right - btn.offset_left
+		btn.offset_left = x
+		btn.offset_right = x + w
+		x += w + 8.0
 
 func _reposition_docked_window(win: Control, _vw: float, extra_w: float) -> void:
 	if win == null or not is_instance_valid(win):
@@ -2545,6 +2603,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_quick_sell_mode(false)
 			get_viewport().set_input_as_handled()
 			return
+		if _repair_mode:
+			_set_repair_mode(false)
+			get_viewport().set_input_as_handled()
+			return
 		var f := get_viewport().gui_get_focus_owner()
 		if f is LineEdit or f is TextEdit:
 			f.release_focus()
@@ -2598,6 +2660,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	elif key_ev.keycode == KEY_F6:
 		_set_view("guild")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F8 or (not is_typing and key_ev.keycode == KEY_P):
+		_set_view("social")
 		get_viewport().set_input_as_handled()
 		return
 	elif key_ev.keycode == KEY_F11:

@@ -40,6 +40,14 @@ static func tier_of_level(level: int) -> int:
 	@warning_ignore("integer_division")
 	return clampi(level / 10, 1, TIER_COUNT)
 
+## Mốc cao nhất nhân vật cấp `level` được vào: cấp 1-10 -> 1x, 11-20 -> 2x, 21-30 -> 3x ... (tối đa 12x).
+static func unlocked_tier(level: int) -> int:
+	return clampi(ceili(level / 10.0), 1, 12)
+
+## Cấp tối thiểu để mở mốc `tier` (2x -> 11, 3x -> 21 ...).
+static func min_level_for_tier(tier: int) -> int:
+	return 1 if tier <= 1 else (tier - 1) * 10 + 1
+
 ## Mốc Vượt Ải Thường mở sẵn cho nhân vật cấp `level`: mốc cùng cấp (tier_of_level); mốc đó chưa có map thì lấy mốc có map gần nhất
 ## (ưu tiên mốc thấp hơn, vd cấp 115 -> 10x).
 static func normal_tier_for_level(level: int) -> int:
@@ -79,7 +87,7 @@ static func minimap_texture(entry: Dictionary) -> Texture2D:
 # ---------------------------------------------------------------- Địa Ngục (tab "Địa Ngục" của màn Vượt Ải)
 ## Map ĐỊA NGỤC 10x / 11x / 12x: dùng lại map luyện công gốc (gốc không có map cấp 110+), quái nâng lên hell_level của nhóm.
 ## Mỗi nhóm dùng map khác nhau: 10x = map 8x-9x nâng lên cấp 100, 11x / 12x = map 10x nâng lên 110 / 120.
-## Mỗi map chọn độ khó 1-5 sao: máu, sát thương, tỉ lệ rơi đồ của quái nhân đúng số sao; 5 sao mọi món rơi ra đều đủ dòng magic.
+## Mỗi map chọn độ khó 1-5 sao: máu, sát thương, tỉ lệ rơi đồ của quái nhân đúng số sao; mỗi quái 20% rơi 1 món đủ 6 dòng magic.
 ## Đổi map của nhóm nào: sửa HELL_MAPS (số map gốc phải có trong map_catalog.json).
 const HELL_TIERS := [10, 11, 12]
 const HELL_MAX_STARS := 5

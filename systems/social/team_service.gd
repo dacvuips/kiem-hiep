@@ -58,6 +58,9 @@ var pick_mode: int = Pick.FREE
 var pk_follow := false
 var allow_create := true                  ## cho phép tổ đội (m_bCreatTeamFlag)
 var auto_refuse_invite := false
+## Thiết lập tổ đội của Auto (tự mời / tự nhận lời mời / tự duyệt người xin vào) đang có hiệu lực — CHỈ khi auto đang chạy và
+## bật "Thiết lập tổ đội". AutoController bật lúc chạy auto, tắt lúc dừng / rời màn chơi.
+var auto_team := false
 var applicants: Array[MockPlayer] = []
 var rng := RandomNumberGenerator.new()
 var _turn := 0                            ## chỉ số người đang tới lượt nhặt (0 = đội trưởng, i+1 = members[i])
@@ -197,7 +200,17 @@ func _clear() -> void:
 	captain = null
 	members.clear()
 	applicants.clear()
+	member_hp.clear()
+	member_near.clear()
+	_turn = 0
 	changed.emit()
+	hp_changed.emit()
+
+## Bỏ đội phía người chơi, không báo tin — dùng khi về Sảnh (Character Hub) hoặc khi kết nối game server đóng / mất:
+## online thì server đã coi ngắt kết nối = rời đội (SocialServer.on_leave), offline thì về Sảnh = rời đội.
+func reset_local() -> void:
+	if in_team() or not applicants.is_empty():
+		_clear()
 
 ## Rời đội: đội viên rời thì đội còn lại; đội trưởng rời thì giải tán cả đội (KTeam::DeleteMember gốc).
 func leave() -> String:

@@ -1,7 +1,7 @@
 extends Node2D
 class_name RemotePlayer
 ## Người chơi khác trên map (online). Vẽ bằng CharacterAvatar như nhân vật mình; vị trí NỘI SUY giữa các bản tin server
-## (hiển thị trễ INTERP_DELAY_MS so với server) nên chuyển động mượt dù chỉ nhận ~9 bản tin/giây.
+## (hiển thị trễ NetClient.interp_delay_ms — bộ đệm tự đo độ muộn thật của mẫu) nên chuyển động mượt.
 ## Gốc node = THÂN (giống Player: chân = gốc + FEET_OFFSET) để sắp độ sâu cùng nhà/cây như Player.
 
 const CharacterAura = preload("res://systems/effects/character_aura.gd")
@@ -17,7 +17,6 @@ const HP_BAR_WIDTH := 56.0
 const HP_BAR_HEIGHT := 4.0
 const HP_BAR_TOP_OFFSET := 16.0
 
-
 var eid := 0
 var display_name := ""
 var level := 1
@@ -28,6 +27,8 @@ var aura: AnimatedSprite2D
 var status_controller: StatusEffectController
 var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
+## StateSpecialId -> hình buff/bùa người này đang dính (theo look.states server gửi).
+var _state_sprites: Dictionary = {}
 var _label: Label
 var _hp_bar: Node2D             ## HealthBar dưới tên — % máu theo snapshot server (máy người đó báo C_HP)
 var hp := 100                   ## % máu mới nhất 0..100
@@ -39,7 +40,7 @@ var _buffer: Array = []        ## [{t, pos, dir, action, z, flags, hp}] theo gi�
 var _action := ""
 var flags := 0                ## NetProto.FLAG_* mới nhất (bày bán, mở giao dịch...)
 var _look := {}
-var _last_vel: Vector2 = Vector2.ZERO   ## vận tốc ước lượng từ 2 mốc cuối (dead-reckoning)
+var _last_vel: Vector2 = Vector2.ZERO   ## vận tốc ước lượng từ 2 mốc cuối (px/giây, dead-reckoning)
 var _last_feet: Vector2 = Vector2.ZERO  ## vị trí chân cuối đã áp
 ## Đang cừu sát với mình (giai đoạn đánh): là "địch" — chiêu của mình va chạm và gây sát thương (gửi qua server).
 var pk_enemy := false
@@ -106,7 +107,7 @@ func setup(info: Dictionary) -> void:
 	set_look(info.look)
 	set_stall_title(str(info.get("stall_title", "")))
 	position = info.pos - Vector2(0, FEET_OFFSET)
-	_push(NetClient.server_now_ms() - INTERP_DELAY_MS, info)
+	_push(NetClient.server_now_ms() - NetClient.interp_delay_ms(NetClient.Interp.PLAYER), info)
 	_apply(info)
 
 func set_pk_enemy(on: bool) -> void:
@@ -137,16 +138,26 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 func _accumulate_damage(amount: float) -> void:
 	if amount <= 0.0:
 		return
-	if _accumulated_damage <= 0.0:
+	## Đòn đầu hiện số NGAY; đòn tới dồn trong DAMAGE_BATCH_INTERVAL thì gộp 1 số.
+	if _damage_batch_timer <= 0.0:
 		_damage_batch_timer = DAMAGE_BATCH_INTERVAL
+		_accumulated_damage = amount
+		_flush_now()
+		return
 	_accumulated_damage += amount
 
 func _flush_damage_number() -> void:
+	if _accumulated_damage <= 0.0:
+		_damage_batch_timer = 0.0
+		return
+	_flush_now()
+	_damage_batch_timer = DAMAGE_BATCH_INTERVAL   ## vẫn đang dồn đòn: giữ nhịp gộp
+
+func _flush_now() -> void:
 	if _accumulated_damage > 0.0:
 		var at := global_position + Vector2(0, -50.0)
 		var dmg_to_show := _accumulated_damage
 		_accumulated_damage = 0.0
-		_damage_batch_timer = 0.0
 		ObjectPool.acquire_deferred(DamageNumberScene, get_parent(), at, func(number):
 			number.set_damage(dmg_to_show))
 
@@ -159,9 +170,12 @@ func take_damage(amount: float) -> void:
 ## Phe địch trong Chiến trường Tống Kim tô đỏ qua pk_enemy (BattleClient).
 ## Chung tổ đội với mình: VLTK gốc (KNpc::SetCurrentCamp / SetTempCurrentCamp) cho cả đội mang PHE HIỆN TẠI của đội trưởng
 ## -> tên đồng đội tô màu phe đội trưởng.
-func _camp_color() -> Color:
+func get_effective_camp() -> int:
 	var cap_camp := team_captain_camp()
-	return Camp.get_color(cap_camp if cap_camp != NO_TEAM_CAMP else camp)
+	return cap_camp if cap_camp != NO_TEAM_CAMP else camp
+
+func _camp_color() -> Color:
+	return Camp.get_color(get_effective_camp())
 
 const NO_TEAM_CAMP := -999
 
@@ -288,6 +302,27 @@ func _refresh_aura_sprite(state_id: int) -> void:
 	_aura_sprite = VltkStateSprite.attach(self, state_id) if state_id > 0 else null
 	_aura_sprite_state = state_id
 
+## Gắn/bỏ hình buff/bùa (trên đầu, quanh người, dưới chân) theo danh sách máy người đó báo lên.
+func _refresh_state_sprites(states: Variant) -> void:
+	var wanted := {}
+	for id in NetProto.sanitize_states(states):
+		if id != _aura_sprite_state:
+			wanted[id] = true
+	for id in _state_sprites.keys():
+		if not wanted.has(id) or not is_instance_valid(_state_sprites[id]):
+			if is_instance_valid(_state_sprites[id]):
+				_state_sprites[id].queue_free()
+			_state_sprites.erase(id)
+	for id in wanted:
+		if not _state_sprites.has(id):
+			var node := VltkStateSprite.attach(self, id)
+			if node != null:
+				_state_sprites[id] = node
+
+## Hào quang người này đang bật: Vector2i(số skill VLTK, cấp) — (0, 0) nếu không bật.
+func get_aura() -> Vector2i:
+	return Vector2i(int(_look.get("aura_skill", 0)), int(_look.get("aura_level", 0)))
+
 func set_look(look: Dictionary) -> void:
 	if look == _look and not _look.is_empty():
 		return
@@ -310,6 +345,7 @@ func set_look(look: Dictionary) -> void:
 			avatar.modulate = Color.WHITE
 
 	_refresh_aura_sprite(int(look.get("aura_state", 0)))
+	_refresh_state_sprites(look.get("states", []))
 	_refresh_nameplate()
 
 func set_stall_title(title: String) -> void:
@@ -366,11 +402,22 @@ func _tick_stall_approach() -> void:
 		open_stall()
 
 func push_state(server_ms: int, st: Dictionary) -> void:
+	NetClient.note_sample(NetClient.Interp.PLAYER, float(server_ms))
+	## Máu: lấy theo mẫu MỚI NHẤT (không chờ tới lượt vẽ trễ) -> bị đánh là thấy tụt ngay.
+	_set_hp(int(st.get("hp", hp)))
 	_push(float(server_ms), st)
 
 func _push(t: float, st: Dictionary) -> void:
 	var item := st.duplicate()
 	item["t"] = t
+	## Đứng yên một lúc (server không gửi gì) rồi mới đi: chèn mốc "vẫn ở chỗ cũ" ngay trước mẫu mới, để nhân vật bắt đầu
+	## bước từ chỗ cũ theo đúng nhịp thay vì trượt chậm cả quãng nghỉ rồi giật lên.
+	if not _buffer.is_empty():
+		var last: Dictionary = _buffer[-1]
+		if t - float(last.t) > NetProto.SNAPSHOT_MS * 2.5:
+			var hold := last.duplicate()
+			hold["t"] = t - NetProto.SNAPSHOT_MS
+			_buffer.append(hold)
 	_buffer.append(item)
 	if _buffer.size() > MAX_BUFFER:
 		_buffer.pop_front()
@@ -385,20 +432,20 @@ func is_dead() -> bool:
 	return _action == "die"
 
 func _process(_delta: float) -> void:
-	if _accumulated_damage > 0.0:
+	if _damage_batch_timer > 0.0:
 		_damage_batch_timer -= _delta
 		if _damage_batch_timer <= 0.0:
 			_flush_damage_number()
 	if _open_stall_until != 0:
 		_tick_stall_approach()
 	if _buffer.is_empty():
-		## Dead-reckoning: tiếp tục trượt theo vận tốc cuối (giảm dần để không đi xa)
-		if _last_vel.length_squared() > 1.0:
+		## Dead-reckoning: tiếp tục trượt theo vận tốc cuối (giảm dần để không đi xa) — chỉ khi đang chạy
+		if _action == "run" and _last_vel.length_squared() > 1.0:
 			_last_feet += _last_vel * _delta
 			_last_vel = _last_vel.lerp(Vector2.ZERO, _delta * 8.0)
 			position = _last_feet - Vector2(0, FEET_OFFSET)
 		return
-	var delay := NetClient.adaptive_interp_delay_ms() if NetClient.has_method("adaptive_interp_delay_ms") else INTERP_DELAY_MS
+	var delay := NetClient.interp_delay_ms(NetClient.Interp.PLAYER)
 	var render_t := NetClient.server_now_ms() - delay
 	## Bỏ bản tin đã cũ (giữ lại 1 bản trước thời điểm vẽ để nội suy).
 	while _buffer.size() >= 2 and float(_buffer[1].t) <= render_t:
@@ -412,7 +459,7 @@ func _process(_delta: float) -> void:
 		feet = (a.pos as Vector2).lerp(b.pos, k)
 		## Cập nhật vận tốc cho dead-reckoning
 		if span > 0.0:
-			_last_vel = (b.pos as Vector2 - a.pos as Vector2) / span
+			_last_vel = (b.pos as Vector2 - a.pos as Vector2) / (span / 1000.0)   ## px/giây (span tính bằng ms)
 		## Quá xa (dịch chuyển / bị kéo về) thì nhảy thẳng tới, không trượt.
 		if (a.pos as Vector2).distance_to(b.pos) > 600.0:
 			feet = b.pos if k > 0.5 else a.pos
@@ -420,8 +467,10 @@ func _process(_delta: float) -> void:
 	else:
 		## Chỉ còn 1 mốc: dead-reckoning ngoại suy
 		var overshoot := render_t - float(a.t)
-		if overshoot > 0.0 and _last_vel.length_squared() > 1.0:
-			feet = (a.pos as Vector2) + _last_vel * clampf(overshoot / 1000.0, 0.0, 0.1)
+		## Chỉ đoán tiếp khi mẫu cuối đang CHẠY (dừng rồi thì đứng đúng chỗ, không trượt quá); tối đa 1 nhịp gửi.
+		var running := NetProto.action_name(int(a.action)) == "run"
+		if running and overshoot > 0.0 and _last_vel.length_squared() > 1.0:
+			feet = (a.pos as Vector2) + _last_vel * clampf(overshoot / 1000.0, 0.0, NetProto.SNAPSHOT_MS / 1000.0)
 	_last_feet = feet
 	position = feet - Vector2(0, FEET_OFFSET)
 	_apply(a)
@@ -438,10 +487,8 @@ func _apply(st: Dictionary) -> void:
 			var main_scene = get_tree().current_scene
 			if main_scene and main_scene.get("_pk_mode") != 1:
 				set_pk_enemy(false)
-	hp = clampi(int(st.get("hp", hp)), 0, 100)
-	if hp != _hp_shown and _hp_bar and _hp_bar.is_node_ready():
-		_hp_shown = hp
-		_hp_bar.set_health(float(hp), 100.0)
+	## Máu đã lấy theo mẫu mới nhất ở push_state; ở đây chỉ áp khi chưa có mẫu nào khác (lúc xuất hiện) / vẽ lại thanh.
+	_set_hp(int(st.get("hp", hp)) if _buffer.size() <= 1 else hp)
 	var dir := int(st.dir)
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))
@@ -450,6 +497,12 @@ func _apply(st: Dictionary) -> void:
 		_action = action
 		avatar.play(action)
 	avatar.set_height(float(st.z))
+
+func _set_hp(v: int) -> void:
+	hp = clampi(v, 0, 100)
+	if hp != _hp_shown and _hp_bar and _hp_bar.is_node_ready():
+		_hp_shown = hp
+		_hp_bar.set_health(float(hp), 100.0)
 
 ## Hướng sprite 0..7 (0 = xuống, 2 = trái, 4 = lên, 6 = phải, theo chiều kim đồng hồ) -> góc màn hình.
 static func _dir_angle(dir: int) -> float:

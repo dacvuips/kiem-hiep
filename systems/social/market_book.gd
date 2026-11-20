@@ -288,6 +288,9 @@ func sell(p: PlayerProfile, sid: int, uid: String, price: int, cur: int, now: in
 	if SecurityLock.is_item_locked(item) or item.lock_state == ItemInstance.LOCK_CHARACTER:
 		_busy_sell_uids.erase(uid)
 		return ["Món đồ đang bị khoá, không treo bán được.", {}]
+	if item.lock_trade:
+		_busy_sell_uids.erase(uid)
+		return ["Vật phẩm khoá, không treo bán được.", {}]
 	if item.trade_price > 0:
 		_busy_sell_uids.erase(uid)
 		return ["Món đồ đang được đặt giá bày bán.", {}]

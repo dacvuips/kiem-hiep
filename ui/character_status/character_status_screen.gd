@@ -576,7 +576,9 @@ func _on_equip_slot_pressed(part: int) -> void:
 			if _profile.unequip(part):
 				SaveManager.save_profile(_profile)
 				refresh()
-				profile_changed.emit()]], item)
+				profile_changed.emit()]] + RepairActions.for_item(_profile, item, func() -> void:
+			refresh()
+			profile_changed.emit()), item)
 
 func _open_inventory() -> void:
 	if inventory_opener.is_valid():

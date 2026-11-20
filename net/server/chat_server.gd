@@ -1,6 +1,6 @@
 class_name ChatServer
 extends RefCounted
-## Chat trên game server: kênh GẦN (3x3 ô tầm nhìn), THẾ GIỚI, TỔ ĐỘI, BANG HỘI, RIÊNG (theo tên nhân vật).
+## Chat trên game server: kênh GẦN (3x3 ô tầm nhìn), THẾ GIỚI, TỔ ĐỘI, BANG HỘI, MÔN PHÁI, RIÊNG (theo tên nhân vật).
 ## Server kiểm tra: đang bị cấm chat (web Admin, cập nhật mỗi 30 giây), dài <= MAX_LEN, gửi không quá nhanh
 ## (kênh thế giới chờ WORLD_COOLDOWN giây giữa 2 tin).
 
@@ -9,7 +9,9 @@ const WORLD := 1
 const TEAM := 2
 const GUILD := 3
 const PRIVATE := 4
-const CHANNEL_NAMES := ["Gần", "Thế giới", "Tổ đội", "Bang hội", "Riêng"]
+const FACTION := 5   ## Môn phái: mọi người online cùng phái (sect_id) — kênh "Môn phái" của khung chat gốc
+const LAST_CHANNEL := FACTION
+const CHANNEL_NAMES := ["Gần", "Thế giới", "Tổ đội", "Bang hội", "Riêng", "Môn phái"]
 
 const MAX_LEN := 600
 const MIN_INTERVAL := 0.8
@@ -24,7 +26,7 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 	var channel := b.get_u8()
 	var target := NetProto.get_str(b, 64).strip_edges()
 	var text := NetProto.get_str(b, 1024).strip_edges().replace("\n", " ")
-	if text.is_empty() or channel > PRIVATE:
+	if text.is_empty() or channel > LAST_CHANNEL:
 		return
 	if text.length() > MAX_LEN:
 		text = text.left(MAX_LEN)
@@ -35,8 +37,8 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		c.entity.touch()
 		gs.profile_changed(c)
 		return
-	## CHỈ khi GAME_TEST_MODE=1: "/testbot [phái] [cấp]" sinh 1 bot (BotDuelBrain) cạnh mình, đánh mình — thử bot người chơi.
-	if gs.test_mode and text.begins_with("/testbot"):
+	## CHỈ khi GAME_TEST_MODE=1: "/testbot [phái] [cấp] [độ khó 0-2]" sinh 1 bot (BotCombatBrain) cạnh mình, đánh mình — thử bot người chơi.
+	if gs.test_mode and (text == "/testbot" or text.begins_with("/testbot ")):
 		var parts := text.split(" ", false)
 		var bp := PlayerProfile.new()
 		bp.display_name = "Bot %d" % (gs.bots.bots.size() + 1)
@@ -45,8 +47,52 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		LonXonRules.refresh_skills(bp)
 		LonXonRules.give_potions(bp)
 		var spot: Vector2 = gs.grid_of(c.entity).free_near(c.entity.pos + Vector2(120, 0))
-		var bot := gs.bots.spawn(bp, spot if spot != Vector2.ZERO else c.entity.pos, c.entity.room_id, c.entity.cell_base, BotDuelBrain.new(c.entity.eid))
+		var bot := gs.bots.spawn(bp, spot if spot != Vector2.ZERO else c.entity.pos, c.entity.room_id, c.entity.cell_base, BotCombatBrain.new(c.entity.eid))
+		bot.difficulty = clampi(int(parts[3]) if parts.size() > 3 else 1, 0, 2)
 		gs.notice(c, "testbot %d" % bot.eid)
+		return
+	## CHỈ khi GAME_TEST_MODE=1: "/testbots N [độ khó 0-2 | -1 trộn]" sinh N bot hỗn chiến quanh mình (BotArenaPolicy: chết 5 giây thì sống
+	## lại) — đo hiệu năng / độ mượt / hành vi bot (tests/bot_bench_tests). "/testbotstats" trả bảng đếm hành vi (JSON) qua thông báo.
+	if gs.test_mode and text.begins_with("/testbots "):
+		var bp_parts := text.split(" ", false)
+		var count := clampi(int(bp_parts[1]) if bp_parts.size() > 1 else 10, 1, 200)
+		var diff := clampi(int(bp_parts[2]) if bp_parts.size() > 2 else -1, -1, 2)
+		var sects := ["thieu_lam", "thien_vuong_bang", "nga_mi", "duong_mon", "ngu_doc_giao", "con_lon", "vo_dang", "cai_bang", "thuy_yen_mon", "thien_nhan_giao"]
+		var arena := BotArenaPolicy.new(c.entity.pos + Vector2(500, 0), 350.0)
+		var made: Array[ServerBot] = []
+		for i in count:
+			var bp := PlayerProfile.new()
+			bp.display_name = "Bot %d" % (gs.bots.bots.size() + 1)
+			bp.sect_id = sects[(i / 3) % sects.size()]   ## mỗi phái đủ 3 độ khó (không để độ khó trùng chu kỳ với phái)
+			bp.level = 100
+			bp.apply_start_stats()
+			LonXonRules.refresh_skills(bp)
+			LonXonRules.give_potions(bp)
+			var spot: Vector2 = arena.center + Vector2.from_angle(TAU * i / count) * arena.radius * randf_range(0.4, 1.0)
+			var free: Vector2 = gs.grid_of(c.entity).free_near(spot)
+			var nb := gs.bots.spawn(bp, free if free != Vector2.ZERO else spot, c.entity.room_id, c.entity.cell_base, BotCombatBrain.new(), arena)
+			nb.difficulty = diff if diff >= 0 else i % 3
+			made.append(nb)
+		for nb in made:
+			arena._retarget(nb, gs.bots)
+		gs.notice(c, "testbots %d" % made.size())
+		return
+	if gs.test_mode and text.begins_with("/testbotstats"):
+		var by_diff := {}
+		var deaths := 0
+		for eid in gs.bots.bots:
+			var ob: ServerBot = gs.bots.bots[eid]
+			var key := str(ob.difficulty)
+			if not by_diff.has(key):
+				by_diff[key] = {"bots": 0, "casts": 0, "hits": 0, "dmg": 0, "taken": 0, "jumps": 0, "potions": 0, "dodges": 0, "buffs": 0, "kills": 0}
+			var row: Dictionary = by_diff[key]
+			row.bots += 1
+			for k in ob.tally:
+				row[k] = int(row.get(k, 0)) + int(ob.tally[k])
+			if ob.policy is BotArenaPolicy:
+				row.kills += int((ob.policy as BotArenaPolicy).kills_by.get(eid, 0))
+				deaths = (ob.policy as BotArenaPolicy).deaths
+		gs.notice(c, "botstats " + JSON.stringify({"by_diff": by_diff, "deaths": deaths, "tick_avg": gs._last_tick_avg, "tick_max": gs._last_tick_max, "kbs": gs._last_kbs}))
 		return
 	## CHỈ khi GAME_TEST_MODE=1: "/testrestart N" khởi động lại êm sau N giây (như lệnh từ web Admin) — thử lưu dữ liệu khi khởi động lại.
 	if gs.test_mode and text.begins_with("/testrestart "):
@@ -168,6 +214,14 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 				return
 			for to in gs.in_world_conns():
 				if to.profile.guild is Dictionary and str(to.profile.guild.get("name", "")) == guild_name:
+					targets.append(to)
+		FACTION:
+			var sect: String = c.profile.sect_id
+			if sect == "":
+				gs.notice(c, "Bạn chưa gia nhập môn phái.")
+				return
+			for to in gs.in_world_conns():
+				if str(to.profile.sect_id) == sect:
 					targets.append(to)
 		PRIVATE:
 			var to = gs.conn_of_name(target)

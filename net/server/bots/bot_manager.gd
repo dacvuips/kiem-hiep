@@ -11,6 +11,8 @@ const MISSILE_SPEED := 600.0      ## đạn bay (px/giây) — đòn tầm xa tr
 const HIT_RANGE_SLACK := 1.35     ## lúc trúng, mục tiêu còn trong tầm x hệ số này mới tính (chạy khỏi tầm = né được)
 const MONSTER_HIT_DELAY := 0.4
 const MAX_HITS_PER_SEC_ON_BOT := 20
+const MIN_HIT_RADIUS := 45.0     ## nửa bề rộng đạn / bán kính nổ tối thiểu (px)
+const THREAT_RADIUS := 700.0     ## bot "thấy" người ra chiêu trong chừng này px
 
 var gs   ## GameServer (hoặc bản giả trong test): now(), entity_of(eid), conn_of_eid(eid), grid_of(e), aoi, add_bot_entity(bot),
          ## remove_bot_entity(bot), broadcast_cast(...), send_pvp_hit(c, eid, raw), bot_damage_monster(bot, m, amount)
@@ -73,6 +75,8 @@ func tick(dt: float) -> void:
 				b.brain.think(b, self, THINK_EVERY)
 		if b.tick_body(gs.grid_of(b), now, dt):
 			gs.aoi.update(b)
+		if b.policy != null and b.policy.has_method("tick_bot"):
+			b.policy.tick_bot(b, self, now)
 	_deliver(now)
 	tick_monster_hits(now)
 
@@ -87,11 +91,34 @@ func cast(b: ServerBot, sk: SkillDefinition, target: ServerEntity) -> bool:
 	var dist := b.pos.distance_to(target.pos)
 	if dist > rng * 1.1:
 		return false
-	b.begin_cast(sk, target.pos, now)
-	gs.broadcast_cast(b, sk.vltk_skill_id, b.skill_level(sk), 0, target.eid, target.pos)
+	var aim := target.pos + aim_error
+	aim_error = Vector2.ZERO
+	b.begin_cast(sk, aim, now)
+	gs.broadcast_cast(b, sk.vltk_skill_id, b.skill_level(sk), 0, target.eid, aim)
 	var hit := BotCombat.roll_skill_hit(b, sk)
-	var delay := HIT_DELAY_MELEE if bool(hit.physical) and rng <= 120.0 else maxf(HIT_DELAY_MELEE, dist / MISSILE_SPEED)
-	_pending.append({"at": now + delay, "bot": b, "target_eid": target.eid, "hit": hit, "range": rng})
+	var melee := bool(hit.physical) and rng <= 120.0
+	var delay := HIT_DELAY_MELEE if melee else maxf(HIT_DELAY_MELEE, dist / MISSILE_SPEED)
+	_pending.append({"at": now + delay, "bot": b, "target_eid": target.eid, "hit": hit, "range": rng, "origin": b.pos, "aim": aim,
+		"form": -1 if melee else sk.vltk_missle_form, "radius": maxf(MIN_HIT_RADIUS, sk.get_effect_radius_px())})
+	_notify_cast(b, sk, target.eid, aim)
+	return true
+
+## Sai số ngắm của lần ra chiêu kế tiếp (não bot đặt trước khi gọi cast — người thật ngắm không chuẩn tuyệt đối).
+var aim_error := Vector2.ZERO
+
+## Bot tự thi triển chiêu hỗ trợ lên mình: buff (trạng thái có thời gian) hoặc bật hào quang.
+func cast_self(b: ServerBot, sk: SkillDefinition) -> bool:
+	var now: float = gs.now()
+	if sk == null or not b.skill_ready(sk, now) or b.is_jumping(now):
+		return false
+	b.begin_cast(sk, b.pos + Vector2(0, 1), now)
+	gs.broadcast_cast(b, sk.vltk_skill_id, b.skill_level(sk), NetProto.CAST_SUPPORT, b.eid, b.pos)
+	if sk.is_aura:
+		b.set_aura(sk.id)
+	else:
+		b.tally.buffs += 1
+		var payload := sk.get_state_payload(b.skill_level(sk))
+		b.add_state(sk.id, payload.attribs, float(payload.seconds), now)
 	return true
 
 func _deliver(now: float) -> void:
@@ -108,6 +135,8 @@ func _deliver(now: float) -> void:
 		var t: ServerEntity = gs.entity_of(int(p.target_eid))
 		if t == null or t.room_id != b.room_id or b.pos.distance_to(t.pos) > float(p.range) * HIT_RANGE_SLACK:
 			continue   ## mục tiêu đã chạy khỏi tầm / rời phòng: trượt (né được)
+		if not still_in_path(p, t.pos):
+			continue   ## bước ngang khỏi đường đạn / ra khỏi vùng nổ: né được
 		_apply_hit(b, t, p.hit, now)
 	_pending = keep
 
@@ -117,6 +146,9 @@ func _apply_hit(b: ServerBot, t: ServerEntity, hit: Dictionary, now: float) -> v
 		if tb.dead or not _allowed(b, tb):
 			return
 		var dmg := BotCombat.bot_vs_bot(b, tb, hit)
+		if dmg > 0:
+			b.tally.hits += 1
+			b.tally.dmg += dmg
 		if dmg > 0 and tb.lose_hp(float(dmg), now, b.eid, b.name):
 			_on_bot_died(tb)
 	elif t is ServerMonster:
@@ -125,11 +157,15 @@ func _apply_hit(b: ServerBot, t: ServerEntity, hit: Dictionary, now: float) -> v
 			return
 		var dmg := BotCombat.damage_vs_monster(b, m, hit)
 		if dmg > 0:
+			b.tally.hits += 1
+			b.tally.dmg += dmg
+		if dmg > 0:
 			gs.bot_damage_monster(b, m, float(dmg))
 	else:
 		var c = gs.conn_of_eid(t.eid)
 		if c == null or (t.flags & NetProto.FLAG_DEAD) != 0:
 			return
+		b.tally.hits += 1
 		gs.send_pvp_hit(c, b.eid, BotCombat.encode_for_player(b, hit))
 
 # ------------------------------------------------------------------ bot bị đánh
@@ -160,7 +196,7 @@ func on_player_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	if d.is_empty():
 		return
 	PvpHit.sanitize(d, c.max_hit)
-	var dmg := BotCombat.resolve_pvp_packet_on_bot(b, d)
+	var dmg := BotCombat.resolve_pvp_packet_on_bot(b, d, c.entity.eid)
 	if dmg > 0 and b.lose_hp(float(dmg), now, c.entity.eid, c.entity.name):
 		_on_bot_died(b)
 
@@ -191,3 +227,55 @@ func _on_bot_died(b: ServerBot) -> void:
 	_pending = _pending.filter(func(p): return p.bot != b)
 	if b.policy != null and b.policy.has_method("on_bot_died"):
 		b.policy.on_bot_died(b)
+
+## Lúc đòn tới, mục tiêu đứng ở `at` còn nằm trong đường đạn / vùng nổ không (theo dạng đạn MisslesForm gốc):
+##   cận chiến (-1) / không rõ: đã xét tầm ở trên; 1 thẳng: cách đường đạn (từ chỗ ra chiêu qua điểm ngắm) <= bán kính;
+##   5 vùng / 6 tại mục tiêu: cách điểm ngắm <= bán kính nổ; 2 toả / 3 vòng / 7 tại người thi triển: trong vòng quanh chỗ ra chiêu.
+static func still_in_path(p: Dictionary, at: Vector2) -> bool:
+	var form := int(p.get("form", -1))
+	var r := float(p.get("radius", MIN_HIT_RADIUS))
+	var origin: Vector2 = p.get("origin", at)
+	var aim: Vector2 = p.get("aim", at)
+	match form:
+		1:
+			var dir := aim - origin
+			if dir.length() < 1.0:
+				return at.distance_to(origin) <= r
+			var along := (at - origin).dot(dir.normalized())
+			if along < -r:
+				return false
+			var closest := origin + dir.normalized() * along
+			return at.distance_to(closest) <= r
+		5, 6:
+			return at.distance_to(aim) <= r
+		2, 3, 7:
+			return at.distance_to(origin) <= float(p.get("range", r)) * HIT_RANGE_SLACK
+		_:
+			return true
+
+## Báo cho các bot ở gần (trừ người ra chiêu) rằng `caster` vừa ra chiêu nhắm `target_eid` / điểm `aim` — não bot quyết né.
+## GameServer gọi cho chiêu của người thật; BotManager.cast tự gọi cho chiêu của bot.
+func on_cast_seen(caster: ServerEntity, skill_id: int, target_eid: int, aim: Vector2) -> void:
+	_notify(caster, skill_id, target_eid, aim)
+
+func _notify_cast(b: ServerBot, sk: SkillDefinition, target_eid: int, aim: Vector2) -> void:
+	_notify(b, sk.vltk_skill_id, target_eid, aim)
+
+func _notify(caster: ServerEntity, skill_id: int, target_eid: int, aim: Vector2) -> void:
+	for eid in bots:
+		var b: ServerBot = bots[eid]
+		if b == caster or b.dead or b.room_id != caster.room_id or b.pos.distance_to(caster.pos) > THREAT_RADIUS:
+			continue
+		if b.brain != null and b.brain.has_method("on_threat"):
+			b.brain.on_threat(b, self, caster, skill_id, target_eid, aim)
+
+## Thực thể trong bán kính quanh bot (cùng phòng): người thật, bot khác, quái. Dùng gs.entities_near nếu có (AOI), không thì duyệt bot.
+func nearby(b: ServerBot, radius: float) -> Array:
+	if gs.has_method("entities_near"):
+		return gs.entities_near(b.pos, radius, b.room_id, b.cell_base)
+	var out: Array = []
+	for eid in bots:
+		var o: ServerBot = bots[eid]
+		if o != b and o.room_id == b.room_id and o.pos.distance_to(b.pos) <= radius:
+			out.append(o)
+	return out

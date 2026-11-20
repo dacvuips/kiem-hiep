@@ -19,7 +19,7 @@ const ITEMS := {
 	"6_1_74":   {"hours": 8,  "mult": 1.0, "gold": 100000, "jade": 0},    ## Bạch Câu hoàn
 	"6_1_130":  {"hours": 8,  "mult": 1.5, "gold": 0,      "jade": 10},   ## Đại Bạch Câu hoàn
 	"6_1_1157": {"hours": 8,  "mult": 2.0, "gold": 0,      "jade": 20},   ## Bạch Câu Hoàn đặc biệt
-	"6_1_1434": {"hours": 80, "mult": 1.5, "gold": 0,      "jade": 90},   ## Đại bạch câu trường hiệu
+	"6_1_1434": {"hours": 80, "mult": 1.5, "gold": 0,      "jade": 90, "icon": "baijuwan", "rare": true},   ## Đại bạch câu trường hiệu (ảnh gốc baijuwan_changxiao không có trong bộ ảnh đã nhập)
 }
 
 static func is_item(misc_id: String) -> bool:

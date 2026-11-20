@@ -208,6 +208,8 @@ static func _guard_items(server_data: Dictionary, merged: Dictionary) -> int:
 			if it.has(k):
 				out[k] = it[k]
 		_guard_lock(known[uid], out)
+		if int(out.get("bind", 0)) & 1:   ## vật phẩm khoá giao dịch: không được đặt giá bày bán
+			out["price"] = 0
 		return out
 	## Đồ đang mặc xét TRƯỚC: uid trùng giữa trang bị và túi thì giữ bản đang mặc, bỏ bản trong túi.
 	var eq = merged.get("equipment", {})

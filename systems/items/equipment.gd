@@ -121,6 +121,7 @@ static func get_effective_magic(item: ItemInstance, active: int) -> Array:
 
 ## Nguồn thuộc tính của toàn bộ đồ đang mặc — mỗi món 1 {tên: Vector3i}, đưa vào CombatantStats.build().
 static func get_attrib_sources(equipped: Dictionary, character_series: int) -> Array[Dictionary]:
+	equipped = working(equipped)
 	var sources: Array[Dictionary] = []
 	var counts := get_active_counts(equipped, character_series)
 	for part in equipped:
@@ -142,6 +143,16 @@ static func get_attrib_sources(equipped: Dictionary, character_series: int) -> A
 		sources.append(source)
 	return sources
 
+## Bỏ đồ ĐÃ HỎNG (độ bền 0) — gốc tháo món hỏng khỏi người (KItemList::Abrade), nên nó không còn chỉ số / kích hoạt.
+## Món hỏng chỉ còn nằm trên người khi hành trang hết chỗ để tháo.
+static func working(equipped: Dictionary) -> Dictionary:
+	var out := {}
+	for part in equipped:
+		var item: ItemInstance = equipped[part]
+		if item != null and not ItemDurability.is_broken(item):
+			out[part] = item
+	return out
+
 static func _add(source: Dictionary, attrib_name: String, v: Vector3i) -> void:
 	source[attrib_name] = source.get(attrib_name, Vector3i.ZERO) + v
 
@@ -150,7 +161,7 @@ static func _add(source: Dictionary, attrib_name: String, v: Vector3i) -> void:
 ##   vũ khí của CẢ 6 dòng, không xét kích hoạt. Không cầm vũ khí -> kind "" (tay không).
 static func get_weapon_damage(equipped: Dictionary) -> Dictionary:
 	var weapon: ItemInstance = equipped.get(Part.WEAPON)
-	if weapon == null:
+	if weapon == null or ItemDurability.is_broken(weapon):
 		return {"kind": "", "min": 0, "max": 0}
 	var add_min := 0
 	var add_max := 0
@@ -220,14 +231,17 @@ static func get_unmet_requirements(item: ItemInstance, profile: PlayerProfile, c
 ## ám khí = 100 + loại (100 tiêu, 101 đao, 102 tiễn, 103 cầm, 104 cung).
 static func get_weapon_class(equipped: Dictionary) -> int:
 	var weapon: ItemInstance = equipped.get(Part.WEAPON)
-	if weapon == null:
+	if weapon == null or ItemDurability.is_broken(weapon):
 		return -1
 	var particular := int(weapon.get_base().get("particular", 0))
 	if weapon.get_detail() == ItemDatabase.Detail.RANGE:
 		return 100 + particular
 	return -1 if particular == 6 else particular
 
+## false = nền ô đỏ: chưa đủ yêu cầu, hoặc ĐÃ HỎNG (độ bền 0 — KItemList::CanEquip gốc) chờ thợ rèn sửa.
 static func can_use(item: ItemInstance, profile: PlayerProfile, ctx: Dictionary = {}) -> bool:
+	if ItemDurability.is_broken(item):
+		return false
 	return get_unmet_requirements(item, profile, ctx).is_empty()
 
 # ---------------------------------------------------------------- ngoại hình

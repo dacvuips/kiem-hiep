@@ -5,9 +5,9 @@ class_name ChatBox
 const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
 const MapChatHelper = preload("res://systems/map_chat_helper.gd")
 
-## Khung CHAT online (giữa, sát đáy màn hình): không có ô chọn kênh — tin gửi luôn vào kênh Gần; "Tán gẫu" từ menu người chơi
-
-## (open_whisper) mới chuyển sang nhắn Riêng cho 1 tin (hiện ô tên người nhận). Tin nhận về vẫn hiện đủ mọi kênh.
+## Khung CHAT online (giữa, sát đáy màn hình): ô chọn kênh gửi (Gần / Tổ đội / Môn phái / Bang hội / Thế giới / Riêng) trước ô nhập,
+## ô chọn bộ lọc xem (Tất cả / Hệ thống / từng kênh) ở hàng đầu. "Tán gẫu" từ menu người chơi (open_whisper) chọn sẵn kênh Riêng.
+## Kinh nghiệm hạ quái KHÔNG ghi vào chat: hiện "+số EXP" nổi trên mép phải khung chat (push_exp).
 
 ## Tin gửi qua game server (ChatServer kiểm tra cấm chat, tốc độ, độ dài). Vào game khung THU GỌN (ẩn phần tin); bấm "Chat" để
 
@@ -21,9 +21,9 @@ const VISIBLE_STEPS := [3, 10, 20]   ## số dòng thấy được; nút ▲ đ�
 
 const FONT_SIZE := 13
 
-const COLORS := [Color(0.93, 0.93, 0.9), Color(1.0, 0.82, 0.35), Color(0.45, 0.85, 1.0), Color(0.5, 0.95, 0.5), Color(1.0, 0.6, 0.85)]
+const COLORS := [Color(0.93, 0.93, 0.9), Color(1.0, 0.82, 0.35), Color(0.45, 0.85, 1.0), Color(0.5, 0.95, 0.5), Color(1.0, 0.6, 0.85), Color(1.0, 0.62, 0.3)]
 
-enum Tab { ALL, SYSTEM }
+enum Tab { ALL, SYSTEM, CHANNEL }
 
 var _log: RichTextLabel
 
@@ -45,12 +45,24 @@ var _step := 0
 
 var _current_tab: Tab = Tab.ALL
 
-var _tab_all: Button
-
-var _tab_sys: Button
-
 var _messages: Array[Dictionary] = []
 var _attached_items: Dictionary = {} # "[Tên Món]" -> "{item:BASE64}"
+## Chữ "Đang treo máy..." vàng, nhấp nháy + chạy dấu chấm, nằm trên mép khung chat 5px khi Auto bật.
+const AFK_GAP := 5.0
+var _afk_label: Label
+var _afk_time := 0.0
+## Chữ "+EXP" nổi: tối đa EXP_ROWS nhãn dùng lại (không tạo / xoá node mỗi lần hạ quái).
+const EXP_ROWS := 3
+const EXP_LIFE := 3.0
+const EXP_RISE := 18.0      ## px bay lên trong suốt EXP_LIFE
+const EXP_ROW_GAP := 2.0
+var _exp_pool: Array[Label] = []
+var _exp_rows: Array[Dictionary] = []   ## [{label, age}] — cũ nhất ở đầu
+## Kênh gửi (ô chọn ở hàng nhập) và bộ lọc xem (ô chọn ở hàng đầu) — dạng select như khung chat gốc, không bày hàng nút.
+const SEND_CHANNELS: Array[int] = [ChatServer.NEAR, ChatServer.TEAM, ChatServer.FACTION, ChatServer.GUILD, ChatServer.WORLD, ChatServer.PRIVATE]
+var _channel_pick: OptionButton
+var _view_pick: OptionButton
+var _view_channel := -1   ## Tab.CHANNEL: chỉ xem kênh này
 
 static var current: ChatBox = null
 ## Tin nhắn riêng phát sinh khi chưa có khung chat (VD chat mật trong phòng chờ PUBG ở Hub) — đổ vào khi khung chat dựng xong.
@@ -61,7 +73,7 @@ static func push_private(from_name: String, to_name: String, text: String) -> vo
 	var color: Color = COLORS[ChatServer.PRIVATE]
 	var line := "[color=#%s][%s] %s → %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[ChatServer.PRIVATE], _esc(from_name), _esc(to_name), _esc(text)]
 	if current != null and is_instance_valid(current) and current._log != null:
-		current.add_line(line, false)
+		current.add_line(line, false, ChatServer.PRIVATE)
 	else:
 		_pending_lines.append(line)
 		if _pending_lines.size() > MAX_LINES:
@@ -85,7 +97,8 @@ static func push_system(bbcode: String) -> void:
 
 		current._shrink_to_fit.call_deferred()
 
-## Gửi thông báo nhận kinh nghiệm khi diệt quái vào khung chat
+## Nhận kinh nghiệm khi diệt quái: KHÔNG ghi vào khung chat — hiện chữ "+số EXP" nổi phía trên mép phải khung chat,
+## bay lên rồi mờ dần trong EXP_LIFE giây, chồng tối đa EXP_ROWS dòng (dòng mới nhất ở dưới cùng).
 
 static func push_exp(_monster_name: String, exp_amount: int) -> void:
 
@@ -93,9 +106,9 @@ static func push_exp(_monster_name: String, exp_amount: int) -> void:
 
 		return
 
-	var text := "[color=#ffaa00][Hệ thống][/color] Nhận được [color=#55ff55]+%s[/color] kinh nghiệm." % InventoryPopup.format_money(exp_amount)
+	if current != null and is_instance_valid(current):
 
-	push_system(text)
+		current._show_exp(exp_amount)
 
 ## Đặt khung chat vào giữa đáy màn chơi (node "UI" của Main).
 
@@ -113,20 +126,29 @@ static func attach(ui: Node) -> ChatBox:
 
 	return box
 
+const CHAT_SHIFT_X := 80.0
+## Khoảng cách từ mép phải khung chat tới cụm nút tiện ích bên phải (Nhân vật / Hành trang… và Giao dịch / Ngồi / Đội / PK).
+const ICONS_GAP := 10.0
+
 func apply_hud_layout() -> void:
+	## Đợi Main xếp xong cụm nút tiện ích (cùng lượt HudLayout báo đổi) rồi mới canh theo.
+	_apply_hud_layout_now.call_deferred()
 
-	anchor_left = 0.5
+## Mép trái (toạ độ màn) của cụm nút tiện ích bên phải; NAN nếu chưa có (VD màn không có các cụm đó).
+func _icons_left_x() -> float:
+	var parent := get_parent()
+	if parent == null:
+		return NAN
+	var x := INF
+	for n in ["SideMenu", "BottomActionBar"]:
+		var c := parent.get_node_or_null(n) as Control
+		if c != null and c.is_visible_in_tree():
+			x = minf(x, c.get_global_rect().position.x)
+	return x if x < INF else NAN
 
-	anchor_right = 0.5
-
-	anchor_top = 1.0
-
-	anchor_bottom = 1.0
-
-	grow_horizontal = Control.GROW_DIRECTION_BOTH
-
-	grow_vertical = Control.GROW_DIRECTION_BEGIN
-
+func _apply_hud_layout_now() -> void:
+	if not is_inside_tree():
+		return
 	var d := HudLayout.get_element("chat_box")
 
 	var w: float = float(d.get("width", 400.0))
@@ -141,15 +163,36 @@ func apply_hud_layout() -> void:
 
 	size.x = w
 
-	offset_left = -w + ox
+	anchor_top = 1.0
 
-	offset_right = 0.0 + ox
+	anchor_bottom = 1.0
+
+	grow_vertical = Control.GROW_DIRECTION_BEGIN
+
+	scale = Vector2.ONE * sc
+
+	var icons_x := _icons_left_x()
+
+	if not is_nan(icons_x):
+		## Mặc định: mép phải khung chat cách cụm nút tiện ích ICONS_GAP px (neo phải -> đổi cỡ màn vẫn giữ khoảng).
+		anchor_left = 1.0
+		anchor_right = 1.0
+		grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		var right := icons_x - get_viewport_rect().size.x - ICONS_GAP + ox
+		## Phóng quanh góc trên-trái: kích thước gốc w, sau khi phóng mép phải đúng `right`.
+		offset_left = right - w * sc
+		offset_right = offset_left + w
+	else:
+		anchor_left = 0.5
+		anchor_right = 0.5
+		grow_horizontal = Control.GROW_DIRECTION_BOTH
+		## Lùi sang trái CHAT_SHIFT_X px so với giữa màn để không đè cụm nút tiện ích bên phải.
+		offset_left = -w - CHAT_SHIFT_X + ox
+		offset_right = -CHAT_SHIFT_X + ox
 
 	offset_top = -8.0 + oy
 
 	offset_bottom = -8.0 + oy
-
-	scale = Vector2.ONE * sc
 
 func _notification(what: int) -> void:
 
@@ -193,29 +236,22 @@ func _init() -> void:
 
 	head.add_child(_size_btn)
 
-	_tab_all = SocialUi.small_button("Tất cả")
-
-	_tab_all.add_theme_font_size_override("font_size", 12)
-
-	_tab_all.tooltip_text = "Xem tất cả tin nhắn và hệ thống"
-
-	_tab_all.pressed.connect(func() -> void: _set_tab(Tab.ALL))
-
-	head.add_child(_tab_all)
-
-	_tab_sys = SocialUi.small_button("Hệ thống")
-
-	_tab_sys.add_theme_font_size_override("font_size", 12)
-
-	_tab_sys.tooltip_text = "Chỉ xem thông báo hệ thống và kinh nghiệm"
-
-	_tab_sys.pressed.connect(func() -> void: _set_tab(Tab.SYSTEM))
-
-	head.add_child(_tab_sys)
-
-	_update_tab_buttons()
-
-	head.add_child(SocialUi.label("Enter để gửi", SocialUi.MUTED, 12))
+	## Bộ lọc xem: Tất cả / Hệ thống / từng kênh — 1 ô chọn (item id: -2 tất cả, -1 hệ thống, >= 0 kênh).
+	_view_pick = _make_pick()
+	_view_pick.tooltip_text = "Chọn loại tin muốn xem"
+	_view_pick.add_item("Tất cả", 1000)
+	_view_pick.add_item("Hệ thống", 1001)
+	for ch in SEND_CHANNELS:
+		_view_pick.add_item(ChatServer.CHANNEL_NAMES[ch], ch)
+	_view_pick.item_selected.connect(func(idx: int) -> void:
+		var id := _view_pick.get_item_id(idx)
+		if id == 1000:
+			_set_tab(Tab.ALL)
+		elif id == 1001:
+			_set_tab(Tab.SYSTEM)
+		else:
+			_set_channel_view(id))
+	head.add_child(_view_pick)
 
 	root.add_child(head)
 
@@ -248,6 +284,14 @@ func _init() -> void:
 	var row := HBoxContainer.new()
 
 	row.add_theme_constant_override("separation", 4)
+
+	## Kênh gửi (tần số): Gần / Tổ đội / Môn phái / Bang hội / Thế giới / Riêng — ô chọn ngay trước ô nhập.
+	_channel_pick = _make_pick()
+	_channel_pick.tooltip_text = "Chọn kênh gửi tin"
+	for ch in SEND_CHANNELS:
+		_channel_pick.add_item(ChatServer.CHANNEL_NAMES[ch], ch)
+	_channel_pick.item_selected.connect(func(idx: int) -> void: _set_send_channel(_channel_pick.get_item_id(idx)))
+	row.add_child(_channel_pick)
 
 	_to = SocialUi.line_edit("Tên người nhận")
 
@@ -282,9 +326,111 @@ func _init() -> void:
 func _ready() -> void:
 
 	_fit_height()
+	_build_afk_label.call_deferred()
 	for line in _pending_lines:
-		add_line(line, false)
+		add_line(line, false, ChatServer.PRIVATE)
 	_pending_lines.clear()
+
+## Nhãn treo máy gắn vào cha của khung chat (không nằm trong PanelContainer để khỏi bị ép bố cục).
+func _build_afk_label() -> void:
+	if _afk_label != null or get_parent() == null:
+		return
+	_afk_label = Label.new()
+	_afk_label.name = "AfkLabel"
+	_afk_label.text = "Đang treo máy..."
+	_afk_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_afk_label.add_theme_font_size_override("font_size", 26)
+	_afk_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.2))
+	_afk_label.add_theme_color_override("font_outline_color", Color(0.15, 0.08, 0.0))
+	_afk_label.add_theme_constant_override("outline_size", 6)
+	_afk_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	_afk_label.add_theme_constant_override("shadow_offset_x", 2)
+	_afk_label.add_theme_constant_override("shadow_offset_y", 2)
+	_afk_label.visible = false
+	get_parent().add_child(_afk_label)
+	tree_exiting.connect(func() -> void:
+		if is_instance_valid(_afk_label):
+			_afk_label.queue_free())
+
+## Hiện 1 dòng "+số EXP": lấy nhãn rảnh trong pool (hoặc dòng cũ nhất khi đã đủ EXP_ROWS dòng) đưa xuống cuối.
+func _show_exp(amount: int) -> void:
+	var host := get_parent()
+	if host == null:
+		return
+	var lbl: Label
+	if _exp_rows.size() >= EXP_ROWS:
+		lbl = _exp_rows.pop_front()["label"]
+	elif not _exp_pool.is_empty():
+		lbl = _exp_pool.pop_back()
+	else:
+		lbl = Label.new()
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lbl.add_theme_font_size_override("font_size", 20)
+		lbl.add_theme_color_override("font_color", Color(0.45, 1.0, 0.45))
+		lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.12, 0.0))
+		lbl.add_theme_constant_override("outline_size", 5)
+		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+		lbl.add_theme_constant_override("shadow_offset_x", 2)
+		lbl.add_theme_constant_override("shadow_offset_y", 2)
+		host.add_child(lbl)
+		tree_exiting.connect(func() -> void:
+			if is_instance_valid(lbl):
+				lbl.queue_free())
+	lbl.text = "+%s EXP" % InventoryPopup.format_money(amount)
+	lbl.size = lbl.get_combined_minimum_size()
+	lbl.visible = true
+	_exp_rows.append({"label": lbl, "age": 0.0})
+	_update_exp(0.0)
+
+## Xếp các dòng "+EXP": dòng mới nhất sát mép trên khung chat (bên phải, ngang chữ "Đang treo máy"), dòng cũ hơn đẩy lên trên;
+## mỗi dòng bay lên EXP_RISE px và mờ dần trong giây cuối của EXP_LIFE.
+func _update_exp(delta: float) -> void:
+	if _exp_rows.is_empty():
+		return
+	var r := get_global_rect()
+	var base_y := r.position.y - AFK_GAP
+	var anchor_x := r.end.x
+	for i in range(_exp_rows.size() - 1, -1, -1):
+		var row: Dictionary = _exp_rows[i]
+		row.age += delta
+		var lbl: Label = row.label
+		if row.age >= EXP_LIFE or not is_instance_valid(lbl):
+			_exp_rows.remove_at(i)
+			if is_instance_valid(lbl):
+				lbl.visible = false
+				_exp_pool.append(lbl)
+	var y := base_y
+	for i in range(_exp_rows.size() - 1, -1, -1):
+		var row: Dictionary = _exp_rows[i]
+		var lbl: Label = row.label
+		var t: float = row.age / EXP_LIFE
+		var sz := lbl.size
+		y -= sz.y
+		lbl.global_position = Vector2(anchor_x - sz.x * 0.5, y - EXP_RISE * t)
+		lbl.modulate.a = clampf((EXP_LIFE - row.age) / 1.0, 0.0, 1.0) * clampf(row.age / 0.15 + 0.3, 0.0, 1.0)
+		y -= EXP_ROW_GAP
+
+func _process(delta: float) -> void:
+	_update_exp(delta)
+	if _afk_label == null or not is_instance_valid(_afk_label):
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	var on: bool = visible and p != null and bool(p.get("is_auto_mode"))
+	if _afk_label.visible != on:
+		_afk_label.visible = on
+		_afk_time = 0.0
+	if not on:
+		return
+	_afk_time += delta
+	## Dấu chấm chạy 0 -> 3 (mỗi 0.4s) + nhấp nháy sáng/tối + nhún nhẹ lên xuống.
+	var dots := int(_afk_time / 0.4) % 4
+	_afk_label.text = "Đang treo máy" + ".".repeat(dots) + " ".repeat(3 - dots)
+	_afk_label.modulate.a = 0.65 + 0.35 * (0.5 + 0.5 * sin(_afk_time * 4.0))
+	var bob := -1.5 * (1.0 + sin(_afk_time * 3.0))   ## chỉ nhún lên, luôn cách khung chat ≥ 5px
+	var r := get_global_rect()
+	var sz := _afk_label.get_combined_minimum_size()
+	_afk_label.size = sz
+	_afk_label.global_position = Vector2(r.position.x, r.position.y - AFK_GAP - sz.y + bob)
 
 ## Chiều cao khung chữ theo font thật (chỉ đọc được theme khi đã vào cây cảnh).
 
@@ -330,13 +476,52 @@ func open_whisper(to_name: String) -> void:
 
 	_toggle.text = "Chat ▾"
 
-	_channel = ChatServer.PRIVATE
-
-	_to.visible = true
+	_set_send_channel(ChatServer.PRIVATE)
 
 	_to.text = to_name
 
 	_input.grab_focus()
+
+## Ô chọn (OptionButton) cùng kiểu nút chung của game (GameUi), cỡ chữ nhỏ cho hàng chat.
+func _make_pick() -> OptionButton:
+	GameUi.apply()
+	var o := OptionButton.new()
+	o.focus_mode = Control.FOCUS_NONE
+	o.theme_type_variation = GameUi.BUTTON
+	o.add_theme_font_size_override("font_size", 12)
+	o.fit_to_longest_item = true
+	return o
+
+## Đổi kênh gửi: kênh Riêng mới hiện ô tên người nhận.
+func _set_send_channel(ch: int) -> void:
+	_channel = ch
+	_to.visible = ch == ChatServer.PRIVATE
+	if _channel_pick != null:
+		var idx := _channel_pick.get_item_index(ch)
+		if idx >= 0 and _channel_pick.selected != idx:
+			_channel_pick.select(idx)
+
+## Bộ lọc xem chỉ 1 kênh.
+func _set_channel_view(ch: int) -> void:
+	_view_channel = ch
+	_current_tab = Tab.CHANNEL
+	_show_body()
+	_rebuild_log()
+
+func _show_body() -> void:
+	if not _body.visible:
+		_body.visible = true
+		_toggle.text = "Chat ▾"
+		_shrink_to_fit.call_deferred()
+
+## Tin có hiện theo bộ lọc đang chọn không.
+func _passes(m: Dictionary) -> bool:
+	match _current_tab:
+		Tab.SYSTEM:
+			return bool(m.get("is_system", false))
+		Tab.CHANNEL:
+			return int(m.get("channel", -1)) == _view_channel
+	return true
 
 func _on_toggle() -> void:
 
@@ -354,35 +539,14 @@ func _set_tab(tab: Tab) -> void:
 
 	_current_tab = tab
 
-	_update_tab_buttons()
+	if _view_pick != null:
+		var idx := _view_pick.get_item_index(1000 if tab == Tab.ALL else 1001)
+		if tab != Tab.CHANNEL and idx >= 0 and _view_pick.selected != idx:
+			_view_pick.select(idx)
 
-	if not _body.visible:
-
-		_body.visible = true
-
-		_toggle.text = "Chat ▾"
-
-		_shrink_to_fit.call_deferred()
+	_show_body()
 
 	_rebuild_log()
-
-func _update_tab_buttons() -> void:
-
-	if _tab_all == null or _tab_sys == null:
-
-		return
-
-	if _current_tab == Tab.ALL:
-
-		_tab_all.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
-
-		_tab_sys.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65))
-
-	else:
-
-		_tab_all.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65))
-
-		_tab_sys.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
 
 func _rebuild_log() -> void:
 
@@ -396,11 +560,7 @@ func _rebuild_log() -> void:
 
 	for m in _messages:
 
-		var is_sys: bool = bool(m.get("is_system", false))
-
-		var show := (_current_tab == Tab.ALL) or (_current_tab == Tab.SYSTEM and is_sys)
-
-		if show:
+		if _passes(m):
 
 			if _lines >= MAX_LINES:
 
@@ -656,15 +816,7 @@ func _send() -> void:
 
 	_input.text = ""
 
-	_input.release_focus()   ## gửi xong trả phím về cho nhân vật
-
-	if ch == ChatServer.PRIVATE:   ## nhắn riêng xong quay về kênh Gần
-
-		_channel = ChatServer.NEAR
-
-		_to.visible = false
-
-		_to.text = ""
+	_input.release_focus()   ## gửi xong trả phím về cho nhân vật (giữ nguyên kênh đang chọn, như khung chat gốc)
 
 func _on_chat(channel: int, from_eid: int, from_name: String, to_name: String, text: String) -> void:
 
@@ -686,7 +838,7 @@ func _on_chat(channel: int, from_eid: int, from_name: String, to_name: String, t
 
 	var body_bbcode := ItemChatHelper.format_chat_bbcode(text)
 	body_bbcode = MapChatHelper.format_chat_map_bbcode(body_bbcode)
-	add_line("[color=#%s][%s] %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[channel], who, body_bbcode], false)
+	add_line("[color=#%s][%s] %s:[/color] %s" % [color.to_html(false), ChatServer.CHANNEL_NAMES[channel], who, body_bbcode], false, channel)
 
 	if channel == ChatServer.NEAR:
 
@@ -736,17 +888,18 @@ func _speaker_node(eid: int) -> Node2D:
 
 	return NetWorldSync.current.remote_of(eid) if NetWorldSync.current else null
 
-func add_line(bbcode: String, is_system := false) -> void:
+## `channel`: kênh chat của tin (-1 = không thuộc kênh nào, VD thông báo hệ thống) — dùng cho bộ lọc xem theo kênh.
+func add_line(bbcode: String, is_system := false, channel := -1) -> void:
 
-	_messages.append({"text": bbcode, "is_system": is_system})
+	var m := {"text": bbcode, "is_system": is_system, "channel": channel}
+
+	_messages.append(m)
 
 	if _messages.size() > MAX_LINES:
 
 		_messages.pop_front()
 
-	var show := (_current_tab == Tab.ALL) or (_current_tab == Tab.SYSTEM and is_system)
-
-	if show:
+	if _passes(m):
 
 		if _lines >= MAX_LINES:
 

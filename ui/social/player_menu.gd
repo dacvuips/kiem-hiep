@@ -38,8 +38,9 @@ func _build(screen_pos: Vector2) -> void:
 	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	## Nền trong suốt phủ màn hình: bấm ra ngoài menu thì đóng, cú bấm không lọt xuống map.
-	var back := Control.new()
+	## Nền tối mờ phủ toàn màn hình (Dark Backdrop): bấm ra ngoài menu thì đóng, cú bấm không lọt xuống map.
+	var back := ColorRect.new()
+	back.color = Color(0, 0, 0, 0)   ## trong suốt: không tối màn hình, chỉ để bắt cú bấm ra ngoài
 	back.set_anchors_preset(Control.PRESET_FULL_RECT)
 	back.mouse_filter = Control.MOUSE_FILTER_STOP
 	back.gui_input.connect(func(e: InputEvent) -> void:
@@ -47,13 +48,18 @@ func _build(screen_pos: Vector2) -> void:
 			close_current())
 	add_child(back)
 	_panel = GameUi.panel(GameUi.WINDOW)  # khung cửa sổ chung của game
+	## Riêng menu này: nền hơi trong suốt, không viền vàng ngoài (nút bên trong giữ kiểu chung).
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(GameUi.BG, 0.6)
+	sb.set_corner_radius_all(GameUi.RADIUS_WINDOW)
+	sb.set_content_margin_all(GameUi.PAD_WINDOW)
+	_panel.add_theme_stylebox_override("panel", sb)
 	_panel.custom_minimum_size = Vector2(WIDTH, 0)
 	add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	_panel.add_child(box)
 	box.add_child(GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(GameUi.label("Cấp %d" % _target.level, GameUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(GameUi.divider())
 	for item in _items():
 		var b := GameUi.button(str(item[0]), GameUi.BUTTON)
@@ -178,7 +184,6 @@ func _team() -> void:
 			_notify("Đã gửi lời mời vào tổ đội tới %s." % _target.display_name)
 		else:
 			_notify("Đã mời %s vào tổ đội." % _target.display_name)
-	TeamWindow.open(_host(), hub)
 
 func _enmity() -> void:
 	var eid := _target.eid

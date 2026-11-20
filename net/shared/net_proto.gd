@@ -6,10 +6,12 @@ class_name NetProto
 ## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
-const VERSION := 3
+const VERSION := 5                ## 4: C_MOVE kèm dấu giờ, S_STATE kèm tuổi mẫu; 5: ngoại hình kèm skill + cấp hào quang (buff đồng đội)
 const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK gốc)
-const SNAPSHOT_EVERY := 2         ## gửi vị trí mỗi 2 tick = 9 lần/giây
-const CLIENT_SEND_RATE := 15.0    ## game gửi vị trí của mình tối đa 15 lần/giây
+const SNAPSHOT_EVERY := 1         ## gửi vị trí MỖI tick = 18 lần/giây (9 lần/giây cách 111ms -> bộ đệm nội suy hay rỗng, khựng)
+const SNAPSHOT_MS := 1000.0 * SNAPSHOT_EVERY / TICK_RATE   ## khoảng cách 2 lượt gửi vị trí (~55.6ms)
+const CLIENT_SEND_RATE := 20.0    ## game gửi vị trí của mình tối đa 20 lần/giây (>= nhịp server: lượt gửi nào cũng có mẫu mới)
+const STATE_AGE_UNIT_MS := 2      ## S_STATE: tuổi mẫu vị trí tính theo đơn vị 2ms (u8 -> tối đa 510ms)
 const AOI_CELL := 1024.0          ## ô lưới tầm nhìn (px); mỗi người thấy 3x3 ô quanh mình
 ## ENet tự BỎ gói không tin cậy khi thấy trễ tăng (throttle) — với game gửi đều 9-15 gói/giây thì chỉ làm mất vị trí,
 ## nên tắt phần giảm (deceleration = 0). Gọi cho mọi ENetPacketPeer mới kết nối, ở cả 2 đầu.
@@ -26,8 +28,9 @@ const C_HELLO := 1        ## u16 version, str access_token, u32 character_id, [u
 ## server chỉ nhận gói xã hội / chợ / lưu nhân vật (GameServer.HUB_ALLOWED).
 const HELLO_WORLD := 0
 const HELLO_HUB := 1
-const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags
-const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse
+const C_MOVE := 2         ## f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u32 t — t = giờ SERVER (NetClient.server_now_ms) lúc
+                          ## lấy vị trí: server biết mẫu cũ bao lâu dù gói tới lệch nhịp tick (thiếu t = lúc server nhận)
+const C_LOOK := 3         ## i16 helm, i16 armor, i16 weapon, i16 horse, u8 gender, i16 mask, i32 aura_state, u8 n + n x u32 states
 const C_DAMAGE := 4       ## u32 monster_eid, u32 amount, u8 flags (1 = làm khựng) — sát thương đã tính ở máy người đánh
 const C_PROFILE := 5      ## u32 grant_ack, json(PlayerProfile.to_dict) nén — game server gộp (ProfileGuard) rồi lưu.
                           ## grant_ack = số thứ tự "quà" (đồ / tiền server cho) cuối cùng game đã áp vào hồ sơ
@@ -46,7 +49,7 @@ const C_PVP_HIT := 22     ## u32 target_eid, u32 n, n byte PvpHit — đòn đá
 const C_BATTLE := 23      ## u8 op (BattleServer.OP_*), str json tham số — chiến trường Tống Kim (chỉ battle server)
 const C_SECURITY := 17    ## u8 op (SocialServer.SEC_*), str hash1, str hash2 — khoá bảo vệ (gửi MÃ BĂM, không gửi mật mã)
 const C_GUILD := 16       ## u8 op (GuildServer.G_*), str json tham số
-const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..PRIVATE), str target (tên người nhận khi nhắn riêng), str text
+const C_CHAT := 15        ## u8 channel (ChatServer.NEAR..LAST_CHANNEL), str target (tên người nhận khi nhắn riêng), str text
 const C_TEAM := 14        ## u8 op (SocialServer.TEAM_*), u32 arg (eid / giá trị), u8 arg2 (đồng ý / chế độ)
 const C_TRADE_REQ_ID := 24 ## u32 character_id — xin giao dịch theo ID nhân vật (Chợ › Giao dịch): không cần đứng gần
 const C_MARKET := 25      ## str json {op: "list" {filter} | "mine" | "sell" {uid, price, cur} | "buy" {id} | "cancel" {id}} — Chợ Giao Thương
@@ -56,7 +59,12 @@ const C_SHOP_BUY := 28    ## str misc_id, u8 count — mua ở Hiệu thuốc (P
 const C_CRAFT := 29       ## str json {op, uids, alt} — Chế tạo (Compound.run trên hồ sơ của server) -> S_NOTICE + S_PROFILE
 const C_PUBG := 31       ## u8 op (PubgServer.OP_*) + str json — Chiến Trường Sinh Tồn: đội chờ (từ Hub) + trong trận
 const C_LONXON := 32     ## u8 op (LonXonServer.OP_*) + str json — Lộn Xộn: xem host / vào host (từ Hub) + trong trận
-const C_HP := 35          ## u8 phần trăm máu 0..100 — máy người chơi báo máu của mình (khi đổi) để đồng đội / người xung quanh thấy
+const C_MSTATE := 34      ## u32 monster_eid, u32 state_id, u16 thời gian (1/10 giây) — bùa mình vừa áp lên quái (chỉ để người khác VẼ)
+const C_REPAIR := 36      ## str item_uid ("" = sửa hết), u8 mode (REPAIR_*) — Thợ rèn sửa trang bị trên hồ sơ server -> S_NOTICE + S_PROFILE
+const REPAIR_NORMAL := 0  ## KPlayer::RepairItem (lượng bạc theo độ bền đã mất)
+const REPAIR_BROKEN_GOLD := 1  ## thoren.lua: sửa đồ đã hỏng hẳn bằng 50 vạn lượng
+const REPAIR_BROKEN_XU := 2    ## thoren.lua: sửa đồ đã hỏng hẳn bằng xu
+const C_HP := 35         ## u8 phần trăm máu 0..100 — máy người chơi báo máu của mình (khi đổi) để đồng đội / người xung quanh thấy
 const C_UY_THAC := 33    ## str json {op: "buy" {mid, n} | "use" {uid}} — Ủy thác (Bạch Câu Hoàn, UyThac trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_DA_TAU := 30      ## str json {op, ...} — Dã Tẩu (claim_option / claim_milestone trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
@@ -67,9 +75,10 @@ const S_ERROR := 2        ## str code, str message (rồi ngắt kết nối)
 const S_SPAWN := 3        ## u32 eid, u8 kind, str name, u16 level, i8 camp, u8 nation, str stall_title ("" = không bày bán), f32 x, f32 y, u8 dir, u8 action, u8 z, u8 flags, u8 hp,
                           ## rồi: người chơi = look; quái = u16 monster_id, u8 series, u8 blue_boss
 const S_DESPAWN := 4      ## u32 eid
-const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, u24 x*2, u24 y*2, u8 dir|action<<3, u8 z, u8 flags, u8 hp) — 14 byte/mục
+const S_STATE := 5        ## u32 server_ms, u16 n, n x (u32 eid, u24 x*2, u24 y*2, u8 dir|action<<3, u8 z, u8 flags, u8 hp, u8 age) — 15 byte/mục;
+                          ## age = mẫu vị trí cũ hơn server_ms bao nhiêu (đơn vị STATE_AGE_UNIT_MS): giờ mẫu = server_ms - age*2
 const S_CORRECT := 6      ## f32 x, f32 y — server kéo nhân vật của mình về vị trí hợp lệ
-const S_LOOK := 7         ## u32 eid, u8 gender, i16 helm, i16 armor, i16 weapon, i16 horse
+const S_LOOK := 7         ## u32 eid + put_look (gender, 4 mã hình, mask, i32 aura_state, u8 n + n x u32 states buff/bùa, u16 aura_skill, u8 aura_level)
 const S_MATTACK := 8      ## u32 monster_eid, u8 skill_slot, u32 target_eid, u8 dir64 — quái bắt đầu ra chiêu vào target
 const S_PONG := 9         ## u32 client_ms, u32 server_ms
 const S_KILL := 10        ## u32 monster_eid, u16 monster_id, u16 level, u8 series, u8 blue, f32 x, f32 y, u8 share% — mình được thưởng
@@ -101,7 +110,9 @@ const S_BATTLE := 38      ## str json {op: "state" | "joined" | "reject" | "resu
 const S_MARKET := 39      ## json nén {op: "list" | "mine" | "done", items: [listing MarketBook], now, slots, ok, msg} — Chợ Giao Thương
 const S_ARENA := 40       ## str json {op: "room" | "state" | "result" | "reject" | "searching" | "no_match", ...} — đấu trường PK
 const S_PUBG := 43       ## json nén {op: "room" | "none" | "chat" | "searching" | "match" | "mstate" | "eliminated" | "result" | "reject", ...}
-const S_TEAM_HP := 46     ## u8 n, n x (u32 eid, u8 hp %, u8 near) — máu đồng đội (gửi khi đổi, ~3 lần/giây); near = cùng phòng / map với mình
+const S_ITEM_DUR := 47    ## u8 n, n x (str uid, i16 độ bền mới) — server vừa trừ độ bền đồ đang mặc (ItemDurability, ITEM_DURABILITY_CHANGE gốc)
+const S_TEAM_HP := 46    ## u8 n, n x (u32 eid, u8 hp %, u8 near) — máu đồng đội (gửi khi đổi, ~3 lần/giây); near = cùng phòng / map với mình
+const S_MSTATE := 45      ## u32 monster_eid, u8 n, n x (u32 state_id, u16 còn lại 1/10 giây) — hình bùa đang dính trên quái
 const S_LONXON := 44     ## json nén {op: "hosts" | "match" | "reject" | "board" | "tokens" | "died" | "respawn" | "level" | "none", ...}
 const S_FIELD := 41       ## str json {op: "room" | "reject", id, map_id, tier, stars, host, members, max} — phòng train chung Vượt Ải
 const S_PLAYER_GUILD := 42 ## u32 eid, str guild_name, u16 guild_emblem — tên + biểu tượng bang hội trên đầu người chơi khác
@@ -110,6 +121,7 @@ const S_GUILD_LIST := 28  ## str json [{name, camp, level, members, cap, master,
 const S_GUILD_INVITE := 29 ## str guild_name, str from_name
 const S_CHAT := 26        ## u8 channel, u32 from_eid, str from_name, str to_name (nhắn riêng), str text
 const S_TEAM_INVITE := 25 ## u32 captain_eid, str captain_name — được mời vào đội
+const S_TEAM_APPLY := 48  ## u32 applicant_eid, str applicant_name, u16 applicant_level — có người xin vào đội
 const S_STALL_ITEMS := 23 ## u32 seller_eid, str title ("" = quầy đóng), u16 n, n x str json đồ (có giá)
 const MAX_PROFILE_BYTES := 512 * 1024
 
@@ -210,24 +222,73 @@ static func reader(packet: PackedByteArray) -> StreamPeerBuffer:
 	b.data_array = packet
 	return b
 
-## Ngoại hình: gender (0 nam / 1 nữ) + 4 mã hình + mask_particular + aura_state. look = {gender, helm, armor, weapon, horse, mask_particular, aura_state}
+## Ngoại hình: gender (0 nam / 1 nữ) + 4 mã hình + mask_particular + aura_state (i32) + states (u8 n + n x u32). look = {gender, helm, armor, weapon, horse, mask_particular, aura_state}
 static func put_look(b: StreamPeerBuffer, look: Dictionary) -> void:
 	b.put_u8(int(look.get("gender", 0)))
 	for k in ["helm", "armor", "weapon", "horse"]:
 		b.put_16(clampi(int(look.get(k, -1)), -1, 32767))
 	b.put_16(int(look.get("mask_particular", -1)))
-	b.put_16(int(look.get("aura_state", 0)))
+	b.put_32(int(look.get("aura_state", 0)))  ## 32-bit: trạng thái bản 15 phái = id + 100000 (Vô Hình Độc 100006)
+	put_states(b, look.get("states", []))
+	put_aura(b, look)
+
+## Hào quang đang bật: số skill VLTK + cấp (0 = không bật) — máy đồng đội cùng phe đứng gần tự nhận chỉ số hào quang hỗ trợ
+## (SectSkillController.receive_ally_support), như skill con "Vòng tròn hỗ trợ đồng đội" gốc.
+static func put_aura(b: StreamPeerBuffer, look: Dictionary) -> void:
+	b.put_u16(clampi(int(look.get("aura_skill", 0)), 0, 65535))
+	b.put_u8(clampi(int(look.get("aura_level", 0)), 0, 255))
+
+static func get_aura(b: StreamPeerBuffer, look: Dictionary) -> void:
+	look["aura_skill"] = b.get_u16()
+	look["aura_level"] = b.get_u8()
+
+## Hình buff/bùa đang dính trên người (StateSpecialId, không gồm hào quang): u8 n + n x u32. Người khác vẽ bằng VltkStateSprite.
+const MAX_LOOK_STATES := 16
+
+static func put_states(b: StreamPeerBuffer, states: Variant) -> void:
+	var ids := sanitize_states(states)
+	b.put_u8(ids.size())
+	for id in ids:
+		b.put_u32(id)
+
+static func get_states(b: StreamPeerBuffer) -> Array:
+	var out := []
+	if b.get_available_bytes() < 1:
+		return out
+	var n := b.get_u8()
+	for i in n:
+		if b.get_available_bytes() < 4:
+			break
+		out.append(b.get_u32())
+	return sanitize_states(out)
+
+## Lọc: số nguyên dương < 1.000.000, không trùng, tăng dần, tối đa MAX_LOOK_STATES.
+static func sanitize_states(states: Variant) -> Array:
+	var out := []
+	if not (states is Array or states is PackedInt32Array):
+		return out
+	for v in states:
+		var id := int(v)
+		if id > 0 and id < 1000000 and not out.has(id):
+			out.append(id)
+	out.sort()
+	return out.slice(0, MAX_LOOK_STATES)
 
 static func get_look(b: StreamPeerBuffer) -> Dictionary:
 	var look := {"gender": b.get_u8()}
 	for k in ["helm", "armor", "weapon", "horse"]:
 		look[k] = b.get_16()
-	if b.get_available_bytes() >= 4:
+	if b.get_available_bytes() >= 6:
 		look["mask_particular"] = b.get_16()
-		look["aura_state"] = b.get_16()
+		look["aura_state"] = b.get_32()
+		look["states"] = get_states(b)
+		get_aura(b, look)
 	else:
 		look["mask_particular"] = -1
 		look["aura_state"] = 0
+		look["states"] = []
+		look["aura_skill"] = 0
+		look["aura_level"] = 0
 	return look
 
 # ---------------------------------------------------------------- Đấu trường PK Binary Packing

@@ -133,51 +133,31 @@ static func roll_pharmacy_item() -> ItemInstance:
 	return ItemGenerator.generate_misc(mid)
 
 ## Kết quả: mảng [{"type": "money", "amount": int} | {"type": "item", "item": ItemInstance}]. Rỗng = không rớt gì.
-## Quy định mới: quái chỉ rớt Đồ Hoàng Kim Môn Phái ngẫu nhiên, Ngựa ngẫu nhiên, và vật phẩm trong Hiệu Thuốc!
+## Bảng gốc cho MỌI map / chế độ thường. Đồ Hoàng Kim / thuốc / ngựa chỉ rơi ở Lộn Xộn (LonXonRules.roll_drops)
+## và PUBG Chiến Trường Sinh Tồn (PubgServer.roll_drops / VltkMonster offline) — KHÔNG thêm vào đây.
 static func roll(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 	var tier := tier_of(monster_level)
 	var t: Array = TIERS[tier]
 	var out: Array = []
-
-	# 1. Rơi vật phẩm trong "Hiệu Thuốc" (máu, nội lực, song hồi, giải độc, thổ địa phù)
-	# Tỉ lệ 35% mỗi quái thường để người chơi luôn có thuốc nhặt dùng
-	var potion_chance := minf(1.0, 0.35 * item_rate_mult)
-	if randf() < potion_chance:
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
-
-	# 2. Rơi Trang Bị Hoàng Kim Môn Phái ngẫu nhiên (thay thế đồ xanh)
-	# Tỉ lệ cơ bản 15% (tăng theo may mắn & item_rate_mult)
-	var gold_chance := minf(1.0, (0.15 + float(extra_luck) * 0.01) * item_rate_mult)
-	if randf() < gold_chance:
-		var gold_item := roll_sect_gold_item()
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
-
-	# 3. Rơi Ngựa ngẫu nhiên
-	# Tỉ lệ 5% mỗi quái thường
-	var horse_chance := minf(1.0, 0.05 * item_rate_mult)
-	if randf() < horse_chance:
-		var horse := roll_horse(series)
-		if horse != null:
-			out.append({"type": "item", "item": horse})
-
-	# 4. Rơi tiền vạn
-	var money_chance := 0.25
-	if randf() < money_chance:
-		out.append({"type": "money", "amount": _money(t)})
-
-	# 5. Dã Tẩu (Địa đồ chí / Mật đồ thần bí) - giữ tỉ lệ nhiệm vụ
-	var scroll_chance := 0.25 if tier <= 1 else (1.0 if tier == 9 else 0.50)
+	_try_append_misc(out, MISC_MAT_DO, _mat_do_rate_for_tier(tier))   ## Mật đồ thần bí: bảng npcdroprate*.ini, độc lập nSel
 	var sel := randi_range(0, 15)
-	if sel == 5:
-		_try_append_misc(out, MISC_DIA_DO_CHI, scroll_chance)
-	_try_append_misc(out, MISC_MAT_DO, _mat_do_rate_for_tier(tier))
-
+	if sel > 6:
+		return out
+	var money_hit := (sel == 2) if tier >= 7 else (sel < 2)
+	if money_hit:
+		out.append({"type": "money", "amount": _money(t)})
+	elif sel == 4:
+		var blue_chance := (1.0 + float(extra_luck) * 0.05) / BLUE_ITEM_ONE_IN
+		if _item_chance(blue_chance):
+			var item := _roll_blue_item(t, series, -1, extra_luck)
+			if item != null:
+				out.append({"type": "item", "item": item})
+	elif sel == 5:
+		_try_append_misc(out, MISC_DIA_DO_CHI, 0.25 if tier <= 1 else (1.0 if tier == 9 else 0.50))
 	return out
 
-## Boss xanh rớt 5 lần (dropnum): rơi Đồ Hoàng Kim Môn Phái, Ngựa và Dược phẩm Hiệu Thuốc!
+## Boss xanh rớt 5 lần (dropnum): mỗi lần nSel = ngẫu_nhiên(0..20) (cấp 6x+: 0..50) — nSel < 5 (6x+: > 40) rớt TIỀN; nSel > 5 rớt
+## 1 TRANG BỊ XANH nhiều dòng magic; nSel == 8 là Mật chí (6_1_213); (6x+: 9 bí kíp, 10 chìa khoá nhiệm vụ — không có trong game -> bỏ qua).
 static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 	var tier := tier_of(monster_level)
 	var t: Array = TIERS[tier]
@@ -188,36 +168,23 @@ static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0)
 		if money:
 			out.append({"type": "money", "amount": _money(t)})
 		elif sel == 8:
-			## droprate0x..10x.lua: boss xanh nSel == 8 -> Thần Bí Lộ Chí / Mật chí (6_1_213)
 			_try_append_misc(out, MISC_MAT_CHI, 1.0)
 		elif sel <= 5 or (tier >= 6 and sel in [9, 10]):
 			continue   ## (6x+) 9 = bí kíp, 10 = chìa khoá nhiệm vụ — không có trong game
 		else:
-			if randf() < 0.25:
-				var horse := roll_horse(series)
-				if horse != null:
-					out.append({"type": "item", "item": horse})
-			else:
-				var gold_item := roll_sect_gold_item()
-				if gold_item != null:
-					out.append({"type": "item", "item": gold_item})
-
-	# Boss xanh luôn rớt thêm 1-2 bình thuốc từ Hiệu Thuốc
-	for k in randi_range(1, 2):
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
-
+			var lines: Array = BOSS_LINES[tier]
+			var item := _roll_blue_item(t, series, randi_range(lines[0], lines[1]), extra_luck)
+			if item != null:
+				out.append({"type": "item", "item": item})
 	return out
 
 ## BOSS HOÀNG KIM (Thập Đại Boss - source gốc VLTK): rơi cực nhiều bảo vật:
 ##   - 4-6 đống tiền lớn (20.000 - 50.000 lượng);
-##   - 4-6 trang bị Hoàng Kim Môn Phái ngẫu nhiên;
-##   - 1-2 Ngựa ngẫu nhiên;
-##   - 3-5 vật phẩm Hiệu Thuốc (dược phẩm, thổ địa phù);
+##   - 4-6 trang bị xanh cấp 9-10 max 6 dòng magic;
 ##   - 2-3 Huyền Tinh Khoáng Thạch (6_1_147);
 ##   - 1-2 Thủy Tinh (Lam/Tử/Lục) hoặc Tinh Hồng Bảo Thạch;
 ##   - 50% rơi Võ Lâm Mật Tịch / Tẩy Tủy Kinh / Tiên Thảo Lộ;
+##   - 40% rơi Trang Bị Hoàng Kim Môn Phái (ItemGenerator.generate_gold);
 ##   - 30% rơi Bí Kíp 90 Môn Phái.
 static func roll_gold_boss(monster_level: int, series: int) -> Array:
 	var out: Array = []
@@ -229,23 +196,10 @@ static func roll_gold_boss(monster_level: int, series: int) -> Array:
 	for i in randi_range(4, 6):
 		out.append({"type": "money", "amount": int(randi_range(20000, 50000) * money_rate_mult)})
 
-	# Rơi 4-6 món Trang Bị Hoàng Kim Môn Phái
 	for i in randi_range(4, 6):
-		var gold_item := roll_sect_gold_item()
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
-
-	# Rơi 1-2 Ngựa ngẫu nhiên
-	for i in randi_range(1, 2):
-		var horse := roll_horse(series)
-		if horse != null:
-			out.append({"type": "item", "item": horse})
-
-	# Rơi 3-5 vật phẩm Hiệu Thuốc
-	for i in randi_range(3, 5):
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
+		var item := _roll_blue_item(t, series, ItemInstance.MAX_MAGIC)
+		if item != null:
+			out.append({"type": "item", "item": item})
 
 	for i in randi_range(2, 3):
 		var ht := ItemGenerator.generate_misc("6_1_147", randi_range(5, 8), 0, randi_range(1, 2))
@@ -272,16 +226,21 @@ static func roll_gold_boss(monster_level: int, series: int) -> Array:
 		if sect_bk != null:
 			out.append({"type": "item", "item": sect_bk})
 
+	## Tạm thời ẩn rơi Trang Bị Hoàng Kim Môn Phái theo yêu cầu
+	# if randf() < 0.40:
+	# 	var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(7, 10))
+	# 	if gold_item != null:
+	# 		out.append({"type": "item", "item": gold_item})
+
 	return out
 
 ## TIỂU HOÀNG KIM (Diệu Như, Liễu Thanh Thanh, Trương Tông Chính - drop_tieuhk.lua gốc):
 ##   - 2-4 đống tiền (10.000 - 25.000 lượng);
-##   - 3-5 Trang Bị Hoàng Kim Môn Phái ngẫu nhiên;
-##   - 1 Ngựa ngẫu nhiên;
-##   - 2-4 vật phẩm Hiệu Thuốc;
+##   - 6-10 trang bị xanh cấp 9-10 (4-6 dòng magic);
 ##   - 1-2 Huyền Tinh (cấp 4-6);
 ##   - 1 Thủy Tinh (Lam/Tử/Lục) hoặc Tinh Hồng Bảo Thạch;
-##   - 25% rơi Mật tịch / Tẩy tủy kinh / Tiên thảo lộ.
+##   - 25% rơi Mật tịch / Tẩy tủy kinh / Tiên thảo lộ;
+##   - 20% cơ hội rơi Đồ Hoàng Kim môn phái.
 static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
 	var out: Array = []
 	var tier := 10
@@ -292,22 +251,10 @@ static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
 	for i in randi_range(2, 4):
 		out.append({"type": "money", "amount": int(randi_range(10000, 25000) * money_rate_mult)})
 
-	# Rơi 3-5 Trang Bị Hoàng Kim Môn Phái ngẫu nhiên
-	for i in randi_range(3, 5):
-		var gold_item := roll_sect_gold_item()
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
-
-	# Rơi 1 Ngựa ngẫu nhiên
-	var horse := roll_horse(series)
-	if horse != null:
-		out.append({"type": "item", "item": horse})
-
-	# Rơi 2-4 vật phẩm Hiệu Thuốc
-	for i in randi_range(2, 4):
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
+	for i in randi_range(6, 10):
+		var item := _roll_blue_item(t, series, randi_range(4, 6))
+		if item != null:
+			out.append({"type": "item", "item": item})
 
 	for i in randi_range(1, 2):
 		var ht := ItemGenerator.generate_misc("6_1_147", randi_range(4, 6), 0, randi_range(1, 2))
@@ -328,43 +275,45 @@ static func roll_small_gold_boss(monster_level: int, series: int) -> Array:
 		if bk != null:
 			out.append({"type": "item", "item": bk})
 
+	## Tạm thời ẩn rơi Trang Bị Hoàng Kim Môn Phái theo yêu cầu
+	# if randf() < 0.20:
+	# 	var gold_item := ItemGenerator.generate_gold(randi_range(0, 4790), randi_range(6, 9))
+	# 	if gold_item != null:
+	# 		out.append({"type": "item", "item": gold_item})
+
 	return out
 
 ## BOSS SÁT THỦ (Nhiếp Thí Trần - dropsatthu.lua gốc):
 ##   - 2-3 đống tiền (5.000 - 15.000 lượng);
-##   - 2-3 Trang Bị Hoàng Kim Môn Phái ngẫu nhiên;
-##   - 50% rơi 1 Ngựa ngẫu nhiên;
-##   - 2-3 vật phẩm Hiệu Thuốc.
+##   - 4-8 trang bị xanh cấp 6-8 (4-6 dòng magic);
+##   - Thưởng danh vọng và điểm kinh nghiệm sát thủ.
 static func roll_killer_boss(monster_level: int, series: int) -> Array:
 	var out: Array = []
+	var tier := clampi(monster_level / 10, 6, 9)
+	var t: Array = (TIERS[tier] as Array).duplicate()
+
 	for i in randi_range(2, 3):
 		out.append({"type": "money", "amount": int(randi_range(5000, 15000) * money_rate_mult)})
 
-	# Rơi 2-3 Trang Bị Hoàng Kim Môn Phái ngẫu nhiên
-	for i in randi_range(2, 3):
-		var gold_item := roll_sect_gold_item()
-		if gold_item != null:
-			out.append({"type": "item", "item": gold_item})
-
-	# 50% rơi 1 Ngựa ngẫu nhiên
-	if randf() < 0.50:
-		var horse := roll_horse(series)
-		if horse != null:
-			out.append({"type": "item", "item": horse})
-
-	# Rơi 2-3 vật phẩm Hiệu Thuốc
-	for i in randi_range(2, 3):
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
+	for i in randi_range(4, 8):
+		var item := _roll_blue_item(t, series, randi_range(4, 6))
+		if item != null:
+			out.append({"type": "item", "item": item})
 
 	return out
 
-## ĐỊA NGỤC (map 11x / 12x của Vượt Ải, độ khó `stars` 1-5):
-##   - Rơi Trang Bị Hoàng Kim Môn Phái, Ngựa và Dược phẩm Hiệu Thuốc
+## ĐỊA NGỤC (map 11x / 12x của Vượt Ải, độ khó `stars` 1-5): như bảng 10x nhưng
+##   - tỉ lệ rơi TRANG BỊ XANH nhân `stars` lần (boss xanh: số lần rơi nhân `stars`);
+##   - cấp đồ: 10x = cấp 8-10 (như bảng 10x), 11x = cấp 9-10, 12x = cấp 10;
+##   - quái thường: mỗi con có HELL_FULL_LINE_CHANCE (20%, mọi số sao) rơi 1 món ĐỦ 6 dòng magic; đồ xanh thường khác không đủ dòng;
+##   - boss xanh: mỗi món có stars/5 cơ hội ĐỦ dòng magic; thuộc tính từng dòng vẫn ngẫu nhiên.
+## Đây là THIẾT KẾ của game này (gốc không có map Địa Ngục).
+const HELL_FULL_LINE_CHANCE := 0.20
+
 static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := false) -> Array:
 	stars = clampi(stars, 1, 5)
 	var t: Array = (TIERS[10] as Array).duplicate()
+	t[2] = clampi(monster_level / 10 - 2, 8, 10)     ## 100 -> 8, 110 -> 9, 120 -> 10
 	var out: Array = []
 	if blue_boss:
 		for i in BOSS_DROPS * stars:
@@ -373,42 +322,26 @@ static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := 
 			elif randf() < (1.0 / 51.0):
 				_try_append_misc(out, MISC_MAT_CHI, 1.0)
 			elif randf() < 0.6:
-				if randf() < 0.25:
-					var horse := roll_horse(series)
-					if horse != null:
-						out.append({"type": "item", "item": horse})
-				else:
-					var gold_item := roll_sect_gold_item()
-					if gold_item != null:
-						out.append({"type": "item", "item": gold_item})
-		for k in randi_range(2, 4) * stars:
-			var pot := roll_pharmacy_item()
-			if pot != null:
-				out.append({"type": "item", "item": pot})
+				var item := _roll_blue_item(t, series, _hell_lines(stars, BOSS_LINES[10]))
+				if item != null:
+					out.append({"type": "item", "item": item})
 		return out
-
-	var sel := randi_range(0, 15)
-	if sel <= 6:
-		if sel == 2:
-			out.append({"type": "money", "amount": _money(t, stars)})
-		elif sel == 4:
-			if randf() < 0.20:
-				var horse := roll_horse(series)
-				if horse != null:
-					out.append({"type": "item", "item": horse})
-			else:
-				var gold_item := roll_sect_gold_item()
-				if gold_item != null:
-					out.append({"type": "item", "item": gold_item})
-		elif sel == 5:
-			_try_append_misc(out, MISC_DIA_DO_CHI, 0.50)
-
-	if randf() < 0.40 * stars:
-		var pot := roll_pharmacy_item()
-		if pot != null:
-			out.append({"type": "item", "item": pot})
-
 	_try_append_misc(out, MISC_MAT_DO, _mat_do_rate_for_tier(10))
+	if randf() < HELL_FULL_LINE_CHANCE:
+		var full_item := _roll_blue_item(t, series, ItemInstance.MAX_MAGIC)
+		if full_item != null:
+			out.append({"type": "item", "item": full_item})
+	var sel := randi_range(0, 15)
+	if sel > 6:
+		return out
+	if sel == 2:
+		out.append({"type": "money", "amount": _money(t, stars)})
+	elif sel == 4 and _item_chance(float(stars) / BLUE_ITEM_ONE_IN):
+		var item := _roll_blue_item(t, series, randi_range(int(t[5]), mini(int(t[6]), ItemInstance.MAX_MAGIC - 1)))
+		if item != null:
+			out.append({"type": "item", "item": item})
+	elif sel == 5:
+		_try_append_misc(out, MISC_DIA_DO_CHI, 0.50)
 	return out
 
 ## Số dòng magic của đồ Địa Ngục: stars/5 cơ hội đủ ItemInstance.MAX_MAGIC dòng, còn lại ngẫu nhiên trong `normal` [min, max].

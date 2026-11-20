@@ -290,7 +290,7 @@ func get_cooldown_at_level(at_level: int) -> float:
 func get_mana_cost_at_level(at_level: int) -> int:
 	for line in stat_lines:
 		if line and "tiêu hao nội lực" in line.label.to_lower():
-			return maxi(0, int(interpolate_at_level(line.value_at_level_1, line.value_at_max_level, at_level)))
+			return maxi(0, stat_line_range(line, at_level).x)
 	if mana_cost > 0.0:
 		return int(mana_cost)
 	return 0
@@ -437,6 +437,10 @@ func stat_line_range(line: SkillStatLine, at_level: int) -> Vector2i:
 	var attrib := attrib_for_line(line)
 	if attrib != "":
 		return attrib_range(attrib, at_level)
+	if not line.level_points.is_empty():   ## mốc lua gốc: Link nhiều mốc, không chặn ở max_level (như thuộc tính gốc)
+		var lo := eval_level_points(line.level_points, at_level)
+		var hi := eval_level_points(line.level_points_max, at_level) if line.is_range and not line.level_points_max.is_empty() else lo
+		return Vector2i(lo, hi)
 	if line.is_range:
 		return Vector2i(int(interpolate_at_level(line.min_at_level_1, line.min_at_max_level, at_level)),
 				int(interpolate_at_level(line.max_at_level_1, line.max_at_max_level, at_level)))
@@ -464,5 +468,8 @@ func get_support_percent_from_other_skills(all_skills: Array[SkillDefinition], p
 		var other_current_level: int = level_of.call(other) if level_of.is_valid() else other_learned_level
 		for stat_line in other.stat_lines:
 			if stat_line.target_skill_id == id:
-				total += other.extrapolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_current_level)
+				if not stat_line.level_points.is_empty():
+					total += eval_level_points(stat_line.level_points, other_current_level)
+				else:
+					total += other.extrapolate_at_level(stat_line.value_at_level_1, stat_line.value_at_max_level, other_current_level)
 	return total

@@ -10,6 +10,7 @@ class_name QuickItemBar
 
 ##   - Giữ lâu / chuột phải: mở bảng chọn loại thuốc trong túi để gán vào ô (hoặc bỏ trống).
 
+##   - Phím 1..4 (input action quick_item_1..4) = bấm ô 1..4; KHÔNG chạy khi đang gõ chữ (ô chat / ô nhập có focus).
 ##   - Bấm thuốc trong Hành trang -> "Gắn vào ô 1..4"; hoặc kéo thuốc dùng được từ Hành trang (ItemRoomView) thả vào ô: gán loại thuốc đó vào ô.
 
 const GROUP := &"quick_item_bar"
@@ -24,7 +25,7 @@ const BOTTOM := 384.0          ## mép dưới hàng ô, tính từ đáy màn h
 
 const TOP_OFFSET := BOTTOM + SLOT_SIZE ## đỉnh của hàng ô (440.0)
 
-const CORNER := 10             ## ô vuông bo góc
+const CORNER := 4              ## ô vuông, bo góc nhẹ
 
 const HOLD_SECONDS := 0.45
 
@@ -134,9 +135,9 @@ func _make_slot(i: int, pos: Vector2) -> Button:
 
 	b.tooltip_text = "Bấm: dùng · Giữ / chuột phải: chọn thuốc"
 
-	var normal := GameUi.box(Color(0.05, 0.12, 0.08, 0.85), Color(0.55, 0.62, 0.42), CORNER, 2, 4)
+	var normal := GameUi.box(Color(0.05, 0.12, 0.08, 0.85), Color(0.72, 0.80, 0.55), CORNER, 3, 4)
 
-	var pressed := GameUi.box(Color(0.10, 0.22, 0.14, 0.95), GameUi.BORDER_ACTIVE, CORNER, 2, 4)
+	var pressed := GameUi.box(Color(0.10, 0.22, 0.14, 0.95), GameUi.BORDER_ACTIVE, CORNER, 3, 4)
 
 	for st in ["normal", "hover", "focus"]:
 
@@ -180,6 +181,15 @@ func _make_slot(i: int, pos: Vector2) -> Button:
 
 	_counts.append(count)
 
+	## Số phím tắt 1..4 ở góc trên trái ô.
+	var key_lbl := GameUi.label(str(i + 1), Color(1.0, 0.9, 0.3), 18, HORIZONTAL_ALIGNMENT_LEFT)
+	key_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	key_lbl.add_theme_constant_override("outline_size", 7)
+	key_lbl.position = Vector2(5, 0)
+	key_lbl.size = Vector2(22, 22)
+	key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(key_lbl)
+
 	b.button_down.connect(func() -> void: _down_at = _now())
 
 	b.button_up.connect(_on_slot_up.bind(i))
@@ -221,6 +231,27 @@ func _mid(i: int) -> String:
 	var p := GameManager.local_profile
 
 	return str(p.quick_items[i]) if p and i < p.quick_items.size() else ""
+
+## Phím 1..4. Dùng _unhandled_key_input: khi ô chat / ô nhập đang có focus thì LineEdit đã ăn phím số trước,
+## sự kiện không tới đây; kiểm tra thêm _typing() phòng ô nhập không nuốt phím (VD ô bị khoá chỉ đọc).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not visible or not event.is_pressed() or event.is_echo():
+		return
+	var k := event as InputEventKey
+	if k != null and (k.ctrl_pressed or k.alt_pressed or k.meta_pressed):
+		return
+	if _typing():
+		return
+	for i in _slots.size():
+		if event.is_action_pressed("quick_item_%d" % (i + 1), false, true):
+			get_viewport().set_input_as_handled()
+			if _mid(i) != "":
+				use_slot(i)
+			return
+
+func _typing() -> bool:
+	var f := get_viewport().gui_get_focus_owner()
+	return f is LineEdit or f is TextEdit
 
 ## Uống 1 bình của ô `i`.
 
@@ -304,9 +335,12 @@ func refresh() -> void:
 
 		_counts[i].text = str(n) if (mid != "" and n > 0) else ""
 
-		_icons[i].modulate = Color.WHITE if n > 0 or mid == "" else Color(0.45, 0.45, 0.45)
+		## Hết thuốc -> ẩn hình (ô trông như trống); vẫn nhớ loại thuốc để mua thêm là hiện lại.
+		_icons[i].visible = mid != "" and n > 0
+		## Ô chưa gắn thuốc / đã hết thuốc hiện hơi trong suốt.
+		_slots[i].self_modulate = Color(1, 1, 1, 0.45) if (mid == "" or n <= 0) else Color.WHITE
 
-		_slots[i].tooltip_text = ("%s — bấm: dùng · giữ / chuột phải: đổi" % str(rec.get("name", ""))) if mid != "" else "Ô trống — bấm để chọn thuốc"
+		_slots[i].tooltip_text = ("%s — phím %d / bấm: dùng · giữ / chuột phải: đổi" % [str(rec.get("name", "")), i + 1]) if mid != "" else "Ô trống — bấm để chọn thuốc"
 
 func _process(delta: float) -> void:
 

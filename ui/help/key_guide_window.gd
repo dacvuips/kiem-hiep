@@ -26,14 +26,14 @@ func _init() -> void:
 		["F1", "Trợ giúp / Bảng hướng dẫn phím tắt"],
 		["F2", "Cài đặt hệ thống (Âm thanh, hình ảnh, thoát)"],
 		["F3 / C", "Bảng thuộc tính nhân vật & Trang bị"],
-		["F4 / B", "Bảng hành trang / Rương đồ / Túi vật phẩm"],
-		["F5 / K", "Bảng kỹ năng võ công (Skill Book)"],
-		["F6", "Bang Hội / Bằng hữu (Social)"],
-		["F7", "Bật / Tắt hiển thị Tên nhân vật & Danh xưng"],
-		["F8", "Bật / Tắt hiển thị Thanh máu (HP) trên đầu"],
+		["F4 / B / I", "Bảng hành trang / Rương đồ / Túi vật phẩm"],
+		["F5 / K / G", "Bảng kỹ năng võ công (Skill Book)"],
+		["F6", "Bảng Bang Hội (Guild)"],
+		["F7 / T / O", "Bật / Tắt chế độ Giao dịch (Trade)"],
+		["F8", "Danh sách Hảo hữu (Friends)"],
 		["F9", "Chuyển chế độ PK (Luyện Công / Phe / Đồ Sát / Bang)"],
 		["F11", "Kỳ Trân Các (Cửa hàng thương thành)"],
-		["F12", "Trung tâm điều hành GM (dành cho Game Master)"],
+		["F12", "Cài đặt hệ thống / Bảng điều hành GM"],
 	])
 
 	# Nhóm 2: Thao tác cửa sổ & Chuột
@@ -43,9 +43,10 @@ func _init() -> void:
 		["Chuột phải (Ô trang bị)", "Tháo trang bị trên người về túi đồ ngay"],
 		["Tab", "Bật / Tắt Bản đồ toàn cảnh (MiniMap)"],
 		["P", "Bật / Tắt giao diện Tổ đội (Party)"],
-		["T / O", "Bật / Tắt chế độ Giao dịch"],
+		["T / O", "Bật / Tắt chế độ Giao dịch nhanh"],
 		["Esc", "Đóng cửa sổ đang mở / Mở Cài đặt hệ thống"],
 		["Ctrl", "Bật / Tắt chế độ Tự động đánh (Auto)"],
+		["Ctrl + F5 / F6", "Lưu nhanh / Tải nhanh tiến trình (Debug)"],
 	])
 
 	# Nhóm 3: Di chuyển & Chiến đấu
@@ -56,6 +57,8 @@ func _init() -> void:
 		["Space", "Khinh công / Nhảy qua chướng ngại vật"],
 		["Chuột trái / J / X", "Tấn công thường / Tương tác mục tiêu"],
 		["Chuột phải / L", "Thi triển kỹ năng chính đã gán"],
+		["1, 2, 3, 4", "Dùng thuốc ở 4 ô thuốc nhanh (không chạy khi đang gõ chat)"],
+		["5, 6, 7, 8", "Thi triển 4 ô kỹ năng phụ đầu tiên của trang đang chọn"],
 	])
 
 	var footer := HBoxContainer.new()

@@ -41,6 +41,27 @@ var network_mode: NetworkMode = NetworkMode.OFFLINE:
 func is_online_mode() -> bool:
 	return network_mode == NetworkMode.ONLINE
 
+## Đồ hết hạn sử dụng (ItemInstance.expire_at) — OFFLINE: máy này tự thu hồi mỗi EXPIRE_CHECK_SEC giây.
+## Online thì chỉ game server thu hồi (GameServer._check_expired_items) rồi gửi bản chuẩn xuống — máy người chơi không tự sửa.
+const EXPIRE_CHECK_SEC := 30.0
+
+func _ready() -> void:
+	var t := Timer.new()
+	t.wait_time = EXPIRE_CHECK_SEC
+	t.autostart = true
+	t.timeout.connect(check_expired_items)
+	add_child(t)
+
+func check_expired_items() -> void:
+	if local_profile == null or is_online_mode():
+		return
+	var gone := local_profile.remove_expired_items()
+	if gone.is_empty():
+		return
+	ChatBox.push_system("[color=#ff5a00][Hệ thống][/color] Vật phẩm hết hạn sử dụng đã bị thu hồi: %s" % ", ".join(gone))
+	if OS.get_environment("KIEMHIEP_NO_SAVE") != "1":
+		SaveManager.save_profile(local_profile)
+
 func is_offline_mode() -> bool:
 	return network_mode == NetworkMode.OFFLINE
 

@@ -8,6 +8,8 @@ class Dummy extends Node2D:
 	var dead := false
 	func is_dead() -> bool: return dead
 	func get_body_height() -> float: return 60.0
+class FeetDummy extends Dummy:
+	func get_ground_position() -> Vector2: return global_position + Vector2(0, 30)
 func _ready() -> void:
 	var player: Node2D = load("res://player/player.tscn").instantiate()
 	add_child(player)
@@ -28,5 +30,13 @@ func _ready() -> void:
 	b.remove_from_group("enemies")
 	check("mục tiêu chết thì bỏ chọn", player.get_selected_target() == null)
 	check("rơi về quái gần nhất", player.get_nearest_enemy(400.0) == a)
+	## Người chơi khác: gốc node ở thân, chân thấp hơn 30px — vòng phải nằm ở chân (trùng aura), không ở gốc.
+	var c := FeetDummy.new(); c.global_position = Vector2(-80, 0); c.add_to_group("other_players"); add_child(c)
+	player.set_target(c)
+	var ring: Node2D = null
+	for ch in c.get_children():
+		if ch is TargetRing:
+			ring = ch
+	check("vòng mục tiêu nằm ở chân (get_ground_position)", ring != null and ring.global_position.is_equal_approx(c.get_ground_position()))
 	print("RESULT fail=", _fail)
 	get_tree().quit(1 if _fail > 0 else 0)

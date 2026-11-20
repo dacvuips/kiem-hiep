@@ -66,7 +66,7 @@ var _auto_gear: Button = null
 
 var _player: Node
 
-## Vị trí MẶC ĐỊNH (offset_left/top/right/bottom trong scene) của từng nút skill — cộng độ dời của người chơi (PlayerProfile.skill_layout).
+## Vị trí MẶC ĐỊNH (offset_left/top/right/bottom trong scene) của từng nút skill — cộng độ dời của người chơi (SkillSlotPrefs, lưu trên máy).
 
 var _base_offsets: Dictionary = {}
 
@@ -131,7 +131,7 @@ static func make_drag_preview(skill: SkillDefinition) -> Control:
 
 		icon.texture = skill.icon
 
-		icon.material = SkillButton.make_circle_mask_material()
+		icon.material = SkillButton.make_icon_fit_material(true)
 
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 
@@ -171,11 +171,29 @@ static func make_drag_preview(skill: SkillDefinition) -> Control:
 
 	return holder
 
-## Nút Auto nằm NGAY DƯỚI mini map (góc phải-trên), canh sát cạnh phải mini map; kích thước/lề lấy từ MiniMap để đổi cỡ vẫn khớp.
+## Khối Auto nằm NGAY DƯỚI mini map (góc phải-trên), canh sát cạnh phải mini map; kích thước/lề lấy từ MiniMap để đổi cỡ vẫn khớp.
+## Gồm 2 phần dính liền: chữ "Auto" bên trái (bấm mở Cấu hình Auto) + công tắc bên phải (bật / tắt tự đánh).
 
-const AUTO_BUTTON_SIZE := Vector2(52, 52)
+const AUTO_BUTTON_SIZE := Vector2(46, 28)   ## cỡ MỖI phần (chữ / công tắc)
 
-const AUTO_BUTTON_GAP := 6.0
+const AUTO_BUTTON_GAP := 10.0
+
+const AUTO_BLOCK_BG := Color(0.05, 0.05, 0.05, 0.5)   ## nền hơi trong suốt
+
+func _auto_half_style(left: bool) -> StyleBoxFlat:
+	var st := StyleBoxFlat.new()
+	st.bg_color = AUTO_BLOCK_BG
+	## Viền vàng bao quanh cả khối: không vẽ cạnh giữa chỗ 2 nửa dính nhau.
+	st.border_color = GameUi.GOLD
+	st.border_width_top = 2
+	st.border_width_bottom = 2
+	st.border_width_left = 2 if left else 0
+	st.border_width_right = 0 if left else 2
+	st.corner_radius_top_left = 8 if left else 0
+	st.corner_radius_bottom_left = 8 if left else 0
+	st.corner_radius_top_right = 0 if left else 8
+	st.corner_radius_bottom_right = 0 if left else 8
+	return st
 
 func _place_auto_button() -> void:
 
@@ -199,25 +217,39 @@ func _place_auto_button() -> void:
 
 	var top := MiniMap.SCREEN_MARGIN + MiniMap.BASE_SIZE.y * MiniMap.UI_SCALE * mm_sc + AUTO_BUTTON_GAP + mm_oy + auto_oy
 
+	var w := AUTO_BUTTON_SIZE.x * auto_sc
+
+	var h := AUTO_BUTTON_SIZE.y * auto_sc
+
+	## Công tắc (AutoButton) ở bên phải.
 	_auto_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 
 	_auto_button.offset_right = -right
 
-	_auto_button.offset_left = -right - AUTO_BUTTON_SIZE.x * auto_sc
+	_auto_button.offset_left = -right - w
 
 	_auto_button.offset_top = top
 
-	_auto_button.offset_bottom = top + AUTO_BUTTON_SIZE.y * auto_sc
-
-	_auto_button.scale = Vector2.ONE * auto_sc
+	_auto_button.offset_bottom = top + h
 
 	if _auto_gear == null or not is_instance_valid(_auto_gear):
 		_auto_gear = Button.new()
 		_auto_gear.name = "AutoGearButton"
-		_auto_gear.text = "⚙"
+		_auto_gear.text = "Auto"
 		_auto_gear.tooltip_text = "Thiết lập auto đánh (Cấu hình Auto)"
 		_auto_gear.focus_mode = Control.FOCUS_NONE
-		_auto_gear.add_theme_font_size_override("font_size", 22)
+		_auto_gear.add_theme_font_size_override("font_size", 12)
+		var bold := FontVariation.new()
+		bold.base_font = _auto_gear.get_theme_font("font")
+		bold.variation_embolden = 0.9
+		_auto_gear.add_theme_font_override("font", bold)
+		var gear_style := _auto_half_style(true)
+		var gear_hover := _auto_half_style(true)
+		gear_hover.bg_color = Color(0.2, 0.18, 0.1, 0.65)
+		for st in ["normal", "focus"]:
+			_auto_gear.add_theme_stylebox_override(st, gear_style)
+		_auto_gear.add_theme_stylebox_override("hover", gear_hover)
+		_auto_gear.add_theme_stylebox_override("pressed", gear_hover)
 		_auto_gear.add_to_group("tutorial_auto_gear")
 		_auto_gear.pressed.connect(func() -> void:
 			if GameManager.local_profile != null:
@@ -228,18 +260,14 @@ func _place_auto_button() -> void:
 		)
 		_auto_button.add_sibling(_auto_gear)
 
-	var gear_elem: Dictionary = HudLayout.get_element("auto_gear")
-	var gear_sc: float = float(gear_elem.get("scale", 1.0))
-	var gear_ox: float = float(gear_elem.get("offset_x", 0.0))
-	var gear_oy: float = float(gear_elem.get("offset_y", 0.0))
-
-	var gear_base_right := MiniMap.SCREEN_MARGIN - mm_ox + AUTO_BUTTON_SIZE.x * auto_sc + AUTO_BUTTON_GAP - gear_ox
+	## Chữ "Auto" dính liền bên trái công tắc: cùng hàng, cùng cỡ, kéo Auto trong bảng chỉnh HUD thì đi theo.
 	_auto_gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_auto_gear.offset_right = -gear_base_right
-	_auto_gear.offset_left = -gear_base_right - AUTO_BUTTON_SIZE.x * gear_sc
-	_auto_gear.offset_top = top - auto_oy + gear_oy
-	_auto_gear.offset_bottom = top - auto_oy + AUTO_BUTTON_SIZE.y * gear_sc + gear_oy
-	_auto_gear.scale = Vector2.ONE * gear_sc
+	_auto_gear.offset_right = -right - w
+	_auto_gear.offset_left = -right - w - w
+	_auto_gear.offset_top = top
+	_auto_gear.offset_bottom = top + h
+	_auto_gear.scale = Vector2.ONE
+	_auto_button.scale = Vector2.ONE
 
 func _ready() -> void:
 
@@ -414,6 +442,9 @@ func _layout_nodes() -> Dictionary:
 
 	return out
 
+## Dời cả cụm nút skill sang trái so với vị trí trong SkillBarUI.tscn (chừa góc phải cho nút đổi trang).
+const CLUSTER_SHIFT_X := -60.0
+
 func _capture_base_offsets() -> void:
 
 	var nodes := _layout_nodes()
@@ -424,9 +455,24 @@ func _capture_base_offsets() -> void:
 
 		_base_offsets[key] = [c.offset_left, c.offset_top, c.offset_right, c.offset_bottom]
 
-## Áp bố cục tự sắp xếp của người chơi: độ dời so với vị trí mặc định, bật / tắt ô (PlayerProfile.skill_slots) và cỡ ô
+## Áp bố cục tự sắp xếp của người chơi: độ dời so với vị trí mặc định, bật / tắt ô (SkillSlotPrefs) và cỡ ô
 
 ## (scale quanh tâm — vùng bấm to / nhỏ theo).
+
+## true = nút Ngồi nằm trong cụm thao tác của Main (Giao dịch / Ngồi / Tổ đội / PK): đi theo vị trí + cỡ của cụm đó.
+var sit_follows_bar := false
+
+## Đặt nút Ngồi vào đúng ô (toạ độ màn hình) — Main gọi sau khi cụm thao tác xếp xong.
+func place_sit_at(rect: Rect2) -> void:
+	if _sit_button == null:
+		return
+	_sit_button.scale = Vector2.ONE
+	_sit_button.pivot_offset = Vector2.ZERO
+	_sit_button.size = rect.size
+	_sit_button.global_position = rect.position
+
+## Phát sau mỗi lần sắp lại nút (Main dùng để canh hàng nút tiện ích theo nút Ngồi / Ngựa thật).
+signal layout_applied
 
 func apply_layout() -> void:
 	var profile := GameManager.local_profile
@@ -436,6 +482,10 @@ func apply_layout() -> void:
 		if not _base_offsets.has(key):
 			continue
 		var c: Control = nodes[key]
+		if key == "sit" and sit_follows_bar:
+			## Nút Ngồi thuộc cụm Giao dịch / Tổ đội / PK: Main đặt vị trí qua place_sit_at(); ở đây chỉ bật / tắt.
+			c.visible = profile.is_skill_slot_on(key) if profile != null else true
+			continue
 		var b: Array = _base_offsets[key]
 		var d := profile.get_layout_offset(key) if profile != null else Vector2.ZERO
 
@@ -446,10 +496,11 @@ func apply_layout() -> void:
 		var hud_oy: float = float(hud_elem.get("offset_y", 0.0))
 		var hud_sc: float = float(hud_elem.get("scale", 1.0))
 
-		c.offset_left = (b[0] + d.x) * hud_sc + hud_ox
-		c.offset_right = (b[2] + d.x) * hud_sc + hud_ox
-		c.offset_top = (b[1] + d.y) * hud_sc + hud_oy
-		c.offset_bottom = (b[3] + d.y) * hud_sc + hud_oy
+		## Cỡ (hud_sc) phóng quanh TÂM nút (pivot), không dời vị trí.
+		c.offset_left = b[0] + d.x + hud_ox + CLUSTER_SHIFT_X
+		c.offset_right = b[2] + d.x + hud_ox + CLUSTER_SHIFT_X
+		c.offset_top = b[1] + d.y + hud_oy
+		c.offset_bottom = b[3] + d.y + hud_oy
 		var k := float(profile.get_skill_slot_size(key)) if profile != null else 1.0
 		k *= hud_sc
 		c.pivot_offset = Vector2(b[2] - b[0], b[3] - b[1]) * 0.5
@@ -467,6 +518,7 @@ func apply_layout() -> void:
 		_page_swap.scale = Vector2.ONE
 
 	_apply_survivor_mode_visibility()
+	layout_applied.emit()
 
 func is_survivor_mode() -> bool:
 	if _is_survivor_mode:
@@ -499,9 +551,10 @@ func _apply_survivor_mode_visibility() -> void:
 	for btn in _loop_buttons:
 		if btn:
 			btn.visible = not in_survivor
+	## Nút số 1/2 chọn nhóm skill luôn ẩn; chỉ giữ nút ⇄ để đổi nhóm.
 	for btn in _page_buttons:
 		if btn:
-			btn.visible = not in_survivor
+			btn.visible = false
 	if _page_swap:
 		_page_swap.visible = not in_survivor
 	if _auto_button:
@@ -850,17 +903,18 @@ func _refresh_auto_button_style() -> void:
 
 	_auto_button.button_pressed = is_on
 
-	var style := StyleBoxFlat.new()
+	## Công tắc: nền giữ màu tối liền với chữ "Auto"; bật thì chữ "Auto" chuyển xanh.
+	var style := _auto_half_style(false)
 
-	style.bg_color = COLOR_AUTO_ON if is_on else COLOR_AUTO_OFF
+	for st in ["normal", "pressed", "hover", "hover_pressed", "focus"]:
+		_auto_button.add_theme_stylebox_override(st, style)
 
-	style.set_corner_radius_all(8)
+	_auto_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	_auto_button.add_theme_stylebox_override("normal", style)
-
-	_auto_button.add_theme_stylebox_override("pressed", style)
-
-	_auto_button.add_theme_color_override("font_color", Color.WHITE)
+	if _auto_gear != null and is_instance_valid(_auto_gear):
+		var c := COLOR_AUTO_ON.lightened(0.25) if is_on else Color.WHITE
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			_auto_gear.add_theme_color_override(k, c)
 
 func _process(_delta: float) -> void:
 
@@ -1074,7 +1128,7 @@ func _style_slot_button(button: Button, sheet_name: String, mask: bool, inset: f
 
 	if mask:
 
-		icon.material = SkillButton.make_circle_mask_material()
+		icon.material = SkillButton.make_icon_fit_material(true)
 
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 

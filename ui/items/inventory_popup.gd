@@ -3,7 +3,7 @@ class_name InventoryPopup
 
 const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Khung "Hành trang" kiểu VLTK: LƯỚI Ô 6 × 10 (ItemRoomView) — mỗi món là 1 khối chiếm số ô rộng × cao riêng, kéo thả để
-## đổi chỗ; tiền ở dưới, nút "Sắp xếp". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
+## đổi chỗ; dải Lượng/Xu/KNB (CurrencyStrip) ngay dưới lưới, nút "Sắp xếp". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
 ## Kéo thanh tiêu đề để di chuyển khung. Bố cục nằm trong InventoryPopup.tscn, khung/nút/màu lấy từ GameUi; script dựng lưới + đổ dữ liệu.
 ## Mọi thay đổi ghi vào PlayerProfile + lưu save, rồi gọi `on_changed` để màn gọi vẽ lại ô trang bị/chỉ số.
 
@@ -21,6 +21,9 @@ var _style_tab_active: StyleBox = null
 var _style_tab_normal: StyleBox = null
 var _tt_btn: Button = null
 var _quick_sell_mode: bool = false
+## Chế độ Sửa (nút "Sửa" cạnh "Bán"): bấm trang bị nào thì thợ rèn sửa món đó (RepairActions).
+var _repair_mode: bool = false
+var _repair_btn: Button
 
 ## Phát sau mỗi thay đổi hành trang (để cửa sổ đi kèm như Rương vẽ lại).
 signal profile_changed
@@ -70,6 +73,8 @@ func _ready() -> void:
 		%SellButton.text = tr(%SellButton.text)
 		%SellButton.tooltip_text = tr("Bật/Tắt chế độ bán nhanh: Nhấp vào món đồ để bán ngay.")
 		%SellButton.pressed.connect(_toggle_quick_sell_mode)
+		_repair_btn = RepairActions.make_button(%SellButton)
+		_repair_btn.pressed.connect(func() -> void: _set_repair_mode(not _repair_mode))
 
 	## Hiệu thuốc
 	if has_node("%ShopButton"):
@@ -99,21 +104,15 @@ func _ready() -> void:
 	)
 	(%SortButton as Control).add_sibling(_tt_btn)
 
-	# Gắn sự kiện click cho các nút cộng trong thanh tiền tệ
-	for frame_path in ["Frame/Root/BottomMoneyBar/FrameGold", "Frame/Root/BottomMoneyBar/FrameXu", "Frame/Root/BottomMoneyBar/FrameJade"]:
-		var f := get_node_or_null(frame_path)
-		if f:
-			var plus: Control = f.get_node_or_null("PlusBtn")
-			if plus:
-				plus.mouse_filter = Control.MOUSE_FILTER_STOP
-				plus.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-				plus.gui_input.connect(func(e: InputEvent) -> void:
-					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-						TienTrangWindow.open(_get_host(), func() -> void:
-							if is_instance_valid(self):
-								_refresh()
-						, _profile)
-				)
+	## Lượng / Xu / KNB nằm TRONG khung, ngay dưới lưới ô (offline chỉ hiện Lượng). Nút "+" mở Tiền Trang / Kỳ Trân Các.
+	var money_row := MarginContainer.new()
+	money_row.add_theme_constant_override("margin_left", 4)
+	money_row.add_theme_constant_override("margin_top", 6)
+	money_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	money_row.add_child(CurrencyStrip.new(func() -> PlayerProfile: return _profile, func() -> void:
+		if is_instance_valid(self):
+			_refresh()))
+	($Frame/Root/Body as Control).add_sibling(money_row)
 
 	## Phong cách tab giống CharacterHub
 	if %BagTabs.get_child_count() > 1:
@@ -169,11 +168,16 @@ func _ready() -> void:
 
 	_room.setup(_profile)
 	_refresh()
-	## Đặt giữa màn hình (sau 1 frame để container tính xong kích thước).
+	## Hub (modal): giữa màn hình. Map đánh quái (không modal): bám mép PHẢI, chừa bên trái cho bảng Nhân vật
+	## (sau 1 frame để container tính xong kích thước).
 	await get_tree().process_frame
 	var frame: Control = %Frame
 	frame.size = frame.get_combined_minimum_size()
-	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
+	var screen := frame.get_viewport_rect().size
+	if _modal:
+		frame.position = (screen - frame.size) * 0.5
+	else:
+		frame.position = Vector2(maxf(0.0, screen.x - frame.size.x - 4.0), maxf(0.0, (screen.y - frame.size.y) * 0.5)).round()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
@@ -323,12 +327,16 @@ func _on_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _commit, _show_message)
+		return
 	if _quick_sell_mode:
 		_sell(index)
 		return
 	var actions := []
 	if not item.is_misc():
 		actions.append(["Trang bị", _equip.bind(index)])
+		actions.append_array(RepairActions.for_item(_profile, item, _commit, _show_message))
 	elif ItemConsumer.is_usable(item):
 		var use_label := ItemConsumer.get_action_label(item)
 		if use_label != "":
@@ -365,6 +373,8 @@ func _sell(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không thể bán."
+	if blocked == "" and item.lock_sell:
+		blocked = "Vật phẩm khoá, không thể bán cho cửa hàng."
 	if blocked != "":
 		_show_message(blocked)
 		return
@@ -382,20 +392,59 @@ func _sell(index: int) -> void:
 	_execute_sell(index, item_name, sale_price)
 
 func _confirm_sell(index: int, item_name: String, sale_price: int) -> void:
-	var popup := ConfirmationDialog.new()
-	popup.title = "Xác nhận bán"
-	popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, format_money(sale_price)]
-	popup.ok_button_text = "Bán"
-	popup.cancel_button_text = "Hủy"
-	add_child(popup)
-	popup.confirmed.connect(func() -> void:
-		_execute_sell(index, item_name, sale_price)
-		popup.queue_free()
+	var item: ItemInstance = _profile.inventory[index]
+	confirm_sell(self, item, sale_price, func() -> void: _execute_sell(index, item_name, sale_price))
+
+## Hộp xác nhận bán đồ quý (dùng chung Hành trang + Hub): khung SocialWindow chuẩn, ảnh món + tên màu phẩm chất + giá vàng nổi bật.
+## on_yes chỉ gọi khi bấm "Bán"; ✕ / "Huỷ" là bỏ.
+static func confirm_sell(host: Node, item: ItemInstance, sale_price: int, on_yes: Callable) -> void:
+	var win := SocialWindow.new("Xác nhận bán", "", 340.0)
+	var center := CenterContainer.new()
+	var card := HBoxContainer.new()
+	card.add_theme_constant_override("separation", 12)
+	center.add_child(card)
+	var slot := GameUi.panel(GameUi.PANEL)
+	slot.custom_minimum_size = Vector2(56, 56)
+	var tex := item.get_icon(true)
+	if tex != null:
+		var icon := TextureRect.new()
+		icon.texture = tex
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(40, 40)
+		slot.add_child(icon)
+	card.add_child(slot)
+	var info := VBoxContainer.new()
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	info.add_theme_constant_override("separation", 4)
+	var name_l := GameUi.label(item.get_display_name(), item.get_quality_color(), 15)
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_l.custom_minimum_size.x = 200
+	info.add_child(name_l)
+	var price_row := HBoxContainer.new()
+	price_row.add_theme_constant_override("separation", 6)
+	price_row.add_child(GameUi.label("Giá bán:", GameUi.MUTED, 13))
+	price_row.add_child(GameUi.label("%s Lượng" % format_money(sale_price), GameUi.GOLD, 15))
+	info.add_child(price_row)
+	card.add_child(info)
+	win.body.add_child(center)
+	var q := GameUi.label("Bán món này cho NPC? Không thể lấy lại.", GameUi.SUBTITLE, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	q.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	win.body.add_child(q)
+	var row := win.add_button_row()
+	var sell := GameUi.button("Bán", GameUi.PRIMARY)
+	sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cancel := GameUi.button("Huỷ", GameUi.BUTTON)
+	cancel.custom_minimum_size.y = GameUi.PRIMARY_HEIGHT
+	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(sell)
+	row.add_child(cancel)
+	SocialWindow.present(host, win, &"confirm_sell")
+	sell.pressed.connect(func() -> void:
+		win.close_requested.emit()
+		on_yes.call()
 	)
-	popup.canceled.connect(func() -> void:
-		popup.queue_free()
-	)
-	popup.popup_centered()
+	cancel.pressed.connect(func() -> void: win.close_requested.emit())
 
 func _execute_sell(index: int, item_name: String, sale_price: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
@@ -410,7 +459,19 @@ func _execute_sell(index: int, item_name: String, sale_price: int) -> void:
 func _toggle_quick_sell_mode() -> void:
 	_set_quick_sell_mode(not _quick_sell_mode)
 
+func _set_repair_mode(enabled: bool) -> void:
+	_repair_mode = enabled
+	RepairActions.set_button_active(_repair_btn, enabled)
+	if enabled:
+		if _quick_sell_mode:
+			_set_quick_sell_mode(false)
+		_show_message(RepairActions.mode_hint(_profile))
+	else:
+		_show_message("Đã tắt chế độ Sửa.")
+
 func _set_quick_sell_mode(enabled: bool) -> void:
+	if enabled and _repair_mode:
+		_set_repair_mode(false)
 	_quick_sell_mode = enabled
 	_update_sell_button_visual()
 	if _quick_sell_mode:
@@ -447,6 +508,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if (event as InputEventKey).keycode == KEY_ESCAPE:
 			if _quick_sell_mode:
 				_set_quick_sell_mode(false)
+				get_viewport().set_input_as_handled()
+				return
+			if _repair_mode:
+				_set_repair_mode(false)
 				get_viewport().set_input_as_handled()
 				return
 			queue_free()
@@ -540,6 +605,8 @@ func _drop(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "" and item.lock_drop:
+		blocked = "Vật phẩm khoá, không thể vứt ra đất."
 	if blocked == "":
 		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":

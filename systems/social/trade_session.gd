@@ -75,6 +75,8 @@ func offer_item(side: TradeSide, item: ItemInstance) -> String:
 		return "Món đồ không có trong hành trang."
 	if SecurityLock.is_item_locked(item) or item.lock_state == ItemInstance.LOCK_CHARACTER:
 		return "Món đồ đang bị khoá, không giao dịch được."
+	if item.lock_trade:
+		return "Món đồ là vật phẩm khoá, không thể giao dịch."
 	var spot := side.room.find_free_spot_any(item.get_size())
 	if spot.z < 0:
 		return "Phòng giao dịch đã đầy."

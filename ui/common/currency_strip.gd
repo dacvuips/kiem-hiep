@@ -2,7 +2,7 @@ extends HBoxContainer
 class_name CurrencyStrip
 
 ## Dải tiền tệ (Lượng / Xu / Kim Nguyên Bảo) đặt ngay DƯỚI mọi khung Hành trang — 1 chỗ dùng chung cho Hub,
-## Giao Dịch, Bày Bán, Chế Tạo... Bản offline chỉ hiện Lượng (Xu/KNB là tiền online).
+## Giao Dịch, Bày Bán... Bản offline chỉ hiện Lượng (Xu/KNB là tiền online).
 ## Tự cập nhật khi SaveManager.profile_changed và mỗi 0,5 giây lúc đang hiện (chỉ gán text khi số đổi → rẻ).
 ## Nút "+" mở Tiền Trang (Lượng, KNB) / Kỳ Trân Các (Xu).
 
@@ -26,7 +26,7 @@ var _last := [-1, -1, -1]
 
 var _k := 1.0
 
-## scale < 1 cho khung hẹp (Giao Dịch / Bày Bán / Chế Tạo): 0.72 → 3 ô ≈ 320px.
+## scale < 1 cho khung hẹp (Giao Dịch / Bày Bán): 0.72 → 3 ô ≈ 320px.
 func _init(get_profile: Callable = Callable(), changed: Callable = Callable(), scale_k := 1.0, with_plus := true) -> void:
 	_k = scale_k
 	_get_profile = get_profile

@@ -23,7 +23,7 @@ static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int)
 	if player != null and "combat_stats" in player and player.combat_stats != null:
 		exp_p = player.combat_stats.exp_enhance_p
 	if exp_p <= 0:
-		exp_p = profile.get_active_exp_enhance_p()
+		exp_p = profile.get_exp_enhance_p()
 	if exp_p > 0:
 		got = int(round(got * (1.0 + float(exp_p) / 100.0)))
 	var before := profile.level

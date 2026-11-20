@@ -18,6 +18,7 @@ var action := 0                  ## chỉ số NetProto.ACTIONS
 var z := 0                       ## độ cao khi nhảy (px)
 var flags := 0
 var hp := 100                    ## phần trăm máu 0..100
+var pos_ms := 0                  ## giờ server (ms) lúc lấy mẫu `pos` (người chơi: dấu giờ trong C_MOVE); 0 = lúc gửi (quái, bot)
 var look: Dictionary = {}        ## {gender, helm, armor, weapon, horse}
 var version := 0
 var cell := Vector2i(1 << 30, 1 << 30)   ## ô AOI đang đứng (AoiGrid quản lý)
@@ -51,7 +52,8 @@ func write_spawn(b: StreamPeerBuffer) -> void:
 	if kind == NetProto.KIND_PLAYER:
 		NetProto.put_look(b, look)
 
-func write_state(b: StreamPeerBuffer) -> void:
+## now_ms = giờ ghi trong đầu gói S_STATE: tuổi mẫu = now_ms - pos_ms (game nội suy theo đúng lúc lấy mẫu).
+func write_state(b: StreamPeerBuffer, now_ms: int = 0) -> void:
 	b.put_u32(eid)
 	NetProto.put_state_pos(b, pos)
 	var dir8: int = VltkMath.image_dir(dir, 8) if kind == NetProto.KIND_MONSTER else (dir & 7)
@@ -59,3 +61,8 @@ func write_state(b: StreamPeerBuffer) -> void:
 	b.put_u8(z)
 	b.put_u8(flags)
 	b.put_u8(hp)
+	## Mẫu của C_MOVE luôn < 360ms (chặn 300ms + 1 tick); cũ hơn = server tự đặt vị trí (hồi sinh, kéo về...) -> tuổi 0.
+	var age: int = now_ms - pos_ms if pos_ms > 0 and now_ms > 0 else 0
+	if age < 0 or age > 400:
+		age = 0
+	b.put_u8(age / NetProto.STATE_AGE_UNIT_MS)

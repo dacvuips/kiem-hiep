@@ -286,9 +286,6 @@ func _net_cast(skill: SkillDefinition, caster: Node2D, target: Variant, support:
 	NetClient.send_cast(skill.vltk_skill_id, _learned_level(skill), NetProto.CAST_SUPPORT if support else 0,
 		target_eid, VltkMath.ground_of(aim_node))
 
-## Buff hỗ trợ: luôn áp lên người thi triển; skill có TargetAlly + vùng ảnh hưởng (VD Thanh Phong phù
-## 3×3 ô) thì đồng đội trong vùng quanh người thi triển cũng được hưởng (CombatTargeting quyết định ai là
-## đồng đội — hiện chưa có tổ đội nên chỉ có chính mình).
 ## Chống bấm bật/tắt hào quang liên tục.
 const AURA_TOGGLE_DELAY := 0.5
 
@@ -320,6 +317,8 @@ func tick_aura(caster: Node2D, delta: float) -> void:
 	if skill == null or skill.vltk_skill_id <= 0:
 		return
 	var level := _learned_level(skill)
+	if not skill.target_enemy:
+		_apply_aura_to_allies(skill, caster, level)
 	var data := VltkSkillData.skill(skill.vltk_skill_id, level)
 	var child := int(data.get("child", 0))
 	if child <= 0 or not VltkSkillData.has_skill(child):
@@ -340,15 +339,90 @@ func is_aura_active(skill: SkillDefinition) -> bool:
 	return skill != null and skill.is_aura and _profile() != null \
 			and _profile().active_aura_id == skill.id
 
+## Buff hỗ trợ như KSkill::Cast gốc: luôn áp lên người thi triển (TargetSelf); skill có TargetAlly + đạn vùng
+## (IsRangeDmg, VD Thanh Phong phù 3 ô, Bất Động Minh Vương / Xuất Ứ Bất Nhiễm 10 ô) thì mọi đồng đội CÙNG PHE (cùng màu
+## tên) đứng trong vùng ô vuông quanh người thi triển cũng nhận. Online: máy của đồng đội tự nhận qua receive_ally_support.
 func _cast_support_buff(skill: SkillDefinition, caster: Node2D) -> void:
 	var payload := skill.get_state_payload(_learned_level(skill))
 	var targets: Array[Node2D] = [caster]
-	var radius := skill.get_effect_radius_px()
-	if skill.target_ally and radius > 0.0:
-		targets = CombatTargeting.find_in_radius(caster, caster.global_position, radius, false, true)
+	if has_ally_area(skill):
+		targets = CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), skill.vltk_damage_range, false, true)
 		if not targets.has(caster):
 			targets.append(caster)
 	CombatTargeting.apply_state_to(targets, skill.id, payload, state_meta(skill))
+
+## Skill hỗ trợ có vùng ảnh hưởng lên đồng đội (TargetAlly + đạn IsRangeDmg có DmgRange).
+static func has_ally_area(skill: SkillDefinition) -> bool:
+	return skill != null and not skill.target_enemy and skill.target_ally \
+			and skill.vltk_range_damage != 0 and skill.vltk_damage_range > 0
+
+## Gói trạng thái hào quang hỗ trợ áp lên đồng đội mỗi nhịp: bỏ tham số skill_* (appendskill, tầm...) — chỉ chỉ số.
+## Thời gian = thành phần [1] trong lua (thường 18 frame = 1 giây) nên rời vùng hoặc tắt hào quang là hết ngay sau đó.
+static func aura_ally_payload(skill: SkillDefinition, level: int) -> Dictionary:
+	var payload := skill.get_state_payload(level)
+	var attribs := {}
+	for k: String in payload["attribs"]:
+		if not k.begins_with("skill_") and not k.begins_with("missle_"):
+			attribs[k] = payload["attribs"][k]
+	payload["attribs"] = attribs
+	return payload
+
+static func aura_ally_meta(skill: SkillDefinition) -> Dictionary:
+	var meta := state_meta(skill)
+	meta["state_id"] = 0   ## đồng đội không vẽ vòng hào quang (gốc: chỉ người bật mới có hình hào quang)
+	return meta
+
+## HÀO QUANG HỖ TRỢ (Lưu Thủy, Mộng Điệp, Phật Tâm Từ Hữu, Thanh Âm Phạn Xướng, Phổ Độ Chúng Sinh, La Hán Trận, Thất Tinh
+## Trận...): KNpc::ProcessState gốc mỗi 10 frame thi triển skill con -> đạn "Vòng tròn hỗ trợ đồng đội" (DmgRange 10 ô,
+## Phổ Độ Chúng Sinh 14) áp thuộc tính hào quang lên mình + đồng đội cùng phe trong vùng. Bản thân đã có chỉ số hào quang
+## qua CombatantBuild nên ở đây chỉ áp cho NGƯỜI KHÁC (khoá "aura:<id>": cùng hào quang từ nhiều người không cộng dồn —
+## gốc cùng skill con thì thay thế).
+func _apply_aura_to_allies(skill: SkillDefinition, caster: Node2D, level: int) -> void:
+	if not has_ally_area(skill):
+		return
+	var allies := CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), skill.vltk_damage_range, false, true)
+	allies.erase(caster)
+	var payload := aura_ally_payload(skill, level)
+	if allies.is_empty() or (payload["attribs"] as Dictionary).is_empty():
+		return
+	CombatTargeting.apply_state_to(allies, "aura:" + skill.id, payload, aura_ally_meta(skill))
+
+## ONLINE — máy của MÌNH nhận buff đồng đội: người chơi khác (`caster`) vừa thi triển skill hỗ trợ vùng / đang bật hào quang
+## hỗ trợ; mình cùng phe và đứng trong vùng ô quanh họ thì tự áp trạng thái (chỉ số nhân vật mỗi máy tự tính).
+## `aura` = nhịp hào quang (bỏ qua nếu chính mình đang bật cùng hào quang — đã có qua CombatantBuild).
+static func receive_ally_support(me: Node2D, caster: Node2D, skill: SkillDefinition, level: int, aura: bool) -> bool:
+	if me == null or caster == null or not is_instance_valid(caster) or not has_ally_area(skill):
+		return false
+	if aura != skill.is_aura or me.get_node_or_null("StatusEffectController") == null:
+		return false
+	## Quan hệ NGƯỜI CHƠI – NGƯỜI CHƠI theo màu tên (Camp.relation, cả 2 là người chơi: 2 Sát thủ vẫn là địch); đang cừu sát thì thôi.
+	if ("pk_enemy" in caster and caster.pk_enemy) or Camp.relation(CombatTargeting.get_camp(caster), CombatTargeting.get_camp(me), true) != Camp.Relation.ALLY:
+		return false
+	if not CombatTargeting.in_vltk_cells(VltkMath.ground_of(caster), me, skill.vltk_damage_range):
+		return false
+	var targets: Array[Node2D] = [me]
+	if aura:
+		var prof := GameManager.local_profile
+		if prof != null and prof.active_aura_id == skill.id:
+			return false
+		var payload := aura_ally_payload(skill, level)
+		if (payload["attribs"] as Dictionary).is_empty():
+			return false
+		CombatTargeting.apply_state_to(targets, "aura:" + skill.id, payload, aura_ally_meta(skill))
+	else:
+		CombatTargeting.apply_state_to(targets, skill.id, skill.get_state_payload(level), state_meta(skill))
+	return true
+
+## SkillDefinition theo số skill VLTK gốc, tra trong MỌI phái (buff của người chơi phái khác).
+static var _skill_by_vltk: Dictionary = {}
+
+static func skill_by_vltk_id(vltk_id: int) -> SkillDefinition:
+	if _skill_by_vltk.is_empty():
+		for sect in SectRegistry.load_all():
+			for s: SkillDefinition in sect.skills:
+				if s.vltk_skill_id > 0 and not _skill_by_vltk.has(s.vltk_skill_id):
+					_skill_by_vltk[s.vltk_skill_id] = s
+	return _skill_by_vltk.get(vltk_id)
 
 ## Bùa tại mục tiêu (MisslesForm 6) / tại người thi triển (7): áp NGAY cho mọi kẻ địch trong vùng quanh
 ## tâm (0 bán kính = chỉ mục tiêu đã chọn).

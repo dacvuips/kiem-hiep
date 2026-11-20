@@ -120,7 +120,14 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 
 	for entry in item.base_values:
 		if entry[0] == "durability_v":
-			out.append(_c(C_WHITE, "Độ bền: %d / %d" % [item.durability, item.get_max_durability()]))
+			## KItem::GetDesc gốc: -1 = "Không thể phá hủy" (vàng); 0 = đã hỏng (đỏ, gốc tô màu tên equip_damage).
+			if ItemDurability.is_indestructible(item):
+				out.append(_c(C_GOLD, "Không thể phá hủy"))
+			elif ItemDurability.is_broken(item):
+				out.append(_c(C_RED, "Độ bền: 0 / %d (Đã hỏng)" % item.get_max_durability()))
+			else:
+				var low := item.durability <= item.get_max_durability() / ItemDurability.WARNING_BASELINE
+				out.append(_c(C_RED if low else C_WHITE, "Độ bền: %d / %d" % [item.durability, item.get_max_durability()]))
 		else:
 			var text := format_attrib(entry[0], [int(entry[1]), 0, 0])
 			if text != "":
@@ -190,7 +197,30 @@ static func build(item: ItemInstance, profile: PlayerProfile, active: int = -1, 
 			out.append(_c(C_GOLD, "Giá cả: %s Lượng" % sale_str))
 		elif item.is_locked():
 			out.append(_c(C_RED, "Vật phẩm đã khóa bảo hiểm"))
+	_append_bound(out, item, with_name)   ## luôn hiện — cả popup chi tiết (with_name = false)
 	return "[center]%s[/center]" % "\n".join(out)
+
+## Vật phẩm khoá (bLockTrade / bLockSell / bLockDrop gốc) — gộp 1 dòng đỏ, cách nhau dấu phẩy. Thời hạn sử dụng chỉ ghi ở đây khi
+## mô tả có tên (with_name); popup chi tiết (with_name = false) hiện hạn ở dòng đầu thay cho "Không thể bán" (ItemDetailPopup).
+static func _append_bound(out: Array, item: ItemInstance, with_expire: bool = true) -> void:
+	if with_expire and item.expire_at > 0:
+		out.append(expire_text(item))
+	var locks := PackedStringArray()
+	if item.lock_trade:
+		locks.append("Không thể giao dịch")
+	if item.lock_sell:
+		locks.append("Không thể bán")
+	if item.lock_drop:
+		locks.append("Không thể vứt bỏ")
+	if not locks.is_empty():
+		out.append(_c(C_RED, ", ".join(locks)))
+
+## "Thời hạn sử dụng: ..." (BBCode màu cam) — KItem::GetDesc gốc: <color=255,90,0>Thời hạn sử dụng: %H:%M:%S %d-%m-%Y. "" = không hạn.
+static func expire_text(item: ItemInstance) -> String:
+	if item.expire_at <= 0:
+		return ""
+	var d := Time.get_datetime_dict_from_unix_time(item.expire_at + int(Time.get_time_zone_from_system().get("bias", 0)) * 60)
+	return _c("ff5a00", "Thời hạn sử dụng: %02d:%02d:%02d %02d-%02d-%04d" % [d.hour, d.minute, d.second, d.day, d.month, d.year])
 
 ## Món có HỆ (Sát Thủ lệnh/giản, Nguyên thạch, khoáng thuộc tính ẩn...) — script gốc (killer_token/killer_sword.lua GetDesc) ghi
 ## "Thuộc tính ngũ hành".
@@ -241,6 +271,7 @@ static func _build_misc(item: ItemInstance, with_name: bool) -> String:
 			out.append(_c(C_GOLD, "Giá cả: %s Lượng" % sale_str))
 		elif item.is_locked():
 			out.append(_c(C_RED, "Vật phẩm đã khóa bảo hiểm"))
+	_append_bound(out, item, with_name)
 	return "[center]%s[/center]" % "\n".join(out)
 
 ## Lời mô tả gốc có thẻ <color=yellow>...<color> và <enter> — đổi sang BBCode.

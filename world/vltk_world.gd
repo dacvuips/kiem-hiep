@@ -48,6 +48,9 @@ class SortedMap extends VltkMap:
 	const UNLOAD_EXTRA := 1              ## chỉ dỡ vùng cách khung nhìn quá MARGIN + chừng này (tránh nạp/dỡ liên tục ở mép)
 	const SHOW_PER_FRAME := 1
 	const PRUNE_INTERVAL := 4.0
+	var prune_grace := 10.0               ## ảnh không dùng quá chừng này giây mới bỏ khỏi cache (bài test đặt ngắn hơn)
+	var _region_paths := {}               ## "rx,ry" -> [đường dẫn ảnh vùng đó cần] (ghi lúc _request)
+	var _tex_last_live := {}              ## tên file ảnh -> lúc gần nhất còn thuộc 1 vùng đang hiện / chờ nạp
 	## NẠP TRƯỚC theo ý định đi: nhân vật đang chạy về hướng nào / vừa chọn đích ở đâu thì nạp sẵn các vùng ở hướng đó (dải 3 vùng rộng),
 	## để tới nơi là có hình ngay, không khựng. Vùng nạp trước đi qua cùng hàng đợi (mỗi khung 1 vùng) nên không gây giật.
 	const LOOKAHEAD_SECONDS := 3.0        ## nạp trước quãng đường chạy trong chừng này giây
@@ -209,6 +212,7 @@ class SortedMap extends VltkMap:
 				var v: Vector2i = _pending[key]["v"]
 				if (absi(v.x - c.x) > rx + UNLOAD_EXTRA or absi(v.y - c.y) > ry + UNLOAD_EXTRA) and not ahead.has(key):
 					_pending.erase(key)
+					_region_paths.erase(key)
 			## Yêu cầu nạp vùng mới, gần nhân vật trước.
 			var todo := []
 			for y in range(c.y - ry, c.y + ry + 1):
@@ -253,6 +257,7 @@ class SortedMap extends VltkMap:
 				var cp := _p(str(c[0]))
 				if not paths.has(cp):
 					paths.append(cp)
+		_region_paths["%d,%d" % [v.x, v.y]] = paths
 		var need: Array[String] = []
 		for p in paths:
 			if _tex_cache.has(p):
@@ -299,12 +304,33 @@ class SortedMap extends VltkMap:
 				_pending.erase(key)
 				shown += 1
 
-	## Bản gốc giữ MỌI ảnh đã từng nạp trong _tex_cache mãi mãi (đi khắp map = hàng trăm MB). Bỏ ảnh không còn vùng nào dùng.
+	## Bản gốc giữ MỌI ảnh đã từng nạp trong _tex_cache mãi mãi (đi khắp map = hàng trăm MB: Tống Kim 1 ~546 MB bộ nhớ đồ hoạ nếu đi hết).
+	## Bỏ ảnh không thuộc vùng nào đang hiện / đang chờ nạp đã quá prune_grace giây (đi tới lui ở mép vùng không nạp lại liên tục).
+	## (Cách cũ so get_reference_count() <= 1 không bao giờ đúng: biến tạm + ép kiểu đã giữ thêm 2 tham chiếu -> chưa từng dọn được ảnh nào.)
+	## Đối chiếu theo TÊN FILE: cùng 1 ảnh có thể nằm trong cache dưới 2 đường dẫn (thư mục map / shared_sprites). Ảnh node còn đang dùng
+	## thì bỏ khỏi cache không mất hình (node giữ ảnh) — bộ nhớ chỉ thật sự trả khi không còn node nào dùng.
 	func _prune_textures() -> void:
+		var now := Time.get_ticks_msec() / 1000.0
+		var live := {}
+		for key in _region_paths:
+			if _objects.has(key) or _tiles.has(key) or _pending.has(key):
+				for p in _region_paths[key]:
+					live[str(p).get_file()] = true
 		for p in _tex_cache.keys():
 			var tex: Variant = _tex_cache[p]
-			if tex is RefCounted and (tex as RefCounted).get_reference_count() <= 1:
+			var name := str(p).get_file()
+			if live.has(name) or (tex != null and _atlas_tex.has(tex)):
+				_tex_last_live[name] = now
+				continue
+			if not _tex_last_live.has(name):
+				_tex_last_live[name] = now   ## lần đầu thấy không còn dùng: tính giờ từ đây
+			elif now - float(_tex_last_live[name]) >= prune_grace:
 				_tex_cache.erase(p)
+				_tex_last_live.erase(name)
+
+	## Số ảnh đang giữ trong cache (đo / kiểm thử).
+	func texture_cache_size() -> int:
+		return _tex_cache.size()
 
 	## QUÁI THẬT thay cho hình tĩnh của bản gốc: mỗi điểm đặt quái role="monster" có mẫu trong MonsterData được sinh thành VltkMonster
 	## (đi tuần, đuổi, đánh bằng skill gốc, máu/dame theo cấp). Điểm không có dữ liệu mẫu giữ hình tĩnh của bản gốc.
@@ -325,6 +351,7 @@ class SortedMap extends VltkMap:
 	## Dỡ vùng: quái đã chết (đã queue_free) vẫn nằm trong danh sách vùng — bản gốc gọi queue_free() lên node đã giải phóng nên báo lỗi.
 	## Ở đây bỏ qua node không còn hợp lệ, và quái còn sống bị dỡ cùng vùng (sinh lại khi nhân vật quay lại, máu đầy).
 	func _hide_region(key: String) -> void:
+		_region_paths.erase(key)   ## ảnh của vùng hết "đang dùng" -> _prune_textures bỏ sau prune_grace giây
 		if _tiles.has(key):
 			_tiles[key].queue_free()
 			_tiles.erase(key)

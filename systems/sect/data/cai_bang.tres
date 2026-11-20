@@ -379,6 +379,7 @@ value_at_max_level = 50.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_29"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 35, 0, 15, 250, 0, 20, 750, 0)
 label = "Tăng công kích tay không"
 value_at_level_1 = 35.0
 value_at_max_level = 750.0
@@ -524,6 +525,7 @@ value_at_max_level = 30.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_42"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 50, 0, 20, 100, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 50.0
 value_at_max_level = 100.0

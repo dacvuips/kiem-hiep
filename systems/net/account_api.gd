@@ -209,6 +209,10 @@ func arena(server_id: int) -> Dictionary:
 func field(server_id: int) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_GET, "/v1/field?server_id=%d" % server_id)
 
+## Kiểm mật khẩu phòng train chung TRƯỚC khi nạp map: data = {ok} | {ok: false, code: "not_found" | "bad_password", msg}.
+func field_check(server_id: int, room_id: String, password: String) -> Dictionary:
+	return await _authed(HTTPClient.METHOD_POST, "/v1/field/check", {"server_id": server_id, "room": room_id, "password": password})
+
 ## Tạo nhân vật ở ô `slot`. profile_data = PlayerProfile.to_dict(). Server kiểm tra tên (2–16 ký tự, không trùng trong máy chủ).
 func create_character(server_id: int, slot: int, character_name: String, profile_data: Dictionary) -> Dictionary:
 	return await _authed(HTTPClient.METHOD_POST, "/v1/characters",
@@ -359,15 +363,32 @@ func _authed(method: HTTPClient.Method, path: String, body: Variant = null) -> D
 	var r := await _request(method, path, body, _access)
 	if r.status == 401:
 		if r.code == "logged_in_elsewhere":
-			_clear_session()
-			session_invalidated.emit(r.message)
+			_kicked(r.message)
 			return r
 		if _refresh != "" and await _do_refresh():
 			r = await _request(method, path, body, _access)
 			if r.code == "logged_in_elsewhere":
-				_clear_session()
-				session_invalidated.emit(r.message)
+				_kicked(r.message)
 	return r
+
+## Phiên bị đá (đăng nhập ở máy / cửa sổ khác): bỏ phiên + nhân vật, rồi đưa về màn đăng nhập ở MỌI màn (đang trong map,
+## Hub...). Trước đây chỉ màn Chọn server / Danh sách nhân vật tự quay về — còn trong game thì local_profile = null mà vẫn
+## chơi tiếp: chiêu rơi về đánh thường, auto không bơm thuốc, rương / thông tin đồ không mở, về Hub thì Hub (bản debug)
+## dựng hồ sơ giả "HoaHieu".
+func _kicked(message: String) -> void:
+	_clear_session()
+	session_invalidated.emit(message)
+	var tree := get_tree()
+	if tree == null:
+		return
+	var cur := tree.current_scene
+	if cur != null and cur.scene_file_path == AccountScreen.LOGIN_SCENE:
+		return
+	AccountScreen.next_login_message = message if message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+	if NetClient.is_in_world():
+		NetClient.disconnect_from_server()
+	tree.paused = false
+	tree.change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 
 # ---------------------------------------------------------------- HTTP
 

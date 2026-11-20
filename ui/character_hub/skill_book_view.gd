@@ -494,7 +494,7 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 
 	var icon := TextureRect.new()
 	icon.name = "Icon"
-	icon.material = SkillButton.make_circle_mask_material()
+	icon.material = SkillButton.make_icon_fit_material()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -537,8 +537,7 @@ func _set_arranging(on: bool) -> void:
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ" if on else "Đã lưu vị trí các nút")
 
 func _reset_layout() -> void:
-	_profile.skill_layout.clear()
-	_profile.skill_slots.clear()
+	_profile.reset_skill_layout()
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
@@ -661,7 +660,7 @@ func _refresh_wheel() -> void:
 			holder.add_theme_stylebox_override("panel", SkillButton.make_round_style(holder.size.x, Color(0.08, 0.08, 0.07)))
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
-			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
+			icon.material = SkillButton.make_icon_fit_material() if str(tool[0]) == "jump" else null
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false

@@ -145,7 +145,7 @@ static func buy(profile: PlayerProfile, mid: String, n: int) -> Dictionary:
 	var bought := 0
 	for i in n:
 		var item := ItemGenerator.generate_misc(mid)
-		if item == null or not profile.add_item(item):
+		if item == null or not profile.add_item_stacked(item):
 			break
 		bought += 1
 	if bought == 0:

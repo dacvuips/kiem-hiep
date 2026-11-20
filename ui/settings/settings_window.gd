@@ -450,6 +450,13 @@ func _build_hub_system_section() -> void:
 		_quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_quit_btn.pressed.connect(_on_quit_game_clicked)
 		quit_row.add_child(_quit_btn)
+		## Ủy thác (chỉ online): mua / dùng Bạch Câu Hoàn rồi thoát — đặt cạnh nút Thoát Game.
+		var uy_btn := SocialUi.stone_button(tr("🧘 Ủy Thác"))
+		uy_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		uy_btn.tooltip_text = tr("Mua / dùng Bạch Câu Hoàn — thoát game vẫn luyện công")
+		uy_btn.pressed.connect(func() -> void:
+			UyThacWindow.open(self, GameManager.local_profile, _on_quit_game_clicked))
+		quit_row.add_child(uy_btn)
 	else:
 		_quit_btn = SocialUi.stone_button(tr("Thoát Game"))
 		_quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -21,7 +21,7 @@ class_name GameServer
 const DEFAULT_MAP_DIR := "res://world/maps/map_321"   ## map chính đã bỏ: server chạy map Trường Bạch Sơn Nam 1 (Vượt Ải)
 const HELLO_TIMEOUT := 10.0
 ## Quái mô phỏng mỗi chừng này tick (= NetProto.SNAPSHOT_EVERY: vị trí chỉ gửi đi theo nhịp này nên bước nhỏ hơn không ai thấy).
-const MONSTER_TICK_EVERY := 2
+const MONSTER_TICK_EVERY := NetProto.SNAPSHOT_EVERY
 ## Tốc độ tối đa chấp nhận (px/giây): lao chiêu ~390, nhảy 216 — để dư cho trễ mạng.
 const MAX_SPEED := 440.0
 ## Ngân sách quãng đường tích tối đa (giây) — bù gói đến dồn do mạng giật, không cho tích lâu để dịch chuyển xa.
@@ -46,7 +46,8 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 ## người đứng gần, giao dịch / bày bán tại chỗ, chiến trường / đấu trường / phòng train chung...) bị bỏ qua.
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
-	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON, NetProto.C_UY_THAC]
+	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON, NetProto.C_UY_THAC,
+	NetProto.C_REPAIR]
 
 class Conn:
 	var key := ""
@@ -66,6 +67,7 @@ class Conn:
 	var packets_window := 0.0
 	var damage_msgs := 0
 	var cast_msgs := 0
+	var abrade_region := Vector2i(1 << 30, 1 << 30)   ## vùng bản đồ lúc trước — đổi vùng thì tụt độ bền giày / ngựa (ItemDurability)
 	var last_view_equip := -100.0
 	## Cừu sát (RelationServer): {other, state, until, launcher}; {} = không.
 	var enmity: Dictionary = {}
@@ -83,6 +85,8 @@ class Conn:
 	var cast_rejects := 0
 	var cast_reject_logged_at := -100.0
 	var damage_window := 0.0
+	var mstate_window := 0.0
+	var mstate_msgs := 0
 	## Bản dữ liệu nhân vật của SERVER (PlayerProfile.to_dict) — nguồn sự thật về cấp / kinh nghiệm khi online.
 	var data: Dictionary = {}
 	var profile: PlayerProfile
@@ -149,6 +153,9 @@ var _next_eid := 1
 var _tick := 0
 var _acc := 0.0
 var _now := 0.0
+## Lần quét đồ hết hạn sử dụng gần nhất (_check_expired_items, mỗi EXPIRE_CHECK_SEC giây).
+var _last_expire_check := 0.0
+const EXPIRE_CHECK_SEC := 60.0
 var max_players := 2000
 var social: SocialServer
 var chat: ChatServer
@@ -400,6 +407,9 @@ func _print_metrics() -> void:
 	_m_awake = 0
 
 func _simulate(_dt: float) -> void:
+	if _now - _last_expire_check >= EXPIRE_CHECK_SEC:
+		_last_expire_check = _now
+		_check_expired_items()
 	for c: Conn in _conns.values():
 		if c.state == ConnState.WAIT_HELLO and _now - c.since > HELLO_TIMEOUT:
 			_kick(c, "timeout", "Hết thời gian chờ vào game")
@@ -431,7 +441,7 @@ func _simulate(_dt: float) -> void:
 				aoi.remove(m)
 				_entities.erase(m.eid)
 			continue
-		## Mỗi quái chạy 2 tick 1 lần (bước đôi) — chia 2 nhóm chẵn / lẻ theo eid để mỗi tick gánh 1 nửa.
+		## Quái chạy MONSTER_TICK_EVERY tick 1 lần (= nhịp gửi vị trí); >1 thì chia nhóm theo eid để mỗi tick gánh 1 phần.
 		if awake.has(m.cell) and (m.eid + _tick) % MONSTER_TICK_EVERY == 0:
 			_m_awake += 1
 			m.tick(self, MONSTER_TICK_EVERY)
@@ -689,9 +699,15 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 						profile_changed(c)
 						_save(c)
 					notice(c, str(r["message"]))
+		NetProto.C_REPAIR:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				_on_repair(c, NetProto.get_str(b, 64), b.get_u8() if b.get_available_bytes() >= 1 else NetProto.REPAIR_NORMAL)
 		NetProto.C_DA_TAU:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
 				_on_da_tau(c, NetProto.get_str(b, 4096))
+		NetProto.C_MSTATE:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 10:
+				_on_mstate(c, b)
 		NetProto.C_HP:
 			## Máy người chơi báo % máu của mình: chỉ để VẼ (thanh máu tổ đội, thanh máu trên đầu người khác) — không dùng tính sát thương.
 			if c.state == ConnState.IN_WORLD and c.entity and b.get_available_bytes() >= 1:
@@ -731,7 +747,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		return
 	c.hub = mode == NetProto.HELLO_HUB
 	if version != NetProto.VERSION:
-		_kick(c, "version", "Phiên bản game đã cũ, hãy cập nhật")
+		_kick(c, "version", "Phiên bản game (giao thức v%d) không khớp máy chủ (v%d) — hãy cập nhật" % [version, NetProto.VERSION])
 		return
 	if _by_character.size() >= max_players:
 		_kick(c, "full", "Máy chủ đã đầy, vui lòng thử lại sau")
@@ -802,6 +818,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		if StarterKit.give_sect_weapon(c.profile) != null:   ## đã chọn phái ở Hub trước lần vào map đầu
 			starter_items += 1
 	var admin_items := c.profile.apply_admin_grants()   ## đồ web Admin tặng: sinh thành món thật (lưu ngay ở lần lưu tới)
+	var expired := c.profile.remove_expired_items()     ## đồ hết hạn sử dụng (ItemInstance.expire_at) trong lúc offline
 	c.data = c.profile.to_dict()   ## gán uid cho đồ cũ chưa có — rồi gửi bản chuẩn này xuống game (S_PROFILE)
 	c.dirty = true
 	c.char_version = int(ch.get("version", 0))
@@ -874,7 +891,9 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 		notice(c, "Nhận quà tân thủ: %d vật phẩm (xem hành trang)." % starter_items)
 	if not uy_thac.is_empty():
 		notice(c, UyThac.format_notice(uy_thac))
-	if (admin_items > 0 or starter_items > 0 or not uy_thac.is_empty()) and not take_over:
+	if not expired.is_empty():
+		notice(c, "Vật phẩm hết hạn sử dụng đã bị thu hồi: %s" % ", ".join(expired))
+	if (admin_items > 0 or starter_items > 0 or not uy_thac.is_empty() or not expired.is_empty()) and not take_over:
 		_save(c)
 	if battle:
 		battle.on_join_world(c)
@@ -896,6 +915,19 @@ func saved_pos(data: Dictionary) -> Vector2:
 				return at   ## (kẹt trong vùng kín giữa vật cản — VD khối đá giữa map — thì về chỗ thông thoáng)
 	return grid.open_spawn_near(grid.default_center())
 
+## Hào quang trong ngoại hình (máy đồng đội dựa vào đây để nhận buff hào quang): chỉ nhận hào quang của PHÁI nhân vật, cấp không
+## vượt cấp đã học + dư cho cộng cấp kỹ năng từ trang bị (server chưa tính) — sai thì coi như không bật.
+const AURA_LEVEL_SLACK := 10
+
+func _set_look_aura(c: Conn, look: Dictionary, vltk_id: int, level: int) -> void:
+	var skill: SkillDefinition = ProfileGuard.skill_by_vltk_id(c.profile, vltk_id) if c.profile else null
+	if skill == null or not skill.is_aura or level <= 0:
+		look["aura_skill"] = 0
+		look["aura_level"] = 0
+		return
+	look["aura_skill"] = vltk_id
+	look["aura_level"] = mini(level, c.profile.get_skill_level(skill.id) + AURA_LEVEL_SLACK)
+
 ## Ngoại hình từ dữ liệu nhân vật (PlayerProfile.to_dict) — cùng cách Player.refresh_appearance().
 static func look_from_profile(data: Dictionary) -> Dictionary:
 	var profile := PlayerProfile.from_dict(data)
@@ -905,15 +937,19 @@ static func look_from_profile(data: Dictionary) -> Dictionary:
 	look["gender"] = 1 if final_gender == "female" else 0
 	look["mask_particular"] = int(look.get("mask_particular", -1))
 	var state_id := 0
-	if profile.gm_aura_state > 0:
-		state_id = profile.gm_aura_state
-	elif profile.active_aura_id != "":
+	look["aura_skill"] = 0
+	look["aura_level"] = 0
+	if profile.active_aura_id != "":
 		var sect := SectRegistry.get_by_id(profile.sect_id)
 		if sect:
 			for skill in sect.skills:
 				if skill.id == profile.active_aura_id:
 					state_id = skill.vltk_state_special_id
+					look["aura_skill"] = skill.vltk_skill_id
+					look["aura_level"] = profile.get_skill_level(skill.id)
 					break
+	if profile.gm_aura_state > 0:
+		state_id = profile.gm_aura_state
 	look["aura_state"] = state_id
 	return look
 
@@ -923,6 +959,15 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 	var action := clampi(b.get_u8(), 0, NetProto.ACTIONS.size() - 1)
 	var z := b.get_u8()
 	var flags := (b.get_u8() & NetProto.CLIENT_FLAGS) | (c.entity.flags & ~NetProto.CLIENT_FLAGS)
+	## Giờ lấy mẫu (giờ server theo đồng hồ đã đồng bộ của game) — chặn trong [nhận - 300ms, nhận] để không giả được.
+	var recv_ms := Time.get_ticks_msec()
+	var sample_ms := recv_ms
+	if b.get_available_bytes() >= 4:
+		var t := b.get_u32()
+		var lag := (recv_ms - t) & 0xFFFFFFFF   ## u32 quay vòng
+		if lag >= 0x80000000:
+			lag = 0   ## dấu giờ ở "tương lai" (đồng hồ game lệch) -> coi như vừa lấy
+		sample_ms = recv_ms - mini(lag, 300)
 	var e := c.entity
 	var grid := grid_of(e)
 	c.move_budget = minf(c.move_budget + (_now - c.last_move_at) * c.max_speed, c.max_speed * MOVE_BUDGET_CAP)
@@ -952,6 +997,9 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 			lonxon.on_died(c, _recent_pvp_killer(c))   ## Lộn Xộn: rớt hết đồ + Lệnh Bài, chờ hồi sinh (không tính trị PK)
 		else:
 			relation.on_died(c)
+			## KNpc::DeathPunish gốc: chết ngoài thế giới (không phải chiến trường / đấu trường) -> đồ phòng thủ tụt + % theo trị PK.
+			if battle == null and arena == null:
+				_apply_abrade(c, ItemDurability.Kind.DEFEND)
 	## Bày bán = ngồi yên tại chỗ: rời chỗ / lên ngựa / nhảy / chết thì tự dọn quầy, còn lại người khác luôn thấy đang ngồi.
 	if c.stall_open:
 		if dist > 1.0 or (flags & (NetProto.FLAG_RIDING | NetProto.FLAG_JUMPING | NetProto.FLAG_DEAD)) != 0:
@@ -962,7 +1010,14 @@ func _on_move(c: Conn, b: StreamPeerBuffer) -> void:
 			flags |= NetProto.FLAG_SITTING
 	if dist > 2.0:
 		e.has_moved = true
+	var region := ItemDurability.region_of(p)
+	if region != c.abrade_region:
+		var first := c.abrade_region == Vector2i(1 << 30, 1 << 30)
+		c.abrade_region = region
+		if not first:
+			_apply_abrade(c, ItemDurability.Kind.MOVE)   ## đổi vùng bản đồ (PlayerChangeRegion gốc): giày / ngựa tụt độ bền
 	if p != e.pos or dir != e.dir or action != e.action or z != e.z or flags != e.flags:
+		e.pos_ms = sample_ms
 		e.pos = p
 		e.dir = dir
 		e.action = action
@@ -1025,6 +1080,58 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 	if aim.distance_to(c.entity.pos) > NetProto.AOI_CELL * 1.5:
 		aim = c.entity.pos
 	broadcast_cast(c.entity, skill_id, level, cast_flags, target_eid, aim)
+	if bots:
+		bots.on_cast_seen(c.entity, skill_id, target_eid, aim)   ## bot ở gần thấy để né
+	_apply_abrade(c, ItemDurability.Kind.ATTACK)   ## KNpc::DoSkill gốc: mỗi lần ra chiêu vũ khí có thể tụt độ bền
+
+## ĐỘ BỀN (ItemDurability) — server trừ trên hồ sơ của nó rồi báo máy người chơi (S_ITEM_DUR + câu báo; món hỏng bị tháo -> S_PROFILE).
+## Hồ sơ tạm của trận PUBG / host Lộn Xộn không tụt (không bao giờ được lưu).
+func _apply_abrade(c: Conn, kind: int) -> void:
+	if c.profile == null or c.hub or c.pubg_match != 0 or c.lonxon_host != 0:
+		return
+	var changes := ItemDurability.abrade(c.profile, kind)
+	if changes.is_empty():
+		return
+	var out := NetProto.writer(NetProto.S_ITEM_DUR)
+	out.put_u8(mini(changes.size(), 255))
+	var broke := false
+	for ch in changes:
+		var item: ItemInstance = ch["item"]
+		NetProto.put_str(out, item.ensure_uid())
+		out.put_16(int(ch["new"]))
+		broke = broke or bool(ch["broke"])
+	_send(c, out)
+	for ch in changes:
+		var msg := ItemDurability.change_message(ch)
+		if msg != "":
+			notice(c, msg)
+	if broke:
+		profile_changed(c)   ## món hỏng đã về hành trang: gửi hồ sơ chuẩn + dựng lại trần sát thương / ngoại hình
+		_save(c)
+	else:
+		c.data = c.profile.to_dict()
+		c.dirty = true
+
+## Thợ rèn: sửa 1 món (uid) hoặc sửa hết (uid ""), hoặc sửa món đã hỏng hẳn (50 vạn lượng / xu) — tính trên hồ sơ server.
+func _on_repair(c: Conn, uid: String, mode: int) -> void:
+	if c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:
+		return
+	if c.trade != null:
+		notice(c, "Đang giao dịch, không thể sửa trang bị.")
+		return
+	var r: Dictionary
+	if uid == "" and mode == NetProto.REPAIR_NORMAL:
+		r = ItemDurability.repair_all(c.profile)
+	else:
+		var item := ItemDurability.find_by_uid(c.profile, uid)
+		if mode == NetProto.REPAIR_NORMAL:
+			r = ItemDurability.repair(c.profile, item)
+		else:
+			r = ItemDurability.repair_broken(c.profile, item, mode == NetProto.REPAIR_BROKEN_XU)
+	if r["ok"]:
+		profile_changed(c)
+		_save(c)
+	notice(c, str(r["message"]))
 
 ## Hình ảnh ra chiêu của thực thể `e` (người chơi / bot) cho mọi người đang thấy `e` (trừ chính chủ nếu là người chơi).
 func broadcast_cast(e: ServerEntity, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
@@ -1074,6 +1181,53 @@ func _cast_allowed(c: Conn, skill_id: int, level: int, support: bool) -> bool:
 		c.next_action_at = maxf(c.next_action_at, _now) + action * CAST_RATE_TOLERANCE
 	return true
 
+## Bùa người chơi vừa áp lên quái (C_MSTATE): server chỉ nhớ để báo hình cho người khác đang thấy quái (không tính thuộc tính).
+const MAX_MSTATE_PER_SEC := 40
+const MAX_MSTATE_SECONDS := 60.0
+
+func _on_mstate(c: Conn, b: StreamPeerBuffer) -> void:
+	var m_eid := b.get_u32()
+	var sid := b.get_u32()
+	var sec := clampf(float(b.get_u16()) / 10.0, 0.1, MAX_MSTATE_SECONDS)
+	if _now - c.mstate_window > 1.0:
+		c.mstate_window = _now
+		c.mstate_msgs = 0
+	c.mstate_msgs += 1
+	if c.mstate_msgs > MAX_MSTATE_PER_SEC or sid <= 0 or sid >= 1000000:
+		return
+	var m := _entities.get(m_eid) as ServerMonster
+	if m == null or m.is_dead() or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or not near(m, c.entity, MAX_HIT_DISTANCE):
+		return
+	m.vis_states[sid] = maxf(float(m.vis_states.get(sid, 0.0)), _now + sec)
+	var pkt := _mstate_packet(m, sid)
+	if pkt == null:
+		return
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			for e: ServerEntity in aoi.bucket(m.cell + Vector2i(dx, dy)).values():
+				var vc: Conn = _players_by_eid.get(e.eid)
+				if vc and vc != c and vc.state == ConnState.IN_WORLD and vc.known.has(m.eid):
+					_send(vc, pkt)
+
+## Gói S_MSTATE của quái: `only_sid` > 0 = chỉ 1 bùa vừa áp, 0 = mọi bùa còn hạn (gửi người mới thấy quái). null nếu không có gì.
+func _mstate_packet(m: ServerMonster, only_sid := 0) -> StreamPeerBuffer:
+	var list := []
+	for sid: int in m.vis_states.keys():
+		var left := float(m.vis_states[sid]) - _now
+		if left <= 0.0:
+			m.vis_states.erase(sid)
+		elif only_sid == 0 or sid == only_sid:
+			list.append([sid, left])
+	if list.is_empty():
+		return null
+	var b := NetProto.writer(NetProto.S_MSTATE)
+	b.put_u32(m.eid)
+	b.put_u8(mini(list.size(), 255))
+	for i in mini(list.size(), 255):
+		b.put_u32(int(list[i][0]))
+		b.put_u16(clampi(int(ceil(float(list[i][1]) * 10.0)), 1, 600))
+	return b
+
 func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
 	var amount := float(b.get_u32())
@@ -1115,7 +1269,7 @@ func _on_monster_killed(m: ServerMonster) -> void:
 	if killer_conn:
 		team_got = social.team_exp(killer_conn, m.pos, MonsterData.stat_at_level(m.data, "exp", m.level), m.level)
 	for c: Conn in team_got:
-		_give_exp(c, int(team_got[c]))
+		_give_exp(c, _with_exp_enhance(c, int(team_got[c])))
 	for eid in m.contributors:
 		var c: Conn = _players_by_eid.get(eid)
 		if c == null:
@@ -1134,8 +1288,16 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		if not team_got.has(c):
 			_grant_exp(c, m, share)
 	## Rớt đồ: server tung xúc xắc theo bảng gốc, đồ thuộc người hạ đòn cuối (DROP_OWNER_SECONDS giây đầu).
+	## Đồ Hoàng Kim / thuốc / ngựa CHỈ rơi trong PUBG và Lộn Xộn (bảng riêng, kể cả boss trong trận);
+	## mọi map / chế độ khác dùng bảng gốc DropTable.
 	var rolls: Array
-	if m.is_boss or bool(m.data.get("is_boss", false)):
+	if pubg and pubg.has_room(m.room_id):   ## quái trong trận PUBG
+		rolls = PubgServer.roll_drops()
+	elif lonxon and lonxon.has_room(m.room_id):   ## quái trong host Lộn Xộn: theo cấp người hạ + người hạ +5 cấp
+		var lx_killer: Conn = _players_by_eid.get(m.last_hitter)
+		rolls = lonxon.roll_drops(lx_killer)
+		lonxon.on_monster_killed(lx_killer)
+	elif m.is_boss or bool(m.data.get("is_boss", false)):
 		var bt := str(m.data.get("boss_type", "gold"))
 		if bt == "small_gold":
 			rolls = DropTable.roll_small_gold_boss(m.level, m.series)
@@ -1143,12 +1305,6 @@ func _on_monster_killed(m: ServerMonster) -> void:
 			rolls = DropTable.roll_killer_boss(m.level, m.series)
 		else:
 			rolls = DropTable.roll_gold_boss(m.level, m.series)
-	elif pubg and pubg.has_room(m.room_id):   ## quái trong trận PUBG
-		rolls = PubgServer.roll_drops()
-	elif lonxon and lonxon.has_room(m.room_id):   ## quái trong host Lộn Xộn: theo cấp người hạ + người hạ +5 cấp
-		var lx_killer: Conn = _players_by_eid.get(m.last_hitter)
-		rolls = lonxon.roll_drops(lx_killer)
-		lonxon.on_monster_killed(lx_killer)
 	elif m.hell_stars > 0:   ## quái phòng Địa Ngục
 		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
 	else:
@@ -1169,11 +1325,16 @@ func _on_monster_killed(m: ServerMonster) -> void:
 func _grant_exp(c: Conn, m: ServerMonster, share: int) -> void:
 	if c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:   ## PUBG / Lộn Xộn: cấp do luật trận, không nhận kinh nghiệm
 		return
-	var got := ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)
-	var exp_p := c.profile.get_active_exp_enhance_p()
+	_give_exp(c, _with_exp_enhance(c, ProfileGuard.exp_for_kill(c.profile.level, m.data, m.level, share)))
+
+## Cộng % kinh nghiệm của đồ đang mặc + thuốc — gốc áp trong KPlayer::AddSelfExp nên đi một mình hay chia tổ đội đều được cộng.
+func _with_exp_enhance(c: Conn, got: int) -> int:
+	if c.profile == null or got <= 0:
+		return got
+	var exp_p := c.profile.get_exp_enhance_p()
 	if exp_p > 0:
 		got = int(round(got * (1.0 + float(exp_p) / 100.0)))
-	_give_exp(c, got)
+	return got
 
 func _give_exp(c: Conn, got: int) -> void:
 	if got <= 0 or c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0 or c.profile.level >= PlayerProfile.MAX_LEVEL:
@@ -1265,6 +1426,21 @@ func _apply_profile(c: Conn, client: Dictionary, ack: int) -> void:
 		send_profile(c)
 		notice(c, "Môn phái tặng vũ khí tân thủ: %s (xem hành trang)." % weapon.get_base().get("name", "?"))
 
+## Đồ hết hạn sử dụng (ItemInstance.expire_at) của người đang online: xoá trên bản chuẩn của server, gửi bản mới xuống + báo.
+## Bỏ qua hồ sơ TẠM của trận PUBG / Lộn Xộn (không phải bản thật).
+func _check_expired_items() -> void:
+	var t := int(Time.get_unix_time_from_system())
+	for c: Conn in _conns.values():
+		if c.state != ConnState.IN_WORLD or c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:
+			continue
+		var gone := c.profile.remove_expired_items(t)
+		if gone.is_empty():
+			continue
+		c.data = c.profile.to_dict()
+		c.dirty = true
+		send_profile(c)
+		notice(c, "Vật phẩm hết hạn sử dụng đã bị thu hồi: %s" % ", ".join(gone))
+
 ## Gửi bản nhân vật chuẩn của server xuống game.
 func send_profile(c: Conn) -> void:
 	c.grants.clear()   ## game sẽ chép nguyên bản này -> mọi quà đã nằm trong đó
@@ -1282,8 +1458,6 @@ func notice(c: Conn, text: String) -> void:
 	NetProto.put_str(b, text)
 	_send(c, b)
 
-## Dã Tẩu: trao thưởng nhiệm vụ / mốc tích lũy trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
-func _on_da_tau(c: Conn, raw: String) -> void:
 ## Ủy thác: mua / dùng Bạch Câu Hoàn trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
 func _on_uy_thac(c: Conn, raw: String) -> void:
 	if c.profile == null or c.pubg_match != 0 or c.lonxon_host != 0:
@@ -1309,6 +1483,8 @@ func _on_uy_thac(c: Conn, raw: String) -> void:
 		_save(c)
 	notice(c, str(r.get("message", "")))
 
+## Dã Tẩu: trao thưởng nhiệm vụ / mốc tích lũy trên hồ sơ chuẩn của server rồi gửi S_PROFILE + lưu DB.
+func _on_da_tau(c: Conn, raw: String) -> void:
 	if c.profile == null:
 		return
 	if not c.pending_profile.is_empty():
@@ -1486,7 +1662,7 @@ func _on_discard(c: Conn, uid: String) -> void:
 	for i in c.profile.inventory.size():
 		var it: ItemInstance = c.profile.inventory[i]
 		if it.uid == uid:
-			if SecurityLock.is_item_locked(it):
+			if not it.can_drop():   ## khoá bảo hiểm / vật phẩm khoá (bLockDrop)
 				return
 			## Đồ Hoàng Kim chỉ vứt được trong trận PUBG (hồ sơ tạm) — ngoài trận luôn chặn (không tin client).
 			if PubgManager.discard_block_reason(it, c.pubg_match != 0 or c.lonxon_host != 0) != "":
@@ -1723,11 +1899,11 @@ func _save(c: Conn) -> void:
 	c.dirty = false
 	if c.entity and not c.hub and battle == null and arena == null and field == null:   ## vị trí do server giữ (sảnh: không đổi chỗ đứng) (game không được tự ghi "pos"); chiến trường giữ vị trí ngoài thế giới
 		c.data["pos"] = [snappedf(c.entity.pos.x, 0.1), snappedf(c.entity.pos.y, 0.1)]
-	c.last_save = _now
-	var char_id := c.character_id
 	c.data["uy_thac_seen"] = int(Time.get_unix_time_from_system())   ## nhân vật còn trong game tới lúc này (UyThac)
 	if c.profile:
 		c.profile.uy_thac_seen = int(c.data["uy_thac_seen"])
+	c.last_save = _now
+	var char_id := c.character_id
 	_saving_chars[char_id] = int(_saving_chars.get(char_id, 0)) + 1
 	var sent_grants: Array = c.unsaved_web_grants.duplicate()
 	var r: Dictionary = await account.save_character(char_id, c.char_version, c.data, sent_grants)
@@ -1762,13 +1938,21 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 	var look := {"gender": e.look.get("gender", 0)}
 	for k in ["helm", "armor", "weapon", "horse"]:
 		look[k] = clampi(b.get_16(), -1, 4096)
-	if b.get_available_bytes() >= 5:
+	if b.get_available_bytes() >= 7:
 		look["gender"] = b.get_u8()
 		look["mask_particular"] = b.get_16()
-		look["aura_state"] = b.get_16()
+		look["aura_state"] = b.get_32()
+		look["states"] = NetProto.get_states(b)
+		var aura := {}
+		if b.get_available_bytes() >= 3:
+			NetProto.get_aura(b, aura)
+		_set_look_aura(c, look, int(aura.get("aura_skill", 0)), int(aura.get("aura_level", 0)))
 	else:
 		look["mask_particular"] = int(e.look.get("mask_particular", -1))
 		look["aura_state"] = int(e.look.get("aura_state", 0))
+		look["states"] = e.look.get("states", [])
+		look["aura_skill"] = int(e.look.get("aura_skill", 0))
+		look["aura_level"] = int(e.look.get("aura_level", 0))
 	if look.has("aura_state") and c.profile:
 		var aura_st := int(look.get("aura_state", 0))
 		if c.profile.gm_aura_state != aura_st or int(c.data.get("gm_aura_state", 0)) != aura_st:
@@ -1897,7 +2081,7 @@ func _send_snapshots() -> void:
 			buf = StreamPeerBuffer.new()
 			blob[e.cell] = buf
 			blob_n[e.cell] = 0
-		e.write_state(buf)
+		e.write_state(buf, now_ms)
 		blob_n[e.cell] += 1
 	for c: Conn in _conns.values():
 		if c.state != ConnState.IN_WORLD or c.entity == null or c.hub:
@@ -1922,6 +2106,8 @@ func _send_snapshots() -> void:
 							n_spawn += 1
 							if e.kind == NetProto.KIND_PLAYER and e.guild_name != "":
 								spawned_guilds.append(e)
+							elif e is ServerMonster and not (e as ServerMonster).vis_states.is_empty():
+								spawned_guilds.append(e)
 			for eid: int in known:
 				if not _in_view(c, eid, center):
 					gone.append(eid)
@@ -1935,6 +2121,8 @@ func _send_snapshots() -> void:
 							e.write_spawn(spawns)
 							n_spawn += 1
 							if e.kind == NetProto.KIND_PLAYER and e.guild_name != "":
+								spawned_guilds.append(e)
+							elif e is ServerMonster and not (e as ServerMonster).vis_states.is_empty():
 								spawned_guilds.append(e)
 					for eid: int in aoi.left_from(cell):
 						if known.has(eid) and not _in_view(c, eid, center):
@@ -1950,8 +2138,14 @@ func _send_snapshots() -> void:
 			spawns.seek(1)
 			spawns.put_u16(n_spawn)
 			_send(c, spawns)
+		## Người chơi mới vào tầm: tên bang; quái mới vào tầm: hình bùa còn hạn.
 		for ge: ServerEntity in spawned_guilds:
-			_send(c, _guild_packet(ge))
+			if ge is ServerMonster:
+				var mp := _mstate_packet(ge as ServerMonster)
+				if mp != null:
+					_send(c, mp)
+			else:
+				_send(c, _guild_packet(ge))
 		var states := NetProto.writer(NetProto.S_STATE)
 		states.put_u32(now_ms)
 		states.put_u16(0)   ## số mục — ghi lại sau
@@ -2004,6 +2198,17 @@ func alloc_eid() -> int:
 
 func entity_of(eid: int) -> ServerEntity:
 	return _entities.get(eid)
+
+## Thực thể (người, bot, quái còn sống) cách `feet` không quá `radius` px trong cùng phòng — quét 3x3 ô AOI quanh đó.
+func entities_near(feet: Vector2, radius: float, room_id: int, base := Vector2i.ZERO) -> Array:
+	var out: Array = []
+	var center := aoi.cell_of(feet, base)
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			for e: ServerEntity in aoi.bucket(center + Vector2i(dx, dy)).values():
+				if e.room_id == room_id and e.pos.distance_to(feet) <= radius and (e.flags & NetProto.FLAG_DEAD) == 0:
+					out.append(e)
+	return out
 
 ## Bot vào thế giới: là 1 thực thể KIND_PLAYER trong AOI (người thật thấy như người chơi khác), không có kết nối.
 func add_bot_entity(b: ServerBot) -> void:

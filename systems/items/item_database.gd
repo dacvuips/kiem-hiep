@@ -387,11 +387,26 @@ static func get_misc(misc_id: String) -> Dictionary:
 			"height": 1,
 			"source": "lonxon",
 		}
+		## Thuốc / đan chồng được POTION_STACK bình 1 ô (gốc potion.txt MaxStack = 0, chỉ giải độc 10 — game này nới ra).
+		for rec in _misc.values():
+			if str(rec.get("source", "")) in ["potion", "songjin"]:
+				rec["stack"] = maxi(int(rec.get("stack", 0)), POTION_STACK)
 		## Bạch Câu Hoàn (UyThac): chồng được như thuốc.
 		for mid in UyThac.ITEMS:
 			if _misc.has(mid):
 				_misc[mid]["stack"] = maxi(int(_misc[mid].get("stack", 0)), UyThac.STACK)
+				if UyThac.ITEMS[mid].has("icon"):
+					_misc[mid]["icon"] = UyThac.ITEMS[mid]["icon"]
 	return _misc.get(misc_id, {})
+
+## Số bình thuốc tối đa trong 1 chồng (1 ô hành trang).
+const POTION_STACK := 50
+
+## Số lượng tối đa của 1 chồng món `misc_id` (1 = không chồng được).
+static func max_stack(misc_id: String) -> int:
+	if misc_id == "":
+		return 1
+	return maxi(int(get_misc(misc_id).get("stack", 0)), 1)
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
 static func list_misc(source: String) -> Array:

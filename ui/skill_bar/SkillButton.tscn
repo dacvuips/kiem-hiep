@@ -5,6 +5,7 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mask"]
 shader = ExtResource("2_mask")
+shader_parameter/round_crop = true
 
 [node name="SkillButton" type="Button"]
 custom_minimum_size = Vector2(64, 64)

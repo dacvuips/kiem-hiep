@@ -6,7 +6,7 @@ class_name SkillButton
 const SLOT_BG := Color(0.1, 0.12, 0.16, 0.85)
 const SLOT_BG_HOVER := Color(0.18, 0.2, 0.26, 0.9)
 const SLOT_BORDER := Color(1, 1, 1, 0.95)
-const BORDER_WIDTH := 2
+const BORDER_WIDTH := 3
 const CIRCLE_MASK_SHADER := preload("res://ui/shaders/circle_mask.gdshader")
 
 @onready var _icon: TextureRect = %Icon
@@ -26,10 +26,13 @@ static func make_round_style(diameter: float, bg: Color, border: Color = SLOT_BO
 	style.anti_aliasing = true
 	return style
 
-## Material cắt icon vuông thành hình tròn (cùng shader với node Icon trong SkillButton.tscn).
-static func make_circle_mask_material() -> ShaderMaterial:
+## Material bỏ viền khung vuông của icon skill gốc + thu icon vừa trong nút tròn, KHÔNG cắt tròn
+## (cùng shader với node Icon trong SkillButton.tscn).
+## round_crop = true: icon phủ kín nút tròn, cắt tròn (nút trên màn chơi).
+static func make_icon_fit_material(round_crop := false) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = CIRCLE_MASK_SHADER
+	material.set_shader_parameter("round_crop", round_crop)
 	return material
 
 static func apply_round_style(button: Button, diameter: float) -> void:
@@ -40,6 +43,8 @@ static func apply_round_style(button: Button, diameter: float) -> void:
 	button.add_theme_stylebox_override("pressed", hover)
 	button.add_theme_stylebox_override("disabled", normal)
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+const EMPTY_SLOT_TINT := Color(1, 1, 1, 0.45)
 
 ## skill_def = null -> hiện ô trống "+" (chưa gắn skill), bấm không làm gì.
 func setup(skill_def: SkillDefinition, main: bool) -> void:
@@ -52,6 +57,8 @@ func setup(skill_def: SkillDefinition, main: bool) -> void:
 	_lock_overlay.add_theme_stylebox_override("panel", make_round_style(diameter, Color(0.1, 0.1, 0.1, 0.6), Color.TRANSPARENT, 0))
 	autowrap_mode = TextServer.AUTOWRAP_WORD
 	add_theme_font_size_override("font_size", 13 if main else 11)
+	## Ô trống hiện hơi trong suốt (self_modulate: không đụng modulate mà SkillBarUI dùng tô hào quang).
+	self_modulate = EMPTY_SLOT_TINT if skill_def == null else Color.WHITE
 	if skill_def == null:
 		_icon.texture = null
 		text = "+"

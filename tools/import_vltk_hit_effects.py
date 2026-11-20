@@ -138,6 +138,7 @@ def load_skills_txt(path=None):
         for field, column in INT_COLUMNS.items():
             flags[field] = to_int(cells[col[column]])
         flags["_child_missle"] = to_int(cells[col["ChildSkillId"]])
+        flags["_style"] = to_int(cells[col["SkillStyle"]])
         script = cells[col["LvlSetScript"]].strip().replace("\\", "/").lstrip("/")
         by_name.setdefault(norm(cells[col["SkillName"]]), []).append((script, mapping, flags))
         by_id[to_int(cells[col["SkillId"]])] = (script, mapping, flags)
@@ -253,6 +254,28 @@ def attribs_literal(attribs: dict) -> str:
     return "{\n" + ",\n".join(parts) + "\n}"
 
 
+def resolve_missle(flags: dict, by_id: dict, missles: dict) -> dict:
+    """Đạn quyết định vùng ảnh hưởng của skill — theo KSkill::Cast gốc:
+    - SkillStyle 0 (Missles): ChildSkillId LÀ MissleId; cận chiến (1) ChildSkillId thường là skill con -> đạn của nó.
+    - Hào quang (IsAura): KNpc::ProcessState cứ 10 frame thi triển SKILL con ChildSkillId -> lấy đạn của skill con
+      (VD Lưu Thủy 86 -> skill 206 -> đạn 92 "Vòng tròn hỗ trợ đồng đội" DmgRange 10).
+    - SkillStyle 2 (InitiativeNpcState, KSkill::CastInitiativeSkill): áp thẳng lên 1 mục tiêu (mình / 1 đồng đội
+      được chọn), KHÔNG có đạn -> không có vùng (ChildSkillId bị bỏ qua).
+    - SkillStyle 3 (PassivityNpcState): bị động lên chính mình — bản VNG ghi Nhất Khí Tam Thanh / Thiên Thanh Địa Trọc là 3."""
+    child = flags["_child_missle"]
+    if flags.get("is_aura"):
+        sub = by_id.get(child)
+        return missles.get(sub[2].get("_child_missle", 0), {}) if sub else {}
+    ## Skill đánh địch giữ cách lấy cũ (bản 15 phái có skill đánh ghi SkillStyle 3, VD Lạc Nhạn Bình Sa).
+    if flags.get("_style", 0) in (0, 1) or flags.get("target_enemy"):
+        missle = missles.get(child, {})
+        if not missle and child in by_id:
+            missle = missles.get(by_id[child][2].get("_child_missle", 0), {})
+        return missle
+    ## 2 (InitiativeNpcState: áp thẳng 1 mục tiêu) / 3 (PassivityNpcState: bị động lên chính mình): không có vùng.
+    return {}
+
+
 def main():
     dry = "--dry" in sys.argv
     old_tables = (*load_skills_txt(), load_missles())
@@ -305,10 +328,7 @@ def main():
                     if is_new and field == "vltk_state_special_id" and value > 0:
                         value += vltk_source.FX_ID_OFFSET   ## states.json: trạng thái bản 15 phái ở khoá riêng
                     lines += f"{field} = {value}\n"
-                missle = missles.get(flags["_child_missle"], {})
-                if not missle and flags["_child_missle"] in by_id:
-                    sub_child = by_id[flags["_child_missle"]][2].get("_child_missle", 0)
-                    missle = missles.get(sub_child, {})
+                missle = resolve_missle(flags, by_id, missles)
                 for field in MISSLE_FIELDS:
                     lines += f"{field} = {missle.get(field, 0)}\n"
                 if attribs:

@@ -111,7 +111,10 @@ func _fill_header() -> void:
 
 	if has_node("%PriceLabel"):
 		var price_label: RichTextLabel = %PriceLabel
-		if _item.can_sell():
+		if _item.expire_at > 0:   ## đồ có hạn (VD Hoàng Kim tân thủ): dòng đầu ghi thời hạn; dòng khoá ở cuối mô tả
+			price_label.text = ItemText.expire_text(_item)
+			price_label.visible = true
+		elif _item.can_sell():
 			var sale_price := _item.get_sale_price()
 			var price_str := InventoryPopup.format_money(sale_price)
 			if _item.is_misc() and _item.count > 1:

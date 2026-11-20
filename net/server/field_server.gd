@@ -95,6 +95,11 @@ static func map_entry(map_id: int, tier: int) -> Dictionary:
 			return m
 	return {}
 
+## sha256(muối + mật khẩu) gửi lên server tài khoản để POST /v1/field/check báo sai mật khẩu trước khi game nạp map
+## (mật khẩu gốc không rời field server). Phải khớp handleFieldCheck ở kiem-hiep-server/account/field.go.
+static func pass_hash(salt: String, password: String) -> String:
+	return (salt + password).sha256_text()
+
 ## Mật khẩu phòng đã chuẩn hoá: bỏ khoảng trắng 2 đầu, tối đa PASSWORD_MAX ký tự.
 static func clean_password(v: Variant) -> String:
 	return str(v).strip_edges().left(PASSWORD_MAX) if v is String else ""
@@ -127,6 +132,9 @@ func _create(c, map_id: int, tier: int, stars: int, password := "") -> void:
 		"stars": clampi(stars, 1, MapCatalog.HELL_MAX_STARS) if hell else 0, "level": int(m["level"]), "dir": str(m["dir"]),
 		"grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS), "spawn": grid.open_spawn_near(spawn_center),
 		"host": c.character_id, "host_name": c.entity.name, "members": [], "monsters": [], "password": password}
+	if password != "":
+		r["pass_salt"] = Crypto.new().generate_random_bytes(8).hex_encode()
+		r["pass_hash"] = pass_hash(str(r.pass_salt), password)
 	rooms[id] = r
 	_rooms_by_rid[r.rid] = r
 	_spawn_monsters(r)
@@ -404,6 +412,6 @@ func _report() -> void:
 		var kind := "guild" if str(r.get("guild", "")) != "" else ("boss" if bool(r.get("is_boss", false)) else "")
 		list.append({"id": id, "map_id": r.map_id, "tier": r.tier, "stars": r.stars, "host": r.host_name,
 			"members": (r.members as Array).size(), "max": int(r.get("max", MAX_MEMBERS)), "locked": str(r.get("password", "")) != "",
-			"kind": kind})
+			"kind": kind, "pass_salt": str(r.get("pass_salt", "")), "pass_hash": str(r.get("pass_hash", ""))})
 	gs.account.report_field({"server_id": gs.account.server_id, "index": index, "host": public_host, "port": public_port, "ws_url": public_ws,
 		"open": true, "players": gs.online_count(), "rooms": list})

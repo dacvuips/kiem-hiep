@@ -174,7 +174,7 @@ func _pick_up(player: Node) -> void:
 			SaveManager.save_profile(profile)
 			queue_free()
 			return
-		if not profile.add_item(item):
+		if not profile.add_item_stacked(item):
 			_full_bag_cooldown = 2.0
 			_notice(player, "Hành trang đã đầy")
 			_time = maxf(_time, LIFETIME - 5.0)   ## để lại trên đất thêm chút nữa

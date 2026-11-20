@@ -432,6 +432,7 @@ value_at_max_level = 13.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_35"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 2, 0, 15, 39, 0, 20, 44, 0, 21, 44, 0)
 label = "Xác suất bỏ qua bùa giảm kháng"
 value_at_level_1 = 2.0
 value_at_max_level = 44.0
@@ -789,12 +790,14 @@ damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_58"), SubResource("SubResource_59")])
 [sub_resource type="Resource" id="SubResource_61"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 10, 0, 30, 18, 0, 31, 18, 0)
 label = "Tỷ lệ tạo thành sát thương"
 value_at_level_1 = 1.0
 value_at_max_level = 18.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_62"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 125, 0)
 label = "Sát thương vật lý - ngoại công"
 value_at_level_1 = 18.0
 value_at_max_level = 125.0

@@ -26,6 +26,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await test_targeting(player, profile)
 	await test_loot(player, profile)
+	await test_team_only_when_running(player, profile)
 	await test_window(profile)
 	print("RESULT fail=", _fail)
 	get_tree().quit(1 if _fail > 0 else 0)
@@ -139,6 +140,24 @@ func test_loot(player: Node2D, profile: PlayerProfile) -> void:
 	var key := text.substr(0, 5)
 	check("lọc thuộc tính khớp (%s)" % text, AutoController.matches_filter(item, [{"text": key, "min": 50}]))
 	check("lọc thuộc tính dưới mức", not AutoController.matches_filter(item, [{"text": key, "min": 70}]))
+
+## Thiết lập tổ đội của Auto chỉ có hiệu lực khi auto đang chạy.
+func test_team_only_when_running(player: Node2D, profile: PlayerProfile) -> void:
+	var s := profile.get_auto_settings()
+	var team := SocialHub.of(profile).team
+	s.team_on = true
+	s.accept_mode = 0
+	player.is_auto_mode = false
+	player.auto.tick(0.016, false)
+	player.auto.apply_settings()   ## như lưu cửa sổ thiết lập lúc auto đang tắt
+	check("auto tắt: thiết lập tổ đội chưa có hiệu lực", not player.auto.running and not team.auto_team and not team.auto_refuse_invite)
+	## Auto đang chạy (_start gọi apply_settings) — đặt thẳng cờ chạy: tick thật còn tự hồi phục / phù về thành tuỳ túi đồ.
+	player.auto.running = true
+	player.auto.apply_settings()
+	check("auto bật: thiết lập tổ đội có hiệu lực", player.auto.running and team.auto_team and team.auto_refuse_invite)
+	player.auto.tick(0.016, false)  ## tắt auto
+	check("tắt auto: thiết lập tổ đội thôi hiệu lực", not team.auto_team and not team.auto_refuse_invite)
+	s.accept_mode = 1
 
 func test_window(profile: PlayerProfile) -> void:
 	var win := AutoSettingsWindow.open(self, profile)

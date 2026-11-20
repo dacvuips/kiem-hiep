@@ -201,7 +201,7 @@ func get_host() -> Node:
 
 const MAJOR_HUBS: Array[StringName] = [&"pk", &"map_select", &"ranking", &"events", &"guild", &"storage", &"ky_tran_cac", &"settings", &"sect_choice", &"tien_trang", &"compound", &"pubg"]
 
-static func present(host: Node, win: SocialWindow, window_kind: StringName = &"") -> SocialWindow:
+static func present(host: Node, win: SocialWindow, window_kind: StringName = &"", with_backdrop: bool = false) -> SocialWindow:
 	var tree := host.get_tree() if host != null and host.is_inside_tree() else Engine.get_main_loop() as SceneTree
 	if window_kind != &"" and tree != null:
 		for w in tree.get_nodes_in_group("social_windows"):
@@ -220,6 +220,16 @@ static func present(host: Node, win: SocialWindow, window_kind: StringName = &""
 	var layer := CanvasLayer.new()
 	layer.layer = DraggableWindow.WINDOW_LAYER + 1
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	if with_backdrop:
+		var backdrop := ColorRect.new()
+		backdrop.color = GameUi.DIM
+		backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+		backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+		backdrop.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				win.close_requested.emit()
+		)
+		layer.add_child(backdrop)
 	layer.add_child(win)
 	if host != null and is_instance_valid(host):
 		host.add_child(layer)
@@ -256,6 +266,47 @@ static func prompt(host: Node, window_title: String, hint: String, on_ok: Callab
 	var layer := present(host, win, &"")
 	var submit := func() -> void:
 		var text := edit.text
+		win.close_requested.emit()
+		on_ok.call(text)
+	ok.pressed.connect(submit)
+	edit.text_submitted.connect(func(_t: String) -> void: submit.call())
+	cancel.pressed.connect(func() -> void: win.close_requested.emit())
+	edit.call_deferred("grab_focus")
+
+## Như prompt() nhưng kiểm trước khi đóng: check(text) (có thể await) trả "" = hợp lệ -> đóng hộp và gọi on_ok(text);
+## trả lý do -> hiện chữ đỏ ngay trong hộp, giữ hộp mở để nhập lại (VD sai mật khẩu phòng).
+static func prompt_checked(host: Node, window_title: String, hint: String, check: Callable, on_ok: Callable, secret := false) -> void:
+	var win := SocialWindow.new(window_title, "", 340.0)
+	var edit := SocialUi.line_edit(hint, secret)
+	win.body.add_child(edit)
+	var err := SocialUi.label("", SocialUi.LABEL_RED, 13)
+	err.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	err.visible = false
+	win.body.add_child(err)
+	var row := win.add_button_row()
+	var ok := SocialUi.stone_button(TranslationServer.translate("Đồng ý"))
+	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cancel := SocialUi.stone_button(TranslationServer.translate("Huỷ"))
+	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(ok)
+	row.add_child(cancel)
+	present(host, win, &"")
+	var submit := func() -> void:
+		if ok.disabled:
+			return
+		var text := edit.text
+		ok.disabled = true
+		err.visible = true
+		err.text = TranslationServer.translate("Đang kiểm tra…")
+		var reason: String = str(await check.call(text))
+		if not is_instance_valid(win) or not win.is_inside_tree():
+			return
+		ok.disabled = false
+		if reason != "":
+			err.text = reason
+			edit.select_all()
+			edit.grab_focus()
+			return
 		win.close_requested.emit()
 		on_ok.call(text)
 	ok.pressed.connect(submit)

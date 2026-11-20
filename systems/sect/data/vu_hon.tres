@@ -353,6 +353,7 @@ damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_92"), SubResource("SubResource_93"), SubResource("SubResource_94"), SubResource("SubResource_95")])
 [sub_resource type="Resource" id="SubResource_25"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 10, 0, 15, 8, 0, 32, 25, 0)
 label = "Triệt tiêu sát thương"
 value_at_level_1 = 10.0
 value_at_max_level = 13.0
@@ -1078,6 +1079,7 @@ max_at_max_level = 1200.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_84"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 48, 0, 20, 72, 0, 23, 79, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 48.0
 value_at_max_level = 79.0
@@ -1135,6 +1137,7 @@ value_at_max_level = 459.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_88"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 55, 0, 23, 66, 0, 26, 72, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 18.0
 value_at_max_level = 72.0
