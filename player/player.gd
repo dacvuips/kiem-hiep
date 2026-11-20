@@ -1692,8 +1692,9 @@ var _aura_sprite: VltkStateSprite = null
 var _aura_sprite_state: int = 0
 
 ## Trạng thái Hộ thể Mộng Điệp (Tân thủ <= 80 trong map luyện công):
-## Hồi 100 HP & 100 MP mỗi 0.5s và hiển thị Aura Mộng Điệp (State ID 40). Lên level 81 là hết.
-const STATE_ID_MONG_DIEP := 40
+## Hồi 100 HP & 100 MP mỗi 0.5s và hiển thị Aura Võ Lâm Hào Kiệt (State ID 173 — wulinhaojie.spr) trong lúc còn được tự hồi.
+## Lên level 81 là hết.
+const STATE_ID_MONG_DIEP := 173
 const MONG_DIEP_REGEN_INTERVAL := 0.5
 const MONG_DIEP_REGEN_AMOUNT := 100.0
 
@@ -1739,7 +1740,7 @@ func _refresh_aura_sprite() -> void:
 				if skill.id == profile.active_aura_id:
 					state_id = skill.vltk_state_special_id
 					break
-	# Hộ thể Mộng Điệp tân thủ: tự động gắn aura Mộng Điệp nếu chưa có hào quang khác
+	# Hộ thể tân thủ: tự động gắn aura Võ Lâm Hào Kiệt nếu chưa có hào quang khác
 	if state_id == 0 and is_mong_diep_active():
 		state_id = STATE_ID_MONG_DIEP
 
