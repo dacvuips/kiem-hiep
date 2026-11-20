@@ -52,6 +52,14 @@ func _ready() -> void:
 	check("đội 3 người: khung hiện 2 đồng đội (không gồm mình)", hud.visible and snap.size() == 2, snap)
 	check("offline: đồng đội đầy máu, không có cờ (mình là đội trưởng)", snap.all(func(r: Dictionary) -> bool: return r.hp == 100 and not r.captain), snap)
 	check("khung nằm dưới hàng nút PK (y >= 104)", hud.position.y >= 104.0, hud.position)
+	var frame: StyleBox = hud.get_theme_stylebox("panel")
+	check("1 khung lớn chung, nền bán trong suốt", frame is StyleBoxFlat and (frame as StyleBoxFlat).bg_color.a > 0.0
+		and (frame as StyleBoxFlat).bg_color.a < 0.8, frame)
+	var rows_ok := true
+	for r in hud._rows:
+		var b: Button = r.button
+		rows_ok = rows_ok and b.get_parent() == hud._list and b.get_theme_stylebox("normal") is StyleBoxEmpty
+	check("mỗi dòng nằm trong khung lớn, không khung / nền riêng", rows_ok and hud._rows.size() == 2)
 
 	## Đổi đội trưởng sang đồng đội đầu: dòng của họ có cờ, nằm đầu.
 	if team.members.is_empty():

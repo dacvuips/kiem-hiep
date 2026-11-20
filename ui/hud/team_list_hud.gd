@@ -1,4 +1,4 @@
-extends VBoxContainer
+extends PanelContainer
 class_name TeamListHud
 ## KHUNG DANH SÁCH TỔ ĐỘI góc trên-trái màn chơi (ngay dưới hàng nút chế độ PK "Luyện Công", tức dưới khung "Phòng #ID").
 ## Mỗi ĐỒNG ĐỘI (không gồm bản thân — máu mình đã có ở thanh trên cùng) 1 dòng: cờ đội trưởng + tên + thanh máu.
@@ -7,6 +7,7 @@ class_name TeamListHud
 ##     Khung này cũng báo % máu của mình lên server (C_HP) khi đổi, để đồng đội thấy.
 ##   - Offline: đồng đội là người chơi giả (không có thân trên map) — thanh máu đầy.
 ##   - Bấm vào 1 dòng: chọn đồng đội đó làm mục tiêu nếu đang thấy họ trên map.
+## Mọi dòng nằm chung 1 KHUNG LỚN nền bán trong suốt (thấy map phía sau); từng dòng không có khung / nền riêng.
 ## Ẩn khi không có tổ đội. Màu / chữ lấy từ GameUi.
 
 const WIDTH := 178.0
@@ -15,11 +16,16 @@ const DEFAULT_TOP := 112.0         ## khi không tìm thấy hàng nút PK (TopL
 const DEFAULT_LEFT := 12.0
 const GAP_BELOW_BAR := 8.0
 const HP_SEND_INTERVAL := 0.2      ## nhịp kiểm tra máu mình để báo server (chỉ gửi khi % đổi)
-const ROW_BG := Color(0.035, 0.040, 0.040, 0.72)
+const PAD := 6.0                   ## lề trong của khung lớn
+const ROW_WIDTH := WIDTH - PAD * 2.0
+const FRAME_BG := Color(0.035, 0.040, 0.040, 0.45)       ## nền khung lớn — bán trong suốt
+const FRAME_BORDER := Color(0.24, 0.24, 0.21, 0.55)
+const ROW_HOVER := Color(1.0, 1.0, 1.0, 0.07)            ## dòng đang trỏ / bấm: sáng nhẹ, không viền
 
 var _profile: PlayerProfile = null
 var _team: TeamService = null
 var _header: Label
+var _list: VBoxContainer           ## tiêu đề + các dòng, nằm trong khung lớn
 var _rows: Array = []              ## [{id, name: Label, bar: HpBar, button: Button}]
 var _anchor: Control = null        ## hàng nút PK của main.gd — khung bám ngay bên dưới
 var _player: Node = null
@@ -58,17 +64,21 @@ class CaptainFlag extends Control:
 func _ready() -> void:
 	name = "TeamListHud"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_theme_constant_override("separation", 3)
+	add_theme_stylebox_override("panel", GameUi.box(FRAME_BG, FRAME_BORDER, GameUi.RADIUS_PANEL, 1, int(PAD)))
 	custom_minimum_size = Vector2(WIDTH, 0)
 	size = Vector2(WIDTH, 0)
 	visible = false
+	_list = VBoxContainer.new()
+	_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_list.add_theme_constant_override("separation", 2)
+	add_child(_list)
 	_header = Label.new()
 	_header.add_theme_color_override("font_color", GameUi.TITLE)
 	_header.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_header.add_theme_constant_override("outline_size", 3)
 	_header.add_theme_font_size_override("font_size", 12)
 	_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_header)
+	_list.add_child(_header)
 	_place()
 
 func _process(delta: float) -> void:
@@ -109,7 +119,7 @@ func _shown_members() -> Array:
 
 func _rebuild() -> void:
 	for r in _rows:
-		remove_child(r.button)
+		_list.remove_child(r.button)
 		(r.button as Node).queue_free()
 	_rows.clear()
 	_refresh_world_name_colors()
@@ -134,22 +144,22 @@ func _refresh_world_name_colors() -> void:
 func _make_row(m: TeamService.Member, is_captain: bool) -> Dictionary:
 	var btn := Button.new()
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.custom_minimum_size = Vector2(WIDTH, ROW_HEIGHT)
+	btn.custom_minimum_size = Vector2(ROW_WIDTH, ROW_HEIGHT)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn.tooltip_text = "%s — cấp %d%s" % [m.name, m.level, " (đội trưởng)" if is_captain else ""]
-	var normal := GameUi.box(ROW_BG, GameUi.BORDER, 4, 1, 0)
-	var hover := GameUi.box(ROW_BG, GameUi.BORDER_ACTIVE, 4, 1, 0)
-	btn.add_theme_stylebox_override("normal", normal)
+	var hover := GameUi.box(ROW_HOVER, Color(0, 0, 0, 0), 4, 0, 0)
+	btn.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	btn.add_theme_stylebox_override("hover", hover)
 	btn.add_theme_stylebox_override("pressed", hover)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	btn.pressed.connect(_on_row_pressed.bind(m.id))
-	add_child(btn)
+	_list.add_child(btn)
 
 	var flag_w := 12.0
 	if is_captain:
 		var flag := CaptainFlag.new()
 		flag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		flag.position = Vector2(5, 5)
+		flag.position = Vector2(1, 5)
 		flag.size = Vector2(flag_w, 13)
 		btn.add_child(flag)
 	var lbl := Label.new()
@@ -158,14 +168,16 @@ func _make_row(m: TeamService.Member, is_captain: bool) -> Dictionary:
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))   ## nền khung trong suốt: viền chữ cho dễ đọc
+	lbl.add_theme_constant_override("outline_size", 3)
 	lbl.add_theme_color_override("font_color", GameUi.GOLD if is_captain else GameUi.TEXT)
-	lbl.position = Vector2(6.0 + (flag_w + 2.0 if is_captain else 0.0), 1)
-	lbl.size = Vector2(WIDTH - lbl.position.x - 6.0, 18)
+	lbl.position = Vector2(2.0 + (flag_w + 2.0 if is_captain else 0.0), 1)
+	lbl.size = Vector2(ROW_WIDTH - lbl.position.x - 2.0, 18)
 	btn.add_child(lbl)
 	var bar := HpBar.new()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.position = Vector2(6, ROW_HEIGHT - 10)
-	bar.size = Vector2(WIDTH - 12, 6)
+	bar.position = Vector2(2, ROW_HEIGHT - 10)
+	bar.size = Vector2(ROW_WIDTH - 4, 6)
 	btn.add_child(bar)
 	return {"id": m.id, "member": m, "name": lbl, "bar": bar, "button": btn, "captain": is_captain}
 
