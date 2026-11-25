@@ -62,7 +62,7 @@ static func resolve_on_bot(bot: ServerBot, attacker: CombatantStats, min_damage:
 	var final := CombatFormulas.resolve_multi_damage(attacker, bot.stats, int(bot.cur_hp), parts, element as ElementTypes.ElementType,
 		mods, dealt, int(bot.mana))
 	if not bot.is_jumping(bot.now_cache):
-		bot.apply_hit_effects(mods, dealt, bot.now_cache, from_eid)
+		bot.apply_hit_effects(mods, dealt, bot.now_cache, from_eid, CombatFormulas.poison_tick_damage(bot.stats, parts, is_pk))
 	return maxi(final, 0)
 
 ## Gói C_PVP_HIT của người thật (đã PvpHit.decode + sanitize) vào bot.

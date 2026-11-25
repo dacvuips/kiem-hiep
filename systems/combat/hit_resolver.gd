@@ -58,7 +58,8 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 		defender.mana = minf(max_m, defender.mana + mana_gained)
 
 	if status:
-		status.apply_vltk_hit(mods, dealt, defender_stats)
+		status.apply_vltk_hit(mods, dealt, defender_stats,
+				CombatFormulas.poison_tick_damage(defender_stats, parts, mods != null and mods.is_pk))
 	if mods and mods.state_source_id != "":
 		_apply_hit_state(defender, status, mods)
 	_apply_return_and_steal(defender_stats, attacker_stats, final_damage, dealt, mods)

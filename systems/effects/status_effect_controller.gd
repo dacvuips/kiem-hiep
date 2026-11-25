@@ -68,7 +68,9 @@ const VLTK_FREEZE_SLOW := 0.5
 ##   - Choáng: roll stun_chance_p % (chỉ khi đang không bị choáng), độc lập với damage.
 ## Thời gian mỗi hiệu ứng trừ % giảm của CHÍNH bên bị trúng (`defender`), tối đa MAX_RESIST %.
 ## `dealt` = damage thực từng loại của đòn (CombatFormulas.resolve_multi_damage out_dealt).
-func apply_vltk_hit(mods: CombatFormulas.HitModifiers, dealt: Dictionary, defender: CombatantStats) -> void:
+## `poison_tick` = lượng rút mỗi nhịp đã tính theo gốc (CombatFormulas.poison_tick_damage: không tương khắc, không chí mạng);
+## -1 = không có, lấy theo damage Độc thực của cú đánh đầu (cách cũ).
+func apply_vltk_hit(mods: CombatFormulas.HitModifiers, dealt: Dictionary, defender: CombatantStats, poison_tick: int = -1) -> void:
 	if mods == null:
 		return
 	if dealt.get(CombatFormulas.DamageType.COLD, 0) > 0 and mods.freeze_frames > 0 and not has_effect("freeze"):
@@ -80,10 +82,12 @@ func apply_vltk_hit(mods: CombatFormulas.HitModifiers, dealt: Dictionary, defend
 	if poison_damage > 0 and mods.poison_time_frames > 0:
 		## Lượng rút mỗi lần lấy theo damage thực tế sau khi đã trừ Kháng Độc và Tương Khắc Ngũ Hành.
 		## Không nhân chí mạng ở nhịp rút (KNpc::Activate tick độc gốc gọi CalcDamage với bIsDS = FALSE).
-		if mods.is_deadly_strike:
+		if poison_tick >= 0:
+			poison_damage = poison_tick
+		elif mods.is_deadly_strike:
 			poison_damage = maxi(1, int(poison_damage / CombatFormulas.DEADLY_STRIKE_MULTIPLIER))
 		var time_frames := _reduce_frames(mods.poison_time_frames, defender.poison_time_reduce_p)
-		if time_frames > 0:
+		if time_frames > 0 and poison_damage > 0:
 			_apply_vltk_poison(poison_damage, time_frames, maxi(1, mods.poison_interval_frames), mods.attacker_node)
 
 	if mods.stun_chance_p > 0 and mods.stun_frames > 0 and not is_stunned and randi_range(1, 100) <= mods.stun_chance_p:

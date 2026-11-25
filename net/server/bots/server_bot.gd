@@ -53,7 +53,8 @@ var now_cache := 0.0                        ## giây server ở nhịp gần nh�
 var states := {}
 var slow_until := 0.0                       ## đang bị làm chậm (Băng sát)
 var stun_until := 0.0                       ## đang bị choáng: không đi / không ra chiêu
-var _poison := {}                           ## {until, every, next, damage, from}
+var _poison := {}                           ## {d: rút mỗi nhịp, t: frame còn lại, c: nhịp (frame), acc, last}
+var _poison_from := 0                       ## eid người gây độc gần nhất (tính người hạ)
 var sitting := false                        ## ngồi thiền (hồi nhanh hơn, BotCombatBrain bật lúc rảnh)
 const SLOW_FACTOR := 0.5
 const SIT_REGEN_P := 0.03                   ## ngồi thiền: hồi 3% máu / giây
@@ -159,21 +160,56 @@ func set_aura(skill_id: String) -> void:
 	refresh_stats()
 
 ## Hiệu ứng của 1 đòn trúng (làm chậm / độc / choáng / bùa) — như StatusEffectController.apply_vltk_hit + HitResolver._apply_hit_state.
-func apply_hit_effects(mods: CombatFormulas.HitModifiers, dealt: Dictionary, now: float, from_eid := 0) -> void:
+## `poison_tick` như StatusEffectController.apply_vltk_hit (CombatFormulas.poison_tick_damage; -1 = theo damage độc của cú đầu).
+func apply_hit_effects(mods: CombatFormulas.HitModifiers, dealt: Dictionary, now: float, from_eid := 0, poison_tick := -1) -> void:
 	if mods == null or dead:
 		return
 	if int(dealt.get(CombatFormulas.DamageType.COLD, 0)) > 0 and mods.freeze_frames > 0:
 		slow_until = maxf(slow_until, now + SkillDefinition.frames_to_seconds(_reduce(mods.freeze_frames, stats.freeze_time_reduce_p)))
 	var poison := int(dealt.get(CombatFormulas.DamageType.POISON, 0))
 	if poison > 0 and mods.poison_time_frames > 0:
-		var every := SkillDefinition.frames_to_seconds(maxi(1, mods.poison_interval_frames))
-		_poison = {"until": now + SkillDefinition.frames_to_seconds(_reduce(mods.poison_time_frames, stats.poison_time_reduce_p)),
-			"every": every, "next": now + every, "damage": maxi(1, mods.poison_tick_damage if mods.poison_tick_damage > 0 else poison), "from": from_eid}
+		## Như StatusEffectController.apply_vltk_hit: nhịp rút không tương khắc, không chí mạng.
+		if poison_tick >= 0:
+			poison = poison_tick
+		elif mods.is_deadly_strike:
+			poison = maxi(1, int(poison / CombatFormulas.DEADLY_STRIKE_MULTIPLIER))
+		var frames := StatusEffectController._reduce_frames(mods.poison_time_frames, stats.poison_time_reduce_p)
+		if frames > 0 and poison > 0:
+			_add_poison(poison, frames, maxi(1, mods.poison_interval_frames), now, from_eid)
 	if mods.stun_chance_p > 0 and mods.stun_frames > 0 and now >= stun_until and randi_range(1, 100) <= mods.stun_chance_p:
 		stun_until = now + SkillDefinition.frames_to_seconds(_reduce(mods.stun_frames, stats.stun_time_reduce_p))
 		move_dest = Vector2.INF
 	if mods.state_source_id != "":
 		add_state(mods.state_source_id, mods.state_attribs, mods.state_seconds, now, true)
+
+## Trúng độc — KNpc::ReceiveDamage gốc: chưa dính thì nhận lớp mới; đang dính thì GỘP 2 lớp (lượng rút mỗi nhịp cộng dồn,
+## thời gian trung bình có trọng số) — dính càng lâu, trúng càng nhiều thì nhịp rút càng to.
+func _add_poison(damage: int, frames: int, interval: int, now: float, from_eid: int) -> void:
+	if from_eid != 0:
+		_poison_from = from_eid
+	if _poison.is_empty():
+		_poison = {"d": damage, "t": frames, "c": interval, "acc": 0.0, "last": now}
+		return
+	var mixed := SectSkillController._mix_poison(Vector3i(int(_poison.d), int(_poison.t), int(_poison.c)),
+			Vector3i(damage, frames, interval))
+	_poison.d = mixed.x
+	_poison.t = mixed.y
+	_poison.c = maxi(1, mixed.z)
+
+## Nhịp độc — KNpc::Activate gốc: mỗi frame game (18/giây) nTime--, nTime chia hết cho nhịp thì rút, về 0 thì hết độc.
+func _tick_poison(now: float) -> void:
+	var acc := float(_poison.acc) + maxf(0.0, now - float(_poison.last)) * SkillDefinition.VLTK_GAME_FPS
+	_poison.last = now
+	while acc >= 1.0 and int(_poison.t) > 0:
+		acc -= 1.0
+		_poison.t = int(_poison.t) - 1
+		if int(_poison.t) % int(_poison.c) == 0:
+			lose_hp(float(_poison.d), now, _poison_from, "")
+			if _poison.is_empty():   ## chết vì độc: die() đã xoá
+				return
+	_poison.acc = acc
+	if int(_poison.t) <= 0:
+		_poison = {}
 
 static func _reduce(frames: int, reduce_p: int) -> int:
 	return maxi(0, frames * (100 - clampi(reduce_p, -100, 95)) / 100)
@@ -187,11 +223,7 @@ func _tick_states(now: float) -> void:
 	if changed:
 		refresh_stats()
 	if not _poison.is_empty():
-		if now >= float(_poison.until):
-			_poison = {}
-		elif now >= float(_poison.next):
-			_poison.next = float(_poison.next) + float(_poison.every)
-			lose_hp(float(_poison.damage), now, int(_poison.from), "")
+		_tick_poison(now)
 
 func free_resources() -> void:
 	if skill_ctl != null:

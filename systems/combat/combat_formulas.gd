@@ -334,6 +334,27 @@ static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantSt
 		out_mana_absorbed[0] = total_mana_absorbed
 	return total if any_hit else -1
 
+## Lượng rút MỖI NHỊP độc — KNpc::Activate gốc (và CoreServer.dll thật): mỗi nhịp gọi CalcDamage(độc thô của đòn) với
+## nMissleSeries = -1, bIsDS = FALSE -> có giáp độc, kháng độc, hệ số PK nhưng KHÔNG tương khắc ngũ hành, KHÔNG chí mạng.
+## (Cú đánh đầu thì có tương khắc — vì thế không lấy damage thực của cú đánh đầu làm lượng rút.)
+## `parts` = các loại damage của đòn (đã nhân hệ số server / hệ số quái); trả -1 nếu đòn không có Độc sát, 0 nếu giáp/kháng nuốt hết.
+static func poison_tick_damage(defender: CombatantStats, parts: Dictionary, is_pk: bool) -> int:
+	var raw: Vector2i = parts.get(DamageType.POISON, Vector2i.ZERO)
+	if raw.y <= 0:
+		return -1
+	if defender == null:
+		return raw.x
+	var ctx := DamageContext.new()
+	ctx.min_damage = raw.x   ## gốc lưu m_PoisonState.nValue[0] = damage độc (cận dưới), nhịp rút roll [nValue0, nValue0]
+	ctx.max_damage = raw.x
+	ctx.damage_type = DamageType.POISON
+	ctx.is_pk = is_pk
+	ctx.pk_damage_rate_percent = PK_DAMAGE_RATE_PERCENT
+	ctx.defender_resist_percent = defender.get_capped_resist(DamageType.POISON)
+	ctx.defender_flat_armor = defender.flat_armor.get(DamageType.POISON, 0)
+	var result := resolve_damage(ctx)
+	return result.final_damage if result.is_hit else 0
+
 ## Tính damage cuối cùng — NGUYÊN VĂN pipeline các bước của KNpc::CalcDamage gốc (xem
 ## docs/vltk_player_stats_reference.md mục 11.9 và CoreServer.dll @1000fa50 để đối chiếu).
 ## Hàm này KHÔNG tự roll hit/miss — gọi roll_hit() riêng TRƯỚC khi gọi hàm này.

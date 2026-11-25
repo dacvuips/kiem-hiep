@@ -260,6 +260,43 @@ func run() -> void:
 	loser.revive(Vector2(3000, 3200), gs.t)
 	check("Hồi sinh: đầy máu, hết cờ chết", not loser.dead and loser.cur_hp == loser.max_hp and (loser.flags & NetProto.FLAG_DEAD) == 0)
 
+	_test_poison_stacks()
+
 	# --- bỏ bot
 	mgr.remove(a)
 	check("Bỏ bot: rời thế giới", not gs.entities.has(a.eid) and not mgr.is_bot(a.eid))
+
+## Độc lên bot (server): trúng liên tục thì GỘP lớp độc như KNpc::ReceiveDamage gốc — nhịp rút to dần, không bị đè.
+func _test_poison_stacks() -> void:
+	var p := ServerBot.create(9001, _profile("thieu_lam", 90, "Bot Độc"))
+	p.stats.poison_time_reduce_p = 0
+	p.max_hp = 1.0e9
+	p.cur_hp = p.max_hp
+	var mods := CombatFormulas.HitModifiers.new()
+	mods.poison_time_frames = 60
+	mods.poison_interval_frames = 10
+	var dealt := {CombatFormulas.DamageType.POISON: 181}
+	var t := 0.0
+	var ticks: Array = []
+	for f in 18 * 4:   ## 4 giây, trúng mỗi 20 frame
+		if f % 20 == 0:
+			p.apply_hit_effects(mods, dealt, t, 0)
+		var hp := p.cur_hp
+		t += 1.0 / 18.0
+		p._tick_states(t)
+		if p.cur_hp < hp:
+			ticks.append(int(round(hp - p.cur_hp)))
+	check("Bot dính độc: có rút máu theo nhịp", ticks.size() >= 6, ticks)
+	check("Bot dính độc liên tục: nhịp rút tăng dần (gộp lớp độc)", ticks.size() > 0 and ticks.max() >= 181 * 3, ticks)
+	## Đánh 1 lần: rút đúng 6 nhịp × 181 rồi hết.
+	var q := ServerBot.create(9002, _profile("thieu_lam", 90, "Bot Độc 2"))
+	q.stats.poison_time_reduce_p = 0
+	q.max_hp = 1.0e9
+	q.cur_hp = q.max_hp
+	q.apply_hit_effects(mods, dealt, 0.0, 0)
+	for f in 18 * 5:
+		q._tick_states((f + 1) / 18.0)
+	check("Bot trúng độc 1 lần: rút 6 nhịp × 181 rồi hết", is_equal_approx(q.max_hp - q.cur_hp, 181.0 * 6) and q._poison.is_empty(),
+		q.max_hp - q.cur_hp)
+	p.free_resources()
+	q.free_resources()
