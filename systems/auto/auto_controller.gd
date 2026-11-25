@@ -214,7 +214,8 @@ func _tick_recovery(s: AutoSettings) -> bool:
 		reason = "Độ bền trang bị thấp"
 	elif s.tdp_bag_full and _bag_full():
 		reason = "Hành trang đầy"
-	elif s.tdp_no_hp_potion and s.hp_on and hp_pct < s.hp_lv1 and profile != null and not _has_potion(profile):
+	## Hết bình máu: còn trên Mức 2 thì đánh tiếp (đi đội máu hay tụt dưới Mức 1, dừng sớm vậy là đang đánh thì tắt); dưới Mức 2 mới phù.
+	elif s.tdp_no_hp_potion and s.hp_on and hp_pct < s.hp_lv2 and profile != null and not _has_potion(profile):
 		reason = "Hết bình sinh lực"
 	elif s.tdp_no_mp_potion and s.mp_on and ("mana" in player) and ("max_mana" in player) and profile != null and not _has_mp_potion(profile) and (player.mana / maxf(player.max_mana, 1.0) * 100.0 < s.mp_lv1):
 		reason = "Hết bình nội lực"
@@ -372,11 +373,11 @@ func _lowest_durability_pct() -> float:
 		return lowest
 	for it in profile.equipment.values():
 		var item := it as ItemInstance
-		if item == null:
+		## Bỏ qua món không thể phá hủy (durability = -1, VD đồ tân thủ / indestructible_b): trước đây bị tính thành -100%
+		## -> luôn dưới ngưỡng -> Auto "Phù về thành" và tự tắt ngay khi đang đánh.
+		if not ItemDurability.has_durability(item):
 			continue
-		var max_d := item.get_max_durability()
-		if max_d > 0:
-			lowest = minf(lowest, item.durability * 100.0 / max_d)
+		lowest = minf(lowest, item.durability * 100.0 / item.get_max_durability())
 	return lowest
 
 func _bag_full() -> bool:

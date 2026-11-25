@@ -34,3 +34,8 @@ func set_miss() -> void:
 	text.add_theme_color_override("font_color", Color.WHITE)
 	text.text = "Miss"
 	_start_float()
+
+func set_text(msg: String, color: Color = Color.GOLD) -> void:
+	text.add_theme_color_override("font_color", color)
+	text.text = msg
+	_start_float()

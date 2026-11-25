@@ -65,7 +65,7 @@ func _decode_time(e: ServerEntity, now_ms: int) -> int:
 	NetProto.get_state_pos(b)
 	b.get_u8()
 	b.get_u8()
-	b.get_u8()
+	b.get_u16()   ## cờ (NetProto v6)
 	b.get_u8()
 	return now_ms - b.get_u8() * NetProto.STATE_AGE_UNIT_MS
 

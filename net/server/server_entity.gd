@@ -47,7 +47,7 @@ func write_spawn(b: StreamPeerBuffer) -> void:
 	b.put_u8(dir8)
 	b.put_u8(action)
 	b.put_u8(z)
-	b.put_u8(flags)
+	b.put_u16(flags)
 	b.put_u8(hp)
 	if kind == NetProto.KIND_PLAYER:
 		NetProto.put_look(b, look)
@@ -59,7 +59,7 @@ func write_state(b: StreamPeerBuffer, now_ms: int = 0) -> void:
 	var dir8: int = VltkMath.image_dir(dir, 8) if kind == NetProto.KIND_MONSTER else (dir & 7)
 	b.put_u8((dir8 & 7) | (action << 3))
 	b.put_u8(z)
-	b.put_u8(flags)
+	b.put_u16(flags)
 	b.put_u8(hp)
 	## Mẫu của C_MOVE luôn < 360ms (chặn 300ms + 1 tick); cũ hơn = server tự đặt vị trí (hồi sinh, kéo về...) -> tuổi 0.
 	var age: int = now_ms - pos_ms if pos_ms > 0 and now_ms > 0 else 0

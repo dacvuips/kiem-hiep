@@ -47,9 +47,11 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	merged["uy_thac_report"] = (server_data["uy_thac_report"] as Dictionary).duplicate() if server_data.get("uy_thac_report") is Dictionary else {}
 	merged["uy_thac_bank"] = (server_data["uy_thac_bank"] as Dictionary).duplicate() if server_data.get("uy_thac_bank") is Dictionary else {}
 	if trust:
-		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "camp", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
+		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):
 				merged[k] = server_data[k]
+		if not client_data.has("camp") and server_data.has("camp"):
+			merged["camp"] = server_data["camp"]
 		## Phái chỉ thêm, không mất: bản game cũ (nạp danh sách nhân vật trước khi server lưu xong) không được xoá phái đã vào.
 		if str(server_data.get("sect_id", "")) != "" and str(merged.get("sect_id", "")) == "":
 			for k in ["sect_id", "sect_name", "element"]:

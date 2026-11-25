@@ -1451,7 +1451,7 @@ script = ExtResource("2_skill")
 id = "con_lon_khieu_phong_tam_lien_kich"
 skill_name = "Khiếu Phong Tam Liên Kích (hệ Lôi)"
 icon = ExtResource("vicon_con_lon_khieu_phong_tam_lien_kich")
-description = "Skill con của Cuồng Phong Sậu Điện, phóng liên hoàn phi kiếm mang lôi khí."
+description = "Skill con tầng 2 của Ngạo Tuyết Tiêu Phong, phóng liên hoàn phi kiếm mang lôi khí."
 school_text = "Tự tiến (Ngoại công)"
 is_active = true
 category = 0
@@ -1480,7 +1480,7 @@ element = 4
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_111"), SubResource("SubResource_112")])
 is_hidden = true
-parent_skill_id = "con_lon_cuong_phong_sau_dien"
+parent_skill_id = "con_lon_ngao_tuyet_tieu_phong"
 [sub_resource type="Resource" id="SubResource_114"]
 script = ExtResource("3_statline")
 level_points = PackedFloat32Array(1, 50, 0, 10, 230, 0, 15, 370, 0, 20, 550, 0, 21, 550, 0)
@@ -1584,6 +1584,11 @@ description = "Skill con do Lưỡng Nghi Chân Khí tự động kích hoạt, 
 school_text = "Võ công trấn phái (Nội công)"
 is_active = true
 category = 0
+vltk_skill_id = 721
+vltk_state_special_id = 721
+vltk_attribs = {
+"staticmagicshield_p": [PackedFloat32Array(1, 1800, 0, 15, 9750, 0, 20, 10000, 0, 21, 10050, 0), PackedFloat32Array(1, 90, 0, 15, 162, 0, 20, 180, 0, 21, 180, 0)]
+}
 req_level = 120
 max_level = 20
 base_damage = 0.0
@@ -1610,6 +1615,11 @@ description = "Skill con do Lưỡng Nghi Chân Khí tự động kích hoạt, 
 school_text = "Võ công trấn phái (Nội công)"
 is_active = true
 category = 0
+vltk_skill_id = 722
+vltk_state_special_id = 722
+vltk_attribs = {
+"fastwalkrun_p": [PackedFloat32Array(1, 5, 0, 15, 30, 0, 20, 35, 0, 21, 36, 0), PackedFloat32Array(1, 54, 0, 15, 162, 0, 20, 180, 0, 21, 180, 0)]
+}
 req_level = 120
 max_level = 20
 base_damage = 0.0
@@ -1909,12 +1919,15 @@ is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
-vltk_state_special_id = 0
+vltk_state_special_id = 1239
 vltk_damage_range = 0
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
-"autoreplyskill": [PackedFloat32Array(1, 317185, 0, 20, 317204, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 138243, 0, 19, 92165, 0, 20, 92165, 0)]
+"anti_lightingres_yan_p": [PackedFloat32Array(1, 5, 0, 20, 15, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)],
+"autoreplyskill": [PackedFloat32Array(1, 317185, 0, 20, 317204, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 138243, 0, 19, 92165, 0, 20, 92165, 0)],
+"enhance_717_auto": [PackedFloat32Array(1, 3, 0, 20, 15, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 50, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)]
 }
 req_level = 180
 vltk_skill_id = 1229
@@ -1925,7 +1938,7 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.00
+cooldown = 15.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0

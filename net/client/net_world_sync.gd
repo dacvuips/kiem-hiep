@@ -56,6 +56,11 @@ func _ready() -> void:
 	NetClient.stall_items.connect(_on_stall_items)
 	NetClient.stall_sign.connect(_on_stall_sign)
 	NetClient.camp_changed.connect(func(eid: int, new_camp: int, new_nation: int) -> void:
+		if eid == NetClient.my_eid:
+			if GameManager.local_profile:
+				GameManager.local_profile.camp = new_camp
+			if player and is_instance_valid(player) and player.has_method("set_camp"):
+				player.set_camp(new_camp)
 		var rp := remote_of(eid)
 		if rp:
 			rp.set_camp(new_camp, new_nation))
@@ -286,6 +291,7 @@ func _on_progress(gained: int, level: int, current_exp: int) -> void:
 	profile.level = clampi(level, 1, PlayerProfile.MAX_LEVEL)
 	profile.current_exp = 0 if profile.level >= PlayerProfile.MAX_LEVEL else current_exp
 	if gained > 0:
+		SkillPractice.on_local_kill_exp(profile, gained)   ## luyện skill bị động / hào quang 90/120/150
 		var mname := _last_killed_monster_name if _last_killed_monster_name != "" else "Quái"
 		ChatBox.push_exp(mname, gained)
 		_last_killed_monster_name = ""
@@ -468,6 +474,7 @@ func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int
 		var sk := SectSkillController.skill_by_vltk_id(skill_id)
 		if sk != null and not sk.is_aura:
 			SectSkillController.receive_ally_support(player, r, sk, level, false)
+			SectSkillController.play_ally_hit_fx_around(r, sk, level)
 
 ## Nhịp hào quang hỗ trợ của người chơi khác (10 frame như KNpc::ProcessState gốc): đồng đội cùng phe đang bật hào quang
 ## và mình đứng trong vùng đạn skill con (10 ô, Phổ Độ Chúng Sinh 14) -> nhận chỉ số hào quang ~1 giây, nhịp sau làm mới.
@@ -488,7 +495,10 @@ func _tick_ally_auras(delta: float) -> void:
 			continue
 		var sk := SectSkillController.skill_by_vltk_id(aura.x)
 		if sk != null and sk.is_aura and not sk.target_enemy:
-			SectSkillController.receive_ally_support(player, r, sk, aura.y, true)
+			## Hào quang tổng hợp (Bế Nguyệt Phất Trần) -> nhận từng hào quang con (máy mình không biết cấp từng con
+			## của họ nên lấy theo cấp hào quang tổng — cấp con gốc cũng bị chặn bởi cấp này).
+			for part in sk.aura_parts(SectRegistry.get_by_id(SectSkillController.sect_id_of(sk)), aura.y):
+				SectSkillController.receive_ally_support(player, r, part["skill"], int(part["level"]), true)
 
 func _on_monster_killed(k: Dictionary) -> void:
 	var m: VltkMonster = _monster_of(int(k.eid))
@@ -557,8 +567,11 @@ func _process(delta: float) -> void:
 		flags |= NetProto.FLAG_DEAD
 	if z > 0.5:
 		flags |= NetProto.FLAG_JUMPING
-	if player.get("pk_mode") == 2:  ## Đồ Sát (PK Murder gốc VLTK)
+	var cur_pk_mode: int = int(player.get("pk_mode")) if player else 0
+	if cur_pk_mode == 2:  ## Đồ Sát (PK Murder gốc VLTK)
 		flags |= NetProto.FLAG_PK
+	elif cur_pk_mode == 1:  ## Chiến Đấu Phe (PK War gốc VLTK)
+		flags |= NetProto.FLAG_PK_WAR
 	var cur := {"feet": player.get_ground_position().round(), "dir": av.direction, "action": av.action, "z": int(z), "flags": flags}
 	if cur == _last_sent and _heartbeat > 0.0:
 		return
@@ -566,3 +579,7 @@ func _process(delta: float) -> void:
 	_send_timer = 1.0 / NetProto.CLIENT_SEND_RATE
 	_heartbeat = 1.0
 	NetClient.send_move(cur.feet, cur.dir, cur.action, cur.z, flags)
+
+func force_sync() -> void:
+	_last_sent.clear()
+	_send_timer = 0.0

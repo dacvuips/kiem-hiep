@@ -60,7 +60,7 @@ var _damage_batch_timer: float = 0.0
 func setup(info: Dictionary) -> void:
 	eid = int(info.eid)
 	display_name = str(info.name)
-	level = int(info.level)
+	level = int(info.get("level", 1))
 	camp = int(info.camp)
 	nation = int(info.get("nation", Nation.Type.NONE))
 	add_to_group("other_players")
@@ -119,6 +119,35 @@ func set_pk_enemy(on: bool) -> void:
 	else:
 		remove_from_group("enemies")
 	refresh_name_color()
+
+func update_pk_relation() -> void:
+	var main_scene = get_tree().current_scene
+	var my_pk_mode: int = int(main_scene.get("_pk_mode")) if main_scene and "_pk_mode" in main_scene else 0
+	var my_camp: int = Camp.Type.BEGIN
+	var my_player = get_tree().get_first_node_in_group("player")
+	if my_player and "camp" in my_player:
+		my_camp = int(my_player.camp)
+	elif GameManager.local_profile:
+		my_camp = GameManager.local_profile.get_current_camp()
+
+	var is_murder := (flags & NetProto.FLAG_PK) != 0
+	var is_war := (flags & NetProto.FLAG_PK_WAR) != 0
+	var eff_camp := get_effective_camp()
+
+	if is_dead():
+		set_pk_enemy(false)
+		return
+
+	if my_pk_mode == 2:  ## Mình đang Đồ sát: đánh mọi người ngoài tân thủ
+		set_pk_enemy(eff_camp != Camp.Type.BEGIN)
+	elif my_pk_mode == 1:  ## Mình đang Chiến đấu phe
+		## Kẻ thù là người đang Đồ sát (tự vệ), hoặc người khác phe cũng đang bật Chiến đấu phe (và cả 2 không phải tân thủ)
+		var enemy_in_war := is_war and eff_camp != my_camp and eff_camp != Camp.Type.BEGIN and my_camp != Camp.Type.BEGIN
+		set_pk_enemy(is_murder or enemy_in_war)
+	elif my_pk_mode == 3:  ## Bang chiến
+		set_pk_enemy(eff_camp == Camp.Type.TONGWAR)
+	else:  ## Luyện công (bình thường): chỉ tự vệ khi bị đồ sát
+		set_pk_enemy(is_murder)
 
 ## Chiêu của mình trúng đối thủ cừu sát: không tự trừ máu ở đây — gói đòn gửi server, máy họ tự tính né / kháng / trừ máu.
 func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damage: int,
@@ -294,19 +323,59 @@ func _refresh_nameplate() -> void:
 	if _hp_bar:
 		_hp_bar.position = Vector2(0.0, _label.position.y + _label.size.y + HP_BAR_TOP_OFFSET)
 
+## Lớp hào quang KHÁC (GM gán / hộ thể tân thủ) = look.aura_state — chồng lên hào quang skill.
 func _refresh_aura_sprite(state_id: int) -> void:
-	if state_id == _aura_sprite_state and (state_id == 0 or _aura_sprite != null):
+	if _skill_aura_sprites.has(state_id):
+		state_id = 0   ## cùng hình với hào quang skill thì không vẽ 2 lần
+	if state_id == _aura_sprite_state and (state_id == 0 or is_instance_valid(_aura_sprite)):
 		return
 	if _aura_sprite != null and is_instance_valid(_aura_sprite):
 		_aura_sprite.queue_free()
 	_aura_sprite = VltkStateSprite.attach(self, state_id) if state_id > 0 else null
 	_aura_sprite_state = state_id
 
+## Lớp hào quang SKILL đang bật (look.aura_skill = số skill VLTK) -> hình StateSpecialId của skill đó, LUÔN hiện khi họ bật.
+## Hào quang tổng hợp (Bế Nguyệt Phất Trần) = nhiều hình cùng lúc (hình của từng hào quang con): state_id -> sprite.
+var _skill_aura_sprites: Dictionary = {}
+
+func _refresh_skill_aura_sprite(vltk_skill_id: int, level: int = 0) -> void:
+	var wanted: Array[int] = []
+	if vltk_skill_id > 0:
+		var sk := SectSkillController.skill_by_vltk_id(vltk_skill_id)
+		if sk != null and sk.is_aura:
+			wanted = sk.aura_state_ids(SectRegistry.get_by_id(SectSkillController.sect_id_of(sk)), maxi(level, 1))
+	for sid: int in _skill_aura_sprites.keys():
+		if not wanted.has(sid) or not is_instance_valid(_skill_aura_sprites[sid]):
+			if is_instance_valid(_skill_aura_sprites[sid]):
+				(_skill_aura_sprites[sid] as Node).queue_free()
+			_skill_aura_sprites.erase(sid)
+	for sid in wanted:
+		if not _skill_aura_sprites.has(sid):
+			var spr := VltkStateSprite.attach(self, sid)
+			if spr != null:
+				_skill_aura_sprites[sid] = spr
+
 ## Gắn/bỏ hình buff/bùa (trên đầu, quanh người, dưới chân) theo danh sách máy người đó báo lên.
+## Máy người đó đang bị Băng sát (cờ trong danh sách trạng thái ngoại hình) -> nhuộm vàng; hết thì gỡ.
+## Thời gian chỉ là trần an toàn — cờ biến khỏi ngoại hình là gỡ ngay.
+const NET_FREEZE_MAX_SECONDS := 15.0
+
+func _sync_net_freeze(frozen: bool) -> void:
+	if status_controller == null:
+		return
+	if frozen:
+		status_controller.apply_effect(StatusEffect.new("freeze", NET_FREEZE_MAX_SECONDS, 0.0, 1.0, StatusEffectController.VLTK_FREEZE_SLOW))
+	elif status_controller.has_effect("freeze"):
+		status_controller.remove_effect("freeze")
+
 func _refresh_state_sprites(states: Variant) -> void:
 	var wanted := {}
-	for id in NetProto.sanitize_states(states):
-		if id != _aura_sprite_state:
+	var ids := NetProto.sanitize_states(states)
+	_sync_net_freeze(ids.has(NetProto.MSTATE_FREEZE))
+	for id in ids:
+		if id == NetProto.MSTATE_FREEZE:
+			continue
+		if id != _aura_sprite_state and not _skill_aura_sprites.has(id):
 			wanted[id] = true
 	for id in _state_sprites.keys():
 		if not wanted.has(id) or not is_instance_valid(_state_sprites[id]):
@@ -344,6 +413,7 @@ func set_look(look: Dictionary) -> void:
 		else:
 			avatar.modulate = Color.WHITE
 
+	_refresh_skill_aura_sprite(int(look.get("aura_skill", 0)), int(look.get("aura_level", 0)))
 	_refresh_aura_sprite(int(look.get("aura_state", 0)))
 	_refresh_state_sprites(look.get("states", []))
 	_refresh_nameplate()
@@ -431,6 +501,10 @@ func get_body_height() -> float:
 func is_dead() -> bool:
 	return _action == "die"
 
+## Đang ẩn thân (cờ FLAG_HIDE do server đặt): không thấy, không chọn làm mục tiêu được (PlayerStealth).
+func is_hidden() -> bool:
+	return (flags & NetProto.FLAG_HIDE) != 0
+
 func _process(_delta: float) -> void:
 	if _damage_batch_timer > 0.0:
 		_damage_batch_timer -= _delta
@@ -481,22 +555,19 @@ func _apply(st: Dictionary) -> void:
 	if flags != old_flags:
 		_refresh_sign()
 		refresh_name_color()
-		if (flags & NetProto.FLAG_PK) != 0:
-			set_pk_enemy(true)
-		else:
-			var main_scene = get_tree().current_scene
-			if main_scene and main_scene.get("_pk_mode") != 1:
-				set_pk_enemy(false)
+		update_pk_relation()
+		## Ẩn thân (KNpc::Paint / PaintInfo gốc): người khác không vẽ thân, tên, thanh máu — ẩn cả node.
+		visible = not is_hidden()
 	## Máu đã lấy theo mẫu mới nhất ở push_state; ở đây chỉ áp khi chưa có mẫu nào khác (lúc xuất hiện) / vẽ lại thanh.
 	_set_hp(int(st.get("hp", hp)) if _buffer.size() <= 1 else hp)
-	var dir := int(st.dir)
+	var dir := int(st.get("dir", avatar.direction))
 	if avatar.direction != dir:
 		avatar.face(Vector2.from_angle(_dir_angle(dir)))
-	var action := NetProto.action_name(int(st.action))
+	var action := NetProto.action_name(int(st.get("action", 0)))
 	if action != _action:
 		_action = action
 		avatar.play(action)
-	avatar.set_height(float(st.z))
+	avatar.set_height(float(st.get("z", 0.0)))
 
 func _set_hp(v: int) -> void:
 	hp = clampi(v, 0, 100)

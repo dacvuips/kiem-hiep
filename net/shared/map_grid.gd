@@ -200,7 +200,7 @@ func is_open_area(point: Vector2) -> bool:
 	return is_free.call(c) and MapGrid._flood(c, is_free, {}) >= OPEN_AREA_CELLS
 
 ## Số ô đi được tối thiểu để coi là vùng thông thoáng (loang tới đủ chừng này thì dừng — chi phí giới hạn).
-const OPEN_AREA_CELLS := 6000
+const OPEN_AREA_CELLS := 2000
 const OPEN_MAX_POCKETS := 40
 
 ## Dùng chung server (MapGrid) và game (VltkMap): duyệt xoắn ốc quanh `start`, mỗi ô trống 5x5 chưa thuộc vùng đã loang thì loang (4 hướng)

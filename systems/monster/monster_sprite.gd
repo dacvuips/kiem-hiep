@@ -26,6 +26,11 @@ func _ensure_sprites() -> void:
 	_shadow = _make_sprite()
 	_sprite = _make_sprite()
 
+## Màu nhuộm trạng thái (băng/độc — StatusEffectController): chỉ thân quái, bóng giữ nguyên (KNpcRes gốc chỉ nhuộm bộ phận).
+func set_status_tint(c: Color) -> void:
+	_ensure_sprites()
+	_sprite.modulate = Color(c.r, c.g, c.b, _sprite.modulate.a)
+
 func _make_sprite() -> Sprite2D:
 	var s := Sprite2D.new()
 	s.centered = false

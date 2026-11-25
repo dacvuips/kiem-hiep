@@ -236,6 +236,8 @@ func _online() -> bool:
 ## Gọi khi vào game bằng 1 nhân vật trên server (màn Danh sách / Tạo nhân vật).
 func set_online_character(character_id: int, version: int) -> void:
 	online_character_id = character_id
+	if GameManager != null and GameManager.local_profile != null and character_id > 0:
+		GameManager.local_profile.id = character_id
 	_online_version = version
 	_pending_profile = null
 
@@ -357,6 +359,9 @@ func save_offline_profile(profile: PlayerProfile, slot: int = -1) -> void:
 	if profile == null or _saving_disabled():
 		return
 	var s := current_offline_slot if slot < 0 else slot
+	## ID nhân vật: 9 chữ số ngẫu nhiên, không trùng các ô khác trên máy (bản cũ dùng số ô 1..4 -> đổi luôn)
+	if profile.id < CHARACTER_ID_MIN:
+		profile.id = _new_offline_character_id(s)
 	if _exp_save_timer != null and not _exp_save_timer.is_stopped():
 		_exp_save_timer.stop()
 	_pending_exp_profile = null
@@ -366,6 +371,26 @@ func save_offline_profile(profile: PlayerProfile, slot: int = -1) -> void:
 	if s == 0:
 		_write_secure(OFFLINE_PROFILE_PATH, data)
 	notify_profile_changed(profile)
+
+## ID nhân vật 9 chữ số (100000000..999999999) — cùng khoảng với ID online do server cấp (migration 0014).
+const CHARACTER_ID_MIN := 100000000
+const CHARACTER_ID_MAX := 999999999
+const _OFFLINE_SLOT_SCAN := 8
+
+func _new_offline_character_id(own_slot: int) -> int:
+	var used: Dictionary = {}
+	for i in _OFFLINE_SLOT_SCAN:
+		if i == own_slot or not has_offline_profile(i):
+			continue
+		var other := load_offline_profile(i)
+		if other != null:
+			used[other.id] = true
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var v := rng.randi_range(CHARACTER_ID_MIN, CHARACTER_ID_MAX)
+	while used.has(v):
+		v = rng.randi_range(CHARACTER_ID_MIN, CHARACTER_ID_MAX)
+	return v
 
 func load_offline_profile(slot: int = -1) -> PlayerProfile:
 	var s := current_offline_slot if slot < 0 else slot

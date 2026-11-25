@@ -121,6 +121,14 @@ func _test_receive() -> void:
 	check("hào quang Lưu Thủy: đồng đội cách 5 ô -> nhận",
 		SectSkillController.receive_ally_support(me, ally, ls, 20, true))
 	check("hào quang không nhận qua đường buff thường", not SectSkillController.receive_ally_support(me, ally, ls, 20, false))
+	## Nga Mi nới phạm vi x2 (SECT_ALLY_RANGE_SCALE): Lưu Thủy 10 -> 20 ô (±10 ô), Phổ Độ Chúng Sinh 14 -> 28.
+	check("Lưu Thủy (Nga Mi) phạm vi 20 ô", SectSkillController.ally_cells(ls) == 20)
+	check("Phổ Độ Chúng Sinh (Nga Mi) phạm vi 28 ô", SectSkillController.ally_cells(_skill(332)) == 28)
+	check("phái khác giữ nguyên (Thanh Phong phù 3 ô)", SectSkillController.ally_cells(tpp) == 3)
+	ally.position = Vector2(100 + 10 * 32, 100)
+	check("hào quang Lưu Thủy: đồng đội cách 10 ô -> nhận", SectSkillController.receive_ally_support(me, ally, ls, 20, true))
+	ally.position = Vector2(100 + 11 * 32, 100)
+	check("hào quang Lưu Thủy: cách 11 ô -> ngoài vùng", not SectSkillController.receive_ally_support(me, ally, ls, 20, true))
 	for n in [me, ally, other, far, free_a]:
 		n.queue_free()
 

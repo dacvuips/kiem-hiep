@@ -246,10 +246,14 @@ func on_pvp_hit(c, eid: int, bytes: PackedByteArray) -> void:
 	var pubg_hit: bool = t != null and gs.pubg != null and gs.pubg.allows_hit(c, t)   ## PUBG: khác đội cùng trận
 	if not pubg_hit and t != null and gs.lonxon != null and gs.lonxon.allows_hit(c, t):
 		pubg_hit = true   ## Lộn Xộn: mỗi người 1 phe, cùng host đánh nhau tự do (bỏ qua tân thủ / tổ đội như PUBG)
-	var pk_hit: bool = t != null and (
-		(c.entity.flags & NetProto.FLAG_PK) != 0 or
-		(t.entity.flags & NetProto.FLAG_PK) != 0
-	)
+	var c_murder: bool = (c.entity.flags & NetProto.FLAG_PK) != 0
+	var t_murder: bool = (t.entity.flags & NetProto.FLAG_PK) != 0
+	var c_war: bool = (c.entity.flags & NetProto.FLAG_PK_WAR) != 0
+	var t_war: bool = (t.entity.flags & NetProto.FLAG_PK_WAR) != 0
+	var c_camp: int = c.profile.get_current_camp() if c.profile else Camp.Type.BEGIN
+	var t_camp: int = t.profile.get_current_camp() if t.profile else Camp.Type.BEGIN
+	var war_hit: bool = c_war and t_war and c_camp != t_camp and c_camp != Camp.Type.BEGIN and t_camp != Camp.Type.BEGIN
+	var pk_hit: bool = t != null and (c_murder or t_murder or war_hit)
 	if not (_fighting(c, t) or battle_hit or arena_hit or pk_hit or field_boss_hit or pubg_hit) or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or (t.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
 	## Tân thủ (Camp.Type.BEGIN) được bảo vệ tuyệt đối theo luật VLTK gốc (KNpcSet::GetRelation)

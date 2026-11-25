@@ -22,6 +22,14 @@ var _acc := 0.0
 var _logic := Vector2.ZERO
 var _z := 0.0
 
+static var _mat_add: CanvasItemMaterial = null
+
+static func get_add_material() -> CanvasItemMaterial:
+	if _mat_add == null:
+		_mat_add = CanvasItemMaterial.new()
+		_mat_add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _mat_add
+
 @onready var _sprite: Sprite2D = $Sprite
 
 ## phase = {anim, frames, dirs, interval} (Missles.txt AnimFileN + AnimFileInfoN). null nếu giai đoạn đó không có ảnh.
@@ -51,6 +59,12 @@ func _setup(phase: Dictionary, anim: Dictionary, logic_pos: Vector2, z: float, d
 	_z = z
 	follow = follow_node
 	z_index = DRAW_Z
+	if _sprite == null:
+		_sprite = $Sprite
+	if anim.get("additive", false):
+		_sprite.material = get_add_material()
+	else:
+		_sprite.material = null
 	_sprite.texture = VltkSkillData.texture(str(phase.get("anim", "")))
 	_sprite.centered = false
 	_sprite.region_enabled = true
@@ -89,5 +103,7 @@ func _update() -> void:
 
 func _on_pool_release() -> void:
 	follow = null
+	if _sprite != null:
+		_sprite.material = null
 
 @warning_ignore_restore("integer_division")

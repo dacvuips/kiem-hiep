@@ -23,15 +23,26 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	var ignore_def: int = attacker_stats.ignore_defense_p if attacker_stats else 0
 	if mods and "ignore_defense_percent" in mods and mods.ignore_defense_percent > 0:
 		ignore_def = maxi(ignore_def, mods.ignore_defense_percent)
-	if (mods == null or mods.use_attack_rating) and not CombatFormulas.roll_hit(attacker_stats.attack_rating, defender_stats.defense, ignore_def):
-		return MISSED
+	var monster_hit := mods != null and CombatFormulas.is_monster_hit(mods.attacker_node, defender)
+	if mods == null or mods.use_attack_rating:
+		var ar := CombatFormulas.hit_attack_rating(attacker_stats, mods)
+		var hit := CombatFormulas.roll_monster_hit(ar, defender_stats.defense, ignore_def) if monster_hit \
+				else CombatFormulas.roll_hit(ar, defender_stats.defense, ignore_def)
+		if not hit:
+			return MISSED
+
+	## Né tránh phi đạn (missle_missrate, VD: Du Long Chân Khí né 80% đòn tầm xa / phi đạn)
+	if mods != null and not mods.is_melee and defender_stats != null and defender_stats.missile_miss_rate > 0:
+		if randi_range(1, 100) <= defender_stats.missile_miss_rate:
+			return MISSED
 
 	if mods and is_player_like(defender) and is_player_like(mods.attacker_node):
 		mods.is_pk = true
+	if mods:
+		mods.five_elements_rate_percent = CombatFormulas.MONSTER_FIVE_ELEMENTS_RATE_PERCENT if monster_hit else 100
 	var parts := mods.extra_damages.duplicate() if mods else {}
 	var main_part: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main_part + Vector2i(min_damage, max_damage)
-	var monster_hit := mods != null and CombatFormulas.is_monster_hit(mods.attacker_node, defender)
 	if not monster_hit or CombatFormulas.monster_uses_server_scaling(mods.attacker_node):
 		parts = CombatFormulas.apply_server_damage_scaling(parts, int(attacker_element))
 	if monster_hit:
@@ -49,12 +60,18 @@ static func receive(defender: Node, defender_stats: CombatantStats, defender_hp:
 	if final_damage < 0:
 		return 0
 
+	## Hóa giải / Ngăn chặn sát thương (damage_absorb_p / Hấp Tinh Trận Đường Môn 180 ngăn chặn 100% sát thương phải chịu)
+	if (defender_stats != null and defender_stats.damage_absorb_p >= 100) or (status != null and status.has_state("duong_mon_hoa_giai_sat_thuong")):
+		final_damage = 0
+	elif defender_stats != null and defender_stats.damage_absorb_p > 0 and final_damage > 0:
+		final_damage = maxi(0, final_damage - int(final_damage * defender_stats.damage_absorb_p / 100.0))
+
 	if mana_absorbed_box[0] > 0 and defender != null and "mana" in defender:
 		defender.mana = maxf(0.0, defender.mana - mana_absorbed_box[0])
 
 	if defender_stats and defender_stats.damage_to_mana_p > 0 and final_damage > 0 and defender != null and "mana" in defender:
 		var mana_gained: float = final_damage * defender_stats.damage_to_mana_p / 100.0
-		var max_m: float = float(defender_stats.max_mana)
+		var max_m: float = float(defender_stats.max_mana) if defender_stats.max_mana > 0 else (float(defender.max_mana) if "max_mana" in defender else 999999.0)
 		defender.mana = minf(max_m, defender.mana + mana_gained)
 
 	if status:
@@ -74,6 +91,10 @@ static func is_player_like(node: Node) -> bool:
 static func _apply_hit_state(defender: Node, status: StatusEffectController, mods: CombatFormulas.HitModifiers) -> void:
 	if mods.state_source_id == "":
 		return
+	if mods.state_meta != null and mods.state_meta.has("hit_chance_p"):
+		var chance: int = int(mods.state_meta.get("hit_chance_p", 100))
+		if chance < 100 and randi_range(1, 100) > chance:
+			return
 	var payload := {"attribs": mods.state_attribs, "seconds": mods.state_seconds}
 	var attacker := mods.attacker_node
 	if mods.state_radius > 0.0 and attacker != null and is_instance_valid(attacker) and defender is Node2D:
@@ -94,6 +115,8 @@ static func _apply_return_and_steal(defender_stats: CombatantStats, attacker_sta
 		returned = final_damage * defender_stats.melee_damage_return_p / 100 + defender_stats.melee_damage_return
 	else:
 		returned = final_damage * defender_stats.range_damage_return_p / 100 + defender_stats.range_damage_return
+	if attacker_stats != null and attacker_stats.return_res_p > 0:
+		returned = maxi(0, returned * (100 - attacker_stats.return_res_p) / 100)
 	if returned > 0 and attacker.has_method("take_status_damage"):
 		attacker.take_status_damage(float(returned), "damage_return")
 	var stolen: int = dealt.get(CombatFormulas.DamageType.PHYSICS, 0) * attacker_stats.steal_life_p / 100

@@ -145,7 +145,7 @@ func think(b: ServerBot, mgr: BotManager, _dt: float) -> void:
 		mgr.cast_self(b, aura)
 		return
 	var t: ServerEntity = mgr.gs.entity_of(target_eid) if target_eid != 0 else null
-	if t != null and (t.room_id != b.room_id or (t.flags & NetProto.FLAG_DEAD) != 0):
+	if t != null and (t.room_id != b.room_id or (t.flags & (NetProto.FLAG_DEAD | NetProto.FLAG_HIDE)) != 0):   ## ẩn thân: mất dấu
 		t = null
 	var dist := b.pos.distance_to(t.pos) if t != null else INF
 	var in_fight := t != null and dist < SAFE_RADIUS

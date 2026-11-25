@@ -46,6 +46,7 @@ func is_online_mode() -> bool:
 const EXPIRE_CHECK_SEC := 30.0
 
 func _ready() -> void:
+	_load_training_cooldown()
 	var t := Timer.new()
 	t.wait_time = EXPIRE_CHECK_SEC
 	t.autostart = true
@@ -88,7 +89,7 @@ var game_mode: GameMode = GameMode.STAGE
 var field_map: Dictionary = {}
 
 func is_manor_mode() -> bool:
-	return (field_map.get("manor", false) == true) or int(field_map.get("id", -1)) == 1041
+	return bool(field_map.get("manor", false))
 
 ## true sau khi Player chết — Spawner kiểm tra cờ này trước khi tick sinh quái tiếp, không chỉ
 ## dựa vào signal (phòng trường hợp 1 Spawner được tạo SAU khi game_over đã bắn, VD debug/hot
@@ -197,5 +198,37 @@ static func cleanup_rooms_on_game_closing() -> void:
 	# 3. Mạng Online: Ngắt kết nối sạch sẽ để server lập tức trigger peer_disconnected và xóa phòng
 	if NetClient != null and NetClient.has_method("disconnect_from_server") and NetClient.status != NetClient.Status.OFFLINE:
 		NetClient.disconnect_from_server()
+
+# ---------------------------------------------------------------- Cooldown phòng luyện công (30 phút)
+const TRAINING_COOLDOWN_SECONDS := 1800
+const TRAINING_COOLDOWN_FILE := "user://training_room_cooldown.json"
+var last_training_exit_time: int = 0
+
+func _load_training_cooldown() -> void:
+	if FileAccess.file_exists(TRAINING_COOLDOWN_FILE):
+		var text := FileAccess.get_file_as_string(TRAINING_COOLDOWN_FILE)
+		var parsed: Variant = JSON.parse_string(text)
+		if parsed is Dictionary:
+			last_training_exit_time = int(parsed.get("exit_time", 0))
+
+func record_training_exit() -> void:
+	last_training_exit_time = int(Time.get_unix_time_from_system())
+	var f := FileAccess.open(TRAINING_COOLDOWN_FILE, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"exit_time": last_training_exit_time}))
+		f.close()
+
+func get_training_cooldown_remaining() -> int:
+	if last_training_exit_time <= 0:
+		if FileAccess.file_exists(TRAINING_COOLDOWN_FILE):
+			_load_training_cooldown()
+	if last_training_exit_time <= 0:
+		return 0
+	var now := int(Time.get_unix_time_from_system())
+	var elapsed := now - last_training_exit_time
+	if elapsed >= TRAINING_COOLDOWN_SECONDS or elapsed < 0:
+		return 0
+	return TRAINING_COOLDOWN_SECONDS - elapsed
+
 
 

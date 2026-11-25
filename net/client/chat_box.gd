@@ -758,9 +758,27 @@ func _handle_slash_command(cmd: String) -> bool:
 
 		return true
 
+	if keyword == "/camp" or keyword == "/gmcamp":
+		if not GmManager.is_gm() and not OS.is_debug_build():
+			push_system("[color=#ff4444][Hệ thống][/color] Lệnh này chỉ dành cho GM (Quản trị viên).")
+			return true
+		if parts.size() < 2 or not parts[1].is_valid_int():
+			push_system("[color=#ffaa00][GM][/color] Cú pháp: /camp <0-6> [ID người chơi] (0: Luyện công, 1: Chính, 2: Tà, 3: Trung lập, 4: Sát thủ, 6: GM)")
+			return true
+		var camp_id := int(parts[1])
+		if parts.size() >= 3 and parts[2].is_valid_int():
+			if NetClient.is_in_world():
+				NetClient.send_chat(ChatServer.NEAR, "", cmd)
+			else:
+				push_system("[color=#ff4444][Hệ thống][/color] Đổi phe người khác chỉ khả dụng khi online.")
+			return true
+		GmManager.change_player_camp(GameManager.local_profile, camp_id)
+		push_system("[color=#ffaa00][GM][/color] Đã chuyển phe thành: %s (Camp %d)" % [Camp.get_camp_name(camp_id), camp_id])
+		return true
+
 	if keyword == "/help":
 
-		push_system("[color=#ffaa00][Hệ thống][/color] Lệnh có sẵn: [color=#ffff77]/knb [số][/color] (KNB), [color=#ffff77]/xu [số][/color] (Xu), [color=#ffff77]/ttl[/color] (Tiên Thảo Lộ), [color=#ffff77]/lead [cấp|+số][/color] (Tài lãnh đạo), [color=#ffff77]/leadexp [exp][/color] (Exp lãnh đạo).")
+		push_system("[color=#ffaa00][Hệ thống][/color] Lệnh có sẵn: [color=#ffff77]/knb [số][/color] (KNB), [color=#ffff77]/xu [số][/color] (Xu), [color=#ffff77]/ttl[/color] (Tiên Thảo Lộ), [color=#ffff77]/camp [0-6][/color] (Đổi phe/màu), [color=#ffff77]/lead [cấp|+số][/color] (Tài lãnh đạo), [color=#ffff77]/leadexp [exp][/color] (Exp lãnh đạo).")
 
 		return true
 

@@ -23,6 +23,8 @@ var _tab_bar: HBoxContainer
 var _content_area: VBoxContainer
 var _status_footer: HFlowContainer
 var _selected_player: Dictionary = {}
+## ID đã nhập ở tab Chiếm Quyền (giữ lại khi vẽ lại tab)
+var _possess_target_id: String = ""
 var _dispenser_res_label: Label = null
 var _aura_filter_category: String = "Tất Cả"
 var _aura_search_keyword: String = ""
@@ -188,7 +190,7 @@ func _build_player_tab() -> void:
 	var search_row := HBoxContainer.new()
 	search_row.add_theme_constant_override("separation", 8)
 
-	var search_input := SocialUi.line_edit("Nhập Tên nhân vật hoặc ID người chơi...")
+	var search_input := SocialUi.line_edit("Nhập ID người chơi...")
 	search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	search_row.add_child(search_input)
 
@@ -286,6 +288,26 @@ func _build_player_tab() -> void:
 		var btn_add_10_lead := SocialUi.small_button("👑 +10 Lãnh Đạo")
 		var btn_set_20_lead := SocialUi.small_button("👑 Cấp 20 (Lập Bang)")
 		var btn_set_max_lead := SocialUi.small_button("👑 Max Cấp 100")
+		var btn_lv_minus := SocialUi.small_button("🎖 -1 Cấp")
+		var btn_lv_plus := SocialUi.small_button("🎖 +1 Cấp")
+		var btn_lv_plus10 := SocialUi.small_button("🎖 +10 Cấp")
+		var btn_lv_set := SocialUi.small_button("🎖 Nhập Cấp")
+		for lv_d in [[btn_lv_minus, -1], [btn_lv_plus, 1], [btn_lv_plus10, 10]]:
+			var d_val: int = lv_d[1]
+			(lv_d[0] as Button).pressed.connect(func() -> void:
+				_show_toast(GmManager.change_level_of(_selected_player, d_val, false))
+				_render_tab()
+			)
+		btn_lv_set.pressed.connect(func() -> void:
+			SocialWindow.prompt(get_tree().current_scene, "Đặt Cấp Nhân Vật", "Nhập cấp (1-%d) cho %s:" % [PlayerProfile.MAX_LEVEL, _selected_player.get("name", "người chơi")], func(val_str: String) -> void:
+				var n := int(val_str.strip_edges())
+				if n <= 0:
+					_show_toast("Cấp nhập vào không hợp lệ!")
+					return
+				_show_toast(GmManager.change_level_of(_selected_player, n, true))
+				_render_tab()
+			)
+		)
 
 		btn_goto.pressed.connect(func() -> void:
 			GmManager.goto_player(_selected_player)
@@ -324,10 +346,11 @@ func _build_player_tab() -> void:
 			_show_toast("Đã xóa pass rương bảo vệ cho %s" % _selected_player.get("name", ""))
 		)
 		btn_camp.pressed.connect(func() -> void:
-			var p: PlayerProfile = _selected_player.get("profile") if _selected_player.get("profile") else GameManager.local_profile
-			var cur_c: int = p.get_current_camp() if p else 0
+			var cur_c: int = int(_selected_player.get("camp", 0)) if _selected_player.has("camp") else (
+				_selected_player.get("profile").get_current_camp() if _selected_player.get("profile") else 0
+			)
 			var next_c: int = (cur_c + 1) % 5
-			GmManager.change_player_camp(p, next_c)
+			GmManager.change_player_camp(_selected_player, next_c)
 			_show_toast("Đã đổi màu PK thành: %s" % Camp.get_camp_name(next_c))
 			_render_tab()
 		)
@@ -393,7 +416,7 @@ func _build_player_tab() -> void:
 			_render_tab()
 		)
 
-		for b in [btn_goto, btn_summon, btn_stuck, btn_rename, btn_mute, btn_ban, btn_kick, btn_unlock, btn_camp, btn_reset, btn_skills, btn_hkmp, btn_pts, btn_custom_pot, btn_add_1_lead, btn_add_5_lead, btn_add_10_lead, btn_set_20_lead, btn_set_max_lead]:
+		for b in [btn_goto, btn_summon, btn_stuck, btn_rename, btn_mute, btn_ban, btn_kick, btn_unlock, btn_camp, btn_reset, btn_skills, btn_hkmp, btn_pts, btn_custom_pot, btn_add_1_lead, btn_add_5_lead, btn_add_10_lead, btn_set_20_lead, btn_set_max_lead, btn_lv_minus, btn_lv_plus, btn_lv_plus10, btn_lv_set]:
 			b.custom_minimum_size = Vector2(0, 32)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			actions_grid.add_child(b)
@@ -628,8 +651,6 @@ func _build_self_tab() -> void:
 	stats_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var full_heal_btn := SocialUi.small_button("💚 Hồi Đầy 100% HP/MP/SP")
 	var add_100_all := SocialUi.small_button("⭐ +100 Toàn Bộ Chỉ Số")
-	var set_lv_100 := SocialUi.small_button("🎖 Đặt Cấp 100")
-	var set_lv_150 := SocialUi.small_button("🎖 Đặt Cấp 150")
 
 	full_heal_btn.pressed.connect(func() -> void:
 		GmManager.restore_self_full()
@@ -639,20 +660,57 @@ func _build_self_tab() -> void:
 		GmManager.adjust_stats(GameManager.local_profile, 100, 100, 100, 100)
 		_show_toast("Đã cộng +100 Sức mạnh, Thân pháp, Sinh khí, Nội công!")
 	)
-	set_lv_100.pressed.connect(func() -> void:
-		GmManager.set_player_level(GameManager.local_profile, 100)
-		_show_toast("Đã đặt nhân vật lên Cấp 100!")
-	)
-	set_lv_150.pressed.connect(func() -> void:
-		GmManager.set_player_level(GameManager.local_profile, 150)
-		_show_toast("Đã đặt nhân vật lên Cấp 150!")
-	)
 	stats_row.add_child(full_heal_btn)
 	stats_row.add_child(add_100_all)
-	stats_row.add_child(set_lv_100)
-	stats_row.add_child(set_lv_150)
 	stats_sec[1].add_child(stats_row)
 	_content_area.add_child(stats_sec[0])
+
+	# KHỐI CẤP NHÂN VẬT: cộng/trừ từng cấp hoặc đặt thẳng cấp — lên cấp cộng đủ điểm tiềm năng/kỹ năng
+	var lv_sec := SocialUi.info_box("🎖 Cấp Nhân Vật (Hiện tại: Cấp %d)" % (GameManager.local_profile.level if GameManager.local_profile else 1))
+	var lv_vb := VBoxContainer.new()
+	lv_vb.add_theme_constant_override("separation", 8)
+	var lv_row := HFlowContainer.new()
+	lv_row.add_theme_constant_override("h_separation", 6)
+	lv_row.add_theme_constant_override("v_separation", 6)
+	lv_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lv_row.add_child(SocialUi.label("Cộng/trừ cấp:", SocialUi.TEXT, 12))
+	for d in [-10, -1, 1, 5, 10, 50]:
+		var b_lv := SocialUi.small_button("%+d Cấp" % d)
+		b_lv.pressed.connect(func() -> void:
+			GmManager.add_player_level(GameManager.local_profile, d)
+			_show_toast("Cấp nhân vật hiện tại: Cấp %d" % GameManager.local_profile.level)
+			_render_tab()
+		)
+		lv_row.add_child(b_lv)
+	for target in [100, 150, 200]:
+		var b_set := SocialUi.small_button("Đặt Cấp %d" % target)
+		b_set.pressed.connect(func() -> void:
+			GmManager.set_player_level(GameManager.local_profile, target)
+			_show_toast("Đã đặt nhân vật lên Cấp %d!" % GameManager.local_profile.level)
+			_render_tab()
+		)
+		lv_row.add_child(b_set)
+	lv_vb.add_child(lv_row)
+	var lv_set_row := HBoxContainer.new()
+	lv_set_row.add_theme_constant_override("separation", 8)
+	lv_set_row.add_child(SocialUi.label("Hoặc nhập cấp:", SocialUi.TEXT, 12))
+	var lv_spin := SpinBox.new()
+	lv_spin.min_value = 1
+	lv_spin.max_value = PlayerProfile.MAX_LEVEL
+	lv_spin.step = 1
+	lv_spin.value = GameManager.local_profile.level if GameManager.local_profile else 1
+	lv_spin.custom_minimum_size = Vector2(110, 32)
+	lv_set_row.add_child(lv_spin)
+	var lv_apply := SocialUi.small_button("Đặt cấp")
+	lv_apply.pressed.connect(func() -> void:
+		GmManager.set_player_level(GameManager.local_profile, int(lv_spin.value))
+		_show_toast("Đã đặt nhân vật lên Cấp %d!" % GameManager.local_profile.level)
+		_render_tab()
+	)
+	lv_set_row.add_child(lv_apply)
+	lv_vb.add_child(lv_set_row)
+	lv_sec[1].add_child(lv_vb)
+	_content_area.add_child(lv_sec[0])
 
 	# KHỐI QUẢN LÝ TÀI LÃNH ĐẠO (CHỌN TRỰC TIẾP TRÊN UI)
 	var lead_sec := SocialUi.info_box("👑 Quản Lý & Tăng Cấp Tài Lãnh Đạo (Chọn Trực Tiếp Trên UI)")
@@ -1176,6 +1234,14 @@ func _build_item_creator_tab() -> void:
 		{"name": "Thiên Nhẫn", "id": "tianren", "gid": 22},
 		{"name": "Võ Đang", "id": "wudang", "gid": 29},
 		{"name": "Côn Lôn", "id": "kunlun", "gid": 32},
+		## Vũ Hồn (bộ tự dựng theo ảnh game — tools/new_sects_gold_sets.py)
+		{"name": "Vũ Hồn Anh Hào", "id": "vu_hon", "gid": 677},
+		{"name": "Vũ Hồn Trấn Nhạc 1", "id": "vu_hon", "gid": 682},
+		{"name": "Vũ Hồn Trấn Nhạc 2", "id": "vu_hon", "gid": 683},
+		{"name": "Vũ Hồn Khai Sơn 1", "id": "vu_hon", "gid": 684},
+		{"name": "Vũ Hồn Khai Sơn 2", "id": "vu_hon", "gid": 685},
+		{"name": "Tiêu Dao Huyền Âm 1", "id": "tieu_dao", "gid": 686},
+		{"name": "Tiêu Dao Huyền Âm 2", "id": "tieu_dao", "gid": 687},
 	]
 	for s_info in sects_data:
 		var sb := SocialUi.small_button("Set " + str(s_info["name"]))
@@ -1490,32 +1556,60 @@ func _build_boss_tab() -> void:
 
 func _build_possess_tab() -> void:
 	var sec := SocialUi.info_box("🎮 Chiếm Quyền & Điều Khiển Trực Tiếp Nhân Vật")
-	var target_name: String = _selected_player.get("name", "Chưa chọn")
-	var target_p: PlayerProfile = _selected_player.get("profile")
-
-	var desc_lbl := SocialUi.label("Cho phép GM đăng nhập và kiểm soát avatar của mục tiêu như tài khoản của chính mình để kiểm tra lỗi, hỗ trợ kỹ thuật hoặc thử nghiệm trực tiếp.", SocialUi.TEXT, 13)
+	var desc_lbl := SocialUi.label("Nhập ID nhân vật KHÁC để GM tiếp quản avatar đó, kiểm tra lỗi / hỗ trợ kỹ thuật. Không thể chiếm quyền chính mình.", SocialUi.TEXT, 13)
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sec[1].add_child(desc_lbl)
 
-	var target_lbl := SocialUi.label("Mục tiêu đang chọn: [%s] (ID: %s)" % [target_name, _selected_player.get("id", "?")], SocialUi.GOLD, 14)
-	sec[1].add_child(target_lbl)
+	## Ô nhập ID mục tiêu (chỉ tìm theo ID khớp đúng, giống tab Người Chơi)
+	var id_row := HBoxContainer.new()
+	id_row.add_theme_constant_override("separation", 8)
+	id_row.add_child(SocialUi.label("ID mục tiêu:", SocialUi.GOLD, 14))
+	var id_input := SocialUi.line_edit("Nhập ID người chơi cần chiếm quyền...")
+	id_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	id_input.text = _possess_target_id
+	id_row.add_child(id_input)
+	sec[1].add_child(id_row)
+
+	var status_lbl := SocialUi.label("", SocialUi.TEXT, 13)
+	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sec[1].add_child(status_lbl)
+	if GmManager.is_possessing and GmManager.possessed_profile:
+		status_lbl.text = "Đang điều khiển: [%s]" % GmManager.possessed_profile.display_name
+		status_lbl.add_theme_color_override("font_color", SocialUi.LABEL_RED)
 
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 12)
 
 	var possess_btn := SocialUi.stone_button("🎮 BẮT ĐẦU ĐIỀU KHIỂN", Vector2(200, 36))
 	var release_btn := SocialUi.stone_button("↩ TRẢ LẠI QUYỀN", Vector2(180, 36))
+	possess_btn.disabled = GmManager.is_possessing
 	release_btn.disabled = not GmManager.is_possessing
 
-	possess_btn.pressed.connect(func() -> void:
+	var do_possess := func() -> void:
+		var id := id_input.text.strip_edges()
+		_possess_target_id = id
+		if id == "":
+			_show_toast("Hãy nhập ID nhân vật cần chiếm quyền!")
+			return
+		var found := GmManager.search_players(id)
+		if found.is_empty():
+			_show_toast("Không tìm thấy nhân vật có ID: %s" % id)
+			return
+		var target: Dictionary = found[0]
+		if target.get("is_self", false):
+			_show_toast("Đây là ID của chính bạn — hãy nhập ID nhân vật khác!")
+			return
+		var target_p: PlayerProfile = target.get("profile")
 		if target_p == null:
-			_show_toast("Mục tiêu không có dữ liệu profile cục bộ để chiếm quyền!")
+			_show_toast("Nhân vật [%s] không có dữ liệu profile trên máy này để chiếm quyền!" % target.get("name", id))
 			return
 		if GmManager.possess_player(target_p):
-			_show_toast("ĐÃ CHIẾM QUYỀN ĐIỀU KHIỂN: %s!" % target_name)
+			_show_toast("ĐÃ CHIẾM QUYỀN ĐIỀU KHIỂN: %s!" % target.get("name", id))
 			_render_tab()
-	)
+	possess_btn.pressed.connect(do_possess)
+	id_input.text_submitted.connect(func(_t: String) -> void: do_possess.call())
 
 	release_btn.pressed.connect(func() -> void:
 		GmManager.release_possession()

@@ -31,6 +31,15 @@ var last_hitter := 0
 ## Hình bùa đang dính (chỉ để người chơi VẼ, server không tính thuộc tính): state_id -> thời điểm hết (giây, GameServer._now).
 var vis_states: Dictionary = {}
 
+## Cooldown đòn đánh xa mở màn: 4 giây; đòn đánh thường: 2 giây.
+const RANGED_COOLDOWN_SECONDS := 4.0
+const RANGED_COOLDOWN_FRAMES := RANGED_COOLDOWN_SECONDS * VltkMath.FPS
+const MELEE_COOLDOWN_SECONDS := 2.0
+const MELEE_COOLDOWN_FRAMES := MELEE_COOLDOWN_SECONDS * VltkMath.FPS
+
+## Đang dí mục tiêu mà đường thẳng tới nó bị vật cản chặn (trượt trục cũng không qua) -> AI cho dùng chiêu xa (MonsterSkillAi can_reach).
+var _chase_blocked := false
+
 var _action_name := "stand"
 var _state_frames := 0.0
 var _state_len := 1.0
@@ -158,7 +167,29 @@ func _enter(s: State, action_name: String) -> void:
 
 ## Chạy `frames` frame VLTK một lượt. GameServer gọi mỗi quái 2 tick 1 lần với frames = 2 (vị trí chỉ gửi đi 2 tick 1 lần nên người
 ## chơi thấy y hệt, CPU còn một nửa); thời gian chiêu / AI / hồi chiêu vẫn tính đúng theo frame.
+## Băng sát (NetProto.MSTATE_FREEZE trong vis_states): KNpc::Activate gốc bỏ hành động ở nhịp lẻ khi m_FreezeState còn
+## (`nTime & 1`) -> mọi việc của quái (đi, ra đòn, nghĩ) chạy bằng 1/2 tốc độ.
+var _freeze_acc := 0
+
+func is_frozen(now: float) -> bool:
+	return float(vis_states.get(NetProto.MSTATE_FREEZE, 0.0)) > now
+
+## Choáng (NetProto.MSTATE_STUN): KNpc::Activate gốc `if (m_StunState.nTime > 0) nRet = TRUE` -> bỏ hẳn mọi việc của nhịp đó:
+## đứng im tại chỗ, không đi / không ra đòn / không nghĩ (đòn đang ra cũng dừng giữa chừng tới khi hết choáng).
+func is_stunned(now: float) -> bool:
+	return float(vis_states.get(NetProto.MSTATE_STUN, 0.0)) > now
+
 func tick(gs: GameServer, frames := 1) -> void:
+	if state != State.DEAD and is_stunned(gs._now):
+		return
+	if state != State.DEAD and is_frozen(gs._now):
+		_freeze_acc += frames
+		frames = _freeze_acc >> 1
+		_freeze_acc -= frames * 2
+		if frames <= 0:
+			return
+	else:
+		_freeze_acc = 0
 	_game_time += frames
 	if state == State.DEAD:
 		return
@@ -169,12 +200,14 @@ func tick(gs: GameServer, frames := 1) -> void:
 		State.ATTACK:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
-				if _target_eid != 0 and _has_melee_skill():
+				if _target_eid != 0:
+					if _has_melee_skill():
+						_active_slot = MonsterSkillAi.BASIC_SLOT
 					var target_conn = gs.conn_of_eid(_target_eid)
 					if target_conn != null and target_conn.entity != null:
 						var t_dist := VltkMath.to_logic(pos).distance_to(VltkMath.to_logic(target_conn.entity.pos))
-						if t_dist > 65.0:
-							_walk_to(VltkMath.to_logic(target_conn.entity.pos))
+						if t_dist > 60.0:
+							_walk_to(_target_approach_pos(target_conn.entity.pos))
 		State.HURT:
 			if _state_frames >= _state_len:
 				_enter(State.IDLE, "stand")
@@ -183,6 +216,16 @@ func tick(gs: GameServer, frames := 1) -> void:
 			_next_ai_time = _game_time + _ai_max_time
 			_ai_think(gs)
 
+func _target_approach_pos(t_pos: Vector2) -> Vector2:
+	var t_logic := VltkMath.to_logic(t_pos)
+	var here := VltkMath.to_logic(pos)
+	var diff := here - t_logic
+	var desired_dist := 55.0
+	if diff.length_squared() < 4.0:
+		var angle := (int(eid) % 8) * (PI * 0.25)
+		return t_logic + Vector2(cos(angle), sin(angle)) * desired_dist
+	return t_logic + diff.normalized() * desired_dist
+
 func _tick_walk(gs: GameServer, frames := 1) -> void:
 	var here := VltkMath.to_logic(pos)
 	var to_dest := _walk_dest - here
@@ -190,20 +233,23 @@ func _tick_walk(gs: GameServer, frames := 1) -> void:
 	var base_spd := maxf(run_spd, _walk_speed) if _target_eid != 0 else _walk_speed
 	var step := maxf(base_spd, 6.0) * (1.25 if blue_boss else 1.0) * frames
 
-	# Khi đang dí mục tiêu: nếu mục tiêu di chuyển thì liên tục cập nhật đường đi bám theo
+	# Khi đang dí mục tiêu: liên tục cập nhật điểm áp sát vây bọc quanh mục tiêu (360 độ)
 	if _target_eid != 0:
 		var target_conn = gs.conn_of_eid(_target_eid)
 		if target_conn != null and target_conn.entity != null:
 			var target_logic := VltkMath.to_logic(target_conn.entity.pos)
-			var stop_rad := 65.0 if _has_melee_skill() else (_skill_radius(_active_slot) * 0.85)
+			var approach_pos := _target_approach_pos(target_conn.entity.pos)
+			var attack_rad := _skill_radius(_active_slot)
+			var is_closing_in := (_active_slot == MonsterSkillAi.BASIC_SLOT) or (attack_rad <= MonsterSkillAi.MELEE_RADIUS)
+			var stop_rad := 60.0 if is_closing_in else (attack_rad * 0.85)
 			if here.distance_to(target_logic) <= stop_rad:
 				_enter(State.IDLE, "stand")
 				var d := VltkMath.dir_between(here, target_logic)
 				if d >= 0:
 					dir = d
 				return
-			if _walk_dest.distance_to(target_logic) > 45.0:
-				_walk_dest = target_logic
+			if _walk_dest.distance_to(approach_pos) > 35.0:
+				_walk_dest = approach_pos
 				to_dest = _walk_dest - here
 			# Không bao giờ cho to_dest đi ngược hướng với mục tiêu
 			var to_enemy := target_logic - here
@@ -226,8 +272,10 @@ func _tick_walk(gs: GameServer, frames := 1) -> void:
 		elif not grid.is_blocked(only_y):
 			next = only_y
 		else:
+			_chase_blocked = _target_eid != 0
 			_enter(State.IDLE, "stand")
 			return
+	_chase_blocked = false
 	pos = next
 	touch()
 	gs.aoi.update(self)
@@ -310,23 +358,31 @@ func _ai_think(gs: GameServer) -> void:
 	var enemy: ServerEntity = _provoker(gs, here) if MonsterData.is_passive(data, level) 			else gs.nearest_player(pos, search_vis, battle_side, cell_base)
 	if enemy == null:
 		_target_eid = 0
+		_opened_eid = 0
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):
 			_patrol()
 		return
+	if _opened_eid != 0 and _opened_eid != enemy.eid:
+		_opened_eid = 0
+	if _target_eid != enemy.eid:
+		_chase_blocked = false
 	_target_eid = enemy.eid
 	var there := VltkMath.to_logic(enemy.pos)
 	var dist := here.distance_to(there)
+
 	if dist > _max_skill_radius():
-		_walk_to(there)
+		_walk_to(_target_approach_pos(enemy.pos))
 		return
 	## Chọn chiêu gần / xa giống VltkMonster (MonsterSkillAi): mở màn đánh xa, rồi áp sát đánh thường; mục tiêu chạy xa
 	## mà còn trong tầm chiêu xa thì đánh xa.
 	var ready: Array = []
 	for i in MonsterSkillAi.SLOT_COUNT:
 		ready.append(_game_time >= _skill_ready[i])
-	var slot := MonsterSkillAi.pick(dist, _ai_radii(), ready, p.slice(1, 5), _opened_eid == enemy.eid)
+	var slot := MonsterSkillAi.pick(dist, _ai_radii(), ready, p.slice(1, 5), _opened_eid == enemy.eid, _vision, not _chase_blocked)
 	if slot == MonsterSkillAi.APPROACH:
-		_walk_to(there)
+		if _has_melee_skill():
+			_active_slot = MonsterSkillAi.BASIC_SLOT
+		_walk_to(_target_approach_pos(enemy.pos))
 		return
 	if slot == MonsterSkillAi.WAIT:
 		if state != State.IDLE:
@@ -346,7 +402,7 @@ func _provoker(gs: GameServer, here: Vector2) -> ServerEntity:
 	if _provoked_eid == 0:
 		return null
 	var e := gs.entity_of(_provoked_eid)
-	if e == null or (e.flags & NetProto.FLAG_DEAD) != 0 or e.room_id != room_id 			or here.distance_to(VltkMath.to_logic(e.pos)) > maxf(_vision * 1.6, 750.0):
+	if e == null or (e.flags & (NetProto.FLAG_DEAD | NetProto.FLAG_HIDE)) != 0 or e.room_id != room_id 			or here.distance_to(VltkMath.to_logic(e.pos)) > maxf(_vision * 1.6, 750.0):
 		_provoked_eid = 0
 		return null
 	return e
@@ -374,11 +430,17 @@ func _begin_attack(gs: GameServer, slot: int, enemy: ServerEntity) -> void:
 	_enter(State.ATTACK, action_name)
 	## KSkillList::SetNextCastTime gốc khoá hồi chiêu THEO MÃ SKILL, không theo ô: quái đặt cùng 1 skill vào nhiều ô
 	## (VD Boss Thứu Thần 4 ô đều Đoạn Hồn Thích, hồi 36 frame) không được ra liền 4 lần bỏ qua TimePerCast.
-	var ready_at := _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len)))
+	## Đòn đánh xa cooldown 8 giây; đòn đánh thường cận chiến cooldown 2 giây.
+	var is_ranged := _skill_radius(slot) > MonsterSkillAi.MELEE_RADIUS
+	var atk_cd_frames := RANGED_COOLDOWN_FRAMES if is_ranged else MELEE_COOLDOWN_FRAMES
+	var ready_at := _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len))) + atk_cd_frames
+	var global_cd_at := _game_time + float(_state_len) + MELEE_COOLDOWN_FRAMES
 	var skill_id := int(MonsterSkillAi.slot_skill(data["skills"], slot)[0])
 	for i in MonsterSkillAi.SLOT_COUNT:
 		if int(MonsterSkillAi.slot_skill(data["skills"], i)[0]) == skill_id:
 			_skill_ready[i] = ready_at
+		else:
+			_skill_ready[i] = maxf(_skill_ready[i], global_cd_at)
 	_opened_eid = enemy.eid
 	gs.monster_attack(self, slot, enemy)
 

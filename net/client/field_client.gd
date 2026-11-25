@@ -17,6 +17,38 @@ var _info: Label
 var _copy: Button
 var _share: Button
 var _leaving := false
+var _joined_successfully := false
+var _recorded_exit := false
+
+func can_show_room_id() -> bool:
+	var action: Dictionary = field.get("action", {})
+	var op: String = str(action.get("op", ""))
+	if op == "create" or bool(action.get("is_host", false)):
+		return true
+	if bool(action.get("via_id", false)):
+		return true
+	if bool(action.get("from_room_list", false)):
+		return false
+	return op == "create"
+
+func is_training_field() -> bool:
+	var action: Dictionary = field.get("action", {})
+	if str(action.get("op", "")) == "boss" or GameManager.field_map.has("boss"):
+		return false
+	if str(action.get("guild", "")) != "":
+		return false
+	return true
+
+func _record_exit_once() -> void:
+	if _recorded_exit:
+		return
+	_recorded_exit = true
+	if _joined_successfully and is_training_field():
+		GameManager.record_training_exit()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
+		_record_exit_once()
 
 ## Chiều cao (xấp xỉ) khung ID phòng góc trên-trái — main.gd đẩy hàng nút debug xuống dưới mức này.
 const HUD_HEIGHT := 72.0
@@ -55,6 +87,7 @@ func _on_message(msg: Dictionary) -> void:
 	match str(msg.get("op", "")):
 		"room":
 			room_id = str(msg.get("id", ""))
+			_joined_successfully = true
 			_show(msg)
 			if str(msg.get("boss_name", "")) != "" or bool(msg.get("is_boss", false)) or str(field.get("action", {}).get("op", "")) == "boss":
 				var bname: String = str(msg.get("boss_name", field.get("action", {}).get("boss_name", "Boss")))
@@ -62,9 +95,15 @@ func _on_message(msg: Dictionary) -> void:
 			elif str(msg.get("guild", "")) != "":
 				_say("Chào mừng đến Tổng Đà Bang Hội - %s!" % msg.get("guild"))
 			elif str(field.get("action", {}).get("op", "")) == "join":
-				_say("Đã vào phòng #%s của %s." % [room_id, msg.get("host", "?")])
+				if can_show_room_id():
+					_say("Đã vào phòng #%s của %s." % [room_id, msg.get("host", "?")])
+				else:
+					_say("Đã vào phòng của %s." % msg.get("host", "?"))
 			else:
-				_say("Phòng #%s — đưa ID này cho bạn bè để vào train chung." % room_id)
+				if can_show_room_id():
+					_say("Phòng #%s — đưa ID này cho bạn bè để vào train chung." % room_id)
+				else:
+					_say("Đã tạo phòng thành công.")
 		"state":
 			_show(msg)
 		"reject":
@@ -91,7 +130,18 @@ func _show(s: Dictionary) -> void:
 		_info.tooltip_text = ", ".join(members)
 		_copy.visible = false
 		return
-	_title.text = ("Phòng #%s 🔒" if bool(s.get("locked", false)) else "Phòng #%s") % s.get("id", room_id)
+	if not can_show_room_id():
+		_title.text = "Phòng Luyện Công"
+		_copy.visible = false
+		if _share:
+			_share.visible = false
+	else:
+		_title.text = ("Phòng #%s 🔒" if bool(s.get("locked", false)) else "Phòng #%s") % s.get("id", room_id)
+		_copy.visible = true
+		_copy.disabled = room_id == ""
+		if _share:
+			_share.visible = true
+			_share.disabled = room_id == ""
 	var stars := int(s.get("stars", 0))
 	var where := str(s.get("name", ""))
 	if stars > 0:
@@ -99,9 +149,10 @@ func _show(s: Dictionary) -> void:
 	var members: Array = s.get("members", [])
 	_info.text = "%s  ·  %d/%d người  ·  Chủ: %s" % [where, members.size(), int(s.get("max", FieldServer.MAX_MEMBERS)), s.get("host", "?")]
 	_info.tooltip_text = ", ".join(members)
-	_copy.disabled = room_id == ""
-	if _share:
-		_share.disabled = room_id == ""
+	if can_show_room_id():
+		_copy.disabled = room_id == ""
+		if _share:
+			_share.disabled = room_id == ""
 
 func _on_disconnected(code: String, message: String) -> void:
 	if code == "field_end":
@@ -122,6 +173,7 @@ func _share_chat() -> void:
 func _leave(message: String) -> void:
 	if _leaving or not is_inside_tree():
 		return
+	_record_exit_once()
 	_leaving = true
 	var is_boss_mode: bool = GameManager.field_map.has("boss") or str(field.get("action", {}).get("op", "")) == "boss"
 	if is_boss_mode:
@@ -161,6 +213,7 @@ func _leave(message: String) -> void:
 func _back_to_hub(message: String) -> void:
 	if _leaving or not is_inside_tree():
 		return
+	_record_exit_once()
 	_leaving = true
 	_title.text = "Không vào được phòng"
 	_info.text = message
@@ -215,16 +268,18 @@ func _build_hud() -> void:
 		_info.mouse_filter = Control.MOUSE_FILTER_STOP
 		box.add_child(_info)
 	else:
-		_title = GameUi.label("Đang mở phòng…", GameUi.GOLD, 16)
+		_title = GameUi.label("Phòng Luyện Công" if not can_show_room_id() else "Đang mở phòng…", GameUi.GOLD, 16)
 		head.add_child(_title)
 		_copy = SocialUi.small_button("Sao chép")
 		_copy.tooltip_text = "Sao chép ID phòng để gửi cho bạn bè"
 		_copy.disabled = true
+		_copy.visible = can_show_room_id()
 		_copy.pressed.connect(_copy_id)
 		head.add_child(_copy)
 		_share = SocialUi.small_button("Gắn chat")
 		_share.tooltip_text = "Gắn ID phòng vào khung chat để rủ bạn bè"
 		_share.disabled = true
+		_share.visible = can_show_room_id()
 		_share.pressed.connect(_share_chat)
 		head.add_child(_share)
 		_info = GameUi.label("", SocialUi.TEXT, 12)

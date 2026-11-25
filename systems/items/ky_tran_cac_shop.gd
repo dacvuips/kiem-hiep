@@ -73,7 +73,7 @@ const ITEMS_TINH_NANG: Array[Array] = [
 		{"id": "6_1_18009", "name": "Bí Kíp 180 - Chân Võ Thất Tiết", "price_original": 50, "price": 50},
 		{"id": "6_1_18010", "name": "Bí Kíp 180 - Thiên Cương Khí Kính", "price_original": 50, "price": 50},
 		{"id": "6_1_18011", "name": "Bí Kíp 180 - Độc Cô Cửu Kiếm", "price_original": 50, "price": 50},
-		{"id": "6_1_18012", "name": "Bí Kíp 180 - Trừ Gian Diệt Nịnh", "price_original": 50, "price": 50},
+		{"id": "6_1_18012", "name": "Bí Kíp 180 - Tận Trung Báo Quốc", "price_original": 50, "price": 50},
 		{"id": "6_1_18013", "name": "Bí Kíp 180 - Thập Bộ Nhất Sát", "price_original": 50, "price": 50},
 		{"id": "6_1_18014", "name": "Bí Kíp 180 - Bôn Lang Thương", "price_original": 50, "price": 50},
 		{"id": "6_1_18015", "name": "Bí Kíp 180 - Lôi Đình Nhất Kích", "price_original": 50, "price": 50},

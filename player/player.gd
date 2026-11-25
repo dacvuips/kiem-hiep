@@ -177,6 +177,7 @@ func _ready() -> void:
 				break
 	## Buff/bùa thêm hoặc hết hạn -> dựng lại chỉ số (CombatantStats.build gồm trạng thái đang dính).
 	status_controller.stats_changed.connect(refresh_combat_stats)
+	status_controller.state_expired.connect(_on_state_expired)
 	## Trang bị thay đổi (mặc/tháo đồ từ F3/F4) -> dựng lại chỉ số & đổi ngoại hình ngay lập tức trong trận
 	if profile and profile.has_signal("equipment_changed"):
 		if not profile.equipment_changed.is_connected(_on_profile_equipment_changed):
@@ -339,6 +340,7 @@ func _on_profile_equipment_changed() -> void:
 	refresh_combat_stats()
 
 func _exit_tree() -> void:
+	PlayerStealth.local_is_hidden = false
 	var profile := GameManager.local_profile if GameManager else null
 	if profile and profile.has_signal("equipment_changed"):
 		if profile.equipment_changed.is_connected(_on_profile_equipment_changed):
@@ -380,11 +382,9 @@ func get_current_look() -> Dictionary:
 	var final_gender: String = str(look.get("gender", gender_key))
 	final_look["gender"] = 1 if final_gender == "female" else 0
 	final_look["mask_particular"] = int(look.get("mask_particular", -1))
-	var cur_aura := _aura_sprite_state
-	var gm_aura: int = int(profile.get("gm_aura_state")) if profile and profile.get("gm_aura_state") != null else 0
-	if cur_aura == 0 and gm_aura > 0:
-		cur_aura = gm_aura
-	final_look["aura_state"] = cur_aura
+	## 2 lớp hình: hào quang SKILL (máy khác tự suy từ aura_skill bên dưới) + lớp hào quang KHÁC (GM / hộ thể tân thủ) = aura_state.
+	var cur_auras := _aura_sprites.keys()
+	final_look["aura_state"] = _extra_aura_state
 	## Hào quang đang bật (số skill + cấp thật) — máy đồng đội cùng phe đứng gần tự nhận chỉ số hào quang hỗ trợ.
 	final_look["aura_skill"] = 0
 	final_look["aura_level"] = 0
@@ -398,8 +398,11 @@ func get_current_look() -> Dictionary:
 	if status_controller:
 		for st in status_controller.get_state_display_list():
 			var sid := int(st["meta"].get("state_id", 0))
-			if sid > 0 and sid != cur_aura and not states.has(sid) and not VltkSkillData.state(sid).is_empty():
+			if sid > 0 and not cur_auras.has(sid) and sid != _extra_aura_state and not states.has(sid) and not VltkSkillData.state(sid).is_empty():
 				states.append(sid)
+	## Đang bị Băng sát -> máy người khác nhuộm vàng nhân vật mình (mã riêng, không phải hình trạng thái).
+	if status_controller and status_controller.has_effect("freeze"):
+		states.append(NetProto.MSTATE_FREEZE)
 	final_look["states"] = NetProto.sanitize_states(states)
 	return final_look
 
@@ -571,9 +574,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			## Bấm 1 lần = TỰ TÌM ĐƯỜNG vòng vật cản (có map chính); giữ chuột quá HOLD_FOLLOW_TIME thì bám theo con trỏ.
 			auto.on_manual_input()
 			_clear_chase_main()
-			var feet := get_global_mouse_position() + Vector2(0, VltkWorld.FEET_OFFSET)
-			if VltkWorld.current == null or not walk_to_feet(feet):
+			if GmManager and GmManager.is_noclip:
 				_set_move_target(get_global_mouse_position())
+			else:
+				var feet := get_global_mouse_position() + Vector2(0, VltkWorld.FEET_OFFSET)
+				if VltkWorld.current == null or not walk_to_feet(feet):
+					_set_move_target(get_global_mouse_position())
 			_show_route = false  ## bấm chuột trên map chính: không vẽ đường chấm (chỉ mini map / nhập toạ độ mới có)
 			_move_follow_held = false
 			_mouse_hold_time = 0.0
@@ -623,6 +629,9 @@ func _is_valid_target(node: Variant) -> bool:
 	if n.is_queued_for_deletion() or not n.is_inside_tree():
 		return false
 	if n.has_method("is_dead") and n.call("is_dead"):
+		return false
+	## Người đang ẩn thân không chọn được (KPlayer::FindSelectNpc gốc bỏ m_HideState.nTime > 0).
+	if n != self and PlayerStealth.is_hidden(n):
 		return false
 	var my_side: String = ""
 	if "battle_side" in self and str(get("battle_side")) != "":
@@ -688,8 +697,10 @@ func get_selected_target() -> Node2D:
 func move_to_screen_position(screen_position: Vector2) -> void:
 	auto.on_manual_input()
 	var world := get_canvas_transform().affine_inverse() * screen_position
-	## Chạm 1 lần = tự tìm đường vòng vật cản như bấm chuột.
-	if VltkWorld.current == null or not walk_to_feet(world + Vector2(0, VltkWorld.FEET_OFFSET)):
+	## Chạm 1 lần = tự tìm đường vòng vật cản như bấm chuột (GM noclip: đi thẳng).
+	if GmManager and GmManager.is_noclip:
+		_set_move_target(world)
+	elif VltkWorld.current == null or not walk_to_feet(world + Vector2(0, VltkWorld.FEET_OFFSET)):
 		_set_move_target(world)
 	_show_route = false
 
@@ -717,6 +728,17 @@ var _path_final := Vector2.ZERO
 ## Tự đi tới điểm CHÂN `feet` (toạ độ pixel map) theo đường vòng vật cản trong ô vuông màn chơi (A*). false = không có đường.
 ## Dùng cho mini map (nhập toạ độ / bấm lên bản đồ). Người chơi kéo joystick/bấm điểm khác thì lộ trình huỷ.
 func walk_to_feet(feet: Vector2, _replan := false) -> bool:
+	if GmManager and GmManager.is_noclip:
+		_path.clear()
+		_path.append(feet - Vector2(0, VltkWorld.FEET_OFFSET))
+		_path_final = _path[0]
+		_show_route = false
+		_route_goal = feet
+		_route_continue = false
+		_route_ahead = PackedVector2Array()
+		if not _replan:
+			_route_replans = 0
+		return _advance_path()
 	var points := VltkWorld.find_path(global_position + Vector2(0, VltkWorld.FEET_OFFSET), feet, true)
 	if points.is_empty():
 		return false
@@ -830,7 +852,7 @@ func _get_move_target_vector(delta: float) -> Vector2:
 			_clear_move_target()
 		return Vector2.ZERO
 	## Kẹt: vận tốc thực sau move_and_slide gần 0 dù đang muốn chạy.
-	if not is_attacking and get_real_velocity().length() < 5.0:
+	if not is_attacking and get_real_velocity().length() < 5.0 and not (GmManager and GmManager.is_noclip):
 		_move_stuck_time += delta
 		if _move_stuck_time >= MOVE_STUCK_TIMEOUT and not _move_follow_held:
 			## Kẹt giữa đường (cạ góc tường, bị đẩy lệch): tìm lại đường từ chỗ đang đứng vài lần rồi mới bỏ.
@@ -855,6 +877,7 @@ func _build_move_marker() -> void:
 
 func _physics_process(delta: float) -> void:
 	_tick_stall()
+	_tick_stealth()
 	if _dead:
 		return
 	var camera_zoom: float = $Camera2D.zoom.x
@@ -912,8 +935,11 @@ func _physics_process(delta: float) -> void:
 			if velocity.length() * delta > remaining:
 				velocity = velocity.normalized() * (remaining / delta)
 	var noclip: bool = GmManager.is_noclip if GmManager else false
-	velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, _is_jumping, noclip)
-	move_and_slide()
+	if noclip:
+		global_position += velocity * delta
+	else:
+		velocity = VltkWorld.slide_velocity(global_position + Vector2(0, VltkWorld.FEET_OFFSET), velocity, delta, _is_jumping, false)
+		move_and_slide()
 	_tick_move_abrade()
 	if not has_moved:
 		if global_position.distance_squared_to(spawn_position) > 100.0 or velocity.length_squared() > 10.0 or is_attacking or is_casting:
@@ -1019,6 +1045,29 @@ func update_move_animation(input_vector: Vector2) -> void:
 	var anim_name := "run" if input_vector != Vector2.ZERO else "stand"
 	if avatar.action != anim_name:
 		avatar.play(anim_name)
+	if combat_stats != null and combat_stats.walk_run_shadow > 0:
+		if input_vector != Vector2.ZERO:
+			if not avatar.is_blur_on():
+				avatar.set_blur(true)
+		else:
+			if avatar.is_blur_on() and not is_attacking:
+				avatar.set_blur(false)
+	elif avatar.is_blur_on() and not is_attacking:
+		avatar.set_blur(false)
+
+## ẨN THÂN (Ngự Tuyết Ẩn / Huyền Băng Vô Tắc -> Dung Tuyết Vô Tung): trạng thái mang thuộc tính "hide" đang chạy.
+func is_hidden() -> bool:
+	return status_controller != null and status_controller.is_hidden()
+
+## Báo AI quái / bot (PlayerStealth) + thân người mờ 50% như KNpcRes gốc (chỉ chính chủ thấy mình).
+var _stealth_shown := false
+
+func _tick_stealth() -> void:
+	var hidden := is_hidden() and not _dead
+	PlayerStealth.local_is_hidden = hidden
+	if hidden != _stealth_shown:
+		_stealth_shown = hidden
+		avatar.set_stealth(hidden)
 
 func play_attack() -> void:
 	if _is_jumping:
@@ -1193,6 +1242,8 @@ func _tick_chase_main(delta: float) -> void:
 ##   - Mặc định (MỌI skill đánh): quái gần nhất trong tầm của skill đó; không có quái thì thi triển theo HƯỚNG NHÌN của
 ##     nhân vật, tới đúng tầm AttackRadius của skill (điểm ảo phía trước mặt) — như VLTK gốc khi bấm skill không chọn địch.
 func get_cast_target(skill: SkillDefinition = null) -> Node2D:
+	if skill != null and not skill.target_enemy:
+		return _make_cast_point(skill)
 	var profile := GameManager.local_profile
 	if profile and profile.get_skill_setting("face_direction"):
 		return _make_cast_point(skill)
@@ -1266,7 +1317,7 @@ func _make_cast_point(skill: SkillDefinition = null) -> Node2D:
 	## màn hình — hướng chéo/dọc không bị kéo dài quá tầm.
 	var r := get_skill_radius(skill) if skill != null else 0.0
 	var distance := r if r > 0.0 else CAST_POINT_DISTANCE
-	var d := last_direction.normalized()
+	var d := (aim_dir if aim_dir != Vector2.ZERO else last_direction).normalized()
 	var logic := Vector2(d.x, d.y * 2.0).normalized() * distance
 	point.global_position = global_position + Vector2(logic.x, logic.y * 0.5)
 	get_tree().create_timer(3.0).timeout.connect(point.queue_free)
@@ -1297,10 +1348,13 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	var speed_mult: float = maxf(0.5, PlayerStats.attack_speed_multiplier)
 	## Độ dài động tác như gốc (ảnh SPR được kéo giãn cho vừa): 18 frame ngoại công / 20 frame nội công theo tốc độ đánh —
 	## khớp khoá động tác của SectSkillController.
-	var base_dur := duration if duration > 0.0 else SectSkillController.action_seconds(physical, combat_stats)
+	var speed: int = (combat_stats.attack_speed if physical else combat_stats.cast_speed) if combat_stats else 0
+	var speed_factor: float = 100.0 / maxf(1.0, float(speed + 100))
+	var base_dur := (duration * speed_factor) if duration > 0.0 else SectSkillController.action_seconds(physical, combat_stats)
 	var act_duration := base_dur / speed_mult
 	avatar.play("attack" if physical else "cast", act_duration)
-	return act_duration
+	## Băng sát: động tác chạy chậm (avatar.get_time_scale) -> thời điểm ra đòn 60% / hết đòn cũng lùi theo.
+	return act_duration / avatar.get_time_scale()
 
 ## CHẠY LAO TỚI mục tiêu (Melee_RunAndAttack gốc): tới khi cách mục tiêu `stop_distance` hoặc hết `seconds` thì dừng và
 ## phát signal rush_finished. Trong lúc lao không nhận phím di chuyển; xuyên qua quái nhưng vẫn vướng vật cản.
@@ -1451,6 +1505,10 @@ func _tick_loop_skills(delta: float) -> void:
 						VltkSkillRunner.play_support(self, null, skill, skill_controller._learned_level(skill))
 			continue
 		elif SectSkillController.is_self_buff(skill):
+			# Cửu Kiếm Hợp Nhất (Hoa Sơn): kỹ năng bị động kích hoạt khi gắn ô thi triển liên tục,
+			# không cần thi triển bùa active nền làm gián đoạn nhân vật.
+			if skill.id == "hoa_son_cuu_kiem_hop_nhat":
+				continue
 			# Buff hỗ trợ bản thân (Từ Hàng Phổ Độ buff máu Nga My, v.v.):
 			# Thi triển nền liên tục không làm dừng di chuyển hay ngắt đòn đánh của nhân vật.
 			if not status_controller.has_state(skill.id):
@@ -1483,7 +1541,8 @@ func on_loop_slot_updated(_index: int, skill_id: String) -> void:
 		if SectSkillController.USE_VLTK_SKILL_FX:
 			VltkSkillRunner.play_support(self, null, skill, skill_controller._learned_level(skill))
 	elif SectSkillController.is_self_buff(skill):
-		skill_controller.try_cast_loop(skill, self, null)
+		if skill_id != "hoa_son_cuu_kiem_hop_nhat":
+			skill_controller.try_cast_loop(skill, self, null)
 
 func get_current_range() -> float:
 	if GameModeManager.is_offline() and (GameManager.game_mode == GameManager.GameMode.STAGE or (GameManager.field_map != null and GameManager.field_map.get("survivor_mode", false) == true)):
@@ -1586,14 +1645,18 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 		damage_type: CombatFormulas.DamageType = CombatFormulas.DamageType.PHYSICS,
 		attacker_element: ElementTypes.ElementType = ElementTypes.ElementType.KIM,
 		mods: CombatFormulas.HitModifiers = null) -> void:
-	## Đang nhảy (bay trên không) hoặc GM God Mode: miễn nhiễm mọi sát thương.
-	if _dead or is_invincible or _is_jumping or (GmManager and GmManager.is_god_mode):
+	## Đang nhảy (bay trên không) hoặc GM God Mode / Tàng Hình: miễn nhiễm mọi sát thương.
+	if _dead or is_invincible or _is_jumping or (GmManager and (GmManager.is_god_mode or GmManager.is_invisible)):
+		return
+
+	## Hóa Giải Sát Thương (Hấp Tinh Trận 180 Đường Môn: chặn 100% sát thương phải chịu)
+	var status_ctrl: StatusEffectController = get_node_or_null("StatusEffectController")
+	if status_ctrl != null and status_ctrl.has_state("duong_mon_hoa_giai_sat_thuong"):
 		return
 
 	# Survivor Perk: Khiên Quán Quân Tinh Anh Sái chặn 100% đòn đánh
 	var shield_comp = get_node_or_null("SurvivorShieldComponent")
 	if shield_comp != null and shield_comp.has_method("try_absorb_hit") and shield_comp.try_absorb_hit():
-		spawn_miss_text()
 		return
 	if mods != null and mods.attacker_node != null:
 		last_attacker = mods.attacker_node
@@ -1604,10 +1667,14 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED:
-		spawn_miss_text()
 		return
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
+
+	## Kích hoạt kỹ năng tự động khi nhận đòn (autoreplyskill: Chinh Chiến Bát Phương...)
+	if skill_controller != null and not _dead:
+		var atk_node: Node2D = (mods.attacker_node as Node2D) if (mods != null and mods.attacker_node is Node2D) else null
+		skill_controller.trigger_auto_reply_skills(self, atk_node)
 
 	# Hấp thụ sát thương bằng Khiên Chân Khí Kim Chung Tráo nếu có
 	if PlayerStats.current_shield > 0.0:
@@ -1622,13 +1689,22 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 			PlayerStats.current_shield = 0.0
 			PlayerStats.shield_changed.emit(0.0, PlayerStats.max_shield)
 
-	health -= final_damage
+	var new_hp := health - final_damage
+	if status_controller != null and status_controller.has_state("vu_hon_vu_muc_di_thu"):
+		var st: Dictionary = status_controller.get_state("vu_hon_vu_muc_di_thu")
+		var attribs: Dictionary = st.get("attribs", {})
+		var lock_val: float = float((attribs.get("lock_life", Vector3i(100, 0, 0)) as Vector3i).x)
+		if lock_val > 0.0:
+			new_hp = maxf(new_hp, lock_val)
+	health = new_hp
 	if health <= 0:
 		die()
 	else:
 		_on_hurt()
 		if hurt_invincible:
 			start_invincibility()
+		if health <= max_health * 0.25 and skill_controller != null and not _dead:
+			skill_controller.trigger_auto_rescue_skills(self)
 
 ## Đường tắt cho va chạm đơn giản (enemy contact_damage kiểu bullet-heaven hiện tại — không phải
 ## đòn "thật" có AttackRating riêng) — bọc thành 1 đòn physics tay không với AttackRating cố định
@@ -1642,20 +1718,27 @@ func take_damage(amount: float) -> void:
 	take_damage_from(fallback_attacker, whole, whole)
 
 func spawn_miss_text() -> void:
-	var spawn_position := global_position + Vector2(0, -20)
-	ObjectPool.acquire_deferred(DamageNumberScene, get_parent(), spawn_position, func(number): number.set_miss())
+	## Không hiển thị chữ "Miss" khi quái đánh trượt người chơi
+	pass
 
 ## Gọi bởi StatusEffectController khi trúng DOT (nếu về sau player bị debuff từ boss/độc).
 func take_status_damage(amount: float, _effect_id: String, source_node: Node = null) -> void:
-	if _dead or _is_jumping:
-		return  ## đang bay: bỏ qua cả sát thương trạng thái (độc, cháy...)
+	if _dead or _is_jumping or (GmManager and (GmManager.is_god_mode or GmManager.is_invisible)):
+		return  ## đang bay hoặc GM: bỏ qua cả sát thương trạng thái (độc, cháy...)
 	if source_node != null:
 		last_attacker = source_node
 		if "profile" in last_attacker and last_attacker.profile:
 			last_attacker_name = str(last_attacker.profile.display_name)
 		elif "display_name" in last_attacker:
 			last_attacker_name = str(last_attacker.display_name)
-	health -= amount
+	var new_dmg_hp := health - amount
+	if status_controller != null and status_controller.has_state("vu_hon_vu_muc_di_thu"):
+		var st: Dictionary = status_controller.get_state("vu_hon_vu_muc_di_thu")
+		var attribs: Dictionary = st.get("attribs", {})
+		var lock_val: float = float((attribs.get("lock_life", Vector3i(100, 0, 0)) as Vector3i).x)
+		if lock_val > 0.0:
+			new_dmg_hp = maxf(new_dmg_hp, lock_val)
+	health = new_dmg_hp
 	if health <= 0:
 		die()
 
@@ -1771,9 +1854,12 @@ func revive() -> void:
 	last_attacker_name = ""
 	start_invincibility()
 
-## Hình trạng thái (StateSpecialId) của hào quang đang bật — gắn lên người suốt lúc hào quang còn bật.
-var _aura_sprite: VltkStateSprite = null
-var _aura_sprite_state: int = 0
+## Hình trạng thái (StateSpecialId) của hào quang SKILL đang bật — gắn lên người suốt lúc hào quang còn bật.
+## Hào quang tổng hợp (Bế Nguyệt Phất Trần) có nhiều hình cùng lúc: state_id -> VltkStateSprite.
+var _aura_sprites: Dictionary = {}
+## Lớp hào quang KHÁC chồng lên (hào quang GM gán / hộ thể tân thủ Võ Lâm Hào Kiệt) — độc lập với hào quang skill.
+var _extra_aura_sprite: VltkStateSprite = null
+var _extra_aura_state: int = 0
 
 ## Trạng thái Hộ thể Mộng Điệp (Tân thủ <= 80 trong map luyện công):
 ## Hồi 100 HP & 100 MP mỗi 0.5s và hiển thị Aura Võ Lâm Hào Kiệt (State ID 173 — wulinhaojie.spr) trong lúc còn được tự hồi.
@@ -1813,27 +1899,37 @@ func set_gm_aura(state_id: int) -> void:
 
 func _refresh_aura_sprite() -> void:
 	var profile := GameManager.local_profile
-	var state_id := 0
-	var gm_aura: int = int(profile.get("gm_aura_state")) if profile and profile.get("gm_aura_state") != null else 0
-	if gm_aura > 0:
-		state_id = gm_aura
-	elif profile and profile.active_aura_id != "":
+	## Lớp 1 — hào quang skill đang bật (Lưu Thủy, Mộng Điệp...): LUÔN hiện khi bật.
+	var skill_states: Array[int] = []
+	if profile and profile.active_aura_id != "":
 		var sect := SectRegistry.get_by_id(profile.sect_id)
 		if sect:
 			for skill in sect.skills:
 				if skill.id == profile.active_aura_id:
-					state_id = skill.vltk_state_special_id
+					skill_states = skill.aura_state_ids(sect, maxi(1, profile.get_skill_level(skill.id)),
+							func(s: SkillDefinition) -> int: return profile.get_skill_level(s.id))
 					break
-	# Hộ thể tân thủ: tự động gắn aura Võ Lâm Hào Kiệt nếu chưa có hào quang khác
-	if state_id == 0 and is_mong_diep_active():
-		state_id = STATE_ID_MONG_DIEP
-
-	if state_id == _aura_sprite_state and (state_id == 0 or _aura_sprite != null):
-		return
-	if _aura_sprite != null and is_instance_valid(_aura_sprite):
-		_aura_sprite.queue_free()
-	_aura_sprite = VltkStateSprite.attach(self, state_id) if state_id > 0 else null
-	_aura_sprite_state = state_id
+	for sid: int in _aura_sprites.keys():
+		if not skill_states.has(sid) or not is_instance_valid(_aura_sprites[sid]):
+			if is_instance_valid(_aura_sprites[sid]):
+				(_aura_sprites[sid] as Node).queue_free()
+			_aura_sprites.erase(sid)
+	for sid in skill_states:
+		if not _aura_sprites.has(sid):
+			var spr := VltkStateSprite.attach(self, sid)
+			if spr != null:
+				_aura_sprites[sid] = spr
+	## Lớp 2 — hào quang khác chồng lên: GM gán, không có thì hộ thể tân thủ (Võ Lâm Hào Kiệt).
+	var extra := int(profile.get("gm_aura_state")) if profile and profile.get("gm_aura_state") != null else 0
+	if extra <= 0 and is_mong_diep_active():
+		extra = STATE_ID_MONG_DIEP
+	if skill_states.has(extra):
+		extra = 0   ## cùng 1 hình thì không vẽ 2 lần
+	if not (extra == _extra_aura_state and (extra == 0 or is_instance_valid(_extra_aura_sprite))):
+		if _extra_aura_sprite != null and is_instance_valid(_extra_aura_sprite):
+			_extra_aura_sprite.queue_free()
+		_extra_aura_sprite = VltkStateSprite.attach(self, extra) if extra > 0 else null
+		_extra_aura_state = extra
 
 # ------------------------------------------------------------ nhảy / ngựa / đi theo
 
@@ -2079,3 +2175,7 @@ func _tick_sit(delta: float) -> void:
 		_sit_time -= SIT_TICK
 		heal(maxf(1.0, floorf(max_health * SIT_HEAL_PER_MILLE / 1000.0)))
 		restore_mana(maxf(1.0, floorf(max_mana * SIT_HEAL_PER_MILLE / 1000.0)))
+
+func _on_state_expired(source_id: String, meta: Dictionary) -> void:
+	if skill_controller != null and not _dead:
+		skill_controller.on_state_expired(self, source_id, meta)

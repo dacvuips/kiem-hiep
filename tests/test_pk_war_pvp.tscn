@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c8pkwarpvtst1"]
+
+[ext_resource type="Script" path="res://tests/test_pk_war_pvp.gd" id="1_test"]
+
+[node name="TestPkWarPvp" type="Node"]
+script = ExtResource("1_test")

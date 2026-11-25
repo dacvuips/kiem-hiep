@@ -57,7 +57,7 @@ var _rooms_hell := false
 var _rooms_timer: Timer
 var _rooms_loading := false
 const ROOMS_POLL := 4.0
-const ROOM_COLS := [110.0, 260.0, 150.0, 110.0, 60.0]   ## ID · Bản đồ · Cấp · Người · 🔒 (cột cuối = nút Vào)
+const ROOM_COLS := [320.0, 160.0, 120.0, 60.0]   ## Bản đồ · Cấp · Người · 🔒 (cột cuối = nút Vào)
 
 const BATTLE_POLL := 3.0
 const BATTLE_COOLDOWN := 10.0
@@ -1662,19 +1662,25 @@ func _enter_field(m: Dictionary) -> void:
 					_play(m))
 		return
 	var hell: Dictionary = m.get("hell", {})
+	var is_hell: bool = int(hell.get("tier", 0)) != 0
 	var create := func(password: String) -> void:
 		var e := m.duplicate(true)
 		e["field"] = {"server": _field_server(st), "action": {"op": "create", "map_id": int(m["id"]), "tier": int(hell.get("tier", 0)),
-			"stars": int(hell.get("stars", 0)), "password": FieldServer.clean_password(password)}}
+			"stars": int(hell.get("stars", 0)), "password": FieldServer.clean_password(password), "is_host": true}}
 		_play(e)
 	var tm: Node = get_node_or_null("/root/TutorialManager")
 	if tm and tm.has_method("is_in_intro_flow") and tm.is_in_intro_flow():
 		create.call("")   ## đang hướng dẫn tân thủ: vào thẳng, không hỏi mật khẩu
 		return
+	if not is_hell:
+		# Màn online vượt ải -> luyện không nhập pass nữa, cứ nhấp vào là tạo thôi
+		create.call("")
+		return
 	SocialWindow.prompt(self, tr("Mật khẩu phòng"), tr("Để trống = ai có ID cũng vào được (tối đa %d ký tự)") % FieldServer.PASSWORD_MAX,
 		create)
 
 ## "Vào chơi chung": tra phòng theo ID -> nạp đúng map (Thường / Địa Ngục + số sao của phòng) -> vào phòng.
+## Nhập ID để vào phòng thì là bình thường, lúc nào cũng vào được (không bị chặn cooldown 30p hay cấp độ).
 func _join_by_id() -> void:
 	var id := _join_edit.text.strip_edges()
 	if id.length() != 6 or not id.is_valid_int():
@@ -1697,7 +1703,41 @@ func _join_by_id() -> void:
 	if reason != "":
 		_join_msg.text = reason
 		return
-	_join_room(st, room)
+	_join_room(st, room, true)
+
+## Kiểm tra điều kiện khi vào phòng từ Danh Sách Phòng:
+## 1. Cooldown 30 phút sau khi rời phòng luyện công
+## 2. Cấp độ phù hợp: đạt đủ cấp tối thiểu của phòng, và phòng 8x chỉ người từ 8x trở xuống mới được vào
+func check_list_join_requirements(room: Dictionary) -> String:
+	if AccountApi.is_gm():
+		return ""
+
+	# Cooldown 30 phút sau khi rời phòng
+	if GameManager != null and GameManager.has_method("get_training_cooldown_remaining"):
+		var remaining: int = GameManager.get_training_cooldown_remaining()
+		if remaining > 0:
+			var m := remaining / 60
+			var s := remaining % 60
+			return tr("Bạn vừa rời phòng. Vui lòng chờ %d phút %02d giây nữa mới được vào phòng qua danh sách (hoặc nhập ID để vào ngay).") % [m, s]
+
+	# Cấp độ phù hợp
+	var prof := _get_profile()
+	var char_level: int = prof.level if prof else 1
+	var entry := join_entry(room)
+	var map_level: int = int(entry.get("level", 10))
+	var room_tier: int = int(room.get("tier", 0))
+	if room_tier == 0:
+		room_tier = MapCatalog.tier_of_level(map_level)
+
+	var min_lvl := MapCatalog.min_level_for_tier(room_tier)
+	var max_lvl := room_tier * 10 + 9
+
+	if char_level < min_lvl:
+		return tr("Chưa đủ cấp độ để vào phòng này (Yêu cầu cấp %d - %d).") % [min_lvl, max_lvl]
+	if char_level > max_lvl:
+		return tr("Phòng %dx chỉ dành cho người chơi dưới %dx (Cấp của bạn: %d).") % [room_tier, room_tier, char_level]
+
+	return ""
 
 ## Lý do không vào được phòng ("" = vào được): đã đóng / đủ người / máy chưa có map.
 static func join_problem(room: Dictionary, id: String) -> String:
@@ -1712,12 +1752,13 @@ static func join_problem(room: Dictionary, id: String) -> String:
 
 ## Vào 1 phòng của danh sách /v1/field (nhập ID hoặc bấm Vào ở "Danh sách phòng"): phòng có 🔒 thì hỏi mật khẩu trước và kiểm
 ## ngay qua /v1/field/check — sai thì báo trong hộp nhập, không nạp map. Field server vẫn kiểm lại khi vào thật (FieldClient).
-func _join_room(st: Dictionary, room: Dictionary) -> void:
+## via_id = true nếu vào bằng ID (thấy ID ở góc trái); false nếu vào bằng danh sách phòng (ẩn ID ở góc trái).
+func _join_room(st: Dictionary, room: Dictionary, via_id: bool = false) -> void:
 	var id := str(room.get("id", ""))
 	var go := func(password: String) -> void:
 		var entry := join_entry(room)
 		entry["field"] = {"server": _field_server(st, room), "action": {"op": "join", "room": id, "map_id": int(room["map_id"]),
-			"tier": int(room.get("tier", 0)), "password": FieldServer.clean_password(password)}}
+			"tier": int(room.get("tier", 0)), "password": FieldServer.clean_password(password), "via_id": via_id, "from_room_list": not via_id}}
 		_play(entry)
 	if bool(room.get("locked", false)):
 		SocialWindow.prompt_checked(self, tr("Phòng #%s 🔒") % id, tr("Nhập mật khẩu phòng"),
@@ -1781,9 +1822,9 @@ func _build_rooms(hell: bool) -> void:
 	head_pad.add_theme_constant_override("margin_left", 10)
 	head_pad.add_child(head)
 	page.add_child(head_pad)
-	var titles := [tr("ID phòng"), tr("Bản đồ"), tr("Cấp map"), tr("Số người"), tr("Khoá")]
+	var titles := [tr("Bản đồ"), tr("Cấp map"), tr("Số người"), tr("Khoá")]
 	for k in titles.size():
-		var l := SocialUi.label(titles[k], SocialUi.LABEL_BLUE, 14, HORIZONTAL_ALIGNMENT_LEFT if k == 1 else HORIZONTAL_ALIGNMENT_CENTER)
+		var l := SocialUi.label(titles[k], SocialUi.LABEL_BLUE, 14, HORIZONTAL_ALIGNMENT_LEFT if k == 0 else HORIZONTAL_ALIGNMENT_CENTER)
 		l.custom_minimum_size.x = ROOM_COLS[k]
 		head.add_child(l)
 	page.add_child(SocialUi.divider())
@@ -1845,7 +1886,7 @@ func _refresh_rooms() -> void:
 	for r in rooms:
 		box.add_child(_room_row(st, r))
 
-## 1 dòng danh sách phòng: ID · tên map (di chuột xem chủ phòng) · cấp map · số người · 🔒 · nút Vào.
+## 1 dòng danh sách phòng: tên map (di chuột xem chủ phòng) · cấp map · số người · 🔒 · nút Vào (ẩn ID phòng).
 func _room_row(st: Dictionary, room: Dictionary) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	var row := HBoxContainer.new()
@@ -1857,7 +1898,6 @@ func _room_row(st: Dictionary, room: Dictionary) -> Control:
 	var cap := int(room.get("max", FieldServer.MAX_MEMBERS))
 	var locked := bool(room.get("locked", false))
 	var cells := [
-		[id, SocialUi.TITLE, HORIZONTAL_ALIGNMENT_CENTER],
 		[str(entry.get("name", "#%d" % int(room.get("map_id", 0)))), SocialUi.TEXT, HORIZONTAL_ALIGNMENT_LEFT],
 		[room_level_text(room), HELL_TEXT if int(room.get("tier", 0)) != 0 else SocialUi.LABEL_BLUE, HORIZONTAL_ALIGNMENT_CENTER],
 		["%d/%d" % [members, cap], SocialUi.MUTED if members >= cap else SocialUi.TEXT, HORIZONTAL_ALIGNMENT_CENTER],
@@ -1869,7 +1909,7 @@ func _room_row(st: Dictionary, room: Dictionary) -> Control:
 		l.clip_text = true
 		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(l)
-	var name_label := row.get_child(1) as Label
+	var name_label := row.get_child(0) as Label
 	name_label.tooltip_text = tr("Chủ phòng: %s") % str(room.get("host", "?"))
 	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	var spacer := Control.new()
@@ -1877,10 +1917,20 @@ func _room_row(st: Dictionary, room: Dictionary) -> Control:
 	row.add_child(spacer)
 	var go := SocialUi.stone_button(tr("Vào"), Vector2(120, 36))
 	var problem := join_problem(room, id)
+	if problem == "":
+		problem = check_list_join_requirements(room)
 	if problem != "":
 		go.disabled = true
 		go.tooltip_text = problem
-	go.pressed.connect(func() -> void: _join_room(st, room))
+	go.pressed.connect(func() -> void:
+		var req_err := check_list_join_requirements(room)
+		if req_err != "":
+			var hub := _get_hub()
+			if hub and hub.has_method("_show_toast"):
+				hub._show_toast("⚠️ " + req_err)
+			return
+		_join_room(st, room, false)
+	)
 	row.add_child(go)
 	return card
 

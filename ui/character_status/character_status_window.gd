@@ -8,6 +8,8 @@ class_name CharacterStatusWindow
 ## scene theo anchor (co giãn theo khung) nhưng cỡ chữ cố định px — thu nhỏ khung là chữ tràn/lệch ô.
 const CONTENT_SIZE := Vector2(733, 550)
 
+signal profile_changed
+
 var screen: CharacterStatusScreen
 var _profile: PlayerProfile
 var _inventory_opener: Callable
@@ -18,6 +20,10 @@ static func open(parent: Node, profile: PlayerProfile, inventory_opener: Callabl
 	w._inventory_opener = inventory_opener
 	parent.add_child(w)
 	return w
+
+func refresh() -> void:
+	if screen != null and is_instance_valid(screen):
+		screen.refresh()
 
 func _ready() -> void:
 	layer = DraggableWindow.WINDOW_LAYER
@@ -37,3 +43,4 @@ func _ready() -> void:
 	window.body.add_child(holder)
 	screen = CharacterStatusScreen.attach(holder, _profile)
 	screen.inventory_opener = _inventory_opener
+	screen.profile_changed.connect(func() -> void: profile_changed.emit())

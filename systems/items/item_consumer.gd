@@ -56,7 +56,7 @@ const BIKIP_180_MAP: Dictionary = {
 	"6_1_18009": {"sect": "vo_dang", "skill": "vo_dang_chan_vo_that_tiet", "name": "Chân Võ Thất Tiết", "sect_name": "Võ Đang"},
 	"6_1_18010": {"sect": "con_lon", "skill": "con_lon_thien_cuong_khi_kinh", "name": "Thiên Cương Khí Kính", "sect_name": "Côn Lôn"},
 	"6_1_18011": {"sect": "hoa_son", "skill": "hoa_son_cuu_kiem_hop_nhat", "name": "Cửu Kiếm Hợp Nhất", "sect_name": "Hoa Sơn"},
-	"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tru_gian_diet_ninh", "name": "Trừ Gian Diệt Nịnh", "sect_name": "Vũ Hồn"},
+	"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tan_trung_bao_quoc", "name": "Tận Trung Báo Quốc", "sect_name": "Vũ Hồn"},
 	"6_1_18013": {"sect": "tieu_dao", "skill": "tieu_dao_thap_bo_nhat_sat", "name": "Thập Bộ Nhất Sát", "sect_name": "Tiêu Dao"},
 	"6_1_18014": {"sect": "duong_gia", "skill": "duong_gia_bon_lang_thuong", "name": "Bôn Lang Thương", "sect_name": "Dương Môn"},
 	"6_1_18015": {"sect": "minh_giao", "skill": "minh_giao_loi_dinh_nhat_kich", "name": "Lôi Đình Nhất Kích", "sect_name": "Minh Giáo"},
@@ -149,6 +149,21 @@ static func get_special_actions(item: ItemInstance, host: Node, profile: PlayerP
 			var sid := sk.id
 			actions.append(["Học %s (%d/%d)" % [sk.skill_name, profile.get_skill_level(sid), sk.max_level], func() -> void:
 				var r := use_book(profile, item, sid)
+				if host != null and host.has_method("_show_toast"):
+					host.call("_show_toast", str(r.get("message", "")))
+				if on_changed.is_valid():
+					on_changed.call()
+			])
+
+	# 0.1. ĐẠI THÀNH BÍ KÍP 90 / 120 / 150: mỗi skill luyện cùng tầng 1 nút "Lĩnh hội <tên>"
+	if is_dai_thanh_book(mid) and profile != null:
+		for sk in dai_thanh_candidates(profile, mid):
+			var sid := sk.id
+			actions.append(["Lĩnh hội %s (%d -> %d)" % [sk.skill_name, profile.get_skill_level(sid), dai_thanh_target_level(mid, sk)], func() -> void:
+				var r := use_dai_thanh(profile, item, sid)
+				if r.get("ok", false):
+					SaveManager.save_profile(profile)
+					SaveManager.flush_online()
 				if host != null and host.has_method("_show_toast"):
 					host.call("_show_toast", str(r.get("message", "")))
 				if on_changed.is_valid():
@@ -324,6 +339,110 @@ static func use_book(profile: PlayerProfile, item: ItemInstance, skill_id: Strin
 			sk_name = sk.skill_name
 	return {"ok": true, "message": "Lĩnh hội Đại Thành Bí Kíp %dx: [%s] đạt cấp %d." % [tier, sk_name, profile.get_skill_level(skill_id)]}
 
+# ================================================================== Đại Thành Bí Kíp 90 / 120 / 150 (Kỳ Trân Các)
+## Theo mô tả vật phẩm gốc: 90 / 120 -> "học được một kỹ năng ... có đẳng cấp 20"; 150 -> "đưa kỹ năng 150 lên cấp 18".
+## Mỗi cuốn đưa 1 skill luyện (practice_only) cùng tầng lên thẳng cấp đích; skill chưa lĩnh hội cũng học được nếu đủ cấp.
+const DAI_THANH_BOOKS: Dictionary = {
+	"6_1_2424": {"tier": 90, "level": 20},
+	"6_1_2425": {"tier": 120, "level": 20},
+	"6_1_30446": {"tier": 150, "level": 18},
+}
+
+static func is_dai_thanh_book(misc_id: String) -> bool:
+	return DAI_THANH_BOOKS.has(misc_id)
+
+## Tầng 90 / 120 / 150 của skill theo cấp yêu cầu (skill 9x của 15 phái có req_level 80..90).
+static func _skill_tier(sk: SkillDefinition) -> int:
+	if sk.req_level >= 180:
+		return 180
+	if sk.req_level >= 150:
+		return 150
+	if sk.req_level >= 120:
+		return 120
+	if sk.req_level >= 80:
+		return 90
+	return 0
+
+## Cấp đích của cuốn `misc_id` cho skill `sk` (không vượt cấp tối đa của skill).
+static func dai_thanh_target_level(misc_id: String, sk: SkillDefinition) -> int:
+	var lv := int(DAI_THANH_BOOKS.get(misc_id, {}).get("level", 0))
+	return mini(lv, sk.max_level) if sk.max_level > 0 else lv
+
+## Skill luyện cùng tầng với cuốn bí kíp, thuộc phái hiện tại.
+static func dai_thanh_candidates(profile: PlayerProfile, misc_id: String) -> Array[SkillDefinition]:
+	var out: Array[SkillDefinition] = []
+	if profile == null or not DAI_THANH_BOOKS.has(misc_id):
+		return out
+	var sect: SectDefinition = SectRegistry.get_by_id(profile.sect_id)
+	if sect == null:
+		return out
+	var tier := int(DAI_THANH_BOOKS[misc_id]["tier"])
+	for sk: SkillDefinition in sect.skills:
+		if sk != null and sk.practice_only and not sk.is_hidden and sk.parent_skill_id == "" and _skill_tier(sk) == tier:
+			out.append(sk)
+	return out
+
+## Lý do không dùng được cuốn `misc_id` cho `skill_id` (rỗng = dùng được).
+static func dai_thanh_block_reason(profile: PlayerProfile, misc_id: String, skill_id: String) -> String:
+	if profile == null or not DAI_THANH_BOOKS.has(misc_id):
+		return "Vật phẩm không hợp lệ."
+	var tier := int(DAI_THANH_BOOKS[misc_id]["tier"])
+	if profile.sect_id == "":
+		return "Chưa gia nhập môn phái, không thể lĩnh hội Đại Thành Bí Kíp %d." % tier
+	var sk: SkillDefinition = null
+	for c in dai_thanh_candidates(profile, misc_id):
+		if c.id == skill_id:
+			sk = c
+	if sk == null:
+		return "Đại Thành Bí Kíp %d chỉ dùng cho kỹ năng %d của môn phái." % [tier, tier]
+	if profile.level < sk.req_level:
+		return "Cần đạt cấp %d để lĩnh hội [%s]." % [sk.req_level, sk.skill_name]
+	if profile.get_skill_level(sk.id) >= dai_thanh_target_level(misc_id, sk):
+		return "[%s] đã đạt cấp %d trở lên." % [sk.skill_name, dai_thanh_target_level(misc_id, sk)]
+	return ""
+
+## Skill mặc định khi bấm "Dùng": skill dùng được có cấp thấp nhất ("" = không có).
+static func dai_thanh_default_skill(profile: PlayerProfile, misc_id: String) -> String:
+	var best := ""
+	var best_lv := 1 << 30
+	for sk in dai_thanh_candidates(profile, misc_id):
+		if dai_thanh_block_reason(profile, misc_id, sk.id) != "":
+			continue
+		var lv := profile.get_skill_level(sk.id)
+		if lv < best_lv:
+			best = sk.id
+			best_lv = lv
+	return best
+
+## Dùng 1 cuốn Đại Thành Bí Kíp 90/120/150 cho `skill_id` ("" = skill cùng tầng có cấp thấp nhất còn nâng được).
+static func use_dai_thanh(profile: PlayerProfile, item: ItemInstance, skill_id: String) -> Dictionary:
+	var mid := item.misc_id if item != null else ""
+	var index := profile.inventory.find(item) if profile != null else -1
+	if not DAI_THANH_BOOKS.has(mid) or index < 0:
+		return {"ok": false, "message": "Vật phẩm không còn trong hành trang."}
+	var tier := int(DAI_THANH_BOOKS[mid]["tier"])
+	if skill_id == "":
+		skill_id = dai_thanh_default_skill(profile, mid)
+		if skill_id == "":
+			var cands := dai_thanh_candidates(profile, mid)
+			if cands.is_empty():
+				return {"ok": false, "message": dai_thanh_block_reason(profile, mid, "")}
+			return {"ok": false, "message": "Không có kỹ năng %d nào nâng được lúc này (chưa đủ cấp hoặc đã đạt cấp %d)." % [tier, int(DAI_THANH_BOOKS[mid]["level"])]}
+	var why := dai_thanh_block_reason(profile, mid, skill_id)
+	if why != "":
+		return {"ok": false, "message": why}
+	var sk: SkillDefinition = null
+	for c in dai_thanh_candidates(profile, mid):
+		if c.id == skill_id:
+			sk = c
+	var target := dai_thanh_target_level(mid, sk)
+	profile.skill_levels[skill_id] = target
+	profile.skill_exp.erase(skill_id)
+	_consume_one(profile, item, index)
+	if profile.has_method("recalc_stats"):
+		profile.call("recalc_stats")
+	return {"ok": true, "skill_changed": true, "message": "Lĩnh hội [Đại Thành Bí Kíp %d]: kỹ năng [%s] đạt cấp %d!" % [tier, sk.skill_name, target]}
+
 static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = null, host: Node = null) -> Dictionary:
 	if profile == null or item == null:
 		return {"ok": false, "message": "Thông tin vật phẩm không hợp lệ."}
@@ -449,35 +568,9 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 			"message": "Lĩnh ngộ [Bàn Nhược Tâm Kinh]! Nhận thêm +1 Điểm Kỹ Năng và +5 Điểm Tiềm Năng."
 		}
 
-	# 7. ĐẠI THÀNH BÍ KÍP 90 (6_1_2424)
-	if mid == "6_1_2424":
-		_consume_one(profile, item, index)
-		profile.skill_points += 2
-		profile.add_exp(2000000)
-		return {
-			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 90]! Nhận thêm +2 Điểm Kỹ Năng và +2.000.000 EXP."
-		}
-
-	# 7.1. ĐẠI THÀNH BÍ KÍP 120 (6_1_2425)
-	if mid == "6_1_2425":
-		_consume_one(profile, item, index)
-		profile.skill_points += 3
-		profile.add_exp(3000000)
-		return {
-			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 120]! Nhận thêm +3 Điểm Kỹ Năng và +3.000.000 EXP."
-		}
-
-	# 7.2. ĐẠI THÀNH BÍ KÍP 150 (6_1_30446)
-	if mid == "6_1_30446":
-		_consume_one(profile, item, index)
-		profile.skill_points += 5
-		profile.add_exp(5000000)
-		return {
-			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 150]! Nhận thêm +5 Điểm Kỹ Năng và +5.000.000 EXP."
-		}
+	# 7. ĐẠI THÀNH BÍ KÍP 90 / 120 / 150 (6_1_2424, 6_1_2425, 6_1_30446): đưa skill luyện cùng tầng lên cấp 20 / 20 / 18
+	if is_dai_thanh_book(mid):
+		return use_dai_thanh(profile, item, "")
 
 	# 7.3. TẨY TỦY KINH (6_1_22) & VÕ LÂM MẬT TỊCH (6_1_26)
 	if mid == "6_1_22":

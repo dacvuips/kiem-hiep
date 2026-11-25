@@ -24,7 +24,7 @@ const OP_QUIT := 3        ## trong host: rời
 const OP_DRAFT := 4       ## {horse 1-5, weapon 0-13} — chọn thẻ 5x (1 lần mỗi lần sống)
 
 ## Gói được gửi khi đang ở trong host (như PUBG: chặn giao dịch / chợ / bày bán / mua / chế tạo).
-const MATCH_ALLOWED := [NetProto.C_MOVE, NetProto.C_CAST, NetProto.C_DAMAGE, NetProto.C_MSTATE, NetProto.C_PROFILE, NetProto.C_PICKUP,
+const MATCH_ALLOWED := [NetProto.C_MOVE, NetProto.C_CAST, NetProto.C_DAMAGE, NetProto.C_DAMAGE_BATCH, NetProto.C_MSTATE, NetProto.C_PROFILE, NetProto.C_PICKUP,
 	NetProto.C_DISCARD, NetProto.C_LOOK, NetProto.C_REVIVE, NetProto.C_PING, NetProto.C_PVP_HIT, NetProto.C_CHAT,
 	NetProto.C_LONXON, NetProto.C_VIEW_EQUIP]
 

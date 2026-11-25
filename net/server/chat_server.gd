@@ -149,25 +149,53 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 		gs.profile_changed(c)
 		gs.notice(c, "[Hệ thống] Đã thêm Tiên Thảo Lộ & Kim Nguyên Bảo vào hành trang.")
 		return
+	## Lệnh GM: "/gmlevel <+N|-N|=N> [eid hoặc tên]" — đổi cấp người chơi, lên cấp cộng đủ điểm tiềm năng/kỹ năng.
+	if text.begins_with("/gmlevel"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var parts := text.split(" ", false)
+		if parts.size() < 2:
+			gs.notice(c, "Cú pháp: /gmlevel <+N|-N|=N> [ID người chơi]")
+			return
+		var arg := parts[1]
+		var absolute := arg.begins_with("=")
+		var num_str := arg.substr(1) if absolute or arg.begins_with("+") else arg
+		if not num_str.is_valid_int():
+			gs.notice(c, "Số cấp không hợp lệ: %s" % arg)
+			return
+		var lv_target_c = c
+		if parts.size() >= 3:
+			lv_target_c = null
+			if parts[2].is_valid_int():
+				lv_target_c = gs.conn_of_eid(int(parts[2]))
+		if lv_target_c == null or lv_target_c.profile == null:
+			gs.notice(c, "Không tìm thấy người chơi có ID này.")
+			return
+		var old_lv: int = lv_target_c.profile.level
+		var new_lv := int(num_str) if absolute else old_lv + int(num_str)
+		lv_target_c.profile.gm_set_level(new_lv)
+		if lv_target_c.entity:
+			lv_target_c.entity.level = lv_target_c.profile.level
+			lv_target_c.entity.touch()
+		gs.profile_changed(lv_target_c)
+		var who_name: String = lv_target_c.entity.name if lv_target_c.entity else lv_target_c.username
+		gs.notice(c, "[GM] Cấp của %s: %d -> %d." % [who_name, old_lv, lv_target_c.profile.level])
+		if lv_target_c != c:
+			gs.notice(lv_target_c, "[GM] Cấp của bạn đã đổi: %d -> %d." % [old_lv, lv_target_c.profile.level])
+		return
 	if text.begins_with("/aura"):
 		if not c.is_gm and not gs.test_mode:
 			gs.notice(c, "Lệnh này chỉ dành cho GM.")
 			return
 		var parts := text.split(" ", false)
 		if parts.size() < 2:
-			gs.notice(c, "Cú pháp: /aura <id_state> [tên_người_chơi hoặc eid]")
+			gs.notice(c, "Cú pháp: /aura <id_state> [ID người chơi]")
 			return
 		var state_id := int(parts[1])
-		var target_c: GameServer.Conn = c
+		var target_c = c
 		if parts.size() >= 3:
-			var target_str := parts[2]
-			if target_str.is_valid_int() and gs.conn_of_eid(int(target_str)) != null:
-				target_c = gs.conn_of_eid(int(target_str))
-			else:
-				for other in gs.in_world_conns():
-					if other.entity and (other.entity.name == target_str or other.username == target_str):
-						target_c = other
-						break
+			target_c = gs.conn_of_eid(int(parts[2])) if parts[2].is_valid_int() else null
 		if target_c == null or target_c.entity == null:
 			gs.notice(c, "Không tìm thấy người chơi mục tiêu.")
 			return
@@ -179,6 +207,39 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 			gs._look_dirty.append(target_c.entity)
 		gs.profile_changed(target_c)
 		gs.notice(c, "[GM] Đã gán hào quang state #%d cho %s." % [state_id, target_c.entity.name])
+		return
+	if text.begins_with("/camp") or text.begins_with("/gmcamp"):
+		if not c.is_gm and not gs.test_mode:
+			gs.notice(c, "Lệnh này chỉ dành cho GM.")
+			return
+		var parts := text.split(" ", false)
+		if parts.size() < 2:
+			gs.notice(c, "Cú pháp: /camp <camp_id> [ID người chơi]")
+			return
+		var camp_id := int(parts[1])
+		if camp_id < 0 or camp_id > 8:
+			gs.notice(c, "Camp ID không hợp lệ (0-8).")
+			return
+		var target_c = c
+		if parts.size() >= 3:
+			target_c = gs.conn_of_eid(int(parts[2])) if parts[2].is_valid_int() else null
+		if target_c == null or target_c.entity == null or target_c.profile == null:
+			gs.notice(c, "Không tìm thấy người chơi mục tiêu.")
+			return
+		target_c.profile.camp = camp_id
+		target_c.data["camp"] = camp_id
+		target_c.entity.camp = camp_id
+		var camp_buf := NetProto.writer(NetProto.S_CAMP)
+		camp_buf.put_u32(target_c.entity.eid)
+		camp_buf.put_8(camp_id)
+		camp_buf.put_u8(target_c.entity.nation)
+		gs.send_to_viewers(target_c, camp_buf)
+		gs.profile_changed(target_c)
+		var who_name: String = target_c.entity.name if target_c.entity else target_c.username
+		var camp_name: String = Camp.get_camp_name(camp_id)
+		gs.notice(c, "[GM] Đã đổi phe cho %s sang: %s (Camp %d)." % [who_name, camp_name, camp_id])
+		if target_c != c:
+			gs.notice(target_c, "[GM] Phe của bạn đã đổi sang: %s." % camp_name)
 		return
 	var now := gs.now()
 	var unix := Time.get_unix_time_from_system()

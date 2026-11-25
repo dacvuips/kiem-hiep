@@ -45,6 +45,8 @@ var _gold_item: OptionButton
 var _perfection: OptionButton
 var _amount: OptionButton
 var _money: OptionButton
+var _gold_set: OptionButton
+var _gold_set_groups: Array[int] = []
 var _equip_button: Button
 var _reroll_button: Button
 var _rows: Dictionary = {}  ## tên hàng -> HBoxContainer (ẩn/hiện theo phẩm chất)
@@ -161,6 +163,27 @@ func _ready() -> void:
 	var btn_add_mantles := GameUi.button("+Phi Phong (TEST)", GameUi.BUTTON)
 	btn_add_mantles.pressed.connect(_on_quick_add_mantles)
 	quick_bar.add_child(btn_add_mantles)
+
+	## Nhận nhanh CẢ BỘ hoàng kim môn phái tự dựng (Vũ Hồn Anh Hào / Trấn Nhạc / Khai Sơn...) — chỉ số random như đồ rơi.
+	var set_bar := HBoxContainer.new()
+	set_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	set_bar.add_theme_constant_override("separation", 8)
+	root.add_child(set_bar)
+	var s_label := Label.new()
+	s_label.text = "Bộ HKMP:"
+	s_label.add_theme_color_override("font_color", GameUi.GOLD)
+	set_bar.add_child(s_label)
+	_gold_set = OptionButton.new()
+	_gold_set.custom_minimum_size = Vector2(360, 0)
+	_gold_set.fit_to_longest_item = false
+	_gold_set_groups = ItemDatabase.list_custom_gold_groups()
+	for group in _gold_set_groups:
+		_gold_set.add_item(ItemDatabase.gold_set_label(group))
+	set_bar.add_child(_gold_set)
+	for spec in [["+Cả bộ (TEST)", false], ["+Cả bộ & mặc", true]]:
+		var sb := GameUi.button(spec[0], GameUi.BUTTON)
+		sb.pressed.connect(_on_quick_add_gold_set.bind(spec[1]))
+		set_bar.add_child(sb)
 
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -502,6 +525,33 @@ func _on_quick_add_masks() -> void:
 	if _on_changed.is_valid():
 		_on_changed.call()
 	_message.text = "Đã nhận %d Mặt Nạ vào hành trang (%d/%d)." % [added, _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY]
+
+func _on_quick_add_gold_set(equip_now: bool) -> void:
+	if _profile == null or _gold_set.selected < 0 or _gold_set.selected >= _gold_set_groups.size():
+		return
+	var group := _gold_set_groups[_gold_set.selected]
+	var added := 0
+	var equipped := 0
+	var first_err := ""
+	for idx in ItemDatabase.get_gold_set_members(group):
+		var item := ItemGenerator.generate_gold_random(idx)
+		if item == null or not _profile.add_item(item):
+			continue
+		added += 1
+		if equip_now:
+			var err := _profile.equip_from_inventory(_profile.inventory.size() - 1)
+			if err == "":
+				equipped += 1
+			elif first_err == "":
+				first_err = "%s: %s" % [item.get_base().get("name", "?"), err]
+	SaveManager.save_profile(_profile)
+	SaveManager.flush_online()
+	if _on_changed.is_valid():
+		_on_changed.call()
+	_message.text = "Đã nhận %d món %s%s (Hành trang %d/%d)." % [added, _gold_set.get_item_text(_gold_set.selected).split(" — ")[0],
+		", mặc %d món" % equipped if equip_now else "", _profile.inventory.size(), PlayerProfile.INVENTORY_CAPACITY]
+	if first_err != "":
+		_message.text += "\nKhông mặc được — %s" % first_err
 
 func _on_quick_add_mantles() -> void:
 	if _profile == null:

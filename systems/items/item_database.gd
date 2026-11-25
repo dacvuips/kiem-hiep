@@ -116,15 +116,55 @@ static func get_desc_template(attrib_name: String) -> String:
 	return str(_desc.get(attrib_name, ""))
 
 ## Các món CÙNG BỘ hoàng kim (mỗi loại đồ 1 món, theo thứ tự ô) — để hiện danh sách bộ trong mô tả.
+## Bộ TỰ DỰNG của phái mới (Group >= 674, tools/new_sects_gold_sets.py) có thể có 2 nhẫn khác tên (VD Anh Hào Bá
+## Khí Ngự Quân / Trấn Sơn Chỉ Hoàn) -> giữ cả hai. Bộ gốc giữ 1 nhẫn: cùng nhóm còn lẫn bản [Định thời] /
+## [Tống Kim] / [Cực phẩm] của chính nhẫn đó.
+const CUSTOM_GOLD_GROUP_MIN := 674
+
+## Các bộ hoàng kim TỰ DỰNG của phái mới (Group >= CUSTOM_GOLD_GROUP_MIN), tăng dần — cho bảng Tạo đồ (test).
+static func list_custom_gold_groups() -> Array[int]:
+	_ensure_gold_loaded()
+	var out: Array[int] = []
+	for group in _gold_groups:
+		if int(group) >= CUSTOM_GOLD_GROUP_MIN:
+			out.append(int(group))
+	out.sort()
+	return out
+
+## Tên hiển thị 1 bộ: phần tên chung của các món (bỏ tiền tố "[TB] ") + mô tả bộ của món đầu (bỏ "(n)").
+static func gold_set_label(group: int) -> String:
+	var members := get_gold_set_members(group)
+	if members.is_empty():
+		return "Bộ %d" % group
+	var common: PackedStringArray = []
+	for i in members.size():
+		var words := str(get_gold(members[i])["name"]).trim_prefix("[TB] ").split(" ")
+		if i == 0:
+			common = words
+			continue
+		var n := 0
+		while n < mini(common.size(), words.size()) and common[n] == words[n]:
+			n += 1
+		common = common.slice(0, n)
+	var intro := str(get_gold(members[0]).get("intro", "")).split(" (")[0]
+	return "%s — %s (%d món)" % [" ".join(common), intro, members.size()]
+
 static func get_gold_set_members(group: int) -> Array[int]:
 	_ensure_gold_loaded()
 	var out: Array[int] = []
-	var seen_details := {}
+	var seen := {}
 	for idx in _gold_groups.get(group, []):
 		var detail := int(_gold[idx]["detail"])
-		if seen_details.has(detail):
+		var key: Variant = detail
+		if detail == Detail.RING and group >= CUSTOM_GOLD_GROUP_MIN:
+			key = "ring:" + str(_gold[idx]["name"])
+			if not seen.has(key) and int(seen.get("rings", 0)) >= 2:
+				continue
+		if seen.has(key):
 			continue
-		seen_details[detail] = true
+		seen[key] = true
+		if detail == Detail.RING:
+			seen["rings"] = int(seen.get("rings", 0)) + 1
 		out.append(idx)
 	return out
 

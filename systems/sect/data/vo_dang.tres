@@ -108,7 +108,7 @@ base_damage = 1.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 384.0
-element = 2
+element = 4
 damage_growth_per_level = 3.8947
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_1"), SubResource("SubResource_2"), SubResource("SubResource_3"), SubResource("SubResource_4"), SubResource("SubResource_5"), SubResource("SubResource_6")])
 is_main_attack = true
@@ -167,7 +167,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_8"), SubResource("SubResource_9"), SubResource("SubResource_10")])
 passive_attack_bonus = 2.5
@@ -217,7 +217,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_12"), SubResource("SubResource_13")])
 passive_attack_bonus = 2.0
@@ -310,7 +310,7 @@ base_damage = 5.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 384.0
-element = 2
+element = 4
 damage_growth_per_level = 3.6842
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_15"), SubResource("SubResource_16"), SubResource("SubResource_17"), SubResource("SubResource_18"), SubResource("SubResource_19"), SubResource("SubResource_20"), SubResource("SubResource_21")])
 
@@ -357,7 +357,7 @@ base_damage = 25.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 2.3077
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_23"), SubResource("SubResource_24")])
 
@@ -442,7 +442,7 @@ base_damage = 20.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 416.0
-element = 2
+element = 4
 damage_growth_per_level = 5.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_26"), SubResource("SubResource_27"), SubResource("SubResource_28"), SubResource("SubResource_29"), SubResource("SubResource_30"), SubResource("SubResource_31")])
 
@@ -489,7 +489,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_33"), SubResource("SubResource_34")])
 passive_defense_bonus = 5.0
@@ -531,7 +531,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_36")])
 
@@ -613,7 +613,7 @@ base_damage = 5.0
 mana_cost = 0.0
 cooldown = 1.39
 range = 416.0
-element = 2
+element = 4
 damage_growth_per_level = 8.9474
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_38"), SubResource("SubResource_39"), SubResource("SubResource_40"), SubResource("SubResource_41"), SubResource("SubResource_42"), SubResource("SubResource_43")])
 
@@ -695,7 +695,7 @@ base_damage = 1.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 512.0
-element = 2
+element = 4
 damage_growth_per_level = 39.5263
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_45"), SubResource("SubResource_46"), SubResource("SubResource_47"), SubResource("SubResource_48"), SubResource("SubResource_49"), SubResource("SubResource_50")])
 is_hotbar = true
@@ -762,7 +762,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_52"), SubResource("SubResource_53"), SubResource("SubResource_54"), SubResource("SubResource_55")])
 
@@ -869,7 +869,7 @@ base_damage = 20.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 78.0
-element = 2
+element = 4
 damage_growth_per_level = 11.1053
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_57"), SubResource("SubResource_58"), SubResource("SubResource_59"), SubResource("SubResource_60"), SubResource("SubResource_61"), SubResource("SubResource_62"), SubResource("SubResource_63"), SubResource("SubResource_64"), SubResource("SubResource_65")])
 is_hotbar = true
@@ -945,7 +945,7 @@ base_damage = 5.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 512.0
-element = 2
+element = 4
 damage_growth_per_level = 18.1579
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_67"), SubResource("SubResource_68"), SubResource("SubResource_69"), SubResource("SubResource_70"), SubResource("SubResource_71")])
 
@@ -995,7 +995,7 @@ base_damage = 12.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 480.0
-element = 2
+element = 4
 damage_growth_per_level = 31.4737
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_73"), SubResource("SubResource_74")])
 
@@ -1045,7 +1045,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_76"), SubResource("SubResource_77")])
 
@@ -1095,7 +1095,7 @@ base_damage = 12.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 480.0
-element = 2
+element = 4
 damage_growth_per_level = 31.4737
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_79"), SubResource("SubResource_80")])
 
@@ -1195,7 +1195,7 @@ base_damage = 8.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 90.0
-element = 2
+element = 4
 damage_growth_per_level = 9.7895
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_82"), SubResource("SubResource_83"), SubResource("SubResource_84"), SubResource("SubResource_85"), SubResource("SubResource_86"), SubResource("SubResource_87"), SubResource("SubResource_88"), SubResource("SubResource_89")])
 is_hotbar = true
@@ -1220,6 +1220,7 @@ id = "vo_dang_huyen_nhat_vo_tuong"
 vltk_skill_id = 162
 skill_name = "Huyền Nhất Vô Tượng"
 is_hidden = true
+parent_skill_id = "vo_dang_nhan_kiem_hop_nhat"
 icon = ExtResource("vicon_vo_dang_huyen_nhat_vo_tuong")
 description = "Chiêu thức phụ trợ tăng 3 kiếm, huyền ảo vô tượng."
 school_text = "Kiếm pháp (Ngoại công)"
@@ -1245,7 +1246,7 @@ base_damage = 1.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 90.0
-element = 2
+element = 4
 damage_growth_per_level = 5.2105
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_91"), SubResource("SubResource_92")])
 
@@ -1262,6 +1263,7 @@ id = "vo_dang_thai_cuc_kiem_y"
 vltk_skill_id = 371
 skill_name = "Thái Cực Kiếm Ý"
 is_hidden = true
+parent_skill_id = "vo_dang_nhan_kiem_hop_nhat"
 description = "Chiêu thức phụ trợ tăng 2 kiếm, kiếm ý thái cực gây choáng."
 school_text = "Kiếm pháp (Hỗ trợ)"
 is_active = false
@@ -1286,7 +1288,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_94")])
 
@@ -1335,7 +1337,7 @@ mana_cost = 0.0
 cooldown = 0.00
 vltk_min_time_per_cast = PackedFloat32Array(1, 630, 0, 15, 324, 0, 20, 270, 0, 21, 270, 0)
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_96"), SubResource("SubResource_97")])
 
@@ -1402,7 +1404,7 @@ base_damage = 6.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 512.0
-element = 2
+element = 4
 damage_growth_per_level = 33.84
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_99"), SubResource("SubResource_100"), SubResource("SubResource_101"), SubResource("SubResource_102")])
 is_hotbar = true
@@ -1430,7 +1432,8 @@ suffix = " điểm"
 
 [sub_resource type="Resource" id="SubResource_107"]
 script = ExtResource("3_statline")
-label = "Tốc độ xuất chiêu"
+level_points = PackedFloat32Array(1, 78, 0, 20, 415, 0, 23, 521, 0, 26, 574, 0)
+label = "Độ chính xác"
 value_at_level_1 = 78.0
 value_at_max_level = 574.0
 suffix = "%"
@@ -1456,6 +1459,21 @@ label = "Tiêu hao nội lực"
 value_at_level_1 = 40.0
 value_at_max_level = 87.0
 
+[sub_resource type="Resource" id="SubResource_112"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_113"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 24, 0, 23, 31, 0, 26, 34, 0)
+label = "Làm choáng"
+value_at_level_1 = 1.0
+value_at_max_level = 24.0
+suffix = "%"
+
 [sub_resource type="Resource" id="SubResource_111"]
 script = ExtResource("2_skill")
 id = "vo_dang_kiem_thuy_tinh_ha"
@@ -1469,7 +1487,7 @@ target_ally = false
 target_self = false
 is_aura = false
 vltk_is_physical = 1
-vltk_missle_form = 1
+vltk_missle_form = 6
 vltk_attack_radius = 470
 vltk_state_special_id = 0
 vltk_damage_range = 3
@@ -1494,24 +1512,9 @@ base_damage = 12.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 90.0
-element = 2
+element = 4
 damage_growth_per_level = 22.6
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_104"), SubResource("SubResource_105"), SubResource("SubResource_106"), SubResource("SubResource_107"), SubResource("SubResource_108"), SubResource("SubResource_109"), SubResource("SubResource_110")])
-
-[sub_resource type="Resource" id="SubResource_112"]
-script = ExtResource("3_statline")
-label = "Ngũ hành tương khắc"
-value_at_level_1 = 40.0
-value_at_max_level = 82.0
-suffix = "%"
-
-[sub_resource type="Resource" id="SubResource_113"]
-script = ExtResource("3_statline")
-level_points = PackedFloat32Array(1, 1, 0, 20, 24, 0, 23, 31, 0, 26, 34, 0)
-label = "Làm choáng"
-value_at_level_1 = 1.0
-value_at_max_level = 24.0
-suffix = "%"
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_105"), SubResource("SubResource_110"), SubResource("SubResource_107"), SubResource("SubResource_104"), SubResource("SubResource_106"), SubResource("SubResource_108"), SubResource("SubResource_109"), SubResource("SubResource_113")])
 
 [sub_resource type="Resource" id="SubResource_114"]
 script = ExtResource("3_statline")
@@ -1526,6 +1529,7 @@ id = "vo_dang_kiem_minh_thuong_khung"
 vltk_skill_id = 1107
 skill_name = "Kiếm Minh Thương Khung"
 is_hidden = true
+parent_skill_id = "vo_dang_kiem_thuy_tinh_ha"
 icon = ExtResource("vicon_vo_dang_kiem_minh_thuong_khung")
 description = "Chiêu thức phụ trợ tăng 2, kiếm minh vang động cả trời xanh."
 school_text = "Kiếm pháp (Ngoại công)"
@@ -1553,9 +1557,9 @@ base_damage = 1.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 90.0
-element = 2
+element = 4
 damage_growth_per_level = 6.8
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_112"), SubResource("SubResource_113"), SubResource("SubResource_114")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_114")])
 
 [sub_resource type="Resource" id="SubResource_116"]
 script = ExtResource("3_statline")
@@ -1598,6 +1602,7 @@ id = "vo_dang_kiem_vu_dieu_nguyet"
 vltk_skill_id = 1105
 skill_name = "Kiếm Vũ Diệu Nguyệt"
 is_hidden = true
+parent_skill_id = "vo_dang_kiem_thuy_tinh_ha"
 icon = ExtResource("vicon_vo_dang_kiem_vu_dieu_nguyet")
 description = "Chiêu thức phụ trợ tăng 3, múa kiếm giữa trăng sao huyền ảo."
 school_text = "Kiếm pháp (Ngoại công)"
@@ -1627,9 +1632,9 @@ base_damage = 12.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 90.0
-element = 2
+element = 4
 damage_growth_per_level = 22.6
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_116"), SubResource("SubResource_117"), SubResource("SubResource_118"), SubResource("SubResource_119"), SubResource("SubResource_120")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_117"), SubResource("SubResource_116"), SubResource("SubResource_119"), SubResource("SubResource_120")])
 
 [sub_resource type="Resource" id="SubResource_122"]
 script = ExtResource("2_skill")
@@ -1665,7 +1670,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 512.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([])
 
@@ -1722,7 +1727,7 @@ base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
 range = 0.0
-element = 2
+element = 4
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_123"), SubResource("SubResource_124"), SubResource("SubResource_125")])
 
@@ -1768,14 +1773,14 @@ is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 0
-vltk_state_special_id = 0
+vltk_state_special_id = 192
 vltk_damage_range = 0
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
+"autoreplyskill": [PackedFloat32Array(1, 316929, 0, 20, 316948, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 138243, 0, 20, 92170, 0)],
 "damage2addmana_p": [PackedFloat32Array(1, 50, 0, 20, 200, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)],
-"autoreplyskill": [PackedFloat32Array(1, 316929, 0, 20, 316948, 0)],
-"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 50, 0)]
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 50, 0), PackedFloat32Array(1, 90, 0, 20, 270, 0)]
 }
 req_level = 180
 vltk_skill_id = 1228
@@ -1786,7 +1791,7 @@ is_active = true
 category = 0
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.00
+cooldown = 15.00
 range = 0.0
 element = 4
 damage_growth_per_level = 0.0

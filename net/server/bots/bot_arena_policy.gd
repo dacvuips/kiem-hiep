@@ -42,7 +42,7 @@ func tick_bot(b: ServerBot, mgr: BotManager, now: float) -> void:
 	if brain == null or not ("target_eid" in brain):
 		return
 	var t: ServerEntity = mgr.gs.entity_of(int(brain.target_eid)) if int(brain.target_eid) != 0 else null
-	if t == null or (t.flags & NetProto.FLAG_DEAD) != 0:
+	if t == null or (t.flags & (NetProto.FLAG_DEAD | NetProto.FLAG_HIDE)) != 0:
 		_retarget(b, mgr)
 
 func _retarget(b: ServerBot, mgr: BotManager) -> void:

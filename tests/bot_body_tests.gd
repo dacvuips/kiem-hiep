@@ -278,7 +278,7 @@ func _test_poison_stacks() -> void:
 	var dealt := {CombatFormulas.DamageType.POISON: 181}
 	var t := 0.0
 	var ticks: Array = []
-	for f in 18 * 4:   ## 4 giây, trúng mỗi 20 frame
+	for f in 18 * 15:   ## 15 giây, trúng mỗi 20 frame
 		if f % 20 == 0:
 			p.apply_hit_effects(mods, dealt, t, 0)
 		var hp := p.cur_hp
@@ -288,6 +288,12 @@ func _test_poison_stacks() -> void:
 			ticks.append(int(round(hp - p.cur_hp)))
 	check("Bot dính độc: có rút máu theo nhịp", ticks.size() >= 6, ticks)
 	check("Bot dính độc liên tục: nhịp rút tăng dần (gộp lớp độc)", ticks.size() > 0 and ticks.max() >= 181 * 3, ticks)
+	var never_drops := true
+	for i in range(1, ticks.size()):
+		if ticks[i] < ticks[i - 1]:
+			never_drops = false
+	check("Bot trúng độc liên tục 15 giây: chuỗi độc không tụt về (giữ lớp dài hơn)", never_drops and ticks.max() == 181 * 14,
+		[ticks.size(), ticks.max(), ticks.slice(0, 10)])
 	## Đánh 1 lần: rút đúng 6 nhịp × 181 rồi hết.
 	var q := ServerBot.create(9002, _profile("thieu_lam", 90, "Bot Độc 2"))
 	q.stats.poison_time_reduce_p = 0

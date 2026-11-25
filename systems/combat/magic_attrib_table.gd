@@ -124,6 +124,8 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.stun_time_reduce_p += v.x
 		"fastwalkrun_p", "fastwalkrun_yan_p":
 			s.move_speed_p += v.x
+		"walkrunshadow":
+			s.walk_run_shadow += v.x
 		"lifereplenish_v":
 			s.life_replenish += v.x
 		"lifereplenish_p":
@@ -140,6 +142,8 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.range_damage_return_p += v.x
 		"rangedamagereturn_v":
 			s.range_damage_return += v.x
+		"returnres_p":
+			s.return_res_p += v.x
 		"steallife_p", "steallifeenhance_p":
 			s.steal_life_p += v.x
 		"attackspeed_v", "attackspeed_yan_v":
@@ -148,10 +152,14 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.cast_speed += v.x
 		"fasthitrecover_v", "fasthitrecover_yan_v":
 			s.hit_recover += v.x
-		"five_elements_enhance_v":
+		"five_elements_enhance_v", "seriesdamage_p":
 			s.five_elements_enhance += v.x
 		"five_elements_resist_v":
 			s.five_elements_resist += v.x
+		"missle_missrate":
+			s.missile_miss_rate += v.x
+		"ignorenegativestate_p":
+			s.ignore_negative_state_p += v.x
 		"expenhance_p":
 			s.exp_enhance_p += v.x
 		"lucky_v":
@@ -160,7 +168,11 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			if v.x > 0:
 				s.mana_shield_p = clampi(maxi(s.mana_shield_p, v.x), 0, 85)
 		"allskill_v", "allskills_v":
-			s.all_skills_bonus += v.x
+			## nValue[2] = mã skill gốc: "Kỹ năng [Vũ Mục Di Thư] +3 cấp" chỉ cộng skill đó; 0 = Võ công vốn có (mọi skill).
+			if v.z > 0:
+				s.skill_level_bonus[v.z] = int(s.skill_level_bonus.get(v.z, 0)) + v.x
+			else:
+				s.all_skills_bonus += v.x
 		"metalskill_v":
 			s.element_skills_bonus[ElementTypes.ElementType.KIM] = s.element_skills_bonus.get(ElementTypes.ElementType.KIM, 0) + v.x
 		"woodskill_v":
@@ -173,8 +185,16 @@ static func apply(s: CombatantStats, attrib_name: String, v: Vector3i) -> bool:
 			s.element_skills_bonus[ElementTypes.ElementType.THO] = s.element_skills_bonus.get(ElementTypes.ElementType.THO, 0) + v.x
 		"ignoredefense_p":
 			s.ignore_defense_p += v.x
+		"anti_lightingres_yan_p", "anti_lightingres_p":
+			s.ignore_lighting_res_p += v.x
+		"enhance_717_auto":
+			s.enhance_luong_nghi_p += v.x
+		"staticmagicshield_p":
+			s.static_magic_shield_p = maxi(s.static_magic_shield_p, v.x)
 		"damage2addmana_p":
 			s.damage_to_mana_p += v.x
+		"damage_absorb_p", "sorbdamage_p":
+			s.damage_absorb_p = maxi(s.damage_absorb_p, v.x)
 		"indestructible_b":
 			s.indestructible = true
 		"staminamax_v":
@@ -196,7 +216,7 @@ static func _add_element(pool: Dictionary, damage_type: int, value: int) -> void
 ## ẩn thân, đổi phe, tự động thi triển skill khác (auto*skill), cộng cấp skill...
 const UNSUPPORTED := ["mana_v", "stamina_v", "staminamax_v", "staminamax_p",
 	"staminareplenish_v", "stealmana_p", "stealmanaenhance_p", "stealstamina_p",
-	"staticmagicshield_p", "dynamicmagicshield_v", "fasthitrecover_v", "fasthitrecover_yan_v",
+	"dynamicmagicshield_v", "fasthitrecover_v", "fasthitrecover_yan_v",
 	"lifepotion_v", "manapotion_v", "hide", "changecamp_b", "allskill_v",
 	"autoattackskill", "autodeathskill", "autoreplyskill", "autorescueskill", "ignoreskill_p",
 	"returnskill_p", "fatallystrikeenhance_p", "fatallystrikeres_p", "burntimereduce_p", "visionradius_p"]

@@ -22,6 +22,12 @@ var _basic_container: VBoxContainer
 var _hud_container: VBoxContainer
 
 # Basic Tab Controls
+var _player_info_section: Label
+var _player_name_label: Label
+var _player_name_value: Label
+var _id_row_label: Label
+var _id_val_label: Label
+var _copy_id_btn: Button
 var _audio_label: Label
 var _music: CheckButton
 var _music_vol_label: Label
@@ -81,14 +87,34 @@ func _init(is_hub: bool = false) -> void:
 
 	_build_tabs_header()
 
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(530, 460)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	body.add_child(scroll)
+
+	var scroll_content := MarginContainer.new()
+	scroll_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_content.add_theme_constant_override("margin_right", 8)
+	scroll.add_child(scroll_content)
+
+	var tabs_content := VBoxContainer.new()
+	tabs_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tabs_content.add_theme_constant_override("separation", 0)
+	scroll_content.add_child(tabs_content)
+
 	_basic_container = VBoxContainer.new()
+	_basic_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_basic_container.add_theme_constant_override("separation", 6)
-	body.add_child(_basic_container)
+	tabs_content.add_child(_basic_container)
 
 	_hud_container = VBoxContainer.new()
+	_hud_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hud_container.add_theme_constant_override("separation", 6)
 	_hud_container.visible = false
-	body.add_child(_hud_container)
+	tabs_content.add_child(_hud_container)
 
 	_build_basic_tab()
 	_build_hud_tab()
@@ -118,6 +144,8 @@ func _switch_tab(index: int) -> void:
 	_hud_container.visible = (index == 1)
 
 func _build_basic_tab() -> void:
+	_build_player_info_section()
+
 	# Âm thanh
 	_audio_label = SocialUi.label(tr("Âm thanh"), SocialUi.SUBTITLE)
 	_basic_container.add_child(_audio_label)
@@ -276,6 +304,78 @@ func _build_basic_tab() -> void:
 	if _is_hub:
 		_build_hub_system_section()
 
+func _build_player_info_section() -> void:
+	var profile: PlayerProfile = GameManager.local_profile
+	var char_name := profile.display_name if profile != null else ""
+	var char_id := 0
+	if profile != null and profile.id > 0:
+		char_id = profile.id
+	elif SaveManager != null and SaveManager.online_character_id > 0:
+		char_id = SaveManager.online_character_id
+	elif SaveManager != null and SaveManager.current_offline_slot >= 0:
+		char_id = SaveManager.current_offline_slot + 1
+
+	_player_info_section = SocialUi.label(tr("Thông tin người chơi"), SocialUi.SUBTITLE)
+	_basic_container.add_child(_player_info_section)
+
+	var id_box := PanelContainer.new()
+	var id_sb := StyleBoxFlat.new()
+	id_sb.bg_color = Color(0.06, 0.08, 0.1, 0.85)
+	id_sb.border_color = Color(0.85, 0.72, 0.35, 0.6)
+	id_sb.set_border_width_all(1)
+	id_sb.set_corner_radius_all(6)
+	id_sb.content_margin_left = 14
+	id_sb.content_margin_right = 14
+	id_sb.content_margin_top = 8
+	id_sb.content_margin_bottom = 8
+	id_box.add_theme_stylebox_override("panel", id_sb)
+	_basic_container.add_child(id_box)
+
+	var id_vbox := VBoxContainer.new()
+	id_vbox.add_theme_constant_override("separation", 6)
+	id_box.add_child(id_vbox)
+
+	if not char_name.is_empty():
+		var name_row := HBoxContainer.new()
+		name_row.add_theme_constant_override("separation", 8)
+		_player_name_label = SocialUi.label(tr("Tên nhân vật:"), SocialUi.MUTED, 14)
+		_player_name_value = SocialUi.label(char_name, SocialUi.TEXT, 15)
+		name_row.add_child(_player_name_label)
+		name_row.add_child(_player_name_value)
+		id_vbox.add_child(name_row)
+
+	var id_row := HBoxContainer.new()
+	id_row.add_theme_constant_override("separation", 8)
+	_id_row_label = SocialUi.label(tr("ID người chơi:"), SocialUi.MUTED, 14)
+	_id_row_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	id_row.add_child(_id_row_label)
+
+	var id_str := str(char_id) if char_id > 0 else tr("Chưa có ID")
+	_id_val_label = SocialUi.label(id_str, SocialUi.GOLD, 16)
+	_id_val_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	id_row.add_child(_id_val_label)
+
+	if char_id > 0:
+		_copy_id_btn = SocialUi.small_button(tr("Sao chép"))
+		_copy_id_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var id_val := char_id
+		_copy_id_btn.pressed.connect(func() -> void:
+			DisplayServer.clipboard_set(str(id_val))
+			if is_instance_valid(_copy_id_btn):
+				_copy_id_btn.text = "✓ " + tr("Đã sao chép")
+				var t := create_tween()
+				if t != null:
+					t.tween_interval(1.5)
+					t.tween_callback(func() -> void:
+						if is_instance_valid(_copy_id_btn):
+							_copy_id_btn.text = tr("Sao chép")
+					)
+		)
+		id_row.add_child(_copy_id_btn)
+
+	id_vbox.add_child(id_row)
+	_basic_container.add_child(SocialUi.divider())
+
 func _on_language_selected(index: int) -> void:
 	var code: String = str(_lang_option.get_item_metadata(index))
 	if code.is_empty():
@@ -291,6 +391,15 @@ func _refresh_texts() -> void:
 	if _tab_buttons.size() >= 2:
 		_tab_buttons[0].text = "⚙ " + tr("Cài Đặt Cơ Bản")
 		_tab_buttons[1].text = "🎨 " + tr("Giao Diện Gameplay")
+
+	if _player_info_section != null:
+		_player_info_section.text = tr("Thông tin người chơi")
+	if _player_name_label != null:
+		_player_name_label.text = tr("Tên nhân vật:")
+	if _id_row_label != null:
+		_id_row_label.text = tr("ID người chơi:")
+	if _copy_id_btn != null and not _copy_id_btn.text.begins_with("✓"):
+		_copy_id_btn.text = tr("Sao chép")
 
 	if _audio_label != null:
 		_audio_label.text = tr("Âm thanh")

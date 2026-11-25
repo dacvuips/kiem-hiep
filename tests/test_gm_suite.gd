@@ -39,8 +39,9 @@ func _ready() -> void:
 	var players := GmManager.get_player_list()
 	assert(not players.is_empty(), "Danh sách người chơi không được rỗng")
 	var target_p := players[0]
-	var found := GmManager.search_players(target_p["name"])
-	assert(not found.is_empty(), "Tìm kiếm người chơi theo tên phải có kết quả")
+	var found := GmManager.search_players(str(target_p["id"]))
+	assert(not found.is_empty(), "Tìm kiếm người chơi theo ID phải có kết quả")
+	assert(GmManager.search_players(str(target_p["name"]) + "_khong_phai_id").is_empty(), "Không tìm theo tên")
 	print("PASS: Danh sách và tìm kiếm người chơi hoạt động tốt")
 
 	# 4. Kiểm tra dịch chuyển và kích kẹt
@@ -226,6 +227,39 @@ func _ready() -> void:
 	var gained_lead := GmManager.add_player_lead_exp(GameManager.local_profile, 100)
 	assert(gained_lead == 1 and GameManager.local_profile.lead_level == 1, "Thêm 100 exp lãnh đạo phải lên cấp 1")
 	print("PASS: GM tăng cấp tài lãnh đạo, kinh nghiệm lãnh đạo và max cấp hoạt động xuất sắc")
+
+	# 11.9 GM đặt cấp phải cộng điểm tiềm năng + điểm kỹ năng như lên cấp thật
+	var lp := GameManager.local_profile
+	lp.level = 10
+	var pot_before := lp.potential_points
+	var sk_before := lp.skill_points
+	GmManager.set_player_level(lp, 100)
+	assert(lp.level == 100, "GM đặt cấp 100")
+	assert(lp.potential_points == pot_before + 90 * PlayerProfile.POTENTIAL_POINTS_PER_LEVEL, "GM lên 90 cấp phải cộng điểm tiềm năng")
+	assert(lp.skill_points == sk_before + 90 * PlayerProfile.SKILL_POINTS_PER_LEVEL, "GM lên 90 cấp phải cộng điểm kỹ năng")
+	GmManager.set_player_level(lp, 50)
+	assert(lp.level == 50 and lp.potential_points == pot_before + 90 * PlayerProfile.POTENTIAL_POINTS_PER_LEVEL, "Hạ cấp không trừ điểm")
+	var pot_mid := lp.potential_points
+	GmManager.add_player_level(lp, 1)
+	assert(lp.level == 51 and lp.potential_points == pot_mid + PlayerProfile.POTENTIAL_POINTS_PER_LEVEL, "GM +1 cấp cộng điểm")
+	GmManager.add_player_level(lp, -10)
+	assert(lp.level == 41, "GM -10 cấp")
+	GmManager.add_player_level(lp, 500)
+	assert(lp.level == PlayerProfile.MAX_LEVEL, "GM cộng cấp không vượt tối đa")
+	## Đổi cấp qua thẻ người chơi đang chọn (tab Người Chơi) — bản thân sửa ngay
+	lp.level = 20
+	var pot_sel := lp.potential_points
+	var self_info := {"name": lp.display_name, "is_self": true, "profile": lp}
+	GmManager.change_level_of(self_info, 5, false)
+	assert(lp.level == 25 and lp.potential_points == pot_sel + 5 * PlayerProfile.POTENTIAL_POINTS_PER_LEVEL, "Tab người chơi +5 cấp cộng điểm")
+	GmManager.change_level_of(self_info, 60, true)
+	assert(lp.level == 60 and int(self_info["level"]) == 60, "Tab người chơi đặt cấp 60")
+	## Hồ sơ người chơi khác (như ở server /gmlevel) dùng chung gm_set_level
+	var other := PlayerProfile.new()
+	other.gm_set_level(100)
+	assert(other.level == 100 and other.potential_points == PlayerProfile.new().potential_points + 99 * PlayerProfile.POTENTIAL_POINTS_PER_LEVEL, "gm_set_level cộng điểm cho hồ sơ khác")
+	assert(load("res://net/server/chat_server.gd") != null, "chat_server.gd phải nạp được")
+	print("PASS: GM đặt cấp cộng đủ điểm tiềm năng / kỹ năng")
 
 	print("--- TOÀN BỘ CÁC MỤC KIỂM THỬ HỆ THỐNG GM ĐÃ VƯỢT QUA XUẤT SẮC! ---")
 	get_tree().quit(0)

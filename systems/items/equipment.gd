@@ -325,6 +325,10 @@ static func get_appearance(equipped: Dictionary, gender: String = "male", riding
 			var group: String = {ItemDatabase.Detail.HELM: "helm", ItemDatabase.Detail.ARMOR: "armor",
 					ItemDatabase.Detail.MELEE: "weapon", ItemDatabase.Detail.RANGE: "weapon"}.get(detail, "")
 			var gold_res := data.res_for_gold(int(base.get("row", -1)), group) if group != "" else -1
+			## Bộ hoàng kim TỰ DỰNG (tools/new_sects_gold_sets.py) không có hàng GoldEquipRes gốc -> mã hình ghi sẵn
+			## trong dữ liệu (trang phục riêng của phái mới: áo 81/82/83, mũ 55/56/57).
+			if gold_res < 0 and group != "" and base.has("avatar_res") and data.is_exported(group, int(base["avatar_res"])):
+				gold_res = int(base["avatar_res"])
 			if gold_res >= 0:
 				result[group] = gold_res
 				continue

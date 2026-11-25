@@ -208,7 +208,9 @@ func _build_slots_online() -> void:
 		var slot := {}
 		if by_slot.has(i) and by_slot[i].get("data") is Dictionary:
 			var c: Dictionary = by_slot[i]
-			slot = _make_character_slot(i, PlayerProfile.from_dict(c["data"]))
+			var prof := PlayerProfile.from_dict(c["data"])
+			prof.id = int(c.get("id", 0))
+			slot = _make_character_slot(i, prof)
 			slot["character"] = c
 		else:
 			slot = {"card": _make_card(i, null)}
@@ -467,9 +469,13 @@ func _on_enter_pressed() -> void:
 		gm.local_profile = prof
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]
+		if prof != null:
+			prof.id = int(c.get("id", 0))
 		var sm := _get_save_manager()
 		if sm != null:
 			sm.set_online_character(int(c["id"]), int(c["version"]))
+	elif GameModeManager.is_offline() and prof != null and prof.id <= 0:
+		prof.id = _selected + 1
 	## "Vào game" = vào Character Hub trước; từ Hub bấm "Chơi" mới vào map chính.
 	if GameModeManager.is_offline():
 		_go(HUB_SCENE)

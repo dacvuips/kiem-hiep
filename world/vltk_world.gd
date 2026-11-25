@@ -10,7 +10,7 @@ class_name VltkWorld
 ##
 ## Chỉ có 1 VltkWorld trong cây tại 1 thời điểm (biến tĩnh `current`). Main.load_stage() gọi setup_stage().
 
-@export_dir var map_dir: String = "res://world/maps/map_321"
+@export_dir var map_dir: String = "res://world/maps/map_200"
 
 ## Khoảng từ tâm node (Player/Enemy) xuống chân — Avatar đặt ở y = 30 trong player.tscn.
 const FEET_OFFSET := 30.0
@@ -1263,6 +1263,12 @@ func _blocked_at(feet: Vector2, jumping: bool = false, ignore_obstacles: bool = 
 static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumping: bool = false, ignore_obstacles: bool = false) -> Vector2:
 	var w := current
 	if w == null or velocity == Vector2.ZERO:
+		return velocity
+	if ignore_obstacles:
+		if GmManager and GmManager.is_noclip:
+			return velocity
+		if w.arena_rect.size != Vector2.ZERO and not w.arena_rect.has_point(feet + velocity * delta):
+			return Vector2.ZERO
 		return velocity
 	if w.map == null or w.map.grid == null:
 		if w.arena_rect.size != Vector2.ZERO and not w.arena_rect.has_point(feet + velocity * delta):

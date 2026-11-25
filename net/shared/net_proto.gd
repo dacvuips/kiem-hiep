@@ -6,7 +6,8 @@ class_name NetProto
 ## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
-const VERSION := 5                ## 4: C_MOVE kèm dấu giờ, S_STATE kèm tuổi mẫu; 5: ngoại hình kèm skill + cấp hào quang (buff đồng đội)
+const VERSION := 6                ## 4: C_MOVE kèm dấu giờ, S_STATE kèm tuổi mẫu; 5: ngoại hình kèm skill + cấp hào quang (buff đồng đội);
+                                  ## 6: cờ trạng thái u16 trong S_SPAWN / S_STATE (thêm FLAG_HIDE)
 const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK gốc)
 const SNAPSHOT_EVERY := 1         ## gửi vị trí MỖI tick = 18 lần/giây (9 lần/giây cách 111ms -> bộ đệm nội suy hay rỗng, khựng)
 const SNAPSHOT_MS := 1000.0 * SNAPSHOT_EVERY / TICK_RATE   ## khoảng cách 2 lượt gửi vị trí (~55.6ms)
@@ -67,6 +68,12 @@ const REPAIR_BROKEN_XU := 2    ## thoren.lua: sửa đồ đã hỏng hẳn bằ
 const C_HP := 35         ## u8 phần trăm máu 0..100 — máy người chơi báo máu của mình (khi đổi) để đồng đội / người xung quanh thấy
 const C_UY_THAC := 33    ## str json {op: "buy" {mid, n} | "use" {uid}} — Ủy thác (Bạch Câu Hoàn, UyThac trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_DA_TAU := 30      ## str json {op, ...} — Dã Tẩu (claim_option / claim_milestone trên hồ sơ server) -> S_NOTICE + S_PROFILE
+## Sát thương lên quái GỘP: u8 n, n x (u32 monster_eid, u32 tổng sát thương, u8 flags: bit0 = làm khựng, bit1..7 = số đòn gộp).
+## Máy người chơi gom mọi đòn trong ~0.1 giây thành 1 gói (skill đánh nhiều nhịp như Tạo Hóa Thái Thanh trúng cả bầy quái
+## ra hàng chục đòn/giây — gửi từng gói C_DAMAGE thì vượt giới hạn gói/giây của server, bị bỏ đòn hoặc bị đá).
+const C_DAMAGE_BATCH := 37
+const DAMAGE_HITS_SHIFT := 1
+const DAMAGE_MAX_HITS := 127
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
@@ -113,6 +120,12 @@ const S_PUBG := 43       ## json nén {op: "room" | "none" | "chat" | "searching
 const S_ITEM_DUR := 47    ## u8 n, n x (str uid, i16 độ bền mới) — server vừa trừ độ bền đồ đang mặc (ItemDurability, ITEM_DURABILITY_CHANGE gốc)
 const S_TEAM_HP := 46    ## u8 n, n x (u32 eid, u8 hp %, u8 near) — máu đồng đội (gửi khi đổi, ~3 lần/giây); near = cùng phòng / map với mình
 const S_MSTATE := 45      ## u32 monster_eid, u8 n, n x (u32 state_id, u16 còn lại 1/10 giây) — hình bùa đang dính trên quái
+## Mã trạng thái RIÊNG trong C_MSTATE/S_MSTATE (ngoài dải StateSpecialId gốc): quái đang bị Băng sát — server làm chậm thật
+## (ServerMonster bỏ 1/2 nhịp như m_FreezeState gốc), máy người xung quanh nhuộm vàng. < 1000000 (giới hạn sid server).
+const MSTATE_FREEZE := 999001
+## Hình trạng thái CHOÁNG (StateSpecialId 50, mag_spe_眩晕 — StatusEffectController áp khi Lôi sát/stun_p trúng): máy người đánh
+## gửi qua C_MSTATE như mọi hình bùa; server coi là quái đang choáng (ServerMonster đứng im, như m_StunState gốc).
+const MSTATE_STUN := 50
 const S_LONXON := 44     ## json nén {op: "hosts" | "match" | "reject" | "board" | "tokens" | "died" | "respawn" | "level" | "none", ...}
 const S_FIELD := 41       ## str json {op: "room" | "reject", id, map_id, tier, stars, host, members, max} — phòng train chung Vượt Ải
 const S_PLAYER_GUILD := 42 ## u32 eid, str guild_name, u16 guild_emblem — tên + biểu tượng bang hội trên đầu người chơi khác
@@ -140,7 +153,11 @@ const FLAG_JUMPING := 8
 const FLAG_STALL := 16
 const FLAG_TRADE_OPEN := 32
 const FLAG_PK := 64
-const CLIENT_FLAGS := 0x4f
+const FLAG_PK_WAR := 128
+## Ẩn thân (Ngự Tuyết Ẩn / Dung Tuyết Vô Tung) — SERVER đặt khi nhận chiêu ẩn thân, gỡ khi hết giờ / ra chiêu khác / chết.
+## Từ bit 8 trở lên chỉ có trong S_SPAWN / S_STATE (u16); C_MOVE vẫn 1 byte nên game không tự đặt được.
+const FLAG_HIDE := 256
+const CLIENT_FLAGS := 0xcf
 
 static func action_index(action: String) -> int:
 	var i := ACTIONS.find(action)

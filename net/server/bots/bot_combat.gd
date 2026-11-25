@@ -46,9 +46,14 @@ static func resolve_on_bot(bot: ServerBot, attacker: CombatantStats, min_damage:
 		bot.add_state(mods.state_source_id, mods.state_attribs, mods.state_seconds, bot.now_cache, true)   ## bùa thuần
 		return 0
 	var ignore_def: int = maxi(attacker.ignore_defense_p if attacker else 0, mods.ignore_defense_percent)
-	if mods.use_attack_rating and not CombatFormulas.roll_hit(attacker.attack_rating, bot.stats.defense, ignore_def):
-		return MISSED
+	if mods.use_attack_rating:
+		var ar := CombatFormulas.hit_attack_rating(attacker, mods)
+		var hit := CombatFormulas.roll_monster_hit(ar, bot.stats.defense, ignore_def) if from_monster \
+				else CombatFormulas.roll_hit(ar, bot.stats.defense, ignore_def)
+		if not hit:
+			return MISSED
 	mods.is_pk = is_pk
+	mods.five_elements_rate_percent = CombatFormulas.MONSTER_FIVE_ELEMENTS_RATE_PERCENT if from_monster else 100
 	var parts: Dictionary = mods.extra_damages.duplicate()
 	var main: Vector2i = parts.get(damage_type, Vector2i.ZERO)
 	parts[damage_type] = main + Vector2i(min_damage, max_damage)
@@ -83,7 +88,7 @@ static func damage_vs_monster(bot: ServerBot, m: ServerMonster, hit: Dictionary)
 	def.defense = maxi(0, MonsterData.stat_at_level(m.data, "defense", m.level))
 	def.element = m.series as ElementTypes.ElementType
 	var mods: CombatFormulas.HitModifiers = hit.mods
-	if mods.use_attack_rating and not CombatFormulas.roll_hit(bot.stats.attack_rating, def.defense, mods.ignore_defense_percent):
+	if mods.use_attack_rating and not CombatFormulas.roll_hit(CombatFormulas.hit_attack_rating(bot.stats, mods), def.defense, mods.ignore_defense_percent):
 		return MISSED
 	var parts: Dictionary = mods.extra_damages.duplicate()
 	parts[int(hit.type)] = parts.get(int(hit.type), Vector2i.ZERO) + Vector2i(int(hit.min), int(hit.max))

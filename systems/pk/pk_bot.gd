@@ -221,7 +221,7 @@ func begin_skill_action(physical: bool, aim_position: Vector2, duration: float =
 	_casting = true
 	var dur := duration if duration > 0.0 else SectSkillController.action_seconds(physical, combat_stats)
 	avatar.play("attack" if physical else "cast", dur)
-	return dur
+	return dur / avatar.get_time_scale()   ## Băng sát: động tác chậm 1/2
 
 func on_hit_target(target: Node, skill_info: Dictionary = {}) -> void:
 	if skill_controller != null and is_instance_valid(target) and target is Node2D:
@@ -327,9 +327,12 @@ func _physics_process(delta: float) -> void:
 	if not active or status_controller.is_stunned:
 		_move(delta)
 		return
+	if PlayerStealth.local_hidden() and target != null and target.is_in_group("player"):
+		target = null
 	if target == null or not is_instance_valid(target):
-		target = get_tree().get_first_node_in_group("player") as Node2D
-	if target == null or (target.has_method("is_dead") and target.is_dead()):
+		if not PlayerStealth.local_hidden():
+			target = get_tree().get_first_node_in_group("player") as Node2D
+	if target == null or (target.has_method("is_dead") and target.is_dead()) or (target.is_in_group("player") and PlayerStealth.local_hidden()):
 		_move(delta)
 		return
 	_tick_potion(delta)

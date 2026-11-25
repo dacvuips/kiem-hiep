@@ -33,6 +33,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from han_viet import to_han_viet  # noqa: E402
 import vltk_source  # noqa: E402
+import new_sects_gold_sets  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "data" / "items"
@@ -468,9 +469,51 @@ def import_gold(enum: dict[int, str], vi_names: dict) -> list[dict]:
             ## Số hàng dữ liệu gốc trong goldequip.txt (Item.GetRow) — bảng hình GoldEquipRes tra theo row + 1.
             "row": row,
         })
-    # Bổ sung bộ Hoàng Kim Dương Gia Cung (Group 674) nếu chưa có
+    # Bổ sung các bộ Hoàng Kim cho các phái mới (Dương Môn, Vũ Hồn, Tiêu Dao)
+    start_r = len(gold_rows) + 1
     if not any(g.get("group") == 674 for g in out):
-        out.extend(build_duong_gia_bow_set(len(gold_rows) + 1))
+        out.extend(build_duong_gia_bow_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 675 for g in out):
+        out.extend(new_sects_gold_sets.build_duong_gia_spear_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 676 for g in out):
+        out.extend(new_sects_gold_sets.build_vu_hon_blade_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 677 for g in out):
+        out.extend(new_sects_gold_sets.build_vu_hon_shield_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 678 for g in out):
+        out.extend(new_sects_gold_sets.build_tieu_dao_sword_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 679 for g in out):
+        out.extend(new_sects_gold_sets.build_tieu_dao_qin_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 680 for g in out):
+        out.extend(new_sects_gold_sets.build_vu_hon_van_loc_the_thu_set(start_r))
+        start_r += 10
+    if not any(g.get("group") == 681 for g in out):
+        out.extend(new_sects_gold_sets.build_vu_hon_van_loc_pha_tran_set(start_r))
+        start_r += 10
+    ## Vũ Hồn thuẫn cực phẩm "Trấn Nhạc" — 2 bộ 6 món; luôn thêm SAU CÙNG để chỉ số mảng các bộ cũ không đổi.
+    if not any(g.get("group") == 682 for g in out):
+        set1 = new_sects_gold_sets.build_vu_hon_tran_nhac_set1(start_r)
+        out.extend(set1)
+        start_r += len(set1)
+    if not any(g.get("group") == 683 for g in out):
+        set2 = new_sects_gold_sets.build_vu_hon_tran_nhac_set2(start_r)
+        out.extend(set2)
+        start_r += len(set2)
+    ## Vũ Hồn đao cực phẩm "Khai Sơn" — 2 bộ 6 món, nối sau Trấn Nhạc.
+    ## Tiêu Dao cầm cực phẩm "Huyền Âm" (686: 6 món, 687: 5 món) nối sau Khai Sơn.
+    for group, build in ((684, new_sects_gold_sets.build_vu_hon_khai_son_set1),
+                         (685, new_sects_gold_sets.build_vu_hon_khai_son_set2),
+                         (686, new_sects_gold_sets.build_tieu_dao_huyen_am_set1),
+                         (687, new_sects_gold_sets.build_tieu_dao_huyen_am_set2)):
+        if not any(g.get("group") == group for g in out):
+            items = build(start_r)
+            out.extend(items)
+            start_r += len(items)
     return out
 
 

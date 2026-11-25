@@ -20,6 +20,12 @@ enum State { IDLE, WALK, ATTACK, HURT, DEAD }
 const FPS := 18.0
 ## Đạn bắn ở 60% động tác (ATTACKACTION_EFFECT_PERCENT gốc) — giống VltkSkillRunner.
 const ATTACK_FIRE_PERCENT := 0.6
+## Cooldown đòn đánh xa mở màn: 4 giây (72 frame ở 18 FPS)
+const RANGED_COOLDOWN_SECONDS := 4.0
+const RANGED_COOLDOWN_FRAMES := RANGED_COOLDOWN_SECONDS * FPS
+## Cooldown đòn đánh thường / cận chiến: 2 giây (36 frame ở 18 FPS)
+const MELEE_COOLDOWN_SECONDS := 2.0
+const MELEE_COOLDOWN_FRAMES := MELEE_COOLDOWN_SECONDS * FPS
 const DEFAULT_ATTACK_RADIUS := 75.0
 const CORPSE_STAY := 1.0
 const CORPSE_FADE := 0.6
@@ -347,6 +353,8 @@ func is_dead() -> bool:
 
 ## Quái đang giao chiến với `node` (nhắm vào nó và nó trong tầm nhìn — như _ai_think khoá địch). Auto dùng để tự vệ.
 func is_engaging(node: Node2D) -> bool:
+	if node != null and node.is_in_group("player") and PlayerStealth.local_hidden():
+		return false
 	var base_vis := float(data.get("vision", 400))
 	var max_vis: float = base_vis
 	return node != null and target == node and not is_dead() and max_vis > 0.0 \
@@ -384,9 +392,14 @@ func _process(delta: float) -> void:
 	if net_eid != 0:
 		_process_net(delta)
 
+## Băng sát: nhịp hành động (động tác, ra đòn, nghĩ) chậm 1/2 — StatusEffectController.action_time_scale (bước đi đã chậm
+## riêng qua move_speed_multiplier trong _tick_walk nên _tick_walk vẫn nhận `frames` đủ).
+func _action_scale() -> float:
+	return status_controller.action_time_scale() if status_controller != null else 1.0
+
 func _physics_process(delta: float) -> void:
 	var frames := delta * FPS
-	_game_time += frames
+	_game_time += frames * _action_scale()
 	if _replan_cooldown > 0.0:
 		_replan_cooldown -= delta
 	if _damage_batch_timer > 0.0:
@@ -431,11 +444,13 @@ func _physics_process(delta: float) -> void:
 				var pillar := get_tree().get_first_node_in_group("honor_pillar") as Node2D
 				target = pillar
 	elif is_survivor_monster or is_survivor_boss:
-		if target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
+		if PlayerStealth.local_hidden() and target != null and target.is_in_group("player"):
+			target = null
+		elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()):
 			var p_node := get_tree().get_first_node_in_group("player") as Node2D
-			if p_node and is_instance_valid(p_node) and not (p_node.has_method("is_dead") and p_node.is_dead()):
+			if p_node and is_instance_valid(p_node) and not (p_node.has_method("is_dead") and p_node.is_dead()) and not PlayerStealth.local_hidden():
 				target = p_node
-	elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()) or (target.is_in_group("player") and target.get("has_moved") == false):
+	elif target == null or not is_instance_valid(target) or (target.has_method("is_dead") and target.is_dead()) or (target.is_in_group("player") and (target.get("has_moved") == false or PlayerStealth.local_hidden())):
 		target = null
 		if battle_side != "":
 			_foe_search_timer -= delta
@@ -444,7 +459,7 @@ func _physics_process(delta: float) -> void:
 				var foe := "jin" if battle_side == "song" else "song"
 				target = _find_nearest_foe(foe)
 		else:
-			if GmManager and GmManager.is_invisible:
+			if PlayerStealth.local_hidden():
 				target = null
 			else:
 				var support_boss := _find_nearest_support_boss()
@@ -490,7 +505,7 @@ func _physics_process(delta: float) -> void:
 				if support_boss != null:
 					target = support_boss
 	var frozen := GameManager.is_game_over or status_controller.is_stunned
-	_state_frames += frames
+	_state_frames += frames * _action_scale()
 	velocity = Vector2.ZERO
 	if not frozen:
 		match _state:
@@ -518,6 +533,21 @@ func _physics_process(delta: float) -> void:
 	var looping := _state == State.IDLE or _state == State.WALK
 	_sprite.set_pose(_action, _dir64, _progress(looping))
 
+## Tính tọa độ áp sát quanh mục tiêu (Vây bọc 360 độ):
+## Thay vì tất cả quái vật dồn vào cùng 1 điểm tâm người chơi, mỗi quái tiếp cận theo vành đai xung quanh
+## (bán kính 55 logic px), giúp các quái tự động tản ra bao vây các hướng (trước, sau, trái, phải).
+func _target_approach_pos(target_node: Node2D) -> Vector2:
+	if target_node == null or not is_instance_valid(target_node):
+		return Vector2.ZERO
+	var t_logic := VltkMath.logic_of(target_node)
+	var here := VltkMath.to_logic(global_position)
+	var diff := here - t_logic
+	var desired_dist := 55.0
+	if diff.length_squared() < 4.0:
+		var angle := (int(get_instance_id()) % 8) * (PI * 0.25)
+		return t_logic + Vector2(cos(angle), sin(angle)) * desired_dist
+	return t_logic + diff.normalized() * desired_dist
+
 func _tick_walk(frames: float) -> void:
 	var here := VltkMath.to_logic(global_position)
 	var to_dest := _walk_dest - here
@@ -525,15 +555,17 @@ func _tick_walk(frames: float) -> void:
 	var speed_val := float(data.get("run_speed", data.get("walk_speed", 7))) if (target != null and is_instance_valid(target)) else float(data.get("walk_speed", 6))
 	var step := maxf(speed_val, 6.0) * frames * speed_mult
 	var attack_rad := _skill_radius(_active_slot)
-	var stop_rad := 65.0 if _has_melee_skill() else (attack_rad * 0.85)
+	var is_closing_in := (_active_slot == MonsterSkillAi.BASIC_SLOT) or (attack_rad <= MonsterSkillAi.MELEE_RADIUS)
+	var stop_rad := 60.0 if is_closing_in else (attack_rad * 0.85)
 
-	# Khi đang dí mục tiêu: nếu mục tiêu di chuyển cách đích đến hiện tại > 60 logic px thì liên tục cập nhật đường đi bám theo
+	# Khi đang dí mục tiêu: liên tục cập nhật điểm áp sát vây bọc quanh mục tiêu
 	if target != null and is_instance_valid(target) and not GameManager.is_game_over:
 		var target_logic := VltkMath.logic_of(target)
-		var target_world := VltkMath.to_world(target_logic)
+		var approach_pos := _target_approach_pos(target)
+		var approach_world := VltkMath.to_world(approach_pos)
 		var dist_to_target := here.distance_to(target_logic)
-		# Nếu đã vào cự ly tấn công và mục tiêu ở gần: dừng lại đứng tấn công hoặc chờ hồi chiêu, không giật cục lao tiếp
-		if dist_to_target <= stop_rad or (dist_to_target <= stop_rad + 20.0 and _stuck_time >= 0.15):
+		# Nếu đã vào cự ly tấn công cận chiến: dừng lại đứng tấn công hoặc chờ hồi chiêu
+		if dist_to_target <= stop_rad:
 			_enter(State.IDLE, "stand")
 			_stuck_time = 0.0
 			_avoid_timer = 0.0
@@ -541,8 +573,8 @@ func _tick_walk(frames: float) -> void:
 			if d >= 0:
 				_dir64 = d
 			return
-		if _nav_goal.distance_to(target_world) > 60.0:
-			_walk_to(target_logic)
+		if _nav_goal.distance_to(approach_world) > 35.0:
+			_walk_to(approach_pos)
 			to_dest = _walk_dest - here
 
 	# Khi đã tới gần nút đường dẫn A* hiện tại
@@ -560,7 +592,7 @@ func _tick_walk(frames: float) -> void:
 				if target != null and is_instance_valid(target) and not GameManager.is_game_over:
 					var target_logic := VltkMath.logic_of(target)
 					if here.distance_to(target_logic) > stop_rad:
-						_walk_to(target_logic)
+						_walk_to(_target_approach_pos(target))
 						to_dest = _walk_dest - here
 					else:
 						_enter(State.IDLE, "stand")
@@ -576,7 +608,7 @@ func _tick_walk(frames: float) -> void:
 			if target != null and is_instance_valid(target) and not GameManager.is_game_over:
 				var target_logic := VltkMath.logic_of(target)
 				if here.distance_to(target_logic) > stop_rad:
-					_walk_to(target_logic)
+					_walk_to(_target_approach_pos(target))
 					to_dest = _walk_dest - here
 				else:
 					_enter(State.IDLE, "stand")
@@ -626,11 +658,36 @@ func _tick_walk(frames: float) -> void:
 	var dir_norm := to_dest.normalized()
 	var move_dir := dir_norm
 
-	# Cơ chế lách vật cản góc hẹp: chỉ dùng các góc trượt về phía trước (30..45 độ), TUYỆT ĐỐI không quay lùi
+	# Cơ chế lách vật cản góc hẹp / lách qua quái khác đứng chắn:
 	if _avoid_timer > 0.0:
 		_avoid_timer -= delta
 		move_dir = _avoid_dir
-	elif _stuck_time >= 0.25 and (target == null or here.distance_to(VltkMath.logic_of(target)) > stop_rad + 20.0):
+	elif _stuck_time >= 0.15 and target != null:
+		# Bị quái khác đứng chắn phía trước: tự động lách sang 2 bên (xoay 45-60 độ quanh mục tiêu)
+		# để trượt vòng qua quái đồng minh và tiếp tục áp sát vào vị trí trống
+		var flank_sign := 1.0 if (int(get_instance_id()) % 2 == 0) else -1.0
+		var flank_candidates: Array[Vector2] = [
+			dir_norm.rotated(flank_sign * PI * 0.25),
+			dir_norm.rotated(-flank_sign * PI * 0.25),
+			dir_norm.rotated(flank_sign * PI * 0.4),
+			dir_norm.rotated(-flank_sign * PI * 0.4),
+		]
+		var w := VltkWorld.current
+		var best_cand := Vector2.ZERO
+		for cand in flank_candidates:
+			if w != null:
+				var test_pos := global_position + VltkMath.to_world(cand * 28.0)
+				if not w._blocked_at(test_pos):
+					best_cand = cand
+					break
+			else:
+				best_cand = cand
+				break
+		if best_cand != Vector2.ZERO:
+			_avoid_dir = best_cand
+			_avoid_timer = 0.3
+			move_dir = best_cand
+	elif _stuck_time >= 0.25:
 		var best_cand := Vector2.ZERO
 		var candidates: Array[Vector2] = [
 			dir_norm.rotated(PI * 0.17),
@@ -653,8 +710,8 @@ func _tick_walk(frames: float) -> void:
 			_avoid_timer = 0.2
 			move_dir = best_cand
 
-	# Khi có mục tiêu: đảm bảo hướng di chuyển move_dir luôn hướng tới mục tiêu, không đi lùi
-	if target != null and is_instance_valid(target):
+	# Khi có mục tiêu và không trong nhịp né lách: đảm bảo move_dir luôn hướng tới mục tiêu
+	if _avoid_timer <= 0.0 and target != null and is_instance_valid(target):
 		var to_tgt := (VltkMath.logic_of(target) - here).normalized()
 		if move_dir.dot(to_tgt) < 0.2:
 			move_dir = to_tgt
@@ -913,9 +970,10 @@ func _ai_think() -> void:
 	## Khoá kẻ địch trong tầm nhìn.
 	var enemy: Node2D = null
 	if target != null and is_instance_valid(target) and not GameManager.is_game_over and not (target.has_method("is_dead") and target.is_dead()):
-		if target.is_in_group("player") and target.get("has_moved") == false:
+		if target.is_in_group("player") and (target.get("has_moved") == false or PlayerStealth.local_hidden()):
 			target = null
 			enemy = null
+			_provoked = false
 		elif is_moba_general:
 			var t_from_camp := VltkMath.logic_of(target).distance_to(_origin_logic)
 			if t_from_camp <= TongKimLolRules.GENERAL_CAMP_RADIUS + 80.0:
@@ -940,13 +998,18 @@ func _ai_think() -> void:
 				target = null
 				_provoked = false
 	if enemy == null:
+		_opened_target = null
 		if is_lane_creep and not lane_waypoints.is_empty():
 			_march_lane(here)
 			return
 		if int(p[0]) > 0 and randi() % 100 < int(p[0]):
 			_patrol()
 		return
+	if _opened_target != null and _opened_target != enemy:
+		_opened_target = null
 	var dist := here.distance_to(VltkMath.logic_of(enemy))
+	var vis_range: float = float(data.get("vision", 400))
+
 	if dist > _max_skill_radius():
 		if is_moba_general:
 			var enemy_from_camp := VltkMath.logic_of(enemy).distance_to(_origin_logic)
@@ -957,7 +1020,7 @@ func _ai_think() -> void:
 			_walk_to(VltkMath.logic_of(enemy))
 			return
 		# Đang ngoài tầm skill: quái PHẢI DÍ theo kẻ địch
-		_walk_to(VltkMath.logic_of(enemy))
+		_walk_to(_target_approach_pos(enemy))
 		return
 	## Trong tầm: chọn chiêu gần / xa theo MonsterSkillAi (mở màn đánh xa, rồi áp sát đánh thường; mục tiêu chạy xa
 	## mà còn trong tầm chiêu xa thì đánh xa). Trong mỗi nhóm vẫn bốc theo xác suất AIParam2-5.
@@ -965,9 +1028,11 @@ func _ai_think() -> void:
 	var ready: Array = []
 	for i in MonsterSkillAi.SLOT_COUNT:
 		ready.append(_game_time >= _skill_ready[i])
-	var slot := MonsterSkillAi.pick(dist, radii, ready, p.slice(1, 5), _opened_target == enemy)
+	var slot := MonsterSkillAi.pick(dist, radii, ready, p.slice(1, 5), _opened_target == enemy, vis_range)
 	if slot == MonsterSkillAi.APPROACH:
-		_walk_to(VltkMath.logic_of(enemy))
+		if _has_melee_skill():
+			_active_slot = MonsterSkillAi.BASIC_SLOT
+		_walk_to(_target_approach_pos(enemy))
 		return
 	if slot == MonsterSkillAi.WAIT:
 		## Chiêu gần đang hồi: đứng quay mặt về mục tiêu chờ.
@@ -1039,11 +1104,17 @@ func _begin_attack(slot: int) -> void:
 	_opened_target = target
 	## KSkillList::SetNextCastTime gốc khoá hồi chiêu THEO MÃ SKILL, không theo ô: quái đặt cùng 1 skill vào nhiều ô
 	## (VD Boss Thứu Thần 4 ô đều Đoạn Hồn Thích, hồi 36 frame) không được ra liền 4 lần bỏ qua TimePerCast.
-	var ready_at := _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len)))
+	## Đòn đánh xa cooldown 8 giây; đòn đánh thường cận chiến cooldown 2 giây.
+	var is_ranged := _skill_radius(slot) > MonsterSkillAi.MELEE_RADIUS
+	var atk_cd := RANGED_COOLDOWN_FRAMES if is_ranged else MELEE_COOLDOWN_FRAMES
+	var ready_at := _game_time + float(maxi(int(s.get("time_per_cast", 0)), int(_state_len))) + atk_cd
 	var skill_id := int(MonsterSkillAi.slot_skill(data["skills"], slot)[0])
+	var global_cooldown_at := _game_time + float(_state_len) + MELEE_COOLDOWN_FRAMES
 	for i in MonsterSkillAi.SLOT_COUNT:
 		if int(MonsterSkillAi.slot_skill(data["skills"], i)[0]) == skill_id:
 			_skill_ready[i] = ready_at
+		else:
+			_skill_ready[i] = maxf(_skill_ready[i], global_cooldown_at)
 	if not s.is_empty():
 		VltkSkillRunner.play_precast(self, s)
 
@@ -1054,10 +1125,12 @@ func _tick_attack() -> void:
 	if _state_frames >= _state_len:
 		_enter(State.IDLE, "stand")
 		# Quái có thiên hướng tiến lại gần Player trong lúc đánh nếu còn ở xa
-		if target != null and is_instance_valid(target) and _has_melee_skill():
+		if target != null and is_instance_valid(target):
+			if _has_melee_skill():
+				_active_slot = MonsterSkillAi.BASIC_SLOT
 			var t_dist := VltkMath.to_logic(global_position).distance_to(VltkMath.logic_of(target))
-			if t_dist > 65.0:
-				_walk_to(VltkMath.logic_of(target))
+			if t_dist > 60.0:
+				_walk_to(_target_approach_pos(target))
 
 func _fire_skill() -> void:
 	if target == null or not is_instance_valid(target) or GameManager.is_game_over:
@@ -1338,11 +1411,17 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 			_provoke(hitter)
 
 	var atk_stats := attacker_stats if attacker_stats != null else CombatantStats.new()
+	var was_frozen := status_controller != null and status_controller.has_effect("freeze")
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), atk_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
+	if net_eid != 0 and not was_frozen and status_controller != null and status_controller.has_effect("freeze"):
+		_net_send_freeze()
 	if final_damage == HitResolver.MISSED:
-		_spawn_number(0.0, true)
+		var is_monster_atk := (mods != null and mods.attacker_node != null and (CombatFormulas.is_monster(mods.attacker_node) or mods.attacker_node.is_in_group("enemies")))
+		if not is_monster_atk:
+			_spawn_number(0.0, true)
 		return
+	SkillPractice.on_monster_hit_by(mods, attacker_stats, get_tree())   ## luyện skill 90/120/150 (đòn trúng)
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
 	# Tăng sát thương khi lính đánh lính trong MOBA để dọn dẹp đợt lính gọn gàng (10-15s), ngăn tích tụ gây lag
@@ -1358,6 +1437,8 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 ## Quái hiền bị người chơi đánh: nhớ lại và quay sang đánh người đó.
 func _provoke(hitter: Node2D) -> void:
 	if hitter == null or battle_side != "" or not MonsterData.is_passive(data, level):
+		return
+	if hitter.is_in_group("player") and PlayerStealth.local_hidden():
 		return
 	_provoked = true
 	if target == null or not is_instance_valid(target):
@@ -1517,6 +1598,13 @@ func _on_state_applied(source_id: String, seconds: float, meta: Dictionary) -> v
 	if sid > 0 and not VltkSkillData.state(sid).is_empty():
 		NetClient.send_monster_state(net_eid, sid, seconds)
 
+## ONLINE: đòn của MÌNH vừa làm quái bị Băng sát -> báo server (mã trạng thái riêng NetProto.MSTATE_FREEZE qua C_MSTATE):
+## server làm quái chậm thật (ServerMonster) + gửi người xung quanh để họ cũng thấy quái nhuộm vàng.
+func _net_send_freeze() -> void:
+	var eff := status_controller.get_effect("freeze")
+	if eff != null and eff.time_remaining > 0.0:
+		NetClient.send_monster_state(net_eid, NetProto.MSTATE_FREEZE, eff.time_remaining)
+
 ## ONLINE: hình bùa người khác áp lên quái (S_MSTATE). Chỉ để VẼ — không thuộc tính, không ảnh hưởng chỉ số.
 func net_apply_states(states: Array) -> void:
 	if status_controller == null or _state == State.DEAD:
@@ -1524,6 +1612,11 @@ func net_apply_states(states: Array) -> void:
 	for e in states:
 		var sid := int(e[0])
 		var sec := float(e[1])
+		if sid == NetProto.MSTATE_FREEZE:
+			## Băng sát người khác gây: nhuộm vàng (vị trí quái do server — đã chậm sẵn ở server).
+			if sec > 0.0 and not status_controller.has_effect("freeze"):
+				status_controller.apply_effect(StatusEffect.new("freeze", sec, 0.0, 1.0, StatusEffectController.VLTK_FREEZE_SLOW))
+			continue
 		if sid > 0 and sec > 0.0:
 			status_controller.apply_state(NET_STATE_PREFIX + str(sid), {}, sec, {"state_id": sid, "is_debuff": true})
 
@@ -1581,7 +1674,7 @@ func _process_net(delta: float) -> void:
 	if _state == State.DEAD:
 		return
 	var frames := delta * FPS
-	_state_frames += frames
+	_state_frames += frames * _action_scale()
 	if _state == State.ATTACK:
 		_tick_attack()   ## diễn hết đòn đang ra (bắn ở 60%) rồi mới theo động tác server
 		_sprite.set_pose(_action, _dir64, _progress(false))

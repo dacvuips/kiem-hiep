@@ -15,19 +15,22 @@ func _ready() -> void:
 	var all_ready := [true, true, true, true, true]
 
 	## Quái có cả chiêu xa (ô 1, tầm 450) lẫn đánh gần (ô 2, 3).
+	## vision mặc định 400.0 -> ngưỡng xa = vision - 200.0 = 200.0.
 	var both := [-1.0, 450.0, 75.0, 75.0, -1.0]
 	var w := [40, 60, 40, 60]
-	_check(MonsterSkillAi.pick(300.0, both, all_ready, w, false) == 1, "Gặp lần đầu ở xa -> mở màn chiêu xa")
-	_check(MonsterSkillAi.pick(150.0, both, all_ready, w, true) == A, "Đã mở màn, khoảng cách vừa -> áp sát")
-	_check(MonsterSkillAi.pick(300.0, both, all_ready, w, true) == 1, "Mục tiêu chạy xa (>225) trong tầm -> đánh xa")
-	_check(MonsterSkillAi.pick(500.0, both, all_ready, w, true) == A, "Ngoài tầm chiêu xa -> đuổi theo")
+	_check(MonsterSkillAi.pick(320.0, both, all_ready, w, false) == 1, "Gặp lần đầu ở xa (320px >= 200px) -> mở màn chiêu xa")
+	_check(MonsterSkillAi.pick(150.0, both, all_ready, w, true) == A, "Đã mở màn, cự ly 150px (< 200px) -> tiếp tục dí cận chiến")
+	_check(MonsterSkillAi.pick(150.0, both, all_ready, w, true, 400.0, false) == 1, "Dí bị vật cản chặn (150px) -> dùng chiêu xa, không đứng kẹt")
+	_check(MonsterSkillAi.pick(150.0, both, [true, false, true, true, true], w, true, 400.0, false) == A, "Bị chặn nhưng chiêu xa đang hồi -> thử áp sát tiếp")
+	_check(MonsterSkillAi.pick(220.0, both, all_ready, w, true) == 1, "Đã qua 4s (ready), cự ly 220px (>= 200px) -> bắn chiêu xa")
+	_check(MonsterSkillAi.pick(220.0, both, [true, false, true, true, true], w, true) == A, "Đang cooldown 4s chiêu xa (220px) -> vẫn dí cận chiến")
+	_check(MonsterSkillAi.pick(500.0, both, all_ready, w, true) == A, "Ngoài tầm chiêu xa (500px > 450px) -> bước tới")
 	var close := MonsterSkillAi.pick(60.0, both, all_ready, w, false)
 	_check(close == 2 or close == 3, "Sát bên -> chỉ đánh gần (ô %d)" % close)
 	for n in 50:
 		if MonsterSkillAi.pick(60.0, both, all_ready, w, true) == 1:
 			_check(false, "Sát bên mà vẫn ra chiêu xa")
 			break
-	_check(MonsterSkillAi.pick(300.0, both, [true, false, true, true, true], w, false) == A, "Chiêu xa đang hồi -> áp sát")
 	_check(MonsterSkillAi.pick(60.0, both, [true, true, false, false, true], w, true) == W, "Đánh gần đang hồi -> đứng chờ")
 
 	## Quái chỉ có chiêu xa (khỉ ném đá, tầm 180): thêm ô đánh thường ảo.

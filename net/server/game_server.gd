@@ -18,7 +18,7 @@ class_name GameServer
 ## Di chuyển (B1): game tự chạy nhân vật rồi gửi vị trí; server KIỂM TRA (tốc độ tối đa theo "ngân sách quãng đường",
 ## ô vật cản, ra ngoài map) và kéo về vị trí hợp lệ nếu sai. Bước sau server sẽ tự tính cả chiêu thức / quái.
 
-const DEFAULT_MAP_DIR := "res://world/maps/map_321"   ## map chính đã bỏ: server chạy map Trường Bạch Sơn Nam 1 (Vượt Ải)
+const DEFAULT_MAP_DIR := "res://world/maps/map_200"   ## map chính: Cổ Dương Động (198/208)
 const HELLO_TIMEOUT := 10.0
 ## Quái mô phỏng mỗi chừng này tick (= NetProto.SNAPSHOT_EVERY: vị trí chỉ gửi đi theo nhịp này nên bước nhỏ hơn không ai thấy).
 const MONSTER_TICK_EVERY := NetProto.SNAPSHOT_EVERY
@@ -27,8 +27,10 @@ const MAX_SPEED := 440.0
 ## Ngân sách quãng đường tích tối đa (giây) — bù gói đến dồn do mạng giật, không cho tích lâu để dịch chuyển xa.
 const MOVE_BUDGET_CAP := 1.2
 const MAX_PACKETS_PER_SEC := 80
-## Sát thương báo lên: tối đa mỗi giây, xa hơn khoảng này không tính.
-const MAX_DAMAGE_PER_SEC := 30
+## Sát thương báo lên: tối đa bao nhiêu ĐÒN mỗi giây (đếm theo số đòn gộp trong C_DAMAGE_BATCH, không theo gói), xa hơn khoảng
+## này không tính. Skill nhiều nhịp gốc đánh bầy quái ra rất nhiều đòn: Tạo Hóa Thái Thanh 4.5 nhịp/giây × mỗi quái trong vùng
+## 11×11 ô, Tam Giới Quy Thiền 3 đạn × 18 nhịp/giây — 30 như trước bỏ mất phần lớn sát thương.
+const MAX_DAMAGE_PER_SEC := 400
 const MAX_HIT_DISTANCE := 1200.0
 ## Lưu nhân vật lên server tài khoản tối đa mỗi chừng này giây (khi có thay đổi) + lúc thoát.
 const SAVE_INTERVAL := 60.0
@@ -80,6 +82,7 @@ class Conn:
 	## tốc độ đánh / xuất chiêu của nhân vật (attackspeed_v / castspeed_v, cập nhật cùng max_hit), số gói ra chiêu bị bác.
 	var next_action_at := 0.0
 	var skill_ready_at: Dictionary = {}
+	var hide_reply_ready_at := 0.0   ## Huyền Băng Vô Tắc: lần tự ẩn thân (Dung Tuyết Vô Tung) sớm nhất tiếp theo
 	var attack_speed := 0
 	var cast_speed := 0
 	var cast_rejects := 0
@@ -338,6 +341,7 @@ func _process(delta: float) -> void:
 		_tick += 1
 		var ts := Time.get_ticks_usec()
 		_simulate(step)
+		_tick_hidden()
 		_m_sim_us += Time.get_ticks_usec() - ts
 		social.tick(step, _now)
 		relation.tick(_now)
@@ -456,8 +460,8 @@ func nearest_player(feet: Vector2, vision_logic: float, exclude_side := "", base
 	for dx in range(-1, 2):
 		for dy in range(-1, 2):
 			for e: ServerEntity in aoi.player_bucket(center + Vector2i(dx, dy)).values():
-				if (e.flags & NetProto.FLAG_DEAD) != 0 or not e.has_moved:
-					continue
+				if (e.flags & (NetProto.FLAG_DEAD | NetProto.FLAG_HIDE)) != 0 or not e.has_moved:
+					continue   ## người đang ẩn thân: quái không thấy (KNpcAI gốc bỏ m_HideState.nTime > 0)
 				if exclude_side != "" and battle:
 					var side := battle.side_of(_players_by_eid.get(e.eid))
 					if side == "" or side == exclude_side:
@@ -613,6 +617,9 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_DAMAGE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 9:
 				_on_damage(c, b)
+		NetProto.C_DAMAGE_BATCH:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
+				_on_damage_batch(c, b)
 		NetProto.C_PROFILE:
 			if c.state == ConnState.IN_WORLD:
 				_on_profile(c, b)
@@ -944,12 +951,11 @@ static func look_from_profile(data: Dictionary) -> Dictionary:
 		if sect:
 			for skill in sect.skills:
 				if skill.id == profile.active_aura_id:
-					state_id = skill.vltk_state_special_id
 					look["aura_skill"] = skill.vltk_skill_id
 					look["aura_level"] = profile.get_skill_level(skill.id)
 					break
-	if profile.gm_aura_state > 0:
-		state_id = profile.gm_aura_state
+	## aura_state = lớp hào quang KHÁC (GM gán); hào quang skill máy người xem tự suy từ aura_skill -> 2 lớp chồng nhau.
+	state_id = maxi(profile.gm_aura_state, 0)
 	look["aura_state"] = state_id
 	return look
 
@@ -1075,6 +1081,7 @@ func _on_cast(c: Conn, b: StreamPeerBuffer) -> void:
 	var cast_flags := b.get_u8() & NetProto.CAST_SUPPORT
 	if not _cast_allowed(c, skill_id, level, cast_flags != 0):
 		return
+	_hide_on_cast(c, skill_id, level)
 	var target_eid := b.get_u32()
 	var aim := NetProto.get_state_pos(b)
 	if aim.distance_to(c.entity.pos) > NetProto.AOI_CELL * 1.5:
@@ -1133,6 +1140,67 @@ func _on_repair(c: Conn, uid: String, mode: int) -> void:
 		_save(c)
 	notice(c, str(r["message"]))
 
+## ẨN THÂN (HideSkill): server quyết — cờ FLAG_HIDE trên thực thể. Có cờ thì quái / bot không chọn làm mục tiêu, máy người
+## khác không vẽ (chính chủ vẽ mờ). Gỡ khi hết giờ, khi chết, hoặc khi ra chiêu khác (KNpc::DoSkill gốc: `m_HideState.nTime = 0`).
+var _hidden: Dictionary = {}   ## eid -> giờ (_now) hết ẩn
+
+func _hide_on_cast(c: Conn, skill_id: int, level: int) -> void:
+	var secs := _hide_seconds(c, skill_id, level)
+	if secs > 0.0:
+		set_hidden(c.entity, secs)
+		return
+	var skill: SkillDefinition = ProfileGuard.skill_by_vltk_id(c.profile, skill_id) if c.profile else null
+	if skill != null and skill.is_aura:
+		return   ## bật / tắt hào quang không phải thi triển võ công
+	set_hidden(c.entity, 0.0)
+
+## Thời gian ẩn (giây) mà chiêu `skill_id` cho nhân vật của `c` — 0 nếu không phải chiêu ẩn thân / không hợp lệ.
+func _hide_seconds(c: Conn, skill_id: int, level: int) -> float:
+	if c.profile == null:
+		return 0.0
+	if skill_id == HideSkill.DUNG_TUYET_VO_TUNG:
+		## Chỉ có khi đã học Huyền Băng Vô Tắc, và không nhanh hơn giãn cách tự thi triển gốc (chống báo ẩn thân liên tục).
+		var sect := SectRegistry.get_by_id(c.profile.sect_id)
+		var hb: SkillDefinition = null
+		if sect:
+			for s: SkillDefinition in sect.skills:
+				if s.id == HideSkill.HUYEN_BANG_VO_TAC_ID:
+					hb = s
+					break
+		var learned := c.profile.get_skill_level(HideSkill.HUYEN_BANG_VO_TAC_ID) if hb else 0
+		if learned <= 0 or _now + CAST_SLACK < c.hide_reply_ready_at:
+			return 0.0
+		var lv := clampi(level, 1, 20)
+		c.hide_reply_ready_at = _now + float(HideSkill.auto_reply(hb, lv)["wait"]) * CAST_RATE_TOLERANCE
+		return HideSkill.dung_tuyet_seconds(lv)
+	var skill: SkillDefinition = ProfileGuard.skill_by_vltk_id(c.profile, skill_id)
+	return minf(HideSkill.seconds_of(skill, level), HideSkill.MAX_SECONDS)
+
+## Đặt / gỡ ẩn thân (`seconds` <= 0 = gỡ). Bot server cũng dùng được.
+func set_hidden(e: ServerEntity, seconds: float) -> void:
+	if e == null:
+		return
+	if seconds > 0.0:
+		_hidden[e.eid] = _now + seconds
+		if (e.flags & NetProto.FLAG_HIDE) == 0:
+			e.flags |= NetProto.FLAG_HIDE
+			e.touch()
+		return
+	_hidden.erase(e.eid)
+	if (e.flags & NetProto.FLAG_HIDE) != 0:
+		e.flags &= ~NetProto.FLAG_HIDE
+		e.touch()
+
+func _tick_hidden() -> void:
+	if _hidden.is_empty():
+		return
+	for eid: int in _hidden.keys():
+		var e := entity_of(eid)
+		if e == null:
+			_hidden.erase(eid)
+		elif _now >= float(_hidden[eid]) or (e.flags & NetProto.FLAG_DEAD) != 0:
+			set_hidden(e, 0.0)
+
 ## Hình ảnh ra chiêu của thực thể `e` (người chơi / bot) cho mọi người đang thấy `e` (trừ chính chủ nếu là người chơi).
 func broadcast_cast(e: ServerEntity, skill_id: int, level: int, cast_flags: int, target_eid: int, aim: Vector2) -> void:
 	var out := NetProto.writer(NetProto.S_CAST)
@@ -1153,7 +1221,7 @@ func broadcast_cast(e: ServerEntity, skill_id: int, level: int, cast_flags: int,
 ## nội công theo tốc độ đánh), skill có hồi chiêu riêng (TimePerCast / skill_mintimepercast_v) phải chờ hết hồi. Gói đến sớm bị
 ## bác -> người xung quanh không thấy chiêu. Chừa CAST_SLACK giây cho trễ mạng / gói dồn và chỉ đòi CAST_RATE_TOLERANCE nhịp
 ## (buff tạm tăng tốc đánh server chưa biết). Mốc sau tính từ mốc trước nên gói dồn không làm tăng nhịp trung bình.
-## Sát thương lên quái (C_DAMAGE) không gắn với chiêu nào (độc, phản đòn, hào quang cũng gửi) nên vẫn chỉ giới hạn trần 1 đòn + số gói/giây.
+## Sát thương lên quái (C_DAMAGE / C_DAMAGE_BATCH) không gắn với chiêu nào (độc, phản đòn, hào quang cũng gửi) nên vẫn chỉ giới hạn trần 1 đòn + số đòn/giây.
 const CAST_SLACK := 0.25
 const CAST_RATE_TOLERANCE := 0.8
 const CAST_REJECT_LOG_SECONDS := 30.0
@@ -1184,6 +1252,8 @@ func _cast_allowed(c: Conn, skill_id: int, level: int, support: bool) -> bool:
 ## Bùa người chơi vừa áp lên quái (C_MSTATE): server chỉ nhớ để báo hình cho người khác đang thấy quái (không tính thuộc tính).
 const MAX_MSTATE_PER_SEC := 40
 const MAX_MSTATE_SECONDS := 60.0
+const MAX_FREEZE_SECONDS := 15.0
+const MAX_STUN_SECONDS := 10.0     ## choáng dài nhất server nhận   ## Băng sát dài nhất server nhận (skill + băng sát đồ + coldenhance thực tế < 10 giây)
 
 func _on_mstate(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
@@ -1198,6 +1268,17 @@ func _on_mstate(c: Conn, b: StreamPeerBuffer) -> void:
 	var m := _entities.get(m_eid) as ServerMonster
 	if m == null or m.is_dead() or (c.entity.flags & NetProto.FLAG_DEAD) != 0 or not near(m, c.entity, MAX_HIT_DISTANCE):
 		return
+	if sid == NetProto.MSTATE_FREEZE:
+		## Băng sát: đang chậm thì không làm mới (ReceiveDamage gốc: `if (m_FreezeState.nTime <= 0)`); trần thời gian chống
+		## máy gian báo chậm mãi.
+		if m.is_frozen(_now):
+			return
+		sec = minf(sec, MAX_FREEZE_SECONDS)
+	elif sid == NetProto.MSTATE_STUN:
+		## Choáng: đang choáng thì không làm mới (ReceiveDamage gốc `if (m_StunState.nTime <= 0)`).
+		if m.is_stunned(_now):
+			return
+		sec = minf(sec, MAX_STUN_SECONDS)
 	m.vis_states[sid] = maxf(float(m.vis_states.get(sid, 0.0)), _now + sec)
 	var pkt := _mstate_packet(m, sid)
 	if pkt == null:
@@ -1231,13 +1312,32 @@ func _mstate_packet(m: ServerMonster, only_sid := 0) -> StreamPeerBuffer:
 func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 	var m_eid := b.get_u32()
 	var amount := float(b.get_u32())
-	var staggers := (b.get_u8() & 1) != 0
+	_apply_client_damage(c, m_eid, amount, b.get_u8())
+
+## C_DAMAGE_BATCH: nhiều quái trong 1 gói, mỗi mục đã gộp nhiều đòn (NetClient._flush_damage).
+func _on_damage_batch(c: Conn, b: StreamPeerBuffer) -> void:
+	var n := b.get_u8()
+	for i in n:
+		if b.get_available_bytes() < 9:
+			return
+		var m_eid := b.get_u32()
+		var amount := float(b.get_u32())
+		_apply_client_damage(c, m_eid, amount, b.get_u8())
+
+## 1 mục sát thương người chơi báo lên: `flags` bit0 = khựng, bit1..7 = số đòn gộp (0 = 1 đòn, gói C_DAMAGE cũ).
+## Chống gian: mỗi đòn tối đa c.max_hit, tổng số đòn mỗi giây tối đa MAX_DAMAGE_PER_SEC (đòn vượt ngân sách bị bỏ).
+func _apply_client_damage(c: Conn, m_eid: int, amount: float, flags: int) -> void:
+	var staggers := (flags & 1) != 0
+	var hits := clampi(flags >> NetProto.DAMAGE_HITS_SHIFT, 1, NetProto.DAMAGE_MAX_HITS)
 	if _now - c.damage_window > 1.0:
 		c.damage_window = _now
 		c.damage_msgs = 0
-	c.damage_msgs += 1
-	if c.damage_msgs > MAX_DAMAGE_PER_SEC:
+	var allowed := mini(hits, MAX_DAMAGE_PER_SEC - c.damage_msgs)
+	if allowed <= 0:
 		return
+	c.damage_msgs += allowed
+	if allowed < hits:
+		amount = amount * allowed / hits
 	var m := _entities.get(m_eid) as ServerMonster
 	if m == null or m.is_dead() or (c.entity.flags & NetProto.FLAG_DEAD) != 0:
 		return
@@ -1245,7 +1345,7 @@ func _on_damage(c: Conn, b: StreamPeerBuffer) -> void:
 		return
 	if m.battle_side != "" and (battle == null or not battle.can_hit_monster(c, m)):
 		return   ## Nguyên Soái: chỉ người phe kia đánh được
-	amount = minf(amount, c.max_hit)
+	amount = minf(amount, c.max_hit * allowed)
 	## Khi quái bị khựng: ép trạng thái "hurt" ngay vào entity để S_STATE tiếp theo broadcast cho mọi người thấy
 	if staggers and not m.is_dead():
 		var hurt_action := NetProto.monster_action_index("hurt")
@@ -1953,12 +2053,8 @@ func _on_look(c: Conn, b: StreamPeerBuffer) -> void:
 		look["states"] = e.look.get("states", [])
 		look["aura_skill"] = int(e.look.get("aura_skill", 0))
 		look["aura_level"] = int(e.look.get("aura_level", 0))
-	if look.has("aura_state") and c.profile:
-		var aura_st := int(look.get("aura_state", 0))
-		if c.profile.gm_aura_state != aura_st or int(c.data.get("gm_aura_state", 0)) != aura_st:
-			c.profile.gm_aura_state = aura_st
-			c.data["gm_aura_state"] = aura_st
-			c.dirty = true
+	## KHÔNG lưu aura_state của gói ngoại hình vào gm_aura_state: trước đây hình hào quang skill (Lưu Thủy 39...) / hộ thể tân thủ
+	## bị ghi thành "hào quang GM" vĩnh viễn. Hào quang GM chỉ gán qua lệnh /aura (ChatServer) / web Admin.
 	if look != e.look:
 		e.look = look
 		e.touch()

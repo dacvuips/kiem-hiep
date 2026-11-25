@@ -15,6 +15,7 @@ signal equipment_changed()
 const GEM_SLOT_UNLOCK_LEVELS: Array[int] = [1, 10, 20, 30, 40, 50]
 const MAX_LEVEL := 200
 
+var id: int = 0
 var display_name: String = ""
 var gender: Gender = Gender.MALE
 var level: int = 1
@@ -45,6 +46,24 @@ var element: int = -1
 ## Phe hiện tại (Camp.Type) = MÀU TÊN, quyết định ai là đồng đội (cùng màu). -1 = theo phe mặc định của
 ## môn phái (Camp.default_for_sect); đặt giá trị khác khi nhân vật đổi phe (sự kiện, bang chiến...).
 var camp: int = -1
+
+## Tên hiển thị kèm ID theo định dạng: tên(ID), ví dụ "HoaHieu(1001)".
+## Nếu không có ID thì trả về display_name thuần.
+func get_display_name_with_id() -> String:
+	var char_id := id
+	if char_id <= 0:
+		var loop := Engine.get_main_loop()
+		var root: Node = loop.root if (loop and "root" in loop) else null
+		var sm: Node = root.get_node_or_null("SaveManager") if root else null
+		if sm != null and "online_character_id" in sm and int(sm.online_character_id) > 0:
+			char_id = int(sm.online_character_id)
+		elif sm != null and "current_offline_slot" in sm and int(sm.current_offline_slot) >= 0:
+			char_id = int(sm.current_offline_slot) + 1
+	if char_id > 0:
+		if display_name.is_empty():
+			return "(%d)" % char_id
+		return "%s(%d)" % [display_name, char_id]
+	return display_name
 
 ## Hệ ngũ hành của nhân vật (theo phái nếu đã vào phái, không thì theo lúc tạo).
 func get_element() -> ElementTypes.ElementType:
@@ -92,7 +111,7 @@ func choose_element(e: ElementTypes.ElementType) -> void:
 const NEWBIE_LEVEL := 10
 
 func get_current_camp() -> int:
-	if camp > 0:
+	if camp >= 0:
 		return camp
 	if not has_sect():
 		return Camp.Type.BEGIN
@@ -153,6 +172,8 @@ var skill_points: int = 0
 ## skill_id (String) -> cấp đã học (int), 0/không có key = chưa học. Áp dụng cho MỌI skill kể cả
 ## đòn chính (đòn chính dùng được ngay ở cấp 0, cộng điểm để nâng sức mạnh).
 var skill_levels: Dictionary = {}
+## skill_id -> độ thành thạo đang tích của skill luyện 90/120/150 (SkillPractice), về 0 mỗi lần lên cấp.
+var skill_exp: Dictionary = {}
 
 ## Tiến độ nâng cấp kỹ năng & điểm kỹ năng trong chế độ Thủ Thành (Zombies vs Plants JX1)
 var thu_thanh_level: int = 10
@@ -566,6 +587,19 @@ func level_up() -> void:
 	skill_points += SKILL_POINTS_PER_LEVEL
 	potential_points += POTENTIAL_POINTS_PER_LEVEL
 
+## GM đặt cấp (dùng chung cho GM ở game và lệnh /gmlevel ở server): lên cấp đi qua level_up() để cộng
+## điểm tiềm năng/kỹ năng/thể lực như thật; hạ cấp không trừ điểm (có thể đã cộng/học), chỉ chỉnh thể lực.
+func gm_set_level(target_level: int) -> void:
+	var new_lv := clampi(target_level, 1, MAX_LEVEL)
+	if new_lv > level:
+		while level < new_lv:
+			level_up()
+	elif new_lv < level:
+		level = new_lv
+		max_stamina = _stamina_for_level()
+		stamina = mini(stamina, max_stamina)
+	current_exp = 0
+
 ## Học mới/nâng 1 cấp cho skill phụ thuộc môn phái hiện tại — false nếu hết điểm, đã max level,
 ## hoặc skill không tồn tại trong môn phái đã chọn (VD id gõ sai/môn phái đổi giữa chừng).
 func learn_skill(skill_id: String) -> bool:
@@ -641,6 +675,7 @@ func reset_to_level_1() -> void:
 	potential_points = fresh.potential_points
 	skill_points = fresh.skill_points
 	skill_levels.clear()  ## kể cả skill luyện (tẩy điểm thường giữ lại chúng)
+	skill_exp.clear()
 
 ## Tẩy điểm (giữ nguyên cấp/EXP): 4 chỉ số gốc về khởi điểm, số điểm đã cộng HOÀN LẠI vào
 ## potential_points; bỏ học mọi skill, tổng số cấp đã học HOÀN LẠI vào skill_points. Thanh skill về
@@ -1124,6 +1159,7 @@ func to_dict() -> Dictionary:
 		"uy_thac_seen": uy_thac_seen,
 		"uy_thac_report": uy_thac_report.duplicate(),
 		"uy_thac_bank": uy_thac_bank.duplicate(),
+		"id": id,
 		"name": display_name,
 		"gender": gender,
 		"level": level,
@@ -1152,6 +1188,7 @@ func to_dict() -> Dictionary:
 		"potential_points": potential_points,
 		"skill_points": skill_points,
 		"skill_levels": skill_levels.duplicate(true),
+		"skill_exp": skill_exp.duplicate(),
 		"thu_thanh_level": thu_thanh_level,
 		"thu_thanh_exp": thu_thanh_exp,
 		"thu_thanh_skill_levels": thu_thanh_skill_levels.duplicate(),
@@ -1198,6 +1235,7 @@ func to_dict() -> Dictionary:
 
 static func from_dict(data: Dictionary) -> PlayerProfile:
 	var profile := PlayerProfile.new()
+	profile.id = int(data.get("id", 0))
 	profile.display_name = str(data.get("name", ""))
 	profile.gender = int(data.get("gender", Gender.MALE)) as Gender
 	profile.level = clampi(int(data.get("level", 1)), 1, MAX_LEVEL)
@@ -1255,6 +1293,10 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var saved_skill_levels: Dictionary = data.get("skill_levels", {})
 	for skill_id in saved_skill_levels.keys():
 		profile.skill_levels[str(skill_id)] = int(saved_skill_levels[skill_id])
+	var saved_skill_exp: Variant = data.get("skill_exp", {})
+	if saved_skill_exp is Dictionary:
+		for skill_id in (saved_skill_exp as Dictionary).keys():
+			profile.skill_exp[str(skill_id)] = maxi(int(saved_skill_exp[skill_id]), 0)
 	profile.thu_thanh_level = int(data.get("thu_thanh_level", 10))
 	profile.thu_thanh_exp = int(data.get("thu_thanh_exp", 0))
 	var saved_tt_levels: Dictionary = data.get("thu_thanh_skill_levels", {})

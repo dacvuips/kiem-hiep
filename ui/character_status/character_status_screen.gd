@@ -73,10 +73,30 @@ func _ready() -> void:
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null and gm.has_signal("profile_modified"):
 		gm.profile_modified.connect(_on_external_profile_changed)
-	if SaveManager != null and SaveManager.has_signal("profile_changed"):
-		SaveManager.profile_changed.connect(_on_external_profile_changed)
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm != null and sm.has_signal("profile_changed"):
+		sm.profile_changed.connect(_on_external_profile_changed)
+
+	var p_node := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	if p_node and "status_controller" in p_node and p_node.status_controller != null:
+		if not p_node.status_controller.stats_changed.is_connected(refresh):
+			p_node.status_controller.stats_changed.connect(refresh)
 
 	refresh()
+
+func _exit_tree() -> void:
+	var gm: Node = get_node_or_null("/root/GmManager")
+	if gm != null and gm.has_signal("profile_modified"):
+		if gm.profile_modified.is_connected(_on_external_profile_changed):
+			gm.profile_modified.disconnect(_on_external_profile_changed)
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm != null and sm.has_signal("profile_changed"):
+		if sm.profile_changed.is_connected(_on_external_profile_changed):
+			sm.profile_changed.disconnect(_on_external_profile_changed)
+	var p_node := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	if p_node and "status_controller" in p_node and p_node.status_controller != null:
+		if p_node.status_controller.stats_changed.is_connected(refresh):
+			p_node.status_controller.stats_changed.disconnect(refresh)
 
 func _on_external_profile_changed(p: PlayerProfile) -> void:
 	if not is_instance_valid(self):
@@ -181,7 +201,8 @@ func _style_derived_box() -> void:
 		_style_label(get_node("%%ResistValue%d" % i), "", COLOR_VALUE, 13, HORIZONTAL_ALIGNMENT_RIGHT, true)
 
 func refresh() -> void:
-	var s := _profile.get_combat_stats()
+	var p_node := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	var s: CombatantStats = p_node.combat_stats if (p_node and "combat_stats" in p_node and p_node.combat_stats != null) else _profile.get_combat_stats()
 
 	(%NameValue as Label).text = _profile.display_name
 	var title_parts := PackedStringArray()
@@ -193,7 +214,6 @@ func refresh() -> void:
 	(%LevelValue as Label).text = str(_profile.level)
 	(%RankValue as Label).text = _profile.world_rank if not _profile.world_rank.is_empty() else "—"
 
-	var p_node := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
 	var cur_life := int(p_node.health) if (p_node and "health" in p_node) else s.max_hp
 	var cur_mana := int(p_node.mana) if (p_node and "mana" in p_node) else s.max_mana
 	(%LifeValue as Label).text = "%d/%d" % [cur_life, s.max_hp]
@@ -224,7 +244,9 @@ func refresh() -> void:
 	## Gốc: bên nào dùng skill KHÔNG tính trúng/trượt (IsUseAR = 0) thì hiện "-" thay cho chính xác.
 	(%ChinhXacValue as Label).text = "%s/%d" % [str(s.attack_rating) if left_uses_ar else "-", s.attack_rating]
 	(%NeTranhValue as Label).text = str(s.defense)
-	(%ChayValue as Label).text = str(PLAYER_RUN_SPEED)
+	var run_speed: int = PLAYER_RUN_SPEED + floori(PLAYER_RUN_SPEED * s.move_speed_p / 100.0)
+	(%ChayValue as Label).text = str(run_speed)
+	(%ChayValue as Label).tooltip_text = "Tốc độ di chuyển: %d (+%d%%)" % [run_speed, s.move_speed_p] if s.move_speed_p != 0 else "Tốc độ di chuyển: %d" % run_speed
 	(%CongKichValue as Label).text = "%d/%d" % [s.attack_speed, s.cast_speed]
 	(%TiemNangValue as Label).text = str(_profile.potential_points)
 

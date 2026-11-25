@@ -82,6 +82,7 @@ var add_physics_magic: int = 0        ## m_CurrentAddPhysicsMagic — + damage v
 
 ## ---- Chỉ số khác từ thuộc tính (MagicAttribTable) ----
 var move_speed_p: int = 0             ## fastwalkrun_p — % tốc chạy
+var walk_run_shadow: int = 0          ## walkrunshadow — số bóng mờ khi di chuyển (Huyễn Nhãn Vân Yên)
 var life_replenish: int = 0           ## lifereplenish_v — máu hồi mỗi GAME_UPDATE_TIME (10 frame)
 var life_replenish_p: int = 0         ## lifereplenish_p — % cộng thêm vào lượng hồi trên
 var mana_replenish: int = 0           ## manareplenish_v — nội lực hồi mỗi GAME_UPDATE_TIME (10 frame)
@@ -90,6 +91,7 @@ var melee_damage_return_p: int = 0    ## phản % damage cận chiến về ngư
 var melee_damage_return: int = 0
 var range_damage_return_p: int = 0    ## phản % damage tầm xa (đạn/skill bay) về người đánh
 var range_damage_return: int = 0
+var return_res_p: int = 0             ## returnres_p — % hóa giải / giảm phản đòn nhận phải (Huyền Thiên Vô Cực)
 var steal_life_p: int = 0             ## % damage vật lý gây ra hút thành máu
 var attack_speed: int = 0             ## attackspeed_v / castspeed_v — gốc giảm số frame ra đòn (chưa áp)
 var cast_speed: int = 0
@@ -100,15 +102,24 @@ var mana_shield_p: int = 0            ## manashield_p — % sát thương chuy�
 
 var all_skills_bonus: int = 0             ## allskill_v / allskills_v — + cấp tất cả kỹ năng
 var element_skills_bonus: Dictionary = {} ## metalskill_v / ... — ElementType -> int (+ cấp kỹ năng theo hệ)
+var skill_level_bonus: Dictionary = {}    ## allskill_v có mã skill — vltk_skill_id -> int (+ cấp RIÊNG skill đó)
 var ignore_defense_p: int = 0             ## ignoredefense_p — % bỏ qua phòng thủ đối phương khi đánh
 var damage_to_mana_p: int = 0             ## damage2addmana_p — % sát thương nhận chuyển hóa thành nội lực
+var damage_absorb_p: int = 0              ## damage_absorb_p / sorbdamage_p — % ngăn chặn/hóa giải sát thương (Hấp Tinh Trận 180: 100%)
+var missile_miss_rate: int = 0            ## missle_missrate — % né tránh đòn tầm xa / phi đạn (Chinh Chiến Bát Phương / Du Long Chân Khí)
+var ignore_negative_state_p: int = 0      ## ignorenegativestate_p — % bỏ qua trạng thái tiêu cực (choáng/độc/chậm...)
+var ignore_lighting_res_p: int = 0         ## anti_lightingres_yan_p / anti_lightingres_p — % bỏ qua kháng lôi đối thủ (Thiên Cương Khí Kính)
+var enhance_luong_nghi_p: int = 0          ## enhance_717_auto — % tăng tỷ lệ tự cứu Lưỡng Nghi Chân Khí (Thiên Cương Khí Kính)
+var static_magic_shield_p: int = 0         ## staticmagicshield_p — giảm sát thương phép gấp X lần nội lực (Ma Pháp Độn: 1800 -> 10000)
 var indestructible: bool = false          ## indestructible_b — không thể phá hủy / không mất độ bền
 var stamina_replenish: int = 0            ## staminareplenish_v — hồi phục thể lực
 
-func get_skill_bonus(element_type: int = -1) -> int:
+func get_skill_bonus(element_type: int = -1, vltk_skill_id: int = 0) -> int:
 	var bonus := all_skills_bonus
 	if element_type >= 0 and element_skills_bonus.has(element_type):
 		bonus += int(element_skills_bonus[element_type])
+	if vltk_skill_id > 0:
+		bonus += int(skill_level_bonus.get(vltk_skill_id, 0))
 	return bonus
 
 ## Giá trị TRƯỚC khi cộng thuộc tính — cho các thuộc tính % (lifemax_p = % của máu gốc, đúng

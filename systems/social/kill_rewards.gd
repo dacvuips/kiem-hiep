@@ -28,6 +28,7 @@ static func grant_exp(profile: PlayerProfile, base_exp: int, monster_level: int)
 		got = int(round(got * (1.0 + float(exp_p) / 100.0)))
 	var before := profile.level
 	profile.add_exp(got)
+	SkillPractice.on_local_kill_exp(profile, got)   ## luyện skill bị động / hào quang 90/120/150
 	if profile.level != before:
 		SaveManager.save_profile(profile)
 		if player != null and player.has_method("refresh_combat_stats"):

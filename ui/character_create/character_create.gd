@@ -366,7 +366,9 @@ func _create_online(player_name: String, enter_game_directly: bool) -> void:
 		return
 	var c: Dictionary = r.data
 	if gm != null:
-		gm.local_profile = PlayerProfile.from_dict(c["data"])
+		var p := PlayerProfile.from_dict(c["data"])
+		p.id = int(c.get("id", 0))
+		gm.local_profile = p
 	if sm != null:
 		sm.set_online_character(int(c["id"]), int(c["version"]))
 	_show_message(tr("Đã tạo nhân vật %s — %s") % [c["name"], profile.sect_name])

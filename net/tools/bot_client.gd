@@ -41,6 +41,7 @@ var view_snap: Dictionary = {}
 var enmity: Dictionary = {}       ## {state, other, name, launcher}
 var pvp_hits: Array = []          ## [{from, hit}]
 var dead := false                 ## gửi cờ FLAG_DEAD trong C_MOVE
+var mstates: Array = []           ## [[monster_eid, state_id, giây]] (S_MSTATE)
 var casts: Array = []             ## [{caster, skill, level, flags, target, aim}] (S_CAST)
 var closed := false
 var battle_msgs: Array = []       ## gói S_BATTLE nhận được (chiến trường)
@@ -190,14 +191,24 @@ func cast(skill_id: int, lv: int, target_eid: int, aim: Vector2, cast_flags := 0
 	NetProto.put_state_pos(b, aim)
 	_send(b, NetProto.CH_RELIABLE)
 
+## Gửi đúng gói game thật dùng (C_DAMAGE_BATCH, NetClient._flush_damage): 1 quái, 1 đòn, có khựng.
 func damage(monster_eid: int, amount: int) -> void:
-	var b := NetProto.writer(NetProto.C_DAMAGE)
+	var b := NetProto.writer(NetProto.C_DAMAGE_BATCH)
+	b.put_u8(1)
 	b.put_u32(monster_eid)
 	b.put_u32(amount)
-	b.put_u8(1)
+	b.put_u8(1 | (1 << NetProto.DAMAGE_HITS_SHIFT))
 	_send(b, NetProto.CH_RELIABLE)
 
 ## Quái gần nhất mình đang thấy (eid hoặc 0).
+## Báo bùa / trạng thái mình vừa áp lên quái (C_MSTATE) — như VltkMonster._on_state_applied / _net_send_freeze.
+func monster_state(monster_eid: int, state_id: int, seconds: float) -> void:
+	var b := NetProto.writer(NetProto.C_MSTATE)
+	b.put_u32(monster_eid)
+	b.put_u32(state_id)
+	b.put_u16(clampi(int(round(seconds * 10.0)), 1, 600))
+	_send(b, NetProto.CH_RELIABLE)
+
 func nearest_monster() -> int:
 	var best := 0
 	var best_d := INF
@@ -321,7 +332,7 @@ func _read_spawn(b: StreamPeerBuffer) -> void:
 	var na := b.get_u8()
 	var st := NetProto.get_str(b)
 	known[id] = {"kind": kind, "name": n, "level": lv, "camp": cp, "nation": na, "stall_title": st, "pos": Vector2(b.get_float(), b.get_float())}
-	b.get_data(4)
+	b.get_data(5)   ## dir, action, z (u8) + cờ (u16, NetProto v6)
 	known[id]["hp"] = b.get_u8()
 	if kind == NetProto.KIND_MONSTER:
 		known[id]["monster_id"] = b.get_u16()
@@ -357,7 +368,7 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				var pos := NetProto.get_state_pos(b)
 				var dir_action := b.get_u8()
 				b.get_u8()
-				var fl := b.get_u8()
+				var fl := b.get_u16()
 				var hp := b.get_u8()
 				b.get_u8()   ## tuổi mẫu (NetProto v4)
 				states_received += 1
@@ -366,6 +377,12 @@ func _on_packet(pkt: PackedByteArray) -> void:
 					known[id].hp = hp
 					known[id].action = dir_action >> 3
 					known[id].flags = fl
+		NetProto.S_MSTATE:
+			var ms_eid := b.get_u32()
+			var n := b.get_u8()
+			for i in n:
+				var sid := b.get_u32()
+				mstates.append([ms_eid, sid, float(b.get_u16()) / 10.0])
 		NetProto.S_MATTACK:
 			var m := b.get_u32()
 			b.get_u8()

@@ -223,15 +223,46 @@ func send_monster_state(monster_eid: int, state_id: int, seconds: float) -> void
 	b.put_u16(clampi(int(round(seconds * 10.0)), 1, 600))
 	_send(b)
 
-## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung).
+## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung). Không gửi ngay: gom theo quái rồi gửi 1 gói
+## C_DAMAGE_BATCH mỗi DAMAGE_FLUSH_SEC (xem _flush_damage) — skill nhiều nhịp đánh bầy quái không làm tràn gói/giây.
+const DAMAGE_FLUSH_SEC := 0.1
+var _pending_damage: Dictionary = {}   ## monster_eid -> [tổng sát thương, số đòn, khựng]
+var _damage_flush_timer := 0.0
+
 func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
 	if status != Status.IN_WORLD or amount <= 0.0:
 		return
-	var b := NetProto.writer(NetProto.C_DAMAGE)
-	b.put_u32(monster_eid)
-	b.put_u32(clampi(int(amount), 0, 0x7fffffff))
-	b.put_u8(1 if staggers else 0)
-	_send(b)
+	var entry: Array = _pending_damage.get(monster_eid, [0, 0, false])
+	if int(entry[1]) >= NetProto.DAMAGE_MAX_HITS:
+		_flush_damage()
+		entry = [0, 0, false]
+	entry[0] = mini(int(entry[0]) + int(amount), 0x7fffffff)
+	entry[1] = int(entry[1]) + 1
+	entry[2] = bool(entry[2]) or staggers
+	_pending_damage[monster_eid] = entry
+
+func _flush_damage() -> void:
+	_damage_flush_timer = DAMAGE_FLUSH_SEC
+	if _pending_damage.is_empty():
+		return
+	if status != Status.IN_WORLD:
+		_pending_damage.clear()
+		return
+	var eids := _pending_damage.keys()
+	var start := 0
+	while start < eids.size():
+		var n := mini(eids.size() - start, 255)
+		var b := NetProto.writer(NetProto.C_DAMAGE_BATCH)
+		b.put_u8(n)
+		for i in n:
+			var eid: int = eids[start + i]
+			var entry: Array = _pending_damage[eid]
+			b.put_u32(eid)
+			b.put_u32(int(entry[0]))
+			b.put_u8((1 if entry[2] else 0) | (mini(int(entry[1]), NetProto.DAMAGE_MAX_HITS) << NetProto.DAMAGE_HITS_SHIFT))
+		_send(b)
+		start += n
+	_pending_damage.clear()
 
 ## Gửi bản nhân vật cho game server (thay cho lưu HTTP khi đang trong map online).
 func send_profile(data: Dictionary) -> void:
@@ -520,6 +551,9 @@ func _process(delta: float) -> void:
 		_on_packet(_peer.get_packet())
 	if status == Status.IN_WORLD:
 		_tick_interp(delta)
+		_damage_flush_timer -= delta
+		if _damage_flush_timer <= 0.0:
+			_flush_damage()
 		_ping_timer -= delta
 		if _ping_timer <= 0.0:
 			_ping_timer = 1.0
@@ -531,7 +565,7 @@ func _read_spawn(b: StreamPeerBuffer) -> void:
 	var info := {
 		"eid": b.get_u32(), "kind": b.get_u8(), "name": NetProto.get_str(b), "level": b.get_u16(), "camp": b.get_8(),
 		"nation": b.get_u8(), "stall_title": NetProto.get_str(b), "pos": Vector2(b.get_float(), b.get_float()), "dir": b.get_u8(), "action": b.get_u8(), "z": b.get_u8(),
-		"flags": b.get_u8(), "hp": b.get_u8(),
+		"flags": b.get_u16(), "hp": b.get_u8(),
 	}
 	if int(info.kind) == NetProto.KIND_PLAYER:
 		info["look"] = NetProto.get_look(b)
@@ -551,6 +585,7 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var feet := Vector2(b.get_float(), b.get_float())
 			var my_name := NetProto.get_str(b)
 			status = Status.IN_WORLD
+			_pending_damage.clear()   ## đòn gom từ phiên / map trước không gửi sang map mới
 			connected_to_world.emit(my_eid, feet, my_name)
 		NetProto.S_ERROR:
 			_last_error = [NetProto.get_str(b), NetProto.get_str(b)]
@@ -573,7 +608,7 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				var da := b.get_u8()
 				var st := {
 					"pos": pos, "dir": da & 7, "action": da >> 3,
-					"z": b.get_u8(), "flags": b.get_u8(), "hp": b.get_u8(),
+					"z": b.get_u8(), "flags": b.get_u16(), "hp": b.get_u8(),
 				}
 				entity_state.emit(eid, server_ms - b.get_u8() * NetProto.STATE_AGE_UNIT_MS, st)
 		NetProto.S_CAST:

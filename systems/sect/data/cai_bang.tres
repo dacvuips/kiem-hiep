@@ -1034,6 +1034,7 @@ script = ExtResource("2_skill")
 id = "cai_bang_ngu_dieu_can_khon"
 skill_name = "Ngũ Diệu Càn Khôn (hệ Hỏa)"
 is_hidden = true
+parent_skill_id = "cai_bang_thoi_thua_luc_long"
 icon = ExtResource("vicon_cai_bang_ngu_dieu_can_khon")
 description = "Tuyệt kỹ tối cao, phóng hỏa khí uy lực cực mạnh, có thể kích hoạt Thời Thừa Lục Long."
 school_text = "Chưởng pháp (Nội công)"

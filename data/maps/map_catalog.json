@@ -1171,6 +1171,14 @@
       ],
       "dir": "res://world/maps/map_79",
       "vuotai": "vuotai/mat_dao_nha_mon_tuong_duong",
+      "start": [
+        104,
+        98
+      ],
+      "arena_center": [
+        53632,
+        50304
+      ],
       "drop_diadochi_rate": 0.03125,
       "drop_matchi_rate": 0.0196,
       "drop_matdo_rate": 0.002
@@ -2267,7 +2275,15 @@
       "vuotai": "vuotai/co_duong_dong",
       "drop_diadochi_rate": 0.03125,
       "drop_matchi_rate": 0.0196,
-      "drop_matdo_rate": 0.002
+      "drop_matdo_rate": 0.002,
+      "start": [
+        99,
+        104
+      ],
+      "arena_center": [
+        50832,
+        53288
+      ]
     },
     {
       "id": 201,

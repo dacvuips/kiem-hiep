@@ -15,7 +15,7 @@ func think(b: ServerBot, mgr: BotManager, _dt: float) -> void:
 	if b.hp_ratio() < 0.5:
 		b.drink_potion(now)
 	var t: ServerEntity = mgr.gs.entity_of(target_eid) if target_eid != 0 else null
-	if t == null or t.room_id != b.room_id or (t.flags & NetProto.FLAG_DEAD) != 0:
+	if t == null or t.room_id != b.room_id or (t.flags & (NetProto.FLAG_DEAD | NetProto.FLAG_HIDE)) != 0:
 		b.stop()
 		return
 	var sk := b.main_skill

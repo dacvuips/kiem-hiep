@@ -2426,6 +2426,46 @@ Chiến Báo": {
 		"th": "การตั้งค่า",
 		"zh": "设置"
 	},
+	"Thông tin người chơi": {
+		"vi": "Thông tin người chơi",
+		"en": "Player Info",
+		"ja": "プレイヤー情報",
+		"ko": "플레이어 정보",
+		"ru": "Информация об игроке",
+		"fr": "Infos du joueur",
+		"th": "ข้อมูลผู้เล่น",
+		"zh": "玩家信息"
+	},
+	"Tên nhân vật:": {
+		"vi": "Tên nhân vật:",
+		"en": "Character Name:",
+		"ja": "キャラクター名:",
+		"ko": "캐릭터 이름:",
+		"ru": "Имя персонажа:",
+		"fr": "Nom du personnage :",
+		"th": "ชื่อตัวละคร:",
+		"zh": "角色名字:"
+	},
+	"ID người chơi:": {
+		"vi": "ID người chơi:",
+		"en": "Player ID:",
+		"ja": "プレイヤーID:",
+		"ko": "플레이어 ID:",
+		"ru": "ID игрока:",
+		"fr": "ID du joueur :",
+		"th": "ID ผู้เล่น:",
+		"zh": "玩家ID:"
+	},
+	"Đã sao chép": {
+		"vi": "Đã sao chép",
+		"en": "Copied",
+		"ja": "コピーしました",
+		"ko": "복사됨",
+		"ru": "Скопировано",
+		"fr": "Copié",
+		"th": "คัดลอกแล้ว",
+		"zh": "已复制"
+	},
 	"Cài Đặt Cơ Bản": {
 		"vi": "Cài Đặt Cơ Bản",
 		"en": "Basic Settings",

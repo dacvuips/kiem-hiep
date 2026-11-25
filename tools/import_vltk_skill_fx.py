@@ -55,7 +55,11 @@ from import_vltk_avatar import write_keep_import, CLIENT, Tables  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 ## Chỗ bản server THẬT (server-vm, máy ảo) khác bảng client VNG và người dùng xác nhận chạy đúng/mạnh hơn:
 ##   Vô Hình Độc: skill 69 tầm 100 (VNG 200); skill 203 (hào quang gây độc) ở server bắn đạn 94 (vùng sát thương 8 ô), client VNG đổi sang đạn 451 (chỉ 5 ô).
-SERVER_OVERRIDES = {203: {"child": 94}, 69: {"attack_radius": 100}}
+SERVER_OVERRIDES = {
+    203: {"child": 94},
+    69: {"attack_radius": 100},
+    1376: {"vanish_skill": 1412},
+}
 ## Nguồn chuẩn: client VNG (bản mới nhất) — Skills.txt, Missles.txt, script/skill/*.lua và sprite đều đọc thẳng từ pak của nó.
 ## Bản Anh-Việt cũ thiếu nhiều skill/đạn (441 đạn so với 737 của VNG) nên chỉ còn làm nguồn dự phòng cho file không có trong VNG.
 VNG_CLIENT = r"D:\game\source_vo-lam-truyen-ky\vng\Level Up Games\Vo Lam Truyen Ky 2.0"
@@ -267,7 +271,7 @@ def build_skill(viet, gbk):
 def referenced_skills(s):
     """SkillId các skill con / skill sự kiện (cột + thuộc tính theo cấp, giá trị thứ 3 = SkillId)."""
     out = set()
-    if s["base"] == 0 and s["child"] > 0:
+    if s["base"] == 0 and s["child"] > 0 and not (s.get("style") == 1 and s.get("form") == 13):
         out.add(s["child"])
     for flag, col in (("start_event", "start_skill"), ("fly_event", "fly_skill"), ("collide_event", "collide_skill"),
                       ("vanish_event", "vanish_skill")):
@@ -371,8 +375,12 @@ def luma_key_if_additive(sheet):
     out = []
     for r, g, b, a in data:
         m = max(r, g, b)
-        ## alpha mới = alpha gốc × độ sáng (cả viền bán trong suốt tối cũng biến mất như khi cộng sáng).
-        out.append((r * 255 // m, g * 255 // m, b * 255 // m, a * m // 255) if m and a else (0, 0, 0, 0))
+        new_a = a * m // 255
+        ## Bỏ qua nhiễu nền đen của SPR (RGB <= 10 khi mở từ RGB 565) tránh sinh lớp hộp trắng mờ
+        if not m or not a or new_a <= 10:
+            out.append((0, 0, 0, 0))
+        else:
+            out.append((r * 255 // m, g * 255 // m, b * 255 // m, new_a))
     sheet.putdata(out)
     return True
 
@@ -513,8 +521,8 @@ def main():
             continue
         seen.add(sid)
         s = build_skill(*skill_rows[sid])
-        if not jx15:
-            s.update(SERVER_OVERRIDES.get(sid, {}))
+        if sid in SERVER_OVERRIDES:
+            s.update(SERVER_OVERRIDES[sid])
         precast = export_anim(paks, s.pop("precast"), anim_cache)
         s["precast"] = precast or ""
         name_key = str(sid if not jx15 or sid in roots else sid + vltk_source.FX_ID_OFFSET)
@@ -524,7 +532,8 @@ def main():
         for ref in referenced_skills(s):
             parent_of.setdefault(ref, sid)
             todo.append(ref)
-        if s["base"] == 1 and s["child"] > 0 and s["child"] in missle_rows:
+        is_missile = s["base"] == 1 or (s.get("style") == 1 and s.get("form") == 13 and s["child"] in missle_rows)
+        if is_missile and s["child"] > 0 and s["child"] in missle_rows:
             m = build_missile(*missle_rows[s["child"]], paks, anim_cache, trust_spr=jx15)
             m_key = str(s["child"] + (vltk_source.FX_ID_OFFSET if jx15 else 0))
             if all_missiles.get(m_key, {}).get("name"):

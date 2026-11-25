@@ -419,7 +419,7 @@ suffix = "%"
 script = ExtResource("2_skill")
 id = "hoa_son_hi_di_kiem_phap"
 skill_name = "Hi Di Kiếm Pháp"
-req_level = 30
+req_level = 40
 vltk_skill_id = 1354
 icon = ExtResource("vicon_hoa_son_hi_di_kiem_phap")
 description = "Kiếm Pháp do Hi Di tiên sinh sáng lập, có thể gia tăng uy lực chiêu kiếm"
@@ -465,7 +465,7 @@ suffix = " điểm"
 script = ExtResource("2_skill")
 id = "hoa_son_khi_quan_truong_hong"
 skill_name = "Khí Quán Trường Hồng"
-req_level = 30
+req_level = 50
 vltk_skill_id = 1379
 icon = ExtResource("vicon_hoa_son_khi_quan_truong_hong")
 description = "Một trong những thất tuyệt của phái Hoa Sơn, nội lực thâm hậu, uy lực kiếm pháp khí tông cực lớn."
@@ -528,7 +528,7 @@ value_at_max_level = 200.0
 script = ExtResource("2_skill")
 id = "hoa_son_long_huyen_kiem_khi"
 skill_name = "Long Huyền Kiếm Khí"
-req_level = 40
+req_level = 30
 vltk_skill_id = 1376
 horse_limit = 1
 icon = ExtResource("vicon_hoa_son_long_huyen_kiem_khi")
@@ -616,7 +616,7 @@ value_at_max_level = 100.0
 script = ExtResource("2_skill")
 id = "hoa_son_doat_menh_lien_hoan_tam_tien_kiem"
 skill_name = "Đoạt Mệnh Liên Hoàn Tam Tiên Kiếm"
-req_level = 50
+req_level = 80
 vltk_skill_id = 1364
 icon = ExtResource("vicon_hoa_son_doat_menh_lien_hoan_tam_tien_kiem")
 description = "Chiêu thức cuối của kiếm tông phái Hoa Sơn, Ngự Kiếm Sát Địch, Mạc Phu Mạc Đương"
@@ -694,7 +694,7 @@ suffix = "%"
 script = ExtResource("2_skill")
 id = "hoa_son_thien_than_dao_huyen"
 skill_name = "Thiên Thân Đảo Huyền"
-req_level = 60
+req_level = 50
 vltk_skill_id = 1355
 weapon_limit = 0
 horse_limit = 1
@@ -730,34 +730,52 @@ damage_growth_per_level = 17.8947
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_46"), SubResource("SubResource_47"), SubResource("SubResource_48"), SubResource("SubResource_49"), SubResource("SubResource_50"), SubResource("SubResource_51"), SubResource("SubResource_52")])
 [sub_resource type="Resource" id="SubResource_54"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 20, 0, 30, 315, 0)
 label = "Băng sát - nội công"
 value_at_level_1 = 20.0
 value_at_max_level = 315.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_55"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 100, 0, 30, 315, 0)
 label = "Băng sát - ngoại công"
 value_at_level_1 = 100.0
-value_at_max_level = 215.0
+value_at_max_level = 315.0
 suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_56"]
 script = ExtResource("3_statline")
-label = "Tốc độ đánh - ngoại công"
-value_at_level_1 = 12.0
-value_at_max_level = 65.0
+level_points = PackedFloat32Array(1, 8, 0, 30, 39, 0, 32, 39, 0, 33, 39, 0)
+label = "Cường hóa Băng sát"
+value_at_level_1 = 8.0
+value_at_max_level = 39.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_57"]
 script = ExtResource("3_statline")
-label = "Tốc độ đánh - nội công"
-value_at_level_1 = 12.0
-value_at_max_level = 65.0
+level_points = PackedFloat32Array(1, 10, 0, 25, 35, 0, 30, 55, 0, 36, 55, 0, 37, 55, 0)
+label = "Sinh lực tối đa"
+value_at_level_1 = 10.0
+value_at_max_level = 55.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_58"]
 script = ExtResource("3_statline")
-label = "Thời gian trì hoãn"
-value_at_level_1 = 1.0
-value_at_max_level = 30.0
+level_points = PackedFloat32Array(1, 9, 0, 30, 40, 0)
+label = "Tốc độ di chuyển"
+value_at_level_1 = 9.0
+value_at_max_level = 40.0
 suffix = "%"
+[sub_resource type="Resource" id="SubResource_58_1"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 3, 0, 30, 9, 0)
+label = "Số bóng mờ khi di chuyển"
+value_at_level_1 = 3.0
+value_at_max_level = 9.0
+suffix = " bóng"
+[sub_resource type="Resource" id="SubResource_58_2"]
+script = ExtResource("3_statline")
+label = "Thời gian duy trì"
+value_at_level_1 = 300.0
+value_at_max_level = 300.0
+suffix = " giây"
 [sub_resource type="Resource" id="SubResource_59"]
 script = ExtResource("2_skill")
 id = "hoa_son_huyen_nhan_van_yen"
@@ -765,10 +783,10 @@ skill_name = "Huyễn Nhãn Vân Yên"
 req_level = 60
 vltk_skill_id = 1358
 icon = ExtResource("vicon_hoa_son_huyen_nhan_van_yen")
-description = "Võ học chính phái phái Hoa Sơn"
-school_text = "Võ công trấn phái"
-is_active = false
-category = 1
+description = "Võ học chính phái phái Hoa Sơn, thi triển tăng cường công lực và tạo bóng mờ khi di chuyển."
+school_text = "Hỗ trợ - chủ động"
+is_active = true
+category = 0
 max_level = 30
 target_enemy = false
 target_ally = false
@@ -782,11 +800,12 @@ vltk_damage_range = 0
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
-"addcolddamage_v": [PackedFloat32Array(1, 100, 0, 30, 215, 0), PackedFloat32Array(1, 1080, 0, 2, 3240, 0), PackedFloat32Array()],
-"addcoldmagic_v": [PackedFloat32Array(1, 20, 0, 30, 315, 0), PackedFloat32Array(1, 1080, 0, 2, 3240, 0), PackedFloat32Array()],
-"attackspeed_v": [PackedFloat32Array(1, 12, 0, 30, 65, 0, 33, 75, 0, 35, 90, 0, 38, 95, 0, 41, 100, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
-"castspeed_v": [PackedFloat32Array(1, 12, 0, 30, 65, 0, 33, 75, 0, 35, 90, 0, 38, 95, 0, 41, 100, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()],
-"coldenhance_p": [PackedFloat32Array(1, 1, 0, 30, 30, 0, 35, 35, 0), PackedFloat32Array(1, -1, 0, 2, -1, 0), PackedFloat32Array()]
+"addcolddamage_v": [PackedFloat32Array(1, 100, 0, 30, 315, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()],
+"addcoldmagic_v": [PackedFloat32Array(1, 20, 0, 30, 315, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()],
+"coldenhance_p": [PackedFloat32Array(1, 8, 0, 30, 39, 0, 32, 39, 0, 33, 39, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()],
+"fastwalkrun_p": [PackedFloat32Array(1, 9, 0, 30, 40, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()],
+"lifemax_yan_p": [PackedFloat32Array(1, 10, 0, 25, 35, 0, 30, 55, 0, 36, 55, 0, 37, 55, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()],
+"walkrunshadow": [PackedFloat32Array(1, 3, 0, 30, 9, 0), PackedFloat32Array(1, 5400, 0, 30, 5400, 0), PackedFloat32Array()]
 }
 base_damage = 0.0
 mana_cost = 0.0
@@ -794,7 +813,7 @@ cooldown = 0.00
 range = 0.0
 element = 2
 damage_growth_per_level = 0.0
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_54"), SubResource("SubResource_55"), SubResource("SubResource_56"), SubResource("SubResource_57"), SubResource("SubResource_58")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_54"), SubResource("SubResource_55"), SubResource("SubResource_56"), SubResource("SubResource_57"), SubResource("SubResource_58"), SubResource("SubResource_58_1"), SubResource("SubResource_58_2")])
 [sub_resource type="Resource" id="SubResource_60"]
 script = ExtResource("3_statline")
 level_points = PackedFloat32Array(1, -5, 0, 15, -20, 0, 20, -50, 0, 32, -75, 0, 33, -75, 0)
@@ -814,6 +833,13 @@ value_at_level_1 = 1.0
 value_at_max_level = 60.0
 suffix = "%"
 target_skill_id = "hoa_son_phach_thach_pha_ngoc"
+[sub_resource type="Resource" id="SubResource_62_1"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 40, 0, 25, 2416, 0, 28, 2916, 0)
+label = "Băng sát bùng nổ khi hết thời gian"
+value_at_level_1 = 40.0
+value_at_max_level = 1921.0
+suffix = " điểm"
 [sub_resource type="Resource" id="SubResource_63"]
 script = ExtResource("2_skill")
 id = "hoa_son_ma_van_kiem_khi"
@@ -823,7 +849,7 @@ vltk_skill_id = 1380
 weapon_limit = 0
 horse_limit = 1
 icon = ExtResource("vicon_hoa_son_ma_van_kiem_khi")
-description = "Khí trường siêu cấp của khí tông Hoa Sơn, gia tăng năng lực phe mình, làm suy yếu năng lực đối phương."
+description = "Khí trường siêu cấp của khí tông Hoa Sơn, gia tăng năng lực phe mình, làm suy yếu năng lực đối phương. Hết 20 giây phát nổ gây sát thương Băng sát."
 school_text = "Kiếm pháp (Nội công)"
 is_active = true
 category = 0
@@ -848,7 +874,7 @@ cooldown = 3.50
 range = 576.0
 element = 2
 damage_growth_per_level = 0.0
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_60"), SubResource("SubResource_61"), SubResource("SubResource_62")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_60"), SubResource("SubResource_61"), SubResource("SubResource_62"), SubResource("SubResource_62_1")])
 [sub_resource type="Resource" id="SubResource_64"]
 script = ExtResource("3_statline")
 label = "Ngũ hành tương khắc"
@@ -885,7 +911,7 @@ suffix = "%"
 script = ExtResource("2_skill")
 id = "hoa_son_thuong_tung_nghenh_khach"
 skill_name = "Thương Tùng Nghênh Khách"
-req_level = 90
+req_level = 60
 practice_only = true
 vltk_skill_id = 1360
 weapon_limit = 0
@@ -944,7 +970,7 @@ value_at_max_level = 65.0
 script = ExtResource("2_skill")
 id = "hoa_son_phach_thach_pha_ngoc"
 skill_name = "Phách Thạch Phá Ngọc"
-req_level = 90
+req_level = 80
 practice_only = true
 vltk_skill_id = 1382
 horse_limit = 1
@@ -979,28 +1005,22 @@ damage_growth_per_level = 52.6316
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_70"), SubResource("SubResource_71"), SubResource("SubResource_72")])
 [sub_resource type="Resource" id="SubResource_78"]
 script = ExtResource("3_statline")
-label = "Tự động kích hoạt cứu nguy khi máu yếu"
-value_at_level_1 = 100.0
-value_at_max_level = 100.0
-suffix = "%"
+label = "Khi sinh lực thấp hơn 25%%, có %d%% tỉ lệ nhận được trạng thái Hồi phục sinh lực"
+value_at_level_1 = 5.0
+value_at_max_level = 25.0
+suffix = ""
 [sub_resource type="Resource" id="SubResource_79"]
 script = ExtResource("3_statline")
-label = "Thời gian duy trì"
-value_at_level_1 = 5.0
-value_at_max_level = 15.0
-suffix = " giây"
+label = "Mỗi nửa giây hồi phục %d điểm sinh lực, duy trì trong 4 giây"
+value_at_level_1 = 1000.0
+value_at_max_level = 10000.0
+suffix = ""
 [sub_resource type="Resource" id="SubResource_80"]
 script = ExtResource("3_statline")
-label = "Tỷ lệ kích hoạt"
-value_at_level_1 = 5.0
-value_at_max_level = 20.0
-suffix = "%"
-[sub_resource type="Resource" id="SubResource_81"]
-script = ExtResource("3_statline")
-label = "Ngũ hành tương khắc"
+label = "Thời gian hồi chiêu"
 value_at_level_1 = 20.0
-value_at_max_level = 50.0
-suffix = "%"
+value_at_max_level = 20.0
+suffix = " giây"
 [sub_resource type="Resource" id="SubResource_74"]
 script = ExtResource("2_skill")
 id = "hoa_son_tu_ha_kiem_khi"
@@ -1034,7 +1054,7 @@ cooldown = 0.00
 range = 0.0
 element = 2
 damage_growth_per_level = 0.0
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_78"), SubResource("SubResource_79"), SubResource("SubResource_80"), SubResource("SubResource_81")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_78"), SubResource("SubResource_79"), SubResource("SubResource_80")])
 [sub_resource type="Resource" id="SubResource_82"]
 script = ExtResource("3_statline")
 label = "Tự động thi triển Cửu Kiếm Hợp Nhất"
@@ -1099,6 +1119,27 @@ level_points = PackedFloat32Array(1, 10, 0, 15, 300, 0, 20, 1100, 0, 26, 1300, 0
 label = "Tiêu hao nội lực"
 value_at_level_1 = 10.0
 value_at_max_level = 1300.0
+[sub_resource type="Resource" id="SubResource_76_1"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 100, 0, 26, 450, 0, 31, 550, 0, 32, 560, 0)
+label = "Sát thương bộc nổ khí trường Ma Vân"
+value_at_level_1 = 100.0
+value_at_max_level = 450.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_76_2"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 300, 0, 20, 1800, 0, 26, 2500, 0, 30, 3000, 0)
+label = "Băng sát nội công"
+value_at_level_1 = 300.0
+value_at_max_level = 2500.0
+suffix = " điểm"
+is_range = true
+min_at_level_1 = 300.0
+max_at_level_1 = 450.0
+min_at_max_level = 2500.0
+max_at_max_level = 3200.0
+
 [sub_resource type="Resource" id="SubResource_77"]
 script = ExtResource("2_skill")
 id = "hoa_son_than_quang_toan_nhieu"
@@ -1109,7 +1150,7 @@ vltk_skill_id = 1384
 weapon_limit = 0
 horse_limit = 1
 icon = ExtResource("vicon_hoa_son_than_quang_toan_nhieu")
-description = "Kiếm pháp đại thừa khí tông Hoa Sơn, phát nổ khí trường xung quanh trong phạm vi nhất định, gây ra sát thương diện rộng và hiệu quả đóng băng."
+description = "Kiếm pháp đại thừa khí tông Hoa Sơn. Khi thi triển bùng nổ luồng kiếm băng quanh người gây Băng sát diện rộng, đồng thời lập tức kích hoạt phát nổ toàn bộ khí trường Ma Vân Kiếm Khí xung quanh với sát thương bộc nổ cực lớn và đóng băng diện rộng."
 school_text = "Kiếm pháp (Nội công)"
 is_active = true
 category = 0
@@ -1122,12 +1163,13 @@ vltk_is_physical = 0
 vltk_missle_form = 7
 vltk_attack_radius = 600
 vltk_state_special_id = 0
-vltk_damage_range = 1
+vltk_damage_range = 5
 vltk_range_damage = 1
 vltk_hit_friend = 0
 vltk_attribs = {
 "candetonate1": [PackedFloat32Array(1, 107264, 0, 2, 107264, 0), PackedFloat32Array(), PackedFloat32Array(1, 100, 0, 26, 450, 0, 31, 550, 0, 32, 560, 0)],
-"candetonate2": [PackedFloat32Array(1, 109568, 0, 2, 109568, 0), PackedFloat32Array(), PackedFloat32Array(1, 100, 0, 26, 450, 0, 31, 550, 0, 32, 560, 0)]
+"candetonate2": [PackedFloat32Array(1, 109568, 0, 2, 109568, 0), PackedFloat32Array(), PackedFloat32Array(1, 100, 0, 26, 450, 0, 31, 550, 0, 32, 560, 0)],
+"colddamage_v": [PackedFloat32Array(1, 300, 0, 20, 1800, 0, 26, 2500, 0, 30, 3000, 0), PackedFloat32Array(), PackedFloat32Array(1, 450, 0, 20, 2400, 0, 26, 3200, 0, 30, 3800, 0)]
 }
 base_damage = 0.0
 mana_cost = 0.0
@@ -1135,7 +1177,7 @@ cooldown = 0.00
 range = 0.0
 element = 2
 damage_growth_per_level = 0.0
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_76")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_76"), SubResource("SubResource_76_2"), SubResource("SubResource_76_1")])
 
 [sub_resource type="Resource" id="SubResource_86"]
 script = ExtResource("3_statline")
@@ -1193,4 +1235,4 @@ sect_name = "Hoa Sơn"
 element = 2
 alignment = 2
 description = "Hoa Sơn từ lâu nổi danh với kiếm pháp tinh diệu, môn hạ đệ tử lấy hiệp nghĩa làm đầu; chia Kiếm tông và Khí tông."
-skills = Array[ExtResource("2_skill")]([SubResource("SubResource_8"), SubResource("SubResource_14"), SubResource("SubResource_17"), SubResource("SubResource_19"), SubResource("SubResource_21"), SubResource("SubResource_23"), SubResource("SubResource_28"), SubResource("SubResource_31"), SubResource("SubResource_34"), SubResource("SubResource_40"), SubResource("SubResource_43"), SubResource("SubResource_45"), SubResource("SubResource_53"), SubResource("SubResource_59"), SubResource("SubResource_63"), SubResource("SubResource_69"), SubResource("SubResource_73"), SubResource("SubResource_74"), SubResource("SubResource_75"), SubResource("SubResource_77"), SubResource("SubResource_88")])
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_8"), SubResource("SubResource_14"), SubResource("SubResource_17"), SubResource("SubResource_19"), SubResource("SubResource_21"), SubResource("SubResource_23"), SubResource("SubResource_28"), SubResource("SubResource_40"), SubResource("SubResource_31"), SubResource("SubResource_43"), SubResource("SubResource_53"), SubResource("SubResource_34"), SubResource("SubResource_59"), SubResource("SubResource_69"), SubResource("SubResource_63"), SubResource("SubResource_45"), SubResource("SubResource_73"), SubResource("SubResource_74"), SubResource("SubResource_88"), SubResource("SubResource_75"), SubResource("SubResource_77")])

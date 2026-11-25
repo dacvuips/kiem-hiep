@@ -148,6 +148,21 @@ func is_riding() -> bool:
 	return horse_res >= 0
 
 ## Độ cao (pixel) so với mặt đất — vẽ nhân vật cao lên z, bóng giữ nguyên (KNpcRes vẽ bóng ở z = 0).
+## Màu nhuộm trạng thái (băng/độc — StatusEffectController): nhuộm các bộ phận, không nhuộm bóng; tách khỏi `modulate`
+## của avatar (mặt nạ, nhấp nháy đỏ khi trúng đòn, ngồi thiền...) để hai bên không xoá màu của nhau.
+func set_status_tint(c: Color) -> void:
+	if _body:
+		_body.modulate = Color(c.r, c.g, c.b, _stealth_alpha)
+
+## Ẩn thân (KNpcRes gốc): CHÍNH CHỦ thấy thân người mờ alpha 128/255; người khác không thấy (RemotePlayer tự ẩn cả node).
+const STEALTH_ALPHA := 128.0 / 255.0
+var _stealth_alpha := 1.0
+
+func set_stealth(on: bool) -> void:
+	_stealth_alpha = STEALTH_ALPHA if on else 1.0
+	if _body:
+		_body.modulate.a = _stealth_alpha
+
 func set_height(z: float) -> void:
 	if _body:
 		_body.position.y = -z
@@ -166,6 +181,14 @@ func face(vec: Vector2) -> void:
 	## nhấp nháy giữa 2 hướng kề nhau.
 	if d != direction and absf(wrapf(raw - float(direction), -4.0, 4.0)) < FACE_HYSTERESIS:
 		return
+	if d != direction:
+		direction = d
+		_frame = -1
+		_apply_frame()
+
+## Đặt trực tiếp hướng 8 hướng 0..7 (0 = quay xuống, 2 = trái, 4 = quay lưng, 6 = phải, theo chiều kim đồng hồ).
+func set_direction8(dir: int) -> void:
+	var d := wrapi(dir, 0, 8)
 	if d != direction:
 		direction = d
 		_frame = -1
@@ -212,10 +235,157 @@ func _set_layer(sprite: Sprite2D, key: String) -> void:
 		var f := _data.get_file(key)
 		sprite.position = Vector2(f["offset"][0], f["offset"][1]) - _data.anchor
 
+## ---- BÓNG MỜ (KNpcBlur gốc, KNpcRes.cpp/.h) ----
+## Bật (SetBlur TRUE) khi ra skill có cột NeedShadow = 1 trong Skills.txt (KNpc::DoSkill) và trong mọi đòn cận chiến
+## DoBlurAttack / DoManyAttack / DoRunAttack; tắt ở 60% động tác (OnSkill) hoặc khi hết đòn.
+## Trong lúc bật: cứ BLUR_INTERVAL lần vẽ chụp 1 bản sao mọi bộ phận (frame đang hiện) GHIM tại chỗ đang đứng, alpha
+## START_BLUR_ALPHA; vòng 7 ô (MAX_BLUR_FRAME) ghi đè ô cũ nhất. Mỗi BLUR_INTERVAL lần vẽ mọi bóng giảm BLUR_ALPHA_CHANGE
+## tới 0 thì ẩn — tắt bóng thì các bóng còn lại vẫn mờ dần hết.
+## Gốc đếm theo số lần vẽ (UiPaint vẽ liên tục ngoài 18 nhịp game) — lấy BLUR_PAINT_FPS lần vẽ/giây.
+const MAX_BLUR_FRAME := 7
+const START_BLUR_ALPHA := 128
+const BLUR_ALPHA_CHANGE := 8
+const BLUR_INTERVAL := 3
+const BLUR_PAINT_FPS := 60.0
+
+var _blur_on: bool = false
+var _blur_root: Node2D            ## top_level: bóng đứng yên ở chỗ chụp, không đi theo nhân vật
+var _blur_slots: Array[Node2D] = []
+var _blur_alpha: PackedInt32Array = PackedInt32Array()
+var _blur_cur: int = 0
+var _blur_timer: int = 0
+var _blur_acc: float = 0.0
+var _blur_active: bool = false    ## còn bóng nào đang hiện
+
+func set_blur(on: bool) -> void:
+	if _blur_on == on:
+		return
+	_blur_on = on
+	if on:
+		_ensure_blur_nodes()
+		_blur_active = true
+
+func is_blur_on() -> bool:
+	return _blur_on
+
+func _ensure_blur_nodes() -> void:
+	if _blur_root != null:
+		return
+	_blur_root = Node2D.new()
+	_blur_root.name = "Blur"
+	_blur_root.top_level = true
+	add_child(_blur_root)
+	move_child(_blur_root, 0)  ## vẽ dưới thân nhân vật
+	_blur_alpha.resize(MAX_BLUR_FRAME)
+	for i in MAX_BLUR_FRAME:
+		var slot := Node2D.new()
+		slot.visible = false
+		_blur_root.add_child(slot)
+		_blur_slots.append(slot)
+		_blur_alpha[i] = 0
+
+## Mỗi lần "vẽ" gốc: KNpcBlur::ChangeAlpha rồi (nếu đang bật và NowGetBlur) chụp bóng mới.
+func _blur_paint() -> void:
+	_blur_timer += 1
+	if _blur_timer >= BLUR_INTERVAL:
+		_blur_timer = 0
+		var any := false
+		for i in MAX_BLUR_FRAME:
+			if _blur_alpha[i] > 0:
+				_blur_alpha[i] = maxi(0, _blur_alpha[i] - BLUR_ALPHA_CHANGE)
+				_blur_slots[i].modulate.a = _blur_alpha[i] / 255.0
+				_blur_slots[i].visible = _blur_alpha[i] > 0
+				any = true
+		_blur_active = any
+	if _blur_on and _blur_timer == 0:
+		_blur_capture()
+		_blur_active = true
+
+func _blur_capture() -> void:
+	var slot := _blur_slots[_blur_cur]
+	var n := 0
+	for child in _body.get_children():
+		var src := child as Sprite2D
+		if src == null or not src.visible or src.texture == null:
+			continue
+		var dst: Sprite2D
+		if n < slot.get_child_count():
+			dst = slot.get_child(n)
+		else:
+			dst = Sprite2D.new()
+			dst.centered = false
+			dst.region_enabled = true
+			slot.add_child(dst)
+		dst.texture = src.texture
+		dst.region_rect = src.region_rect
+		dst.position = src.position
+		dst.visible = true
+		n += 1
+	for i in range(n, slot.get_child_count()):
+		(slot.get_child(i) as CanvasItem).visible = false
+	slot.global_transform = _body.global_transform
+	_blur_alpha[_blur_cur] = START_BLUR_ALPHA
+	slot.modulate = Color(1, 1, 1, START_BLUR_ALPHA / 255.0)
+	slot.visible = n > 0
+	_blur_cur = (_blur_cur + 1) % MAX_BLUR_FRAME
+
+## Tạo 1 bóng mờ tĩnh tại toạ độ world_pos, mờ dần rồi tự giải phóng
+func spawn_blur_ghost(world_pos: Vector2, initial_alpha: float = 0.65, fade_duration: float = 0.55) -> Node2D:
+	if _body == null:
+		return null
+	_ensure_blur_nodes()
+	var ghost := Node2D.new()
+	ghost.top_level = true
+	var n := 0
+	for child in _body.get_children():
+		var src := child as Sprite2D
+		if src == null or not src.visible or src.texture == null:
+			continue
+		var dst := Sprite2D.new()
+		dst.centered = false
+		dst.region_enabled = true
+		dst.texture = src.texture
+		dst.region_rect = src.region_rect
+		dst.position = src.position
+		ghost.add_child(dst)
+		n += 1
+	if n == 0:
+		ghost.queue_free()
+		return null
+	var offset := _body.global_position - global_position
+	ghost.global_position = world_pos + offset
+	ghost.modulate = Color(0.9, 0.95, 1.0, initial_alpha)
+	_blur_root.add_child(ghost)
+	var tween := ghost.create_tween()
+	tween.tween_property(ghost, "modulate:a", 0.0, fade_duration)
+	tween.tween_callback(ghost.queue_free)
+	return ghost
+
+func _tick_blur(delta: float) -> void:
+	if not _blur_active or _blur_root == null:
+		return
+	_blur_acc += delta * BLUR_PAINT_FPS
+	var steps := mini(int(_blur_acc), 8)  ## khung hình bị khựng lâu thì không chụp dồn
+	_blur_acc -= floorf(_blur_acc)
+	for i in steps:
+		_blur_paint()
+
+## Hệ số nhịp động tác (Băng sát gốc: chậm 1/2) — đọc từ StatusEffectController của chủ (Player / RemotePlayer / PkBot).
+var _owner_status: StatusEffectController
+
+func get_time_scale() -> float:
+	if _owner_status == null or not is_instance_valid(_owner_status):
+		var p := get_parent()
+		_owner_status = p.get("status_controller") as StatusEffectController if p != null and "status_controller" in p else null
+		if _owner_status == null:
+			return 1.0
+	return _owner_status.action_time_scale()
+
 func _process(delta: float) -> void:
+	_tick_blur(delta)
 	if _finished:
 		return
-	_time += delta * _speed
+	_time += delta * _speed * get_time_scale()
 	var frame := int(_time * _data.fps)
 	if action in LOOPING:
 		frame %= maxi(_frames_per_dir, 1)

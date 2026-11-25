@@ -274,7 +274,7 @@ func _enter_main_map() -> void:
 		if not field.is_empty() and field.has("dir"):
 			VltkWorld.current.map_dir = str(field["dir"])
 		elif VltkWorld.current.map_dir == "" or not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(VltkWorld.current.map_dir)):
-			VltkWorld.current.map_dir = "res://world/maps/map_20"
+			VltkWorld.current.map_dir = "res://world/maps/map_200"
 		VltkWorld.current.setup_main_map()
 
 	## Chế độ Thủ Thành (Zombies vs Plants JX1): Bàn cờ 11x5, hiệp khách, Xe Lương Thảo, 5 đợt quái
@@ -418,8 +418,8 @@ func _enter_main_map() -> void:
 
 			add_child(match_node)
 
-	## Map Nguyệt Ca Đảo (Sơn Trang Nông Trại)
-	if field.get("manor", false) or int(field.get("id", -1)) == 1041:
+	## Map Nguyệt Ca Đảo (Sơn Trang Nông Trại) - chỉ nạp khi vào chế độ Sơn Trang (manor)
+	if field.get("manor", false):
 		# Đảm bảo UI nổi lên trên màn phủ bóng tối ban đêm (layer 10)
 		if has_node("UI") and $UI is CanvasLayer:
 			$UI.layer = 10
@@ -1106,7 +1106,7 @@ func _toggle_status_window() -> void:
 
 	_status_window = CharacterStatusWindow.open(self, GameManager.local_profile, _toggle_inventory_window)
 
-	_status_window.screen.profile_changed.connect(_on_panel_profile_changed)
+	_status_window.profile_changed.connect(_on_panel_profile_changed)
 
 	_status_window.tree_exited.connect(func() -> void:
 
@@ -1188,7 +1188,7 @@ func _on_panel_profile_changed() -> void:
 
 	if is_instance_valid(_status_window):
 
-		_status_window.screen.refresh()
+		_status_window.refresh()
 
 	var tree := get_tree()
 
@@ -1362,7 +1362,16 @@ func _build_bottom_action_bar() -> void:
 	pk_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pk_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pk_button.add_child(pk_icon)
-	## Ảnh pk.png gốc đã là nút tròn: bỏ nền đen + viền, icon to đúng bằng ô nút (SLOT) cũ.
+
+	var pk_glyph := Label.new()
+	pk_glyph.name = "PkGlyph"
+	pk_glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pk_glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	pk_glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pk_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pk_glyph.add_theme_font_size_override("font_size", 20)
+	_pk_button.add_child(pk_glyph)
+
 	SideMenu.make_bare(_pk_button, 0.0)
 	## Ô trống giữ chỗ cho nút Ngồi (SitButton nằm trong SkillBarUI, đặt đúng vào ô này).
 	var sit_slot := Control.new()
@@ -1870,46 +1879,36 @@ func set_pk_mode(target_mode: int) -> void:
 		_pk_cooldown_until = 0.0
 
 	var player := get_tree().get_first_node_in_group("player")
-
 	if player and "pk_mode" in player:
-
 		player.pk_mode = _pk_mode
-
 		if player.has_method("set_camp"):
-
 			var base_camp: int = lp.get_current_camp() if lp else Camp.Type.BEGIN
-
 			var target_camp: int = Camp.Type.FREE if _pk_mode == 2 else (Camp.Type.TONGWAR if _pk_mode == 3 else base_camp)
-
 			player.set_camp(target_camp)
 
+	# Đồng bộ cờ mạng ngay lập tức sang server và các client khác
+	var sync_node := get_node_or_null("NetWorldSync")
+	if sync_node and sync_node.has_method("force_sync"):
+		sync_node.force_sync()
+
 	var others := get_tree().get_nodes_in_group("other_players")
-
-	var my_camp: int = player.camp if player else Camp.Type.BEGIN
-
+	var my_camp: int = player.camp if player else (lp.get_current_camp() if lp else Camp.Type.BEGIN)
 	for node in others:
-
 		var rp := node as RemotePlayer
-
 		if rp and is_instance_valid(rp):
-
-			if _pk_mode == 2:  ## Đồ sát: đánh mọi người ngoài tân thủ
-
-				rp.set_pk_enemy(rp.camp != Camp.Type.BEGIN)
-
-			elif _pk_mode == 1:  ## Chiến đấu phe: đánh người khác phe cũng bật chiến đấu
-
-				var rp_in_war: bool = (rp.flags & NetProto.FLAG_PK) != 0 or bool(rp.get("pk_mode"))
-
-				rp.set_pk_enemy(rp_in_war and rp.camp != my_camp and rp.camp != Camp.Type.BEGIN)
-
-			elif _pk_mode == 3:  ## Bang chiến
-
-				rp.set_pk_enemy(rp.camp == Camp.Type.TONGWAR)
-
-			else:  ## Luyện công (bình thường): chỉ tự vệ khi bị đồ sát
-
-				rp.set_pk_enemy((rp.flags & NetProto.FLAG_PK) != 0)
+			if rp.has_method("update_pk_relation"):
+				rp.update_pk_relation()
+			else:
+				if _pk_mode == 2:  ## Đồ sát: đánh mọi người ngoài tân thủ
+					rp.set_pk_enemy(rp.camp != Camp.Type.BEGIN)
+				elif _pk_mode == 1:  ## Chiến đấu phe: đánh người khác phe cũng bật chiến đấu
+					var rp_in_war: bool = (rp.flags & NetProto.FLAG_PK_WAR) != 0
+					var rp_in_murder: bool = (rp.flags & NetProto.FLAG_PK) != 0
+					rp.set_pk_enemy(rp_in_murder or (rp_in_war and rp.camp != my_camp and rp.camp != Camp.Type.BEGIN))
+				elif _pk_mode == 3:  ## Bang chiến
+					rp.set_pk_enemy(rp.camp == Camp.Type.TONGWAR)
+				else:  ## Luyện công (bình thường): chỉ tự vệ khi bị đồ sát
+					rp.set_pk_enemy((rp.flags & NetProto.FLAG_PK) != 0)
 
 	_refresh_pk_ui()
 
@@ -1942,37 +1941,74 @@ func _toggle_pk_mode() -> void:
 	set_pk_mode((_pk_mode + 1) % (max_mode + 1))
 
 func _refresh_pk_ui() -> void:
-
 	if _pk_button and is_instance_valid(_pk_button):
-
-		# Giữ nguyên icon gốc VLTK (pk.png), không ghi đè text emoji lên nút!
-
 		_pk_button.text = ""
-
-		## Không vẽ vòng vàng khi bật PK: ảnh nút (khung Luyện công / Chiến đấu / Đồ sát) đã cho biết chế độ.
 		var pk_icon := _pk_button.get_node_or_null("PkIcon") as TextureRect
-		if pk_icon != null and not _pk_frames.is_empty():
-			## Gốc có khung 3 cho Bang chiến; ảnh pk.spr chỉ có 3 khung -> dùng khung Chiến đấu ánh tím.
-			pk_icon.texture = _pk_frames[mini(mini(_pk_mode, 2), _pk_frames.size() - 1)] if _pk_mode != 3 else _pk_frames[mini(1, _pk_frames.size() - 1)]
-			pk_icon.modulate = Color(0.85, 0.6, 1.0) if _pk_mode == 3 else Color.WHITE
+		var pk_glyph := _pk_button.get_node_or_null("PkGlyph") as Label
+
+		var border_color: Color
+		var bg_color: Color
+		var shadow_col: Color
 
 		match _pk_mode:
-
-			0:
-
+			0:  ## Luyện công (Hòa bình) - Icon Khiên 🛡️
+				if pk_icon != null:
+					pk_icon.visible = false
+				if pk_glyph != null:
+					pk_glyph.text = "🛡️"
+					pk_glyph.visible = true
+				border_color = Color(0.35, 0.85, 0.45)
+				bg_color = Color(0.06, 0.14, 0.08, 0.92)
+				shadow_col = Color(0.2, 0.8, 0.3, 0.3)
 				_pk_button.tooltip_text = "Chế độ PK (F9): [LUYỆN CÔNG]\n(Bấm để mở danh sách chọn chế độ PK)"
-
-			1:
-
+			1:  ## Chiến đấu phe - Icon 2 Kiếm Chéo ⚔️ (ảnh pk.png gốc)
+				if pk_icon != null and not _pk_frames.is_empty():
+					pk_icon.texture = _pk_frames[0]
+					pk_icon.modulate = Color(1.0, 0.85, 0.4)
+					pk_icon.visible = true
+					if pk_glyph != null:
+						pk_glyph.visible = false
+				else:
+					if pk_icon != null:
+						pk_icon.visible = false
+					if pk_glyph != null:
+						pk_glyph.text = "⚔️"
+						pk_glyph.visible = true
+				border_color = Color(1.0, 0.65, 0.2)
+				bg_color = Color(0.25, 0.14, 0.04, 0.92)
+				shadow_col = Color(1.0, 0.5, 0.1, 0.5)
 				_pk_button.tooltip_text = "Chế độ PK (F9): [CHIẾN ĐẤU PHE]\n(Bấm để mở danh sách chọn chế độ PK)"
-
-			2:
-
+			2:  ## Đồ sát - Icon Đầu Lâu 💀
+				if pk_icon != null:
+					pk_icon.visible = false
+				if pk_glyph != null:
+					pk_glyph.text = "💀"
+					pk_glyph.visible = true
+				border_color = Color(1.0, 0.25, 0.25)
+				bg_color = Color(0.28, 0.04, 0.04, 0.92)
+				shadow_col = Color(1.0, 0.1, 0.1, 0.6)
 				_pk_button.tooltip_text = "Chế độ PK (F9): [ĐỒ SÁT]\n(Bấm để mở danh sách chọn chế độ PK)"
-
-			3:
-
+			3:  ## Bang chiến - Icon Cờ 🚩
+				if pk_icon != null:
+					pk_icon.visible = false
+				if pk_glyph != null:
+					pk_glyph.text = "🚩"
+					pk_glyph.visible = true
+				border_color = Color(0.85, 0.5, 1.0)
+				bg_color = Color(0.18, 0.05, 0.28, 0.92)
+				shadow_col = Color(0.7, 0.2, 0.9, 0.5)
 				_pk_button.tooltip_text = "Chế độ PK (F9): [BANG CHIẾN]\n(Bấm để mở danh sách chọn chế độ PK)"
+
+		# Viền tròn và hiệu ứng phát sáng cho nút tròn PK
+		var sb := StyleBoxFlat.new()
+		sb.set_corner_radius_all(int(SideMenu.SLOT / 2))
+		sb.bg_color = bg_color
+		sb.border_color = border_color
+		sb.set_border_width_all(2)
+		sb.shadow_color = shadow_col
+		sb.shadow_size = 5
+		for st in ["normal", "focus", "hover", "pressed"]:
+			_pk_button.add_theme_stylebox_override(st, sb)
 
 	if _pk_hud_btn and is_instance_valid(_pk_hud_btn):
 
@@ -2280,6 +2316,9 @@ func _on_exit_confirmed() -> void:
 			SaveManager.restore_profile_from_save()
 
 		await SaveManager.flush_online()
+
+	if GameManager != null and GameManager.is_training_stage() and not GameModeManager.is_offline():
+		GameManager.record_training_exit()
 
 	if tree != null:
 

@@ -691,7 +691,7 @@ func _learned_level(skill: SkillDefinition) -> int:
 	var caster := get_parent()
 	var c_stats: CombatantStats = caster.get("combat_stats") if caster else null
 	if c_stats != null:
-		base_lvl += c_stats.get_skill_bonus(int(skill.element) if "element" in skill else -1)
+		base_lvl += c_stats.get_skill_bonus(int(skill.element) if "element" in skill else -1, skill.vltk_skill_id)
 	return maxi(1, base_lvl)
 
 ## Hiệu ứng trúng đòn — NGUYÊN VĂN KNpc::AppendSkillEffect gốc (giá trị skill đọc từ vltk_attribs):

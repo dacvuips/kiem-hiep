@@ -69,7 +69,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_mask &= ~32  ## Quái đi xuyên vật cản (obstacle layer)
 	_base_sprite_scale = sprite.scale
-	target = get_tree().get_first_node_in_group("player")
+	if not PlayerStealth.local_hidden():
+		target = get_tree().get_first_node_in_group("player")
+	else:
+		target = null
 	if not $HitArea.body_entered.is_connected(_on_hit_area_body_entered):
 		$HitArea.body_entered.connect(_on_hit_area_body_entered)
 	sprite.play("walk")
@@ -226,10 +229,11 @@ func _physics_process(delta: float) -> void:
 		if _damage_batch_timer <= 0.0:
 			_flush_damage_number()
 
-	## Player đã chết (queue_free()) — target vẫn còn tham chiếu cũ (không tự về null), truy cập
-	## target.global_position lúc này sẽ lỗi vì object đã bị giải phóng. Dừng hẳn di chuyển thay
-	## vì không còn ai để đuổi theo nữa.
-	if GameManager.is_game_over or target == null or not is_instance_valid(target) or (target.is_in_group("player") and target.get("has_moved") == false):
+	## Player đã chết (queue_free()) hoặc GM tàng hình:
+	if GameManager.is_game_over or target == null or not is_instance_valid(target) \
+			or (target.is_in_group("player") and (target.get("has_moved") == false or PlayerStealth.local_hidden())):
+		if PlayerStealth.local_hidden() and target != null and target.is_in_group("player"):
+			target = null
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_update_vltk_pose(Vector2.ZERO, delta)
@@ -239,6 +243,20 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_update_vltk_pose(Vector2.ZERO, delta)
+		return
+	if status_controller.is_confused:
+		_atk_time = -1.0
+		if not has_meta("_randmove_dir") or float(get_meta("_randmove_timer", 0.0)) <= 0.0:
+			var angle := randf() * TAU
+			set_meta("_randmove_dir", Vector2(cos(angle), sin(angle)))
+			set_meta("_randmove_timer", randf_range(0.6, 1.2))
+		var rtimer: float = float(get_meta("_randmove_timer")) - delta
+		set_meta("_randmove_timer", rtimer)
+		var rdir: Vector2 = get_meta("_randmove_dir")
+		var conf_bonus := 1.0 + (combat_stats.move_speed_p / 100.0 if combat_stats else 0.0)
+		velocity = rdir * speed * conf_bonus * 0.75 * status_controller.move_speed_multiplier
+		move_and_slide()
+		_update_vltk_pose(velocity, delta)
 		return
 	if _vltk_sprite != null:
 		_atk_cooldown = maxf(0.0, _atk_cooldown - delta)
@@ -305,7 +323,7 @@ func _tick_vltk_attack(delta: float) -> void:
 	_vltk_sprite.set_pose(_attack_action, _vltk_dir64, clampf(_atk_time / _atk_len, 0.0, 1.0))
 	if _atk_time >= _atk_len:
 		_atk_time = -1.0
-		_atk_cooldown = _atk_len * 0.5
+		_atk_cooldown = maxf(2.0, _atk_len * 0.5)
 		## Chiêu có TimePerCast (Skills.txt, frame) thì cả vòng đánh + chờ không ngắn hơn hồi chiêu gốc.
 		if _active_skill_id > 0:
 			var tpc := float(VltkSkillData.skill(_active_skill_id, _active_skill_level).get("time_per_cast", 0)) / VltkMath.FPS
@@ -433,8 +451,11 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED:
-		spawn_miss_number()
+		var is_monster_atk := (mods != null and mods.attacker_node != null and (CombatFormulas.is_monster(mods.attacker_node) or mods.attacker_node.is_in_group("enemies")))
+		if not is_monster_atk:
+			spawn_miss_number()
 		return
+	SkillPractice.on_monster_hit_by(mods, attacker_stats, get_tree())   ## luyện skill 90/120/150 (đòn trúng)
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
 
@@ -500,7 +521,10 @@ func _on_pool_acquire() -> void:
 	_atk_cooldown = 0.0
 	_vltk_time = 0.0
 	modulate = Color.WHITE
-	target = get_tree().get_first_node_in_group("player")
+	if not PlayerStealth.local_hidden():
+		target = get_tree().get_first_node_in_group("player")
+	else:
+		target = null
 	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if col:
 		col.set_deferred("disabled", false)
@@ -627,7 +651,7 @@ func _get_stage_damage_scale() -> float:
 func _deal_contact_damage(body: Node) -> void:
 	if body == null or not is_instance_valid(body):
 		return
-	if body.is_in_group("player") and body.get("has_moved") == false:
+	if body.is_in_group("player") and (body.get("has_moved") == false or (GmManager and GmManager.is_invisible)):
 		return
 	## Ưu tiên take_damage_from() (pipeline CombatFormulas đầy đủ — roll trúng/né, tương khắc Ngũ
 	## Hành, % kháng) khi target hỗ trợ (Player). Fallback take_damage() cho các body khác (VD test

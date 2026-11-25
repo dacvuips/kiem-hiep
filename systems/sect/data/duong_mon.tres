@@ -1175,7 +1175,7 @@ value_at_max_level = 60.0
 [sub_resource type="Resource" id="SubResource_116"]
 script = ExtResource("2_skill")
 id = "duong_mon_nhiep_hon_nguyet_anh"
-skill_name = "Nhiếp Hồn Nguyệt ảnh (hệ Mộc)"
+skill_name = "Nhiếp Hồn Nguyệt Ảnh"
 horse_limit = 1
 weapon_limit = 101
 practice_only = true
@@ -1212,7 +1212,7 @@ cooldown = 0.00
 range = 360.0
 element = 1
 damage_growth_per_level = 5.928
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_108"), SubResource("SubResource_109"), SubResource("SubResource_110"), SubResource("SubResource_111"), SubResource("SubResource_112"), SubResource("SubResource_113"), SubResource("SubResource_114"), SubResource("SubResource_115")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_108"), SubResource("SubResource_109"), SubResource("SubResource_110"), SubResource("SubResource_111"), SubResource("SubResource_114"), SubResource("SubResource_115")])
 [sub_resource type="Resource" id="SubResource_117"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
@@ -1528,7 +1528,7 @@ value_at_max_level = 92.0
 [sub_resource type="Resource" id="SubResource_151"]
 script = ExtResource("2_skill")
 id = "duong_mon_vo_anh_xuyen"
-skill_name = "Vô ảnh Xuyên (hệ Mộc)"
+skill_name = "Vô ảnh Xuyên"
 horse_limit = 1
 weapon_limit = 101
 practice_only = true
@@ -1564,7 +1564,7 @@ cooldown = 0.00
 range = 360.0
 element = 1
 damage_growth_per_level = 7.296
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_144"), SubResource("SubResource_145"), SubResource("SubResource_146"), SubResource("SubResource_147"), SubResource("SubResource_148"), SubResource("SubResource_149"), SubResource("SubResource_150")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_144"), SubResource("SubResource_145"), SubResource("SubResource_146"), SubResource("SubResource_147"), SubResource("SubResource_150")])
 is_hotbar = true
 [sub_resource type="Resource" id="SubResource_152"]
 script = ExtResource("3_statline")
@@ -1890,7 +1890,7 @@ target_self = false
 is_aura = false
 vltk_is_physical = 0
 vltk_missle_form = 13
-vltk_attack_radius = 0
+vltk_attack_radius = 405
 vltk_state_special_id = 0
 vltk_damage_range = 0
 vltk_range_damage = 0
@@ -1906,7 +1906,7 @@ base_damage = 60.0
 mana_cost = 0.0
 cooldown = 0.00
 vltk_min_time_per_cast = PackedFloat32Array(1, 270, 0, 15, 126, 0, 20, 90, 0, 21, 90, 0)
-range = 0.0
+range = 405.0
 element = 1
 damage_growth_per_level = 7.2
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_182"), SubResource("SubResource_183"), SubResource("SubResource_184"), SubResource("SubResource_185")])
@@ -2154,15 +2154,16 @@ vltk_damage_range = 0
 vltk_range_damage = 0
 vltk_hit_friend = 0
 vltk_attribs = {
-"autorescueskill": [PackedFloat32Array(1, 315649, 0, 20, 315668, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 46085, 0, 20, 46100, 0)]
+"autorescueskill": [PackedFloat32Array(1, 315649, 0, 20, 315668, 0), PackedFloat32Array(1, -1, 0, 20, -1, 0), PackedFloat32Array(1, 46085, 0, 20, 46100, 0)],
+"seriesdamage_p": [PackedFloat32Array(1, 20, 0, 20, 50, 0)]
 }
 req_level = 180
 vltk_skill_id = 1223
 icon = ExtResource("vicon_duong_mon_hap_tinh_tran")
 description = "Kỹ năng thất truyền của phái Đường Môn, khi sinh lực dưới 25% kích hoạt ngăn chặn 100% sát thương phải chịu."
-school_text = "Hỗ trợ chủ động (Thất truyền 180)"
-is_active = true
-category = 0
+school_text = "Bị động (Thất truyền 180)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
 cooldown = 0.00
@@ -2170,7 +2171,7 @@ range = 0.0
 element = 1
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_200"), SubResource("SubResource_201"), SubResource("SubResource_202"), SubResource("SubResource_203"), SubResource("SubResource_204")])
-is_hotbar = true
+is_hotbar = false
 
 [resource]
 script = ExtResource("1_sect")

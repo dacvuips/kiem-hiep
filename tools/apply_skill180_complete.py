@@ -118,6 +118,11 @@ for sid, info in SKILL_180_DEFS.items():
         "wait": 0
     }
 
+# Từ Hàng Phổ Độ 1234 (Ba La Tâm Kinh kích hoạt): Skills.txt gốc giống hệt Từ Hàng Phổ Độ 93 (đạn 5, vùng 5 ô,
+# TargetAlly + TargetSelf, bảng cihang_pudu) — chỉ khác MissleForm 7 (bung tại chỗ người đánh) + ảnh 门派进阶\水.spr.
+if "93" in skills_fx:
+    skills_fx["1234"] = {**skills_fx["93"], "form": 7, "precast": "tien_giai_thuy", "series": 2, "name": "Từ Hàng Phổ Độ"}
+
 with open(skills_fx_path, "w", encoding="utf-8") as f:
     json.dump(skills_fx, f, ensure_ascii=False, indent=2)
 print("Updated skills.json!")
@@ -386,17 +391,17 @@ req_level = 180
 vltk_skill_id = {data['vltk_id']}
 icon = ExtResource("vicon_{data['skill_id']}")
 description = "{data['desc']}"
-school_text = "Hỗ trợ chủ động (Thất truyền 180)"
-is_active = true
-category = 0
+school_text = "Bị động (Thất truyền 180)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 20.0
+cooldown = 0.0
 range = 0.0
 element = {data['element']}
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([{stat_lines_refs}])
-is_hotbar = true
+is_hotbar = false
 """
     new_sub_blocks.append(skill_block)
 

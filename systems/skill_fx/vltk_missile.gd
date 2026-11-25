@@ -26,10 +26,12 @@ const FOLLOW_REAIM_TICKS := 4
 const DRAW_Z := 1
 ## Đạn Follow mất mục tiêu (quái đã chết giữa chừng / chưa có mục tiêu) thì đuổi quái gần nhất trong tầm này (toạ độ logic) thay vì
 ## bay thẳng luôn; quét lại mỗi RETARGET_TICKS nhịp cho rẻ. (Bản gốc bay thẳng — đây là chỉnh theo yêu cầu "đạn dí theo".)
-const RETARGET_RANGE := 480.0
+const RETARGET_RANGE := 650.0
 const RETARGET_TICKS := 2
 
 static var _next_serial := 1
+## Danh sách các đạn / khí trường đang hoạt động trên toàn thế giới (để hỗ trợ kỹ năng kích nổ như Thần Quang Toàn Nhiễu)
+static var active_missiles: Array[VltkMissile] = []
 
 var ctx: VltkCastContext
 var skill: Dictionary = {}     ## skill (đã áp cấp) sinh ra đạn — quyết định sự kiện của đạn (KSkill::CreateMissle)
@@ -116,6 +118,9 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	survivor_bounce_left = 0
 	scale = Vector2.ONE
 
+	if not active_missiles.has(self):
+		active_missiles.append(self)
+
 	if ctx != null and ctx.launcher != null and ctx.launcher.is_in_group("player"):
 		survivor_pierce_left = SurvivorPerks.get_pierce_count()
 		survivor_bounce_left = SurvivorPerks.get_bounce_count()
@@ -149,6 +154,10 @@ func _setup(cast_ctx: VltkCastContext, skill_lv: Dictionary, m_data: Dictionary,
 	_sprite.region_enabled = true
 	var fly: Variant = _phase(Phase.FLY)
 	_anim = VltkSkillData.anim(str(fly["anim"])) if fly is Dictionary else {}
+	if _anim.get("additive", false):
+		_sprite.material = VltkEffect.get_add_material()
+	else:
+		_sprite.material = null
 	_sprite.texture = VltkSkillData.texture(str(fly["anim"])) if fly is Dictionary else null
 	status = Phase.WAIT
 	global_position = VltkMath.to_world(logic)
@@ -184,7 +193,8 @@ func _activate() -> bool:
 	if ctx == null or not ctx.is_valid():
 		_do_vanish()
 		return false
-	if follow_target != null and not (is_instance_valid(follow_target) and follow_target.is_inside_tree()):
+	## KMissle gốc: mục tiêu đang đuổi mà ẩn thân thì đạn thôi bám theo.
+	if follow_target != null and (not (is_instance_valid(follow_target) and follow_target.is_inside_tree()) or (follow_target != ctx.launcher and PlayerStealth.is_hidden(follow_target))):
 		follow_target = null
 	if _cur_life >= _life and status != Phase.VANISH and status != Phase.COLLISION:
 		if int(data.get("auto_explode", 0)):
@@ -199,6 +209,8 @@ func _activate() -> bool:
 			_play_sound(Phase.FLY, logic)  ## KMissle: PlaySound(MS_DoFly) lúc bắt đầu bay
 			## Đạn đứng yên (STAND) có vùng va chạm: kiểm tra ngay khi bắt đầu bay để không bỏ lọt va chạm
 			if _move_kind == MoveKind.STAND:
+				if int(data.get("auto_explode", 0)):
+					_process_collision_at(logic, maxi(int(data.get("dmg_range", 0)), int(data.get("collide_range", 0))))
 				_check_collision()
 		else:
 			_do_vanish()
@@ -208,8 +220,61 @@ func _activate() -> bool:
 		var fly_time := int(skill.get("fly_time", 0))
 		if int(skill.get("fly_event", 0)) and fly_time > 0 and (_cur_life - _start_life) % fly_time == 0:
 			_on_event("fly")
+		_check_long_huyen_aura()
 	_cur_life += 1
 	return status != Phase.VANISH
+
+func _check_long_huyen_aura() -> void:
+	var m_child := int(skill.get("child", 0))
+	var m_id := int(skill.get("id", 0))
+	if m_id == 1376 or m_child == 100421 or (m_child % 1000) == 421:
+		_process_long_huyen_aura()
+
+func _process_long_huyen_aura() -> void:
+	if ctx == null or not ctx.is_valid():
+		return
+	var radius_px := float(int(data.get("collide_range", 5)) * VltkMath.CELL)
+	var radius_sq := radius_px * radius_px
+	var lvl := int(skill.get("level", 1))
+
+	var progress := clampf(float(lvl - 1) / 19.0, 0.0, 1.0)
+	var all_res := int(round(1.0 + 9.0 * progress))
+	var sorb_dmg := int(round(1.0 + 9.0 * progress))
+	var life_max := int(round(1.0 + 9.0 * progress))
+	var anti_hurt := int(round(1.0 + 4.0 * progress))
+
+	var attribs := {
+		"allres_p": Vector3i(all_res, 0, 0),
+		"sorbdamage_p": Vector3i(sorb_dmg, 0, 0),
+		"lifemax_p": Vector3i(life_max, 0, 0),
+		"anti_do_hurt_p": Vector3i(anti_hurt, 0, 0)
+	}
+	var meta := {
+		"name": "Long Huyền Kiếm Khí",
+		"icon": preload("res://assets/skill_icons/vltk/hoa_son_long_huyen_kiem_khi.png") if ResourceLoader.exists("res://assets/skill_icons/vltk/hoa_son_long_huyen_kiem_khi.png") else null,
+		"is_debuff": false,
+		"state_id": 100147
+	}
+
+	var candidates: Array[Node2D] = []
+	if ctx.launcher != null and is_instance_valid(ctx.launcher):
+		candidates.append(ctx.launcher)
+	if ctx.world != null and is_instance_valid(ctx.world):
+		for p in ctx.world.get_tree().get_nodes_in_group(&"player"):
+			if p is Node2D and not candidates.has(p):
+				candidates.append(p)
+		for a in ctx.world.get_tree().get_nodes_in_group(&"allies"):
+			if a is Node2D and not candidates.has(a):
+				candidates.append(a)
+
+	for node in candidates:
+		if not is_instance_valid(node) or not node.is_inside_tree():
+			continue
+		var n_logic := VltkMath.logic_of(node)
+		if (n_logic - logic).length_squared() <= radius_sq:
+			var st: StatusEffectController = node.get_node_or_null("StatusEffectController")
+			if st != null:
+				st.apply_state("hoa_son_long_huyen_buff", attribs, 0.6, meta)
 
 func _prepare_fly() -> bool:
 	if _move_kind == MoveKind.ROLLBACK:
@@ -251,19 +316,27 @@ func _on_fly() -> void:
 		MoveKind.CIRCLE, MoveKind.HELIX:
 			off = _orbit_step()
 		MoveKind.FOLLOW:
-			_temp1 += 1
-			if follow_target == null and _cur_life % RETARGET_TICKS == 0:
-				follow_target = _find_retarget()
-			if _temp1 > FOLLOW_REAIM_TICKS:
-				_temp1 = 0
-				if follow_target != null:
-					var des := VltkMath.logic_of(follow_target)
-					var dist := int(logic.distance_to(des))
-					if dist != 0:
-						x_factor = (int(des.x - logic.x) << 10) / dist
-						y_factor = (int(des.y - logic.y) << 10) / dist
-						dir = maxi(0, VltkMath.dir_between(logic, des))
-			off = Vector2(x_factor * _speed, y_factor * _speed)
+			var spread_ticks := int(data.get("spread_ticks", 0))
+			var cur_flight := _cur_life - _start_life
+			if spread_ticks > 0 and cur_flight < spread_ticks:
+				# Giai đoạn tỏa tròn ra ngoài xung quanh Player đến bán kính mục tiêu (~400px)
+				var spd := int(data.get("spread_speed", _speed))
+				off = Vector2(x_factor * spd, y_factor * spd)
+			else:
+				# Giai đoạn hướng thẳng mục tiêu và dí theo quái
+				_temp1 += 1
+				if follow_target == null and _cur_life % RETARGET_TICKS == 0:
+					follow_target = _find_retarget()
+				if _temp1 > FOLLOW_REAIM_TICKS or (spread_ticks > 0 and cur_flight == spread_ticks):
+					_temp1 = 0
+					if follow_target != null:
+						var des := VltkMath.logic_of(follow_target)
+						var dist := int(logic.distance_to(des))
+						if dist != 0:
+							x_factor = (int(des.x - logic.x) << 10) / dist
+							y_factor = (int(des.y - logic.y) << 10) / dist
+							dir = maxi(0, VltkMath.dir_between(logic, des))
+				off = Vector2(x_factor * _speed, y_factor * _speed)
 	logic += off / 1024.0
 	if _check_collision() == -1:
 		## Đạn parabol (lựu đạn) rơi chạm đất thì nổ ngay điểm rơi — z giảm nhanh nên hay lọt qua khung z ≤ 20 mà chưa kịp trúng.
@@ -302,6 +375,9 @@ func _orbit_step() -> Vector2:
 
 ## KMissle::CheckCollision: -1 = chạm đất, 0 = không chạm, 1 = chạm.
 func _check_collision() -> int:
+	var spread_ticks := int(data.get("spread_ticks", 0))
+	if spread_ticks > 0 and (_cur_life - _start_life) < spread_ticks:
+		return 0  # Đang trong giai đoạn tỏa tròn quanh Player, chưa va chạm
 	if _z <= MIN_COLLISION_Z:
 		return -1
 	if _z > MAX_COLLISION_Z:
@@ -327,12 +403,17 @@ func _check_collision() -> int:
 			continue
 		var c := VltkMath.cell_of(VltkMath.logic_of(t)) - cell
 		if absi(c.x) <= collide_range and absi(c.y) <= collide_range:
-			## Vùng sát thương (dmg_range / 2 ô) hẹp hơn vùng dò va chạm: chưa ai nằm trong vùng sát thương thì cứ bay tiếp,
-			## không nổ/biến mất sớm (nếu không đạn parabol nổ ngay lúc mới bay mà chưa trúng ai).
-			if _process_collision_at(logic, dmg_range) > 0:
+			var hit_count := 0
+			if dmg_range <= collide_range or int(data.get("is_range_dmg", 0)) == 0:
+				hit_count = _process_collision_at(VltkMath.logic_of(t), dmg_range)
+			else:
+				hit_count = _process_collision_at(logic, dmg_range)
+			if hit_count > 0:
+				if _last_col != t:
+					if _move_kind == MoveKind.LINE:
+						_last_col = t
 				_do_collision()
 				return 1
-			break
 	return 0
 
 ## CheckNearestCollision: mục tiêu trong 3×3 ô quanh đạn và cách đạn không quá 1 ô (32) mỗi trục.
@@ -349,6 +430,8 @@ func _nearest_collision() -> Node2D:
 	return best
 
 func _is_target(t: Node) -> bool:
+	if int(skill.get("target_enemy", 1)) == 0:
+		return false
 	if not (t is Node2D and is_instance_valid(t) and t.is_inside_tree() and t != ctx.launcher):
 		return false
 	if t.has_method("is_dead") and t.is_dead():
@@ -375,7 +458,7 @@ func _process_collision_at(center: Vector2, dmg_range: int) -> int:
 		_next_dmg_tick = _cur_life + interval
 	if dmg_range <= 0:
 		return 0
-	var r := dmg_range / 2
+	var r := dmg_range if int(data.get("range_dmg", data.get("is_range_dmg", 0))) else dmg_range / 2
 	var center_cell := VltkMath.cell_of(center)
 	var hits: Array = []
 	for t in ctx.targets():
@@ -464,20 +547,49 @@ func _do_vanish() -> void:
 func _on_event(kind: String) -> void:
 	var event_skill := int(skill.get(kind + "_skill", 0))
 	var event_level := int(skill.get("event_level", 0))
+	if event_level <= 0:
+		event_level = int(skill.get("level", 1))
 	if event_skill <= 0 or event_level <= 0 or not ctx.is_valid():
 		return
 	VltkSkillCaster.cast_event(ctx, event_skill, event_level, self if int(skill.get("by_missle", 0)) else null)
 
 ## KMissle::CreateSpecialEffect — mỗi đạn chỉ 1 hiệu ứng còn chạy trên cùng 1 mục tiêu.
 func _spawn_effect(phase: int, at_logic: Vector2, follow: Node2D = null, target: Node = null) -> void:
-	if target != null:
+	var phase_data: Variant = _phase(phase)
+	if not (phase_data is Dictionary) or phase_data.is_empty():
+		return
+	var anim_name: String = str(phase_data.get("anim", ""))
+	if anim_name.is_empty():
+		return
+
+	# Ngăn chặn trùng lặp hiệu ứng va chạm trên cùng 1 mục tiêu:
+	# Với các chiêu bắn nhiều đạn (child_num 3-9 viên), tất cả cùng va chạm vào quái trong cùng 1 tick hoặc các tick liên tiếp.
+	# Nếu mỗi viên đạn đều sinh ra 1 VltkEffect thì các lớp khói/băng/lửa sẽ đè chồng lên nhau,
+	# làm nhân alpha thành 1 khối đặc đục hoàn toàn (opaque) che khuất quái và nhân vật.
+	if target != null and is_instance_valid(target):
+		var meta_key := "vltk_fx_" + anim_name
+		var now_tick := Engine.get_physics_frames()
+		if target.has_meta(meta_key):
+			var active_until: int = target.get_meta(meta_key)
+			if now_tick < active_until:
+				return
 		for e in _effects:
 			if e["target"] == target and e["end"] >= _cur_life:
 				return
+	elif target != null:
+		for e in _effects:
+			if e["target"] == target and e["end"] >= _cur_life:
+				return
+
 	_play_sound(phase, at_logic)  ## KMissle::CreateSpecialEffect gọi PlaySound(trạng thái) sau khi qua kiểm tra trùng
-	var fx := VltkEffect.spawn(ctx.world, _phase(phase), at_logic - Vector2(0, 5), _z, dir, follow)
+	var fx := VltkEffect.spawn(ctx.world, phase_data, at_logic - Vector2(0, 5), _z, dir, follow)
 	if fx:
 		_effects.append({"end": _cur_life + fx.end_tick, "target": target})
+		if target != null and is_instance_valid(target):
+			var meta_key := "vltk_fx_" + anim_name
+			var now_tick := Engine.get_physics_frames()
+			var duration_frames := int(ceil(float(fx.end_tick) * 60.0 / 18.0))
+			target.set_meta(meta_key, now_tick + duration_frames)
 
 ## Tiếng đạn theo giai đoạn (SndFile1..4 / SndFileB1..4 trong Missles.txt), phát tại vị trí đạn.
 func _play_sound(phase: int, at_logic: Vector2) -> void:
@@ -534,11 +646,82 @@ func _update_visual() -> void:
 	_sprite.region_rect = Rect2((index % cols) * size[0], (index / cols) * size[1], size[0], size[1])
 	_sprite.position = Vector2(offset[0], offset[1] - _z * VltkMath.Z_SCREEN)
 
+func _exit_tree() -> void:
+	active_missiles.erase(self)
+
 func _on_pool_release() -> void:
+	active_missiles.erase(self)
 	ctx = null
 	follow_target = null
 	_parent = null
 	_last_col = null
 	_effects.clear()
+	if _sprite != null:
+		_sprite.material = null
+
+## Kích nổ đạn/khí trường ngay lập tức (không cần đợi hết thời gian sống).
+## Dùng cho các chiêu kích nổ như Thần Quang Toàn Nhiễu kích nổ Ma Vân Kiếm Khí.
+func detonate(bonus_mult: float = 1.0) -> void:
+	if status == Phase.VANISH or not is_inside_tree():
+		return
+	if ctx != null and ctx.is_valid():
+		if bonus_mult > 1.0:
+			ctx.detonate_mult = bonus_mult
+		if int(data.get("auto_explode", 0)):
+			_process_collision_at(logic, int(data.get("dmg_range", 0)))
+			if int(skill.get("collide_event", 0)):
+				_on_event("collide")
+	_spawn_effect(Phase.VANISH, logic)
+	_do_vanish()
+	ObjectPool.release(self)
+
+## Tìm và kích nổ các đạn / khí trường phù hợp quanh vị trí trung tâm.
+static func detonate_missiles(launcher: Node2D, target_missile_codes: Array[int], center_logic: Vector2,
+		radius_logic: float, bonus_mult: float = 1.0) -> int:
+	var detonated_count := 0
+	var candidates := active_missiles.duplicate()
+	for m: VltkMissile in candidates:
+		if not is_instance_valid(m) or not m.is_inside_tree() or m.status == Phase.VANISH:
+			continue
+		if launcher != null and (m.ctx == null or m.ctx.launcher != launcher):
+			continue
+
+		var m_child := int(m.skill.get("child", 0))
+		var m_skill_id := int(m.skill.get("id", 0))
+		var match_found := false
+
+		if target_missile_codes.is_empty():
+			# Mặc định: kích nổ Ma Vân Kiếm Khí
+			if m_skill_id == 1380 or m_child == 100419 or (m_child % 1000) == 419:
+				match_found = true
+		else:
+			for code in target_missile_codes:
+				var m_id := code >> 8 if code > 1000 else code
+				if m_id == 419 and (m_skill_id == 1380 or m_child == 100419 or (m_child % 1000) == 419):
+					match_found = true
+					break
+				elif m_id == 421 and (m_skill_id == 1376 or m_child == 100421 or (m_child % 1000) == 421):
+					match_found = true
+					break
+				elif m_id == 428 and (m_child == 100428 or (m_child % 1000) == 428):
+					match_found = true
+					break
+				elif m_child == code or (m_child % 1000) == m_id or m_skill_id == code:
+					match_found = true
+					break
+
+		if not match_found:
+			continue
+
+		if radius_logic > 0.0:
+			var m_log: Vector2 = m.logic
+			var dist: float = m_log.distance_to(center_logic)
+			if dist > radius_logic:
+				continue
+
+		m.detonate(bonus_mult)
+		detonated_count += 1
+
+	return detonated_count
 
 @warning_ignore_restore("integer_division")

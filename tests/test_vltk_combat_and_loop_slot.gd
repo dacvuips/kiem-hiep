@@ -83,6 +83,18 @@ func test_poison_mechanics_and_mix() -> void:
 	assert_true(mixed.y == 60, "Thời gian độc duy trì đúng 60 frame")
 	assert_true(mixed.z == 10, "Nhịp rút độc giữ đúng 10 frame")
 
+	# Gộp lớp độc khi đang dính (cân bằng riêng): lượng rút cộng dồn, thời gian giữ lớp dài hơn (không trung bình như gốc).
+	var merged := StatusEffectController.merge_poison(Vector3i(300, 5, 10), Vector3i(200, 60, 10))
+	assert_true(merged.x == 500, "Đang dính 300/nhịp + lớp 200 -> 500/nhịp")
+	assert_true(merged.y == 60, "Chồng độc to sắp hết (5 frame) vẫn được lớp mới nối thời gian lên 60 frame")
+	assert_true(merged.z == 10, "Nhịp rút trung bình 2 lớp")
+	# Trần chồng độc: tối đa POISON_STACK_MAX lần 1 lớp (server online chặn đòn vượt ProfileGuard.max_hit).
+	var capped := Vector3i(200, 60, 10)
+	for i in 50:
+		capped = StatusEffectController.merge_poison(capped, Vector3i(200, 60, 10))
+	assert_true(capped.x == 200 * StatusEffectController.POISON_STACK_MAX, "Đánh độc liên tục không cộng quá trần")
+	assert_true(StatusEffectController.merge_poison(Vector3i(1000, 5, 10), Vector3i(200, 60, 10)).x == 1000, "Chồng đã to hơn trần lớp mới: giữ nguyên, không tăng")
+
 	# Test Poison Stacking trong StatusEffectController
 	var dummy := Node2D.new()
 	add_child(dummy)

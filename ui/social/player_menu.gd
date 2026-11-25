@@ -47,23 +47,22 @@ func _build(screen_pos: Vector2) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close_current())
 	add_child(back)
-	_panel = GameUi.panel(GameUi.WINDOW)  # khung cửa sổ chung của game
-	## Riêng menu này: nền hơi trong suốt, không viền vàng ngoài (nút bên trong giữ kiểu chung).
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(GameUi.BG, 0.6)
-	sb.set_corner_radius_all(GameUi.RADIUS_WINDOW)
-	sb.set_content_margin_all(GameUi.PAD_WINDOW)
+	_panel = PanelContainer.new()
+	## Bỏ hoàn toàn khung nền menu theo yêu cầu
+	var sb := StyleBoxEmpty.new()
 	_panel.add_theme_stylebox_override("panel", sb)
 	_panel.custom_minimum_size = Vector2(WIDTH, 0)
 	add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	_panel.add_child(box)
-	box.add_child(GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(GameUi.divider())
+	var title_lbl := GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	title_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	title_lbl.add_theme_constant_override("outline_size", 4)
+	box.add_child(title_lbl)
 	for item in _items():
 		var b := GameUi.button(str(item[0]), GameUi.BUTTON)
-		b.custom_minimum_size = Vector2(WIDTH - 2 * GameUi.PAD_WINDOW, 32)
+		b.custom_minimum_size = Vector2(WIDTH, 32)
 		var action: Callable = item[1]
 		b.pressed.connect(func() -> void:
 			close_current()

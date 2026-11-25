@@ -51,7 +51,13 @@ def player_skill_ids() -> set:
         ## mục dạng {id, cấp} hoặc {"tên", id, cấp}
         ids |= {int(x) for x in re.findall(r'\{\s*(?:"[^"]*"\s*,\s*)?(\d+)\s*,\s*\d+\s*\}', lua_table(text, table))}
     ids |= {int(x) for x in re.findall(r"\d+", lua_table(text, "SKILL120AR"))}
+    ## factionhead.lua bản VNG ghi NHẦM skill 150 Thúy Yên: {1063, 1064} — 1064 (Băng Ngưng Hàn Yên) là tầng 2 của
+    ## 1063, còn skill nội công thật Thủy Anh Man Tú (1065) bị bỏ sót. Bản 15 phái liệt kê 1063 + 1065.
+    ids |= FACTIONHEAD_MISSING
     return ids
+
+
+FACTIONHEAD_MISSING = {1065}
 
 
 def skill_ids_by_name() -> dict:

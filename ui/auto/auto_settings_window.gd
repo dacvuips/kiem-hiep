@@ -184,7 +184,7 @@ func _build_recovery() -> void:
 
 	_header("Dùng Thổ Địa Phù Khi")
 	var g2 := _grid(3)
-	g2.add_child(_check("Hết bình sinh lực", "tdp_no_hp_potion"))
+	g2.add_child(_check("Hết bình sinh lực (máu dưới Mức 2)", "tdp_no_hp_potion"))
 	g2.add_child(_check("Hành trang đầy", "tdp_bag_full"))
 	g2.add_child(_row([_check("Độ bền thấp", "tdp_low_dura_on"), _num("tdp_low_dura", 1, 99)]))
 	g2.add_child(_check("Hết bình nội lực", "tdp_no_mp_potion"))

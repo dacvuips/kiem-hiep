@@ -412,6 +412,14 @@ func _create_attack_skill_card(data: Dictionary) -> Control:
 	var desc: String = str(data.get("description", "")).strip_edges()
 	if desc != "":
 		tooltip_lines.append("• Mô tả: %s" % desc)
+	var sk_id: String = str(data.get("id", ""))
+	if sk_id != "":
+		var t_idx := 2
+		for sect in SectRegistry.load_all():
+			for candidate in sect.skills:
+				if candidate.parent_skill_id == sk_id:
+					tooltip_lines.append("• [Tầng thứ %d] %s: %s" % [t_idx, candidate.skill_name, candidate.description])
+					t_idx += 1
 	card.tooltip_text = "\n".join(tooltip_lines)
 
 	return card

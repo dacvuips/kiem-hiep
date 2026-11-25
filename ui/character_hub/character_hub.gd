@@ -88,6 +88,10 @@ var _hub_custom_avatar_view: TextureRect
 var _hub_avatar_upload_box: PanelContainer
 var _hub_avatar_delete_btn: Button
 var _is_test_mode: bool = false
+var _equip_mannequin: CharacterAvatar
+var _mannequin_direction: int = 0
+var _rotate_btn: Button
+var _ride_toggle_btn: Button
 
 func _ready() -> void:
 	MusicManager.stop(0.5)
@@ -667,6 +671,7 @@ func _test_equipment_red_and_quit() -> void:
 ## Tạo hồ sơ mẫu khi chạy F6 test trực tiếp
 func _create_mock_profile() -> void:
 	_profile = PlayerProfile.new()
+	_profile.id = 1001
 	_profile.display_name = "HoaHieu"
 	_profile.title = ""
 	_profile.fuyuan = 0
@@ -814,7 +819,13 @@ func refresh() -> void:
 	%DamageRightValue.text = "%d/%d" % [min_dmg, max_dmg]
 	%ChinhXacValue.text = "%s/%d" % [str(s.attack_rating) if left_uses_ar else "-", s.attack_rating if s.attack_rating > 0 else 52]
 	%NeTranhValue.text = str(s.defense if s.defense != 0 else -20)
-	%ChayValue.text = "10"
+	var base_run: int = 10
+	if s.move_speed_p > 0:
+		%ChayValue.text = "%d (+%d%%)" % [base_run, s.move_speed_p]
+		%ChayValue.tooltip_text = "Tốc độ chạy cơ bản: %d\nTăng thêm: +%d%% (giày, ngựa, bùa...)" % [base_run, s.move_speed_p]
+	else:
+		%ChayValue.text = str(base_run)
+		%ChayValue.tooltip_text = "Tốc độ chạy cơ bản: %d" % base_run
 	%CongKichValue.text = "%d/%d" % [s.attack_speed, s.cast_speed]
 	%TiemNangValue.text = str(_profile.potential_points)
 	%DefenseValue.text = "%d%%" % s.get_capped_resist(CombatFormulas.DamageType.PHYSICS)
@@ -1227,7 +1238,69 @@ func _drop_on_tab(_at: Vector2, data: Variant, bag: int) -> void:
 	else:
 		_show_toast("Túi %d đã đầy chỗ cho món này" % (bag + 1), true)
 
+func _setup_equip_mannequin() -> void:
+	var equip_bg: TextureRect = get_node_or_null("%EquipBackground")
+	if equip_bg == null and %CenterPanel:
+		equip_bg = %CenterPanel.get_node_or_null("EquipBox/EquipBackground")
+	if equip_bg == null:
+		return
+
+	if _equip_mannequin == null:
+		_equip_mannequin = CharacterAvatar.new()
+		_equip_mannequin.name = "EquipMannequin"
+		_equip_mannequin.position = Vector2(201, 395)
+		_equip_mannequin.scale = Vector2(1.15, 1.15)
+		equip_bg.add_child(_equip_mannequin)
+		equip_bg.move_child(_equip_mannequin, 0)
+		equip_bg.self_modulate = Color(1.0, 1.0, 1.0, 0.25)
+
+	if _rotate_btn == null:
+		_rotate_btn = Button.new()
+		_rotate_btn.name = "RotateMannequinBtn"
+		_rotate_btn.text = "⟳ Xoay"
+		_rotate_btn.tooltip_text = "Xoay góc nhìn nhân vật (8 hướng)"
+		_rotate_btn.size = Vector2(55, 24)
+		_rotate_btn.position = Vector2(109, 470)
+		_rotate_btn.focus_mode = Control.FOCUS_NONE
+		_rotate_btn.add_theme_font_size_override("font_size", 12)
+		_rotate_btn.pressed.connect(_on_rotate_mannequin_pressed)
+		equip_bg.add_child(_rotate_btn)
+
+	if _ride_toggle_btn == null:
+		_ride_toggle_btn = Button.new()
+		_ride_toggle_btn.name = "RideToggleBtn"
+		_ride_toggle_btn.text = "🐎 Lên"
+		_ride_toggle_btn.tooltip_text = "Lên / Xuống ngựa"
+		_ride_toggle_btn.size = Vector2(56, 24)
+		_ride_toggle_btn.position = Vector2(167, 470)
+		_ride_toggle_btn.focus_mode = Control.FOCUS_NONE
+		_ride_toggle_btn.add_theme_font_size_override("font_size", 12)
+		_ride_toggle_btn.pressed.connect(_on_toggle_riding_pressed)
+		equip_bg.add_child(_ride_toggle_btn)
+
+func _on_rotate_mannequin_pressed() -> void:
+	_mannequin_direction = (_mannequin_direction + 1) % 8
+	if _equip_mannequin:
+		_equip_mannequin.set_direction8(_mannequin_direction)
+
+func _on_toggle_riding_pressed() -> void:
+	if _profile == null:
+		return
+	if not _profile.equipment.has(Equipment.Part.HORSE):
+		_show_toast("Chưa trang bị ngựa!", true)
+		return
+	_profile.riding = not _profile.riding
+	SaveManager.save_profile(_profile, true)
+	_refresh_equipment_display()
+	_sync_game_player_appearance()
+	refresh()
+	if _profile.riding:
+		_show_toast("Đã lên ngựa")
+	else:
+		_show_toast("Đã xuống ngựa")
+
 func _setup_equipment_slots() -> void:
+	_setup_equip_mannequin()
 	if has_node("%MaskVisualCheck"):
 		%MaskVisualCheck.toggled.connect(_on_mask_visual_check_toggled)
 	for slot_name in SLOT_TO_PART:
@@ -1291,6 +1364,25 @@ func _refresh_equipment_display() -> void:
 			equip_bg.texture = TEX_EQUIP_BG_FEMALE
 		else:
 			equip_bg.texture = TEX_EQUIP_BG_MALE
+
+	if _equip_mannequin:
+		var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
+		_equip_mannequin.set_gender(gender_str)
+		var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding, _profile.show_mask)
+		_equip_mannequin.set_appearance(int(look.helm), int(look.armor), int(look.weapon), int(look.horse))
+		_equip_mannequin.set_direction8(_mannequin_direction)
+		_equip_mannequin.play("stand")
+
+	if _ride_toggle_btn:
+		var has_horse: bool = _profile.equipment.has(Equipment.Part.HORSE)
+		_ride_toggle_btn.visible = has_horse
+		if has_horse:
+			if _profile.riding:
+				_ride_toggle_btn.text = "🐎 Xuống"
+				_ride_toggle_btn.tooltip_text = "Đang cưỡi ngựa\nBấm để xuống ngựa (chỉ số ngựa tạm ẩn)"
+			else:
+				_ride_toggle_btn.text = "🐎 Lên"
+				_ride_toggle_btn.tooltip_text = "Đang đi bộ\nBấm để lên ngựa (kích hoạt chỉ số ngựa)"
 
 	var ctx := Equipment.get_requirement_context(_profile)
 	var series := _profile.get_element() if _profile.has_method("get_element") else _sect_element()
@@ -1480,6 +1572,7 @@ func _unequip_item(part: int, item: ItemInstance) -> void:
 		SaveManager.save_profile(_profile)
 		SaveManager.flush_online()
 		_show_toast("Đã tháo %s" % item.get_display_name())
+		_sync_game_player_appearance()
 		refresh()
 		_refresh_inventory_view()
 	else:
@@ -1872,6 +1965,7 @@ func _equip_item_from_inv(index: int) -> void:
 	else:
 		_show_toast("Đã trang bị %s!" % item_name)
 		SaveManager.save_profile(_profile)
+		_sync_game_player_appearance()
 		refresh()
 		_refresh_inventory_view()
 

@@ -183,27 +183,32 @@ func apply_hit_effects(mods: CombatFormulas.HitModifiers, dealt: Dictionary, now
 		add_state(mods.state_source_id, mods.state_attribs, mods.state_seconds, now, true)
 
 ## Trúng độc — KNpc::ReceiveDamage gốc: chưa dính thì nhận lớp mới; đang dính thì GỘP 2 lớp (lượng rút mỗi nhịp cộng dồn,
-## thời gian trung bình có trọng số) — dính càng lâu, trúng càng nhiều thì nhịp rút càng to.
+## thời gian giữ lớp dài hơn — xem StatusEffectController.merge_poison) — còn trúng độc là còn giữ chuỗi, nhịp rút to dần.
 func _add_poison(damage: int, frames: int, interval: int, now: float, from_eid: int) -> void:
 	if from_eid != 0:
 		_poison_from = from_eid
 	if _poison.is_empty():
-		_poison = {"d": damage, "t": frames, "c": interval, "acc": 0.0, "last": now}
+		_poison = {"d": damage, "t": frames, "c": interval, "n": StatusEffect.first_tick_in(frames, interval), "acc": 0.0, "last": now}
 		return
-	var mixed := SectSkillController._mix_poison(Vector3i(int(_poison.d), int(_poison.t), int(_poison.c)),
+	var mixed := StatusEffectController.merge_poison(Vector3i(int(_poison.d), int(_poison.t), int(_poison.c)),
 			Vector3i(damage, frames, interval))
 	_poison.d = mixed.x
 	_poison.t = mixed.y
 	_poison.c = maxi(1, mixed.z)
+	_poison.n = mini(int(_poison.n), int(_poison.c))   ## bộ đếm nhịp riêng như StatusEffect.tick_counter
 
-## Nhịp độc — KNpc::Activate gốc: mỗi frame game (18/giây) nTime--, nTime chia hết cho nhịp thì rút, về 0 thì hết độc.
+## Nhịp độc — KNpc::Activate gốc: mỗi frame game (18/giây) nTime--, hết độc khi về 0. Nhịp rút đếm riêng (xem StatusEffect.tick_counter).
 func _tick_poison(now: float) -> void:
 	var acc := float(_poison.acc) + maxf(0.0, now - float(_poison.last)) * SkillDefinition.VLTK_GAME_FPS
 	_poison.last = now
 	while acc >= 1.0 and int(_poison.t) > 0:
 		acc -= 1.0
 		_poison.t = int(_poison.t) - 1
-		if int(_poison.t) % int(_poison.c) == 0:
+		_poison.n = int(_poison.n) - 1
+		var due := int(_poison.n) <= 0
+		if due:
+			_poison.n = int(_poison.c)
+		if due or int(_poison.t) == 0:
 			lose_hp(float(_poison.d), now, _poison_from, "")
 			if _poison.is_empty():   ## chết vì độc: die() đã xoá
 				return

@@ -106,11 +106,14 @@ func test_targeting(player: Node2D, profile: PlayerProfile) -> void:
 	await get_tree().process_frame
 
 	## Thử tự động dùng TDP khi hết bình sinh lực
-	player.health = 40.0
 	player.is_auto_mode = true
 	auto.running = true
 	s.tdp_no_hp_potion = true
-	check("phù khi hết bình máu", auto._tick_recovery(s))
+	player.health = player.max_health * (s.hp_lv2 + 5) / 100.0
+	auto._tick_recovery(s)
+	check("hết bình máu nhưng còn trên Mức 2: vẫn đánh tiếp", player.is_auto_mode and auto.running)
+	player.health = player.max_health * (s.hp_lv2 - 5) / 100.0
+	check("phù khi hết bình máu và máu dưới Mức 2", auto._tick_recovery(s))
 	check("tự dừng auto sau khi phù", not player.is_auto_mode and not auto.running)
 	player.health = 100.0
 

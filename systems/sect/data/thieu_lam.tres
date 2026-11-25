@@ -1731,6 +1731,66 @@ damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_140"), SubResource("SubResource_141"), SubResource("SubResource_142"), SubResource("SubResource_143"), SubResource("SubResource_144")])
 is_hotbar = true
 
+
+[sub_resource type="Resource" id="SubResource_146"]
+script = ExtResource("3_statline")
+label = "Sát thương vật lý"
+value_at_level_1 = 55.0
+value_at_max_level = 796.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_147"]
+script = ExtResource("3_statline")
+label = "Băng sát"
+value_at_level_1 = 12.0
+value_at_max_level = 193.0
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_148"]
+script = ExtResource("3_statline")
+label = "Ngũ hành tương khắc"
+value_at_level_1 = 40.0
+value_at_max_level = 82.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_149"]
+script = ExtResource("2_skill")
+id = "thieu_lam_tam_gioi_quy_thien_2"
+vltk_skill_id = 1085
+skill_name = "Tam Giới Quy Thiền (Tầng 2)"
+is_hidden = true
+parent_skill_id = "thieu_lam_tam_gioi_quy_thien"
+icon = ExtResource("vicon_thieu_lam_tam_gioi_quy_thien")
+description = "Đao kình nộ phát tầng 2 của Tam Giới Quy Thiền, trảm phá hư không bổ sung sát thương hàn băng vật lý."
+school_text = "Đao pháp (Ngoại công - Tầng 2)"
+is_active = true
+category = 0
+req_level = 150
+max_level = 26
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 1
+vltk_missle_form = 2
+vltk_attack_radius = 512
+vltk_state_special_id = 0
+vltk_damage_range = 1
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"colddamage_v": [PackedFloat32Array(1, 12, 0, 20, 135, 0, 23, 173, 0, 26, 193, 0), PackedFloat32Array(), PackedFloat32Array(1, 12, 0, 20, 135, 0, 23, 173, 0, 26, 193, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 55, 0, 15, 180, 0, 20, 400, 0, 23, 664, 0, 26, 796, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 55.0
+mana_cost = 0.0
+cooldown = 0.00
+range = 512.0
+element = 0
+damage_growth_per_level = 29.64
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_146"), SubResource("SubResource_147"), SubResource("SubResource_148")])
+
 [resource]
 script = ExtResource("1_sect")
 required_gender = 0
@@ -1739,4 +1799,4 @@ sect_name = "Thiếu Lâm"
 element = 0
 alignment = 0
 description = "Cửa Phật ngàn năm chốn Trung Nguyên, võ học lấy cương mãnh trực diện làm gốc, tinh thông quyền, cước, côn, đao, trảo pháp và các môn nội công thâm hậu."
-skills = Array[ExtResource("2_skill")]([SubResource("SubResource_31"), SubResource("SubResource_10"), SubResource("SubResource_14"), SubResource("SubResource_17"), SubResource("SubResource_21"), SubResource("SubResource_52"), SubResource("SubResource_48"), SubResource("SubResource_56"), SubResource("SubResource_43"), SubResource("SubResource_72"), SubResource("SubResource_63"), SubResource("SubResource_74"), SubResource("SubResource_80"), SubResource("SubResource_89"), SubResource("SubResource_97"), SubResource("SubResource_103"), SubResource("SubResource_106"), SubResource("SubResource_114"), SubResource("SubResource_121"), SubResource("SubResource_126"), SubResource("SubResource_128"), SubResource("SubResource_130"), SubResource("SubResource_132"), SubResource("SubResource_134"), SubResource("SubResource_137"), SubResource("SubResource_139"), SubResource("SubResource_145")])
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_31"), SubResource("SubResource_10"), SubResource("SubResource_14"), SubResource("SubResource_17"), SubResource("SubResource_21"), SubResource("SubResource_52"), SubResource("SubResource_48"), SubResource("SubResource_56"), SubResource("SubResource_43"), SubResource("SubResource_72"), SubResource("SubResource_63"), SubResource("SubResource_74"), SubResource("SubResource_80"), SubResource("SubResource_89"), SubResource("SubResource_97"), SubResource("SubResource_103"), SubResource("SubResource_106"), SubResource("SubResource_114"), SubResource("SubResource_121"), SubResource("SubResource_126"), SubResource("SubResource_128"), SubResource("SubResource_130"), SubResource("SubResource_132"), SubResource("SubResource_134"), SubResource("SubResource_137"), SubResource("SubResource_139"), SubResource("SubResource_145"), SubResource("SubResource_149")])
