@@ -19,7 +19,8 @@ MARK="--kiemhiep-test-server"   # dấu trên dòng lệnh của server thử ->
 BATTLE=0
 [ "${1:-}" = "--battle" ] && BATTLE=1
 
-env_get() { grep -E "^$1=" "$SERVER_REPO/.env" | tail -n 1 | cut -d= -f2- | tr -d '' || true; }
+env_get() { grep -E "^$1=" "$SERVER_REPO/.env" | tail -n 1 | cut -d= -f2- | tr -d '
+' || true; }
 [ -f "$SERVER_REPO/.env" ] || { echo "Lỗi: chưa có $SERVER_REPO/.env (repo backend kiem-hiep-server)"; exit 1; }
 GODOT="${GODOT:-$(env_get GODOT_PATH)}"
 [ -n "$GODOT" ] || { echo "Lỗi: đặt GODOT_PATH trong $SERVER_REPO/.env"; exit 1; }
@@ -76,7 +77,7 @@ run_suite() {
 
 cd "$project"
 echo "== Bài test không cần server"
-for s in social_tests social_ui_tests auto_tests sect_join_tests skill_display_tests net_smooth_tests ride_look_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests bot_body_tests bot_brain_tests map_texture_cache_tests uy_thac_tests monster_state_sync_tests team_list_hud_tests item_durability_tests ally_buff_tests; do
+for s in social_tests social_ui_tests auto_tests sect_join_tests skill_display_tests net_smooth_tests ride_look_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests bot_body_tests bot_brain_tests map_texture_cache_tests uy_thac_tests monster_state_sync_tests team_list_hud_tests item_durability_tests ally_buff_tests skill_hit_tests stealth_tests stealth_player_tests; do
 	run_suite "$s" "$s.tscn"
 done
 
@@ -97,7 +98,11 @@ start_server world GAME_TEST_MODE=1 GAME_ENET_PORT=7917 GAME_WS_PORT=7918
 start_server field7 GAME_FIELD=1 GAME_FIELD_INDEX=7 GAME_ENET_PORT=7927 GAME_WS_PORT=7928
 start_server field8 GAME_FIELD=1 GAME_FIELD_INDEX=8 GAME_ENET_PORT=7937 GAME_WS_PORT=7938
 run_suite "net_tests" net_tests.tscn GAME_ENET_PORT=7917 DEV_TRUST_CLIENT_SAVES="$(env_get DEV_TRUST_CLIENT_SAVES)" NET_TEST_RESTART=1
+## net_tests kết thúc bằng bài "khởi động lại êm" (/testrestart) -> server thế giới thử đã thoát: bật lại cho các bài sau.
+start_server world GAME_TEST_MODE=1 GAME_ENET_PORT=7917 GAME_WS_PORT=7918
 ## Bot người chơi phía server (GAME_TEST_MODE: lệnh "/testbot" sinh bot cạnh mình).
+run_suite "net_status_sync_tests" net_status_sync_tests.tscn GAME_ENET_PORT=7917
+run_suite "net_client_status_tests" net_client_status_tests.tscn GAME_ENET_PORT=7917
 run_suite "bot_online_tests" bot_online_tests.tscn GAME_ENET_PORT=7917
 ## Đo bot qua mạng: độ trễ, độ mượt, tải server, hành vi (20 rồi 60 bot hỗn chiến; BOT_BENCH_SEC giây mỗi mức).
 run_suite "bot_bench_tests" bot_bench_tests.tscn GAME_ENET_PORT=7917 BOT_BENCH_SEC=20
