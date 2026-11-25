@@ -823,10 +823,26 @@ func _select(skill: SkillDefinition) -> void:
 		_profile = GameManager.local_profile
 
 	var learned := _profile.get_skill_level(skill.id) if _profile != null else 0
-	_skill_name_label.text = skill.skill_name
+
+	# Tiêu đề kèm hệ ngũ hành chuẩn VNG (VD: Huy Sư Diệt Lỗ (hệ Hỏa))
+	var elem_name: String = ElementTypes.ELEMENT_NAME.get(skill.element, "") if skill.element in ElementTypes.ELEMENT_NAME else ""
+	var full_name := skill.skill_name
+	if elem_name != "" and not ("(" in full_name):
+		full_name += " (hệ %s)" % elem_name
+	_skill_name_label.text = full_name
 	_skill_icon.texture = skill.icon
-	_skill_desc.text = skill.description
-	_skill_school_label.text = skill.school_text
+
+	# Mô tả trong ngoặc kép kiểu VNG gốc
+	var desc := skill.description.strip_edges()
+	if desc != "" and not desc.begins_with("\""):
+		desc = "\"%s\"" % desc
+	_skill_desc.text = desc
+
+	# Lưu phái chuẩn VNG (VD: Võ công lưu phái: Thuẫn (Ngoại công))
+	var school := skill.school_text.strip_edges()
+	if school != "" and not school.begins_with("Võ công lưu phái:"):
+		school = "Võ công lưu phái: %s" % school
+	_skill_school_label.text = school
 	_stat_scroll.scroll_vertical = 0
 
 	_add_line(_stat_box, tr("Đẳng cấp hiện thời:") + " %d/%d" % [learned, skill.max_level], COLOR_CURRENT_LEVEL, 15)
@@ -835,27 +851,12 @@ func _select(skill: SkillDefinition) -> void:
 		_add_line(_stat_box, tr("Yêu cầu cấp độ nhân vật:") + " %d" % skill.req_level,
 				COLOR_STAT if has_level else COLOR_WARNING, 13)
 
-	var weapon_text := skill.get_weapon_limit_bbcode()
-	if weapon_text != "":
-		var rich := RichTextLabel.new()
-		rich.bbcode_enabled = true
-		rich.fit_content = true
-		rich.scroll_active = false
-		rich.add_theme_font_size_override("normal_font_size", 13)
-		rich.text = "[center]%s[/center]" % weapon_text
-		_stat_box.add_child(rich)
-
-	if skill.horse_limit == 1:
-		_add_line(_stat_box, tr("Trong lúc cưỡi ngựa không thể thi triển"), COLOR_WARNING, 13)
-	elif skill.horse_limit == 2:
-		_add_line(_stat_box, tr("Chỉ thi triển được khi cưỡi ngựa"), COLOR_WARNING, 13)
-
 	var support := skill.get_support_percent_from_other_skills(_all_skills, _profile)
 	if support > 0.0:
 		_add_line(_stat_box, tr("Hỗ trợ từ các kỹ năng khác:") + " %d%%" % int(support), COLOR_STAT, 13)
 
 	if skill.practice_only:
-		_add_line(_stat_box, "Kỹ năng cao cấp: tăng cấp bằng luyện tập", COLOR_WARNING, 13)
+		_add_line(_stat_box, "Mức độ luyện: 0%", COLOR_STAT, 13)
 
 	if skill.is_aura:
 		_add_line(_stat_box, "Hào quang: %s" % ("Đang bật" if _profile.active_aura_id == skill.id else "Đang tắt"), COLOR_GOLD, 13)
@@ -865,8 +866,18 @@ func _select(skill: SkillDefinition) -> void:
 			_add_line(_stat_box, line, COLOR_STAT, 13)
 		_append_child_skills(_stat_box, skill, learned, COLOR_STAT)
 
+	## Hạn chế vũ khí / cưỡi ngựa — đặt ở cuối khối hiện thời chuẩn VNG gốc (ngay trên Đẳng cấp tiếp theo)
+	var weapon_text := skill.get_weapon_limit_bbcode()
+	if weapon_text != "":
+		_add_rich_line(_stat_box, weapon_text, 13)
+
+	if skill.horse_limit == 1:
+		_add_line(_stat_box, tr("Trong lúc cưỡi ngựa không thể thi triển"), COLOR_WARNING, 13)
+	elif skill.horse_limit == 2:
+		_add_line(_stat_box, tr("Chỉ thi triển được khi cưỡi ngựa"), COLOR_WARNING, 13)
+
 	if learned < skill.max_level:
-		_add_line(_stat_box, "--- Đẳng cấp kế tiếp ---", COLOR_NEXT, 14)
+		_add_line(_stat_box, "Đẳng cấp tiếp theo", COLOR_NEXT, 14)
 		for line in _build_stat_lines(skill, learned + 1):
 			_add_line(_stat_box, line, COLOR_NEXT, 13)
 		_append_child_skills(_stat_box, skill, learned + 1, COLOR_NEXT)
@@ -942,13 +953,25 @@ func _add_line(box: VBoxContainer, text: String, color: Color, font_size: int = 
 	label.add_theme_font_size_override("font_size", font_size)
 	box.add_child(label)
 
+func _add_rich_line(box: VBoxContainer, bbcode: String, font_size: int = 13) -> void:
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.fit_content = true
+	rich.scroll_active = false
+	rich.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rich.add_theme_font_size_override("normal_font_size", font_size)
+	rich.text = "[center]%s[/center]" % bbcode
+	box.add_child(rich)
+
 func _append_child_skills(box: VBoxContainer, parent_skill: SkillDefinition, at_level: int, color: Color) -> void:
 	var index := 2
 	for candidate in _all_skills:
 		if candidate.parent_skill_id != parent_skill.id:
 			continue
-		_add_line(box, "Tăng %d: %s" % [index, candidate.skill_name], COLOR_LINKED_SKILL, 13)
-		for line in _build_stat_lines(candidate, clampi(at_level, 1, candidate.max_level)):
+		var child_level := clampi(at_level, 1, candidate.max_level)
+		var title_bbcode := "[color=#6488ff]Tầng thứ %d: [/color][color=#ffff44]%s[/color] [color=#6488ff][cấp %d][/color]" % [index, candidate.skill_name, child_level]
+		_add_rich_line(box, title_bbcode, 13)
+		for line in _build_stat_lines(candidate, child_level):
 			_add_line(box, line, color, 12)
 		index += 1
 

@@ -21,12 +21,16 @@ var sect: SectDefinition
 ## Hồ sơ nhân vật của người thi triển — null = nhân vật của mình (GameManager.local_profile). Bot PK (PkBot) gán hồ sơ riêng
 ## để dùng chung bộ điều khiển skill: cấp skill, đòn chính, hào quang đọc từ hồ sơ này.
 var owner_profile: PlayerProfile = null
+## Chiêu đánh vừa ra (m_ActiveSkillID gốc) + mốc thời gian (ms) — SkillPractice tính đòn trúng quái cho chiêu này.
+var active_skill_id := ""
+var active_skill_at := 0
 
 func _profile() -> PlayerProfile:
 	return owner_profile if owner_profile != null else GameManager.local_profile
 var _cooldowns: Dictionary = {}  ## skill_id (String) -> giây còn lại
 var _cooldown_totals: Dictionary = {}  ## skill_id (String) -> cooldown gốc (để tính % cho UI)
-var _auto_attack_cooldowns: Dictionary = {}  ## skill_id (String) -> giãn cách kích hoạt tự động
+var _auto_attack_cooldowns: Dictionary = {}  ## skill_id (String) -> giãn cách kích hoạt tự động khi đánh
+var _auto_reply_cooldowns: Dictionary = {}   ## skill_id (String) -> giãn cách kích hoạt tự động khi bị đánh
 
 ## ---- Khoá động tác (KNpc::DoAttack/DoMagic gốc) ----
 ## VLTK gốc KHÔNG có hồi chiêu cho đa số chiêu đánh: nhịp ra đòn = độ dài động tác, đang ra chiêu thì không ra chiêu khác.
@@ -61,12 +65,15 @@ func setup(sect_def: SectDefinition) -> void:
 	_cooldowns.clear()
 	_cooldown_totals.clear()
 	_auto_attack_cooldowns.clear()
+	_auto_reply_cooldowns.clear()
 	_action_lock = 0.0
 
 ## Xoá mọi hồi chiêu + khoá động tác (đổi map / test).
 func clear_cooldowns() -> void:
 	_cooldowns.clear()
 	_cooldown_totals.clear()
+	_auto_attack_cooldowns.clear()
+	_auto_reply_cooldowns.clear()
 	_action_lock = 0.0
 
 func tick(delta: float) -> void:
@@ -75,6 +82,8 @@ func tick(delta: float) -> void:
 		_cooldowns[id] = maxf(0.0, _cooldowns[id] - delta)
 	for id in _auto_attack_cooldowns.keys():
 		_auto_attack_cooldowns[id] = maxf(0.0, _auto_attack_cooldowns[id] - delta)
+	for id in _auto_reply_cooldowns.keys():
+		_auto_reply_cooldowns[id] = maxf(0.0, _auto_reply_cooldowns[id] - delta)
 
 ## 0.0 = sẵn sàng dùng, 1.0 = vừa thi triển — UI dùng để vẽ radial fill hồi chiêu.
 func get_cooldown_ratio(skill_id: String) -> float:
@@ -119,6 +128,18 @@ func get_loop_skill(index: int) -> SkillDefinition:
 ## Ô liên tục đang bật (bấm vào ô để tạm dừng/tiếp tục — chỉ lưu trong phiên chơi).
 var loop_enabled: Array[bool] = [true]
 
+## Kỹ năng có đang nằm trong ô thi triển liên tục và đang được bật hay không
+func is_in_active_loop_slot(skill_id: String) -> bool:
+	var profile := _profile()
+	if profile == null or skill_id == "":
+		return false
+	for i in profile.loop_skill_ids.size():
+		if profile.loop_skill_ids[i] == skill_id:
+			if i < loop_enabled.size() and not loop_enabled[i]:
+				return false
+			return true
+	return false
+
 func get_sub_skills() -> Array[SkillDefinition]:
 	var result: Array[SkillDefinition] = []
 	result.resize(PlayerProfile.HOTBAR_SLOT_COUNT)
@@ -134,6 +155,24 @@ func _find_skill(skill_id: String) -> SkillDefinition:
 		return null
 	for skill in sect.skills:
 		if skill.id == skill_id and skill.can_assign_to_hotbar():
+			return skill
+	return null
+
+## Tìm kỹ năng bất kỳ trong môn phái theo id (kể cả bị động / không gắn hotbar).
+func _find_sect_skill(skill_id: String) -> SkillDefinition:
+	if skill_id == "" or sect == null:
+		return null
+	for skill in sect.skills:
+		if skill.id == skill_id:
+			return skill
+	return null
+
+## Skill của phái theo SkillId gốc VLTK (kể cả skill con ẩn) — null nếu không có.
+func find_by_vltk_id(vltk_id: int) -> SkillDefinition:
+	if vltk_id <= 0 or sect == null:
+		return null
+	for skill in sect.skills:
+		if skill != null and skill.vltk_skill_id == vltk_id:
 			return skill
 	return null
 
@@ -158,9 +197,13 @@ func try_cast_loop(skill: SkillDefinition, caster: Node2D, target: Variant = nul
 	return _try_cast(skill, caster, target)
 
 ## Buff hỗ trợ (skill chủ động không nhắm địch, VD Thanh Phong phù, Skill 180...) — tâm là người thi triển, không
-## cần mục tiêu.
+## cần mục tiêu. Kỹ năng lướt / tốc biến (vltk_missle_form == 13 hoặc cận chiến) không phải buff bản thân.
 static func is_self_buff(skill: SkillDefinition) -> bool:
-	return skill != null and not skill.target_enemy and not skill.is_aura
+	if skill == null or skill.is_aura or skill.target_enemy:
+		return false
+	if skill.vltk_missle_form in [8, 11, 12, 13]:
+		return false
+	return true
 
 ## Bùa xuất hiện NGAY tại mục tiêu / tại người thi triển (MisslesForm 6/7) — không bay, áp cả vùng luôn.
 static func is_instant_curse(skill: SkillDefinition) -> bool:
@@ -173,6 +216,8 @@ static func state_meta(skill: SkillDefinition) -> Dictionary:
 
 ## Lý do skill không thi triển được vì vũ khí đang cầm / ngựa ("" = được). Người thi triển không phải player thì bỏ qua.
 func get_cast_block_reason(skill: SkillDefinition, caster: Node2D) -> String:
+	if skill != null and skill.id == "hoa_son_cuu_kiem_hop_nhat":
+		return "Kỹ năng cần gắn vào ô thi triển liên tục để phát huy tác dụng!"
 	var profile := _profile()
 	if profile == null or not caster.has_method("is_riding"):
 		return ""
@@ -188,7 +233,10 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 	## Hào quang LUÔN là bật/tắt (kể cả hào quang gây hại như Vô Hình Độc) — hiệu quả do nhịp hào quang lo, xem tick_aura.
 	var toggle_aura := skill.is_aura
 	if tgt_node == null and not self_buff and not toggle_aura:
-		return false
+		if skill.vltk_missle_form == 13 and caster.has_method("_make_cast_point"):
+			tgt_node = caster._make_cast_point(skill)
+		else:
+			return false
 	if _cooldowns.get(skill.id, 0.0) > 0.0:
 		return false
 	## Đang diễn động tác chiêu trước (hoặc đang lao/đánh liên hoàn cận chiến) -> chưa ra chiêu đánh khác. Buff bản thân
@@ -223,6 +271,16 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 							caster.notify("Không đủ nội lực!")
 						return false
 					caster.mana -= cost
+			var life_cost_aura := skill.get_life_cost_at_level(_learned_level(skill))
+			if life_cost_aura > 0:
+				if GmManager and GmManager.is_god_mode:
+					pass
+				elif "health" in caster:
+					if caster.health <= life_cost_aura:
+						if caster.has_method("notify"):
+							caster.notify("Không đủ sinh lực!")
+						return false
+					caster.health = maxf(1.0, caster.health - life_cost_aura)
 		_toggle_aura(skill, caster)
 		if is_aura_active(skill) and USE_VLTK_SKILL_FX:
 			VltkSkillRunner.play_support(caster, null, skill, _learned_level(skill))
@@ -231,6 +289,18 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 		_cooldown_totals[skill.id] = AURA_TOGGLE_DELAY
 		skill_cast.emit(skill.id)
 		return true
+
+	## Tiêu hao sinh lực: Thiên Vương Bang gốc tiêu hao sinh lực khi thi triển kỹ năng.
+	var life_cost := skill.get_life_cost_at_level(_learned_level(skill))
+	if life_cost > 0:
+		if GmManager and GmManager.is_god_mode:
+			pass
+		elif "health" in caster:
+			if caster.health <= life_cost:
+				if caster.has_method("notify"):
+					caster.notify("Không đủ sinh lực!")
+				return false
+			caster.health = maxf(1.0, caster.health - life_cost)
 
 	## Tiêu hao nội lực: mọi bản đồ đều tiêu hao nội lực khi thi triển kỹ năng.
 	var mana_cost := skill.get_mana_cost_at_level(_learned_level(skill))
@@ -244,6 +314,10 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 				return false
 			caster.mana -= mana_cost
 
+	## KNpc::DoSkill gốc: thi triển võ công là hiện hình (`m_HideState.nTime = 0`) — trừ chính skill ẩn thân.
+	if status and not skill.has_attrib("hide"):
+		status.break_hide()
+
 	var stats := _resolve_stats(skill, caster)
 	var cooldown := DEBUG_COOLDOWN if DEBUG_NO_COOLDOWN else stats.cooldown
 	_cooldowns[skill.id] = cooldown
@@ -251,21 +325,26 @@ func _try_cast(skill: SkillDefinition, caster: Node2D, target: Variant = null) -
 	if use_action_lock and not self_buff:
 		_action_lock = stats.action_time
 	if self_buff:
-		_play_vltk_precast(skill, caster)
+		_play_vltk_precast(skill, caster, null, stats)
 		_cast_support_buff(skill, caster)
 		_net_cast(skill, caster, null, true)
 	elif is_instant_curse(skill):
-		_play_vltk_precast(skill, caster, tgt_node)
+		_play_vltk_precast(skill, caster, tgt_node, stats)
 		_cast_instant_curse(skill, caster, tgt_node)
 		_net_cast(skill, caster, tgt_node, true)
 	elif USE_VLTK_SKILL_FX and VltkSkillRunner.supports(skill, _learned_level(skill)):
 		VltkSkillRunner.execute(caster, tgt_node, stats, skill, _learned_level(skill))
+		if (skill.target_self or skill.target_ally) and not skill.vltk_attribs.is_empty():
+			_cast_support_buff(skill, caster)
 		_net_cast(skill, caster, tgt_node, false)
 	else:
 		SectSkillCast.execute(caster, tgt_node, stats, skill)
 	## Đánh trúng quái/người nào thì vòng đỏ hiện dưới chân đó (như khi bấm chọn).
 	if caster.has_method("mark_cast_target"):
 		caster.mark_cast_target(tgt_node)
+	if not self_buff:
+		active_skill_id = skill.id
+		active_skill_at = Time.get_ticks_msec()
 	skill_cast.emit(skill.id)
 	return true
 
@@ -317,6 +396,39 @@ func tick_aura(caster: Node2D, delta: float) -> void:
 	if skill == null or skill.vltk_skill_id <= 0:
 		return
 	var level := _learned_level(skill)
+	if not skill.vltk_append_skill_ids.is_empty():
+		## Hào quang tổng hợp (Bế Nguyệt Phất Trần): mỗi nhịp chạy từng hào quang con đã học như gốc.
+		for part in skill.aura_parts(sect, level, _learned_level_of_part):
+			_tick_one_aura(part["skill"], caster, int(part["level"]))
+		return
+	_tick_one_aura(skill, caster, level)
+
+## Cấp hào quang con của hào quang tổng hợp: chưa học (cấp lưu 0) thì không chạy.
+func _learned_level_of_part(s: SkillDefinition) -> int:
+	var prof := _profile()
+	if prof == null or prof.get_skill_level(s.id) <= 0:
+		return 0
+	return _learned_level(s)
+
+## Hào quang bật của người khác có gồm `skill_id` không (chính nó hoặc 1 hào quang con của hào quang tổng hợp).
+static func aura_covers(sect: SectDefinition, active_aura_id: String, skill_id: String) -> bool:
+	if active_aura_id == "":
+		return false
+	if active_aura_id == skill_id:
+		return true
+	if sect == null:
+		return false
+	for s: SkillDefinition in sect.skills:
+		if s.id == active_aura_id:
+			for part in s.aura_parts(sect, s.max_level if s.max_level > 0 else 20):
+				if (part["skill"] as SkillDefinition).id == skill_id:
+					return true
+			return false
+	return false
+
+func _tick_one_aura(skill: SkillDefinition, caster: Node2D, level: int) -> void:
+	if skill == null or skill.vltk_skill_id <= 0 or level <= 0:
+		return
 	if not skill.target_enemy:
 		_apply_aura_to_allies(skill, caster, level)
 	var data := VltkSkillData.skill(skill.vltk_skill_id, level)
@@ -343,13 +455,94 @@ func is_aura_active(skill: SkillDefinition) -> bool:
 ## (IsRangeDmg, VD Thanh Phong phù 3 ô, Bất Động Minh Vương / Xuất Ứ Bất Nhiễm 10 ô) thì mọi đồng đội CÙNG PHE (cùng màu
 ## tên) đứng trong vùng ô vuông quanh người thi triển cũng nhận. Online: máy của đồng đội tự nhận qua receive_ally_support.
 func _cast_support_buff(skill: SkillDefinition, caster: Node2D) -> void:
+	# Kích nổ khí trường (CanDetonate) lập tức khi thi triển skill kích nổ (như Thần Quang Toàn Nhiễu)
+	if skill.has_attrib("candetonate1") or skill.vltk_skill_id == 1384:
+		var lvl := _learned_level(skill)
+		var s := VltkSkillData.skill(skill.vltk_skill_id, lvl)
+		var center := VltkMath.logic_of(caster)
+		var radius: float = float(skill.vltk_attack_radius if skill.vltk_attack_radius > 0 else 600)
+		var bonus_mult: float = 1.0
+		if skill.has_attrib("candetonate1"):
+			var v := skill.get_attrib("candetonate1", lvl)
+			if v.z > 0:
+				bonus_mult = float(v.z) / 100.0
+		elif s.has("candetonate1"):
+			var cd_arr: Array = s["candetonate1"]
+			if cd_arr.size() >= 3:
+				bonus_mult = float(cd_arr[2]) / 100.0
+		if bonus_mult <= 0.0:
+			bonus_mult = (100.0 + (lvl - 1) * (350.0 / 25.0)) / 100.0 if lvl <= 26 else (450.0 + (lvl - 26) * (110.0 / 6.0)) / 100.0
+		VltkMissile.detonate_missiles(caster, [107264, 109568], center, radius, bonus_mult)
+
 	var payload := skill.get_state_payload(_learned_level(skill))
 	var targets: Array[Node2D] = [caster]
 	if has_ally_area(skill):
-		targets = CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), skill.vltk_damage_range, false, true)
+		targets = CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), ally_cells(skill), false, true)
 		if not targets.has(caster):
 			targets.append(caster)
 	CombatTargeting.apply_state_to(targets, skill.id, payload, state_meta(skill))
+	if has_ally_area(skill):
+		for t in ally_fx_nodes(caster, skill):
+			play_ally_hit_fx(t, skill, _learned_level(skill))
+
+## Người cùng phe với `caster` trong vùng buff (gồm chính họ) để VẼ vòng va chạm — quét cả người chơi khác online
+## ("other_players"; CombatTargeting.find_in_cells chỉ quét player/enemies vì chỉ số của họ do máy họ tự tính).
+static func ally_fx_nodes(caster: Node2D, skill: SkillDefinition) -> Array[Node2D]:
+	var out: Array[Node2D] = [caster]
+	var center := VltkMath.ground_of(caster)
+	var cells := ally_cells(skill)
+	for group in [&"player", &"other_players"]:
+		for n in caster.get_tree().get_nodes_in_group(group):
+			if not (n is Node2D) or n == caster or out.has(n) or not is_instance_valid(n) or n.is_queued_for_deletion():
+				continue
+			if CombatTargeting.in_vltk_cells(center, n, cells) and CombatTargeting.get_relation(caster, n) == Camp.Relation.ALLY:
+				out.append(n)
+	return out
+
+## KMissle::ProcessCollision gốc (máy người chơi): đạn của buff vùng chạm tới AI trong vùng thì vẽ hình va chạm của đạn
+## (MS_DoCollision — AnimFile4 trong Missles.txt) ngay dưới chân người đó, VD Từ Hàng Phổ Độ -> đạn 5 -> vòng hồi sinh lực.
+## ColFollowTarget = 1 thì hình đi theo người, 0 thì đứng tại chỗ. Mỗi người chỉ 1 hình cùng lúc (cùng skill).
+static func play_ally_hit_fx(node: Node2D, skill: SkillDefinition, level: int) -> void:
+	if node == null or not is_instance_valid(node) or not node.is_inside_tree() or skill == null or skill.vltk_skill_id <= 0:
+		return
+	if not VltkSkillData.has_skill(skill.vltk_skill_id):
+		return
+	var m := VltkSkillData.missile_for(VltkSkillData.skill(skill.vltk_skill_id, level))
+	var anims: Array = m.get("anims", [])
+	var phase: Variant = anims[VltkSkillData.Phase.COLLISION] if anims.size() > VltkSkillData.Phase.COLLISION else null
+	if not (phase is Dictionary):
+		return
+	var key := "_ally_fx_until_%d" % skill.vltk_skill_id
+	var now := Time.get_ticks_msec()
+	if int(node.get_meta(key, 0)) > now:
+		return
+	var follow: Node2D = node if int(m.get("col_follow", 0)) else null
+	var fx := VltkEffect.spawn(node.get_parent(), phase, VltkMath.logic_of(node) - Vector2(0, 5), 0.0, 0, follow)
+	if fx != null:
+		node.set_meta(key, now + int(float(fx.end_tick) * VltkMath.TICK * 1000.0))
+
+## ONLINE — người chơi khác (`caster`) vừa ra buff vùng: vẽ vòng va chạm dưới chân mọi người cùng phe với họ trong vùng
+## (cả mình lẫn người khác), như máy client gốc tự vẽ khi đạn chạm. Chỉ số thì mỗi máy tự nhận qua receive_ally_support.
+static func play_ally_hit_fx_around(caster: Node2D, skill: SkillDefinition, level: int) -> void:
+	if caster == null or not is_instance_valid(caster) or not has_ally_area(skill) or skill.is_aura:
+		return
+	for t in ally_fx_nodes(caster, skill):
+		play_ally_hit_fx(t, skill, level)
+
+
+## Hệ số nới phạm vi buff / hào quang đồng đội theo phái (KHÔNG có trong gốc — cân bằng riêng): id skill bắt đầu bằng
+## "<phái>_" -> cạnh vùng ô vuông DmgRange nhân hệ số này. Nga Mi x2 (hào quang 10 -> 20 ô, Phổ Độ Chúng Sinh 14 -> 28,
+## Từ Hàng Phổ Độ 5 -> 10). Máy người thi triển và máy đồng đội (online) cùng đọc nên luôn khớp.
+const SECT_ALLY_RANGE_SCALE := {"nga_mi": 2.0}
+
+## Cạnh vùng ô vuông (ô bản đồ) buff / hào quang lên đồng đội của `skill`, đã nhân SECT_ALLY_RANGE_SCALE.
+static func ally_cells(skill: SkillDefinition) -> int:
+	if skill == null:
+		return 0
+	for sect_id: String in SECT_ALLY_RANGE_SCALE:
+		if skill.id.begins_with(sect_id + "_"):
+			return int(round(skill.vltk_damage_range * float(SECT_ALLY_RANGE_SCALE[sect_id])))
+	return skill.vltk_damage_range
 
 ## Skill hỗ trợ có vùng ảnh hưởng lên đồng đội (TargetAlly + đạn IsRangeDmg có DmgRange).
 static func has_ally_area(skill: SkillDefinition) -> bool:
@@ -367,10 +560,11 @@ static func aura_ally_payload(skill: SkillDefinition, level: int) -> Dictionary:
 	payload["attribs"] = attribs
 	return payload
 
+## Skill con của hào quang (VD Lưu Thủy 86 -> 206) mang CÙNG StateSpecialId (39 Lưu Thủy, 40 Mộng Điệp, 41 Phật Tâm Từ Hữu,
+## 56 Phổ Độ Chúng Sinh, 45 La Hán Trận...) và áp trạng thái đó lên mọi người cùng phe trong vùng -> đồng đội cũng có hình dưới chân.
 static func aura_ally_meta(skill: SkillDefinition) -> Dictionary:
-	var meta := state_meta(skill)
-	meta["state_id"] = 0   ## đồng đội không vẽ vòng hào quang (gốc: chỉ người bật mới có hình hào quang)
-	return meta
+	return state_meta(skill)
+
 
 ## HÀO QUANG HỖ TRỢ (Lưu Thủy, Mộng Điệp, Phật Tâm Từ Hữu, Thanh Âm Phạn Xướng, Phổ Độ Chúng Sinh, La Hán Trận, Thất Tinh
 ## Trận...): KNpc::ProcessState gốc mỗi 10 frame thi triển skill con -> đạn "Vòng tròn hỗ trợ đồng đội" (DmgRange 10 ô,
@@ -380,7 +574,7 @@ static func aura_ally_meta(skill: SkillDefinition) -> Dictionary:
 func _apply_aura_to_allies(skill: SkillDefinition, caster: Node2D, level: int) -> void:
 	if not has_ally_area(skill):
 		return
-	var allies := CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), skill.vltk_damage_range, false, true)
+	var allies := CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), ally_cells(skill), false, true)
 	allies.erase(caster)
 	var payload := aura_ally_payload(skill, level)
 	if allies.is_empty() or (payload["attribs"] as Dictionary).is_empty():
@@ -398,12 +592,12 @@ static func receive_ally_support(me: Node2D, caster: Node2D, skill: SkillDefinit
 	## Quan hệ NGƯỜI CHƠI – NGƯỜI CHƠI theo màu tên (Camp.relation, cả 2 là người chơi: 2 Sát thủ vẫn là địch); đang cừu sát thì thôi.
 	if ("pk_enemy" in caster and caster.pk_enemy) or Camp.relation(CombatTargeting.get_camp(caster), CombatTargeting.get_camp(me), true) != Camp.Relation.ALLY:
 		return false
-	if not CombatTargeting.in_vltk_cells(VltkMath.ground_of(caster), me, skill.vltk_damage_range):
+	if not CombatTargeting.in_vltk_cells(VltkMath.ground_of(caster), me, ally_cells(skill)):
 		return false
 	var targets: Array[Node2D] = [me]
 	if aura:
 		var prof := GameManager.local_profile
-		if prof != null and prof.active_aura_id == skill.id:
+		if prof != null and aura_covers(SectRegistry.get_by_id(prof.sect_id), prof.active_aura_id, skill.id):
 			return false
 		var payload := aura_ally_payload(skill, level)
 		if (payload["attribs"] as Dictionary).is_empty():
@@ -412,6 +606,37 @@ static func receive_ally_support(me: Node2D, caster: Node2D, skill: SkillDefinit
 	else:
 		CombatTargeting.apply_state_to(targets, skill.id, skill.get_state_payload(level), state_meta(skill))
 	return true
+
+## Skill sự kiện HỖ TRỢ bắn ra từ đạn của chiêu đánh (KSkill::OnMissleEvent, ByMissle): VD Ngọc Tuyền Tâm Kinh cấp 11+
+## -> FlyEvent 1115 (lifereplenish_v như Từ Hàng Phổ Độ) áp lên mình + đồng đội cùng phe trong vùng ô vuông quanh
+## `center_logic` (vị trí đạn mẹ). Chạy trên MỌI máy (máy người khác chạy lại chiêu qua VltkSkillRunner.replay) và mỗi máy
+## chỉ áp cho nhân vật nó tự tính chỉ số: người thi triển là người chơi khác thì chỉ xét nhân vật của mình.
+static func apply_event_support(launcher: Node2D, vltk_id: int, level: int, center_logic: Vector2) -> void:
+	var skill := skill_by_vltk_id(vltk_id)
+	if skill == null or launcher == null or not is_instance_valid(launcher) or not launcher.is_inside_tree() \
+			or not has_ally_area(skill):
+		return
+	var center := VltkMath.to_world(center_logic)
+	var cells := ally_cells(skill)
+	var targets: Array[Node2D] = []
+	if launcher is RemotePlayer:
+		var me := launcher.get_tree().get_first_node_in_group(&"player") as Node2D
+		if me != null and CombatTargeting.in_vltk_cells(center, me, cells) and not ("pk_enemy" in launcher and launcher.pk_enemy) \
+				and Camp.relation(CombatTargeting.get_camp(launcher), CombatTargeting.get_camp(me), true) == Camp.Relation.ALLY:
+			targets.append(me)
+	else:
+		targets = CombatTargeting.find_in_cells(launcher, center, cells, false, true)
+		if skill.target_self and not targets.has(launcher) and CombatTargeting.in_vltk_cells(center, launcher, cells):
+			targets.append(launcher)
+	var alive: Array[Node2D] = []
+	for n in targets:
+		if not (n.has_method("is_dead") and n.is_dead()):
+			alive.append(n)
+	if alive.is_empty():
+		return
+	CombatTargeting.apply_state_to(alive, skill.id, skill.get_state_payload(level), state_meta(skill))
+	for t in alive:
+		play_ally_hit_fx(t, skill, level)
 
 ## SkillDefinition theo số skill VLTK gốc, tra trong MỌI phái (buff của người chơi phái khác).
 static var _skill_by_vltk: Dictionary = {}
@@ -423,6 +648,15 @@ static func skill_by_vltk_id(vltk_id: int) -> SkillDefinition:
 				if s.vltk_skill_id > 0 and not _skill_by_vltk.has(s.vltk_skill_id):
 					_skill_by_vltk[s.vltk_skill_id] = s
 	return _skill_by_vltk.get(vltk_id)
+
+## Id phái chứa `skill` ("" nếu không thấy) — để tìm hào quang con của hào quang tổng hợp ở máy người khác.
+static func sect_id_of(skill: SkillDefinition) -> String:
+	if skill == null:
+		return ""
+	for sect in SectRegistry.load_all():
+		if sect.skills.has(skill):
+			return sect.id
+	return ""
 
 ## Bùa tại mục tiêu (MisslesForm 6) / tại người thi triển (7): áp NGAY cho mọi kẻ địch trong vùng quanh
 ## tâm (0 bán kính = chỉ mục tiêu đã chọn).
@@ -441,9 +675,9 @@ func _cast_instant_curse(skill: SkillDefinition, caster: Node2D, target: Node2D)
 
 ## Phần thi triển gốc của skill buff/bùa (vẫn áp hiệu quả bằng đường cũ): ảnh xuất chiêu + động tác + đạn/skill con
 ## chỉ để vẽ — xem VltkSkillRunner.play_support. `target` = mục tiêu của bùa (null với buff lên mình).
-func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D = null) -> void:
+func _play_vltk_precast(skill: SkillDefinition, caster: Node2D, target: Node2D = null, stats: ResolvedSkillStats = null) -> void:
 	if USE_VLTK_SKILL_FX and skill.vltk_skill_id > 0:
-		VltkSkillRunner.play_support(caster, target, skill, _learned_level(skill))
+		VltkSkillRunner.play_support(caster, target, skill, _learned_level(skill), stats)
 
 func _learned_level(skill: SkillDefinition) -> int:
 	var prof := _profile()
@@ -474,7 +708,9 @@ func _resolve_hit_effects(stats: ResolvedSkillStats, skill: SkillDefinition, lev
 	var poison_type := CombatFormulas.DamageType.POISON
 	var freeze := 0
 	if skill.has_attrib("colddamage_v"):
-		freeze = skill.get_attrib("colddamage_v", level).y + attacker.cold_enhance_frames
+		var ca := skill.get_attrib("colddamage_v", level)
+		var skill_freeze := ca.z if ca.z > 0 else ca.y
+		freeze = skill_freeze + attacker.cold_enhance_frames
 		if not is_physical and attacker.inner_element_damage.has(cold_type):
 			freeze = maxi(freeze, MagicAttribTable.COLD_DAMAGE_TIME + attacker.cold_enhance_frames)
 	if is_physical and attacker.outer_element_damage.has(cold_type):
@@ -595,10 +831,11 @@ func get_echo_damage(skill: SkillDefinition, caster: Node2D = null) -> Vector2i:
 		hi += total
 	return Vector2i(int(lo), int(hi))
 
-func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSkillStats:
+## `level_override` > 0: tính ở cấp này thay vì cấp đã học (skill con bắn qua sự kiện dùng EventSkillLevel của skill cha).
+func _resolve_stats(skill: SkillDefinition, caster: Node2D = null, level_override: int = 0) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
 	var profile := _profile()
-	var learned_level: int = _learned_level(skill)
+	var learned_level: int = level_override if level_override > 0 else _learned_level(skill)
 	var real := skill.get_combat_damage_at_level(learned_level)
 	var enhance_percent: float = real["physics_enhance"]
 	var physics_flat: Vector2i = real["physics_flat"]
@@ -686,6 +923,8 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSk
 	stats.five_elements_damage_p = real["five_elements_damage_p"]
 	if skill.has_attrib("ignoredefense_p"):
 		stats.ignore_defense_percent = skill.get_attrib("ignoredefense_p", learned_level).x
+	if skill.has_attrib("attackrating_p"):
+		stats.attack_rating_p = skill.get_attrib("attackrating_p", learned_level).x
 	## Bùa (nhắm địch, chỉ trạng thái — VD Mê Tung ảo ảnh): đạn không gây damage, trúng thì áp trạng thái.
 	if skill.is_state_skill() and skill.target_enemy:
 		var payload := skill.get_state_payload(learned_level)
@@ -697,6 +936,15 @@ func _resolve_stats(skill: SkillDefinition, caster: Node2D = null) -> ResolvedSk
 		stats.state_radius = skill.get_effect_radius_px()
 		stats.damage = 0.0
 		stats.extra_damage_ranges = {}
+	elif skill.vltk_state_special_id > 0:
+		## Skill tấn công kèm trạng thái / hiệu ứng hình ảnh (VD: Kinh Đào Phách Ngạn lửa trên đầu, StateSpecialId 240 / 100240)
+		var payload := skill.get_state_payload(learned_level)
+		stats.is_state_only = false
+		stats.state_source_id = skill.id
+		stats.state_attribs = payload["attribs"]
+		stats.state_seconds = payload["seconds"] if payload["seconds"] > 0.0 else 5.0
+		stats.state_meta = state_meta(skill)
+		stats.state_radius = skill.get_effect_radius_px()
 	stats.element = skill.element	
 	## Hồi chiêu riêng gốc (TimePerCast / skill_mintimepercast_v) không giảm theo tốc độ đánh; tốc độ đánh rút ngắn ĐỘNG TÁC.
 	stats.cooldown = skill.get_cooldown_at_level(learned_level)
@@ -720,11 +968,11 @@ func trigger_auto_attack_skills(caster: Node2D, target: Node2D, source_skill: Di
 		return
 	var src_child := int(source_skill.get("child", 0))
 	var src_id := int(source_skill.get("id", 0))
-	if src_child == 357 or src_id in [1232, 100357]:
+	if src_child in [357, 100418, 100429] or src_id in [1232, 100357, 1368, 101421]:
 		return
 
 	## Sâm La Độc Hải (Ngũ Độc): tự động kích hoạt Hồn Ảnh Tùng Sanh (1232 - Missile 357 nổ đầu lâu)
-	var sam_la := _find_skill("ngu_doc_sam_la_doc_hai")
+	var sam_la := _find_sect_skill("ngu_doc_sam_la_doc_hai")
 	if sam_la != null and is_skill_usable(sam_la):
 		var cd: float = _auto_attack_cooldowns.get("ngu_doc_sam_la_doc_hai", 0.0)
 		if cd <= 0.0:
@@ -733,6 +981,78 @@ func trigger_auto_attack_skills(caster: Node2D, target: Node2D, source_skill: Di
 			if randf() < rate:
 				_auto_attack_cooldowns["ngu_doc_sam_la_doc_hai"] = 1.0  ## Giãn cách chuẩn 1 giây
 				_cast_auto_attack_missile(caster, target, 1232, lvl, sam_la)
+
+	## Cửu Kiếm Hợp Nhất (Hoa Sơn 150): tự động kích hoạt Độc Cô Cửu Kiếm (1368 - phóng 9 thanh phi kiếm)
+	## Chỉ áp dụng khi người chơi gắn skill ở ô thi triển liên tục (và đang bật); nếu không để ở slot liên tục thì không áp dụng.
+	var cuu_kiem := _find_sect_skill("hoa_son_cuu_kiem_hop_nhat")
+	if cuu_kiem != null and is_skill_usable(cuu_kiem):
+		var in_loop := false
+		if caster.is_in_group("player"):
+			in_loop = is_in_active_loop_slot("hoa_son_cuu_kiem_hop_nhat")
+		else:
+			in_loop = true
+		if in_loop:
+			var cd_hs: float = _auto_attack_cooldowns.get("hoa_son_cuu_kiem_hop_nhat", 0.0)
+			if cd_hs <= 0.0:
+				var lvl_hs := _learned_level(cuu_kiem)
+				# Tỉ lệ 10% (lv 1) -> 30% (lv 26) theo đúng statline SubResource_82
+				var rate_hs := 0.10 + 0.20 * clampf(float(lvl_hs - 1) / 25.0, 0.0, 1.0)
+				if randf() < rate_hs:
+					_auto_attack_cooldowns["hoa_son_cuu_kiem_hop_nhat"] = 1.0  ## Giãn cách chuẩn 1 giây
+					_cast_auto_attack_missile(caster, target, 1368, lvl_hs, cuu_kiem)
+
+	_try_ba_la_tam_kinh(caster)
+
+## Ba La Tâm Kinh (Nga Mi thất truyền 180) — em_adskill gốc (script/skill/advancedskill.lua):
+##   autoattackskill = { 1234*256 + cấp (1->20), -1, 3*18*256 + tỉ lệ (10%->30%) }
+## -> mỗi lần ra đòn có tỉ lệ thi triển Từ Hàng Phổ Độ 1234 CÙNG CẤP Ba La; kích hoạt xong 3*18 frame (3 giây) mới kích lại.
+## 1234 giống Từ Hàng Phổ Độ 93 (bảng cihang_pudu, đạn 5, vùng 5 ô) nhưng MissleForm 7: bung tại chỗ người đánh,
+## hồi sinh lực cho mình + đồng đội cùng phe quanh mình. Online: máy đồng đội tự nhận qua S_CAST (CAST_SUPPORT).
+func _try_ba_la_tam_kinh(caster: Node2D) -> void:
+	var ba_la := _find_sect_skill("nga_mi_ba_la_tam_kinh")
+	if ba_la == null or not is_skill_usable(ba_la) or float(_auto_attack_cooldowns.get(ba_la.id, 0.0)) > 0.0:
+		return
+	var lvl := _learned_level(ba_la)
+	var v := ba_la.get_attrib("autoattackskill", lvl)
+	@warning_ignore("integer_division")
+	var child_id := v.x / 256
+	var child_lvl := maxi(1, v.x % 256)
+	var rate := clampi(v.z % 256, 0, 100)
+	@warning_ignore("integer_division")
+	var interval := float(v.z / 256) / VltkMath.FPS
+	if child_id <= 0 or randi() % 100 >= rate:
+		return
+	var heal := skill_by_vltk_id(child_id)
+	if heal == null:
+		return
+	_auto_attack_cooldowns[ba_la.id] = interval
+	cast_area_heal(caster, heal, child_lvl)
+	if NetClient.is_in_world() and caster.is_in_group("player"):
+		NetClient.send_cast(child_id, child_lvl, NetProto.CAST_SUPPORT, 0, caster.global_position)
+
+## Buff vùng bung tại chỗ `caster` (không động tác, không hồi chiêu): áp trạng thái lên mình + đồng đội cùng phe trong
+## vùng ô vuông, vẽ ảnh xuất chiêu + vòng va chạm dưới chân từng người (như máy client gốc khi đạn chạm).
+static func cast_area_heal(caster: Node2D, skill: SkillDefinition, level: int) -> void:
+	if caster == null or not is_instance_valid(caster) or not caster.is_inside_tree() or skill == null:
+		return
+	var targets: Array[Node2D] = [caster]
+	if has_ally_area(skill):
+		targets = CombatTargeting.find_in_cells(caster, VltkMath.ground_of(caster), ally_cells(skill), false, true)
+		if not targets.has(caster):
+			targets.append(caster)
+	var alive: Array[Node2D] = []
+	for n in targets:
+		if not (n.has_method("is_dead") and n.is_dead()):
+			alive.append(n)
+	if alive.is_empty():
+		return
+	CombatTargeting.apply_state_to(alive, skill.id, skill.get_state_payload(level), state_meta(skill))
+	if USE_VLTK_SKILL_FX and VltkSkillData.has_skill(skill.vltk_skill_id):
+		## Ảnh xuất chiêu + tiếng + ĐẠN của skill (Từ Hàng Phổ Độ: đạn 5 — cột nước hồi máu là pha bay của đạn) bung tại chỗ,
+		## chỉ để vẽ (ctx.stats = null, như máy đồng đội vẽ lại) — không động tác, không ngắt đòn đang ra.
+		VltkSkillRunner.replay(caster, skill.vltk_skill_id, level, null, VltkMath.logic_of(caster))
+		for t in ally_fx_nodes(caster, skill):
+			play_ally_hit_fx(t, skill, level)
 
 func _cast_auto_attack_missile(caster: Node2D, target: Node2D, child_skill_id: int, level: int, parent_skill: SkillDefinition) -> void:
 	if not USE_VLTK_SKILL_FX or not VltkSkillData.has_skill(child_skill_id):
@@ -749,3 +1069,459 @@ func _cast_auto_attack_missile(caster: Node2D, target: Node2D, child_skill_id: i
 	if NetClient.is_in_world() and caster.is_in_group("player"):
 		var target_eid := int(target.net_eid) if "net_eid" in target else 0
 		NetClient.send_cast(child_skill_id, level, 0, target_eid, target.global_position)
+
+## Kích hoạt kỹ năng tự động khi nhận sát thương / bị đánh trúng (autoreplyskill trong VLTK gốc).
+func trigger_auto_reply_skills(victim: Node2D, attacker: Node2D = null) -> void:
+	if victim == null or not is_instance_valid(victim) or not victim.is_inside_tree():
+		return
+	if victim is Node and (victim as Node).is_queued_for_deletion():
+		return
+
+	## Thiên Vương Bang: Chinh Chiến Bát Phương (thien_vuong_chinh_chien_bat_phuong)
+	## Tự động xuất chiêu Du Long Chân Khí (Skill ID 1231): xóa hiệu ứng bất thường, né tránh phi đạn 80%, bỏ qua trạng thái 100%.
+	var chinh_chien := _find_sect_skill("thien_vuong_chinh_chien_bat_phuong")
+	if chinh_chien != null and is_skill_usable(chinh_chien):
+		var cd: float = _auto_reply_cooldowns.get("thien_vuong_chinh_chien_bat_phuong", 0.0)
+		if cd <= 0.0:
+			var lvl := _learned_level(chinh_chien)
+			var progress := clampf(float(lvl - 1) / 19.0, 0.0, 1.0)
+			var chance := 0.01 + 0.02 * progress  ## Tỷ lệ kích hoạt: 1% ở lv 1 -> 3% ở lv 20
+			if randf() < chance:
+				var cd_duration := 30.0 - 20.0 * progress  ## Giãn cách: 30s ở lv 1 -> 10s ở lv 20
+				_auto_reply_cooldowns["thien_vuong_chinh_chien_bat_phuong"] = cd_duration
+				var buff_duration := 1.0 + 2.0 * progress  ## Thời gian duy trì: 1s ở lv 1 -> 3s ở lv 20
+				_trigger_du_long_chan_khi(victim, lvl, buff_duration, chinh_chien)
+
+	## Côn Lôn: Thiên Cương Khí Kính (con_lon_thien_cuong_khi_kinh)
+	## Tự động kích hoạt Tiên Thiên Cương Khí (Skill ID 1239): bỏ qua kháng lôi 15%, tăng tỷ lệ Lưỡng Nghi Chân Khí 15%, ngũ hành tương khắc 50%, duy trì 15 giây.
+	var thien_cuong := _find_sect_skill("con_lon_thien_cuong_khi_kinh")
+	if thien_cuong != null and is_skill_usable(thien_cuong):
+		var cd_tc: float = _auto_reply_cooldowns.get("con_lon_thien_cuong_khi_kinh", 0.0)
+		if cd_tc <= 0.0:
+			var lvl_tc := _learned_level(thien_cuong)
+			var progress_tc := clampf(float(lvl_tc - 1) / 19.0, 0.0, 1.0)
+			var chance_tc := 0.03 + 0.02 * progress_tc  ## Tỷ lệ kích hoạt: 3% ở lv 1 -> 5% ở lv 20
+			if randf() < chance_tc:
+				var cd_duration_tc := 30.0 - 15.0 * progress_tc  ## Giãn cách: 30s ở lv 1 -> 15s ở lv 20
+				_auto_reply_cooldowns["con_lon_thien_cuong_khi_kinh"] = cd_duration_tc
+				var buff_duration_tc := 5.0 + 10.0 * progress_tc  ## Thời gian duy trì: 5s ở lv 1 -> 15s ở lv 20
+				_trigger_thien_cuong_khi_kinh(victim, lvl_tc, buff_duration_tc, thien_cuong)
+
+	## Võ Đang: Chân Võ Thất Tiết (vo_dang_chan_vo_that_tiet)
+	## Tự động kích hoạt Âm Dương Khí Quyết (Skill ID 1238 / State 192): chuyển hóa sát thương thành nội lực (50% lv1 -> 200% lv20), tăng ngũ hành tương khắc (20% -> 50%), duy trì 5s -> 15s.
+	var chan_vo := _find_sect_skill("vo_dang_chan_vo_that_tiet")
+	if chan_vo != null and is_skill_usable(chan_vo):
+		var cd_cv: float = _auto_reply_cooldowns.get("vo_dang_chan_vo_that_tiet", 0.0)
+		if cd_cv <= 0.0:
+			var lvl_cv := _learned_level(chan_vo)
+			var progress_cv := clampf(float(lvl_cv - 1) / 19.0, 0.0, 1.0)
+			var chance_cv := 0.03 + 0.07 * progress_cv  ## Tỷ lệ kích hoạt: 3% ở lv 1 -> 10% ở lv 20
+			if randf() < chance_cv:
+				var cd_duration_cv := 30.0 - 10.0 * progress_cv  ## Giãn cách: 30s ở lv 1 -> 20s ở lv 20
+				_auto_reply_cooldowns["vo_dang_chan_vo_that_tiet"] = cd_duration_cv
+				var buff_duration_cv := 5.0 + 10.0 * progress_cv  ## Thời gian duy trì: 5s ở lv 1 -> 15s ở lv 20
+				_trigger_chan_vo_that_tiet(victim, lvl_cv, buff_duration_cv, chan_vo)
+
+	## Thiên Nhẫn: Liệt Hỏa Phần Thiên (thien_nhan_liet_hoa_phan_thien)
+	## Tự động phản kích Hỏa sát và có tỷ lệ kích hoạt Ma Âm Phệ Phách (Skill ID 1236 / 723 / State 121) làm đối thủ hoảng loạn.
+	var liet_hoa := _find_sect_skill("thien_nhan_liet_hoa_phan_thien")
+	if liet_hoa != null and is_skill_usable(liet_hoa):
+		var cd_lh: float = _auto_reply_cooldowns.get("thien_nhan_liet_hoa_phan_thien", 0.0)
+		if cd_lh <= 0.0:
+			var lvl_lh := _learned_level(liet_hoa)
+			var progress_lh := clampf(float(lvl_lh - 1) / 19.0, 0.0, 1.0)
+			var cd_duration_lh := 30.0 - 10.0 * progress_lh  ## Giãn cách phản kích: 30s ở lv 1 -> 20s ở lv 20
+			_auto_reply_cooldowns["thien_nhan_liet_hoa_phan_thien"] = cd_duration_lh
+			_trigger_liet_hoa_phan_thien(victim, attacker, lvl_lh, progress_lh, liet_hoa)
+
+	## Thúy Yên: Huyền Băng Vô Tắc (advancedskill.lua cy_adskill) — bị đánh trúng có xác suất tự thi triển Dung Tuyết Vô Tung
+	## (skill 1235) ẩn thân. Tỷ lệ / giãn cách đọc thẳng từ autoreplyskill gốc: 5% / 20 giây (cấp 1) -> 10% / 10 giây (cấp 19-20).
+	var huyen_bang := _find_sect_skill(HideSkill.HUYEN_BANG_VO_TAC_ID)
+	if huyen_bang != null and victim.is_in_group("player") and is_skill_usable(huyen_bang):
+		if float(_auto_reply_cooldowns.get(huyen_bang.id, 0.0)) <= 0.0:
+			var lvl_hb := _learned_level(huyen_bang)
+			var reply := HideSkill.auto_reply(huyen_bang, lvl_hb)
+			if randi() % 100 < int(reply["rate"]):
+				_auto_reply_cooldowns[huyen_bang.id] = float(reply["wait"])
+				_trigger_dung_tuyet_vo_tung(victim, lvl_hb, huyen_bang)
+
+	## Vũ Hồn: Tận Trung Báo Quốc (vu_hon_tan_trung_bao_quoc - Skill ID 1986)
+	## Bị đánh trúng có xác suất tự động thi triển Đấu Dũng Đương Tiên (Skill ID 1987) tăng tốc độ di chuyển và bốc lửa Tiên Giới Hỏa
+	var tan_trung := _find_sect_skill("vu_hon_tan_trung_bao_quoc")
+	if tan_trung != null and is_skill_usable(tan_trung):
+		var cd_tt: float = _auto_reply_cooldowns.get("vu_hon_tan_trung_bao_quoc", 0.0)
+		if cd_tt <= 0.0:
+			var lvl_tt := _learned_level(tan_trung)
+			var progress_tt := clampf(float(lvl_tt - 1) / 19.0, 0.0, 1.0)
+			var chance_tt := 0.01 + 0.19 * progress_tt  ## 1% ở lv 1 -> 20% ở lv 20
+			if randf() < chance_tt:
+				var cd_duration_tt := 15.0  ## Giãn cách phản kích: 15 giây theo VLTK gốc
+				_auto_reply_cooldowns["vu_hon_tan_trung_bao_quoc"] = cd_duration_tt
+				_trigger_dau_dung_duong_tien(victim, lvl_tt, tan_trung)
+
+## Dung Tuyết Vô Tung: ẩn thân (trạng thái mang "hide") + hình Tiên Giới Thủy; online báo server để nó đặt cờ ẩn thân.
+func _trigger_dung_tuyet_vo_tung(victim: Node2D, level: int, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status == null:
+		return
+	var secs := HideSkill.dung_tuyet_seconds(level)
+	var meta := {"name": "Dung Tuyết Vô Tung", "icon": parent_skill.icon if parent_skill else null, "is_debuff": false}
+	status.apply_state("thuy_yen_dung_tuyet_vo_tung", {"hide": Vector3i(1, 0, 0)}, secs, meta)
+	if VltkSkillData.has_skill(HideSkill.DUNG_TUYET_VO_TUNG):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(HideSkill.DUNG_TUYET_VO_TUNG, level))
+	if NetClient.is_in_world():
+		NetClient.send_cast(HideSkill.DUNG_TUYET_VO_TUNG, level, NetProto.CAST_SUPPORT, 0, victim.global_position)
+
+func _trigger_dau_dung_duong_tien(victim: Node2D, level: int, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status == null:
+		return
+	var progress := clampf(float(level - 1) / 19.0, 0.0, 1.0)
+	var speed_bonus := int(10.0 + 20.0 * progress)  ## Cấp 1 tăng 10% -> Cấp 20 tăng 30% tốc độ di chuyển
+	var duration := 5.0 + 8.0 * progress  ## Cấp 1 duy trì 5s -> Cấp 20 duy trì 13s
+	var attribs := {
+		"fastwalkrun_p": Vector3i(speed_bonus, 0, 0),
+	}
+	var meta := {
+		"name": "Đấu Dũng Đương Tiên",
+		"icon": parent_skill.icon if parent_skill else null,
+		"is_debuff": false,
+		"state_id": 0
+	}
+	status.apply_state("vu_hon_dau_dung_duong_tien", attribs, duration, meta)
+
+	## Phát hiệu ứng ngọn lửa Tiên Giới Hỏa bốc cháy quanh thân nhân vật
+	if VltkSkillData.has_skill(1987):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1987, level))
+	elif VltkSkillData.has_skill(1986):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1986, level))
+
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1987, level, NetProto.CAST_SUPPORT, 0, victim.global_position)
+
+func _trigger_liet_hoa_phan_thien(victim: Node2D, attacker: Node2D, level: int, progress: float, parent_skill: SkillDefinition) -> void:
+	## 1. Hỏa sát phản kích (100 điểm ở lv 1 -> 500 điểm ở lv 20)
+	var fire_dmg := int(100.0 + 400.0 * progress)
+	if attacker != null and is_instance_valid(attacker) and attacker is Node2D:
+		if attacker.has_method("take_damage"):
+			attacker.take_damage(fire_dmg)
+		elif attacker.has_method("take_damage_from"):
+			var mods := CombatFormulas.HitModifiers.new()
+			mods.attacker_node = victim
+			mods.is_melee = true
+			mods.use_attack_rating = false
+			attacker.take_damage_from(victim, null, fire_dmg, fire_dmg, CombatFormulas.DamageType.FIRE, ElementTypes.ElementType.HOA, mods)
+
+	## 2. Tỷ lệ kích hoạt Ma Âm Phệ Phách: 1% ở lv 1 -> 3% ở lv 20
+	var chance := 0.01 + 0.02 * progress
+	if randf() <= chance:
+		## Hoạt ảnh xuất chiêu Tiên Giới Hỏa quanh người
+		if VltkSkillData.has_skill(1226):
+			VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1226, level))
+		elif VltkSkillData.has_skill(1236):
+			VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1236, level))
+
+		## Thời gian hoảng loạn: 1s ở lv 1 -> 4s ở lv 20
+		var confuse_duration := 1.0 + 3.0 * progress
+		## Tỷ lệ trúng hiệu ứng: 35% ở lv 1 -> 85% ở lv 20 (miss rate 65% -> 15%)
+		var hit_chance := 0.35 + 0.50 * progress
+		var radius := 180.0
+		var max_targets := 6
+
+		var targets: Array[Node2D] = []
+		var tree := victim.get_tree()
+		if tree != null:
+			var enemies := tree.get_nodes_in_group("enemies")
+			for e in enemies:
+				if e is Node2D and is_instance_valid(e) and not (e as Node).is_queued_for_deletion():
+					if (e as Node2D).global_position.distance_to(victim.global_position) <= radius:
+						targets.append(e as Node2D)
+						if targets.size() >= max_targets:
+							break
+
+		for t in targets:
+			if randf() <= hit_chance:
+				var status: StatusEffectController = t.get_node_or_null("StatusEffectController")
+				if status != null:
+					var attribs := {
+						"randmove": Vector3i(1, int(confuse_duration * 18), 0)
+					}
+					var meta := {
+						"name": "Ma Âm Phệ Phách",
+						"icon": parent_skill.icon if parent_skill else null,
+						"is_debuff": true,
+						"state_id": 121
+					}
+					status.apply_state("debuff_hoang_loan_121", attribs, confuse_duration, meta)
+
+		## Đồng bộ mạng nếu đang online
+		if NetClient.is_in_world() and victim.is_in_group("player"):
+			NetClient.send_cast(1226, level, 0, 0, victim.global_position)
+
+func _trigger_thien_cuong_khi_kinh(victim: Node2D, level: int, duration: float, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		var progress := clampf(float(level - 1) / 19.0, 0.0, 1.0)
+		var ignore_light := int(5.0 + 10.0 * progress)
+		var enhance_luong_nghi := int(3.0 + 12.0 * progress)
+		var series_dmg := int(20.0 + 30.0 * progress)
+		var attribs := {
+			"anti_lightingres_yan_p": Vector3i(ignore_light, 0, 0),
+			"enhance_717_auto": Vector3i(enhance_luong_nghi, 0, 0),
+			"seriesdamage_p": Vector3i(series_dmg, 0, 0),
+		}
+		var meta := {
+			"name": "Thiên Cương Khí Kính",
+			"icon": parent_skill.icon if parent_skill else null,
+			"is_debuff": false,
+			"state_id": 1239
+		}
+		status.apply_state("con_lon_thien_cuong_khi_kinh", attribs, duration, meta)
+
+	## Hoạt ảnh Tiên Giới Thổ hoàng kim quanh người
+	if VltkSkillData.has_skill(1239):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1239, level))
+	elif VltkSkillData.has_skill(1229):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1229, level))
+
+	## Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1229, level, 0, 0, victim.global_position)
+
+func _trigger_chan_vo_that_tiet(victim: Node2D, level: int, duration: float, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		var progress := clampf(float(level - 1) / 19.0, 0.0, 1.0)
+		var dmg_to_mana := int(50.0 + 150.0 * progress)
+		var series_dmg := int(20.0 + 30.0 * progress)
+		var attribs := {
+			"damage2addmana_p": Vector3i(dmg_to_mana, int(duration * 18), 0),
+			"seriesdamage_p": Vector3i(series_dmg, int(duration * 18), 0),
+		}
+		var meta := {
+			"name": "Chân Võ Thất Tiết",
+			"icon": parent_skill.icon if parent_skill else null,
+			"is_debuff": false,
+			"state_id": 192
+		}
+		status.apply_state("vo_dang_chan_vo_that_tiet", attribs, duration, meta)
+
+	## Hoạt ảnh Tiên Giới Thổ hoàng kim quanh người (Skill 1238 / 1228)
+	if VltkSkillData.has_skill(1238):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1238, level))
+	elif VltkSkillData.has_skill(1228):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1228, level))
+
+	## Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1228, level, 0, 0, victim.global_position)
+
+func _trigger_du_long_chan_khi(victim: Node2D, level: int, duration: float, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		## 1. Xóa toàn bộ hiệu ứng xấu đang chịu (choáng, chậm, độc, debuff)
+		status.cleanse_negative_effects()
+		## 2. Áp trạng thái Du Long Chân Khí (né phi đạn 80%, miễn nhiễm trạng thái xấu 100%)
+		var attribs := {
+			"missle_missrate": Vector3i(80, 0, 0),
+			"ignorenegativestate_p": Vector3i(100, 0, 0)
+		}
+		var meta := {
+			"name": "Du Long Chân Khí",
+			"icon": parent_skill.icon if parent_skill else null,
+			"is_debuff": false,
+			"state_id": 1231
+		}
+		status.apply_state("thien_vuong_dulong_chan_khi", attribs, duration, meta)
+
+	## 3. Hoạt ảnh Tiên Giới Kim (vòng sáng tiên giới hoàng kim quanh người)
+	if VltkSkillData.has_skill(1231):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1231, level))
+
+	## 4. Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1231, level, 0, 0, victim.global_position)
+
+## Kích hoạt kỹ năng tự cứu khi máu yếu (autorescueskill trong VLTK gốc: Tử Hà Kiếm Khí, Lưỡng Nghi Chân Khí, Hấp Tinh Trận...)
+func trigger_auto_rescue_skills(victim: Node2D) -> void:
+	if victim == null or not is_instance_valid(victim) or not victim.is_inside_tree():
+		return
+	if victim is Node and (victim as Node).is_queued_for_deletion():
+		return
+
+	## Hoa Sơn: Tử Hà Kiếm Khí (hoa_son_tu_ha_kiem_khi)
+	## Khi sinh lực thấp hơn 25%, có 25% tỉ lệ nhận được trạng thái Hồi phục sinh lực (ở cấp 20).
+	## Mỗi nửa giây hồi phục 10000 điểm sinh lực, duy trì trong 4 giây. Thời gian hồi chiêu: 20 giây.
+	var tu_ha := _find_sect_skill("hoa_son_tu_ha_kiem_khi")
+	if tu_ha != null and is_skill_usable(tu_ha):
+		var cd: float = _auto_reply_cooldowns.get("hoa_son_tu_ha_kiem_khi", 0.0)
+		if cd <= 0.0:
+			var lvl := _learned_level(tu_ha)
+			var progress := clampf(float(lvl - 1) / 19.0, 0.0, 1.0)
+			var chance := 0.05 + 0.20 * progress  ## Tỷ lệ: 5% ở lv 1 -> 25% ở lv 20
+			if randf() < chance:
+				var cd_duration := 20.0  ## Hồi chiêu: 20s
+				_auto_reply_cooldowns["hoa_son_tu_ha_kiem_khi"] = cd_duration
+				var heal_per_tick := int(1000.0 + 9000.0 * progress)  ## 1000 ở lv 1 -> 10000 ở lv 20
+				var buff_duration := 4.0  ## Duy trì trong 4 giây
+				_trigger_tu_ha_kiem_khi(victim, lvl, buff_duration, heal_per_tick, tu_ha)
+
+	## Côn Lôn: Lưỡng Nghi Chân Khí (con_lon_luong_nghi_chan_khi)
+	## Khi sinh lực thấp hơn 25%, có tỷ lệ tự động kích hoạt Ma Pháp Độn (tạo khiên tăng tốc và kháng đòn).
+	var luong_nghi := _find_sect_skill("con_lon_luong_nghi_chan_khi")
+	if luong_nghi != null and is_skill_usable(luong_nghi):
+		var cd_ln: float = _auto_reply_cooldowns.get("con_lon_luong_nghi_chan_khi", 0.0)
+		if cd_ln <= 0.0:
+			var lvl_ln := _learned_level(luong_nghi)
+			var progress_ln := clampf(float(lvl_ln - 1) / 19.0, 0.0, 1.0)
+			var chance_ln := 0.01 + 0.19 * progress_ln  ## 1% ở lv 1 -> 20% ở lv 20
+			if "combat_stats" in victim and victim.combat_stats != null:
+				chance_ln += float(victim.combat_stats.enhance_luong_nghi_p) / 100.0  ## +3% -> +15% từ Thiên Cương Khí Kính
+			if randf() < chance_ln:
+				_auto_reply_cooldowns["con_lon_luong_nghi_chan_khi"] = 20.0  ## Hồi chiêu: 20s theo VLTK gốc
+				var buff_duration_ln := 5.0 + 5.0 * progress_ln  ## Duy trì: 5s ở lv 1 -> 10s ở lv 20
+				_trigger_luong_nghi_chan_khi(victim, lvl_ln, buff_duration_ln, luong_nghi)
+
+	## Đường Môn: Hấp Tinh Trận (duong_mon_hap_tinh_tran)
+	## Kỹ năng thất truyền 180 của phái Đường Môn. Khi sinh lực thấp hơn 25%, có tỷ lệ tự động
+	## kích hoạt Hóa Giải Sát Thương (ngăn chặn 100% sát thương phải chịu trong 2s -> 5s).
+	## Tỷ lệ: 5% ở lv 1 -> 20% ở lv 20. Giãn cách: 10 giây (180 frames).
+	var hap_tinh := _find_sect_skill("duong_mon_hap_tinh_tran")
+	if hap_tinh != null and is_skill_usable(hap_tinh):
+		var cd_ht: float = _auto_reply_cooldowns.get("duong_mon_hap_tinh_tran", 0.0)
+		if cd_ht <= 0.0:
+			var lvl_ht := _learned_level(hap_tinh)
+			var progress_ht := clampf(float(lvl_ht - 1) / 19.0, 0.0, 1.0)
+			var chance_ht := 0.05 + 0.15 * progress_ht  ## 5% ở lv 1 -> 20% ở lv 20
+			if randf() < chance_ht:
+				var cd_duration_ht := 10.0  ## Giãn cách kích hoạt: 10 giây chuẩn VLTK (180 frames)
+				_auto_reply_cooldowns["duong_mon_hap_tinh_tran"] = cd_duration_ht
+				var buff_duration_ht := 2.0 + 3.0 * progress_ht  ## Duy trì: 2s ở lv 1 -> 5s ở lv 20
+				_trigger_hap_tinh_tran(victim, lvl_ht, buff_duration_ht, hap_tinh)
+
+func _trigger_luong_nghi_chan_khi(victim: Node2D, level: int, duration: float, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		var progress := clampf(float(level - 1) / 19.0, 0.0, 1.0)
+		var speed_bonus := int(5.0 + 30.0 * progress)
+		var magic_shield_val := int(1800.0 + 8200.0 * progress)  ## 1800 (18 lần) -> 10000 (100 lần nội lực)
+		var attribs := {
+			"staticmagicshield_p": Vector3i(magic_shield_val, 0, 0),
+			"fastwalkrun_p": Vector3i(speed_bonus, 0, 0),
+		}
+		var ma_phap_skill := _find_sect_skill("con_lon_ma_phap_don")
+		var icon: Texture2D = ma_phap_skill.icon if (ma_phap_skill and ma_phap_skill.icon) else (parent_skill.icon if parent_skill else null)
+		var meta := {
+			"name": "Ma Pháp Độn",
+			"icon": icon,
+			"is_debuff": false,
+			"state_id": 721
+		}
+		status.apply_state("con_lon_ma_phap_don", attribs, duration, meta)
+
+	if VltkSkillData.has_skill(721):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(721, level))
+	elif VltkSkillData.has_skill(717):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(717, level))
+
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(717, level, 0, 0, victim.global_position)
+
+func _trigger_tu_ha_kiem_khi(victim: Node2D, level: int, duration: float, heal_per_half_sec: int, parent_skill: SkillDefinition) -> void:
+	## 1. Hồi phục sinh lực mỗi nửa giây (8 ticks trong 4 giây)
+	if victim.has_method("apply_hot"):
+		var total_heal := float(heal_per_half_sec * 8)
+		victim.apply_hot(total_heal, duration)
+	elif victim.has_method("heal"):
+		victim.heal(float(heal_per_half_sec))
+
+	## 2. Áp icon trạng thái Hồi phục sinh lực trên StatusEffectController
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		var meta := {
+			"name": "Hồi phục sinh lực",
+			"icon": parent_skill.icon if parent_skill else null,
+			"is_debuff": false,
+			"state_id": 1366
+		}
+		status.apply_state("hoa_son_tu_ha_hoi_phuc", {}, duration, meta)
+
+	## 3. Hoạt ảnh / FX kỹ năng nếu có (chiêu con 1366 hoặc precast)
+	if VltkSkillData.has_skill(1366):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1366, level))
+
+	## 4. Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1366, level, 0, 0, victim.global_position)
+
+func _trigger_hap_tinh_tran(victim: Node2D, level: int, duration: float, parent_skill: SkillDefinition) -> void:
+	var status: StatusEffectController = victim.get_node_or_null("StatusEffectController")
+	if status != null:
+		var attribs := {
+			"damage_absorb_p": Vector3i(100, 0, 0),
+		}
+		var meta := {
+			"name": "Hóa Giải Sát Thương",
+			"icon": parent_skill.icon if parent_skill else null,
+			"is_debuff": false,
+			"state_id": 1233
+		}
+		status.apply_state("duong_mon_hoa_giai_sat_thuong", attribs, duration, meta)
+
+	## Hoạt ảnh Tiên Giới Mộc hoàng kim quanh người (Skill ID 1233 hoặc 1223)
+	if VltkSkillData.has_skill(1233):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1233, level))
+	elif VltkSkillData.has_skill(1223):
+		VltkSkillRunner.play_precast(victim, VltkSkillData.skill(1223, level))
+
+	## Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and victim.is_in_group("player"):
+		NetClient.send_cast(1223, level, 0, 0, victim.global_position)
+
+## Xử lý sự kiện khi một trạng thái (buff/debuff) kết thúc/hết hạn trên nhân vật
+func on_state_expired(target: Node2D, source_id: String, _meta: Dictionary) -> void:
+	if target == null or not is_instance_valid(target) or not target.is_inside_tree():
+		return
+	if target.has_method("is_dead") and target.is_dead():
+		return
+
+	## Vũ Hồn: Khi trạng thái Vũ Mục Di Thư (vu_hon_vu_muc_di_thu - Skill ID 1982) kết thúc,
+	## kích hoạt Trung Vũ Lưu Phong (vu_hon_trung_vu_luu_phong - Skill ID 1984, chiêu thức 1991):
+	## Hồi % sinh lực tối đa và bốc cháy ngọn lửa môn phái hệ Hỏa (tien_giai_hoa) quanh thân nhân vật.
+	if source_id == "vu_hon_vu_muc_di_thu":
+		_trigger_trung_vu_luu_phong(target)
+
+func _trigger_trung_vu_luu_phong(target: Node2D) -> void:
+	var skill_trung_vu := _find_sect_skill("vu_hon_trung_vu_luu_phong")
+	if skill_trung_vu == null or not is_skill_usable(skill_trung_vu):
+		return
+	var lvl := _learned_level(skill_trung_vu)
+	if lvl <= 0:
+		return
+
+	## Công thức hồi % sinh lực tối đa từ source gốc VLTK (wuhuntang.lua - zhongwuliufengBUFF):
+	## resume_life_p: {{1, 30}, {28, 60}, {34, 70}, {35, 71}}
+	## Cấp 1 hồi 30%, Cấp 20 hồi đúng 51% (51.11%), Cấp 21 hồi 52% (52.22%)
+	var heal_pct: float = 30.0
+	if lvl <= 28:
+		heal_pct = 30.0 + float(lvl - 1) * (60.0 - 30.0) / 27.0
+	elif lvl <= 34:
+		heal_pct = 60.0 + float(lvl - 28) * (70.0 - 60.0) / 6.0
+	else:
+		heal_pct = 70.0 + float(lvl - 34) * (71.0 - 70.0) / 1.0
+	var heal_percent_int := int(floor(heal_pct))
+
+	var max_hp: float = float(target.get("max_health")) if target.get("max_health") != null else 1000.0
+	var heal_amount := floorf(max_hp * float(heal_percent_int) / 100.0)
+	if target.has_method("heal") and heal_amount > 0.0:
+		target.heal(heal_amount)
+
+	## Phát hiệu ứng ngọn lửa môn phái (tiến giai hệ Hỏa - tien_giai_hoa) bốc cháy quanh thân nhân vật
+	if VltkSkillData.has_skill(1991):
+		VltkSkillRunner.play_precast(target, VltkSkillData.skill(1991, lvl))
+	elif VltkSkillData.has_skill(1987):
+		VltkSkillRunner.play_precast(target, VltkSkillData.skill(1987, lvl))
+
+	## Đồng bộ mạng nếu đang online
+	if NetClient.is_in_world() and target.is_in_group("player"):
+		NetClient.send_cast(1991, lvl, NetProto.CAST_SUPPORT, 0, target.global_position)

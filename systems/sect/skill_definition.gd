@@ -61,7 +61,7 @@ const WEAPON_LIMIT_TEXT := {
 	3: ["Thương", "ffff40"], 4: ["Song Chùy", "ff80c0"], 5: ["Song Đao", "e0e0e0"], 100: ["Phi Tiêu", "d0a060"],
 	101: ["Phi Đao", "60a0ff"], 102: ["Tụ Tiễn", "4080ff"],
 	## Bản 15 phái (loại vũ khí Equipment.get_weapon_class): Vũ Hồn dùng đao thuẫn / thuẫn đao.
-	7: ["Đao Thuẫn", "ff8040"], 8: ["Thuẫn Đao", "ff8040"], 103: ["Cầm", "c080ff"], 104: ["Cung", "d0a060"],
+	7: ["Đao Thuẫn", "ff8040"], 8: ["Thuẫn", "ffff00"], 103: ["Cầm", "c080ff"], 104: ["Cung", "d0a060"],
 }
 
 ## Lý do KHÔNG thi triển được ("" = được) theo KSkill::CanCastSkill gốc: `weapon_class` = loại vũ khí đang cầm
@@ -87,6 +87,9 @@ func get_weapon_limit_bbcode() -> String:
 ## số MÔ PHỎNG dùng cho combat cast (SectSkillController) — số "Tiêu hao nội lực" hiển thị THẬT
 ## cho người chơi (đúng VLTK gốc, tăng theo cấp) nằm trong stat_lines bên dưới.
 @export var mana_cost: float = 0.0
+## Số "Tiêu hao sinh lực" mô phỏng (Thiên Vương Bang gốc dùng sinh lực để ra chiêu). Số hiển thị thật
+## nằm trong stat_lines (dòng "Tiêu hao sinh lực").
+@export var life_cost: float = 0.0
 ## Hồi chiêu riêng (giây) = cột TimePerCast Skills.txt / 18 (tools/sync_skill_cooldowns.py). Không phải nhịp ra đòn —
 ## xem SectSkillController.action_seconds (khoá động tác 18/20 frame như KNpc gốc).
 @export var cooldown: float = 1.0
@@ -137,6 +140,9 @@ func get_weapon_limit_bbcode() -> String:
 @export var vltk_damage_range: int = 0
 @export var vltk_range_damage: int = 0
 @export var vltk_hit_friend: int = 0
+## skill_appendskill gốc (emei120 Bế Nguyệt Phất Trần + emei120_1..4): hào quang TỔNG HỢP — bật lên là cùng lúc chạy các
+## hào quang con này (SkillId VLTK) đã học, mỗi con ở cấp min(cấp con, cấp hào quang tổng) — KNpc::ProcessState gốc.
+@export var vltk_append_skill_ids: PackedInt32Array = PackedInt32Array()
 @export_group("")
 
 const MF_AT_TARGET := 6
@@ -160,7 +166,13 @@ func get_attack_radius_at_level(level: int = 1) -> float:
 		var val := get_attrib("skill_attackradius", level).x
 		if val > 0:
 			return float(val)
-	return float(vltk_attack_radius)
+	if vltk_attack_radius > 0:
+		return float(vltk_attack_radius)
+	if vltk_missle_form == 13 and vltk_skill_id > 0:
+		var s := VltkSkillData.skill(vltk_skill_id, level)
+		if s.has("param1") and float(s["param1"]) > 0:
+			return float(s["param1"])
+	return range
 
 const VLTK_GAME_FPS := 18.0  ## GAME_FPS trong GameDataDef.h gốc
 
@@ -216,6 +228,54 @@ func get_state_payload(level: int) -> Dictionary:
 	if seconds <= 0.0:
 		seconds = 30.0  ## mặc định 30 giây cho buff chủ động không ghi rõ thời gian trong attribs
 	return {"attribs": attribs, "seconds": seconds}
+
+## Hào quang THỰC SỰ chạy khi bật skill này ở cấp `own_level`: [{"skill", "level"}]. Hào quang thường -> chính nó.
+## Hào quang tổng hợp (vltk_append_skill_ids) -> các hào quang con cùng phái đã học (`level_of(skill) -> cấp đã học`;
+## Callable rỗng = coi như đã học tới cấp hào quang tổng, dùng khi máy khác không biết cấp từng con), cấp bị chặn
+## bởi cấp hào quang tổng như KNpc::ProcessState gốc (`if(nAppendLv > nCurLevel) nAppendLv = nCurLevel`).
+func aura_parts(sect: SectDefinition, own_level: int, level_of: Callable = Callable()) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if own_level <= 0:
+		return out
+	if vltk_append_skill_ids.is_empty():
+		out.append({"skill": self, "level": own_level})
+		return out
+	if sect == null:
+		return out
+	for vid in vltk_append_skill_ids:
+		for s: SkillDefinition in sect.skills:
+			if s.vltk_skill_id != vid or s == self:
+				continue
+			var lv := own_level if not level_of.is_valid() else mini(int(level_of.call(s)), own_level)
+			if lv > 0:
+				out.append({"skill": s, "level": lv})
+			break
+	return out
+
+## Dòng mô tả từng hào quang con của hào quang tổng hợp (bảng kỹ năng) — "Lưu Thủy: cấp 20" / "chưa học".
+func aura_parts_lines(sect: SectDefinition, own_level: int, level_of: Callable) -> PackedStringArray:
+	var out := PackedStringArray()
+	if sect == null:
+		return out
+	for vid in vltk_append_skill_ids:
+		for s: SkillDefinition in sect.skills:
+			if s.vltk_skill_id == vid and s != self:
+				var lv := int(level_of.call(s))
+				out.append("  • %s: %s" % [s.skill_name, ("cấp %d" % mini(lv, maxi(own_level, 1))) if lv > 0 else "chưa học"])
+				break
+	return out
+
+## Hình trạng thái (StateSpecialId) vẽ trên người khi bật hào quang này — tổng hợp thì gồm hình của mọi hào quang
+## con đang chạy (KNpc::UpdateNpcStateInfo gốc), không trùng.
+func aura_state_ids(sect: SectDefinition, own_level: int, level_of: Callable = Callable()) -> Array[int]:
+	var out: Array[int] = []
+	if vltk_state_special_id > 0:
+		out.append(vltk_state_special_id)
+	for p in aura_parts(sect, own_level, level_of):
+		var sid: int = (p["skill"] as SkillDefinition).vltk_state_special_id
+		if sid > 0 and not out.has(sid):
+			out.append(sid)
+	return out
 
 ## Mọi thuộc tính tại `level` — {tên: Vector3i} — để đưa vào MagicAttribTable/CombatantStats.build().
 func get_attribs_at_level(level: int) -> Dictionary:
@@ -293,6 +353,15 @@ func get_mana_cost_at_level(at_level: int) -> int:
 			return maxi(0, stat_line_range(line, at_level).x)
 	if mana_cost > 0.0:
 		return int(mana_cost)
+	return 0
+
+## Tiêu hao sinh lực tại cấp `at_level` — đọc từ stat_lines (dòng "Tiêu hao sinh lực") hoặc life_cost mô phỏng (Thiên Vương Bang gốc).
+func get_life_cost_at_level(at_level: int) -> int:
+	for line in stat_lines:
+		if line and "tiêu hao sinh lực" in line.label.to_lower():
+			return maxi(0, stat_line_range(line, at_level).x)
+	if life_cost > 0.0:
+		return int(life_cost)
 	return 0
 
 ## Skill được phép gắn vào nút skill ngoài trận (nút chính lẫn 4 nút phụ): phải thi triển được

@@ -1016,6 +1016,14 @@ range = 320.0
 element = 3
 damage_growth_per_level = 11.8816
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_73"), SubResource("SubResource_74"), SubResource("SubResource_75"), SubResource("SubResource_76"), SubResource("SubResource_77")])
+[sub_resource type="Resource" id="SubResource_108"]
+script = ExtResource("3_statline")
+label = "Sau khi chấm dứt trạng thái [Vũ Mục Di Thư], lập tức hồi"
+value_at_level_1 = 30.0
+value_at_max_level = 51.0
+level_points = PackedFloat32Array(1, 30, 0, 28, 60, 0, 34, 70, 0, 35, 71, 0)
+suffix = "% sinh lực tối đa"
+
 [sub_resource type="Resource" id="SubResource_79"]
 script = ExtResource("3_statline")
 label = "Độ chính xác"
@@ -1025,7 +1033,7 @@ suffix = "%"
 [sub_resource type="Resource" id="SubResource_80"]
 script = ExtResource("2_skill")
 id = "vu_hon_trung_vu_luu_phong"
-skill_name = "Trung Vu Lưu Phong"
+skill_name = "Trung Vũ Lưu Phong"
 req_level = 120
 practice_only = true
 vltk_skill_id = 1984
@@ -1055,21 +1063,25 @@ cooldown = 0.00
 range = 0.0
 element = 3
 damage_growth_per_level = 0.0
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_79")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_108"), SubResource("SubResource_79")])
 [sub_resource type="Resource" id="SubResource_81"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0)
 label = "Ngũ hành tương khắc"
 value_at_level_1 = 40.0
 value_at_max_level = 82.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_82"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 55, 0, 20, 535, 0, 23, 686, 0, 26, 762, 0)
 label = "Sát thương vật lý"
 value_at_level_1 = 55.0
 value_at_max_level = 762.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_83"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 10, 0, 15, 150, 0, 20, 500, 0, 23, 900, 0, 26, 1200, 0)
+level_points_max = PackedFloat32Array(1, 10, 0, 15, 150, 0, 20, 500, 0, 23, 900, 0, 26, 1200, 0)
 label = "Hỏa sát"
 is_range = true
 min_at_level_1 = 10.0
@@ -1083,8 +1095,15 @@ level_points = PackedFloat32Array(1, 48, 0, 20, 72, 0, 23, 79, 0)
 label = "Tiêu hao nội lực"
 value_at_level_1 = 48.0
 value_at_max_level = 79.0
+[sub_resource type="Resource" id="SubResource_84_range"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 480, 0, 20, 480, 0, 27, 480, 0)
+label = "Phạm vi hiệu quả"
+value_at_level_1 = 480.0
+value_at_max_level = 480.0
 [sub_resource type="Resource" id="SubResource_85"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 10, 0, 10, 20, 0, 20, 40, 0, 30, 60, 0, 40, 80, 0, 45, 85, 0)
 label = "Tấn công chí mạng"
 value_at_level_1 = 10.0
 value_at_max_level = 54.0
@@ -1100,7 +1119,7 @@ weapon_limit = 8
 horse_limit = 1
 icon = ExtResource("vicon_vu_hon_huy_su_diet_lo")
 description = "Võ công đại thừa Vũ Hồn hệ Thuẫn, bộc phát Hồi Hoàn Thuẫn tấn công kẻ địch và làm giảm sức tấn công, tách ra sau khi đánh trúng."
-school_text = "Công kích ngoại công"
+school_text = "Thuẫn (Ngoại công)"
 is_active = true
 category = 0
 max_level = 27
@@ -1128,7 +1147,7 @@ cooldown = 0.00
 range = 448.0
 element = 3
 damage_growth_per_level = 45.7692
-stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_81"), SubResource("SubResource_82"), SubResource("SubResource_83"), SubResource("SubResource_84"), SubResource("SubResource_85")])
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_81"), SubResource("SubResource_84"), SubResource("SubResource_84_range"), SubResource("SubResource_82"), SubResource("SubResource_83"), SubResource("SubResource_85")])
 [sub_resource type="Resource" id="SubResource_87"]
 script = ExtResource("3_statline")
 label = "Sát thương vật lý"
@@ -1254,6 +1273,114 @@ range = 0.0
 element = 3
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_96"), SubResource("SubResource_97"), SubResource("SubResource_98")])
+
+[sub_resource type="Resource" id="SubResource_100"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 10, 0, 15, 60, 0, 30, 120, 0, 40, 200, 0, 45, 200, 0)
+label = "Sát thương vật lý"
+value_at_level_1 = 10.0
+value_at_max_level = 200.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_101"]
+script = ExtResource("3_statline")
+is_range = true
+min_at_level_1 = 1.0
+max_at_level_1 = 1.0
+min_at_max_level = 230.0
+max_at_max_level = 400.0
+level_points = PackedFloat32Array(1, 1, 0, 30, 230, 0, 31, 230, 0)
+level_points_max = PackedFloat32Array(1, 1, 0, 30, 400, 0, 31, 400, 0)
+label = "Hỏa sát"
+suffix = " điểm"
+
+[sub_resource type="Resource" id="SubResource_102"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0)
+label = "Tốc độ đánh - ngoại công"
+value_at_level_1 = -1.0
+value_at_max_level = -15.0
+suffix = "% (Dương)"
+
+[sub_resource type="Resource" id="SubResource_103"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0)
+label = "Tốc độ đánh - nội công"
+value_at_level_1 = -1.0
+value_at_max_level = -15.0
+suffix = "% (Dương)"
+
+[sub_resource type="Resource" id="SubResource_104"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0)
+label = "Tốc độ đánh - ngoại công"
+value_at_level_1 = -1.0
+value_at_max_level = -15.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_105"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0)
+label = "Tốc độ đánh - nội công"
+value_at_level_1 = -1.0
+value_at_max_level = -15.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_106"]
+script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 0, 0, 20, 0, 0, 21, -2, 0, 22, -4, 0)
+label = "Tăng công kích kỹ năng"
+value_at_level_1 = 0.0
+value_at_max_level = -4.0
+suffix = "%"
+
+[sub_resource type="Resource" id="SubResource_107"]
+script = ExtResource("2_skill")
+id = "vu_hon_kinh_dao_phach_ngan"
+skill_name = "Kinh Đào Phách Ngạn"
+is_hidden = true
+parent_skill_id = "vu_hon_huy_su_diet_lo"
+req_level = 150
+practice_only = false
+vltk_skill_id = 1970
+weapon_limit = -2
+horse_limit = 0
+icon = ExtResource("vicon_vu_hon_huy_su_diet_lo")
+description = "Đòn đánh tiếp nối tầng 2 của Huy Sư Diệt Lỗ, phân tán thành nhiều đao kình lửa làm giảm tốc độ đánh và uy lực kỹ năng của kẻ địch."
+school_text = "Thuẫn (Ngoại công)"
+is_active = true
+category = 0
+max_level = 20
+target_enemy = true
+target_ally = false
+target_self = false
+is_aura = false
+vltk_is_physical = 1
+vltk_missle_form = 2
+vltk_attack_radius = 240
+vltk_state_special_id = 100240
+vltk_damage_range = 2
+vltk_range_damage = 0
+vltk_hit_friend = 0
+vltk_attribs = {
+"attackspeed_yan_v": [PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0), PackedFloat32Array(1, 18, 0, 20, 90, 0, 21, 90, 0), PackedFloat32Array()],
+"castspeed_yan_v": [PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0), PackedFloat32Array(1, 18, 0, 20, 90, 0, 21, 90, 0), PackedFloat32Array()],
+"attackspeed_v": [PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0), PackedFloat32Array(1, 18, 0, 20, 90, 0, 21, 90, 0), PackedFloat32Array()],
+"castspeed_v": [PackedFloat32Array(1, -1, 0, 10, -5, 0, 11, -6, 0, 20, -15, 0, 21, -15, 0), PackedFloat32Array(1, 18, 0, 20, 90, 0, 21, 90, 0), PackedFloat32Array()],
+"firedamage_v": [PackedFloat32Array(1, 1, 0, 30, 230, 0, 31, 230, 0), PackedFloat32Array(), PackedFloat32Array(1, 1, 0, 30, 400, 0, 31, 400, 0)],
+"physicsenhance_p": [PackedFloat32Array(1, 10, 0, 15, 60, 0, 30, 120, 0, 40, 200, 0, 45, 200, 0), PackedFloat32Array(), PackedFloat32Array()],
+"seriesdamage_p": [PackedFloat32Array(1, 40, 0, 15, 40, 0, 20, 80, 0, 21, 82, 0), PackedFloat32Array(), PackedFloat32Array()],
+"skill_enhance": [PackedFloat32Array(1, 0, 0, 20, 0, 0, 21, -2, 0, 22, -4, 0), PackedFloat32Array(1, 18, 0, 20, 90, 0, 21, 90, 0), PackedFloat32Array()],
+"skill_misslenum_v": [PackedFloat32Array(1, 1, 0, 5, 1, 0, 20, 3, 0, 21, 3, 0), PackedFloat32Array(), PackedFloat32Array()]
+}
+base_damage = 10.0
+mana_cost = 0.0
+cooldown = 0.00
+range = 240.0
+element = 3
+damage_growth_per_level = 9.5
+stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_100"), SubResource("SubResource_101"), SubResource("SubResource_102"), SubResource("SubResource_103"), SubResource("SubResource_104"), SubResource("SubResource_105"), SubResource("SubResource_106")])
+
 [resource]
 script = ExtResource("1_sect")
 id = "vu_hon"
@@ -1261,4 +1388,4 @@ sect_name = "Vũ Hồn"
 element = 3
 alignment = 2
 description = "Vũ Hồn Đường kế thừa di chí Vũ Mục, tinh thông thuẫn pháp và đao pháp, tận trung báo quốc, diệt gian trừ nịnh."
-skills = Array[ExtResource("2_skill")]([SubResource("SubResource_7"), SubResource("SubResource_15"), SubResource("SubResource_20"), SubResource("SubResource_23"), SubResource("SubResource_24"), SubResource("SubResource_28"), SubResource("SubResource_31"), SubResource("SubResource_39"), SubResource("SubResource_46"), SubResource("SubResource_49"), SubResource("SubResource_53"), SubResource("SubResource_60"), SubResource("SubResource_65"), SubResource("SubResource_72"), SubResource("SubResource_78"), SubResource("SubResource_80"), SubResource("SubResource_86"), SubResource("SubResource_91"), SubResource("SubResource_99")])
+skills = Array[ExtResource("2_skill")]([SubResource("SubResource_7"), SubResource("SubResource_15"), SubResource("SubResource_20"), SubResource("SubResource_23"), SubResource("SubResource_24"), SubResource("SubResource_28"), SubResource("SubResource_31"), SubResource("SubResource_39"), SubResource("SubResource_46"), SubResource("SubResource_49"), SubResource("SubResource_53"), SubResource("SubResource_60"), SubResource("SubResource_65"), SubResource("SubResource_72"), SubResource("SubResource_78"), SubResource("SubResource_80"), SubResource("SubResource_86"), SubResource("SubResource_91"), SubResource("SubResource_99"), SubResource("SubResource_107")])
