@@ -14,6 +14,18 @@ static var _loaded := false
 static var _zoom := DEFAULT_ZOOM
 static var _wheel_zoom := true
 static var _locale := DEFAULT_LOCALE
+static var _render_3d := false
+
+## Chế độ hiển thị map đánh quái: false = 2D (mặc định), true = 3D (thử nghiệm). Chỉ đổi phần VẼ — chỉ số, combat,
+## server y nguyên. Map chưa có bản 3D thì vẫn vẽ 2D. Lưu mục [graphics] render_3d.
+static func render_3d() -> bool:
+	_load()
+	return _render_3d
+
+static func set_render_3d(on: bool) -> void:
+	_load()
+	_render_3d = on
+	_write_section("graphics", "render_3d", on)
 
 static func locale() -> String:
 	_load()
@@ -59,6 +71,7 @@ static func _load() -> void:
 	_zoom = clampf(float(cfg.get_value("camera", "zoom", DEFAULT_ZOOM)), ZOOM_MIN, ZOOM_MAX)
 	_wheel_zoom = bool(cfg.get_value("camera", "wheel_zoom", true))
 	_locale = str(cfg.get_value("general", "locale", DEFAULT_LOCALE))
+	_render_3d = bool(cfg.get_value("graphics", "render_3d", false))
 
 ## Đọc lại file trước khi ghi để không đè mục [audio] của MusicManager.
 static func _write(key: String, value: Variant) -> void:

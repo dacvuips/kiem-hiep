@@ -81,6 +81,21 @@ func get_texture(key: String) -> Texture2D:
 	_textures[file] = tex
 	return tex
 
+## Ảnh gốc (Image, RGBA8) của 1 sheet — cho AvatarBaker ghép frame trên CPU (chạy được cả --headless, không cần GPU).
+## Không cache: chỉ dùng lúc nướng bộ hình 3D.
+func get_image(key: String) -> Image:
+	var file := key + ".png"
+	for dir in [USER_CACHE_DIR % gender, data.get("png_dir", "")]:
+		var path: String = dir + file
+		if not FileAccess.file_exists(path):
+			continue
+		var image := Image.new()
+		if image.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) == OK:
+			if image.get_format() != Image.FORMAT_RGBA8:
+				image.convert(Image.FORMAT_RGBA8)
+			return image
+	return null
+
 ## Hình có sẵn trên máy không (đóng gói hoặc đã tải) — bản online dùng để biết cần tải thêm file nào.
 func has_texture_file(key: String) -> bool:
 	var file := key + ".png"

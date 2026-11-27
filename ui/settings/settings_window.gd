@@ -46,6 +46,10 @@ var _zoom_label: Label
 var _zoom_slider: HSlider
 var _zoom_value: Label
 var _reset_zoom_btn: Button
+var _graphics_label: Label
+var _render_3d_check: CheckButton
+var _render_3d_note: Label
+var _view_3d_btn: Button
 var _close_btn: Button
 var _exit_hub_btn: Button
 
@@ -287,6 +291,8 @@ func _build_basic_tab() -> void:
 	_show_zoom(_zoom_slider.value)
 	_zoom_slider.value_changed.connect(_on_zoom_changed)
 
+	_build_graphics_section()
+
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 8)
 	_basic_container.add_child(buttons)
@@ -303,6 +309,29 @@ func _build_basic_tab() -> void:
 
 	if _is_hub:
 		_build_hub_system_section()
+
+## Hiển thị 2D / 3D cho map đánh quái (GameSettings.render_3d). Hub luôn 2D.
+func _build_graphics_section() -> void:
+	_basic_container.add_child(SocialUi.divider())
+	_graphics_label = SocialUi.label(tr("Hiển thị"), SocialUi.SUBTITLE)
+	_basic_container.add_child(_graphics_label)
+	_render_3d_check = _check(tr("Map đánh quái dạng 3D (thử nghiệm)"), GameSettings.render_3d(), _basic_container)
+	_render_3d_check.toggled.connect(GameSettings.set_render_3d)
+	_render_3d_note = SocialUi.label(tr("Map chưa có bản 3D thì vẫn hiện 2D. Chỉ số và cách chơi không đổi."), SocialUi.MUTED, 13)
+	_render_3d_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_basic_container.add_child(_render_3d_note)
+	_view_3d_btn = SocialUi.stone_button(tr("Xem thử nhân vật 3D"))
+	_view_3d_btn.pressed.connect(_on_view_3d_pressed)
+	_basic_container.add_child(_view_3d_btn)
+
+func _on_view_3d_pressed() -> void:
+	var gender := "male"
+	var look := {}
+	var av: Variant = _player.get("avatar") if _player != null and is_instance_valid(_player) else null
+	if av is CharacterAvatar:
+		gender = av.gender
+		look = {"helm": av.helm_res, "armor": av.armor_res, "weapon": av.weapon_res, "horse": av.horse_res}
+	Character3DViewer.open(get_tree().root, gender, look)
 
 func _build_player_info_section() -> void:
 	var profile: PlayerProfile = GameManager.local_profile
@@ -421,6 +450,11 @@ func _refresh_texts() -> void:
 		_camera_label.text = tr("Camera")
 	if _wheel_zoom_check != null:
 		_wheel_zoom_check.text = tr("Lăn chuột để zoom camera")
+	if _graphics_label != null:
+		_graphics_label.text = tr("Hiển thị")
+		_render_3d_check.text = tr("Map đánh quái dạng 3D (thử nghiệm)")
+		_render_3d_note.text = tr("Map chưa có bản 3D thì vẫn hiện 2D. Chỉ số và cách chơi không đổi.")
+		_view_3d_btn.text = tr("Xem thử nhân vật 3D")
 	if _zoom_label != null:
 		_zoom_label.text = tr("Mức zoom")
 	if _reset_zoom_btn != null:
