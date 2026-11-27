@@ -16,7 +16,14 @@ func _ready() -> void:
 	GameManager.current_stage = null
 	GameManager.is_game_over = false
 	get_tree().change_scene_to_file.call_deferred("res://Main.tscn")
-	await get_tree().create_timer(9.0).timeout
+	await get_tree().create_timer(7.0).timeout
+	## W3D_POS="x,y" (toạ độ mini map, 1 ô = 256 px): dịch nhân vật tới đó.
+	var pos_env := OS.get_environment("W3D_POS")
+	if pos_env != "":
+		var pl := get_tree().get_first_node_in_group("player") as Node2D
+		var xy := pos_env.split(",")
+		pl.global_position = Vector2(float(xy[0]) * 256.0 + 128.0, float(xy[1]) * 256.0 + 128.0) - Vector2(0, VltkWorld.FEET_OFFSET)
+		await get_tree().create_timer(12.0).timeout
 	var shot := func(name: String) -> void:
 		for pop in get_tree().root.find_children("*", "SocialWindow", true, false):
 			pop.queue_free()
@@ -50,4 +57,12 @@ func _ready() -> void:
 			kinds[v._dynamic[id]["kind"]] = kinds.get(v._dynamic[id]["kind"], 0) + 1
 		print("kinds2=", kinds)
 		print("mouse center->", World3DView.screen_to_world(get_viewport().get_visible_rect().size * 0.5, get_viewport()), " player=", p.global_position)
+	## Xoay camera 90° + ngẩng lên, chụp thêm.
+	World3DView.cam_yaw = PI / 2.0
+	World3DView.cam_pitch_deg = 45.0
+	print("dir up after yaw90 -> ", World3DView.screen_dir_to_world(Vector2(0, -1)))
+	await get_tree().create_timer(0.5).timeout
+	await shot.call("d")
+	World3DView.cam_yaw = 0.0
+	World3DView.cam_pitch_deg = World3DView.PITCH_DEG
 	get_tree().quit()

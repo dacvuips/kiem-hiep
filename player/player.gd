@@ -900,7 +900,8 @@ func _physics_process(delta: float) -> void:
 	var want_zoom := _zoom_target / maxf(view_mult, 0.1)
 	if not is_equal_approx(camera_zoom, want_zoom):
 		$Camera2D.zoom = Vector2.ONE * lerpf(camera_zoom, want_zoom, minf(1.0, ZOOM_SMOOTHING * delta))
-	var input_vector := _key_vector("move_left", "move_right", "move_up", "move_down")
+	## Chế độ 3D đã xoay camera: "lên" là ra xa camera -> đổi sang hướng thế giới 2D.
+	var input_vector := World3DView.screen_dir_to_world(_key_vector("move_left", "move_right", "move_up", "move_down"))
 	if input_vector != Vector2.ZERO:
 		if _has_move_target:
 			_clear_move_target()
@@ -2059,7 +2060,7 @@ func start_jump(frames: int = JUMP_DEFAULT_FRAMES, target_pos: Vector2 = Vector2
 		_notice("Đang cưỡi ngựa, không thể nhảy")
 		return false
 	_is_sitting = false
-	var dir := _key_vector("move_left", "move_right", "move_up", "move_down")
+	var dir := World3DView.screen_dir_to_world(_key_vector("move_left", "move_right", "move_up", "move_down"))
 	if target_pos != Vector2.INF:
 		var diff := target_pos - global_position
 		if diff.length() > 20.0:

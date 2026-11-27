@@ -25,6 +25,12 @@ const BASE_DIST := 10.0          ## khoảng camera ở zoom 1 (2D): thấy bề
 const SCAN_INTERVAL := 0.25      ## quét vật thể tĩnh / mặt đất mới nạp (giây)
 
 static var current: World3DView
+## Góc camera (giữ qua các lần vào map). yaw 0 = nhìn về Bắc như bản 2D.
+static var cam_yaw := 0.0
+static var cam_pitch_deg := PITCH_DEG
+const PITCH_MIN := 15.0
+const PITCH_MAX := 75.0
+const YAW_STEP := PI / 4.0
 
 var _world: VltkWorld
 var _container: SubViewportContainer
@@ -37,6 +43,8 @@ var _dyn_root: Node3D
 var _scan_t := 0.0
 
 var _ground := {}     ## instance id (Sprite2D / holder 2D) -> Node3D
+var _ground_seq := 0  ## nâng mỗi tấm nền 1 chút (thứ tự nạp) để chỗ 2 tấm chồng nhau không nhấp nháy
+var _floor: MeshInstance3D   ## nền dự phòng dưới cùng (như ảnh trời / nền của bản 2D) — chỗ vùng chưa nạp không bị đen
 var _statics := {}    ## instance id holder -> Node3D
 var _dynamic := {}    ## instance id -> {"src": Node2D, "node": Node3D, "kind": String, ...}
 
@@ -64,12 +72,15 @@ func _ready() -> void:
 	current = self
 	_world = get_parent() as VltkWorld
 	_build_viewport()
+	_build_camera_buttons()
 
 func _exit_tree() -> void:
 	if current == self:
 		current = null
 	if _container != null and is_instance_valid(_container):
 		_container.queue_free()
+	if _buttons != null and is_instance_valid(_buttons):
+		_buttons.queue_free()
 
 func _build_viewport() -> void:
 	_container = SubViewportContainer.new()
@@ -115,10 +126,71 @@ func _build_viewport() -> void:
 	_root3d.add_child(_ground_root)
 	_root3d.add_child(_static_root)
 	_root3d.add_child(_dyn_root)
+	_floor = MeshInstance3D.new()
+	var fp := PlaneMesh.new()
+	fp.size = Vector2(400, 400)
+	_floor.mesh = fp
+	_floor.material_override = _color_material(Color(0.30, 0.26, 0.20))
+	_floor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_root3d.add_child(_floor)
 	_cam = Camera3D.new()
 	_cam.fov = FOV
 	_cam.far = 200.0
 	_root3d.add_child(_cam)
+
+## ---------- xoay góc nhìn ----------
+## Nút xoay camera (cả điện thoại): ⟲ ⟳ xoay 45°, ▲ ▼ ngẩng / cúi, N về hướng Bắc. Máy tính: giữ chuột giữa + kéo.
+## Layer 2: trên HUD thường (UI layer 1), dưới popup (50+).
+var _buttons: CanvasLayer
+var _mid_drag := false
+
+func _build_camera_buttons() -> void:
+	_buttons = CanvasLayer.new()
+	_buttons.layer = 2
+	_buttons.name = "World3DCameraButtons"
+	get_tree().root.add_child.call_deferred(_buttons)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	row.position = Vector2(14, 112)
+	_buttons.add_child(row)
+	for spec in [["⟲", "yaw", -YAW_STEP], ["⟳", "yaw", YAW_STEP], ["▲", "pitch", 10.0], ["▼", "pitch", -10.0],
+			["N", "reset", 0.0]]:
+		var b := SocialUi.stone_button(spec[0], Vector2(38, 34))
+		b.focus_mode = Control.FOCUS_NONE
+		b.tooltip_text = {"yaw": tr("Xoay camera"), "pitch": tr("Ngẩng / cúi camera"), "reset": tr("Về hướng Bắc")}[spec[1]]
+		var kind: String = spec[1]
+		var step: float = spec[2]
+		b.pressed.connect(func() -> void: _turn(kind, step))
+		row.add_child(b)
+
+func _turn(kind: String, step: float) -> void:
+	match kind:
+		"yaw":
+			cam_yaw = wrapf(cam_yaw + step, -PI, PI)
+		"pitch":
+			cam_pitch_deg = clampf(cam_pitch_deg + step, PITCH_MIN, PITCH_MAX)
+		"reset":
+			cam_yaw = 0.0
+			cam_pitch_deg = PITCH_DEG
+
+func _input(e: InputEvent) -> void:
+	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_MIDDLE:
+		_mid_drag = e.pressed
+	elif e is InputEventMouseMotion and _mid_drag:
+		cam_yaw = wrapf(cam_yaw - e.relative.x * 0.008, -PI, PI)
+		cam_pitch_deg = clampf(cam_pitch_deg + e.relative.y * 0.25, PITCH_MIN, PITCH_MAX)
+		get_viewport().set_input_as_handled()
+
+## Hướng phím / joystick (theo MÀN HÌNH: lên = ra xa camera) -> hướng trong thế giới 2D khi camera đã xoay.
+## Camera chưa xoay (hoặc tắt 3D) thì trả nguyên.
+static func screen_dir_to_world(v: Vector2) -> Vector2:
+	if v == Vector2.ZERO or not is_active() or is_zero_approx(cam_yaw):
+		return v
+	var right := Vector3(cos(cam_yaw), 0, -sin(cam_yaw))
+	var back := Vector3(sin(cam_yaw), 0, cos(cam_yaw))
+	var d := right * v.x + back * v.y            ## mặt đất 3D (x, z logic)
+	var w := Vector2(d.x, d.z * 0.5)              ## logic -> 2D (y màn hình = y logic / 2)
+	return w.normalized() * v.length() if w != Vector2.ZERO else v
 
 ## ---------- toạ độ ----------
 
@@ -209,8 +281,10 @@ func _update_camera() -> void:
 		zoom = maxf(cam2.zoom.x, 0.1)
 	var dist := BASE_DIST / zoom
 	var target := to3d(focus2) + Vector3(0, 0.4, 0)
-	var pitch := deg_to_rad(PITCH_DEG)
-	_cam.position = target + Vector3(0, sin(pitch), cos(pitch)) * dist
+	var pitch := deg_to_rad(cam_pitch_deg)
+	_cam.position = target + Vector3(sin(cam_yaw) * cos(pitch), sin(pitch), cos(cam_yaw) * cos(pitch)) * dist
+	if _floor != null:
+		_floor.position = Vector3(target.x, -0.03, target.z)
 	_cam.look_at(target, Vector3.UP)
 
 ## Khối tĩnh che nhân vật (nằm giữa camera và nhân vật) -> làm mờ, như game 3D góc nhìn từ trên.
@@ -269,7 +343,8 @@ func _ensure_ground(key_node: Node, s: Sprite2D, lift: float, seen: Dictionary) 
 	seen[id] = true
 	if _ground.has(id) or s.texture == null:
 		return
-	_ground[id] = make_ground_quad(s, lift)
+	_ground_seq = (_ground_seq + 1) % 64
+	_ground[id] = make_ground_quad(s, lift + _ground_seq * 0.00005)
 	_ground_root.add_child(_ground[id])
 
 ## Tấm phẳng dán ảnh nền, 4 góc lấy đúng biến đổi của Sprite2D (kể cả co giãn / xô nghiêng).
@@ -290,7 +365,9 @@ func make_ground_quad(s: Sprite2D, lift: float) -> MeshInstance3D:
 		st.add_vertex(to3d(xf * corners[i], lift / PX))
 	var mi := MeshInstance3D.new()
 	mi.mesh = st.commit()
-	mi.material_override = _tex_material(s.texture, lift > 0.0)
+	## Ảnh nền vùng có viền TRONG SUỐT chồng sang vùng bên (2D bỏ qua chỗ trong suốt) -> phải cắt alpha, không thì
+	## viền đó vẽ thành dải ĐEN đè lên vùng kế bên.
+	mi.material_override = _tex_material(s.texture, true)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
 
