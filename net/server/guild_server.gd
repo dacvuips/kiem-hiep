@@ -7,6 +7,7 @@ const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 ## Sau mỗi thay đổi: lưu bang + gửi bản mới (S_GUILD) cho thành viên đang online.
 
 const FUND_TICK_SECONDS := 30
+const LOAD_RETRY_SECONDS := 5.0
 
 ## Lệnh C_GUILD (tham số trong JSON)
 const G_CREATE := 1        ## {title, camp}
@@ -41,11 +42,14 @@ var _fund_clock := 0.0
 func _init(server: GameServer) -> void:
 	gs = server
 
+## Nạp lúc khởi động: game server còn đang nạp bản đồ (Lộn Xộn...) chặn luồng chính nhiều giây nên yêu cầu đầu tiên hay bị quá giờ
+## dù máy chủ tài khoản vẫn chạy -> thử lại mỗi LOAD_RETRY_SECONDS tới khi được (trước đây lỗi 1 lần là bỏ, cả phiên không có dữ liệu).
 func load_all() -> void:
 	var r: Dictionary = await gs.account.list_guilds()
-	if not r.ok:
-		push_warning("Không nạp được bang hội: %s" % r.get("message", ""))
-		return
+	while not r.ok:
+		push_warning("Không nạp được bang hội: %s — thử lại sau %ds" % [r.get("message", ""), int(LOAD_RETRY_SECONDS)])
+		await gs.get_tree().create_timer(LOAD_RETRY_SECONDS).timeout
+		r = await gs.account.list_guilds()
 	for g in r.get("guilds", []):
 		if g.get("data") is Dictionary:
 			guilds[str(g.name)] = g.data

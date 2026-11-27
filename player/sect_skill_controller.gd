@@ -971,16 +971,7 @@ func trigger_auto_attack_skills(caster: Node2D, target: Node2D, source_skill: Di
 	if src_child in [357, 100418, 100429] or src_id in [1232, 100357, 1368, 101421]:
 		return
 
-	## Sâm La Độc Hải (Ngũ Độc): tự động kích hoạt Hồn Ảnh Tùng Sanh (1232 - Missile 357 nổ đầu lâu)
-	var sam_la := _find_sect_skill("ngu_doc_sam_la_doc_hai")
-	if sam_la != null and is_skill_usable(sam_la):
-		var cd: float = _auto_attack_cooldowns.get("ngu_doc_sam_la_doc_hai", 0.0)
-		if cd <= 0.0:
-			var lvl := _learned_level(sam_la)
-			var rate := 0.10 + 0.20 * clampf(float(lvl - 1) / 19.0, 0.0, 1.0)
-			if randf() < rate:
-				_auto_attack_cooldowns["ngu_doc_sam_la_doc_hai"] = 1.0  ## Giãn cách chuẩn 1 giây
-				_cast_auto_attack_missile(caster, target, 1232, lvl, sam_la)
+	_try_sam_la_doc_hai(caster, target)
 
 	## Cửu Kiếm Hợp Nhất (Hoa Sơn 150): tự động kích hoạt Độc Cô Cửu Kiếm (1368 - phóng 9 thanh phi kiếm)
 	## Chỉ áp dụng khi người chơi gắn skill ở ô thi triển liên tục (và đang bật); nếu không để ở slot liên tục thì không áp dụng.
@@ -1002,6 +993,51 @@ func trigger_auto_attack_skills(caster: Node2D, target: Node2D, source_skill: Di
 					_cast_auto_attack_missile(caster, target, 1368, lvl_hs, cuu_kiem)
 
 	_try_ba_la_tam_kinh(caster)
+
+## Sâm La Độc Hải (Ngũ Độc thất truyền 180) — wu_adskill gốc (script/skill/advancedskill.lua):
+##   autoattackskill = { 1232*256 + cấp (1->20), -1, 1*18*256 + tỉ lệ (20%->60%) }
+## KNpc::ReceiveDamage gốc: mỗi đòn TRÚNG có tỉ lệ thi triển Hồn Ảnh Tùng Sanh 1232 CÙNG CẤP lên mục tiêu, xong 18 frame
+## (1 giây) mới kích lại. 1232 (wudu.lua daowudu150_2) là skill đánh riêng: đạn 357 đầu lâu nổ tại mục tiêu, ngoại công,
+## độc sát 1->12/nhịp (10 frame, 60 frame) + ngũ hành tương khắc 40%->80% — damage KHÔNG lấy từ Sâm La.
+func _try_sam_la_doc_hai(caster: Node2D, target: Node2D) -> void:
+	var sam_la := _find_sect_skill("ngu_doc_sam_la_doc_hai")
+	if sam_la == null or not is_skill_usable(sam_la) or float(_auto_attack_cooldowns.get(sam_la.id, 0.0)) > 0.0:
+		return
+	var lvl := _learned_level(sam_la)
+	var v := sam_la.get_attrib("autoattackskill", lvl)
+	@warning_ignore("integer_division")
+	var child_id := v.x / 256
+	var child_lvl := maxi(1, v.x % 256)
+	var rate := clampi(v.z % 256, 0, 100)
+	@warning_ignore("integer_division")
+	var interval := float(v.z / 256) / VltkMath.FPS
+	if child_id <= 0 or randi() % 100 >= rate:
+		return
+	_auto_attack_cooldowns[sam_la.id] = interval
+	_cast_auto_attack_missile(caster, target, child_id, child_lvl, hon_anh_tung_sanh_def())
+
+static var _hon_anh_def: SkillDefinition
+
+## Hồn Ảnh Tùng Sanh 1232 không có trong bảng phái (chỉ Sâm La kích) — dựng SkillDefinition theo Skills.txt + wudu.lua
+## daowudu150_2 để _resolve_stats tính đúng AppendSkillEffect gốc (IsPhysical 1: cộng sát thương hệ ngoại công của trang bị,
+## độc sát gộp MixPoisonDamage, hỗ trợ % sát thương kỹ năng).
+static func hon_anh_tung_sanh_def() -> SkillDefinition:
+	if _hon_anh_def == null:
+		var d := SkillDefinition.new()
+		d.id = "ngu_doc_hon_anh_tung_sanh"
+		d.skill_name = "Hồn Ảnh Tùng Sanh"
+		d.vltk_skill_id = 1232
+		d.vltk_is_physical = 1
+		d.element = ElementTypes.ElementType.MOC
+		d.max_level = 20
+		d.target_enemy = true
+		d.vltk_attribs = {
+			"seriesdamage_p": [PackedFloat32Array([1, 40, 0, 20, 80, 0, 21, 82, 0]), PackedFloat32Array(), PackedFloat32Array()],
+			"poisondamage_v": [PackedFloat32Array([1, 1, 0, 20, 12, 0, 23, 15, 0]),
+					PackedFloat32Array([1, 60, 0, 20, 60, 0]), PackedFloat32Array([1, 10, 0, 20, 10, 0])],
+		}
+		_hon_anh_def = d
+	return _hon_anh_def
 
 ## Ba La Tâm Kinh (Nga Mi thất truyền 180) — em_adskill gốc (script/skill/advancedskill.lua):
 ##   autoattackskill = { 1234*256 + cấp (1->20), -1, 3*18*256 + tỉ lệ (10%->30%) }
@@ -1054,13 +1090,14 @@ static func cast_area_heal(caster: Node2D, skill: SkillDefinition, level: int) -
 		for t in ally_fx_nodes(caster, skill):
 			play_ally_hit_fx(t, skill, level)
 
-func _cast_auto_attack_missile(caster: Node2D, target: Node2D, child_skill_id: int, level: int, parent_skill: SkillDefinition) -> void:
+## `stats_skill`: skill dùng để tính đòn — skill con thật (VD Hồn Ảnh 1232) ở `level`, không phải skill bị động kích nó.
+func _cast_auto_attack_missile(caster: Node2D, target: Node2D, child_skill_id: int, level: int, stats_skill: SkillDefinition) -> void:
 	if not USE_VLTK_SKILL_FX or not VltkSkillData.has_skill(child_skill_id):
 		return
 	var ctx := VltkCastContext.new()
 	ctx.launcher = caster
 	ctx.world = caster.get_parent()
-	ctx.stats = _resolve_stats(parent_skill, caster)
+	ctx.stats = _resolve_stats(stats_skill, caster, level)
 	ctx.attacker_stats = caster.combat_stats if "combat_stats" in caster else null
 	if "cast_target_group" in caster:
 		ctx.target_group = caster.cast_target_group

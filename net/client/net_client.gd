@@ -21,6 +21,7 @@ signal drops_received(drops: Array)
 signal picked(drop_id: int, amount: int, item: Dictionary)
 signal drop_gone(drop_id: int)
 signal server_notice(text: String)
+signal event_times_changed   ## lịch sự kiện năm GM đặt vừa đổi (S_EVENT_TIMES)
 signal trade_invite(from_eid: int, from_name: String)
 signal trade_state(partner_eid: int, partner_name: String, mine: Dictionary, theirs: Dictionary)
 signal trade_end(success: bool, message: String)
@@ -53,6 +54,8 @@ signal field_message(msg: Dictionary)
 signal pubg_message(msg: Dictionary)
 ## Lộn Xộn (LonXonServer trên game server thế giới): tin S_LONXON — xem LonXonServer.
 signal lonxon_message(msg: Dictionary)
+## Oẳn tù xì: tin S_RPS {op: invite | state | end, ...} — xem RpsServer.
+signal rps_message(msg: Dictionary)
 
 ## Số thứ tự quà (đồ / tiền) server cho mà hồ sơ trên máy đã áp — gửi kèm C_PROFILE.
 var grant_ack := 0
@@ -150,6 +153,7 @@ func disconnect_from_server() -> void:
 	_peer = null
 	status = Status.OFFLINE
 	my_eid = 0
+	SeasonalEvents.use_local_overrides()   ## rời online: lịch sự kiện về bản của máy
 
 func is_in_world() -> bool:
 	return status == Status.IN_WORLD
@@ -170,9 +174,26 @@ func _fail(code: String, message: String) -> void:
 	if was != Status.OFFLINE:
 		disconnected.emit(code, message)
 
+## Đếm gói gửi lên theo loại trong cửa sổ 1 giây: gần trần chống dồn của server (GameServer.MAX_PACKETS_PER_SEC) thì in ra
+## log để biết gói nào gửi nhiều (server đá "flood" khi vượt).
+const SEND_WARN_PER_SEC := 60
+var _send_window_ms := 0
+var _send_count := 0
+var _send_types: Dictionary = {}
+
 func _send(b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> void:
 	if _peer == null or _peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _send_window_ms > 1000:
+		if _send_count >= SEND_WARN_PER_SEC:
+			print("[NetClient] gửi %d gói/giây — theo loại: %s" % [_send_count, _send_types])
+		_send_window_ms = now_ms
+		_send_count = 0
+		_send_types.clear()
+	_send_count += 1
+	var t: int = b.data_array[0]
+	_send_types[t] = int(_send_types.get(t, 0)) + 1
 	_peer.set_target_peer(1)
 	_peer.transfer_channel = channel
 	_peer.transfer_mode = MultiplayerPeer.TRANSFER_MODE_RELIABLE if channel == NetProto.CH_RELIABLE \
@@ -214,35 +235,60 @@ func send_cast(skill_id: int, level: int, cast_flags: int, target_eid: int, aim:
 	_send(b)
 
 ## Báo bùa mình vừa áp lên quái (choáng, làm chậm, bùa phái...) để server chuyển cho người khác đang thấy quái đó vẽ hình.
+## Không gửi ngay: gom lại, gửi 1 gói C_MSTATE_BATCH cùng nhịp với sát thương (_flush_damage) — bùa áp cả vùng trúng hàng
+## chục quái 1 lúc không làm tràn gói/giây (server đá "Gửi dữ liệu quá nhanh").
+var _pending_mstate: Dictionary = {}   ## Vector2i(monster_eid, state_id) -> thời gian (1/10 giây), giữ lần dài nhất
+
 func send_monster_state(monster_eid: int, state_id: int, seconds: float) -> void:
 	if status != Status.IN_WORLD or state_id <= 0 or seconds <= 0.0:
 		return
-	var b := NetProto.writer(NetProto.C_MSTATE)
-	b.put_u32(monster_eid)
-	b.put_u32(state_id)
-	b.put_u16(clampi(int(round(seconds * 10.0)), 1, 600))
-	_send(b)
+	var key := Vector2i(monster_eid, state_id)
+	_pending_mstate[key] = maxi(int(_pending_mstate.get(key, 0)), clampi(int(round(seconds * 10.0)), 1, 600))
+
+func _flush_mstate() -> void:
+	if _pending_mstate.is_empty():
+		return
+	if status != Status.IN_WORLD:
+		_pending_mstate.clear()
+		return
+	var keys := _pending_mstate.keys()
+	var start := 0
+	while start < keys.size():
+		var n := mini(keys.size() - start, 255)
+		var b := NetProto.writer(NetProto.C_MSTATE_BATCH)
+		b.put_u8(n)
+		for i in n:
+			var key: Vector2i = keys[start + i]
+			b.put_u32(key.x)
+			b.put_u32(key.y)
+			b.put_u16(int(_pending_mstate[key]))
+		_send(b)
+		start += n
+	_pending_mstate.clear()
 
 ## Báo sát thương mình gây cho quái (server kiểm tra rồi trừ máu chung). Không gửi ngay: gom theo quái rồi gửi 1 gói
 ## C_DAMAGE_BATCH mỗi DAMAGE_FLUSH_SEC (xem _flush_damage) — skill nhiều nhịp đánh bầy quái không làm tràn gói/giây.
 const DAMAGE_FLUSH_SEC := 0.1
-var _pending_damage: Dictionary = {}   ## monster_eid -> [tổng sát thương, số đòn, khựng]
+var _pending_damage: Dictionary = {}   ## khoá (monster_eid, hoặc -monster_eid - 1 cho rút độc) -> [tổng sát thương, số đòn, khựng]
 var _damage_flush_timer := 0.0
 
-func send_damage(monster_eid: int, amount: float, staggers: bool) -> void:
+## `poison` = nhịp rút độc: gửi mục riêng có cờ DAMAGE_POISON (server không chặn trần 1 đòn).
+func send_damage(monster_eid: int, amount: float, staggers: bool, poison := false) -> void:
 	if status != Status.IN_WORLD or amount <= 0.0:
 		return
-	var entry: Array = _pending_damage.get(monster_eid, [0, 0, false])
+	var key := -monster_eid - 1 if poison else monster_eid
+	var entry: Array = _pending_damage.get(key, [0, 0, false])
 	if int(entry[1]) >= NetProto.DAMAGE_MAX_HITS:
 		_flush_damage()
 		entry = [0, 0, false]
 	entry[0] = mini(int(entry[0]) + int(amount), 0x7fffffff)
 	entry[1] = int(entry[1]) + 1
 	entry[2] = bool(entry[2]) or staggers
-	_pending_damage[monster_eid] = entry
+	_pending_damage[key] = entry
 
 func _flush_damage() -> void:
 	_damage_flush_timer = DAMAGE_FLUSH_SEC
+	_flush_mstate()
 	if _pending_damage.is_empty():
 		return
 	if status != Status.IN_WORLD:
@@ -255,11 +301,11 @@ func _flush_damage() -> void:
 		var b := NetProto.writer(NetProto.C_DAMAGE_BATCH)
 		b.put_u8(n)
 		for i in n:
-			var eid: int = eids[start + i]
-			var entry: Array = _pending_damage[eid]
-			b.put_u32(eid)
+			var key: int = eids[start + i]
+			var entry: Array = _pending_damage[key]
+			b.put_u32(key if key >= 0 else -key - 1)
 			b.put_u32(int(entry[0]))
-			b.put_u8((1 if entry[2] else 0) | (mini(int(entry[1]), NetProto.DAMAGE_MAX_HITS) << NetProto.DAMAGE_HITS_SHIFT))
+			b.put_u8((1 if entry[2] else 0) | (NetProto.DAMAGE_POISON if key < 0 else 0) | (mini(int(entry[1]), NetProto.DAMAGE_MAX_HITS) << NetProto.DAMAGE_HITS_SHIFT))
 		_send(b)
 		start += n
 	_pending_damage.clear()
@@ -389,6 +435,26 @@ func send_craft(op: int, uids: Array, alt: Array) -> void:
 	NetProto.put_str(b, JSON.stringify({"op": op, "uids": uids, "alt": alt}))
 	_send(b)
 
+## Hành trang: "split" {uid, n} — server tách chồng trên hồ sơ của nó rồi gửi S_PROFILE.
+func send_item_op(op: String, args: Dictionary = {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var a := args.duplicate()
+	a["op"] = op
+	var w := NetProto.writer(NetProto.C_ITEM_OP)
+	NetProto.put_str(w, JSON.stringify(a))
+	_send(w)
+
+## Sự kiện năm: "craft" {ev, recipe, items: {uid: n}, times} / "open" {uid} — server làm trên hồ sơ của nó rồi gửi S_NOTICE + S_PROFILE.
+func send_event(op: String, args: Dictionary = {}) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var payload := args.duplicate()
+	payload["op"] = op
+	var b := NetProto.writer(NetProto.C_EVENT)
+	NetProto.put_str(b, JSON.stringify(payload))
+	_send(b)
+
 ## Dã Tẩu: server trao thưởng (claim_option / claim_milestone) trên hồ sơ của server rồi gửi S_NOTICE + S_PROFILE.
 func send_da_tau(op: String, args: Dictionary = {}) -> void:
 	if status != Status.IN_WORLD:
@@ -462,6 +528,14 @@ func send_friend(op: int, eid := 0, arg := 0, name := "") -> void:
 	b.put_u32(eid)
 	b.put_u8(arg)
 	NetProto.put_str(b, name)
+	_send(b)
+
+## Oẳn tù xì: gửi C_RPS {op, ...} (RpsServer.on_rps).
+func send_rps(d: Dictionary) -> void:
+	if status != Status.IN_WORLD:
+		return
+	var b := NetProto.writer(NetProto.C_RPS)
+	NetProto.put_str(b, JSON.stringify(d))
 	_send(b)
 
 ## "Cừu sát": tuyên bố cừu sát người chơi `eid`.
@@ -586,6 +660,7 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var my_name := NetProto.get_str(b)
 			status = Status.IN_WORLD
 			_pending_damage.clear()   ## đòn gom từ phiên / map trước không gửi sang map mới
+			_pending_mstate.clear()
 			connected_to_world.emit(my_eid, feet, my_name)
 		NetProto.S_ERROR:
 			_last_error = [NetProto.get_str(b), NetProto.get_str(b)]
@@ -681,6 +756,9 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			drop_gone.emit(b.get_u32())
 		NetProto.S_NOTICE:
 			server_notice.emit(NetProto.get_str(b))
+		NetProto.S_EVENT_TIMES:
+			SeasonalEvents.apply_remote_overrides(JSON.parse_string(NetProto.get_str(b, 65535)))
+			event_times_changed.emit()
 		NetProto.S_ITEM_DUR:
 			_on_item_dur(b)
 		NetProto.S_TRADE_INVITE:
@@ -737,6 +815,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var pmsg := NetProto.get_json(b)
 			if not pmsg.is_empty():
 				pubg_message.emit(pmsg)
+		NetProto.S_RPS:
+			var rmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 14))
+			if rmsg is Dictionary:
+				rps_message.emit(rmsg)
 		NetProto.S_LONXON:
 			var lmsg := NetProto.get_json(b)
 			if not lmsg.is_empty():

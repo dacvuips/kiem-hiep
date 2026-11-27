@@ -79,6 +79,8 @@ func _ready() -> void:
 	for i in n:
 
 		_slots.append(_make_slot(i, Vector2(i * (SLOT_SIZE + GAP), 0)))
+		## Bản web: 4 ô nằm trên thanh dưới (WebHudBar) — ô bên phải ẩn, phím 1-4 + bảng chọn thuốc vẫn chạy ở đây.
+		_slots[i].visible = not WebHudBar.enabled()
 
 	refresh()
 	if SaveManager != null and SaveManager.has_signal("profile_changed"):
@@ -237,6 +239,8 @@ func _mid(i: int) -> String:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not visible or not event.is_pressed() or event.is_echo():
 		return
+	if WebHudBar.enabled():   ## bản web: phím 1-9 do thanh dưới (WebHudBar) xử lý cho đủ 9 ô
+		return
 	var k := event as InputEventKey
 	if k != null and (k.ctrl_pressed or k.alt_pressed or k.meta_pressed):
 		return
@@ -298,6 +302,18 @@ func use_slot(i: int) -> void:
 			player.notify(str(res["message"]))
 		return
 
+	## Hộp / rương / túi (rơi từ quái, hộp nguyên liệu ...): mở như nút "Mở Hộp" trong Hành trang, báo kết quả ngay trên màn.
+	if _is_box(item):
+		var res := ItemConsumer.use_item(p, item, player, get_tree().current_scene)
+		if str(res.get("message", "")) != "" and player.has_method("notify"):
+			player.notify(str(res["message"]))
+		if res.get("ok", false):
+			_last_use = _now()
+			SaveManager.save_profile(p)
+			SaveManager.flush_online()
+			_refresh_inventory()
+		return
+
 	if not PotionEffect.consume(p, player, item):
 
 		return
@@ -306,12 +322,12 @@ func use_slot(i: int) -> void:
 
 	SaveManager.save_profile(p)
 
+	_refresh_inventory()
+
+func _refresh_inventory() -> void:
 	var inv := InventoryPopup.find_open(get_tree())
-
 	if is_instance_valid(inv) and inv.has_method("_refresh"):
-
 		inv.call("_refresh")
-
 	refresh()
 
 ## Vẽ lại ảnh + số bình của 4 ô.
@@ -362,13 +378,13 @@ func _open_picker(i: int) -> void:
 
 		return
 
-	var win := SocialWindow.new("Ô thuốc %d" % (i + 1), "Chọn thuốc trong hành trang", 380.0)
+	var win := SocialWindow.new("Ô thuốc %d" % (i + 1), "Chọn thuốc / hộp trong hành trang", 380.0)
 
 	var seen := {}
 
 	for it in p.inventory:
 
-		if not _is_quick_item(it) or seen.has(it.misc_id):
+		if not is_quick_item(it) or seen.has(it.misc_id):
 
 			continue
 
@@ -413,7 +429,7 @@ func _open_picker(i: int) -> void:
 
 	if seen.is_empty():
 
-		win.body.add_child(SocialUi.label("Hành trang chưa có thuốc / đan dùng được.", SocialUi.MUTED, 14))
+		win.body.add_child(SocialUi.label("Hành trang chưa có thuốc / đan / hộp dùng được.", SocialUi.MUTED, 14))
 
 	var buttons := win.add_button_row()
 
@@ -445,14 +461,19 @@ func _open_picker(i: int) -> void:
 
 		SocialWindow.present(host, win, &"quick_item_picker")
 
-static func _is_quick_item(item: ItemInstance) -> bool:
-	return PotionEffect.usable(item) or ItemConsumer.is_town_portal(item)
+## Món gắn được vào ô thuốc nhanh: thuốc / đan, Thổ Địa Phù, hộp / rương / túi mở được.
+static func is_quick_item(item: ItemInstance) -> bool:
+	return PotionEffect.usable(item) or ItemConsumer.is_town_portal(item) or _is_box(item)
+
+## Hộp mở được (không phải thuốc — thuốc tên có chữ "túi"/"gói" vẫn đi đường uống).
+static func _is_box(item: ItemInstance) -> bool:
+	return item != null and item.is_misc() and not PotionEffect.usable(item) and ItemConsumer.is_chest_or_box(item)
 
 ## Thả món kéo từ hành trang: nhận thuốc / đan dùng được hoặc Thổ Địa Phù.
 
 func _can_drop(_at: Vector2, data: Variant, _i: int) -> bool:
 
-	return data is Dictionary and data.get("type") == ItemRoomView.DRAG_TYPE and _is_quick_item(data.get("item") as ItemInstance)
+	return data is Dictionary and data.get("type") == ItemRoomView.DRAG_TYPE and is_quick_item(data.get("item") as ItemInstance)
 
 func _drop(_at: Vector2, data: Variant, i: int) -> void:
 

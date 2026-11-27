@@ -509,7 +509,18 @@ def import_gold(enum: dict[int, str], vi_names: dict) -> list[dict]:
     for group, build in ((684, new_sects_gold_sets.build_vu_hon_khai_son_set1),
                          (685, new_sects_gold_sets.build_vu_hon_khai_son_set2),
                          (686, new_sects_gold_sets.build_tieu_dao_huyen_am_set1),
-                         (687, new_sects_gold_sets.build_tieu_dao_huyen_am_set2)):
+                         (687, new_sects_gold_sets.build_tieu_dao_huyen_am_set2),
+                         ## Hoa Sơn kiếm cực phẩm "Lăng Vân" (688: 6 món, 689: 5 món).
+                         (688, new_sects_gold_sets.build_hoa_son_lang_van_set1),
+                         (689, new_sects_gold_sets.build_hoa_son_lang_van_set2),
+                         ## Hoa Sơn khí cực phẩm "Tử Tiêu" (690: 6 món, 691: 5 món).
+                         (690, new_sects_gold_sets.build_hoa_son_tu_tieu_set1),
+                         (691, new_sects_gold_sets.build_hoa_son_tu_tieu_set2),
+                         ## Dương Môn cung cực phẩm "Truy Phong" (692/693) + thương cực phẩm "Hạo Thiên" (694/695).
+                         (692, new_sects_gold_sets.build_duong_mon_truy_phong_set1),
+                         (693, new_sects_gold_sets.build_duong_mon_truy_phong_set2),
+                         (694, new_sects_gold_sets.build_duong_mon_hao_thien_set),
+                         (695, new_sects_gold_sets.build_duong_mon_hao_thien_set2)):
         if not any(g.get("group") == group for g in out):
             items = build(start_r)
             out.extend(items)
@@ -570,6 +581,12 @@ MISC_FILES = {
 }
 
 
+## Tên gốc ghi nhầm trong bảng (mô tả + script nói khác) — sửa theo mô tả.
+MISC_NAME_FIX = {
+    "4_399_1": "Thịt bò",   ## questkey 399: tên "Thịt heo" trùng 398, mô tả + ban_banh_u.lua (Đoan Ngọ) là thịt bò
+}
+
+
 def import_misc(enum: dict[int, str]) -> list[dict]:
     """Thuốc / vật phẩm nhiệm vụ / vật phẩm dùng -> [{id "genre_detail_particular", name, ..., effects?, script?}].
     effects (thuốc): [[thuộc tính magic gốc, giá trị, số frame]] — 5×(mã, giá trị, thời gian) của potion.txt."""
@@ -586,7 +603,7 @@ def import_misc(enum: dict[int, str]) -> list[dict]:
             item_id = "%d_%d_%d" % (get("genre"), get("detail"), get("particular"))
             if "effects" in cols:
                 item_id += "_%d" % get("level")
-            item = {"id": item_id, "name": clean_text(r[0].strip()),
+            item = {"id": item_id, "name": MISC_NAME_FIX.get(item_id, clean_text(r[0].strip())),
                     "genre": get("genre"), "detail": get("detail"), "particular": get("particular"),
                     "image": r[cols["image"]].strip(), "width": get("width", 1), "height": get("height", 1),
                     "intro": clean_text(r[cols["intro"]].strip()), "price": get("price"), "level": get("level"),

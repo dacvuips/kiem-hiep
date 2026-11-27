@@ -66,6 +66,7 @@ func _ready() -> void:
 		guild_list_updated.emit(list))
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
+	NetClient.rps_message.connect(_on_rps)
 
 func _exit_tree() -> void:
 	if current == self:
@@ -141,6 +142,22 @@ func _on_friend_invite(from_eid: int, from_name: String) -> void:
 		return
 	_ask("Hảo hữu", "%s xin phép gia nhập bằng hữu." % from_name, func(ok: bool) -> void:
 		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 1 if ok else 0))
+
+## Oẳn tù xì (RpsServer): lời mời -> hộp hỏi Tham gia / Từ chối; trạng thái / kết thúc -> RpsWindow.
+func _on_rps(msg: Dictionary) -> void:
+	if str(msg.get("op", "")) == "invite":
+		var from_eid := int(msg.get("from", 0))
+		var from_name := str(msg.get("name", ""))
+		var p := GameManager.local_profile
+		if p and p.blacklist.has(from_name):
+			NetClient.send_rps({"op": "answer", "eid": from_eid, "accept": false})   ## sổ đen: tự từ chối
+			return
+		SocialWindow.ask_yes_no(get_tree().current_scene, "Oẳn tù xì",
+			"%s mời bạn chơi Oẳn tù xì (Búa - Kéo - Bao).
+Bạn có muốn tham gia không?" % from_name,
+			func(ok: bool) -> void: NetClient.send_rps({"op": "answer", "eid": from_eid, "accept": ok}), "Tham gia", "Từ chối")
+		return
+	RpsWindow.handle(get_tree().current_scene, msg)
 
 func _on_team_state(st: Dictionary) -> void:
 	var hub := _hub()

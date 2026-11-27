@@ -49,7 +49,9 @@ func _ready() -> void:
 	win._on_chat_send()
 	check("Tin mật ghi [Mật] tới đúng người", str(room["chat"].back()).contains("[Mật] Bạn → ") and str(room["chat"].back()).contains(mate_name))
 	var pend: Array = ChatBox._pending_lines
-	check("Tin mật lưu sang chat chính (kênh Riêng)", not pend.is_empty() and str(pend.back()).contains("[Riêng] HỏaLong → " + mate_name) and str(pend.back()).contains("đi chung nhé"))
+	## dòng kiểu gốc: ảnh kênh Riêng (chtx_4 / chtx_self) + "người gửi → người nhận:" + nội dung (ChatBox.format_line)
+	check("Tin mật lưu sang chat chính (kênh Riêng)", not pend.is_empty() and str(pend.back()).contains("HỏaLong → " + mate_name)
+		and str(pend.back()).contains("đi chung nhé") and (str(pend.back()).contains("chtx_4") or str(pend.back()).contains("chtx_self")))
 	var box := ChatBox.create()
 	add_child(box)
 	check("Khung chat chính dựng xong -> nhận tin mật đang chờ", ChatBox._pending_lines.is_empty() and box._log.get_parsed_text().contains("đi chung nhé"))

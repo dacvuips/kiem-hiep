@@ -167,6 +167,14 @@ func _ready() -> void:
 	if GameManager.is_manor_mode():
 		quick_item_bar.visible = false
 
+	## Bản web: thanh dưới kiểu PC (khung gốc VLTK) thay cụm nút skill tròn + 4 ô thuốc bên phải + joystick.
+	if WebHudBar.enabled() and player:
+		skill_bar_ui.web_mode = true
+		var web_bar := WebHudBar.new()
+		web_bar.setup(player, skill_bar_ui, quick_item_bar)
+		$UI.add_child(web_bar)
+		_wire_web_bar(web_bar, player)
+
 	HudLayout.add_listener(_apply_hud_layout)
 
 	_apply_hud_layout()   ## 4 ô thuốc nhanh ngay trên cụm nút skill
@@ -221,6 +229,39 @@ func _open_pubg_draft_popup() -> void:
 				elif player_node.has_method("refresh_appearance"):
 					player_node.refresh_appearance()
 		)
+
+## Bản web: nút thanh công cụ gốc trên WebHudBar làm đúng việc của hàng nút menu cũ (hàng cũ ẩn đi). Nút gốc mà game chưa có
+## chức năng (Chạy/đi bộ, Ghi hình, Nhiệm vụ) không gắn -> WebHudBar làm mờ.
+func _wire_web_bar(bar: WebHudBar, player: Node) -> void:
+	## Thanh gốc không có ô thi triển liên tục: tạm dừng ô liên tục (dữ liệu giữ nguyên, bản thường vẫn dùng).
+	if "skill_controller" in player and player.skill_controller != null:
+		for i in player.skill_controller.loop_enabled.size():
+			player.skill_controller.loop_enabled[i] = false
+	bar.set_action("status", _toggle_status_window)
+	bar.set_action("items", _toggle_inventory_window)
+	bar.set_action("itemex", _toggle_inventory_window)
+	bar.set_action("skills", _toggle_skill_book)
+	bar.set_action("friend", _toggle_friend_window)
+	bar.set_action("team", _toggle_team_window)
+	bar.set_action("faction", _toggle_guild_window)
+	bar.set_action("chatroom", func() -> void: ChatPanel.toggle(self))
+	bar.set_action("options", _toggle_settings_window)
+	bar.set_action("market", _toggle_ky_tran_cac)
+	bar.set_action("exchange", _toggle_trade_mode)
+	bar.set_action("pk", func() -> void: _toggle_pk_menu(bar.get_tool_button("pk")))
+	bar.set_action("sit", func() -> void:
+		if is_instance_valid(player):
+			player.toggle_sit())
+	bar.set_action("horse", func() -> void:
+		if is_instance_valid(player):
+			player.toggle_ride())
+	bar.set_state("sit", func() -> bool: return is_instance_valid(player) and player.is_sitting())
+	bar.set_state("horse", func() -> bool: return is_instance_valid(player) and player.is_riding())
+	bar.set_state("exchange", func() -> bool: return GameManager.local_profile != null and GameManager.local_profile.trade_open)
+	for n in ["SideMenu", "BottomActionBar"]:
+		var c := $UI.get_node_or_null(n) as Control
+		if c != null:
+			c.visible = false
 
 ## Chế độ "Chơi": đi lại tự do trên toàn map chính. Không ô vuông giới hạn, không sinh quái / vật phẩm kiểu sinh tồn, không đếm giờ ải.
 

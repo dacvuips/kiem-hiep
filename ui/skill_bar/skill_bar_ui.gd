@@ -79,6 +79,13 @@ var _survivor_skills_btn: Button = null
 
 const AIM_DEAD_ZONE := 14.0
 
+## Kéo xa tới AIM_MAX_DRAG pixel (tính từ chỗ bấm) = điểm thi triển ở tầm TỐI ĐA của skill; kéo ngắn hơn = đánh gần hơn theo tỉ lệ.
+const AIM_MAX_DRAG := 130.0
+
+var _aim_fraction := 1.0
+
+var _right_aiming := false
+
 var _aiming := false
 
 var _aim_press_pos := Vector2.ZERO
@@ -562,6 +569,8 @@ func _apply_survivor_mode_visibility() -> void:
 	if _auto_gear:
 		_auto_gear.visible = not in_survivor
 
+	_apply_web_mode()
+
 	if in_survivor:
 		_ensure_survivor_skills_button()
 		if _survivor_skills_btn:
@@ -569,6 +578,43 @@ func _apply_survivor_mode_visibility() -> void:
 	else:
 		if _survivor_skills_btn:
 			_survivor_skills_btn.visible = false
+
+## ---- Bản web: thanh dưới kiểu PC (WebHudBar) thay cụm nút tròn ----
+
+## true (Main bật khi WebHudBar.enabled()) = ẩn mọi nút skill / nhảy / ngựa / ngồi / đổi nhóm của cụm này; vẫn giữ logic
+## (chuột phải đánh, hồi chiêu, phím tắt) và nút Auto góc trên phải. WebHudBar đọc skill + bấm ô qua slot_skill / press_slot.
+var web_mode := false:
+	set(v):
+		web_mode = v
+		_apply_web_mode()
+
+func _apply_web_mode() -> void:
+	if not web_mode or not is_inside_tree():
+		return
+	var hide: Array = [_main_button, _jump_button, _horse_button, _sit_button, _page_swap]
+	hide.append_array(_sub_buttons)
+	hide.append_array(_loop_buttons)
+	hide.append_array(_page_buttons)
+	for c in hide:
+		if c != null and is_instance_valid(c):
+			(c as Control).visible = false
+
+## Skill đang gắn ở ô `slot` (MAIN_SLOT, LOOP_SLOT_BASE + i, hoặc 0-7 = ô của trang đang chọn); null = ô trống.
+func slot_skill(slot: int) -> SkillDefinition:
+	if slot >= 0 and slot >= _sub_buttons.size() and slot < LOOP_SLOT_BASE:
+		return null
+	return _slot_button(slot).skill
+
+## Bấm ô `slot` như bấm nút tương ứng của cụm (thi triển / bật-tắt ô liên tục).
+func press_slot(slot: int) -> void:
+	if _player == null:
+		return
+	if slot == MAIN_SLOT:
+		_on_main_pressed()
+	elif slot >= LOOP_SLOT_BASE:
+		_on_loop_pressed(slot - LOOP_SLOT_BASE)
+	elif slot >= 0 and slot < _sub_buttons.size() and _sub_buttons[slot].skill != null:
+		_on_sub_pressed(slot)
 
 func _ensure_survivor_skills_button() -> void:
 	if _survivor_skills_btn != null and is_instance_valid(_survivor_skills_btn):
@@ -926,11 +972,43 @@ func _process(_delta: float) -> void:
 
 	if _aiming and _aim_dir != Vector2.ZERO and not editing_hotbar:
 
-		_player.set_aim(_aim_dir)
+		_player.set_aim(_aim_dir, _aim_fraction)
 
 		if _player.skill_controller.try_cast_main(_player, _player.make_aim_target(_main_button.skill)):
 
 			_player.play_cast()
+
+	## Chuột phải giữ trên bản đồ (PC/Web): thi triển skill nút chính về phía con trỏ, gần/xa theo vị trí chuột (tối đa tầm skill).
+	## Bản web: skill chuột phải (ô P) là hào quang -> hào quang đã bật khi chọn, bấm phải không ra chiêu (KPlayer::ProcessMouse
+	## gốc: IsAura -> return).
+	elif _player.right_cast_held and web_mode and _main_button.skill != null and _main_button.skill.is_aura:
+		_player.right_cast_held = false
+
+	elif _player.right_cast_held and not editing_hotbar:
+
+		## Ngắm + đánh ÍT NHẤT 1 lần kể cả khi nhấp nhanh (nhấn và nhả trong cùng khung hình) — cờ chỉ tắt ở đây, Player không tự tắt.
+
+		if not _player.is_dead():
+
+			_right_aiming = true
+
+			var aim: Array = _player.aim_toward(_player.get_global_mouse_position(), _main_button.skill)
+
+			_player.set_aim(aim[0], aim[1], false)   ## chuột phải: không hiện mũi tên xanh
+
+			if aim[0] != Vector2.ZERO and _player.skill_controller.try_cast_main(_player, _player.make_aim_target(_main_button.skill)):
+
+				_player.play_cast()
+
+		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or _player.is_dead():
+
+			_player.right_cast_held = false
+
+			_stop_aim()
+
+	elif _right_aiming:
+
+		_stop_aim()
 
 	var controller: SectSkillController = _player.skill_controller
 
@@ -1046,9 +1124,15 @@ func _on_main_gui_input(event: InputEvent) -> void:
 
 			_aim_dir = v.normalized()
 
+			_aim_fraction = clampf(v.length() / AIM_MAX_DRAG, 0.0, 1.0)
+
 func _stop_aim() -> void:
 
 	_aiming = false
+
+	_right_aiming = false
+
+	_aim_fraction = 1.0
 
 	_aim_dir = Vector2.ZERO
 

@@ -554,6 +554,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			set_camera_zoom(_zoom_target * step)
 			get_viewport().set_input_as_handled()
 		return
+	## Chuột phải (PC/Web): giữ = thi triển skill nút chính về phía con trỏ (SkillBarUI đọc cờ này mỗi khung hình).
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+		## Chỉ BẬT ở đây; SkillBarUI tắt khi thấy đã nhả (để nhấp nhanh vẫn đánh được 1 phát).
+		if event.pressed:
+			right_cast_held = true
+			auto.on_manual_input()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			## Bấm trúng Tiêu Xa = tự động theo sau bảo vệ tiêu xa
@@ -562,10 +570,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				start_follow(cart)
 				get_viewport().set_input_as_handled()
 				return
+			## Bản web, Shift + bấm trái = ra skill chuột trái tại con trỏ (gốc Shift+LButton -> Mouse_Force0).
+			if WebHudBar.enabled() and event.shift_pressed:
+				cast_left_skill_at(get_global_mouse_position())
+				get_viewport().set_input_as_handled()
+				return
 			## Bấm trúng quái / người chơi khác = CHỌN làm mục tiêu đánh (hiện vòng đỏ xoay dưới chân), không chạy tới điểm bấm.
 			var picked := pick_target_at(get_global_mouse_position())
 			if picked != null:
 				set_target(picked, true)
+				## Bản web: bấm trái vào quái = đuổi theo và đánh LIÊN TỤC bằng skill chuột trái (ô T) — gốc Npc::m_nPeopleIdx.
+				if WebHudBar.enabled() and picked.is_in_group("enemies"):
+					start_left_attack(picked)
 				## Bấm vào người chơi khác: hiện menu (Tán gẫu / Hảo hữu / Tổ đội / Theo sau / Tin tức / Cừu sát / Sổ đen).
 				if picked is RemotePlayer:
 					PlayerMenu.open(self, picked as RemotePlayer, get_viewport().get_mouse_position())
@@ -1030,6 +1046,9 @@ func _physics_process(delta: float) -> void:
 		use_main_skill()
 
 	## Phím skill_1-4 (bàn phím 5-8; 1-4 dành cho 4 ô thuốc QuickItemBar) = 4 ô đầu của trang thanh skill đang chọn.
+	## Bản web: phím 1-9 là 9 ô vật phẩm của thanh dưới gốc (WebHudBar), skill đổi bằng Q E R Y U H -> không dùng skill_1-4.
+	if WebHudBar.enabled():
+		return
 	var page_start: int = GameManager.local_profile.hotbar_page * PlayerProfile.HOTBAR_SLOTS_PER_PAGE 			if GameManager.local_profile else 0
 	for i in range(4):
 		if _key_pressed("skill_%d" % (i + 1)):
@@ -1184,7 +1203,52 @@ func _start_chase_main(target: Variant, skill: SkillDefinition) -> void:
 	set_target(n, false)
 	_move_towards_target(n)
 
+## Bản web — skill CHUỘT TRÁI (ô T, WebMouseSkills.left_skill): bấm trái vào kẻ địch -> đuổi theo rồi đánh LIÊN TỤC bằng skill
+## đó (ra tiếp mỗi khi hết hồi chiêu) tới khi mục tiêu chết / mất / người chơi bấm chỗ khác hoặc tự đi — như Npc::m_nPeopleIdx
+## của client gốc (KPlayer::ProcessMouse, Key == 0 + quan hệ địch).
+var _chase_keep := false
+const KEEP_ATTACK_SLACK := 1.5
+
+func start_left_attack(target: Node2D) -> void:
+	if _dead or target == null:
+		return
+	var skill := WebMouseSkills.left_skill(skill_controller)
+	if skill == null:
+		return
+	if _is_sitting:
+		_stand_up()
+	auto.on_manual_input()
+	_start_chase_main(target, skill)
+	set_target(target, true)   ## người chơi tự bấm chọn (_start_chase_main đặt như mục tiêu tự chọn)
+	_chase_keep = true
+
+## Shift + bấm trái (bản web): ra skill chuột trái 1 lần về phía con trỏ / vào địch dưới con trỏ (gốc Mouse_Force0).
+func cast_left_skill_at(world_pos: Vector2) -> void:
+	if _dead or _is_jumping or status_controller.is_stunned:
+		return
+	var skill := WebMouseSkills.left_skill(skill_controller)
+	if skill == null or skill.is_aura:
+		return
+	if _is_sitting:
+		_stand_up()
+	_clear_chase_main()
+	var picked := pick_target_at(world_pos)
+	var target: Node2D = null
+	if picked != null and picked.is_in_group("enemies"):
+		target = picked
+		update_facing(picked.global_position - global_position)
+	else:
+		var aim: Array = aim_toward(world_pos, skill)
+		if aim[0] == Vector2.ZERO:
+			return
+		set_aim(aim[0], aim[1], false)
+		target = make_aim_target(skill)
+	if skill_controller.try_cast_loop(skill, self, target):
+		play_cast()
+	set_aim(Vector2.ZERO)
+
 func _clear_chase_main() -> void:
+	_chase_keep = false
 	_chase_main_target = null
 	_chase_main_skill = null
 	_chase_replan_timer = 0.0
@@ -1217,11 +1281,24 @@ func _tick_chase_main(delta: float) -> void:
 	var dist_logic: float = sqrt(d.x * d.x + d.y * d.y * 4.0)
 	var skill_range: float = get_skill_radius(_chase_main_skill) if _chase_main_skill else get_current_range()
 
-	# Đã tiến tới mức phạm vi có thể thi triển skill:
-	if dist_logic <= skill_range:
+	# Đã tiến tới mức phạm vi có thể thi triển skill. Đánh liên tục (bản web) bằng chiêu CẬN CHIẾN: như get_cast_target, quái trong
+	# vùng quét là ra chiêu luôn — bộ chạy chiêu tự lao tới (VltkSkillRunner._melee_approach), không đi bộ theo đường (đường chỉ tới
+	# ô kề quái nên có thể không bao giờ vào đúng tầm).
+	var melee_keep := _chase_keep and _chase_main_skill != null and _chase_main_skill.vltk_skill_id > 0 \
+			and dist_logic <= AUTO_CHASE_RADIUS \
+			and VltkSkillRunner.is_melee_supported(VltkSkillData.skill(_chase_main_skill.vltk_skill_id, 1))
+	# Thân quái chặn không cho đứng sát hơn (đi từ trên / dưới, trục dọc tính gấp đôi): đã sát trong 1.5 lần tầm thì ra chiêu.
+	var near_keep := _chase_keep and dist_logic <= skill_range * KEEP_ATTACK_SLACK
+	if dist_logic <= skill_range or melee_keep or near_keep:
 		stop_walking()
 		update_facing(_chase_main_target.global_position - global_position)
 		var target := _chase_main_target
+		## Đánh liên tục (skill chuột trái bản web): ra chiêu mỗi khi được, giữ mục tiêu; đứng trong tầm thì không tính hết giờ đuổi.
+		if _chase_keep:
+			_chase_elapsed_time = 0.0
+			if skill_controller.try_cast_loop(_chase_main_skill, self, target):
+				play_cast()
+			return
 		if skill_controller.try_cast_main(self, target):
 			play_cast()
 			_clear_chase_main()
@@ -1260,10 +1337,17 @@ func get_cast_target(skill: SkillDefinition = null) -> Node2D:
 ## `aim_dir` (hướng trên màn hình, đã chuẩn hoá; ZERO = không ngắm): nhân vật quay mặt theo hướng đó, skill đánh vào 1 điểm ảo theo hướng
 ## đó (không nhắm quái) và 1 mũi tên dài vẽ trên bản đồ chỉ hướng đánh.
 var aim_dir := Vector2.ZERO
+## Tỉ lệ khoảng cách điểm thi triển so với tầm tối đa của skill (AIM_MIN_FRACTION..1): kéo nút chính gần = đánh gần, kéo xa = đánh ở tầm max.
+var aim_fraction := 1.0
+const AIM_MIN_FRACTION := 0.2
 var _aim_arrow: AimArrow
+## Đang giữ CHUỘT PHẢI trên bản đồ (PC/Web): SkillBarUI thi triển skill nút chính về phía con trỏ.
+var right_cast_held := false
 
-func set_aim(dir: Vector2) -> void:
+## `show_arrow` = false: ngắm bằng chuột phải — không vẽ mũi tên xanh (con trỏ đã chỉ điểm đánh).
+func set_aim(dir: Vector2, fraction: float = 1.0, show_arrow: bool = true) -> void:
 	aim_dir = dir.normalized() if dir != Vector2.ZERO else Vector2.ZERO
+	aim_fraction = clampf(fraction, AIM_MIN_FRACTION, 1.0) if aim_dir != Vector2.ZERO else 1.0
 	if aim_dir != Vector2.ZERO:
 		last_direction = aim_dir
 		if not is_attacking and not is_casting and not _is_jumping:
@@ -1274,7 +1358,7 @@ func set_aim(dir: Vector2) -> void:
 		add_child(_aim_arrow)
 	var main_skill := skill_controller.get_main_skill()
 	## Mũi tên chỉ vẽ cho skill TẦM XA (đạn bay); skill cận chiến/đánh sát không có mũi tên (vẫn xoay và đánh theo hướng kéo).
-	_aim_arrow.set_aim(aim_dir if _is_ranged_skill(main_skill) else Vector2.ZERO, global_position + Vector2(0, 30), _aim_length(main_skill))
+	_aim_arrow.set_aim(aim_dir if show_arrow and _is_ranged_skill(main_skill) else Vector2.ZERO, get_ground_position(), _aim_length(main_skill) * aim_fraction)
 
 ## Skill tầm xa = có đạn bay (không phải kiểu cận chiến VLTK) và tầm đánh đủ dài (> AIM_ARROW_MIN_RADIUS pixel).
 const AIM_ARROW_MIN_RADIUS := 120.0
@@ -1297,14 +1381,26 @@ var _aim_point: Node2D
 func make_aim_target(skill: SkillDefinition = null) -> Node2D:
 	var d := (aim_dir if aim_dir != Vector2.ZERO else last_direction).normalized()
 	var r := get_skill_radius(skill) if skill != null else 0.0
-	var distance := r if r > 0.0 else CAST_POINT_DISTANCE
+	var distance := (r if r > 0.0 else CAST_POINT_DISTANCE) * (aim_fraction if aim_dir != Vector2.ZERO else 1.0)
 	var logic := Vector2(d.x, d.y * 2.0).normalized() * distance
 	if _aim_point == null or not is_instance_valid(_aim_point):
 		_aim_point = Node2D.new()
 		_aim_point.set_meta("cast_point", true)
 		get_parent().add_child(_aim_point)
-	_aim_point.global_position = global_position + Vector2(logic.x, logic.y * 0.5)
+	## Tính từ CHÂN (gốc đo tầm của bộ máy chiêu, cũng là gốc mũi tên) -> điểm nổ trùng đầu mũi tên.
+	_aim_point.global_position = get_ground_position() + Vector2(logic.x, logic.y * 0.5)
 	return _aim_point
+
+## Hướng + tỉ lệ khoảng cách để ngắm tới 1 điểm trên bản đồ (chuột phải): khoảng cách tính theo logic VLTK (dọc nhân đôi),
+## quá tầm skill thì giữ ở tầm max. Trả về [dir màn hình, fraction].
+func aim_toward(world_point: Vector2, skill: SkillDefinition = null) -> Array:
+	var off := world_point - get_ground_position()
+	if off.length() < 1.0:
+		return [Vector2.ZERO, 1.0]
+	var r := get_skill_radius(skill) if skill != null else 0.0
+	var max_d := r if r > 0.0 else CAST_POINT_DISTANCE
+	var logic_len := Vector2(off.x, off.y * 2.0).length()
+	return [off.normalized(), clampf(logic_len / max_d, AIM_MIN_FRACTION, 1.0)]
 
 ## Điểm mục tiêu ảo phía trước mặt (meta "cast_point" — SectSkillCast/bùa nhận biết để không đuổi/áp trạng thái
 ## lên nó); tự huỷ sau vài giây.
@@ -1319,7 +1415,7 @@ func _make_cast_point(skill: SkillDefinition = null) -> Node2D:
 	var distance := r if r > 0.0 else CAST_POINT_DISTANCE
 	var d := (aim_dir if aim_dir != Vector2.ZERO else last_direction).normalized()
 	var logic := Vector2(d.x, d.y * 2.0).normalized() * distance
-	point.global_position = global_position + Vector2(logic.x, logic.y * 0.5)
+	point.global_position = get_ground_position() + Vector2(logic.x, logic.y * 0.5)
 	get_tree().create_timer(3.0).timeout.connect(point.queue_free)
 	return point
 
@@ -1802,6 +1898,7 @@ func die() -> void:
 	is_auto_mode = false
 	auto.tick(0.0, false)
 	aim_dir = Vector2.ZERO
+	right_cast_held = false
 	velocity = Vector2.ZERO
 	avatar.play("sit")
 	avatar.modulate = Color(0.75, 0.4, 0.95, 1.0)

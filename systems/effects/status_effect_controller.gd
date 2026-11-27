@@ -146,19 +146,19 @@ func _apply_vltk_poison(damage: int, time_frames: int, interval_frames: int, att
 ##   - Thời gian: KHÁC gốc (cân bằng riêng của game) — lấy lớp CÒN DÀI HƠN, max(t1, t2). Gốc lấy trung bình có trọng số theo
 ##     lượng độc nên chồng độc càng to thì thời gian càng ngắn rồi mất trắng (tụt từ hàng nghìn về vài trăm). Giờ còn trúng độc
 ##     là còn giữ chuỗi; ngừng trúng độc thì hết sau thời gian của lớp cuối.
-##   - Trần: vì thời gian không còn ngắn lại, đánh liên tục thì chồng độc cộng mãi (đã thấy 500 triệu/nhịp lên boss). Lượng rút
-##     tối đa POISON_STACK_MAX lần 1 lớp (lớp đang dính đã to hơn thì giữ nguyên, không tăng). Server online chặn mỗi đòn ở
-##     ProfileGuard.max_hit (= đòn to nhất x CRIT_MULT x TOLERANCE) nên trần này phải <= đó, không thì máy mình trừ máu quái về 0
-##     mà server chỉ trừ phần trong trần -> quái "hết máu" mà không chết.
+##   - KHÔNG trần (chốt 2026-11-25): đánh liên tục thì chồng độc cộng mãi. Online: nhịp rút độc gửi cờ NetProto.DAMAGE_POISON,
+##     server không chặn ProfileGuard.max_hit cho phần này (không thì máy mình trừ máu quái về 0 mà server chỉ trừ trong trần ->
+##     quái "hết máu" mà không chết).
+##   - Chỉ chặn tràn số: Vector3i là int 32 bit, vượt thì quay về số âm và lớp độc mất trắng.
 ## Chia nguyên CỐ Ý như gốc.
-const POISON_STACK_MAX := 3
+const POISON_INT_LIMIT := 0x7fffffff
 
 @warning_ignore("integer_division")
 static func merge_poison(cur: Vector3i, add: Vector3i) -> Vector3i:
 	var c1 := maxi(1, cur.z)
 	var c2 := maxi(1, add.z)
 	var d := ((c1 + c2) * cur.x / c1 + (c1 + c2) * add.x / c2) / 2
-	d = mini(d, maxi(cur.x, add.x * POISON_STACK_MAX))
+	d = mini(d, POISON_INT_LIMIT)
 	return Vector3i(d, maxi(cur.y, add.y), maxi(1, (c1 + c2) / 2))
 
 ## Áp 1 bộ trạng thái thuộc tính (buff lên mình / bùa lên địch) trong `seconds` giây.

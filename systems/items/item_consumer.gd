@@ -85,6 +85,8 @@ static func is_usable(item: ItemInstance) -> bool:
 	if item == null or not item.is_misc():
 		return false
 	var mid := item.misc_id
+	if SeasonalEvents.is_usable(mid):
+		return true
 	if is_chest_or_box(item):
 		return true
 	if PotionEffect.usable(item) or PotionEffect.is_fuyuan_potion(item):
@@ -132,6 +134,8 @@ static func get_action_label(item: ItemInstance) -> String:
 		return "Dịch Chuyển"
 	if mid in ["6_1_12", "6_1_2424", "6_1_2425", "6_1_30446", "6_1_22", "6_1_26"] or BIKIP_180_MAP.has(mid) or mid in ["6_1_18017", "6_1_18018", "6_1_18019", "6_1_18020", "6_1_18021", "6_1_18022", "6_1_18023", "6_1_18024", "6_1_18025"]:
 		return "Luyện Bí Kíp"
+	if mid in ["6_1_1241", "6_1_1242", "6_1_1243", "6_1_1244", "6_1_1245", "6_1_1246"]:
+		return "Thắp Đèn"   ## lồng đèn Trung Thu: nhân đôi kinh nghiệm (PotionEffect)
 	if PotionEffect.usable(item) or PotionEffect.is_fuyuan_potion(item) or mid in ["ky_thien_nien_tran_lo", "6_1_125"]:
 		return "Uống"
 	return "Sử dụng"
@@ -453,6 +457,18 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 	
 	var mid := item.misc_id
 	var item_name := item.get_display_name()
+
+	# 0. VẬT PHẨM SỰ KIỆN NĂM (SeasonalEvents): mở / dùng theo bảng thưởng gốc của sự kiện — online server làm (gói C_EVENT).
+	if SeasonalEvents.is_usable(mid):
+		var block := SeasonalEvents.use_block_reason(profile, item)
+		if block != "":
+			return {"ok": false, "message": block}
+		if NetClient.is_in_world():
+			NetClient.send_event("open", {"uid": item.ensure_uid()})
+			return {"ok": false, "message": ""}
+		if GameModeManager.is_online():
+			return {"ok": false, "message": "Mất kết nối máy chủ, chưa mở được %s." % item_name}
+		return SeasonalEvents.open_item(profile, item.ensure_uid())
 
 	# 0. ĐẠI THÀNH BÍ KÍP (Lộn Xộn): bấm Dùng = học kỹ năng cùng tầng đang có cấp thấp nhất
 	if LonXonRules.book_tier(mid) > 0:
@@ -923,7 +939,7 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 		}
 
 	# 17. TIÊN THẢO LỘ & THIÊN SƠN BẢO LỘ (6_1_1181, 6_1_71, 6_1_72...)
-	if mid in ["6_1_1181", "6_1_71", "6_1_1765", "6_1_113", "6_1_72", "6_0_70"]:
+	if mid in ["6_1_1181", "6_1_71", "6_1_1765", "6_1_113", "6_1_72", "6_0_70", "6_0_60", "6_0_61", "6_0_62"]:
 		var blocked := PotionEffect.block_reason(item, profile)
 		if blocked != "":
 			return {"ok": false, "message": blocked}
@@ -939,6 +955,12 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 				msg = "Uống %s thành công!\nTăng 10 điểm May Mắn trong 1 giờ." % item_name
 			elif mid == "6_0_70":
 				msg = "Dùng %s thành công!\nTăng 30 điểm May Mắn trong 30 phút." % item_name
+			elif mid == "6_0_60":
+				msg = "Ăn %s!\nTốc độ đánh và ra chiêu +20 trong 10 phút." % item_name
+			elif mid == "6_0_61":
+				msg = "Ăn %s!\nSinh lực và nội lực tối đa +100%% trong 10 phút." % item_name
+			elif mid == "6_0_62":
+				msg = "Ăn %s!\nKháng tất cả +5%% trong 10 phút." % item_name
 			return {"ok": true, "message": msg}
 		return {"ok": false, "message": "Không thể sử dụng %s lúc này." % item_name}
 

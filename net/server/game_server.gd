@@ -49,7 +49,7 @@ enum ConnState { WAIT_HELLO, AUTH, IN_WORLD, CLOSING }
 const HUB_ALLOWED := [NetProto.C_PROFILE, NetProto.C_MARKET, NetProto.C_TRADE_REQ_ID, NetProto.C_TRADE_ANSWER, NetProto.C_TRADE_OP,
 	NetProto.C_CHAT, NetProto.C_TEAM, NetProto.C_GUILD, NetProto.C_FRIEND, NetProto.C_SECURITY, NetProto.C_PING,
 	NetProto.C_SHOP_BUY, NetProto.C_CRAFT, NetProto.C_DA_TAU, NetProto.C_PUBG, NetProto.C_LONXON, NetProto.C_UY_THAC,
-	NetProto.C_REPAIR]
+	NetProto.C_REPAIR, NetProto.C_EVENT, NetProto.C_ITEM_OP]
 
 class Conn:
 	var key := ""
@@ -67,6 +67,7 @@ class Conn:
 	var last_move_at := 0.0
 	var packets := 0
 	var packets_window := 0.0
+	var packet_types: Dictionary = {}   ## loại gói -> số gói trong cửa sổ 1 giây hiện tại (để ghi log khi bị đá vì gửi dồn)
 	var damage_msgs := 0
 	var cast_msgs := 0
 	var abrade_region := Vector2i(1 << 30, 1 << 30)   ## vùng bản đồ lúc trước — đổi vùng thì tụt độ bền giày / ngựa (ItemDurability)
@@ -166,6 +167,7 @@ var guild: GuildServer
 ## Chợ Giao Thương — chỉ máy chủ thế giới (null ở tiến trình chiến trường).
 var market: MarketServer
 var relation: RelationServer
+var rps: RpsServer
 ## Chiến trường Tống Kim (chỉ tiến trình GAME_BATTLE=1), null = server thế giới thường.
 var battle: BattleServer
 ## Đấu trường PK (GAME_ARENA=1, map 397): phòng 1 chọi 1 + người xem — ArenaServer.
@@ -257,6 +259,7 @@ func _ready() -> void:
 	chat = ChatServer.new(self)
 	guild = GuildServer.new(self)
 	relation = RelationServer.new(self)
+	rps = RpsServer.new(self)
 	if _env("GAME_BATTLE", "0") == "1":
 		battle = BattleServer.new(self, map_dir)
 		if not battle.is_ready():
@@ -345,6 +348,7 @@ func _process(delta: float) -> void:
 		_m_sim_us += Time.get_ticks_usec() - ts
 		social.tick(step, _now)
 		relation.tick(_now)
+		rps.tick(_now)
 		guild.tick(step)
 		if market:
 			market.tick(step)
@@ -516,6 +520,7 @@ func _drop(c: Conn) -> void:
 	if c.entity:
 		social.on_leave(c)
 		relation.on_leave(c)
+		rps.on_leave(c)
 		if battle:
 			battle.on_leave(c)
 		if arena:
@@ -561,6 +566,7 @@ func _send(c: Conn, b: StreamPeerBuffer, channel := NetProto.CH_RELIABLE) -> voi
 func _kick(c: Conn, code: String, message: String) -> void:
 	if c.state == ConnState.CLOSING:
 		return
+	print("Đá kết nối: %s (%s) — %s: %s" % [c.entity.name if c.entity else "-", c.username, code, message])
 	var b := NetProto.writer(NetProto.S_ERROR)
 	NetProto.put_str(b, code)
 	NetProto.put_str(b, message)
@@ -568,6 +574,7 @@ func _kick(c: Conn, code: String, message: String) -> void:
 	if c.entity and c.state == ConnState.IN_WORLD:
 		social.on_leave(c)   ## huỷ giao dịch, rời đội trước khi mất thực thể
 		relation.on_leave(c)
+		rps.on_leave(c)
 		if field:
 			field.on_leave(c)   ## chủ phòng bị đá -> đóng phòng
 	c.state = ConnState.CLOSING
@@ -592,12 +599,16 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 	if _now - c.packets_window > 1.0:
 		c.packets_window = _now
 		c.packets = 0
+		c.packet_types.clear()
 	c.packets += 1
+	var type := pkt[0]
+	c.packet_types[type] = int(c.packet_types.get(type, 0)) + 1
 	if c.packets > MAX_PACKETS_PER_SEC:
+		print("Gói/giây theo loại (loại: số): %s" % c.packet_types)
 		_kick(c, "flood", "Gửi dữ liệu quá nhanh")
 		return
 	var b := NetProto.reader(pkt)
-	var type := b.get_u8()
+	b.get_u8()
 	if c.hub and not HUB_ALLOWED.has(type):
 		return
 	if c.pubg_match != 0 and not PubgServer.MATCH_ALLOWED.has(type):
@@ -661,6 +672,11 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 				if n <= PvpHit.MAX_BYTES and n <= b.get_available_bytes():
 					var r := b.get_data(n)
 					relation.on_pvp_hit(c, target, r[1])
+		NetProto.C_RPS:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
+				var rd: Variant = JSON.parse_string(NetProto.get_str(b, 256))
+				if rd is Dictionary:
+					rps.on_rps(c, rd)
 		NetProto.C_VIEW_EQUIP:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 4:
 				relation.on_view_equip(c, b.get_u32())
@@ -706,6 +722,12 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 						profile_changed(c)
 						_save(c)
 					notice(c, str(r["message"]))
+		NetProto.C_EVENT:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
+				_on_seasonal_event(c, NetProto.get_str(b, 4096))
+		NetProto.C_ITEM_OP:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 2:
+				_on_item_op(c, NetProto.get_str(b, 256))
 		NetProto.C_REPAIR:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 3:
 				_on_repair(c, NetProto.get_str(b, 64), b.get_u8() if b.get_available_bytes() >= 1 else NetProto.REPAIR_NORMAL)
@@ -715,6 +737,12 @@ func _on_packet(c: Conn, pkt: PackedByteArray) -> void:
 		NetProto.C_MSTATE:
 			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 10:
 				_on_mstate(c, b)
+		NetProto.C_MSTATE_BATCH:
+			if c.state == ConnState.IN_WORLD and b.get_available_bytes() >= 1:
+				for i in b.get_u8():
+					if b.get_available_bytes() < 10:
+						break
+					_on_mstate(c, b)
 		NetProto.C_HP:
 			## Máy người chơi báo % máu của mình: chỉ để VẼ (thanh máu tổ đội, thanh máu trên đầu người khác) — không dùng tính sát thương.
 			if c.state == ConnState.IN_WORLD and c.entity and b.get_available_bytes() >= 1:
@@ -892,6 +920,7 @@ func _on_hello(c: Conn, b: StreamPeerBuffer) -> void:
 	if market:
 		market.on_join(c)
 	send_profile(c)
+	_send_event_times(c)
 	if admin_items > 0 and not take_over:
 		notice(c, "Nhận %d vật phẩm từ Quản trị viên (xem hành trang)." % admin_items)
 	if starter_items > 0 and not take_over:
@@ -1250,7 +1279,7 @@ func _cast_allowed(c: Conn, skill_id: int, level: int, support: bool) -> bool:
 	return true
 
 ## Bùa người chơi vừa áp lên quái (C_MSTATE): server chỉ nhớ để báo hình cho người khác đang thấy quái (không tính thuộc tính).
-const MAX_MSTATE_PER_SEC := 40
+const MAX_MSTATE_PER_SEC := 200   ## số MỤC bùa/giây (C_MSTATE_BATCH gom nhiều mục / gói): bùa cả vùng trúng hàng chục quái / lần
 const MAX_MSTATE_SECONDS := 60.0
 const MAX_FREEZE_SECONDS := 15.0
 const MAX_STUN_SECONDS := 10.0     ## choáng dài nhất server nhận   ## Băng sát dài nhất server nhận (skill + băng sát đồ + coldenhance thực tế < 10 giây)
@@ -1325,7 +1354,7 @@ func _on_damage_batch(c: Conn, b: StreamPeerBuffer) -> void:
 		_apply_client_damage(c, m_eid, amount, b.get_u8())
 
 ## 1 mục sát thương người chơi báo lên: `flags` bit0 = khựng, bit1..7 = số đòn gộp (0 = 1 đòn, gói C_DAMAGE cũ).
-## Chống gian: mỗi đòn tối đa c.max_hit, tổng số đòn mỗi giây tối đa MAX_DAMAGE_PER_SEC (đòn vượt ngân sách bị bỏ).
+## Chống gian: mỗi đòn tối đa c.max_hit (trừ nhịp rút độc — cờ DAMAGE_POISON), tổng số đòn mỗi giây tối đa MAX_DAMAGE_PER_SEC.
 func _apply_client_damage(c: Conn, m_eid: int, amount: float, flags: int) -> void:
 	var staggers := (flags & 1) != 0
 	var hits := clampi(flags >> NetProto.DAMAGE_HITS_SHIFT, 1, NetProto.DAMAGE_MAX_HITS)
@@ -1345,7 +1374,8 @@ func _apply_client_damage(c: Conn, m_eid: int, amount: float, flags: int) -> voi
 		return
 	if m.battle_side != "" and (battle == null or not battle.can_hit_monster(c, m)):
 		return   ## Nguyên Soái: chỉ người phe kia đánh được
-	amount = minf(amount, c.max_hit * allowed)
+	if (flags & NetProto.DAMAGE_POISON) == 0:   ## rút độc: chồng lớp không trần (merge_poison) -> không chặn max_hit
+		amount = minf(amount, c.max_hit * allowed)
 	## Khi quái bị khựng: ép trạng thái "hurt" ngay vào entity để S_STATE tiếp theo broadcast cho mọi người thấy
 	if staggers and not m.is_dead():
 		var hurt_action := NetProto.monster_action_index("hurt")
@@ -1409,6 +1439,9 @@ func _on_monster_killed(m: ServerMonster) -> void:
 		rolls = DropTable.roll_hell(m.level, m.series, m.hell_stars, m.blue_boss)
 	else:
 		rolls = DropTable.roll_blue_boss(m.level, m.series) if m.blue_boss else DropTable.roll(m.level, m.series)
+	## Sự kiện năm đang diễn ra: mọi quái (trừ PUBG / Lộn Xộn) rơi Hộp sự kiện — CHỈ online, offline không rơi.
+	if not (pubg and pubg.has_room(m.room_id)) and not (lonxon and lonxon.has_room(m.room_id)):
+		rolls = rolls + SeasonalEvents.roll_monster_drops()
 	var placed: Array = []
 	for i in rolls.size():
 		var off := Vector2(randf_range(-22, 22), randf_range(-8, 8)) * (1.0 if rolls.size() > 1 else 0.4)
@@ -1744,13 +1777,35 @@ func _on_pickup(c: Conn, id: int) -> void:
 			b.put_u8(1)
 			NetProto.put_str(b, JSON.stringify(item.to_dict()))
 		else:
-			if not c.profile.add_item(item):
+			## Nguyên liệu / vật phẩm chồng được: gộp vào chồng cùng loại trước (PlayerProfile.add_item_stacked). Đã gộp thì uid món nhặt
+			## không còn nguyên -> không dùng "quà chờ xác nhận" (sẽ cộng trùng) mà gửi luôn bản chuẩn (send_profile) sau S_PICKED.
+			var picked_dict := item.to_dict()
+			var before_n := item.count
+			var ok_all := c.profile.add_item_stacked(item)
+			var merged := item.count != before_n or not c.profile.inventory.has(item)
+			if not ok_all and not merged:
 				c.grant_seq -= 1
 				notice(c, "Hành trang đã đầy")
 				return
-			c.grants.append({"seq": c.grant_seq, "amount": 0, "item": item.to_dict()})
+			if not ok_all:   ## gộp được 1 phần, túi đầy: phần còn lại nằm lại dưới đất
+				d.item = item.to_dict()
+				c.data = c.profile.to_dict()
+				c.dirty = true
+				send_profile(c)
+				notice(c, "Hành trang đã đầy — còn %d %s dưới đất." % [item.count, item.get_display_name()])
+				return
+			if not merged:
+				c.grants.append({"seq": c.grant_seq, "amount": 0, "item": item.to_dict()})
 			b.put_u8(1)
-			NetProto.put_str(b, JSON.stringify(item.to_dict()))
+			NetProto.put_str(b, JSON.stringify(item.to_dict() if not merged else picked_dict))
+			if merged:
+				c.data = c.profile.to_dict()
+				c.dirty = true
+				_send(c, b)
+				_drop_gone(id)
+				social.team_picked(c)
+				send_profile(c)
+				return
 	c.data = c.profile.to_dict()
 	c.dirty = true
 	_send(c, b)
@@ -2092,11 +2147,57 @@ func _heartbeat() -> void:
 	var st: Variant = r.get("settings")
 	if st is Dictionary:
 		_apply_settings(st)
+	if r.has("event_overrides"):
+		_apply_event_overrides(r["event_overrides"])
 	var cmd: Variant = r.get("command")
 	if cmd is Dictionary and int(cmd.get("id", 0)) > _ack_command:
 		_ack_command = int(cmd.get("id", 0))
 		if str(cmd.get("action", "")) == "restart":
 			start_drain(clampi(int(cmd.get("seconds", 60)), 10, 1800), str(cmd.get("message", "")).left(200), str(cmd.get("by", "")))
+
+## Lịch sự kiện năm GM đặt (server tài khoản gửi trong heartbeat / sau khi GM đổi): áp vào SeasonalEvents (quái rơi hộp, ép, mở đồ
+## đều theo lịch này) và báo mọi người đang kết nối nếu khác bản đang dùng.
+func _apply_event_overrides(raw: Variant) -> void:
+	var before := JSON.stringify(SeasonalEvents.overrides())
+	SeasonalEvents.apply_remote_overrides(raw)
+	if JSON.stringify(SeasonalEvents.overrides()) == before:
+		return
+	print("Lịch sự kiện năm (GM): ", SeasonalEvents.overrides())
+	for c: Conn in _conns.values():
+		if c.state == ConnState.IN_WORLD:
+			_send_event_times(c)
+
+func _send_event_times(c: Conn) -> void:
+	var w := NetProto.writer(NetProto.S_EVENT_TIMES)
+	NetProto.put_str(w, JSON.stringify(SeasonalEvents.overrides()))
+	_send(c, w)
+
+## GM đặt / xoá lịch 1 sự kiện: ghi ở server tài khoản (mọi tiến trình nhận qua heartbeat), áp ngay ở đây.
+func _gm_event_time(c: Conn, a: Dictionary, reset: bool) -> void:
+	if not c.is_gm:
+		notice(c, "Chỉ GM mới đổi được lịch sự kiện.")
+		return
+	var ev_id := str(a.get("ev", "")).left(40)
+	if SeasonalEvents.get_event(ev_id).is_empty():
+		notice(c, "Sự kiện không tồn tại.")
+		return
+	var st := 0 if reset else int(a.get("start", 0))
+	var en := 0 if reset else int(a.get("end", 0))
+	if not reset:
+		var bad := SeasonalEvents.set_override(ev_id, st, en, false)   ## chỉ để kiểm tra hợp lệ
+		SeasonalEvents.clear_override(ev_id, false)
+		if bad != "":
+			notice(c, bad)
+			return
+	var who := c.entity.name if c.entity else str(c.character_id)
+	var r: Dictionary = await account.set_event_override(ev_id, st, en, who)
+	if not r.get("ok", false):
+		notice(c, "Không lưu được lịch sự kiện: %s" % str(r.get("message", "máy chủ tài khoản lỗi")))
+		return
+	_apply_event_overrides(r.get("event_overrides", {}))
+	var ev_name := str(SeasonalEvents.get_event(ev_id).get("name", ev_id))
+	notice(c, ("%s: về lịch mặc định." % ev_name) if reset else ("%s: GM đặt %s – %s." % [ev_name,
+		SeasonalEvents.format_date(st), SeasonalEvents.format_date(en)]))
 
 ## Thông số game từ web Admin — kẹp lại trong khoảng cho phép dù server tài khoản đã kiểm.
 func _apply_settings(st: Dictionary) -> void:
@@ -2359,6 +2460,69 @@ func online_count() -> int:
 	return _by_character.size()
 
 ## Mảng chữ từ JSON của game (tối đa `limit` phần tử, mỗi phần tử tối đa 32 ký tự) — chống gói lạ.
+## Sự kiện năm: ép / mở vật phẩm trên hồ sơ của server (giờ server quyết định sự kiện có đang diễn ra không).
+## Thao tác hành trang trên hồ sơ server: "split" = tách n cái khỏi 1 chồng thành chồng mới (PlayerProfile.split_stack);
+## "merge" = kéo chồng `from` thả lên chồng cùng loại `to` (PlayerProfile.merge_stack).
+func _on_item_op(c: Conn, text: String) -> void:
+	if c.profile == null:
+		return
+	if c.trade != null or c.profile.stall_open:
+		notice(c, "Đang giao dịch / bày bán, không thể sắp xếp hành trang.")
+		return
+	var a = JSON.parse_string(text)
+	if not a is Dictionary:
+		return
+	var err := ""
+	match str(a.get("op", "")):
+		"split":
+			err = c.profile.split_stack(str(a.get("uid", "")).left(32), clampi(int(a.get("n", 0)), 0, 1_000_000))
+		"merge":
+			err = c.profile.merge_stack(str(a.get("from", "")).left(32), str(a.get("to", "")).left(32))
+		_:
+			return
+	if err != "":
+		notice(c, err)
+		return
+	c.data = c.profile.to_dict()
+	c.dirty = true
+	send_profile(c)
+
+func _on_seasonal_event(c: Conn, text: String) -> void:
+	if c.profile == null:
+		return
+	var g = JSON.parse_string(text)
+	if g is Dictionary and str(g.get("op", "")) in ["gm_time", "gm_reset"]:
+		_gm_event_time(c, g, str(g["op"]) == "gm_reset")
+		return
+	if c.trade != null:
+		notice(c, "Đang giao dịch, không thể dùng sự kiện.")
+		return
+	if c.profile.stall_open:
+		notice(c, "Đang bày bán, không thể dùng sự kiện.")
+		return
+	var a = JSON.parse_string(text)
+	if not a is Dictionary:
+		return
+	var r: Dictionary
+	match str(a.get("op", "")):
+		"craft":
+			var items := {}
+			var raw: Variant = a.get("items", {})
+			if raw is Dictionary:
+				for uid in (raw as Dictionary).keys().slice(0, 40):
+					items[str(uid).left(32)] = clampi(int(raw[uid]), 0, 1_000_000)
+			r = SeasonalEvents.craft(c.profile, str(a.get("ev", "")).left(40), str(a.get("recipe", "")).left(16), items,
+				clampi(int(a.get("times", -1)), -1, SeasonalEvents.MAX_BATCH))
+		"open":
+			r = SeasonalEvents.open_item(c.profile, str(a.get("uid", "")).left(32))
+		_:
+			return
+	if r.get("ok", false):
+		SeasonalEvents.prune_counters(c.profile)
+		profile_changed(c)
+		_save(c)
+	notice(c, str(r.get("message", "")))
+
 static func _str_list(v: Variant, limit: int) -> Array:
 	var out := []
 	if v is Array:

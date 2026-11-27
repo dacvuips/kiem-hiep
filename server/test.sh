@@ -77,7 +77,7 @@ run_suite() {
 
 cd "$project"
 echo "== Bài test không cần server"
-for s in social_tests social_ui_tests auto_tests sect_join_tests skill_display_tests net_smooth_tests ride_look_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests bot_body_tests bot_brain_tests map_texture_cache_tests uy_thac_tests monster_state_sync_tests team_list_hud_tests item_durability_tests ally_buff_tests skill_hit_tests stealth_tests stealth_player_tests; do
+for s in social_tests social_ui_tests auto_tests sect_join_tests skill_display_tests net_smooth_tests ride_look_tests target_tests save_security_tests cast_timing_tests lon_xon_rules_tests lon_xon_server_logic_tests lon_xon_client_tests bot_body_tests bot_brain_tests map_texture_cache_tests uy_thac_tests monster_state_sync_tests team_list_hud_tests item_durability_tests ally_buff_tests skill_hit_tests stealth_tests stealth_player_tests rps_tests; do
 	run_suite "$s" "$s.tscn"
 done
 

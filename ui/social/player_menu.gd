@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name PlayerMenu
 ## MENU NGƯỜI CHƠI — bấm vào người chơi khác trên map (PopUpContextPeopleMenu gốc). Mục nào không đủ điều kiện thì ẩn (như gốc):
-##   Xem quầy (họ đang bày bán) · Tán gẫu (luôn) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
+##   Xem quầy (họ đang bày bán) · Tán gẫu (luôn) · Oẳn tù xì (online) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
 ##   Sổ đen (chưa chặn) · Đóng.
 ## Bấm ra ngoài menu = đóng (không làm nhân vật chạy tới chỗ bấm).
 
@@ -84,6 +84,7 @@ func _items() -> Array:
 	var items := []
 	items.append(["Xem thông tin", _view_info])
 	items.append(["Tán gẫu", _chat])
+	items.append(["Oẳn tù xì", _rps])
 	items.append(["Tổ đội", _team])
 	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false):
 		items.append(["Giao dịch", _trade])
@@ -133,6 +134,13 @@ func _chat() -> void:
 	var box: ChatBox = sync.chat_box() if sync else null
 	if box:
 		box.open_whisper(_target.display_name)
+
+## Oẳn tù xì (Búa - Kéo - Bao): chỉ chơi online — server gửi hộp hỏi cho người kia (RpsServer).
+func _rps() -> void:
+	if not NetClient.is_in_world():
+		_notify("Oẳn tù xì chỉ chơi được khi online với người chơi khác.")
+		return
+	NetClient.send_rps({"op": "invite", "eid": _target.eid})
 
 func _trade() -> void:
 	var p := _profile()

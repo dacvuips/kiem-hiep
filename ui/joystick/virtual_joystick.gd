@@ -31,6 +31,11 @@ var _press_position: Vector2
 var _pressed_actions: Dictionary = {}  ## action (StringName) -> true, các action joystick đang giữ
 
 func _ready() -> void:
+	## Bản web chơi bằng chuột + bàn phím: không có joystick ảo (bấm chuột trên map để đi).
+	if WebHudBar.enabled():
+		visible = false
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_process(false)
 	_rest_base_position = _base.position
 	_center_knob()
 	## Ẩn bằng visible của node Base: vị trí/kích thước của nó vẫn được dùng để tính hướng kéo.
@@ -101,6 +106,9 @@ func _on_release(pointer: int, local_position: Vector2) -> void:
 
 ## Ẩn joystick (VD lúc mở bảng skill) phải nhả phím, không thì nhân vật cứ đi mãi theo hướng cũ.
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and visible and WebHudBar.enabled():
+		hide.call_deferred()   ## Main bật lại joystick khi đổi map / đóng bảng skill — bản web luôn ẩn
+		return
 	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree() and _pointer != -1:
 		_stop()
 

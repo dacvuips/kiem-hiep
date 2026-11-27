@@ -83,7 +83,7 @@ func on_field(c, b: StreamPeerBuffer) -> void:
 		OP_GUILD:
 			_guild_enter(c, str(args.get("guild", "")).strip_edges(), int(args.get("map_id", 987)))
 		OP_BOSS:
-			_boss_enter(c, int(args.get("boss_id", 0)), int(args.get("map_id", 0)), str(args.get("boss_name", "Boss Hoàng Kim")))
+			_boss_enter(c, int(args.get("boss_id", 0)), int(args.get("map_id", 0)), str(args.get("boss_name", "Boss Hoàng Kim")), args.get("spawn_coord", null))
 
 ## Map được phép: tab Thường = mọi map trong danh mục luyện công; Địa Ngục = map của nhóm đó (MapCatalog.HELL_MAPS). {} = không hợp lệ.
 static func map_entry(map_id: int, tier: int) -> Dictionary:
@@ -195,8 +195,12 @@ func _guild_enter(c, guild_name: String, map_id: int) -> void:
 	print("Mở Tổng Đà Bang Hội #%s: %s — %s khởi tạo" % [id, guild_name, r.host_name])
 	_enter(c, r)
 
+const BOSS_SPAWN_COORDS := {
+	566: [209, 203], ## Cổ Bách — Lão Hổ Động (209/203)
+}
+
 ## Vào hoặc mở phòng Săn Boss Hoàng Kim chung (tất cả người chơi săn cùng 1 Boss vào chung 1 phòng).
-func _boss_enter(c, boss_id: int, map_id: int, boss_name: String) -> void:
+func _boss_enter(c, boss_id: int, map_id: int, boss_name: String, spawn_coord: Variant = null) -> void:
 	if boss_id <= 0 or map_id <= 0:
 		_reject(c, "Thông tin Boss không hợp lệ.")
 		return
@@ -220,12 +224,16 @@ func _boss_enter(c, boss_id: int, map_id: int, boss_name: String) -> void:
 	var slot: int = _free_slots.pop_back() if not _free_slots.is_empty() else _next_slot
 	if slot == _next_slot:
 		_next_slot += 1
-	var spawn_center: Vector2 = grid.default_center()
-	var default_spawn: Vector2 = grid.open_spawn_near(spawn_center + Vector2(0, 320.0))
-	if default_spawn == Vector2.ZERO:
-		default_spawn = grid.open_spawn_near(spawn_center + Vector2(-1600.0, -1000.0))
+	var map_center: Vector2 = grid.default_center()
+	var boss_spawn_center: Vector2 = map_center
+	var sc: Variant = spawn_coord if spawn_coord != null else BOSS_SPAWN_COORDS.get(boss_id, null)
+	if sc is Array and (sc as Array).size() >= 2:
+		boss_spawn_center = (Vector2(float(sc[0]), float(sc[1])) + Vector2(0.5, 0.5)) * 256.0
+	var default_spawn: Vector2 = grid.open_spawn_near(map_center + Vector2(0, 320.0))
+	if default_spawn == Vector2.ZERO or default_spawn.distance_to(boss_spawn_center) < 500.0:
+		default_spawn = grid.open_spawn_near(map_center + Vector2(-1600.0, -1000.0))
 		if default_spawn == Vector2.ZERO:
-			default_spawn = grid.open_spawn_near(spawn_center)
+			default_spawn = grid.open_spawn_near(map_center)
 	var r := {"id": id, "rid": int(id), "map_id": map_id, "name": "Săn Boss: %s" % boss_name, "tier": 0,
 		"stars": 0, "level": 95, "dir": str(m["dir"]), "grid": grid, "slot": slot, "base": Vector2i(0, slot * ROOM_CELLS),
 		"spawn": default_spawn, "host": c.character_id, "host_name": c.entity.name,
@@ -234,7 +242,7 @@ func _boss_enter(c, boss_id: int, map_id: int, boss_name: String) -> void:
 	rooms[id] = r
 	_rooms_by_rid[r.rid] = r
 	_spawn_monsters(r)
-	_spawn_boss_monster(r, boss_id, spawn_center)
+	_spawn_boss_monster(r, boss_id, boss_spawn_center)
 	print("Mở phòng Săn Boss #%s: %s (Boss ID %d, Map %d) — %s khởi tạo" % [id, boss_name, boss_id, map_id, r.host_name])
 	_enter(c, r)
 

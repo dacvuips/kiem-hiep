@@ -6,8 +6,10 @@ class_name NetProto
 ## 1 = không tin cậy (vị trí server gửi xuống, gói sau ghi đè gói trước).
 ## WebSocket luôn tin cậy — vẫn chạy đúng, chỉ tốn hơn chút.
 
-const VERSION := 6                ## 4: C_MOVE kèm dấu giờ, S_STATE kèm tuổi mẫu; 5: ngoại hình kèm skill + cấp hào quang (buff đồng đội);
+const VERSION := 7                ## 4: C_MOVE kèm dấu giờ, S_STATE kèm tuổi mẫu; 5: ngoại hình kèm skill + cấp hào quang (buff đồng đội);
                                   ## 6: cờ trạng thái u16 trong S_SPAWN / S_STATE (thêm FLAG_HIDE)
+                                  ## 7: C_DAMAGE_BATCH flags thêm bit1 = rút độc (server không chặn trần max_hit), số đòn từ bit2;
+                                  ##    C_MSTATE_BATCH (bùa áp lên quái gom theo nhịp)
 const TICK_RATE := 18             ## mô phỏng server (khớp GAME_FPS VLTK gốc)
 const SNAPSHOT_EVERY := 1         ## gửi vị trí MỖI tick = 18 lần/giây (9 lần/giây cách 111ms -> bộ đệm nội suy hay rỗng, khựng)
 const SNAPSHOT_MS := 1000.0 * SNAPSHOT_EVERY / TICK_RATE   ## khoảng cách 2 lượt gửi vị trí (~55.6ms)
@@ -58,9 +60,14 @@ const C_ARENA := 26       ## u8 op (ArenaServer.OP_*) + str json — đấu trư
 const C_FIELD := 27       ## u8 op (FieldServer.OP_*) + str json — phòng train chung Vượt Ải (tạo phòng {map_id, tier, stars} / vào {room, map_id})
 const C_SHOP_BUY := 28    ## str misc_id, u8 count — mua ở Hiệu thuốc (PotionShop): server trừ tiền + thêm thuốc rồi gửi S_PROFILE
 const C_CRAFT := 29       ## str json {op, uids, alt} — Chế tạo (Compound.run trên hồ sơ của server) -> S_NOTICE + S_PROFILE
+const C_EVENT := 39       ## str json {op: "craft" {ev, recipe, items: {uid: n}, times} | "open" {uid} | GM: "gm_time" {ev, start, end} | "gm_reset" {ev}} — Sự kiện năm (SeasonalEvents trên hồ sơ server) -> S_NOTICE + S_PROFILE
+const C_ITEM_OP := 40     ## str json {op: "split", uid, n} — thao tác hành trang trên hồ sơ server (tách chồng) -> S_PROFILE (lỗi: S_NOTICE)
 const C_PUBG := 31       ## u8 op (PubgServer.OP_*) + str json — Chiến Trường Sinh Tồn: đội chờ (từ Hub) + trong trận
 const C_LONXON := 32     ## u8 op (LonXonServer.OP_*) + str json — Lộn Xộn: xem host / vào host (từ Hub) + trong trận
 const C_MSTATE := 34      ## u32 monster_eid, u32 state_id, u16 thời gian (1/10 giây) — bùa mình vừa áp lên quái (chỉ để người khác VẼ)
+## Bùa áp lên quái GỘP: u8 n, n x (u32 monster_eid, u32 state_id, u16 thời gian 1/10 giây) — như C_MSTATE nhưng gom ~0.1 giây.
+## Bùa áp cả vùng (VD Xuyên Tâm Độc Thích) trúng vài chục quái 1 lúc: gửi từng gói C_MSTATE thì vượt trần gói/giây -> bị đá.
+const C_MSTATE_BATCH := 38
 const C_REPAIR := 36      ## str item_uid ("" = sửa hết), u8 mode (REPAIR_*) — Thợ rèn sửa trang bị trên hồ sơ server -> S_NOTICE + S_PROFILE
 const REPAIR_NORMAL := 0  ## KPlayer::RepairItem (lượng bạc theo độ bền đã mất)
 const REPAIR_BROKEN_GOLD := 1  ## thoren.lua: sửa đồ đã hỏng hẳn bằng 50 vạn lượng
@@ -68,12 +75,15 @@ const REPAIR_BROKEN_XU := 2    ## thoren.lua: sửa đồ đã hỏng hẳn bằ
 const C_HP := 35         ## u8 phần trăm máu 0..100 — máy người chơi báo máu của mình (khi đổi) để đồng đội / người xung quanh thấy
 const C_UY_THAC := 33    ## str json {op: "buy" {mid, n} | "use" {uid}} — Ủy thác (Bạch Câu Hoàn, UyThac trên hồ sơ server) -> S_NOTICE + S_PROFILE
 const C_DA_TAU := 30      ## str json {op, ...} — Dã Tẩu (claim_option / claim_milestone trên hồ sơ server) -> S_NOTICE + S_PROFILE
-## Sát thương lên quái GỘP: u8 n, n x (u32 monster_eid, u32 tổng sát thương, u8 flags: bit0 = làm khựng, bit1..7 = số đòn gộp).
+## Sát thương lên quái GỘP: u8 n, n x (u32 monster_eid, u32 tổng sát thương, u8 flags: bit0 = làm khựng, bit1 = rút độc,
+## bit2..7 = số đòn gộp).
 ## Máy người chơi gom mọi đòn trong ~0.1 giây thành 1 gói (skill đánh nhiều nhịp như Tạo Hóa Thái Thanh trúng cả bầy quái
 ## ra hàng chục đòn/giây — gửi từng gói C_DAMAGE thì vượt giới hạn gói/giây của server, bị bỏ đòn hoặc bị đá).
 const C_DAMAGE_BATCH := 37
-const DAMAGE_HITS_SHIFT := 1
-const DAMAGE_MAX_HITS := 127
+const DAMAGE_POISON := 2          ## bit1: nhịp rút độc — chồng độc không trần (StatusEffectController.merge_poison) nên server không chặn max_hit
+const DAMAGE_HITS_SHIFT := 2
+const DAMAGE_MAX_HITS := 63
+const C_RPS := 41        ## str json {op: "invite" {eid} | "answer" {eid, accept} | "pick" {choice 0 Búa/1 Kéo/2 Bao} | "next" | "leave"} — Oẳn tù xì (RpsServer)
 const C_STALL := 13       ## u8 op (SocialServer.STALL_* / TRADE_OPEN / TRADE_CLOSE), rồi: OPEN str title | BROWSE u32 seller | BUY u32 seller, str uid
 
 # server -> game
@@ -135,6 +145,8 @@ const S_GUILD_INVITE := 29 ## str guild_name, str from_name
 const S_CHAT := 26        ## u8 channel, u32 from_eid, str from_name, str to_name (nhắn riêng), str text
 const S_TEAM_INVITE := 25 ## u32 captain_eid, str captain_name — được mời vào đội
 const S_TEAM_APPLY := 48  ## u32 applicant_eid, str applicant_name, u16 applicant_level — có người xin vào đội
+const S_EVENT_TIMES := 49 ## str json {event_id: {start, end}} — lịch sự kiện năm GM đặt (gửi lúc vào + khi đổi); máy chơi chỉ nhận
+const S_RPS := 50         ## str json {op: "invite" {from, name} | "state" {...RpsServer.state_for} | "end" {msg}} — Oẳn tù xì
 const S_STALL_ITEMS := 23 ## u32 seller_eid, str title ("" = quầy đóng), u16 n, n x str json đồ (có giá)
 const MAX_PROFILE_BYTES := 512 * 1024
 

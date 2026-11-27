@@ -78,14 +78,14 @@ func _ready() -> void:
 		var chat_panel := ChatPanel.open(self)
 		if not chat_panel.is_node_ready():
 			chat_panel._ready()
-		print("Chat Tab World: ", chat_panel._tabs[ChatServer.WORLD].text)
-		print("Chat Tab Guild: ", chat_panel._tabs[ChatServer.GUILD].text)
-		print("Chat Tab Private: ", chat_panel._tabs[ChatServer.PRIVATE].text)
+		print("Chat Tab World: ", chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.WORLD)))
+		print("Chat Tab Guild: ", chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.GUILD)))
+		print("Chat Tab Private: ", chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.PRIVATE)))
 		print("Chat Input Placeholder: ", chat_panel._input.placeholder_text)
 		if target_lang == "zh":
-			assert(chat_panel._tabs[ChatServer.WORLD].text == "世界", "Expected '世界', got %s" % chat_panel._tabs[ChatServer.WORLD].text)
-			assert(chat_panel._tabs[ChatServer.GUILD].text == "帮会", "Expected '帮会', got %s" % chat_panel._tabs[ChatServer.GUILD].text)
-			assert(chat_panel._tabs[ChatServer.PRIVATE].text == "私聊", "Expected '私聊', got %s" % chat_panel._tabs[ChatServer.PRIVATE].text)
+			assert(chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.WORLD)) == "世界", "Expected '世界', got %s" % chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.WORLD)))
+			assert(chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.GUILD)) == "帮会", "Expected '帮会', got %s" % chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.GUILD)))
+			assert(chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.PRIVATE)) == "私聊", "Expected '私聊', got %s" % chat_panel._channel_pick.get_item_text(chat_panel._channel_pick.get_item_index(ChatServer.PRIVATE)))
 		chat_panel.close()
 
 		# 3. Ranking Window

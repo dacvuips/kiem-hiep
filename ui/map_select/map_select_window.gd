@@ -1955,7 +1955,7 @@ func _play(m: Dictionary) -> void:
 const BOSS_LIST := [
 	# --- Thập Đại Boss Hoàng Kim Môn Phái ---
 	{"name": "Huyền Giác Đại Sư", "id": 740, "res": "boss003", "series": "Kim", "series_idx": 0, "sect": "Thiếu Lâm", "level": 95, "map_id": 320, "map_name": "Chân Núi Trường Bạch", "type": "gold"},
-	{"name": "Cổ Bách", "id": 566, "res": "boss018", "series": "Kim", "series_idx": 0, "sect": "Thiên Vương", "level": 95, "map_id": 123, "map_name": "Lão Hổ Động", "type": "gold"},
+	{"name": "Cổ Bách", "id": 566, "res": "boss018", "series": "Kim", "series_idx": 0, "sect": "Thiên Vương", "level": 95, "map_id": 123, "map_name": "Lão Hổ Động", "type": "gold", "spawn_coord": [209, 203]},
 	{"name": "Đường Bất Nhiễm", "id": 741, "res": "boss019", "series": "Mộc", "series_idx": 1, "sect": "Đường Môn", "level": 95, "map_id": 319, "map_name": "Lâm Du Quan", "type": "gold"},
 	{"name": "Bạch Doanh Doanh", "id": 742, "res": "boss007", "series": "Mộc", "series_idx": 1, "sect": "Đường Môn", "level": 95, "map_id": 224, "map_name": "Sa Mạc Địa Biểu", "type": "gold"},
 	{"name": "Lam Y Y", "id": 582, "res": "boss008", "series": "Mộc", "series_idx": 1, "sect": "Ngũ Độc", "level": 95, "map_id": 75, "map_name": "Xi Vưu Động", "type": "gold"},
@@ -2121,6 +2121,8 @@ func _boss_card(boss: Dictionary) -> Control:
 				"type": str(boss.get("type", "gold")),
 				"is_gold": true,
 			}
+			if boss.has("spawn_coord"):
+				entry["boss"]["spawn_coord"] = boss["spawn_coord"]
 			_enter_boss_field(entry, boss)
 		)
 	else:
@@ -2190,6 +2192,8 @@ func _enter_boss_field(m: Dictionary, boss: Dictionary) -> void:
 			"boss_name": str(boss.get("name", "Boss Hoàng Kim"))
 		}
 	}
+	if boss.has("spawn_coord"):
+		e["field"]["action"]["spawn_coord"] = boss["spawn_coord"]
 	_play(e)
 
 static func boss_spawn_schedule(boss: Dictionary) -> Dictionary:

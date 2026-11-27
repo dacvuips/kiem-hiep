@@ -74,6 +74,8 @@ func _send_action() -> void:
 		"room": str(action.get("room", "")), "guild": str(action.get("guild", "")),
 		"boss_id": int(action.get("boss_id", 0)), "boss_name": str(action.get("boss_name", "")),
 		"password": str(action.get("password", ""))}
+	if action.has("spawn_coord"):
+		args["spawn_coord"] = action["spawn_coord"]
 	var op_type: int = FieldServer.OP_CREATE
 	if str(action.get("op", "")) == "join":
 		op_type = FieldServer.OP_JOIN

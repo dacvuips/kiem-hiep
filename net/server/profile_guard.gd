@@ -46,6 +46,8 @@ static func merge(server_data: Dictionary, client_data: Dictionary, pending_gold
 	merged["uy_thac_seen"] = int(server_data.get("uy_thac_seen", 0))
 	merged["uy_thac_report"] = (server_data["uy_thac_report"] as Dictionary).duplicate() if server_data.get("uy_thac_report") is Dictionary else {}
 	merged["uy_thac_bank"] = (server_data["uy_thac_bank"] as Dictionary).duplicate() if server_data.get("uy_thac_bank") is Dictionary else {}
+	## Sự kiện năm: bộ đếm số lần dùng / ép (giới hạn + thưởng mốc) chỉ server ghi (gói C_EVENT).
+	merged["event_counters"] = (server_data["event_counters"] as Dictionary).duplicate() if server_data.get("event_counters") is Dictionary else {}
 	if trust:
 		for k in ["name", "server_seen", "starter_kit", "guild", "guild_join_after", "security_hash", "security_locked", "friends", "pk_value", "songjin_points", "pk_points"]:
 			if server_data.has(k):

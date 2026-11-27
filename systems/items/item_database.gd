@@ -402,6 +402,14 @@ static func get_misc(misc_id: String) -> Dictionary:
 		]
 		for c_it in custom_ky_items:
 			_misc[str(c_it["id"])] = c_it
+		## Hộp sự kiện năm (quái rơi trong đợt — data/events/seasonal_events.json "boxes")
+		for b_it in SeasonalEvents.box_records():
+			_misc[str(b_it["id"])] = b_it
+		## Nguyên liệu sự kiện năm: cho chồng (nhiều món gốc stack 0 = không chồng)
+		var ev_stack := SeasonalEvents.event_stack()
+		for s_id in SeasonalEvents.stack_items():
+			if _misc.has(s_id):
+				_misc[s_id]["stack"] = maxi(int(_misc[s_id].get("stack", 0)), ev_stack)
 		## Đại Thành Bí Kíp của màn Lộn Xộn (LonXonRules.BOOK_IDS) — mỗi cuốn +1 cấp 1 kỹ năng đúng tầng, chỉ dùng trong Lộn Xộn.
 		for tier in LonXonRules.BOOK_IDS:
 			var bid: String = LonXonRules.BOOK_IDS[tier]

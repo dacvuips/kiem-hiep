@@ -6,7 +6,7 @@ const AuraDatabase = preload("res://systems/auras/aura_database.gd")
 ## TRUNG TÂM ĐIỀU HÀNH GAME MASTER (GM CONTROL CENTER)
 ## Giao diện trực quan tích hợp toàn diện các công cụ hỗ trợ GM quản lý thế giới, người chơi, boss, cấp phát vật phẩm.
 
-enum Tab { SELF, PLAYER, DISPENSER, ITEM_CREATOR, BOSS, POSSESS, AUDIT, AURA }
+enum Tab { SELF, PLAYER, DISPENSER, ITEM_CREATOR, BOSS, POSSESS, AUDIT, AURA, EVENTS }
 const TAB_NAMES := [
 	"1. Bản Thân",
 	"2. Người Chơi",
@@ -15,7 +15,8 @@ const TAB_NAMES := [
 	"5. Boss & Rớt Đồ",
 	"6. Chiếm Quyền",
 	"7. Nhật Ký GM",
-	"8. Hào Quang Aura"
+	"8. Hào Quang Aura",
+	"9. Sự Kiện Năm"
 ]
 
 var _current_tab: int = Tab.SELF
@@ -95,6 +96,9 @@ func _init() -> void:
 	bot_bar.add_child(close_btn)
 	body.add_child(bot_bar)
 
+	NetClient.event_times_changed.connect(func() -> void:
+		if _current_tab == Tab.EVENTS and is_inside_tree():
+			_render_tab())
 	if GmManager != null:
 		if GmManager.has_signal("gm_state_changed"):
 			GmManager.connect("gm_state_changed", _refresh_footer)
@@ -180,6 +184,8 @@ func _render_tab() -> void:
 			_build_audit_tab()
 		Tab.AURA:
 			_build_aura_tab()
+		Tab.EVENTS:
+			_build_events_tab()
 
 # ==============================================================================
 # TAB 1: QUẢN TRỊ NGƯỜI CHƠI
@@ -1242,6 +1248,14 @@ func _build_item_creator_tab() -> void:
 		{"name": "Vũ Hồn Khai Sơn 2", "id": "vu_hon", "gid": 685},
 		{"name": "Tiêu Dao Huyền Âm 1", "id": "tieu_dao", "gid": 686},
 		{"name": "Tiêu Dao Huyền Âm 2", "id": "tieu_dao", "gid": 687},
+		{"name": "Hoa Sơn Lăng Vân 1", "id": "hoa_son", "gid": 688},
+		{"name": "Hoa Sơn Lăng Vân 2", "id": "hoa_son", "gid": 689},
+		{"name": "Hoa Sơn Tử Tiêu 1", "id": "hoa_son", "gid": 690},
+		{"name": "Hoa Sơn Tử Tiêu 2", "id": "hoa_son", "gid": 691},
+		{"name": "Dương Môn Truy Phong 1", "id": "duong_gia", "gid": 692},
+		{"name": "Dương Môn Truy Phong 2", "id": "duong_gia", "gid": 693},
+		{"name": "Dương Môn Hạo Thiên 1", "id": "duong_gia", "gid": 694},
+		{"name": "Dương Môn Hạo Thiên 2", "id": "duong_gia", "gid": 695},
 	]
 	for s_info in sects_data:
 		var sb := SocialUi.small_button("Set " + str(s_info["name"]))
@@ -1866,3 +1880,123 @@ func _build_aura_card(item: Dictionary, is_active: bool) -> Control:
 
 	card.add_child(vb)
 	return card
+
+# ==============================================================================
+# TAB 9: LỊCH SỰ KIỆN NĂM — GM đặt ngày bắt đầu / kết thúc để thử theo giờ thật; "Mặc định" về lịch gốc.
+# Online: gửi server (C_EVENT gm_time / gm_reset) -> lưu ở server tài khoản, mọi tiến trình + mọi người chơi nhận (S_EVENT_TIMES).
+# Offline: lưu trên máy (user://seasonal_event_override.json). Hộp sự kiện chỉ rơi khi chơi online.
+# ==============================================================================
+
+func _build_events_tab() -> void:
+	var online := NetClient.is_in_world()
+	var head := SocialUi.info_box("📅 Lịch Sự Kiện Năm")
+	var note := SocialUi.label(("ONLINE — lưu trên máy chủ, áp cho mọi người chơi và mọi máy chủ (≈5 giây)." if online
+		else "OFFLINE — chỉ áp trên máy này.") + "  Ngày nhập dạng dd/mm/yyyy (giờ Việt Nam); kết thúc tính hết ngày đó.",
+		SocialUi.MUTED, 12)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	head[1].add_child(note)
+	_content_area.add_child(head[0])
+	var now := SeasonalEvents.now_unix()
+	for row in SeasonalEvents.sorted_events(now):
+		_content_area.add_child(_event_gm_row(row["event"], row["period"], now, online))
+
+func _event_gm_row(ev: Dictionary, per: Dictionary, now: int, online: bool) -> Control:
+	var box := SocialUi.info_box()
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 8)
+	box[1].add_child(line)
+	var cover := SeasonalEventUi.cover_item(ev)
+	if cover != "":
+		line.add_child(SeasonalEventUi.icon_cell(cover, 0, 36))
+	var info := VBoxContainer.new()
+	info.custom_minimum_size.x = 260
+	var gm: bool = per.get("gm", false)
+	var st := SeasonalEventUi.status_of(per, now)
+	info.add_child(SocialUi.label(str(ev.get("name", "")) + ("   [GM đặt lịch]" if gm else ""), Color(1.0, 0.8, 0.35) if gm else SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label("%s – %s   %s" % [SeasonalEvents.format_date(per["start"]), SeasonalEvents.format_date(per["end"]),
+		str(st.get("text", ""))], st.get("color", SocialUi.MUTED), 11))
+	line.add_child(info)
+	var start_in := SocialUi.line_edit("bắt đầu dd/mm/yyyy")
+	start_in.custom_minimum_size.x = 120
+	start_in.text = SeasonalEvents.format_date(per["start"])
+	var end_in := SocialUi.line_edit("kết thúc dd/mm/yyyy")
+	end_in.custom_minimum_size.x = 120
+	end_in.text = SeasonalEvents.format_date(per["end"])
+	line.add_child(start_in)
+	line.add_child(SocialUi.label("→", SocialUi.MUTED, 13))
+	line.add_child(end_in)
+	var ev_id := str(ev["id"])
+	var b_save := SocialUi.small_button("Lưu")
+	b_save.pressed.connect(func() -> void:
+		var a := _parse_vn_date(start_in.text)
+		var b := _parse_vn_date(end_in.text)
+		if a < 0 or b < 0:
+			_show_toast("Ngày không hợp lệ (dd/mm/yyyy).")
+			return
+		_gm_set_event(ev_id, a, b + SeasonalEvents.DAY - 1, online))
+	line.add_child(b_save)
+	var b_now := SocialUi.small_button("Kích hoạt ngay (7 ngày)")
+	b_now.tooltip_text = "Bắt đầu từ 0:00 hôm nay, kết thúc hết ngày thứ 7 — để thử theo giờ thật."
+	b_now.pressed.connect(func() -> void:
+		var d := SeasonalEvents.vn_date(SeasonalEvents.now_unix())
+		var today := SeasonalEvents.vn_midnight(int(d["year"]), int(d["month"]), int(d["day"]))
+		_gm_set_event(ev_id, today, today + 7 * SeasonalEvents.DAY - 1, online))
+	line.add_child(b_now)
+	var b_def := SocialUi.small_button("Mặc định")
+	b_def.disabled = not gm and SeasonalEvents.get_override(ev_id).is_empty()
+	b_def.tooltip_text = "Xoá lịch GM, về lịch gốc của sự kiện."
+	b_def.pressed.connect(func() -> void:
+		if online:
+			NetClient.send_event("gm_reset", {"ev": ev_id})
+			_await_event_server()
+		else:
+			SeasonalEvents.clear_override(ev_id)
+			_show_toast("%s: về lịch mặc định." % ev.get("name", ""))
+			_render_tab())
+	line.add_child(b_def)
+	return box[0]
+
+func _gm_set_event(ev_id: String, start: int, end: int, online: bool) -> void:
+	if online:
+		NetClient.send_event("gm_time", {"ev": ev_id, "start": start, "end": end})   ## server trả S_NOTICE + S_EVENT_TIMES
+		_await_event_server()
+		return
+	var err := SeasonalEvents.set_override(ev_id, start, end)
+	_show_toast(err if err != "" else "Đã đặt lịch %s – %s." % [SeasonalEvents.format_date(start), SeasonalEvents.format_date(end)])
+	_render_tab()
+
+## Online: chờ server trả lời lệnh lịch GM. Có câu báo (S_NOTICE) -> hiện lên; 5 giây không có gì -> server đang chạy bản cũ
+## (chưa có lệnh gm_time / gm_reset — bỏ qua im lặng) hoặc mất kết nối.
+var _event_wait := 0
+
+func _await_event_server() -> void:
+	_event_wait += 1
+	var ticket := _event_wait
+	_show_toast("Đã gửi lên máy chủ, chờ xác nhận…")
+	var answered := [false]
+	var on_notice := func(text: String) -> void:
+		if ticket == _event_wait and not answered[0]:
+			answered[0] = true
+			_show_toast(text)
+	NetClient.server_notice.connect(on_notice)
+	await get_tree().create_timer(5.0).timeout
+	if NetClient.server_notice.is_connected(on_notice):
+		NetClient.server_notice.disconnect(on_notice)
+	if ticket == _event_wait and not answered[0] and is_inside_tree():
+		_show_toast("Máy chủ không phản hồi — máy chủ đang chạy bản cũ chưa có lịch sự kiện GM (build lại: bash server/dev.sh up) hoặc mất kết nối.")
+
+## "dd/mm/yyyy" -> 0:00 giờ VN (unix), -1 nếu sai.
+static func _parse_vn_date(text: String) -> int:
+	var p := text.strip_edges().replace("-", "/").replace(".", "/").split("/")
+	if p.size() != 3 or not (p[0].is_valid_int() and p[1].is_valid_int() and p[2].is_valid_int()):
+		return -1
+	var d := int(p[0])
+	var m := int(p[1])
+	var y := int(p[2])
+	if y < 2000 or y > 2100 or m < 1 or m > 12 or d < 1:
+		return -1
+	var leap := (y % 4 == 0 and y % 100 != 0) or y % 400 == 0
+	var dim: int = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
+	if d > dim:
+		return -1
+	return SeasonalEvents.vn_midnight(y, m, d)

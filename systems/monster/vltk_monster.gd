@@ -1456,7 +1456,7 @@ func take_damage(amount: float, attacker_node: Node = null) -> void:
 			return
 		_apply_damage(amount, true)
 
-func take_status_damage(amount: float, _effect_id: String, source_node: Node = null) -> void:
+func take_status_damage(amount: float, effect_id: String, source_node: Node = null) -> void:
 	if source_node != null and is_instance_valid(source_node):
 		if "battle_side" in source_node and str(source_node.get("battle_side")) != "":
 			last_attacker_side = str(source_node.get("battle_side"))
@@ -1467,7 +1467,7 @@ func take_status_damage(amount: float, _effect_id: String, source_node: Node = n
 				last_attacker_side = TongKimLolState.current.team_side
 	if _state != State.DEAD:
 		if net_eid != 0:
-			_net_damage(amount, false)
+			_net_damage(amount, false, effect_id == "poison")
 			return
 		_apply_damage(amount, false)
 
@@ -1653,7 +1653,7 @@ func net_attack(slot: int, target_node: Node2D, dir64: int, real: bool) -> void:
 	_net_real_attack = real
 	_begin_attack(slot)
 
-func _net_damage(amount: float, staggers: bool) -> void:
+func _net_damage(amount: float, staggers: bool, poison := false) -> void:
 	_accumulate_damage(amount)
 	_last_predicted_dmg_ms = Time.get_ticks_msec()
 	## Trừ trước trên thanh máu theo cơ chế Client Prediction (VLTK gốc): không có delay
@@ -1666,7 +1666,7 @@ func _net_damage(amount: float, staggers: bool) -> void:
 		_enter(State.HURT, "hurt")
 	elif staggers and _state != State.DEAD:
 		_enter(State.HURT, "hurt")
-	NetClient.send_damage(net_eid, amount, staggers)
+	NetClient.send_damage(net_eid, amount, staggers, poison)
 
 var _net_last_vel: Vector2 = Vector2.ZERO
 

@@ -1758,6 +1758,9 @@ func _show_events_view() -> void:
 		_events_view.set_docked(true, true)
 		_events_view.close_requested.connect(func() -> void: _set_view("character"))
 		_events_view.event_action_requested.connect(_on_event_action)
+		_events_view.profile_changed.connect(func() -> void:
+			_refresh_inventory_view()
+			refresh())
 		%LeftPanel.add_child(_events_view)
 	_events_view.set_docked(true, true)
 	_events_view.visible = true
@@ -1928,6 +1931,15 @@ func _on_room_item_pressed(item: ItemInstance) -> void:
 	if item.can_sell():
 		var label := "Bán (%s Lượng)" % InventoryPopup.format_money(item.get_sale_price())
 		actions.append([label, func() -> void: _sell_item_from_inv(index)])
+	var split := InventoryPopup.split_action(self, _profile, item, func(msg: String, is_error: bool) -> void:
+		_show_toast(msg, is_error)
+		if not is_error:
+			if not NetClient.is_in_world():
+				SaveManager.save_profile(_profile)
+			refresh()
+			_refresh_inventory_view())
+	if not split.is_empty():
+		actions.append(split)
 	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
 		actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])   ## đồ Hoàng Kim: chỉ vứt trong trận PUBG
 	if _current_view == "crafting" and _crafting_view and is_instance_valid(_crafting_view):

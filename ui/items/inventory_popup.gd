@@ -275,6 +275,27 @@ func _refresh() -> void:
 		(%JadeValue as Label).text = format_money(_profile.jade)
 
 ## Kiểu VLTK: 9985010 -> "998 vạn 5010".
+## Nút "Tách" cho chồng vật phẩm từ 2 cái trở lên -> [] nếu không tách được. Bấm: hỏi số lượng (1..count-1) rồi tách thành chồng mới.
+## Online: server tách (C_ITEM_OP) rồi gửi bản chuẩn; `on_done(message, is_error)` gọi khi xong (online: lúc nhận S_PROFILE).
+static func split_action(host: Node, profile: PlayerProfile, item: ItemInstance, on_done: Callable) -> Array:
+	if item == null or not item.is_misc() or item.count < 2 or item.trade_price > 0:
+		return []
+	return ["Tách", func() -> void:
+		var most := item.count - 1
+		SocialWindow.prompt(host, "Tách %s" % item.get_display_name(), "Số lượng tách ra (1 - %d)" % most, func(text: String) -> void:
+			var n := int(text) if text.is_valid_int() else 0
+			if n < 1 or n > most:
+				on_done.call("Số lượng tách phải từ 1 đến %d." % most, true)
+				return
+			if NetClient.is_in_world():
+				NetClient.profile_received.connect(func(_d: Dictionary) -> void:
+					on_done.call_deferred("Đã tách %d %s." % [n, item.get_display_name()], false), CONNECT_ONE_SHOT)
+				NetClient.send_item_op("split", {"uid": item.uid, "n": n})
+				return
+			var err := profile.split_stack(item.uid, n)
+			on_done.call(err if err != "" else "Đã tách %d %s." % [n, item.get_display_name()], err != ""),
+			str(maxi(1, item.count / 2)), false, most)]
+
 static func format_money(value: int) -> String:
 	@warning_ignore("integer_division")
 	var van := value / 10000
@@ -351,11 +372,18 @@ func _on_item_pressed(item: ItemInstance) -> void:
 		var label := "Bán (%s Lượng)" % format_money(item.get_sale_price())
 		actions.append([label, _sell.bind(index)])
 
+	var split := split_action(self, _profile, item, func(msg: String, is_error: bool) -> void:
+		_show_message(msg, is_error)
+		if not is_error:
+			_commit())
+	if not split.is_empty():
+		actions.append(split)
 	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
 		actions.append(["Vứt bỏ", _drop.bind(index)])   ## đồ Hoàng Kim: chỉ có nút Vứt bỏ trong trận PUBG
 
-	if PotionEffect.usable(item) or ItemConsumer.is_town_portal(item):
-		for i in _profile.quick_items.size():
+	if QuickItemBar.is_quick_item(item):
+		## Bản thường có 4 ô thuốc nhanh; bản web có 9 ô vật phẩm trên thanh dưới gốc.
+		for i in mini(_profile.quick_items.size(), PlayerProfile.QUICK_ITEM_COUNT if WebHudBar.enabled() else 4):
 			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if _partner_action.is_valid():
 		var extra: Array = _partner_action.call(item)

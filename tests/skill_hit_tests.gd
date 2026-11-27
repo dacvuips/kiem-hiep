@@ -109,22 +109,22 @@ func test_server_damage_budget() -> void:
 	var gs: GameServer = load("res://net/server/game_server.gd").new()
 	var c := GameServer.Conn.new()
 	gs._now = 10.0
-	## 1 gói gộp 3 quái x 100 đòn (quái không tồn tại -> chỉ kiểm ngân sách đòn).
+	## 1 gói gộp 3 quái x 60 đòn (quái không tồn tại -> chỉ kiểm ngân sách đòn).
 	var b := StreamPeerBuffer.new()
 	b.put_u8(3)
 	for eid in [9001, 9002, 9003]:
 		b.put_u32(eid)
 		b.put_u32(5000)
-		b.put_u8(1 | (100 << NetProto.DAMAGE_HITS_SHIFT))
+		b.put_u8(1 | (60 << NetProto.DAMAGE_HITS_SHIFT))
 	b.seek(0)
 	gs._on_damage_batch(c, b)
-	check("Ngân sách đếm theo số đòn gộp (300)", c.damage_msgs == 300)
+	check("Ngân sách đếm theo số đòn gộp (180)", c.damage_msgs == 180)
 	var b2 := StreamPeerBuffer.new()
-	b2.put_u8(2)
-	for eid in [9004, 9005]:
+	b2.put_u8(5)
+	for eid in [9004, 9005, 9007, 9008, 9009]:
 		b2.put_u32(eid)
 		b2.put_u32(5000)
-		b2.put_u8(100 << NetProto.DAMAGE_HITS_SHIFT)
+		b2.put_u8(60 << NetProto.DAMAGE_HITS_SHIFT)
 	b2.seek(0)
 	gs._on_damage_batch(c, b2)
 	check("Vượt ngân sách %d đòn/giây thì dừng" % GameServer.MAX_DAMAGE_PER_SEC, c.damage_msgs == GameServer.MAX_DAMAGE_PER_SEC)

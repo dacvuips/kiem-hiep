@@ -5626,6 +5626,16 @@ Chiến Báo": {
 		"th": "กระซิบ",
 		"zh": "私聊"
 	},
+	"Riêng": {   ## tên kênh nhắn riêng của khung chat (ChatServer.CHANNEL_NAMES) — cùng nghĩa "Mật"
+		"vi": "Riêng",
+		"en": "Whisper",
+		"ja": "密談",
+		"ko": "귓속말",
+		"ru": "Личное",
+		"fr": "Chuchoter",
+		"th": "กระซิบ",
+		"zh": "私聊"
+	},
 	"Gần": {
 		"vi": "Gần",
 		"en": "Nearby",

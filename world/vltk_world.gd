@@ -873,8 +873,14 @@ func setup_main_map() -> void:
 	else:
 		if GameManager.field_map.has("boss") and not (GameManager.field_map.get("survivor_mode", false) == true):
 			# Người chơi xuất hiện ở góc/rìa map để an toàn, không bị Boss đánh khi vừa vào
+			var boss_target := _boss_spawn_target(GameManager.field_map.get("boss", {}), center)
 			var corners := get_corner_spawn_positions(center)
-			var pick: Vector2 = corners.pick_random() if not corners.is_empty() else (center + Vector2(-1600.0, -1000.0))
+			var safe_corners: Array[Vector2] = []
+			for c in corners:
+				if c.distance_to(boss_target) >= 500.0:
+					safe_corners.append(c)
+			var pool: Array[Vector2] = safe_corners if not safe_corners.is_empty() else corners
+			var pick: Vector2 = pool.pick_random() if not pool.is_empty() else (center + Vector2(-1600.0, -1000.0))
 			map.prepare_around(pick)
 			safe_pos = _open_position_near(pick)
 			if safe_pos == Vector2.ZERO:
@@ -971,6 +977,15 @@ func get_corner_spawn_positions(center: Vector2) -> Array[Vector2]:
 			res.append(center)
 	return res
 
+## Tính tọa độ world (pixel) để thả Boss: ưu tiên `spawn_coord` ([x, y] theo hệ tọa độ MiniMap), nếu không có thì dùng tâm bản đồ.
+func _boss_spawn_target(boss_data: Dictionary, fallback_center: Vector2) -> Vector2:
+	var sc: Variant = boss_data.get("spawn_coord", null)
+	if sc is Array and (sc as Array).size() >= 2:
+		return (Vector2(float(sc[0]), float(sc[1])) + Vector2(0.5, 0.5)) * 256.0
+	if sc is Vector2i:
+		return (Vector2(sc) + Vector2(0.5, 0.5)) * 256.0
+	return fallback_center
+
 ## Thả Boss Hoàng Kim / Tiểu Hoàng Kim khi khiêu chiến từ tab Boss
 func _spawn_boss_if_requested(player: Node2D, center_override := Vector2.ZERO) -> void:
 	if VltkWorld.net_monsters:
@@ -979,8 +994,9 @@ func _spawn_boss_if_requested(player: Node2D, center_override := Vector2.ZERO) -
 	if boss_data.is_empty():
 		return
 
-	# Boss được sinh ở tâm bản đồ (giữa 60 vùng), cách xa vị trí rìa của người chơi
-	var center := center_override if center_override != Vector2.ZERO else _default_center()
+	# Boss được sinh ở tọa độ chỉ định (nếu có spawn_coord) hoặc tâm bản đồ (giữa 60 vùng)
+	var fallback_center := center_override if center_override != Vector2.ZERO else _default_center()
+	var center := _boss_spawn_target(boss_data, fallback_center)
 	map.prepare_around(center)
 	var spawn_pos := _open_position_near(center)
 	if spawn_pos == Vector2.ZERO:

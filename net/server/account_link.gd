@@ -64,6 +64,12 @@ func report_field(state: Dictionary) -> void:
 func heartbeat(state: Dictionary) -> Dictionary:
 	return await _call(HTTPClient.METHOD_POST, "/internal/game/heartbeat", state)
 
+## Lịch sự kiện năm GM đặt (start = end = 0: về mặc định) — lưu ở server tài khoản để MỌI tiến trình game nhận qua heartbeat.
+## Trả {ok, event_overrides: {event_id: {start, end}}}.
+func set_event_override(event_id: String, start: int, end: int, by: String) -> Dictionary:
+	return await _call(HTTPClient.METHOD_POST, "/internal/game/event-override",
+		{"event_id": event_id, "start": start, "end": end, "by": by})
+
 func _call(method: HTTPClient.Method, path: String, body: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()
 	http.timeout = 10.0

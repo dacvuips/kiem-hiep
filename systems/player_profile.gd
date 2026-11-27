@@ -31,8 +31,10 @@ var prestige: int = 0
 var songjin_points: int = 0
 ## Điểm xếp hạng Đấu Trường Võ Lâm (PK): thắng +10, thua -2 ở Đại hội võ lâm & Võ lâm Liên đấu.
 var pk_points: int = 0
-## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): mã vật phẩm (misc_items) gán vào từng ô, "" = trống.
-var quick_items: Array = ["", "", "", ""]
+## Ô vật phẩm nhanh: mã vật phẩm (misc_items) gán vào từng ô, "" = trống. Bản thường dùng 4 ô đầu (QuickItemBar); bản web
+## dùng đủ 9 ô như thanh dưới VLTK gốc (WebHudBar, [Item_0..8], phím 1-9). Hồ sơ cũ 4 ô đọc vẫn được (from_dict).
+const QUICK_ITEM_COUNT := 9
+var quick_items: Array = ["", "", "", "", "", "", "", "", ""]
 var world_rank: String = ""
 ## Đã hoàn thành hoặc trải nghiệm hướng dẫn bắt buộc đầu game (Introduce tân thủ)
 var intro_completed: bool = false
@@ -475,6 +477,9 @@ var market: Array = []
 ## magic: [cấp 6 dòng], luck, seed} | {kind: "gold", gold, perfection, seed}]. Game server sinh khi nhân vật vào map
 ## (apply_admin_grants) — seed cố định nên sinh lại vẫn ra đúng món đó. Hết chỗ trong hành trang thì để chờ lần sau.
 var admin_grants: Array = []
+## Bộ đếm SỰ KIỆN NĂM (SeasonalEvents): "<sự kiện>:<năm đợt>:use:<mã vật phẩm>" / "...:craft:<công thức>" -> số lần — giới hạn dùng
+## và thưởng mốc mỗi đợt. Online chỉ server ghi (ProfileGuard giữ bản server).
+var event_counters: Dictionary = {}
 ## Trạng thái ĐANG chạy (không lưu): đang bày bán / đang mở giao dịch (nhận lời xin giao dịch). Hai trạng thái loại trừ nhau.
 var stall_open: bool = false
 var trade_open: bool = false
@@ -507,11 +512,24 @@ func _init() -> void:
 	loop_skill_ids.resize(LOOP_SLOT_COUNT)
 	loop_skill_ids.fill("")
 
-## Đường cong EXP ngoài trận — đã nâng x10 lần theo yêu cầu cân bằng game.
+## Mốc EXP lên cấp = nguyên bảng gốc settings/npc/player/level_exp.txt (cột 2: cấp n → n+1), không chia/nhân.
+## Xuất lại: python tools/export_level_exp.py → data/player/level_exp.json [cấp 1..200].
+const LEVEL_EXP_PATH := "res://data/player/level_exp.json"
+static var _level_exp: PackedInt64Array = PackedInt64Array()
+
+static func exp_to_next_level_at(lvl: int) -> int:
+	if _level_exp.is_empty():
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(LEVEL_EXP_PATH))
+		if data is Array:
+			for v in data:
+				_level_exp.append(int(v))
+		if _level_exp.is_empty():
+			push_error("PlayerProfile: thiếu bảng " + LEVEL_EXP_PATH)
+			return 2000000000
+	return _level_exp[clampi(lvl, 1, _level_exp.size()) - 1]
+
 func get_exp_to_next_level() -> int:
-	var base := 100 + (level - 1) * 150
-	var cur := int(base / 2) if level >= 80 else int(base / 3)
-	return cur * 10
+	return exp_to_next_level_at(level)
 
 func is_gem_slot_unlocked(index: int) -> bool:
 	return level >= GEM_SLOT_UNLOCK_LEVELS[index]
@@ -792,6 +810,54 @@ func add_item_stacked(item: ItemInstance) -> bool:
 		if item.count <= 0:
 			return true
 	return add_item(item)
+
+## Tách `n` cái khỏi chồng `uid` thành chồng mới ở ô trống (giữ nguyên khoá / hạn / cấp). "" = được, khác = lý do.
+## Online: server làm (C_ITEM_OP "split") rồi gửi bản chuẩn — game không tự tách (ProfileGuard bỏ uid lạ).
+func split_stack(uid: String, n: int) -> String:
+	var src: ItemInstance = null
+	for it in inventory:
+		if it.uid == uid:
+			src = it
+			break
+	if src == null:
+		return "Vật phẩm không còn trong hành trang."
+	if not src.is_misc() or src.count < 2:
+		return "Chỉ tách được chồng từ 2 cái trở lên."
+	if src.trade_price > 0:
+		return "Vật phẩm đang đặt giá bán, không tách được."
+	if n < 1 or n >= src.count:
+		return "Số lượng tách phải từ 1 đến %d." % (src.count - 1)
+	var part := ItemInstance.from_dict(src.to_dict())
+	part.uid = ItemInstance.new_uid()
+	part.count = n
+	if not add_item(part):
+		return "Hành trang không còn ô trống để tách."
+	src.count -= n
+	return ""
+
+## Gộp chồng `from_uid` vào chồng `to_uid` (kéo thả món lên món cùng loại): chuyển tối đa tới ItemDatabase.max_stack,
+## chồng nguồn hết thì bỏ khỏi túi, còn dư thì giữ chỗ cũ. "" = được, khác = lý do.
+## Online: server làm (C_ITEM_OP "merge") rồi gửi bản chuẩn — ProfileGuard giữ số lượng theo server.
+func merge_stack(from_uid: String, to_uid: String) -> String:
+	var src: ItemInstance = null
+	var dst: ItemInstance = null
+	for it in inventory:
+		if it.uid == from_uid:
+			src = it
+		elif it.uid == to_uid:
+			dst = it
+	if src == null or dst == null:
+		return "Vật phẩm không còn trong hành trang."
+	if not can_stack(src, dst):
+		return "Hai vật phẩm này không gộp được."
+	var take := mini(ItemDatabase.max_stack(dst.misc_id) - dst.count, src.count)
+	if take <= 0:
+		return "Chồng này đã đầy."
+	dst.count += take
+	src.count -= take
+	if src.count <= 0:
+		inventory.erase(src)
+	return ""
 
 ## Sinh đồ web Admin tặng (admin_grants) vào hành trang — trả số món đã thêm; món không đủ chỗ / hỏng thì giữ / bỏ.
 func apply_admin_grants() -> int:
@@ -1159,6 +1225,7 @@ func to_dict() -> Dictionary:
 		"uy_thac_seen": uy_thac_seen,
 		"uy_thac_report": uy_thac_report.duplicate(),
 		"uy_thac_bank": uy_thac_bank.duplicate(),
+		"event_counters": event_counters.duplicate(),
 		"id": id,
 		"name": display_name,
 		"gender": gender,
@@ -1273,6 +1340,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		for k in data["uy_thac_bank"]:
 			if int(data["uy_thac_bank"][k]) > 0:
 				profile.uy_thac_bank[str(k)] = int(data["uy_thac_bank"][k])
+	if data.get("event_counters") is Dictionary:
+		for k in data["event_counters"]:
+			profile.event_counters[str(k)] = int(data["event_counters"][k])
 	profile.show_mask = bool(data.get("show_mask", true))
 	profile.riding = bool(data.get("riding", true))   ## bản lưu cũ chưa có khoá này: như trước (có ngựa = cưỡi)
 	profile.custom_avatar = str(data.get("custom_avatar", ""))

@@ -3,6 +3,7 @@
 - Vũ Hồn (menpai = 11, Hệ Hỏa): Nhánh Đao Pháp (Group 676) và Nhánh Thuẫn Pháp (Group 677)
 - Tiêu Dao (menpai = 12, Hệ Thổ): Nhánh Kiếm Pháp (Group 678) và Nhánh Cầm/Âm Luật (Group 679)
 - Minh Giáo (menpai = 14, Hệ Mộc): Nhánh Đao Pháp (Group 680) và Nhánh Chùy/Kích (Group 681)
+- Hoa Sơn (menpai = 10): kiếm cực phẩm "Lăng Vân" (Group 688, 689), khí cực phẩm "Tử Tiêu" (Group 690, 691) theo ảnh game
 """
 
 ## Hình NGOÀI MAP (mã hình nhân vật ghép bộ phận, data/avatar/*.json) cho mũ/áo hoàng kim tự dựng — bộ tự dựng không có
@@ -1689,5 +1690,553 @@ def build_tieu_dao_huyen_am_set2(start_row: int) -> list[dict]:
             _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
             _tn_line("lifemax_v", "Sinh lực tối đa", 200),
             _tn_line("lightingres_p", "Kháng lôi", 50),
+        ], 5),
+    ]
+
+
+# -----------------------------------------------------------------------------
+# 15-16. HOA SƠN KIẾM CỰC PHẨM "Lăng Vân" (theo ảnh game, menpai = 10)
+#   Bộ 1 (Group 688, 6 món): [TB] Độc Cô Hài, Tam Tiên Kiếm, Đoạn Phong Bào, Tụ Sương Yêu Đái, Nguyệt Diệu Chỉ Hoàn,
+#                            Tinh Hạc Hộ Uyển — dòng bộ: Tăng sát thương đối với hệ Hỏa
+#   Bộ 2 (Group 689, 5 món): Thu Thủy Quán, Bạch Sa Y, Hộ Tâm Phù, Tiêu Diêu Bội, Tê Linh Chỉ
+#                            — dòng bộ: Giảm sát thương đến từ hệ Hỏa
+# Hình ô đồ: hình riêng server gốc không có -> tạm dùng hình gần giống. Ngoài map: mượn áo/mũ bộ Hoa Sơn gốc
+# "Đằng Long" (GoldEquipRes áo 69 / mũ 43).
+# -----------------------------------------------------------------------------
+SECT_AVATAR_RES[10] = (69, 43)
+HS_THIEN_THAN_DAO_HUYEN, HS_KIEM_TONG_TONG_QUYET, HS_HUYEN_NHAN_VAN_YEN = 1355, 1349, 1358
+HS_DUONG_NGO_KIEM_PHAP, HS_BACH_HONG_QUAN_NHAT, HS_KIM_NHAN_HOANH_KHONG = 1350, 1347, 1351
+HS_DOAT_MENH_TAM_TIEN_KIEM = 1364
+
+
+def build_hoa_son_lang_van_set1(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    group, ext = 688, 738
+    intro = "Bộ HKMP Hoa Sơn kiếm cực phẩm"
+    set_lines = [_tn_line("lifemax_v", "Sinh lực tối đa", 100), _tn_line("me2firedamage_p", "Tăng sát thương đối với hệ Hỏa", 1)]
+
+    def item(name, detail, particular, series, level, strength, image, base, magic, set_id, intro_text=intro):
+        return _tn_item(name, detail, particular, series, level, strength, image, intro_text, base,
+                        magic + [dict(x, range=[list(r) for r in x["range"]]) for x in set_lines],
+                        group, set_id, ext, start_row + set_id - 1, menpai=10, set_size=6)
+
+    return [
+        item("[TB] Lăng Vân Độc Cô Hài", 5, 0, THUY, 120, 110, r"\spr\item\equip\boots\obj-shoes05.spr",
+             [["armordefense_v", 140, 140], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 240),
+            _tn_line("fastwalkrun_p", "Tốc độ di chuyển", 40),
+            _tn_line("vitality_v", "Sinh khí", 20),
+            _tn_line("poisonres_p", "Kháng độc", 30),
+            _tn_skill(3, HS_THIEN_THAN_DAO_HUYEN),
+            _tn_skill(3, HS_KIEM_TONG_TONG_QUYET),
+        ], 1, "Trấn bang chi bảo Hoa Sơn kiếm cực phẩm"),
+        ## Vũ khí Kiếm (Particular 0).
+        item("Lăng Vân Tam Tiên Kiếm", 0, 0, KIM, 99, 110, r"\spr\item\equip\closeweapon\obj-sword24.spr", [
+            ["weapondamagemin_v", 46, 46],
+            ["weapondamagemax_v", 86, 86],
+            ["durability_v", 99, 99],
+        ], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("attackspeed_v", "Tốc độ đánh - ngoại công", 20),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 150),
+            _tn_line("addphysicsdamage_v", "Sát thương vật lý - ngoại công", 60),
+            _tn_line("strength_v", "Sức mạnh", 5),
+            _tn_skill(3, HS_HUYEN_NHAN_VAN_YEN),
+        ], 2),
+        item("Lăng Vân Đoạn Phong Bào", 2, 4, THO, 90, 260, r"\spr\item\equip\armor\obj-ma-cloth23.spr",
+             [["armordefense_v", 720, 720], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 50),
+            _tn_skill(3, HS_KIEM_TONG_TONG_QUYET),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 25),
+            _tn_line("energy_v", "Nội công", 5),
+            _tn_skill(3, HS_DUONG_NGO_KIEM_PHAP),
+        ], 3),
+        item("Lăng Vân Tụ Sương Yêu Đái", 6, 0, HOA, 85, 135, r"\spr\item\equip\sash\obj-sash06.spr",
+             [["armordefense_v", 160, 160], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 300),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_skill(3, HS_BACH_HONG_QUAN_NHAT),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("dexterity_v", "Thân pháp", 20),
+            _tn_line("deadlystrikeenhance_p", "Tấn công chí mạng", 5),
+        ], 4),
+        item("Lăng Vân Nguyệt Diệu Chỉ Hoàn", 3, 0, THUY, 80, 0, r"\spr\item\equip\ring\obj-ring109.spr", [], [
+            _tn_line("indestructible_b", "Không thể phá hủy", 1),
+            _tn_skill(1),
+            None, None, None, None,
+        ], 5),
+        item("Lăng Vân Tinh Hạc Hộ Uyển", 8, 1, MOC, 95, 110, r"\spr\item\equip\bangle\obj-bangle103.spr",
+             [["armordefense_v", 135, 135], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(3, HS_DOAT_MENH_TAM_TIEN_KIEM),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("strength_v", "Sức mạnh", 20),
+            _tn_skill(3, HS_KIM_NHAN_HOANH_KHONG),
+        ], 6),
+    ]
+
+
+def build_hoa_son_lang_van_set2(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    group, ext = 689, 739
+    intro = "Bộ HKMP 2 Hoa Sơn kiếm cực phẩm"
+    set_lines = [_tn_line("lifemax_v", "Sinh lực tối đa", 100), _tn_line("fire2medamage_p", "Giảm sát thương đến từ hệ Hỏa", 1)]
+
+    def item(name, detail, particular, series, image, base, magic, set_id):
+        return _tn_item(name, detail, particular, series, 120, 0, image, intro, base,
+                        magic + [dict(x, range=[list(r) for r in x["range"]]) for x in set_lines],
+                        group, set_id, ext, start_row + set_id - 1, menpai=10, set_size=5)
+
+    return [
+        item("Lăng Vân Thu Thủy Quán", 7, 4, MOC, r"\spr\item\equip\cap\obj-ma-cap132.spr",
+             [["armordefense_v", 315, 315], ["durability_v", 85, 85]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("dexterity_v", "Thân pháp", 5),
+            _tn_line("coldres_p", "Kháng băng", 30),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 50),
+            _tn_line("vitality_v", "Sinh khí", 20),
+        ], 1),
+        item("Lăng Vân Bạch Sa Y", 2, 4, THO, r"\spr\item\equip\armor\obj-ma-cloth134.spr",
+             [["armordefense_v", 630, 630], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 60),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 50),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 50),
+            _tn_line("energy_v", "Nội công", 20),
+        ], 2),
+        item("Lăng Vân Hộ Tâm Phù", 4, 1, MOC, r"\spr\item\equip\nick\obj-neck116.spr", [], [
+            _tn_line("allres_p", "Kháng tất cả", 24),
+            _tn_line("lightingres_p", "Kháng lôi", 30),
+            _tn_line("coldres_p", "Kháng băng", 25),
+            _tn_line("poisonres_p", "Kháng độc", 25),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 50),
+            _tn_line("vitality_v", "Sinh khí", 20),
+        ], 3),
+        item("Lăng Vân Tiêu Diêu Bội", 9, 1, MOC, r"\spr\item\equip\waist\obj-waist114.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("lightingres_p", "Kháng lôi", 12),
+            _tn_line("dexterity_v", "Thân pháp", 5),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 50),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+            _tn_line("vitality_v", "Sinh khí", 20),
+        ], 4),
+        item("Lăng Vân Tê Linh Chỉ", 3, 0, HOA, r"\spr\item\equip\ring\obj-ring117.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(1),
+            _tn_line("vitality_v", "Sinh khí", 5),
+            _tn_line("lightingres_p", "Kháng lôi", 25),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+            _tn_line("dexterity_v", "Thân pháp", 20),
+        ], 5),
+    ]
+
+
+# -----------------------------------------------------------------------------
+# 17-18. HOA SƠN KHÍ CỰC PHẨM "Tử Tiêu" (theo ảnh game, menpai = 10)
+#   Bộ 1 (Group 690, 6 món): Vũ Hà Quán, Lăng Phong Y, [TB] Bạch Vân Yêu Đái, Tật Phong Hài, Thanh Huyền Ngọc Bội,
+#                            Tuyết Nguyệt Chỉ Hoàn — dòng bộ: Tăng sát thương đối với hệ Hỏa
+#   Bộ 2 (Group 691, 5 món): Xích Hà Giáp, Hàn Băng Kiếm, Hộ Sơn Uyển, Thủy Linh Phù, Hải Châu Giới
+#                            — dòng bộ: Giảm sát thương đến từ hệ Hỏa
+# Hình ô đồ tạm dùng hình gần giống; ngoài map dùng SECT_AVATAR_RES[10] như bộ Lăng Vân.
+# -----------------------------------------------------------------------------
+HS_LONG_HUYEN_KIEM_KHI, HS_PHACH_THACH_PHA_NGOC, HS_THANH_VAN_TONG_SANG = 1376, 1382, 1372
+HS_LONG_NHIEU_THAN, HS_MA_VAN_KIEM_KHI = 1374, 1380
+
+
+def build_hoa_son_tu_tieu_set1(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    group, ext = 690, 740
+    intro = "Bộ HKMP Hoa Sơn khí cực phẩm"
+    set_lines = [_tn_line("lifemax_v", "Sinh lực tối đa", 100), _tn_line("me2firedamage_p", "Tăng sát thương đối với hệ Hỏa", 1)]
+
+    def item(name, detail, particular, series, level, strength, image, base, magic, set_id, intro_text=intro):
+        return _tn_item(name, detail, particular, series, level, strength, image, intro_text, base,
+                        magic + [dict(x, range=[list(r) for r in x["range"]]) for x in set_lines],
+                        group, set_id, ext, start_row + set_id - 1, menpai=10, set_size=6)
+
+    return [
+        item("Tử Tiêu Vũ Hà Quán", 7, 4, THUY, 85, 110, r"\spr\item\equip\cap\obj-ma-cap132.spr",
+             [["armordefense_v", 315, 315], ["durability_v", 85, 85]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 50),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("addcoldmagic_v", "Băng sát - nội công", 120),
+        ], 1),
+        item("Tử Tiêu Lăng Phong Y", 2, 4, KIM, 90, 135, r"\spr\item\equip\armor\obj-ma-cloth133.spr",
+             [["armordefense_v", 630, 630], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 50),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 25),
+            _tn_line("vitality_v", "Sinh khí", 5),
+            _tn_skill(3, HS_THANH_VAN_TONG_SANG),
+        ], 2),
+        item("[TB] Tử Tiêu Bạch Vân Yêu Đái", 6, 0, THO, 120, 135, r"\spr\item\equip\sash\obj-sash110.spr",
+             [["armordefense_v", 140, 140], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("coldres_p", "Kháng băng", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 240),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_skill(3, HS_THANH_VAN_TONG_SANG),
+            _tn_line("addcoldmagic_v", "Băng sát - nội công", 120),
+        ], 3, "Trấn bang chi bảo Hoa Sơn khí cực phẩm"),
+        item("Tử Tiêu Tật Phong Hài", 5, 0, MOC, 99, 110, r"\spr\item\equip\boots\obj-shoes05.spr",
+             [["armordefense_v", 140, 140], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fastwalkrun_p", "Tốc độ di chuyển", 60),
+            _tn_skill(3, HS_LONG_HUYEN_KIEM_KHI),
+            _tn_line("lightingres_p", "Kháng lôi", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 400),
+            _tn_skill(3, HS_PHACH_THACH_PHA_NGOC),
+        ], 4),
+        item("Tử Tiêu Thanh Huyền Ngọc Bội", 9, 1, MOC, 95, 0, r"\spr\item\equip\waist\obj-waist115.spr",
+             [["durability_v", 60, 60]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 50),
+            _tn_line("castspeed_v", "Tốc độ đánh - nội công", 40),
+            _tn_line("vitality_v", "Sinh khí", 5),
+            _tn_line("addcoldmagic_v", "Băng sát - nội công", 200),
+            _tn_skill(3, HS_LONG_NHIEU_THAN),
+            _tn_skill(3, HS_MA_VAN_KIEM_KHI),
+        ], 5),
+        item("Tử Tiêu Tuyết Nguyệt Chỉ Hoàn", 3, 0, THO, 80, 0, r"\spr\item\equip\ring\obj-ring116.spr", [], [
+            _tn_line("indestructible_b", "Không thể phá hủy", 1),
+            _tn_skill(1),
+            None, None, None, None,
+        ], 6),
+    ]
+
+
+def build_hoa_son_tu_tieu_set2(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    group, ext = 691, 741
+    intro = "Bộ HKMP 2 Hoa Sơn khí cực phẩm"
+    set_lines = [_tn_line("lifemax_v", "Sinh lực tối đa", 100), _tn_line("fire2medamage_p", "Giảm sát thương đến từ hệ Hỏa", 1)]
+
+    def item(name, detail, particular, series, image, base, magic, set_id):
+        return _tn_item(name, detail, particular, series, 120, 0, image, intro, base,
+                        magic + [dict(x, range=[list(r) for r in x["range"]]) for x in set_lines],
+                        group, set_id, ext, start_row + set_id - 1, menpai=10, set_size=5)
+
+    return [
+        item("Tử Tiêu Xích Hà Giáp", 2, 4, THO, r"\spr\item\equip\armor\obj-ma-cloth23.spr",
+             [["armordefense_v", 630, 630], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 60),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 50),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("addcoldmagic_v", "Băng sát - nội công", 120),
+            _tn_line("poisonres_p", "Kháng độc", 30),
+        ], 1),
+        ## Vũ khí Kiếm (Particular 0).
+        item("Tử Tiêu Hàn Băng Kiếm", 0, 0, KIM, r"\spr\item\equip\closeweapon\obj-sword24.spr", [
+            ["weapondamagemin_v", 46, 46],
+            ["weapondamagemax_v", 86, 86],
+            ["durability_v", 99, 99],
+        ], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("coldres_p", "Kháng băng", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("addcoldmagic_v", "Băng sát - nội công", 300),
+            _tn_skill(3, HS_HUYEN_NHAN_VAN_YEN),
+        ], 2),
+        item("Tử Tiêu Hộ Sơn Uyển", 8, 1, MOC, r"\spr\item\equip\bangle\obj-ma-bangle114.spr",
+             [["armordefense_v", 135, 135], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("lightingres_p", "Kháng lôi", 30),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 50),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+        ], 3),
+        item("Tử Tiêu Thủy Linh Phù", 4, 1, THO, r"\spr\item\equip\nick\obj-neck116.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("lightingres_p", "Kháng lôi", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 25),
+            _tn_line("allres_p", "Kháng tất cả", 24),
+            _tn_line("energy_v", "Nội công", 20),
+        ], 4),
+        item("Tử Tiêu Hải Châu Giới", 3, 0, THUY, r"\spr\item\equip\ring\obj-ring117.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(1),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("lightingres_p", "Kháng lôi", 25),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+            _tn_line("vitality_v", "Sinh khí", 20),
+        ], 5),
+    ]
+
+
+# -----------------------------------------------------------------------------
+# 19-21. DƯƠNG MÔN (menpai = 13) — cung cực phẩm "Truy Phong" + thương cực phẩm "Hạo Thiên" (theo ảnh game)
+#   692 (6 món): Diệt Thần Cung, Đằng Vân Ngoa, Tuyệt Ảnh Đái, Vân Vũ Y, [TB] Xạ Nhật Uyển, Toàn Thiên Khấu
+#   693 (5 món): Kim Sa Quán, Tử Vân Y, Xuyên Vân Phù, Liệt Nhật Giới, Xích Luyện Hoàn
+#   694 (6 món): Bá Vương Thương, [TB] Thần Hành Ngoa, Thanh Long Trảo, Chu Tước Hoàn, Huyền Vũ Y, Bạch Hổ Đái
+#   695 (5 món): Bạch Quang Hoàn (mũ), Bá Vương Y, Định Quốc Phù, Vô Song Khấu, Đoạn Hồn Giới
+#   Dòng bộ: bộ 1 Tăng sát thương đối với hệ Mộc, bộ 2 Giảm sát thương đến từ hệ Mộc.
+# -----------------------------------------------------------------------------
+DM_LUU_VAN_TIEN, DM_THIEN_HANH_THUONG, DM_CUNG_PHAP, DM_THUONG_PHAP = 1766, 1767, 1768, 1769
+DM_HUYEN_THAN_QUYET, DM_NGU_MA_QUYET, DM_TRAN_LIEU_THUAT, DM_LONG_CUONG_QUYET = 1771, 1772, 1773, 1774
+DM_NGUNG_THAN_TINH_KHI, DM_PHA_TRAN_VO_SONG, DM_TINH_LAC_TIEN, DM_DAO_HAI_THUONG = 1777, 1779, 1780, 1781
+DM_LONG_DAM_HO_TAM = 1778
+## Hình ô đồ tìm theo ảnh (quét pak client) — xem DM_IMAGES; mặc định hình gần giống.
+## Hình riêng (không có tên file trong client): lấy từ pak client 15 phái bằng quét toàn bộ SPR rồi so với ảnh, lưu sẵn
+## assets/items/icons{,_small}/hkmp_dm_*.png — đường dẫn "custom" chỉ để ItemDatabase.get_icon lấy tên file.
+## Cung rồng đỏ và mũ lông bạc vòng tím KHÔNG có trong client -> cung dùng hình cung thường, mũ dùng mũ bạc gần nhất.
+DM_IMAGES = {
+    "bow": r"\spr\item\equip\weapon\obj-bow01.spr",
+    "cloth1": r"\spr\item\equip\custom\hkmp_dm_cloth_truy_phong.spr",
+    "cap2": r"\spr\item\equip\custom\hkmp_dm_cap_bac.spr",
+    "cloth2": r"\spr\item\equip\custom\hkmp_dm_cloth_tu_van.spr",
+    "cloth3": r"\spr\item\equip\custom\hkmp_dm_cloth_huyen_vu.spr",
+    "cap4": r"\spr\item\equip\custom\hkmp_dm_cap_bac.spr",
+    "cloth4": r"\spr\item\equip\custom\hkmp_dm_cloth_tu_van.spr",
+}
+
+
+def _dm_builder(group, ext, intro, set_lines, start_row, set_size):
+    def item(name, detail, particular, series, level, strength, image, base, magic, set_id, intro_text=intro,
+             extra_req=()):
+        it = _tn_item(name, detail, particular, series, level, strength, image, intro_text, base,
+                      magic + [dict(x, range=[list(r) for r in x["range"]]) for x in set_lines],
+                      group, set_id, ext, start_row + set_id - 1, menpai=13, set_size=set_size)
+        it["require"] += [list(r) for r in extra_req]
+        return it
+    return item
+
+
+def build_duong_mon_truy_phong_set1(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    item = _dm_builder(692, 742, "Bộ HKMP Dương Môn cung cực phẩm",
+                       [_tn_line("lifemax_v", "Sinh lực tối đa", 100),
+                        _tn_line("me2wooddamage_p", "Tăng sát thương đối với hệ Mộc", 1)], start_row, 6)
+    return [
+        ## Vũ khí Cung (tầm xa, Particular 4) — yêu cầu Nội công 100.
+        item("Truy Phong Diệt Thần Cung", 1, 4, KIM, 99, 0, DM_IMAGES["bow"], [
+            ["weapondamagemin_v", 48, 48],
+            ["weapondamagemax_v", 100, 100],
+            ["durability_v", 99, 99],
+        ], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("addphysicsmagic_v", "Sát thương vật lý - nội công", 300),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("energy_v", "Nội công", 20),
+            _tn_line("poisonres_p", "Kháng độc", 25),
+            _tn_skill(3, DM_PHA_TRAN_VO_SONG),
+        ], 1, extra_req=[["requireeng", 100]]),
+        item("Truy Phong Đằng Vân Ngoa", 5, 0, THUY, 95, 135, r"\spr\item\equip\boots\obj-shoes120.spr",
+             [["armordefense_v", 160, 160], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(3, DM_TINH_LAC_TIEN),
+            _tn_line("fastwalkrun_p", "Tốc độ di chuyển", 60),
+            _tn_line("lightingres_p", "Kháng lôi", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 40),
+        ], 2),
+        item("Truy Phong Tuyệt Ảnh Đái", 6, 0, HOA, 85, 135, r"\spr\item\equip\sash\obj-sash109.spr",
+             [["armordefense_v", 160, 160], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 300),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_skill(3, DM_LUU_VAN_TIEN),
+            _tn_line("fireres_p", "Kháng hỏa", 30),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 80),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 40),
+        ], 3),
+        item("Truy Phong Vân Vũ Y", 2, 4, THO, 90, 260, DM_IMAGES["cloth1"],
+             [["armordefense_v", 720, 720], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 50),
+            _tn_skill(3, DM_CUNG_PHAP),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_skill(3, DM_HUYEN_THAN_QUYET),
+        ], 4),
+        item("[TB] Truy Phong Xạ Nhật Uyển", 8, 1, MOC, 120, 110, r"\spr\item\equip\bangle\obj-bangle109.spr",
+             [["armordefense_v", 135, 135], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 50),
+            _tn_skill(3, DM_CUNG_PHAP),
+            _tn_skill(3, DM_TRAN_LIEU_THUAT),
+        ], 5, "Trấn bang chi bảo Dương Môn cung cực phẩm"),
+        item("Truy Phong Toàn Thiên Khấu", 3, 0, MOC, 80, 0, r"\spr\item\equip\ring\obj-ring109.spr", [], [
+            _tn_line("indestructible_b", "Không thể phá hủy", 1),
+            _tn_skill(1),
+            None, None, None, None,
+        ], 6),
+    ]
+
+
+def build_duong_mon_truy_phong_set2(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    item = _dm_builder(693, 743, "Bộ HKMP 2 Dương Môn cung cực phẩm",
+                       [_tn_line("lifemax_v", "Sinh lực tối đa", 100),
+                        _tn_line("wood2medamage_p", "Giảm sát thương đến từ hệ Mộc", 1)], start_row, 5)
+    return [
+        item("Truy Phong Kim Sa Quán", 7, 4, KIM, 120, 0, DM_IMAGES["cap2"],
+             [["armordefense_v", 360, 360], ["durability_v", 85, 85]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("strength_v", "Sức mạnh", 20),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("fireres_p", "Kháng hỏa", 30),
+            _tn_line("addphysicsmagic_v", "Sát thương vật lý - nội công", 120),
+            _tn_skill(3, DM_PHA_TRAN_VO_SONG),
+        ], 1),
+        item("Truy Phong Tử Vân Y", 2, 4, THO, 120, 0, DM_IMAGES["cloth2"],
+             [["armordefense_v", 720, 720], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 60),
+            _tn_skill(3, DM_NGUNG_THAN_TINH_KHI),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("energy_v", "Nội công", 20),
+        ], 2),
+        item("Truy Phong Xuyên Vân Phù", 4, 1, THO, 120, 0, r"\spr\item\equip\nick\obj-neck109.spr", [], [
+            _tn_line("allres_p", "Kháng tất cả", 24),
+            _tn_line("lightingres_p", "Kháng lôi", 25),
+            _tn_line("coldres_p", "Kháng băng", 25),
+            _tn_line("fireres_p", "Kháng hỏa", 25),
+            _tn_line("addphysicsmagic_v", "Sát thương vật lý - nội công", 120),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 40),
+        ], 3),
+        item("Truy Phong Liệt Nhật Giới", 3, 0, THUY, 120, 0, r"\spr\item\equip\ring\obj-ring117.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("addphysicsmagic_v", "Sát thương vật lý - nội công", 120),
+            _tn_line("vitality_v", "Sinh khí", 20),
+        ], 4),
+        item("Truy Phong Xích Luyện Hoàn", 3, 0, HOA, 120, 0, r"\spr\item\equip\ring\obj-ring116.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(1),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("fireres_p", "Kháng hỏa", 25),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+            _tn_line("dexterity_v", "Thân pháp", 20),
+        ], 5),
+    ]
+
+
+def build_duong_mon_hao_thien_set(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    item = _dm_builder(694, 744, "Bộ HKMP Dương Môn thương cực phẩm",
+                       [_tn_line("lifemax_v", "Sinh lực tối đa", 100),
+                        _tn_line("me2wooddamage_p", "Tăng sát thương đối với hệ Mộc", 1)], start_row, 6)
+    return [
+        ## Vũ khí Thương (Particular 3) — yêu cầu Sức mạnh + Thân pháp 165.
+        item("Hạo Thiên Bá Vương Thương", 0, 3, KIM, 99, 165, r"\spr\item\equip\closeweapon\obj-spear12.spr", [
+            ["weapondamagemin_v", 18, 18],
+            ["weapondamagemax_v", 158, 158],
+            ["attackratingenhance_p", 30, 30],
+            ["durability_v", 99, 99],
+        ], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("addcolddamage_v", "Băng sát - ngoại công", 120),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 150),
+            _tn_line("addphysicsdamage_v", "Sát thương vật lý - ngoại công", 50),
+            _tn_line("stealmanaenhance_p", "Hút nội lực", 8),
+            _tn_skill(3, DM_PHA_TRAN_VO_SONG),
+        ], 1, extra_req=[["requiredex", 165]]),
+        ## "Long Uy Quyết" trong ảnh không có trong bảng skill phái -> gần nhất là Long Cương Quyết (1774).
+        item("[TB] Hạo Thiên Thần Hành Ngoa", 5, 0, THUY, 120, 135, r"\spr\item\equip\boots\obj-shoes120.spr",
+             [["armordefense_v", 160, 160], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fastwalkrun_p", "Tốc độ di chuyển", 60),
+            _tn_line("manamax_v", "Nội lực tối đa", 240),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_skill(3, DM_THUONG_PHAP),
+            _tn_skill(3, DM_LONG_CUONG_QUYET),
+        ], 2, "Trấn bang chi bảo Dương Môn thương cực phẩm"),
+        item("Hạo Thiên Thanh Long Trảo", 8, 1, MOC, 95, 110, r"\spr\item\equip\bangle\obj-bangle109.spr",
+             [["armordefense_v", 135, 135], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 40),
+            _tn_skill(3, DM_DAO_HAI_THUONG),
+            _tn_line("fireres_p", "Kháng hỏa", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_skill(3, DM_NGU_MA_QUYET),
+        ], 3),
+        item("Hạo Thiên Chu Tước Hoàn", 3, 0, THUY, 80, 0, r"\spr\item\equip\ring\obj-ring109.spr", [], [
+            _tn_line("indestructible_b", "Không thể phá hủy", 1),
+            _tn_skill(1),
+            None, None, None, None,
+        ], 4),
+        item("Hạo Thiên Huyền Vũ Y", 2, 4, THO, 90, 260, DM_IMAGES["cloth3"],
+             [["armordefense_v", 720, 720], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 50),
+            _tn_skill(3, DM_THUONG_PHAP),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 25),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("strength_v", "Sức mạnh", 12),
+        ], 5),
+        item("Hạo Thiên Bạch Hổ Đái", 6, 0, HOA, 85, 135, r"\spr\item\equip\sash\obj-sash109.spr",
+             [["armordefense_v", 160, 160], ["durability_v", 80, 80]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_skill(3, DM_THIEN_HANH_THUONG),
+            _tn_line("fireres_p", "Kháng hỏa", 30),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 80),
+            _tn_line("deadlystrikeenhance_p", "Tấn công chí mạng", 5),
+        ], 6),
+    ]
+
+
+def build_duong_mon_hao_thien_set2(start_row: int) -> list[dict]:
+    KIM, MOC, THUY, HOA, THO = 0, 1, 2, 3, 4
+    item = _dm_builder(695, 745, "Bộ HKMP 2 Dương Môn thương cực phẩm",
+                       [_tn_line("lifemax_v", "Sinh lực tối đa", 100),
+                        _tn_line("wood2medamage_p", "Giảm sát thương đến từ hệ Mộc", 1)], start_row, 5)
+    return [
+        item("Hạo Thiên Bạch Quang Hoàn", 7, 4, KIM, 120, 0, DM_IMAGES["cap4"],
+             [["armordefense_v", 360, 360], ["durability_v", 85, 85]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("stuntimereduce_p", "Thời gian choáng", 50),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("fireres_p", "Kháng hỏa", 30),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 150),
+            _tn_skill(3, DM_PHA_TRAN_VO_SONG),
+        ], 1),
+        item("Hạo Thiên Bá Vương Y", 2, 4, THO, 120, 0, DM_IMAGES["cloth4"],
+             [["armordefense_v", 720, 720], ["durability_v", 90, 90]], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("fasthitrecover_v", "Thời gian phục hồi", 60),
+            _tn_skill(3, DM_LONG_DAM_HO_TAM),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("energy_v", "Nội công", 20),
+        ], 2),
+        item("Hạo Thiên Định Quốc Phù", 4, 1, THO, 120, 0, r"\spr\item\equip\nick\obj-neck109.spr", [], [
+            _tn_line("allres_p", "Kháng tất cả", 24),
+            _tn_line("lightingres_p", "Kháng lôi", 25),
+            _tn_line("coldres_p", "Kháng băng", 25),
+            _tn_line("fireres_p", "Kháng hỏa", 25),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 50),
+            _tn_line("poisontimereduce_p", "Thời gian trúng độc", 40),
+        ], 3),
+        item("Hạo Thiên Vô Song Khấu", 3, 0, MOC, 120, 0, r"\spr\item\equip\ring\obj-ring117.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_line("physicsres_p", "Phòng thủ vật lý", 30),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("freezetimereduce_p", "Thời gian làm chậm", 50),
+            _tn_line("addphysicsdamage_p", "Sát thương vật lý - ngoại công", 50),
+            _tn_line("strength_v", "Sức mạnh", 20),
+        ], 4),
+        item("Hạo Thiên Đoạn Hồn Giới", 3, 0, HOA, 120, 0, r"\spr\item\equip\ring\obj-ring116.spr", [], [
+            _tn_line("lifemax_v", "Sinh lực tối đa", 200),
+            _tn_skill(1),
+            _tn_line("manamax_v", "Nội lực tối đa", 200),
+            _tn_line("fireres_p", "Kháng hỏa", 25),
+            _tn_line("allres_p", "Kháng tất cả", 5),
+            _tn_line("dexterity_v", "Thân pháp", 20),
         ], 5),
     ]

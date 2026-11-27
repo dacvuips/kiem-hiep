@@ -36,6 +36,19 @@ const SPECIAL_ITEM_EFFECTS := {
 	"6_1_113": {"effects": [["expenhance_p", 50, 64800]], "state_id": 67},           ## Tiên Thảo hoàn (1h, exp +50%)
 	"6_1_72": {"effects": [["lucky_v", 10, 64800]], "state_id": 67},                 ## Thiên Sơn Bảo Lộ (1h, may mắn +10, skill 441)
 	"6_0_70": {"effects": [["lucky_v", 30, 32400]], "state_id": 67},                 ## Bánh chưng May mắn (30m, may mắn +30, skill 410)
+	## Bánh chưng Đoan Ngọ (Tống tẩu, ban_banh_u.lua) — skill trạng thái 401..403 (script/skill/special/40x.lua: 10800 frame = 10 phút)
+	"6_0_60": {"effects": [["attackspeed_v", 20, 10800], ["castspeed_v", 20, 10800]]},   ## Hạt dẻ: tốc đánh + tốc ra chiêu 20
+	"6_0_61": {"effects": [["lifemax_p", 100, 10800], ["manamax_p", 100, 10800]]},       ## Thịt heo: sinh lực + nội lực tối đa +100%
+	"6_0_62": {"effects": [["physicsres_p", 5, 10800], ["coldres_p", 5, 10800], ["lightingres_p", 5, 10800],
+		["fireres_p", 5, 10800], ["poisonres_p", 5, 10800]]},                             ## Thịt bò: kháng tất cả +5%
+	## Lồng đèn Trung Thu 2006 (event/mid_autumn06/item/lightcage/lightcage.lua): thắp = AddSkillState(440) nhân đôi kinh nghiệm
+	## 10/20/30/40/50/60 phút (cùng trạng thái Tiên Thảo Lộ — không dùng chồng). Sự kiện năm "Tết Trung Thu" ép ra các đèn này.
+	"6_1_1241": {"effects": [["expenhance_p", 100, 10800]], "state_id": 67},         ## Lồng đèn bươm bướm (10 phút)
+	"6_1_1242": {"effects": [["expenhance_p", 100, 21600]], "state_id": 67},         ## Lồng đèn ngôi sao (20 phút)
+	"6_1_1243": {"effects": [["expenhance_p", 100, 32400]], "state_id": 67},         ## Lồng đèn ống (30 phút)
+	"6_1_1244": {"effects": [["expenhance_p", 100, 43200]], "state_id": 67},         ## Lồng đèn tròn (40 phút)
+	"6_1_1245": {"effects": [["expenhance_p", 100, 54000]], "state_id": 67},         ## Lồng đèn cá chép (50 phút)
+	"6_1_1246": {"effects": [["expenhance_p", 100, 64800]], "state_id": 67},         ## Lồng đèn kéo quân (60 phút)
 	"6_1_122": {"fuyuan": 10},                                                        ## Phúc Duyên Lộ (Tiểu)
 	"6_1_123": {"fuyuan": 20},                                                        ## Phúc Duyên Lộ (Trung)
 	"6_1_124": {"fuyuan": 50},                                                        ## Phúc Duyên Lộ (Đại)

@@ -246,6 +246,11 @@ func on_chat(c, b: StreamPeerBuffer) -> void:
 	if c.muted_until > unix:
 		gs.notice(c, "Bạn đang bị cấm chat đến %s." % Time.get_datetime_string_from_unix_time(int(c.muted_until + 7 * 3600), true))
 		return
+	## Kết nối SẢNH (Character Hub) không đứng trên map: kênh Gần không có "người gần" — không lấy vị trí cũ của nhân vật (sẽ lọt tin tới
+	## người đang đứng chỗ đó trên map).
+	if channel == NEAR and c.hub:
+		gs.notice(c, "Kênh Gần chỉ dùng khi đang ở trong map.")
+		return
 	if now - c.last_chat < MIN_INTERVAL:
 		gs.notice(c, "Bạn nói nhanh quá, chậm lại chút.")
 		return

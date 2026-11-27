@@ -186,7 +186,9 @@ func _on_picked(id: int, amount: int, item: Dictionary) -> void:
 				else:
 					_notify("Nhặt được %s → +1 mảnh Sơn Hà Xã Tắc (Hiện có: %d)" % [res.get("name", it.get_display_name()), int(res.get("shxt_total", 1))])
 			else:
-				if not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
+				if ItemDatabase.max_stack(it.misc_id) > 1 and it.is_misc():
+					profile.add_item_stacked(it)   ## chồng được: gộp như server (server gửi thêm bản chuẩn nếu đã gộp)
+				elif not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
 					profile.add_item(it)
 				_notify("Nhặt được %s" % it.get_display_name())
 		SaveManager.save_profile(profile)

@@ -11,7 +11,6 @@ const WIDTH := 5.0
 ## Ảnh mũi tên năng lượng (đầu mũi tên nằm BÊN TRÁI ảnh, đuôi bên phải). Kéo giãn theo độ dài ngắm, bề dày cố định.
 const TEXTURE_PATH := "res://assets/ui/aim_arrow.png"
 const THICKNESS := 44.0
-const MIN_LENGTH := 48.0
 static var _texture: Texture2D
 static var _texture_tried := false
 
@@ -24,24 +23,42 @@ func _ready() -> void:
 	z_index = -50
 	visible = false
 
+## Thôi ngắm: mũi tên mờ dần trong FADE_TIME giây (nhấp nhanh vẫn kịp thấy hướng đánh) rồi ẩn.
+const FADE_TIME := 0.35
+var _fade := 0.0
+
 func set_aim(dir: Vector2, feet: Vector2, length: float) -> void:
 	if dir == Vector2.ZERO:
-		visible = false
+		if visible and _fade <= 0.0:
+			_fade = FADE_TIME
 		return
+	_fade = 0.0
+	modulate.a = 1.0
 	var logic := Vector2(dir.x, dir.y * 2.0).normalized() * length
 	_origin = feet
 	_tip = feet + Vector2(logic.x, logic.y * 0.5)
 	visible = true
 	queue_redraw()
 
+func _process(delta: float) -> void:
+	if _fade <= 0.0:
+		return
+	_fade -= delta
+	modulate.a = clampf(_fade / FADE_TIME, 0.0, 1.0)
+	if _fade <= 0.0:
+		visible = false
+		modulate.a = 1.0
+
 func _draw() -> void:
 	if not visible:
 		return
-	if not (_tip.is_finite() and _origin.is_finite()) or _tip.distance_to(_origin) < HEAD:
-		return   ## quá ngắn: tam giác đầu mũi tên suy biến (Godot báo "triangulation failed")
+	if not (_tip.is_finite() and _origin.is_finite()) or _tip.distance_to(_origin) < 1.0:
+		return
 	var tex := _get_texture()
+	if tex == null and _tip.distance_to(_origin) < HEAD:
+		return   ## mũi tên vẽ tay quá ngắn: tam giác đầu mũi tên suy biến (Godot báo "triangulation failed")
 	if tex != null:
-		var length := maxf(_tip.distance_to(_origin), MIN_LENGTH)
+		var length := _tip.distance_to(_origin)   ## đúng độ dài thật: đầu mũi tên trùng điểm nổ kể cả khi nhắm gần
 		## Quay sao cho trục -x của ảnh (đầu mũi tên) hướng theo hướng ngắm; đuôi nằm ở chân nhân vật.
 		draw_set_transform(_origin, (_tip - _origin).angle() + PI, Vector2.ONE)
 		draw_texture_rect(tex, Rect2(-length, -THICKNESS * 0.5, length, THICKNESS), false)
