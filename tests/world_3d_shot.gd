@@ -59,20 +59,41 @@ func _ready() -> void:
 		p._set_move_target(p.global_position + Vector2(220, 80))
 	await get_tree().create_timer(2.0).timeout
 	await shot.call("b")
+	## 2 ngón chạm + nhích nhẹ (dưới ngưỡng) -> KHÔNG được xoay.
+	var yaw_t := World3DView.cam_yaw
+	for i in 2:
+		var t := InputEventScreenTouch.new()
+		t.index = i
+		t.pressed = true
+		t.position = Vector2(500 + i * 150, 300)
+		Input.parse_input_event(t)
+	var dd := InputEventScreenDrag.new()
+	dd.index = 0
+	dd.relative = Vector2(6, 3)
+	dd.position = Vector2(506, 303)
+	Input.parse_input_event(dd)
+	await get_tree().process_frame
+	for i in 2:
+		var t := InputEventScreenTouch.new()
+		t.index = i
+		t.pressed = false
+		Input.parse_input_event(t)
+	await get_tree().process_frame
+	print("2 ngon nhich nhe: yaw ", yaw_t, " -> ", World3DView.cam_yaw, " (phai giu nguyen)")
 	## Xoay bằng 2 ngón tay (giả lập cảm ứng) rồi Alt + kéo chuột trái.
 	var yaw0 := World3DView.cam_yaw
 	for i in 2:
 		var t := InputEventScreenTouch.new()
 		t.index = i
 		t.pressed = true
-		t.position = Vector2(300 + i * 150, 300)
+		t.position = Vector2(500 + i * 150, 300)
 		Input.parse_input_event(t)
 	for k in 10:
 		for i in 2:
 			var d := InputEventScreenDrag.new()
 			d.index = i
 			d.relative = Vector2(-12, 0)
-			d.position = Vector2(300 + i * 150 - k * 12, 300)
+			d.position = Vector2(500 + i * 150 - k * 12, 300)
 			Input.parse_input_event(d)
 		await get_tree().process_frame
 	for i in 2:

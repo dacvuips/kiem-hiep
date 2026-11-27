@@ -145,24 +145,32 @@ func _drag_rotate(rel: Vector2) -> void:
 	cam_yaw = wrapf(cam_yaw - rel.x * 0.008, -PI, PI)
 	cam_pitch_deg = clampf(cam_pitch_deg + rel.y * 0.25, PITCH_MIN, PITCH_MAX)
 
-## ---- 2 ngón tay trên map (chỉ chạm KHÔNG rơi vào nút HUD mới tới được _unhandled_input) ----
-var _touches := {}          ## index -> vị trí
+## ---- 2 ngón tay trên map ----
+## Chỉ chạm KHÔNG rơi vào nút HUD mới tới được _unhandled_input -> giữ joystick + bấm skill không bao giờ thành xoay.
+## 2 ngón chạm map chưa phải xoay ngay: phải KÉO quá GESTURE_START_PX mới bắt đầu (chạm 2 ngón chọn quái / bấm đi vẫn bình
+## thường). Nhấc tay thì bắt ở _input (luôn tới, kể cả ngón trượt lên nút rồi mới nhấc) -> không còn "ngón ma".
+const GESTURE_START_PX := 24.0
+var _touches := {}          ## index -> vị trí (chỉ các chạm bắt đầu trên map)
 var _pinch_dist := 0.0
+var _gesture_on := false
+var _gesture_acc := 0.0     ## quãng kéo cộng dồn khi đang có 2 ngón, chưa bắt đầu xoay
 
 func _unhandled_input(e: InputEvent) -> void:
-	if e is InputEventScreenTouch:
-		if e.pressed:
-			_touches[e.index] = e.position
-		else:
-			_touches.erase(e.index)
+	if e is InputEventScreenTouch and e.pressed:
+		_touches[e.index] = e.position
 		_pinch_dist = _touch_spread()
-		if _touches.size() >= 2:
-			_cancel_touch_walk()
-			get_viewport().set_input_as_handled()
+		_gesture_acc = 0.0
 	elif e is InputEventScreenDrag and _touches.has(e.index):
 		_touches[e.index] = e.position
 		if _touches.size() < 2:
 			return
+		if not _gesture_on:
+			_gesture_acc += e.relative.length()
+			if _gesture_acc < GESTURE_START_PX:
+				return
+			_gesture_on = true
+			_cancel_touch_walk()
+			_pinch_dist = _touch_spread()
 		## Mỗi ngón góp 1/n chuyển động -> kéo 2 ngón cùng chiều = xoay; khoảng cách đổi = zoom.
 		_drag_rotate(e.relative / float(_touches.size()))
 		var d := _touch_spread()
@@ -170,6 +178,14 @@ func _unhandled_input(e: InputEvent) -> void:
 			_pinch_zoom(d / _pinch_dist)
 		_pinch_dist = d
 		get_viewport().set_input_as_handled()
+
+## Nhấc tay: gọi từ _input để không bỏ sót.
+func _touch_released(index: int) -> void:
+	_touches.erase(index)
+	_pinch_dist = _touch_spread()
+	if _touches.size() < 2:
+		_gesture_on = false
+		_gesture_acc = 0.0
 
 ## Ngón đầu chạm map đã thành "bấm chuột trái" giả lập (Player chạy tới / bám theo ngón) -> hủy khi thành cử chỉ 2 ngón.
 func _cancel_touch_walk() -> void:
@@ -195,8 +211,10 @@ func _pinch_zoom(ratio: float) -> void:
 		p.set_camera_zoom(p.get_camera_zoom() * ratio)
 
 func _input(e: InputEvent) -> void:
+	if e is InputEventScreenTouch and not e.pressed:
+		_touch_released(e.index)
 	## Đang xoay bằng 2 ngón: chặn chuột giả lập từ cảm ứng (không cho Player chạy theo ngón).
-	if _touches.size() >= 2 and e is InputEventMouse and e.device == InputEvent.DEVICE_ID_EMULATION:
+	if _gesture_on and e is InputEventMouse and e.device == InputEvent.DEVICE_ID_EMULATION:
 		get_viewport().set_input_as_handled()
 		return
 	## Bắt ngay từ _input để Player không coi là bấm đi / ra chiêu.
