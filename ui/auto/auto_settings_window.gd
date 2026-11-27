@@ -508,8 +508,10 @@ func _find_skill(id: String) -> SkillDefinition:
 			return s
 	if profile != null and not profile.sect_id.is_empty():
 		var sect := SectRegistry.get_by_id(profile.sect_id)
-		if sect != null:
-			return sect.get_skill(id)
+		if sect != null:   ## SectDefinition không có get_skill: tìm trong danh sách skill của phái
+			for sk in sect.skills:
+				if sk != null and sk.id == id:
+					return sk
 	return null
 
 # ------------------------------------------------------------------ 3. Di chuyển
