@@ -30,7 +30,6 @@ static var cam_yaw := 0.0
 static var cam_pitch_deg := PITCH_DEG
 const PITCH_MIN := 15.0
 const PITCH_MAX := 75.0
-const YAW_STEP := PI / 4.0
 
 var _world: VltkWorld
 var _container: SubViewportContainer
@@ -72,15 +71,13 @@ func _ready() -> void:
 	current = self
 	_world = get_parent() as VltkWorld
 	_build_viewport()
-	_build_camera_buttons()
 
 func _exit_tree() -> void:
 	if current == self:
 		current = null
 	if _container != null and is_instance_valid(_container):
 		_container.queue_free()
-	if _buttons != null and is_instance_valid(_buttons):
-		_buttons.queue_free()
+
 
 func _build_viewport() -> void:
 	_container = SubViewportContainer.new()
@@ -139,47 +136,95 @@ func _build_viewport() -> void:
 	_root3d.add_child(_cam)
 
 ## ---------- xoay góc nhìn ----------
-## Nút xoay camera (cả điện thoại): ⟲ ⟳ xoay 45°, ▲ ▼ ngẩng / cúi, N về hướng Bắc. Máy tính: giữ chuột giữa + kéo.
-## Layer 2: trên HUD thường (UI layer 1), dưới popup (50+).
-var _buttons: CanvasLayer
+## Xoay camera (không có nút trên màn hình):
+##   - Điện thoại: 2 ngón tay trên map (không trên nút HUD): kéo ngang = xoay, kéo dọc = ngẩng / cúi, chụm / mở = zoom.
+##   - Máy tính: giữ chuột giữa + kéo, hoặc giữ Alt + kéo chuột trái (laptop không có chuột giữa).
 var _mid_drag := false
 
-func _build_camera_buttons() -> void:
-	_buttons = CanvasLayer.new()
-	_buttons.layer = 2
-	_buttons.name = "World3DCameraButtons"
-	get_tree().root.add_child.call_deferred(_buttons)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	row.position = Vector2(14, 112)
-	_buttons.add_child(row)
-	for spec in [["⟲", "yaw", -YAW_STEP], ["⟳", "yaw", YAW_STEP], ["▲", "pitch", 10.0], ["▼", "pitch", -10.0],
-			["N", "reset", 0.0]]:
-		var b := SocialUi.stone_button(spec[0], Vector2(38, 34))
-		b.focus_mode = Control.FOCUS_NONE
-		b.tooltip_text = {"yaw": tr("Xoay camera"), "pitch": tr("Ngẩng / cúi camera"), "reset": tr("Về hướng Bắc")}[spec[1]]
-		var kind: String = spec[1]
-		var step: float = spec[2]
-		b.pressed.connect(func() -> void: _turn(kind, step))
-		row.add_child(b)
+func _drag_rotate(rel: Vector2) -> void:
+	cam_yaw = wrapf(cam_yaw - rel.x * 0.008, -PI, PI)
+	cam_pitch_deg = clampf(cam_pitch_deg + rel.y * 0.25, PITCH_MIN, PITCH_MAX)
 
-func _turn(kind: String, step: float) -> void:
-	match kind:
-		"yaw":
-			cam_yaw = wrapf(cam_yaw + step, -PI, PI)
-		"pitch":
-			cam_pitch_deg = clampf(cam_pitch_deg + step, PITCH_MIN, PITCH_MAX)
-		"reset":
-			cam_yaw = 0.0
-			cam_pitch_deg = PITCH_DEG
+## ---- 2 ngón tay trên map (chỉ chạm KHÔNG rơi vào nút HUD mới tới được _unhandled_input) ----
+var _touches := {}          ## index -> vị trí
+var _pinch_dist := 0.0
+
+func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventScreenTouch:
+		if e.pressed:
+			_touches[e.index] = e.position
+		else:
+			_touches.erase(e.index)
+		_pinch_dist = _touch_spread()
+		if _touches.size() >= 2:
+			_cancel_touch_walk()
+			get_viewport().set_input_as_handled()
+	elif e is InputEventScreenDrag and _touches.has(e.index):
+		_touches[e.index] = e.position
+		if _touches.size() < 2:
+			return
+		## Mỗi ngón góp 1/n chuyển động -> kéo 2 ngón cùng chiều = xoay; khoảng cách đổi = zoom.
+		_drag_rotate(e.relative / float(_touches.size()))
+		var d := _touch_spread()
+		if _pinch_dist > 1.0 and d > 1.0:
+			_pinch_zoom(d / _pinch_dist)
+		_pinch_dist = d
+		get_viewport().set_input_as_handled()
+
+## Ngón đầu chạm map đã thành "bấm chuột trái" giả lập (Player chạy tới / bám theo ngón) -> hủy khi thành cử chỉ 2 ngón.
+func _cancel_touch_walk() -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if "_mouse_holding" in p:
+		p.set("_mouse_holding", false)
+	if "_move_follow_held" in p:
+		p.set("_move_follow_held", false)
+	if p.has_method("_clear_move_target"):
+		p.call("_clear_move_target")
+
+func _touch_spread() -> float:
+	if _touches.size() < 2:
+		return 0.0
+	var pts: Array = _touches.values()
+	return (pts[0] as Vector2).distance_to(pts[1])
+
+func _pinch_zoom(ratio: float) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("set_camera_zoom") and p.has_method("get_camera_zoom") and absf(ratio - 1.0) > 0.002:
+		p.set_camera_zoom(p.get_camera_zoom() * ratio)
 
 func _input(e: InputEvent) -> void:
-	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_MIDDLE:
-		_mid_drag = e.pressed
-	elif e is InputEventMouseMotion and _mid_drag:
-		cam_yaw = wrapf(cam_yaw - e.relative.x * 0.008, -PI, PI)
-		cam_pitch_deg = clampf(cam_pitch_deg + e.relative.y * 0.25, PITCH_MIN, PITCH_MAX)
+	## Đang xoay bằng 2 ngón: chặn chuột giả lập từ cảm ứng (không cho Player chạy theo ngón).
+	if _touches.size() >= 2 and e is InputEventMouse and e.device == InputEvent.DEVICE_ID_EMULATION:
 		get_viewport().set_input_as_handled()
+		return
+	## Bắt ngay từ _input để Player không coi là bấm đi / ra chiêu.
+	if e is InputEventMouseButton:
+		if e.button_index == MOUSE_BUTTON_MIDDLE:
+			_mid_drag = e.pressed
+			get_viewport().set_input_as_handled()
+		elif e.button_index == MOUSE_BUTTON_LEFT:
+			if e.pressed and e.alt_pressed and not _over_gui():
+				_mid_drag = true
+				get_viewport().set_input_as_handled()
+			elif not e.pressed and _mid_drag:
+				_mid_drag = false
+				get_viewport().set_input_as_handled()
+	elif e is InputEventMouseMotion and _mid_drag:
+		_drag_rotate(e.relative)
+		get_viewport().set_input_as_handled()
+
+## Con trỏ đang trên 1 ô giao diện THỰC SỰ nhận chuột (STOP ở chính nó hoặc cha) — khung chứa PASS thì không tính.
+func _over_gui() -> bool:
+	var c: Node = get_viewport().gui_get_hovered_control()
+	while c is Control:
+		if c == _container or c is MoveJoystick:   ## vùng joystick ảo thực chất là mặt map
+			return false
+		if (c as Control).mouse_filter == Control.MOUSE_FILTER_STOP and (c as Control).is_visible_in_tree():
+			return true
+		c = c.get_parent()
+	return false
 
 ## Hướng phím / joystick (theo MÀN HÌNH: lên = ra xa camera) -> hướng trong thế giới 2D khi camera đã xoay.
 ## Camera chưa xoay (hoặc tắt 3D) thì trả nguyên.
