@@ -11,7 +11,7 @@ extends SceneTree
 ## Tuỳ chọn:
 ##   --gender=male|female   --helm=N --armor=N --weapon=N --horse=N   (mã hình; bỏ trống = mặc định / đi bộ)
 ##   --actions=stand,run,attack,cast,hurt,die     --out=res://data/avatar3d/<tên>     --scale=4 (phóng ảnh xoay vòng)
-## Character3D.load_baked("<out>") để dùng; Character3DViewer.open(root, "", {}, "<out>") để xem thử.
+## Character3D.load_baked("<out>") để dùng.
 
 const DEFAULT_ACTIONS := "stand,run,attack,cast,hurt,die"
 const DIR_NAMES := ["front", "front_left", "left", "back_left", "back", "back_right", "right", "front_right"]

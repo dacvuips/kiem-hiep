@@ -49,7 +49,6 @@ var _reset_zoom_btn: Button
 var _graphics_label: Label
 var _render_3d_check: CheckButton
 var _render_3d_note: Label
-var _view_3d_btn: Button
 var _close_btn: Button
 var _exit_hub_btn: Button
 
@@ -320,18 +319,6 @@ func _build_graphics_section() -> void:
 	_render_3d_note = SocialUi.label(tr("Map chưa có bản 3D thì vẫn hiện 2D. Chỉ số và cách chơi không đổi."), SocialUi.MUTED, 13)
 	_render_3d_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_basic_container.add_child(_render_3d_note)
-	_view_3d_btn = SocialUi.stone_button(tr("Xem thử nhân vật 3D"))
-	_view_3d_btn.pressed.connect(_on_view_3d_pressed)
-	_basic_container.add_child(_view_3d_btn)
-
-func _on_view_3d_pressed() -> void:
-	var gender := "male"
-	var look := {}
-	var av: Variant = _player.get("avatar") if _player != null and is_instance_valid(_player) else null
-	if av is CharacterAvatar:
-		gender = av.gender
-		look = {"helm": av.helm_res, "armor": av.armor_res, "weapon": av.weapon_res, "horse": av.horse_res}
-	Character3DViewer.open(get_tree().root, gender, look)
 
 func _build_player_info_section() -> void:
 	var profile: PlayerProfile = GameManager.local_profile
@@ -454,7 +441,6 @@ func _refresh_texts() -> void:
 		_graphics_label.text = tr("Hiển thị")
 		_render_3d_check.text = tr("Map đánh quái dạng 3D (thử nghiệm)")
 		_render_3d_note.text = tr("Map chưa có bản 3D thì vẫn hiện 2D. Chỉ số và cách chơi không đổi.")
-		_view_3d_btn.text = tr("Xem thử nhân vật 3D")
 	if _zoom_label != null:
 		_zoom_label.text = tr("Mức zoom")
 	if _reset_zoom_btn != null:

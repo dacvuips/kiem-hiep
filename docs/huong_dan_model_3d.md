@@ -7,8 +7,6 @@ Nhân vật 3D có 2 nguồn hình, cùng một cách gọi (`Character3D.play()
 | Hình phẳng VLTK (8 hướng) | xoay nhảy nấc 45° | đủ mọi bộ đồ gốc | `AvatarBaker` nướng từ frame gốc |
 | Model 3D thật (.glb / .fbx) | xoay và chuyển động tác liền | chỉ bộ nào có model | `data/avatar3d/models/<tên>/` |
 
-Xem thử: Cài đặt → **Xem thử nhân vật 3D** → hộp chọn góc trên bên phải (hình phẳng hoặc `Model 3D: <tên>`).
-
 ## Thư mục 1 model
 
 ```
@@ -33,7 +31,7 @@ data/avatar3d/models/<tên>/          (hoặc user://avatar3d/models/<tên>/ —
 - `height`: model tự co cho cao bằng số này (mét). 0.8 = cỡ hình phẳng hiện tại.
 - `yaw_offset_deg`: model nhìn lệch hướng thì xoay bù. Mixamo / Tripo quay mặt +Z, để 0.
 - `animations`: không ghi thì tự đoán theo tên (idle, run, attack/slash/punch, cast/spell, hit/impact, death...).
-  Mở màn xem thử: dòng trên cùng ghi động tác nào đang dùng animation nào.
+  `Character3D.model_animation_for("<động tác>")` cho biết động tác nào đang dùng animation nào.
 
 Mẫu có sẵn: `data/avatar3d/models/nguoi_go/` (người gỗ do `tools/make_test_mannequin.gd` dựng).
 
@@ -60,11 +58,11 @@ Mẫu có sẵn: `data/avatar3d/models/nguoi_go/` (người gỗ do `tools/make_
    - Các động tác khác: **Without Skin**, FBX → đặt tên `anim_run.fbx`, `anim_attack.fbx`...
    - Nên bật **In Place** cho chạy (nhân vật chạy tại chỗ, game tự dời vị trí).
 
-5. Chép vào `data/avatar3d/models/<tên>/`, mở màn xem thử chọn `Model 3D: <tên>`.
+5. Chép vào `data/avatar3d/models/<tên>/`; nạp bằng `Character3D.load_model(Model3DLoader.model_dir("<tên>"))`.
    Tên động tác đoán sai thì ghi `animations` trong `model.json`.
 
 ## Giới hạn hiện tại
 
 - Mỗi bộ đồ cần 1 model riêng. Bộ nào chưa có model thì dùng hình phẳng.
   Hướng lâu dài: 1 thân chung + áo phủ cùng bộ xương + vũ khí gắn vào tay (BoneAttachment3D).
-- Chưa có map 3D; trong map vẫn vẽ 2D (`GameSettings.render_3d()` chưa được map đọc).
+- Map 3D (World3DView) hiện vẽ người là các khối bộ phận (Actor3DRig); chưa nối Character3D / model vào map.
