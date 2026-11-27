@@ -992,7 +992,7 @@ func _process(_delta: float) -> void:
 
 			_right_aiming = true
 
-			var aim: Array = _player.aim_toward(_player.get_global_mouse_position(), _main_button.skill)
+			var aim: Array = _player.aim_toward(World3DView.mouse_world(_player), _main_button.skill)
 
 			_player.set_aim(aim[0], aim[1], false)   ## chuột phải: không hiện mũi tên xanh
 

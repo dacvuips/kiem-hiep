@@ -26,6 +26,7 @@ static func set_render_3d(on: bool) -> void:
 	_load()
 	_render_3d = on
 	_write_section("graphics", "render_3d", on)
+	World3DView.sync()   ## đang ở map thì bật / tắt lớp 3D ngay
 
 static func locale() -> String:
 	_load()

@@ -184,7 +184,7 @@ func _process(delta: float) -> void:
 				return
 			if player.has_method("is_moving_to_target") and not player.is_moving_to_target():
 				_want_pickup = false
-	_hover = get_global_mouse_position().distance_to(global_position + Vector2(0, -12)) <= CLICK_RADIUS
+	_hover = World3DView.mouse_world(self, false).distance_to(global_position + Vector2(0, -12)) <= CLICK_RADIUS
 	queue_redraw()
 
 ## Auto nhặt đồ: đứng đủ gần thì nhặt ngay (true = đã gửi lệnh nhặt), xa thì để người gọi tự chạy tới.
@@ -202,7 +202,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
 	## Toạ độ thế giới của chỗ bấm lấy thẳng từ sự kiện (không phụ thuộc vị trí con trỏ lưu sẵn trong viewport).
-	var click_world: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * event.position
+	var click_world: Vector2 = World3DView.screen_to_world(event.position, get_viewport(), false)
 	if click_world.distance_to(global_position + Vector2(0, -12)) > CLICK_RADIUS:
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D

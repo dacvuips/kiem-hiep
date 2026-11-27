@@ -565,18 +565,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			## Bấm trúng Tiêu Xa = tự động theo sau bảo vệ tiêu xa
-			var cart := _pick_escort_cart_at(get_global_mouse_position())
+			var cart := _pick_escort_cart_at(World3DView.mouse_world(self))
 			if cart != null:
 				start_follow(cart)
 				get_viewport().set_input_as_handled()
 				return
 			## Bản web, Shift + bấm trái = ra skill chuột trái tại con trỏ (gốc Shift+LButton -> Mouse_Force0).
 			if WebHudBar.enabled() and event.shift_pressed:
-				cast_left_skill_at(get_global_mouse_position())
+				cast_left_skill_at(World3DView.mouse_world(self))
 				get_viewport().set_input_as_handled()
 				return
 			## Bấm trúng quái / người chơi khác = CHỌN làm mục tiêu đánh (hiện vòng đỏ xoay dưới chân), không chạy tới điểm bấm.
-			var picked := pick_target_at(get_global_mouse_position())
+			var picked := pick_target_at(World3DView.mouse_world(self))
 			if picked != null:
 				set_target(picked, true)
 				## Bản web: bấm trái vào quái = đuổi theo và đánh LIÊN TỤC bằng skill chuột trái (ô T) — gốc Npc::m_nPeopleIdx.
@@ -591,11 +591,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			auto.on_manual_input()
 			_clear_chase_main()
 			if GmManager and GmManager.is_noclip:
-				_set_move_target(get_global_mouse_position())
+				_set_move_target(World3DView.mouse_world(self))
 			else:
-				var feet := get_global_mouse_position() + Vector2(0, VltkWorld.FEET_OFFSET)
+				var feet := World3DView.mouse_world(self) + Vector2(0, VltkWorld.FEET_OFFSET)
 				if VltkWorld.current == null or not walk_to_feet(feet):
-					_set_move_target(get_global_mouse_position())
+					_set_move_target(World3DView.mouse_world(self))
 			_show_route = false  ## bấm chuột trên map chính: không vẽ đường chấm (chỉ mini map / nhập toạ độ mới có)
 			_move_follow_held = false
 			_mouse_hold_time = 0.0
@@ -712,7 +712,7 @@ func get_selected_target() -> Node2D:
 ## Chạy tới 1 điểm theo TOẠ ĐỘ MÀN HÌNH (VD cú chạm trong vùng joystick — MoveJoystick.tapped).
 func move_to_screen_position(screen_position: Vector2) -> void:
 	auto.on_manual_input()
-	var world := get_canvas_transform().affine_inverse() * screen_position
+	var world := World3DView.screen_to_world(screen_position, get_viewport())
 	## Chạm 1 lần = tự tìm đường vòng vật cản như bấm chuột (GM noclip: đi thẳng).
 	if GmManager and GmManager.is_noclip:
 		_set_move_target(world)
@@ -854,7 +854,7 @@ func _get_move_target_vector(delta: float) -> Vector2:
 			_move_follow_held = true
 	if _move_follow_held:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			_set_move_target(get_global_mouse_position())
+			_set_move_target(World3DView.mouse_world(self))
 		else:
 			_move_follow_held = false
 	var to_target := _move_target - global_position

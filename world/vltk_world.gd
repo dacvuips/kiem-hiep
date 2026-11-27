@@ -506,6 +506,7 @@ class NpcShadow extends Node2D:
 func _ready() -> void:
 	current = self
 	_update_sky_background()
+	World3DView.sync.call_deferred()   ## Cài đặt "Map đánh quái dạng 3D": dựng lớp hiển thị 3D đè lên map 2D
 
 func _exit_tree() -> void:
 	if current == self:
