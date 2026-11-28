@@ -10,7 +10,7 @@ rồi xuất APK (ký bằng debug keystore trong cài đặt editor, giống c�
 
     GODOT=".../Godot_v4.7.2-stable_win64_console.exe" python tools/build_launcher_apk.py
     python tools/build_launcher_apk.py --release        # bản phát hành (cần keystore release trong export_credentials)
-    python tools/build_launcher_apk.py --publish        # chép APK vào server/client/files/kiem-hiep.apk
+    python tools/build_launcher_apk.py --publish        # chép APK vào download/kiem-hiep-launcher.apk (trang tải)
 
 Khi nào phải build + phát APK mới:
   - sửa launcher.gd theo cách core mới cần (tăng LAUNCHER_VERSION, phát manifest với --min-launcher)
@@ -118,7 +118,8 @@ def main() -> None:
     ap.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
     ap.add_argument("--out", type=Path, default=ROOT / "build" / "kiem-hiep-launcher.apk")
     ap.add_argument("--release", action="store_true", help="xuất bản release (mặc định debug, ký debug keystore)")
-    ap.add_argument("--publish", action="store_true", help="chép APK vào server/client/files/kiem-hiep.apk")
+    ap.add_argument("--publish", action="store_true",
+                    help="chép APK vào download/kiem-hiep-launcher.apk (trang tải; repo backend: deploy.sh download)")
     args = ap.parse_args()
 
     sh = ls.settings_hash()
@@ -151,10 +152,10 @@ def main() -> None:
         sys.exit("Không thấy APK sau khi xuất")
     print(f"APK: {args.out} ({args.out.stat().st_size / 1048576:.1f} MB)")
     if args.publish:
-        dst = ROOT / "server" / "client" / "files" / "kiem-hiep.apk"
-        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst = ROOT / "download" / "kiem-hiep-launcher.apk"
         shutil.copyfile(args.out, dst)
-        print(f"Đã chép -> {dst}  (link: <account_url>/client/files/kiem-hiep.apk)")
+        print(f"Đã chép -> {dst}  (lên VPS: repo kiem-hiep-server `bash deploy/deploy.sh download`; "
+              f"link: <account_url>/download/kiem-hiep-launcher.apk)")
 
 
 if __name__ == "__main__":

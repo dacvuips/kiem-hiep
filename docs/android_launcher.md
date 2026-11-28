@@ -50,9 +50,10 @@ tải xong bản mới mới cho vào game.
 **Sửa `project.godot`, thêm/bớt/đổi thứ tự autoload, đổi `extends` của autoload, đổi theme/font theme, bus âm thanh:**
 `build_client_update.py` sẽ in `CHÚ Ý: settings_hash đổi ...`. Làm theo thứ tự:
 
-1. `python tools/build_launcher_apk.py --publish` → APK mới ở `server/client/files/kiem-hiep.apk`
-2. Đưa APK lên máy chủ, **sau đó** mới phát core:
-   `python tools/build_client_update.py --apk-url https://<máy chủ>/client/files/kiem-hiep.apk`
+1. `python tools/build_launcher_apk.py --publish` → APK mới ở `download/kiem-hiep-launcher.apk`
+2. Repo `kiem-hiep-server`: `bash deploy/deploy.sh download` (đưa APK + trang tải lên VPS)
+3. **Sau đó** mới phát core: `python tools/build_client_update.py --apk-url https://kiem-hiep-api.viettheo.site/download/kiem-hiep-launcher.apk`
+   rồi `bash deploy/deploy.sh client`
 
 Nếu phát core trước, APK cũ thấy `settings_hash` lệch thì báo "Cần cài bản mới" (không văng), nhưng người chơi bị chặn
 cho tới khi có APK.
@@ -62,8 +63,9 @@ cho tới khi có APK.
 
 ## Chuyển người chơi đang dùng APK cũ (chứa cả game) sang launcher mỏng
 
-APK cũ có `LAUNCHER_VERSION = 1`. Phát APK mỏng (`LAUNCHER_VERSION = 2`) lên máy chủ, rồi phát core với
-`--min-launcher 2 --apk-url <link APK>`: launcher cũ hiện nút "Tải bản cài mới".
+APK cũ có `LAUNCHER_VERSION = 1`. Phát APK mỏng (`LAUNCHER_VERSION = 2`) lên máy chủ (`deploy.sh download`), rồi phát
+core với `--min-launcher 2 --apk-url <link APK>` (`deploy.sh client`): launcher cũ hiện nút "Tải bản cài mới".
+Đã làm ngày 2026-11-28.
 
 ## Ký APK
 
