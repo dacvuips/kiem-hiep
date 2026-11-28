@@ -27,6 +27,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "server" / "client"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import launcher_settings  # noqa: E402
 
 # (tên gói, preset, thư mục nguồn). Gói đầu là core = main pack; thứ tự còn lại = thứ tự ContentPacks nạp.
 PACKS: list[tuple[str, str, list[str]]] = [
@@ -184,6 +186,12 @@ def main() -> None:
 
     for name, _, _, changed in plan:
         print(f"  {'XUẤT LẠI' if changed else 'giữ nguyên'}: {name}")
+    settings_hash = launcher_settings.settings_hash()
+    if old.get("settings_hash") and old.get("settings_hash") != settings_hash:
+        print(f"CHÚ Ý: settings_hash đổi {old.get('settings_hash')} -> {settings_hash}: phải build + phát APK mới "
+              f"(tools/build_launcher_apk.py --publish) TRƯỚC, nếu không người chơi sẽ bị báo cần cài bản mới.")
+    else:
+        print(f"settings_hash = {settings_hash}")
     if args.dry_run:
         return
 
@@ -209,7 +217,8 @@ def main() -> None:
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    changed_any = [p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
+    changed_any = ([p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
+                   or old.get("settings_hash") != settings_hash)
     manifest = {
         "version": int(old.get("version", 0)) + (1 if changed_any else 0),
         "build": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -218,6 +227,9 @@ def main() -> None:
         "min_launcher": args.min_launcher if args.min_launcher is not None else int(old.get("min_launcher", 1)),
         "apk_url": args.apk_url if args.apk_url is not None else old.get("apk_url", ""),
         "files_base": args.files_base if args.files_base is not None else old.get("files_base", ""),
+        # Cài đặt mà engine chỉ đọc từ APK lúc mở app (project.godot, autoload, theme...). Launcher mỏng có mã khác
+        # -> báo tải APK mới thay vì chạy core lệch. Đổi mã này = PHẢI phát APK (tools/build_launcher_apk.py) trước.
+        "settings_hash": settings_hash,
         "packs": packs,
     }
     tmp_manifest = manifest_path.with_suffix(".json.tmp")

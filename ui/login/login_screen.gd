@@ -29,7 +29,6 @@ func _get_account_api() -> Node:
 	return get_node_or_null("/root/AccountApi")
 
 func _ready() -> void:
-	_upgrade_singletons_from_pack()
 	_setup_screen()
 	_update_locale_texts()
 	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
@@ -251,39 +250,3 @@ func _update_locale_texts() -> void:
 	var back_mode: BaseButton = get_node_or_null("%BackModeButton")
 	if back_mode:
 		back_mode.text = tr("‹ Đổi Chế Độ Chơi")
-
-func _upgrade_singletons_from_pack() -> void:
-	var singletons: Array = [
-		["GmManager", "res://systems/gm/gm_manager.gd"],
-		["LocalizationManager", "res://systems/localization_manager.gd"],
-		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
-		["MusicManager", "res://systems/music_manager.gd"],
-		["SfxManager", "res://systems/sfx_manager.gd"],
-		["PlayerStats", "res://systems/player_stats.gd"],
-		["GameManager", "res://systems/game_manager.gd"],
-		["SaveManager", "res://systems/save/save_manager.gd"],
-		["AccountApi", "res://systems/net/account_api.gd"],
-		["NetClient", "res://net/client/net_client.gd"],
-	]
-	for item in singletons:
-		var node_name: String = item[0]
-		var script_path: String = item[1]
-		var node: Node = get_tree().root.get_node_or_null(node_name)
-		if node != null:
-			if ResourceLoader.exists(script_path):
-				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-				if scr:
-					node.set_script(scr)
-					if node.has_method("_ready"):
-						node._ready()
-		else:
-			if ResourceLoader.exists(script_path):
-				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-				if scr:
-					var inst = scr.new()
-					inst.name = node_name
-					get_tree().root.add_child(inst)
-	if ResourceLoader.exists("res://systems/player_profile.gd"):
-		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
-		if prof_scr and GameManager != null and GameManager.local_profile != null:
-			GameManager.local_profile.set_script(prof_scr)

@@ -1,24 +1,28 @@
 extends Control
-## Trình tải game JX1 Idle Origin — thứ DUY NHẤT nằm trong APK (vài chục MB, chủ yếu là engine Godot).
+## Trình tải game JX1 Idle Origin cho APK Android = LAUNCHER MỎNG (tools/build_launcher_apk.py dựng project riêng):
+## APK chỉ có engine + màn tải này + autoload GIẢ (chỉ `extends Node`), KHÔNG có code game.
 ##
 ## Mỗi lần mở app:
 ##   1. Hỏi máy chủ GET /v1/client/manifest (danh sách gói .pck của bản game mới nhất + sha256).
-##   2. Gói nào chưa có trên máy (tên file có mã băm nội dung, VD core-1a2b3c4d.pck) thì tải về user://content/
-##      — tải tiếp được khi rớt mạng (Range), kiểm sha256 xong mới đổi tên .part -> .pck.
-##   3. Ghi user://content/installed.json, xoá gói cũ, khởi động lại app chạy game bằng `--main-pack core.pck`
-##      (Android: GodotApp.java đọc file đánh dấu user://boot_game). Gói còn lại do autoload ContentPacks của game nạp.
+##   2. Kiểm tương thích: min_launcher, phiên bản Godot, settings_hash (cài đặt project / autoload / theme mà engine
+##      chỉ đọc từ APK lúc mở app — xem tools/launcher_settings.py). Lệch -> báo tải APK mới, KHÔNG vào game.
+##   3. Gói core chưa có thì tải về user://content/ (tải tiếp được khi rớt mạng, kiểm sha256 xong mới đổi tên).
+##   4. Nạp core + các gói đã có, gắn script thật từ core cho autoload giả, rồi vào game.
+## Vì sao không chạy lại app bằng `--main-pack`: template Android chính thức chỉ cho main pack nằm TRONG APK.
+## Vì sao APK không được chứa code game: nạp gói lúc đang chạy không thay được script đã biên dịch — code cũ trong APK
+## sẽ kẹt lại và game văng khi core đổi script (lỗi 2026-11-28).
 ## Mất mạng nhưng đã có bản tải trước -> vào game luôn (game chơi offline được).
-## Bản engine/launcher quá cũ so với manifest -> báo tải APK mới (chỉ khi đổi phiên bản Godot hoặc sửa launcher).
 
-## Tăng khi sửa launcher/GodotApp.java theo cách bản game mới phụ thuộc vào (manifest.min_launcher).
-const LAUNCHER_VERSION := 1
+## Tăng khi sửa launcher theo cách bản game mới phụ thuộc vào (manifest.min_launcher).
+## 2 = launcher mỏng (APK không chứa code game).
+const LAUNCHER_VERSION := 2
 const SETTING_URL := "kiem_hiep/network/account_url"
+## Chỉ APK launcher mỏng có (tools/build_launcher_apk.py ghi vào project.godot của APK).
+const SETTING_SETTINGS_HASH := "kiem_hiep/launcher/settings_hash"
 const DEFAULT_URL := "https://kiem-hiep-api.viettheo.site"
 const CONTENT_DIR := "user://content"
 const INSTALLED_PATH := "user://content/installed.json"
-## GodotApp.java đọc lúc mở app: dòng 1 = đường dẫn core.pck, dòng 2 = thư mục gói. Đọc xong xoá (dùng 1 lần),
-## nên lần mở app sau lại vào launcher để kiểm tra cập nhật.
-const BOOT_MARKER := "user://boot_game"
+const FIRST_SCENE := "res://ui/mode_select/ModeSelect.tscn"
 const MANIFEST_TIMEOUT := 10.0
 const CONNECT_TIMEOUT_MS := 15000
 ## Không nhận được byte nào trong chừng này -> coi như rớt mạng, kết nối lại và tải tiếp.
@@ -46,8 +50,9 @@ var _speed_b0 := 0
 var _speed := 0.0
 
 func _ready() -> void:
-	if OS.has_feature("editor") or OS.has_feature("web") or OS.has_feature("ios"):
-		get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
+	# Editor / web / iOS / bản đầy đủ (không phải APK launcher mỏng): code game đã có sẵn, vào thẳng.
+	if OS.has_feature("editor") or OS.has_feature("web") or OS.has_feature("ios") or not _is_thin_launcher():
+		get_tree().change_scene_to_file.call_deferred(FIRST_SCENE)
 		return
 	_base_url = str(ProjectSettings.get_setting(SETTING_URL, DEFAULT_URL))
 	for arg in OS.get_cmdline_user_args() + OS.get_cmdline_args():
@@ -144,6 +149,10 @@ func _check_manifest(m: Dictionary) -> String:
 	if int(m.get("min_launcher", 1)) > LAUNCHER_VERSION:
 		return "outdated"
 	# Gói xuất từ Godot khác phiên bản (major.minor) có thể không chạy được trên engine trong APK này.
+	# Core đòi cài đặt project / autoload / theme khác với APK này -> phải cài APK mới (nạp vẫn chạy được nhưng sai).
+	var want_settings := str(m.get("settings_hash", ""))
+	if want_settings != "" and want_settings != _own_settings_hash():
+		return "outdated"
 	var engine := str(m.get("engine", "")).split(".")
 	var v := Engine.get_version_info()
 	if engine.size() < 2 or int(engine[0]) != int(v["major"]) or int(engine[1]) != int(v["minor"]):
@@ -388,55 +397,57 @@ func _boot(installed: Dictionary) -> void:
 				var ok_pack := ProjectSettings.load_resource_pack(fp, false)
 				print("Launcher: Nạp gói bổ trợ %s -> %s" % [fn, ok_pack])
 
-	# 3. Đảm bảo toàn bộ các Autoload singleton được tạo và gắn vào cây /root
-	var autoloads: Array = [
-		["GameUiBoot", "res://ui/common/game_ui_boot.gd"],
-		["LocalizationManager", "res://systems/localization_manager.gd"],
-		["PlayerStats", "res://systems/player_stats.gd"],
-		["VfxManager", "res://systems/vfx_manager.gd"],
-		["SfxManager", "res://systems/sfx_manager.gd"],
-		["ObjectPool", "res://systems/object_pool.gd"],
-		["GameManager", "res://systems/game_manager.gd"],
-		["SaveManager", "res://systems/save/save_manager.gd"],
-		["MusicManager", "res://systems/music_manager.gd"],
-		["AccountApi", "res://systems/net/account_api.gd"],
-		["NetClient", "res://net/client/net_client.gd"],
-		["ContentPacks", "res://systems/boot/content_packs.gd"],
-		["WebContentManager", "res://systems/boot/web_content_manager.gd"],
-		["GmManager", "res://systems/gm/gm_manager.gd"],
-		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
-		["FarmManager", "res://systems/son_trang/farm_manager.gd"],
-		["SceneTransition", "res://ui/common/scene_transition.gd"],
-	]
-	for al in autoloads:
-		var node_name: String = al[0]
-		var script_path: String = al[1]
-		if get_tree().root.has_node(node_name):
-			if ResourceLoader.exists(script_path):
-				var scr = load(script_path)
-				var existing = get_tree().root.get_node(node_name)
-				if scr and existing and existing.get_script() != scr:
-					existing.set_script(scr)
-					if existing.has_method("_ready"):
-						existing._ready()
-					print("Launcher: Nâng cấp script singleton %s -> OK" % node_name)
-		else:
-			if ResourceLoader.exists(script_path):
-				var scr = load(script_path)
-				if scr and scr is GDScript and scr.can_instantiate():
-					var inst = scr.new()
-					inst.name = node_name
-					get_tree().root.add_child(inst)
-					print("Launcher: Khởi tạo singleton %s -> OK" % node_name)
-				else:
-					push_warning("Launcher: Không thể khởi tạo singleton %s từ %s" % [node_name, script_path])
+	# 3. Gắn script thật (từ core vừa nạp) cho autoload giả của APK.
+	var err := _activate_autoloads()
+	if err != "":
+		_fail("Không khởi động được dữ liệu game (%s).
+Vui lòng cài lại bản mới nhất." % err)
+		return
 
 	await get_tree().process_frame
-	print("Launcher: Chuyển cảnh sang màn hình chọn chế độ (ModeSelect)...")
-	get_tree().change_scene_to_file.call_deferred("res://ui/mode_select/ModeSelect.tscn")
+	print("Launcher: vào game (%s)" % FIRST_SCENE)
+	get_tree().change_scene_to_file.call_deferred(FIRST_SCENE)
 
-func _restart_via_java() -> void:
-	pass
+## APK launcher mỏng: project.godot khai báo đủ autoload như game (nên tên MusicManager, NetClient... dùng được trong code),
+## nhưng script ở các đường dẫn đó trong APK chỉ là bản giả `extends Node`. Engine đã tạo node + đăng ký tên toàn cục
+## lúc mở app. Ở đây: gỡ script giả (không còn ai giữ -> rời bộ nhớ đệm), nạp script thật từ core, gắn lại và cho node
+## vào cây lại đúng thứ tự để _enter_tree/_ready chạy như lúc engine tự tạo autoload. "" = thành công.
+func _activate_autoloads() -> String:
+	var root := get_tree().root
+	var entries: Array[Dictionary] = []
+	for child in root.get_children():
+		var key := "autoload/" + str(child.name)
+		if child != self and ProjectSettings.has_setting(key):
+			entries.append({"node": child, "path": str(ProjectSettings.get_setting(key)).trim_prefix("*"),
+				"index": child.get_index()})
+	# Tháo hết trước: script của autoload này có thể nhắc tới autoload khác -> không để bản giả nào còn trong bộ nhớ.
+	for e in entries:
+		root.remove_child(e.node)
+		(e.node as Node).set_script(null)
+	for e in entries:
+		var path: String = e.path
+		if ResourceLoader.has_cached(path):
+			# Còn sót bản giả trong bộ nhớ đệm (không còn node nào dùng) -> đọc lại tại chỗ từ core.
+			ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
+		var scr := load(path) as Script
+		if scr == null or not scr.can_instantiate():
+			return "autoload %s" % e.node.name
+		e["script"] = scr
+	for e in entries:
+		(e.node as Node).set_script(e.script)
+	for e in entries:
+		var n: Node = e.node
+		n.request_ready()
+		root.add_child(n)
+		root.move_child(n, mini(int(e.index), root.get_child_count() - 1))
+	print("Launcher: gắn script thật cho %d autoload" % entries.size())
+	return ""
+
+func _is_thin_launcher() -> bool:
+	return ProjectSettings.has_setting(SETTING_SETTINGS_HASH)
+
+func _own_settings_hash() -> String:
+	return str(ProjectSettings.get_setting(SETTING_SETTINGS_HASH, ""))
 
 # --- Tiện ích file ---
 
