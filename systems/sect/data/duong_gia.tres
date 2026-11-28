@@ -94,7 +94,7 @@ vltk_attribs = {
 }
 base_damage = 14.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 819.2
 element = 0
 damage_growth_per_level = 7.1579
@@ -178,7 +178,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 320.0
 element = 0
 damage_growth_per_level = 0.0
@@ -229,7 +229,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -275,7 +275,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -331,7 +331,7 @@ vltk_attribs = {
 }
 base_damage = 20.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 8.00
 range = 640.0
 element = 0
 damage_growth_per_level = 10.6316
@@ -406,7 +406,8 @@ vltk_attribs = {
 }
 base_damage = 13.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 20.00
+vltk_min_time_per_cast = PackedFloat32Array(1, 360, 0, 20, 360, 0)
 range = 0.0
 element = 0
 damage_growth_per_level = 7.1053
@@ -431,6 +432,7 @@ value_at_max_level = 13.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_35"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 2, 0, 15, 39, 0, 20, 44, 0, 21, 44, 0)
 label = "Xác suất bỏ qua bùa giảm kháng"
 value_at_level_1 = 2.0
 value_at_max_level = 44.0
@@ -471,7 +473,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 6.00
+cooldown = 40.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -522,7 +524,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 4.00
+cooldown = 30.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -609,7 +611,8 @@ vltk_attribs = {
 }
 base_damage = 13.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 20.00
+vltk_min_time_per_cast = PackedFloat32Array(1, 360, 0, 20, 360, 0)
 range = 0.0
 element = 0
 damage_growth_per_level = 7.1053
@@ -648,7 +651,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -694,7 +697,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -734,7 +737,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -780,19 +783,21 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([SubResource("SubResource_58"), SubResource("SubResource_59")])
 [sub_resource type="Resource" id="SubResource_61"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 1, 0, 20, 10, 0, 30, 18, 0, 31, 18, 0)
 label = "Tỷ lệ tạo thành sát thương"
 value_at_level_1 = 1.0
 value_at_max_level = 18.0
 suffix = "%"
 [sub_resource type="Resource" id="SubResource_62"]
 script = ExtResource("3_statline")
+level_points = PackedFloat32Array(1, 18, 0, 20, 125, 0)
 label = "Sát thương vật lý - ngoại công"
 value_at_level_1 = 18.0
 value_at_max_level = 125.0
@@ -835,7 +840,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -901,7 +906,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 5.00
 range = 819.2
 element = 0
 damage_growth_per_level = 0.0
@@ -983,7 +988,7 @@ vltk_attribs = {
 }
 base_damage = 13.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 5.00
 range = 320.0
 element = 0
 damage_growth_per_level = 7.1053
@@ -1041,7 +1046,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0
@@ -1103,7 +1108,7 @@ vltk_attribs = {
 }
 base_damage = 20.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 819.2
 element = 0
 damage_growth_per_level = 12.3684
@@ -1162,7 +1167,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.40
+cooldown = 0.00
 range = 480.0
 element = 0
 damage_growth_per_level = 0.0
@@ -1227,7 +1232,7 @@ vltk_attribs = {
 }
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 0.0
+cooldown = 0.00
 range = 0.0
 element = 0
 damage_growth_per_level = 0.0

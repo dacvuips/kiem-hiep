@@ -189,7 +189,7 @@ static func cleanup_tk_items() -> void:
 	if profile:
 		var kept: Array[ItemInstance] = []
 		for it in profile.inventory:
-			if it != null and (it.misc_id.begins_with("tk_") or bool(it.get_base().get("songjin_only", false))):
+			if it != null and (it.misc_id.begins_with("tk_") or it.get_base().get("songjin_only", false) == true):
 				continue
 			kept.append(it)
 		profile.inventory = kept

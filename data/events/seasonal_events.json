@@ -1,0 +1,7158 @@
+{
+ "version": 1,
+ "box_drop_rate": 0.1,
+ "boxes": {
+  "ev_box_tet_nguyen_dan": {
+   "id": "ev_box_tet_nguyen_dan",
+   "name": "Hộp Tết Nguyên Đán",
+   "icon": "baise_lipinhe",
+   "event": "tet_nguyen_dan",
+   "intro": "Rơi từ quái trong thời gian Tết Nguyên Đán. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_valentine": {
+   "id": "ev_box_valentine",
+   "name": "Hộp Lễ Tình Nhân 14/2",
+   "icon": "baise_lipinhe",
+   "event": "valentine",
+   "intro": "Rơi từ quái trong thời gian Lễ Tình Nhân 14/2. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_quoc_te_phu_nu": {
+   "id": "ev_box_quoc_te_phu_nu",
+   "name": "Hộp Quốc tế Phụ nữ 8/3",
+   "icon": "baise_lipinhe",
+   "event": "quoc_te_phu_nu",
+   "intro": "Rơi từ quái trong thời gian Quốc tế Phụ nữ 8/3. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_giai_phong_30_4": {
+   "id": "ev_box_giai_phong_30_4",
+   "name": "Hộp Mừng Giải phóng 30/4",
+   "icon": "baise_lipinhe",
+   "event": "giai_phong_30_4",
+   "intro": "Rơi từ quái trong thời gian Mừng Giải phóng 30/4. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_doan_ngo": {
+   "id": "ev_box_doan_ngo",
+   "name": "Hộp Tết Đoan Ngọ",
+   "icon": "baise_lipinhe",
+   "event": "doan_ngo",
+   "intro": "Rơi từ quái trong thời gian Tết Đoan Ngọ. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_sinh_nhat_vltk": {
+   "id": "ev_box_sinh_nhat_vltk",
+   "name": "Hộp Sinh Nhật Võ Lâm Truyền Kỳ",
+   "icon": "baise_lipinhe",
+   "event": "sinh_nhat_vltk",
+   "intro": "Rơi từ quái trong thời gian Sinh Nhật Võ Lâm Truyền Kỳ. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_trung_thu": {
+   "id": "ev_box_trung_thu",
+   "name": "Hộp Tết Trung Thu",
+   "icon": "baise_lipinhe",
+   "event": "trung_thu",
+   "intro": "Rơi từ quái trong thời gian Tết Trung Thu. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_quoc_khanh": {
+   "id": "ev_box_quoc_khanh",
+   "name": "Hộp Mừng Quốc khánh 2/9",
+   "icon": "baise_lipinhe",
+   "event": "quoc_khanh",
+   "intro": "Rơi từ quái trong thời gian Mừng Quốc khánh 2/9. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_phu_nu_viet_nam": {
+   "id": "ev_box_phu_nu_viet_nam",
+   "name": "Hộp Phụ nữ Việt Nam 20/10",
+   "icon": "baise_lipinhe",
+   "event": "phu_nu_viet_nam",
+   "intro": "Rơi từ quái trong thời gian Phụ nữ Việt Nam 20/10. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_nha_giao": {
+   "id": "ev_box_nha_giao",
+   "name": "Hộp Nhà Giáo Việt Nam 20/11",
+   "icon": "baise_lipinhe",
+   "event": "nha_giao",
+   "intro": "Rơi từ quái trong thời gian Nhà Giáo Việt Nam 20/11. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  },
+  "ev_box_giang_sinh": {
+   "id": "ev_box_giang_sinh",
+   "name": "Hộp Lễ Giáng Sinh",
+   "icon": "baise_lipinhe",
+   "event": "giang_sinh",
+   "intro": "Rơi từ quái trong thời gian Lễ Giáng Sinh. Mở ra 1 nguyên liệu ngẫu nhiên của sự kiện.",
+   "price": 0,
+   "stack": 100,
+   "width": 1,
+   "height": 1,
+   "source": "event"
+  }
+ },
+ "event_stack": 100,
+ "stack_items": [
+  "4_394_1",
+  "4_395_1",
+  "4_396_1",
+  "4_397_1",
+  "4_398_1",
+  "4_399_1",
+  "4_404_1",
+  "4_405_1",
+  "6_1_1221",
+  "6_1_1222",
+  "6_1_1223",
+  "6_1_1224",
+  "6_1_1225",
+  "6_1_1226",
+  "6_1_1227",
+  "6_1_1228",
+  "6_1_1653",
+  "6_1_1654",
+  "6_1_1655",
+  "6_1_1656",
+  "6_1_1657",
+  "6_1_1658",
+  "6_1_1659",
+  "6_1_1660",
+  "6_1_1661",
+  "6_1_2851",
+  "6_1_2852",
+  "6_1_2853",
+  "6_1_2854",
+  "6_1_2855",
+  "6_1_2856",
+  "6_1_2857",
+  "6_1_2858",
+  "6_1_2861",
+  "6_1_2865",
+  "6_1_2976",
+  "6_1_2977",
+  "6_1_2978",
+  "6_1_2981",
+  "6_1_30153",
+  "6_1_30154",
+  "6_1_30166",
+  "6_1_30167",
+  "6_1_30172",
+  "6_1_30173",
+  "6_1_30176",
+  "6_1_30177",
+  "6_1_30195",
+  "6_1_30196",
+  "6_1_30200",
+  "6_1_3039",
+  "6_1_3040",
+  "6_1_3041",
+  "6_1_3072",
+  "6_1_3074",
+  "6_1_3075",
+  "6_1_3076",
+  "6_1_3081",
+  "6_1_3093",
+  "6_1_3094",
+  "6_1_3095",
+  "6_1_3096",
+  "6_1_3097",
+  "6_1_3098",
+  "6_1_3099",
+  "6_1_3100",
+  "6_1_3101",
+  "6_1_3102",
+  "6_1_3103",
+  "6_1_3104",
+  "6_1_3108",
+  "6_1_3117",
+  "6_1_3118",
+  "6_1_3119",
+  "6_1_3120",
+  "6_1_3123",
+  "6_1_3124",
+  "6_1_3126",
+  "6_1_63",
+  "6_1_64",
+  "6_1_65",
+  "6_1_66",
+  "6_1_67",
+  "ev_box_doan_ngo",
+  "ev_box_giai_phong_30_4",
+  "ev_box_giang_sinh",
+  "ev_box_nha_giao",
+  "ev_box_phu_nu_viet_nam",
+  "ev_box_quoc_khanh",
+  "ev_box_quoc_te_phu_nu",
+  "ev_box_sinh_nhat_vltk",
+  "ev_box_tet_nguyen_dan",
+  "ev_box_trung_thu",
+  "ev_box_valentine"
+ ],
+ "events": [
+  {
+   "id": "tet_nguyen_dan",
+   "name": "Tết Nguyên Đán",
+   "icon": "🧧",
+   "calendar": "lunar",
+   "anchor": [
+    1,
+    1
+   ],
+   "desc": "Mừng xuân mới: mở Túi Mừng Xuân lấy Lá bánh, Gạo nếp, Đậu xanh, Thịt heo gói Bánh Chưng (thường / hảo hạng / thượng hạng), treo liễn Phúc – Lộc – Thọ hái lộc; gom năm loại trái cây bày Mâm Ngũ Quả (Mâm Bạc / Mâm Vàng), đổi Thủy Tinh – Tinh Hồng Bảo Thạch lấy Bao Lì Xì Đỏ. Ăn bánh, dùng mâm và lì xì nhận kinh nghiệm cùng bảo vật.",
+   "cover": "6_1_3106",
+   "start_offset": -22,
+   "end_offset": 8,
+   "source": "script/activitysys/config/35",
+   "recipes": [
+    {
+     "id": "tt08_1",
+     "name": "Gói Bánh chưng thượng hạng",
+     "title": "Bánh chưng thượng hạng",
+     "materials": [
+      {
+       "item": "6_1_1653",
+       "count": 4
+      },
+      {
+       "item": "6_1_1654",
+       "count": 3
+      },
+      {
+       "item": "6_1_1655",
+       "count": 2
+      },
+      {
+       "item": "6_1_1656",
+       "count": 1
+      },
+      {
+       "item": "6_1_1660",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_1662",
+      "count": 1
+     }
+    },
+    {
+     "id": "tt08_2",
+     "name": "Gói Bánh chưng hảo hạng",
+     "title": "Bánh chưng hảo hạng",
+     "materials": [
+      {
+       "item": "6_1_1653",
+       "count": 4
+      },
+      {
+       "item": "6_1_1654",
+       "count": 3
+      },
+      {
+       "item": "6_1_1655",
+       "count": 2
+      },
+      {
+       "item": "6_1_1656",
+       "count": 1
+      },
+      {
+       "item": "6_1_1661",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_1663",
+      "count": 1
+     }
+    },
+    {
+     "id": "tt08_3",
+     "name": "Gói Bánh chưng thường",
+     "title": "Bánh chưng thường",
+     "materials": [
+      {
+       "item": "6_1_1653",
+       "count": 4
+      },
+      {
+       "item": "6_1_1654",
+       "count": 3
+      },
+      {
+       "item": "6_1_1655",
+       "count": 2
+      },
+      {
+       "item": "6_1_1656",
+       "count": 1
+      }
+     ],
+     "money": 20000,
+     "result": {
+      "item": "6_1_1664",
+      "count": 1
+     }
+    },
+    {
+     "id": "tt08_lien",
+     "name": "Treo liễn Phúc Lộc Thọ",
+     "title": "Treo liễn Phúc Lộc Thọ",
+     "materials": [
+      {
+       "item": "6_1_1657",
+       "count": 1
+      },
+      {
+       "item": "6_1_1658",
+       "count": 1
+      },
+      {
+       "item": "6_1_1659",
+       "count": 1
+      }
+     ],
+     "money": 9999,
+     "limit": 20,
+     "result": {
+      "all": [
+       {
+        "pick": [
+         {
+          "item": "6_1_123",
+          "count": 1,
+          "rate": 75.0
+         },
+         {
+          "item": "6_1_124",
+          "count": 1,
+          "rate": 20.0
+         },
+         {
+          "item": "6_1_71",
+          "count": 1,
+          "rate": 5.0
+         }
+        ]
+       },
+       {
+        "pick": [
+         {
+          "exp": 500000,
+          "rate": 35.0
+         },
+         {
+          "exp": 1000000,
+          "rate": 30.0
+         },
+         {
+          "exp": 1500000,
+          "rate": 25.0
+         },
+         {
+          "exp": 2000000,
+          "rate": 10.0
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "c13",
+     "name": "Hợp thành Mâm Bạc Ngũ Quả",
+     "title": "Mâm Bạc Ngũ Quả",
+     "materials": [
+      {
+       "item": "6_1_3098",
+       "count": 1
+      },
+      {
+       "item": "6_1_3095",
+       "count": 1
+      },
+      {
+       "item": "6_1_3097",
+       "count": 1
+      },
+      {
+       "item": "6_1_3099",
+       "count": 1
+      },
+      {
+       "item": "6_1_3096",
+       "count": 1
+      },
+      {
+       "item": "6_1_3103",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3105",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c14",
+     "name": "Hợp thành Mâm Bạc Ngũ Quả",
+     "title": "Mâm Bạc Ngũ Quả",
+     "materials": [
+      {
+       "item": "6_1_3093",
+       "count": 1
+      },
+      {
+       "item": "6_1_3100",
+       "count": 1
+      },
+      {
+       "item": "6_1_3101",
+       "count": 1
+      },
+      {
+       "item": "6_1_3094",
+       "count": 1
+      },
+      {
+       "item": "6_1_3102",
+       "count": 1
+      },
+      {
+       "item": "6_1_3103",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3105",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c16",
+     "name": "Hợp thành Mâm Vàng Ngũ Quả",
+     "title": "Mâm Vàng Ngũ Quả",
+     "materials": [
+      {
+       "item": "6_1_3098",
+       "count": 1
+      },
+      {
+       "item": "6_1_3095",
+       "count": 1
+      },
+      {
+       "item": "6_1_3097",
+       "count": 1
+      },
+      {
+       "item": "6_1_3099",
+       "count": 1
+      },
+      {
+       "item": "6_1_3096",
+       "count": 1
+      },
+      {
+       "item": "6_1_3104",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3106",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c17",
+     "name": "Hợp thành Mâm Vàng Ngũ Quả",
+     "title": "Mâm Vàng Ngũ Quả",
+     "materials": [
+      {
+       "item": "6_1_3093",
+       "count": 1
+      },
+      {
+       "item": "6_1_3100",
+       "count": 1
+      },
+      {
+       "item": "6_1_3101",
+       "count": 1
+      },
+      {
+       "item": "6_1_3094",
+       "count": 1
+      },
+      {
+       "item": "6_1_3102",
+       "count": 1
+      },
+      {
+       "item": "6_1_3104",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3106",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c18",
+     "name": "Nộp Bao Lì Xì Năm Mới (nhỏ)",
+     "title": "handin redbag",
+     "materials": [
+      {
+       "item": "6_1_3108",
+       "count": 1
+      }
+     ],
+     "money": 100000,
+     "result": {
+      "exp": 1000000
+     }
+    },
+    {
+     "id": "c23",
+     "name": "Hợp thành Bao lì xì đỏ",
+     "title": "Bao lì xì đỏ",
+     "materials": [
+      {
+       "item": "4_353_1",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30169",
+      "count": 10,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c24",
+     "name": "Hợp thành Bao lì xì đỏ",
+     "title": "Bao lì xì đỏ",
+     "materials": [
+      {
+       "item": "4_238_1",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30169",
+      "count": 10,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c25",
+     "name": "Hợp thành Bao lì xì đỏ",
+     "title": "Bao lì xì đỏ",
+     "materials": [
+      {
+       "item": "4_239_1",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30169",
+      "count": 10,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c26",
+     "name": "Hợp thành Bao lì xì đỏ",
+     "title": "Bao lì xì đỏ",
+     "materials": [
+      {
+       "item": "4_240_1",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30169",
+      "count": 10,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_3105": {
+     "result": {
+      "all": [
+       {
+        "exp": 1000000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_3108",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 30.0
+         }
+        ]
+       }
+      ]
+     },
+     "limit": 1000,
+     "min_level": 150
+    },
+    "6_1_3106": {
+     "result": {
+      "all": [
+       {
+        "all": [
+         {
+          "exp": 6000000
+         },
+         {
+          "pick": [
+           {
+            "item": "6_1_2349",
+            "count": 1,
+            "rate": 0.05
+           },
+           {
+            "item": "6_1_3001",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2982",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2983",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2984",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2985",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2986",
+            "count": 1,
+            "rate": 0.1
+           },
+           {
+            "item": "6_1_2987",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2988",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2989",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2990",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_2991",
+            "count": 1,
+            "rate": 0.1
+           },
+           {
+            "item": "6_1_3002",
+            "count": 1,
+            "rate": 0.2
+           },
+           {
+            "item": "6_1_3003",
+            "count": 1,
+            "rate": 0.1
+           },
+           {
+            "item": "6_1_3004",
+            "count": 1,
+            "rate": 0.05
+           },
+           {
+            "item": "6_1_1617",
+            "count": 1,
+            "rate": 1.0
+           },
+           {
+            "item": "6_1_2117",
+            "count": 1,
+            "expire": {
+             "days": 30
+            },
+            "rate": 1.0
+           },
+           {
+            "item": "6_1_2712",
+            "count": 1,
+            "rate": 0.5
+           },
+           {
+            "item": "6_1_2711",
+            "count": 1,
+            "rate": 1.0
+           },
+           {
+            "item": "6_1_2710",
+            "count": 1,
+            "rate": 1.0
+           },
+           {
+            "item": "6_1_2311",
+            "count": 1,
+            "rate": 0.1
+           },
+           {
+            "item": "6_1_2183",
+            "count": 1,
+            "rate": 0.3
+           },
+           {
+            "item": "6_1_30084",
+            "count": 1,
+            "expire": {
+             "days": 14
+            },
+            "rate": 1.0
+           },
+           {
+            "gold_row": 3491,
+            "name": "Trường sinh",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3492,
+            "name": "Bột Hải",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3493,
+            "name": "Vũ Uy",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3494,
+            "name": "Nhược Thủy",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3495,
+            "name": "Trấn Nhạc",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3496,
+            "name": "Yên Ba",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3497,
+            "name": "Thần Tuệ",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3498,
+            "name": "Truy Anh ",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3499,
+            "name": "Long Đảm",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3500,
+            "name": "Lưu Huỳnh",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3501,
+            "name": "Cuồng Lan",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3502,
+            "name": "Thúy Ngọc Băng Huyền",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3503,
+            "name": "Hồng Anh",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3504,
+            "name": "Ngưng Tuyết Hàn Sương",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3505,
+            "name": "Diệu Giải Trần Duyên",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3506,
+            "name": "Lực Phá Quân Tinh",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.1
+           },
+           {
+            "gold_row": 3211,
+            "name": "Hoàng Kim ấn Cấp 7 (Cường hóa)",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "gold_row": 3221,
+            "name": "Hoàng Kim ấn Cấp 7 (Nhược hóa)",
+            "expire": {
+             "days": 7
+            },
+            "rate": 0.05
+           },
+           {
+            "item": "6_1_2219",
+            "count": 1,
+            "expire": {
+             "days": 30
+            },
+            "rate": 0.1
+           },
+           {
+            "item": "6_1_2125",
+            "count": 1,
+            "rate": 20.0
+           },
+           {
+            "exp": 5000000,
+            "rate": 40.0
+           },
+           {
+            "exp": 8000000,
+            "rate": 13.0
+           },
+           {
+            "exp": 10000000,
+            "rate": 10.0
+           },
+           {
+            "exp": 15000000,
+            "rate": 5.0
+           },
+           {
+            "exp": 20000000,
+            "rate": 1.6
+           },
+           {
+            "exp": 50000000,
+            "rate": 0.5
+           },
+           {
+            "exp": 100000000,
+            "rate": 0.05
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_3108",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 60.0
+         }
+        ]
+       }
+      ]
+     },
+     "milestones": {
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 10000000
+      },
+      "300": {
+       "exp": 10000000
+      },
+      "400": {
+       "exp": 10000000
+      },
+      "500": {
+       "exp": 20000000
+      },
+      "600": {
+       "exp": 20000000
+      },
+      "700": {
+       "exp": 20000000
+      },
+      "800": {
+       "exp": 20000000
+      },
+      "900": {
+       "exp": 20000000
+      },
+      "1000": {
+       "exp": 30000000
+      },
+      "1100": {
+       "exp": 30000000
+      },
+      "1200": {
+       "exp": 30000000
+      },
+      "1300": {
+       "exp": 30000000
+      },
+      "1400": {
+       "exp": 30000000
+      },
+      "1500": {
+       "exp": 40000000
+      },
+      "1600": {
+       "exp": 40000000
+      },
+      "1700": {
+       "exp": 40000000
+      },
+      "1800": {
+       "exp": 40000000
+      },
+      "1900": {
+       "exp": 40000000
+      },
+      "2000": {
+       "item": "6_1_2349",
+       "count": 1
+      }
+     },
+     "limit": 2000,
+     "min_level": 150
+    },
+    "6_1_30169": {
+     "result": {
+      "exp": 2500000
+     },
+     "min_level": 150
+    },
+    "6_1_1662": {
+     "result": {
+      "all": [
+       {
+        "exp": 2000000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_72",
+          "count": 1,
+          "rate": 16.7116
+         },
+         {
+          "item": "6_1_125",
+          "count": 1,
+          "rate": 17.9574
+         },
+         {
+          "item": "6_1_1482",
+          "count": 1,
+          "rate": 0.0112
+         },
+         {
+          "item": "6_1_1481",
+          "count": 1,
+          "rate": 0.0561
+         },
+         {
+          "item": "6_1_1480",
+          "count": 1,
+          "rate": 5.6117
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 3,
+          "rate": 24.6914
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 4,
+          "rate": 17.9574
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 5,
+          "rate": 2.2447
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 6,
+          "rate": 1.1223
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 7,
+          "rate": 0.1122
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 8,
+          "rate": 0.0561
+         },
+         {
+          "item": "6_1_71",
+          "count": 1,
+          "rate": 12.3457
+         },
+         {
+          "item": "6_1_1181",
+          "count": 1,
+          "rate": 1.1223
+         }
+        ]
+       }
+      ]
+     },
+     "min_level": 50
+    },
+    "6_1_1663": {
+     "result": {
+      "all": [
+       {
+        "exp": 1500000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_124",
+          "count": 1,
+          "rate": 22.9412
+         },
+         {
+          "item": "6_1_72",
+          "count": 1,
+          "rate": 17.6471
+         },
+         {
+          "item": "6_1_73",
+          "count": 1,
+          "rate": 16.4706
+         },
+         {
+          "item": "6_1_71",
+          "count": 1,
+          "rate": 8.2353
+         },
+         {
+          "item": "6_1_125",
+          "count": 1,
+          "rate": 20.0
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 3,
+          "rate": 8.2353
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 4,
+          "rate": 5.8824
+         },
+         {
+          "item": "6_1_147",
+          "count": 1,
+          "level": 5,
+          "rate": 0.5882
+         }
+        ]
+       }
+      ]
+     },
+     "min_level": 50
+    },
+    "6_1_1664": {
+     "result": {
+      "exp": 500000
+     },
+     "min_level": 50
+    },
+    "6_1_1652": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_1653",
+        "count": 1,
+        "rate": 37.3
+       },
+       {
+        "item": "6_1_1654",
+        "count": 1,
+        "rate": 29.1
+       },
+       {
+        "item": "6_1_1655",
+        "count": 1,
+        "rate": 19.4
+       },
+       {
+        "item": "6_1_1656",
+        "count": 1,
+        "rate": 9.7
+       },
+       {
+        "item": "6_1_1657",
+        "count": 1,
+        "rate": 1.0
+       },
+       {
+        "item": "6_1_1658",
+        "count": 1,
+        "rate": 1.0
+       },
+       {
+        "item": "6_1_1659",
+        "count": 1,
+        "rate": 1.0
+       },
+       {
+        "item": "6_1_1660",
+        "count": 1,
+        "rate": 0.5
+       },
+       {
+        "item": "6_1_1661",
+        "count": 1,
+        "rate": 1.0
+       }
+      ]
+     }
+    },
+    "ev_box_tet_nguyen_dan": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_1653",
+        "count": 1,
+        "rate": 19.02,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1654",
+        "count": 1,
+        "rate": 14.27,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1655",
+        "count": 1,
+        "rate": 9.51,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1656",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3098",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3095",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3097",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3099",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3096",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3093",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3100",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3101",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3094",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3102",
+        "count": 1,
+        "rate": 4.76,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3103",
+        "count": 1,
+        "rate": 1.9,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_1661",
+        "count": 1,
+        "rate": 0.57,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1657",
+        "count": 1,
+        "rate": 0.57,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1658",
+        "count": 1,
+        "rate": 0.57,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1659",
+        "count": 1,
+        "rate": 0.57,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_3104",
+        "count": 1,
+        "rate": 0.57,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1660",
+        "count": 1,
+        "rate": 0.12,
+        "tier": "Rất hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_1652": [
+     "Đánh quái rơi Túi mừng xuân (mở ra Lá bánh, Gạo nếp, Đậu xanh, Thịt heo, Phúc / Lộc / Thọ, Bí quyết)"
+    ]
+   },
+   "drop_box": "ev_box_tet_nguyen_dan"
+  },
+  {
+   "id": "valentine",
+   "name": "Lễ Tình Nhân 14/2",
+   "icon": "💝",
+   "calendar": "solar",
+   "anchor": [
+    2,
+    14
+   ],
+   "desc": "Pha Trà Giải Nhiệt và gói Quà Màu Xanh tặng người thương; nộp Hoa Hồng lấy kinh nghiệm. Dùng trà và quà nhận phần thưởng.",
+   "start_offset": -12,
+   "end_offset": 14,
+   "source": "script/activitysys/config/1008",
+   "recipes": [
+    {
+     "id": "c14",
+     "name": "Hợp thành Trà giải nhiệt",
+     "title": "Trà giải nhiệt",
+     "materials": [
+      {
+       "item": "6_1_30173",
+       "count": 1
+      },
+      {
+       "item": "6_1_30176",
+       "count": 1
+      },
+      {
+       "item": "6_1_30177",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30174",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c15",
+     "name": "Hợp thành Quà màu xanh",
+     "title": "Quà màu Xanh",
+     "materials": [
+      {
+       "item": "6_1_30177",
+       "count": 1
+      },
+      {
+       "item": "6_1_30173",
+       "count": 2
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30179",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c23",
+     "name": "giao nộp Hoa Hồng",
+     "title": "Nộp vật phẩm",
+     "materials": [
+      {
+       "item": "6_1_30172",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30175",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_30174": {
+     "result": {
+      "all": [
+       {
+        "all": [
+         {
+          "exp": 6000000
+         },
+         {
+          "pick": [
+           {
+            "item": "6_1_30172",
+            "count": 1,
+            "expire": {
+             "event_end": true
+            },
+            "rate": 50.0
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_2349",
+          "count": 1,
+          "rate": 0.1002
+         },
+         {
+          "item": "6_1_3001",
+          "count": 1,
+          "rate": 0.1002
+         },
+         {
+          "item": "6_1_2982",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2983",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2984",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2985",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2986",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_2987",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2988",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2989",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_2990",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_2991",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_3002",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_3003",
+          "count": 1,
+          "rate": 0.1002
+         },
+         {
+          "item": "6_1_3004",
+          "count": 1,
+          "rate": 0.0501
+         },
+         {
+          "item": "6_1_1617",
+          "count": 1,
+          "rate": 0.4609
+         },
+         {
+          "item": "6_1_2117",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.501
+         },
+         {
+          "item": "6_1_2712",
+          "count": 1,
+          "rate": 0.3006
+         },
+         {
+          "item": "6_1_2711",
+          "count": 1,
+          "rate": 0.7014
+         },
+         {
+          "item": "6_1_2710",
+          "count": 1,
+          "rate": 0.7014
+         },
+         {
+          "item": "6_1_907",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_30084",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_2517",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_2520",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_30117",
+          "count": 1,
+          "rate": 0.4008
+         },
+         {
+          "item": "6_1_30170",
+          "count": 1,
+          "rate": 0.02
+         },
+         {
+          "item": "6_1_30171",
+          "count": 1,
+          "rate": 0.02
+         },
+         {
+          "item": "6_1_2256",
+          "count": 1,
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_2312",
+          "count": 1,
+          "rate": 0.4008
+         },
+         {
+          "item": "6_1_2957",
+          "count": 1,
+          "rate": 0.2004
+         },
+         {
+          "item": "6_1_2958",
+          "count": 1,
+          "rate": 0.1002
+         },
+         {
+          "item": "6_1_2745",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.4008
+         },
+         {
+          "item": "6_1_2115",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.4008
+         },
+         {
+          "item": "6_1_1091",
+          "count": 1,
+          "rate": 1.002
+         },
+         {
+          "item": "6_1_2219",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1002
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 20.0401
+         },
+         {
+          "exp": 6000000,
+          "rate": 35.0701
+         },
+         {
+          "exp": 8000000,
+          "rate": 13.0261
+         },
+         {
+          "exp": 10000000,
+          "rate": 10.02
+         },
+         {
+          "exp": 15000000,
+          "rate": 5.01
+         },
+         {
+          "exp": 20000000,
+          "rate": 1.4028
+         },
+         {
+          "exp": 50000000,
+          "rate": 0.501
+         },
+         {
+          "exp": 100000000,
+          "rate": 0.0501
+         }
+        ]
+       }
+      ]
+     },
+     "milestones": {
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 10000000
+      },
+      "300": {
+       "exp": 10000000
+      },
+      "400": {
+       "exp": 10000000
+      },
+      "500": {
+       "exp": 20000000
+      },
+      "600": {
+       "exp": 20000000
+      },
+      "700": {
+       "exp": 20000000
+      },
+      "800": {
+       "exp": 20000000
+      },
+      "900": {
+       "exp": 20000000
+      },
+      "1000": {
+       "exp": 30000000
+      },
+      "1100": {
+       "exp": 30000000
+      },
+      "1200": {
+       "exp": 30000000
+      },
+      "1300": {
+       "exp": 40000000
+      },
+      "1400": {
+       "exp": 50000000
+      },
+      "1500": {
+       "item": "6_1_2349",
+       "count": 1
+      }
+     },
+     "min_level": 150
+    },
+    "6_1_30175": {
+     "result": {
+      "exp": 5000000
+     },
+     "min_level": 150
+    },
+    "6_1_30179": {
+     "result": {
+      "exp": 1000000
+     },
+     "min_level": 150
+    },
+    "ev_box_valentine": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_30173",
+        "count": 1,
+        "rate": 58.82,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_30177",
+        "count": 1,
+        "rate": 29.41,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_30176",
+        "count": 1,
+        "rate": 11.76,
+        "tier": "Hơi hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_30177": [
+     "Tống kim cao cấp 1000 điểm",
+     "Tống kim cao cấp 3000 điểm",
+     "Vượt qua ải 17",
+     "Vượt qua ải 28",
+     "Giết chết 1 thủy tặc đầu lĩnh",
+     "Tiêu diệt thuỷ tặc đại đầu lĩnh",
+     "Vượt qua ải Viêm Đế thứ 10",
+     "Tiêu diệt boss Hoàng Kim",
+     "Nhiệm vụ sát thủ cấp 90"
+    ]
+   },
+   "drop_box": "ev_box_valentine"
+  },
+  {
+   "id": "quoc_te_phu_nu",
+   "name": "Quốc tế Phụ nữ 8/3",
+   "icon": "🌹",
+   "calendar": "solar",
+   "anchor": [
+    3,
+    8
+   ],
+   "desc": "Gom Hoa Hồng bốn màu, Cỏ Xanh, Giỏ Đựng Hoa và Nơ để kết Hoa Hồng Tam Sắc, Tứ Sắc và Giỏ Hoa Hồng Vĩnh Cửu. Dùng hoa nhận kinh nghiệm và bảo vật quý.",
+   "start_offset": -3,
+   "end_offset": 23,
+   "source": "script/activitysys/config/40",
+   "recipes": [
+    {
+     "id": "c14",
+     "name": "Hợp thành Hoa Hồng Tứ Sắc",
+     "title": "Hoa Hồng Tứ Sắc",
+     "materials": [
+      {
+       "item": "6_1_3117",
+       "count": 5
+      },
+      {
+       "item": "6_1_3119",
+       "count": 5
+      },
+      {
+       "item": "6_1_3118",
+       "count": 5
+      },
+      {
+       "item": "6_1_3120",
+       "count": 5
+      },
+      {
+       "item": "6_1_3124",
+       "count": 1
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3122",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c15",
+     "name": "Hợp thành Giỏ Hoa Hồng Vĩnh Cửu",
+     "title": "Giỏ Hoa Hồng Vĩnh Cửu",
+     "materials": [
+      {
+       "item": "6_1_3117",
+       "count": 5
+      },
+      {
+       "item": "6_1_3119",
+       "count": 5
+      },
+      {
+       "item": "6_1_3118",
+       "count": 5
+      },
+      {
+       "item": "6_1_3120",
+       "count": 5
+      },
+      {
+       "item": "6_1_3124",
+       "count": 2
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      },
+      {
+       "item": "6_1_3126",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3127",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c16",
+     "name": "Hợp thành Hoa Hồng Tam Sắc",
+     "title": "Hoa Hồng Tam Sắc",
+     "materials": [
+      {
+       "item": "6_1_3117",
+       "count": 5
+      },
+      {
+       "item": "6_1_3119",
+       "count": 5
+      },
+      {
+       "item": "6_1_3118",
+       "count": 5
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3121",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c17",
+     "name": "Hợp thành Hoa Hồng Tam Sắc",
+     "title": "Hoa Hồng Tam Sắc",
+     "materials": [
+      {
+       "item": "6_1_3117",
+       "count": 5
+      },
+      {
+       "item": "6_1_3119",
+       "count": 5
+      },
+      {
+       "item": "6_1_3120",
+       "count": 5
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3121",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c18",
+     "name": "Hợp thành Hoa Hồng Tam Sắc",
+     "title": "Hoa Hồng Tam Sắc",
+     "materials": [
+      {
+       "item": "6_1_3117",
+       "count": 5
+      },
+      {
+       "item": "6_1_3120",
+       "count": 5
+      },
+      {
+       "item": "6_1_3118",
+       "count": 5
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3121",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c19",
+     "name": "Hợp thành Hoa Hồng Tam Sắc",
+     "title": "Hoa Hồng Tam Sắc",
+     "materials": [
+      {
+       "item": "6_1_3119",
+       "count": 5
+      },
+      {
+       "item": "6_1_3120",
+       "count": 5
+      },
+      {
+       "item": "6_1_3118",
+       "count": 5
+      },
+      {
+       "item": "6_1_3123",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3121",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c29",
+     "name": "Mua Giỏ Đựng Hoa",
+     "title": "Giỏ Đựng Hoa",
+     "materials": [],
+     "money": 10000,
+     "result": {
+      "item": "6_1_3123",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_3121": {
+     "result": {
+      "exp": 500000
+     },
+     "limit": 1000,
+     "min_level": 150
+    },
+    "6_1_3122": {
+     "result": {
+      "exp": 1000000
+     },
+     "limit": 1500,
+     "min_level": 150
+    },
+    "6_1_3127": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2349",
+        "count": 1,
+        "rate": 0.1001
+       },
+       {
+        "item": "6_1_2982",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2983",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2984",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2985",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2986",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_2987",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2988",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2989",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_2990",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_2991",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_3002",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_3003",
+        "count": 1,
+        "rate": 0.1001
+       },
+       {
+        "item": "6_1_3004",
+        "count": 1,
+        "rate": 0.0501
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.002
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.001
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.001
+       },
+       {
+        "item": "6_1_30190",
+        "count": 1,
+        "rate": 0.001
+       },
+       {
+        "item": "6_1_1604",
+        "count": 1,
+        "expire": {
+         "days": 14
+        },
+        "rate": 2.002
+       },
+       {
+        "item": "6_1_2339",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 2.002
+       },
+       {
+        "item": "6_1_30170",
+        "count": 1,
+        "rate": 0.02
+       },
+       {
+        "item": "6_1_30171",
+        "count": 1,
+        "rate": 0.02
+       },
+       {
+        "item": "6_1_1157",
+        "count": 1,
+        "expire": {
+         "days": 14
+        },
+        "rate": 2.002
+       },
+       {
+        "item": "6_1_2527",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 1.0511
+       },
+       {
+        "item": "6_1_2710",
+        "count": 1,
+        "rate": 0.5005
+       },
+       {
+        "item": "6_1_2711",
+        "count": 1,
+        "rate": 0.3003
+       },
+       {
+        "item": "6_1_2712",
+        "count": 1,
+        "rate": 0.2002
+       },
+       {
+        "item": "6_1_2744",
+        "count": 1,
+        "expire": {
+         "days": 14
+        },
+        "rate": 2.002
+       },
+       {
+        "item": "6_1_2219",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 0.1001
+       },
+       {
+        "item": "6_1_2125",
+        "count": 1,
+        "rate": 20.02
+       },
+       {
+        "gold_row": 3880,
+        "name": "Vũ Đã Hà",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3881,
+        "name": "Thanh Bình Lạc",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3882,
+        "name": "Hồi Xuân",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3883,
+        "name": "Khô Mộc",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3884,
+        "name": "Lưu Vân ",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3885,
+        "name": "Nê Trạch",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.1001
+       },
+       {
+        "gold_row": 3886,
+        "name": "Lôi Hỏa Kiếp",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.0501
+       },
+       {
+        "gold_row": 3887,
+        "name": "Mê Túy Thiên Hương",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.0501
+       },
+       {
+        "gold_row": 3888,
+        "name": "Điệp Vũ Hoa Phi",
+        "expire": {
+         "days": 7
+        },
+        "rate": 0.0501
+       },
+       {
+        "exp": 5000000,
+        "rate": 35.035
+       },
+       {
+        "exp": 8000000,
+        "rate": 13.013
+       },
+       {
+        "exp": 10000000,
+        "rate": 10.01
+       },
+       {
+        "exp": 15000000,
+        "rate": 5.005
+       },
+       {
+        "exp": 20000000,
+        "rate": 2.3453
+       },
+       {
+        "exp": 50000000,
+        "rate": 0.5005
+       },
+       {
+        "exp": 100000000,
+        "rate": 0.0501
+       }
+      ]
+     },
+     "milestones": {
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 10000000
+      },
+      "300": {
+       "exp": 10000000
+      },
+      "400": {
+       "exp": 10000000
+      },
+      "500": {
+       "exp": 20000000
+      },
+      "600": {
+       "exp": 20000000
+      },
+      "700": {
+       "exp": 20000000
+      },
+      "800": {
+       "exp": 20000000
+      },
+      "900": {
+       "exp": 20000000
+      },
+      "1000": {
+       "exp": 30000000
+      },
+      "1100": {
+       "exp": 30000000
+      },
+      "1200": {
+       "exp": 30000000
+      },
+      "1300": {
+       "exp": 40000000
+      },
+      "1400": {
+       "exp": 50000000
+      },
+      "1500": {
+       "pick": [
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 14.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 14.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 14.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 11.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 11.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 14.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 10.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 5.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 5.0
+        },
+        {
+         "item": "6_1_30190",
+         "count": 1,
+         "rate": 2.0
+        }
+       ]
+      }
+     },
+     "limit": 1500,
+     "min_level": 150
+    },
+    "6_1_3128": {
+     "result": {
+      "all": [
+       {
+        "item": "6_1_3121",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        }
+       },
+       {
+        "item": "6_1_3122",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        }
+       },
+       {
+        "item": "6_1_3127",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        }
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_3125": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_3118",
+        "count": 5,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 25.0
+       },
+       {
+        "item": "6_1_3119",
+        "count": 5,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 25.0
+       },
+       {
+        "item": "6_1_3120",
+        "count": 5,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 25.0
+       },
+       {
+        "item": "6_1_3117",
+        "count": 5,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 25.0
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "ev_box_quoc_te_phu_nu": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_3117",
+        "count": 1,
+        "rate": 22.6,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3119",
+        "count": 1,
+        "rate": 22.6,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3118",
+        "count": 1,
+        "rate": 22.6,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3120",
+        "count": 1,
+        "rate": 22.6,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3124",
+        "count": 1,
+        "rate": 9.04,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3126",
+        "count": 1,
+        "rate": 0.54,
+        "tier": "Hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {},
+   "drop_box": "ev_box_quoc_te_phu_nu"
+  },
+  {
+   "id": "giai_phong_30_4",
+   "name": "Mừng Giải phóng 30/4",
+   "icon": "🎖️",
+   "calendar": "solar",
+   "anchor": [
+    4,
+    30
+   ],
+   "desc": "Ghép Mảnh Chiến Công thành Mũ Hòa Bình, Mũ Tai Bèo, Mũ Tự Do. Dùng mũ nhận kinh nghiệm và quà chiến thắng.",
+   "cover": "6_1_30198",
+   "start_offset": -4,
+   "end_offset": 8,
+   "source": "script/activitysys/config/1009",
+   "recipes": [
+    {
+     "id": "c3",
+     "name": "Mua Mảnh chiến công lệnh 1",
+     "title": "Mảnh chiến công lệnh 1",
+     "materials": [],
+     "money": 10000,
+     "result": {
+      "item": "6_1_30196",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c5",
+     "name": "Đổi Chiếc Mũ Hòa Bình",
+     "title": "Chiếc Mũ Hòa Bình",
+     "materials": [
+      {
+       "item": "6_1_30196",
+       "count": 5
+      },
+      {
+       "item": "6_1_30195",
+       "count": 5
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30198",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c6",
+     "name": "Đổi Chiếc Mũ Tai Bèo",
+     "title": "Chiếc Mũ Tai Bèo",
+     "materials": [
+      {
+       "item": "6_1_30196",
+       "count": 5
+      },
+      {
+       "item": "6_1_30195",
+       "count": 5
+      },
+      {
+       "item": "6_1_30200",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30197",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c7",
+     "name": "Đổi Chiếc Mũ Tự Do",
+     "title": "Chiếc Mũ Tự Do",
+     "materials": [
+      {
+       "item": "6_1_30196",
+       "count": 5
+      },
+      {
+       "item": "6_1_30195",
+       "count": 5
+      },
+      {
+       "item": "6_1_30200",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30199",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_30197": {
+     "result": {
+      "all": [
+       {
+        "exp": 6000000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_2349",
+          "count": 1,
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2982",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2983",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2984",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2985",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2986",
+          "count": 1,
+          "rate": 0.2001
+         },
+         {
+          "item": "6_1_2987",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2988",
+          "count": 1,
+          "rate": 0.3002
+         },
+         {
+          "item": "6_1_2989",
+          "count": 1,
+          "rate": 0.2001
+         },
+         {
+          "item": "6_1_2990",
+          "count": 1,
+          "rate": 0.2001
+         },
+         {
+          "item": "6_1_2991",
+          "count": 1,
+          "rate": 0.2001
+         },
+         {
+          "item": "6_1_3002",
+          "count": 1,
+          "rate": 0.5003
+         },
+         {
+          "item": "6_1_3003",
+          "count": 1,
+          "rate": 0.2001
+         },
+         {
+          "item": "6_1_3004",
+          "count": 1,
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.004
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.002
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.002
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1,
+          "rate": 0.001
+         },
+         {
+          "item": "6_1_30170",
+          "count": 1,
+          "rate": 0.02
+         },
+         {
+          "item": "6_1_30171",
+          "count": 1,
+          "rate": 0.02
+         },
+         {
+          "item": "6_1_1604",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_2527",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_1617",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_30191",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_2744",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 2.0011
+         },
+         {
+          "item": "6_1_2219",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 20.0109
+         },
+         {
+          "item": "6_1_2952",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2953",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2266",
+          "count": 1,
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2267",
+          "count": 1,
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2268",
+          "count": 1,
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_1082",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_1083",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.1001
+         },
+         {
+          "item": "6_1_2117",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 1.0005
+         },
+         {
+          "item": "6_1_30084",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 1.0005
+         },
+         {
+          "exp": 5000000,
+          "rate": 49.5539
+         },
+         {
+          "exp": 10000000,
+          "rate": 6.0033
+         },
+         {
+          "exp": 15000000,
+          "rate": 2.5014
+         },
+         {
+          "exp": 20000000,
+          "rate": 0.5003
+         },
+         {
+          "exp": 50000000,
+          "rate": 0.05
+         }
+        ]
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_30199": {
+     "result": {
+      "all": [
+       {
+        "exp": 12000000
+       },
+       {
+        "all": [
+         {
+          "pick": [
+           {
+            "item": "6_1_2219",
+            "count": 1,
+            "expire": {
+             "days": 30
+            },
+            "rate": 0.5051
+           },
+           {
+            "item": "6_1_2349",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_30140",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_2982",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2983",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2984",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2985",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2986",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2987",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2988",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_2989",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_2990",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "item": "6_1_2991",
+            "count": 1,
+            "rate": 1.0101
+           },
+           {
+            "exp": 20000000,
+            "rate": 40.9091
+           },
+           {
+            "exp": 50000000,
+            "rate": 10.101
+           },
+           {
+            "exp": 100000000,
+            "rate": 5.0505
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.202
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.101
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.101
+           },
+           {
+            "item": "6_1_30180",
+            "count": 1,
+            "rate": 0.101
+           },
+           {
+            "item": "6_1_3002",
+            "count": 1,
+            "rate": 3.3333
+           },
+           {
+            "item": "6_1_3003",
+            "count": 1,
+            "rate": 2.0202
+           },
+           {
+            "item": "6_1_3004",
+            "count": 1,
+            "rate": 1.0101
+           }
+          ]
+         },
+         {
+          "item": "6_1_30180",
+          "count": 1
+         }
+        ]
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_30198": {
+     "result": {
+      "exp": 1000000
+     },
+     "min_level": 150
+    },
+    "ev_box_giai_phong_30_4": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_30195",
+        "count": 1,
+        "rate": 92.59,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_30200",
+        "count": 1,
+        "rate": 7.41,
+        "tier": "Hơi hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {},
+   "drop_box": "ev_box_giai_phong_30_4"
+  },
+  {
+   "id": "doan_ngo",
+   "name": "Tết Đoan Ngọ",
+   "icon": "🍙",
+   "calendar": "lunar",
+   "anchor": [
+    5,
+    5
+   ],
+   "desc": "Mùng 5 tháng 5 tưởng nhớ Khuất Nguyên: gom Táo đỏ, Hạt dẻ, Lá bánh, Gạo nếp, Thịt heo, Thịt bò gói bánh chưng Hạt dẻ, Thịt heo, Thịt bò, Thập cẩm, May mắn; nhờ Tống tẩu nâng Thập cẩm lên Mật ong, Bát bửu, Bách quả, Thượng hạng và Bánh chưng Khuất Nguyên huyền thoại (hỏng thì trả lại Thập cẩm). Ăn bánh tăng sức hoặc nhận kinh nghiệm.",
+   "cover": "6_1_68",
+   "buff_items": {
+    "6_0_60": {
+     "text": "10 phút tốc độ đánh và ra chiêu +20%"
+    },
+    "6_0_61": {
+     "text": "10 phút sinh lực và nội lực tối đa +100%"
+    },
+    "6_0_62": {
+     "text": "10 phút kháng tất cả +5%"
+    },
+    "6_0_70": {
+     "text": "30 phút may mắn +30"
+    }
+   },
+   "start_offset": -6,
+   "end_offset": 7,
+   "source": "script/global/ban_banh_u.lua",
+   "recipes": [
+    {
+     "id": "dn_hat_de",
+     "name": "Làm Bánh chưng Hạt dẻ",
+     "materials": [
+      {
+       "item": "4_395_1",
+       "count": 2
+      },
+      {
+       "item": "4_396_1",
+       "count": 2
+      },
+      {
+       "item": "4_397_1",
+       "count": 2
+      }
+     ],
+     "money": 2000,
+     "result": {
+      "item": "6_0_60",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_heo",
+     "name": "Làm Bánh chưng Thịt heo",
+     "materials": [
+      {
+       "item": "4_395_1",
+       "count": 2
+      },
+      {
+       "item": "4_396_1",
+       "count": 2
+      },
+      {
+       "item": "4_397_1",
+       "count": 2
+      },
+      {
+       "item": "4_398_1",
+       "count": 2
+      }
+     ],
+     "money": 2000,
+     "result": {
+      "item": "6_0_61",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_bo",
+     "name": "Làm Bánh chưng Thịt bò",
+     "materials": [
+      {
+       "item": "4_394_1",
+       "count": 2
+      },
+      {
+       "item": "4_396_1",
+       "count": 2
+      },
+      {
+       "item": "4_397_1",
+       "count": 2
+      },
+      {
+       "item": "4_399_1",
+       "count": 2
+      }
+     ],
+     "money": 2000,
+     "result": {
+      "item": "6_0_62",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_thap_cam",
+     "name": "Làm Bánh chưng Thập cẩm",
+     "materials": [
+      {
+       "item": "4_394_1",
+       "count": 2
+      },
+      {
+       "item": "4_395_1",
+       "count": 2
+      },
+      {
+       "item": "4_396_1",
+       "count": 2
+      },
+      {
+       "item": "4_397_1",
+       "count": 2
+      },
+      {
+       "item": "4_398_1",
+       "count": 2
+      },
+      {
+       "item": "4_399_1",
+       "count": 2
+      }
+     ],
+     "money": 2000,
+     "rate": 30.0,
+     "result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_may_man",
+     "name": "Làm Bánh chưng May mắn",
+     "materials": [
+      {
+       "item": "4_394_1",
+       "count": 1
+      },
+      {
+       "item": "4_395_1",
+       "count": 1
+      },
+      {
+       "item": "4_396_1",
+       "count": 1
+      },
+      {
+       "item": "4_405_1",
+       "count": 1
+      },
+      {
+       "item": "4_397_1",
+       "count": 1
+      },
+      {
+       "item": "4_398_1",
+       "count": 1
+      },
+      {
+       "item": "4_399_1",
+       "count": 1
+      }
+     ],
+     "money": 2000,
+     "result": {
+      "item": "6_0_70",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up64",
+     "name": "Nâng lên Thập cẩm Mật ong",
+     "materials": [
+      {
+       "item": "6_1_63",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 50.0,
+     "result": {
+      "item": "6_1_64",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up65",
+     "name": "Nâng lên Thập cẩm Bát bửu",
+     "materials": [
+      {
+       "item": "6_1_64",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 30.0,
+     "result": {
+      "item": "6_1_65",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up66",
+     "name": "Nâng lên Thập cẩm Bách quả",
+     "materials": [
+      {
+       "item": "6_1_65",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 30.0,
+     "result": {
+      "item": "6_1_66",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up67",
+     "name": "Nâng lên Thập cẩm Thượng hạng",
+     "materials": [
+      {
+       "item": "6_1_66",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 30.0,
+     "result": {
+      "item": "6_1_67",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up68",
+     "name": "Nâng lên Thập cẩm Khuất Nguyên",
+     "materials": [
+      {
+       "item": "6_1_67",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 3.0,
+     "result": {
+      "item": "6_1_68",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up64_mp",
+     "name": "Nâng lên Thập cẩm Mật ong (có Mật phương)",
+     "materials": [
+      {
+       "item": "6_1_63",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      },
+      {
+       "item": "4_404_1",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 60.0,
+     "result": {
+      "item": "6_1_64",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up65_mp",
+     "name": "Nâng lên Thập cẩm Bát bửu (có Mật phương)",
+     "materials": [
+      {
+       "item": "6_1_64",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      },
+      {
+       "item": "4_404_1",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 50.0,
+     "result": {
+      "item": "6_1_65",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up66_mp",
+     "name": "Nâng lên Thập cẩm Bách quả (có Mật phương)",
+     "materials": [
+      {
+       "item": "6_1_65",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      },
+      {
+       "item": "4_404_1",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 40.0,
+     "result": {
+      "item": "6_1_66",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up67_mp",
+     "name": "Nâng lên Thập cẩm Thượng hạng (có Mật phương)",
+     "materials": [
+      {
+       "item": "6_1_66",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      },
+      {
+       "item": "4_404_1",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 35.0,
+     "result": {
+      "item": "6_1_67",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    },
+    {
+     "id": "dn_up68_mp",
+     "name": "Nâng lên Thập cẩm Khuất Nguyên (có Mật phương)",
+     "materials": [
+      {
+       "item": "6_1_67",
+       "count": 1
+      },
+      {
+       "any": [
+        "4_394_1",
+        "4_395_1",
+        "4_396_1",
+        "4_397_1",
+        "4_398_1",
+        "4_399_1"
+       ],
+       "count": 1
+      },
+      {
+       "item": "4_404_1",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "rate": 6.0,
+     "result": {
+      "item": "6_1_68",
+      "count": 1
+     },
+     "fail_result": {
+      "item": "6_1_63",
+      "count": 1
+     }
+    }
+   ],
+   "usables": {
+    "6_1_63": {
+     "result": {
+      "exp": 1000
+     }
+    },
+    "6_1_64": {
+     "result": {
+      "exp": 5000
+     }
+    },
+    "6_1_65": {
+     "result": {
+      "exp": 30000
+     }
+    },
+    "6_1_66": {
+     "result": {
+      "exp": 100000
+     }
+    },
+    "6_1_67": {
+     "result": {
+      "exp": 500000
+     }
+    },
+    "6_1_68": {
+     "result": {
+      "exp": 200000000
+     },
+     "limit": 1
+    },
+    "ev_box_doan_ngo": {
+     "result": {
+      "pick": [
+       {
+        "item": "4_395_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_396_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_397_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_398_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_394_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_399_1",
+        "count": 1,
+        "rate": 16.47,
+        "tier": "Thường"
+       },
+       {
+        "item": "4_405_1",
+        "count": 1,
+        "rate": 0.99,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "4_404_1",
+        "count": 1,
+        "rate": 0.21,
+        "tier": "Rất hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "4_394_1": [
+     "Đánh quái rơi (gốc không còn script rơi — hiện lấy qua GM)"
+    ],
+    "4_404_1": [
+     "Gốc: Tống tẩu nói Mật phương đã thất lạc, không có nguồn — hiện lấy qua GM"
+    ],
+    "4_405_1": [
+     "Gốc: nhận ở Tống tẩu bằng điểm nạp — hiện lấy qua GM"
+    ]
+   },
+   "drop_box": "ev_box_doan_ngo"
+  },
+  {
+   "id": "sinh_nhat_vltk",
+   "name": "Sinh Nhật Võ Lâm Truyền Kỳ",
+   "icon": "🎂",
+   "calendar": "solar",
+   "anchor": [
+    6,
+    15
+   ],
+   "desc": "Mừng sinh nhật Võ Lâm: dùng Sữa Tươi, Đường, Bột Mì, Kem, Bơ, SoCoLa, Nến làm Bánh Kem và Bánh Sinh Nhật, ghép Bánh Sinh Nhật Đặc Biệt. Ăn bánh nhận kinh nghiệm và rương quà.",
+   "start_offset": -9,
+   "end_offset": 14,
+   "source": "script/activitysys/config/31",
+   "recipes": [
+    {
+     "id": "c16",
+     "name": "Hợp thành Bánh Kem",
+     "title": "Bánh Kem",
+     "materials": [
+      {
+       "item": "6_1_2851",
+       "count": 2
+      },
+      {
+       "item": "6_1_2852",
+       "count": 2
+      },
+      {
+       "item": "6_1_2853",
+       "count": 2
+      },
+      {
+       "item": "6_1_2856",
+       "count": 1
+      },
+      {
+       "item": "6_1_2855",
+       "count": 2
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_2859",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c17",
+     "name": "Hợp thành Bánh Sinh Nhật",
+     "title": "Hợp thành Bánh Sinh Nhật",
+     "materials": [
+      {
+       "item": "6_1_2851",
+       "count": 2
+      },
+      {
+       "item": "6_1_2852",
+       "count": 2
+      },
+      {
+       "item": "6_1_2853",
+       "count": 2
+      },
+      {
+       "item": "6_1_2856",
+       "count": 1
+      },
+      {
+       "item": "6_1_2855",
+       "count": 2
+      },
+      {
+       "item": "6_1_2854",
+       "count": 1
+      },
+      {
+       "item": "6_1_2857",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2860",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 40.0
+       },
+       {
+        "item": "6_1_2861",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 60.0
+       }
+      ]
+     }
+    },
+    {
+     "id": "c18",
+     "name": "Hợp thành Bánh Sinh Nhật Đặc Biệt",
+     "title": "Bánh Sinh Nhật Đặc Biệt",
+     "materials": [
+      {
+       "item": "6_1_2861",
+       "count": 1
+      },
+      {
+       "item": "6_1_2858",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_2864",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c24",
+     "name": "Hợp thành Phiên Vũ",
+     "title": "Phiên Vũ",
+     "materials": [
+      {
+       "item": "6_1_2865",
+       "count": 200
+      }
+     ],
+     "money": 0,
+     "result": {
+      "equip": [
+       10,
+       7,
+       1
+      ],
+      "name": ""
+     }
+    }
+   ],
+   "usables": {
+    "6_1_2862": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2851",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 40.0
+       },
+       {
+        "item": "6_1_2852",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 40.0
+       },
+       {
+        "item": "6_1_2853",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 20.0
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_2863": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2854",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 30.0
+       },
+       {
+        "item": "6_1_2855",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 40.0
+       },
+       {
+        "item": "6_1_2856",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 30.0
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_2859": {
+     "result": {
+      "exp": 1000000
+     },
+     "milestones": {
+      "500": {
+       "exp": 5000000
+      },
+      "1000": {
+       "exp": 10000000
+      }
+     },
+     "limit": 1000,
+     "min_level": 150
+    },
+    "6_1_2860": {
+     "result": {
+      "exp": 4000000
+     },
+     "milestones": {
+      "20": {
+       "exp": 2000000
+      },
+      "40": {
+       "exp": 4000000
+      },
+      "60": {
+       "exp": 6000000
+      },
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 15000000
+      },
+      "300": {
+       "exp": 20000000
+      },
+      "400": {
+       "exp": 20000000
+      },
+      "500": {
+       "exp": 20000000
+      }
+     },
+     "limit": 500,
+     "min_level": 150
+    },
+    "6_1_2861": {
+     "result": {
+      "all": [
+       {
+        "exp": 10000000
+       },
+       {
+        "exp": 8000000
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "6_1_2864": {
+     "result": {
+      "exp": 15000000
+     },
+     "milestones": {
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 20000000
+      },
+      "300": {
+       "exp": 30000000
+      },
+      "400": {
+       "exp": 40000000
+      }
+     },
+     "limit": 400,
+     "min_level": 150
+    },
+    "ev_box_sinh_nhat_vltk": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2865",
+        "count": 1,
+        "rate": 35.61,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2851",
+        "count": 1,
+        "rate": 14.25,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2852",
+        "count": 1,
+        "rate": 14.25,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2853",
+        "count": 1,
+        "rate": 14.25,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2855",
+        "count": 1,
+        "rate": 14.25,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2856",
+        "count": 1,
+        "rate": 2.85,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_2854",
+        "count": 1,
+        "rate": 2.85,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_2857",
+        "count": 1,
+        "rate": 0.85,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_2858",
+        "count": 1,
+        "rate": 0.85,
+        "tier": "Hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {},
+   "drop_box": "ev_box_sinh_nhat_vltk"
+  },
+  {
+   "id": "trung_thu",
+   "name": "Tết Trung Thu",
+   "icon": "🏮",
+   "calendar": "lunar",
+   "anchor": [
+    8,
+    15
+   ],
+   "desc": "Rằm tháng Tám: mở Hộp Vật Liệu Lồng Đèn (đánh quái rơi) lấy Giấy kiếng vàng / lam / lục / đỏ / cam, Thanh tre, Dây cói, Nến rồi làm lồng đèn bươm bướm, ngôi sao, ống, tròn, cá chép, kéo quân. Thắp đèn được nhân đôi kinh nghiệm 10–60 phút. Ăn Bánh Trung Thu các thành nhận kinh nghiệm; đổi Ngũ Hành Kỳ Thạch lấy Hồi Thiên Tái Tạo Cẩm Nang, Nhất Kỷ Càn Khôn Phù.",
+   "buff_items": {
+    "6_1_1241": {
+     "exp_x2_minutes": 10
+    },
+    "6_1_1242": {
+     "exp_x2_minutes": 20
+    },
+    "6_1_1243": {
+     "exp_x2_minutes": 30
+    },
+    "6_1_1244": {
+     "exp_x2_minutes": 40
+    },
+    "6_1_1245": {
+     "exp_x2_minutes": 50
+    },
+    "6_1_1246": {
+     "exp_x2_minutes": 60
+    }
+   },
+   "start_offset": -6,
+   "end_offset": 7,
+   "source": "script/activitysys/config/21",
+   "recipes": [
+    {
+     "id": "au06_1",
+     "name": "Làm Lồng đèn bươm bướm",
+     "title": "Lồng đèn bươm bướm",
+     "materials": [
+      {
+       "item": "6_1_1221",
+       "count": 2
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 1000,
+     "result": {
+      "item": "6_1_1241",
+      "count": 1
+     }
+    },
+    {
+     "id": "au06_2",
+     "name": "Làm Lồng đèn ngôi sao",
+     "title": "Lồng đèn ngôi sao",
+     "materials": [
+      {
+       "item": "6_1_1222",
+       "count": 2
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 2000,
+     "result": {
+      "item": "6_1_1242",
+      "count": 1
+     }
+    },
+    {
+     "id": "au06_3",
+     "name": "Làm Lồng đèn ống",
+     "title": "Lồng đèn ống",
+     "materials": [
+      {
+       "item": "6_1_1223",
+       "count": 2
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 3000,
+     "result": {
+      "item": "6_1_1243",
+      "count": 1
+     }
+    },
+    {
+     "id": "au06_4",
+     "name": "Làm Lồng đèn tròn",
+     "title": "Lồng đèn tròn",
+     "materials": [
+      {
+       "item": "6_1_1224",
+       "count": 2
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 4000,
+     "result": {
+      "item": "6_1_1244",
+      "count": 1
+     }
+    },
+    {
+     "id": "au06_5",
+     "name": "Làm Lồng đèn cá chép",
+     "title": "Lồng đèn cá chép",
+     "materials": [
+      {
+       "item": "6_1_1225",
+       "count": 1
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 5000,
+     "result": {
+      "item": "6_1_1245",
+      "count": 1
+     }
+    },
+    {
+     "id": "au06_6",
+     "name": "Làm Lồng đèn kéo quân",
+     "title": "Lồng đèn kéo quân",
+     "materials": [
+      {
+       "item": "6_1_1221",
+       "count": 1
+      },
+      {
+       "item": "6_1_1222",
+       "count": 1
+      },
+      {
+       "item": "6_1_1223",
+       "count": 1
+      },
+      {
+       "item": "6_1_1224",
+       "count": 1
+      },
+      {
+       "item": "6_1_1225",
+       "count": 1
+      },
+      {
+       "item": "6_1_1226",
+       "count": 1
+      },
+      {
+       "item": "6_1_1227",
+       "count": 1
+      },
+      {
+       "item": "6_1_1228",
+       "count": 1
+      }
+     ],
+     "money": 5000,
+     "result": {
+      "item": "6_1_1246",
+      "count": 1
+     }
+    },
+    {
+     "id": "c31",
+     "name": "Đổi hồi thiên tái tạo cẩm nang",
+     "title": "Cẩm nang thay đổi trời đất",
+     "materials": [
+      {
+       "item": "6_1_2125",
+       "count": 3
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_1781",
+      "count": 1,
+      "expire": {
+       "days": 14
+      }
+     }
+    },
+    {
+     "id": "c32",
+     "name": "Đổi nhất kỷ càn khôn phù",
+     "title": "Nhất Kỷ Càn Khôn Phù",
+     "materials": [
+      {
+       "item": "6_1_2125",
+       "count": 300
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_2126",
+      "count": 1,
+      "expire": {
+       "days": 14
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_2507": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2508": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2509": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2510": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2511": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2512": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_2513": {
+     "result": {
+      "exp": 10000000
+     },
+     "limit": 20,
+     "min_level": 50
+    },
+    "6_1_1220": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_1221",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 26.35
+       },
+       {
+        "item": "6_1_1224",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 0.5
+       },
+       {
+        "item": "6_1_1223",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 3.0
+       },
+       {
+        "item": "6_1_1225",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 0.15
+       },
+       {
+        "item": "6_1_1222",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 10.0
+       },
+       {
+        "item": "6_1_1226",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 20.0
+       },
+       {
+        "item": "6_1_1227",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 20.0
+       },
+       {
+        "item": "6_1_1228",
+        "count": 1,
+        "expire": {
+         "event_end": true
+        },
+        "rate": 20.0
+       }
+      ]
+     }
+    },
+    "ev_box_trung_thu": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_1221",
+        "count": 1,
+        "rate": 31.72,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1226",
+        "count": 1,
+        "rate": 15.86,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1227",
+        "count": 1,
+        "rate": 15.86,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1228",
+        "count": 1,
+        "rate": 15.86,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_1222",
+        "count": 1,
+        "rate": 12.69,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_1223",
+        "count": 1,
+        "rate": 3.81,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1224",
+        "count": 1,
+        "rate": 3.81,
+        "tier": "Hiếm"
+       },
+       {
+        "item": "6_1_1225",
+        "count": 1,
+        "rate": 0.4,
+        "tier": "Rất hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_2496": [
+     "Đánh quái rớt bánh hạt sen"
+    ],
+    "6_1_2497": [
+     "Đánh quái rớt bánh đậu xanh"
+    ],
+    "6_1_2498": [
+     "Đánh quái rớt bánh khoai môn"
+    ],
+    "6_1_2499": [
+     "Tống kim cao cấp kết thúc tặng bánh dẻo (thắng)",
+     "Tống kim cao cấp kết thúc tặng bánh dẻo (hòa)",
+     "Tống kim cao cấp kết thúc tặng bánh dẻo (thua)"
+    ],
+    "6_1_1220": [
+     "Đánh quái rơi Hộp vật liệu lồng đèn (mở ra giấy kiếng, thanh tre, dây cói, nến)"
+    ]
+   },
+   "drop_box": "ev_box_trung_thu"
+  },
+  {
+   "id": "quoc_khanh",
+   "name": "Mừng Quốc khánh 2/9",
+   "icon": "🎆",
+   "calendar": "solar",
+   "anchor": [
+    9,
+    2
+   ],
+   "desc": "Nộp Dây Thừng, ghép Dây Thừng + Dải Lụa Đỏ thành Pháo Hoa Quốc Khánh, Nến Trắng + Lồng Đèn Ánh Trăng thành Bánh Trung Thu Hàn Nguyệt. Đốt pháo, ăn bánh nhận thưởng.",
+   "start_offset": -1,
+   "end_offset": 28,
+   "source": "script/activitysys/config/33",
+   "recipes": [
+    {
+     "id": "c19",
+     "name": "Nộp Dây Thừng",
+     "title": "Nộp Dây Thừng",
+     "materials": [
+      {
+       "item": "6_1_2976",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "exp": 1000000
+     },
+     "milestones": {
+      "500": {
+       "exp": 5000000
+      },
+      "1000": {
+       "exp": 5000000
+      }
+     }
+    },
+    {
+     "id": "c20",
+     "name": "Đổi Pháo Hoa Quốc Khánh",
+     "title": "Pháo Hoa Quốc Khánh",
+     "materials": [
+      {
+       "item": "6_1_2976",
+       "count": 1
+      },
+      {
+       "item": "6_1_2977",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_2979",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c22",
+     "name": "Đổi Bánh Trung Thu Hàn Nguyệt",
+     "title": "Bánh Trung Thu Hàn Nguyệt",
+     "materials": [
+      {
+       "item": "6_1_2981",
+       "count": 1
+      },
+      {
+       "item": "6_1_2978",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_2980",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_2979": {
+     "result": {
+      "all": [
+       {
+        "pick": [
+         {
+          "item": "6_1_2714",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2715",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2717",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2718",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2720",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2716",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2719",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2721",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_2722",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_2723",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_1675",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2350",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2312",
+          "count": 1,
+          "rate": 0.4
+         },
+         {
+          "item": "6_1_1266",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2527",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_1672",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_1181",
+          "count": 1,
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2183",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_1157",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2520",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2517",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 26.54
+         },
+         {
+          "item": "6_1_2115",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_1617",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_30084",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_30104",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "gold_row": 3470,
+          "name": "Phi phong Kinh Lôi (Dịch chuyển tức thời)",
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_1083",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "exp": 6000000,
+          "rate": 30.0
+         },
+         {
+          "exp": 9000000,
+          "rate": 25.0
+         },
+         {
+          "item": "6_1_2104",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2105",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.06
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.06
+         }
+        ]
+       },
+       {
+        "pick": [
+         {
+          "exp": 3000000,
+          "rate": 50.0
+         },
+         {
+          "exp": 5000000,
+          "rate": 45.0
+         },
+         {
+          "exp": 10000000,
+          "rate": 4.0
+         },
+         {
+          "exp": 200000000,
+          "rate": 1.0
+         }
+        ]
+       }
+      ]
+     },
+     "milestones": {
+      "20": {
+       "exp": 2000000
+      },
+      "40": {
+       "exp": 4000000
+      },
+      "60": {
+       "exp": 6000000
+      },
+      "80": {
+       "exp": 8000000
+      },
+      "100": {
+       "exp": 10000000
+      },
+      "200": {
+       "exp": 12000000
+      },
+      "300": {
+       "exp": 14000000
+      },
+      "400": {
+       "exp": 16000000
+      },
+      "500": {
+       "all": [
+        {
+         "exp": 20000000
+        },
+        {
+         "item": "6_1_30140",
+         "count": 1,
+         "expire": {
+          "event_end": true
+         }
+        }
+       ]
+      },
+      "600": {
+       "exp": 20000000
+      },
+      "700": {
+       "exp": 20000000
+      },
+      "800": {
+       "exp": 20000000
+      },
+      "900": {
+       "exp": 20000000
+      },
+      "1000": {
+       "all": [
+        {
+         "exp": 25000000
+        },
+        {
+         "item": "6_1_30140",
+         "count": 1,
+         "expire": {
+          "event_end": true
+         }
+        }
+       ]
+      },
+      "1100": {
+       "exp": 25000000
+      },
+      "1200": {
+       "exp": 25000000
+      },
+      "1300": {
+       "exp": 25000000
+      },
+      "1400": {
+       "exp": 25000000
+      },
+      "1500": {
+       "all": [
+        {
+         "exp": 30000000
+        },
+        {
+         "item": "6_1_30140",
+         "count": 1,
+         "expire": {
+          "event_end": true
+         }
+        }
+       ]
+      }
+     },
+     "limit": 1500,
+     "min_level": 150
+    },
+    "6_1_2980": {
+     "result": {
+      "all": [
+       {
+        "pick": [
+         {
+          "item": "6_1_2714",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2715",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2717",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2718",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2720",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2716",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2719",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2721",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_2722",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_2723",
+          "count": 1,
+          "rate": 0.15
+         },
+         {
+          "item": "6_1_1675",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2350",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2312",
+          "count": 1,
+          "rate": 0.4
+         },
+         {
+          "item": "6_1_1266",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2527",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_1672",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_1181",
+          "count": 1,
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2183",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_1157",
+          "count": 1,
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2520",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2517",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 26.54
+         },
+         {
+          "item": "6_1_2115",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_1617",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_30084",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_30104",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "gold_row": 3470,
+          "name": "Phi phong Kinh Lôi (Dịch chuyển tức thời)",
+          "expire": {
+           "days": 14
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_1083",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "exp": 6000000,
+          "rate": 30.0
+         },
+         {
+          "exp": 9000000,
+          "rate": 25.0
+         },
+         {
+          "item": "6_1_2104",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2105",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.06
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "expire": {
+           "event_end": true
+          },
+          "rate": 0.06
+         }
+        ]
+       },
+       {
+        "exp": 5000000
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "ev_box_quoc_khanh": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2976",
+        "count": 1,
+        "rate": 35.71,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2981",
+        "count": 1,
+        "rate": 35.71,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_2977",
+        "count": 1,
+        "rate": 14.29,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_2978",
+        "count": 1,
+        "rate": 14.29,
+        "tier": "Hơi hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_2976": [
+     "Nhiệm vụ Sát thủ "
+    ]
+   },
+   "drop_box": "ev_box_quoc_khanh"
+  },
+  {
+   "id": "phu_nu_viet_nam",
+   "name": "Phụ nữ Việt Nam 20/10",
+   "icon": "💐",
+   "calendar": "solar",
+   "anchor": [
+    10,
+    20
+   ],
+   "desc": "Ghép Hoàng Thạch + Thiên Tinh Thạch thành Băng Tinh Thạch; nộp Hoàng Thạch lấy kinh nghiệm. Dùng Băng Tinh Thạch nhận phần thưởng.",
+   "start_offset": 0,
+   "end_offset": 6,
+   "source": "script/activitysys/config/1007",
+   "recipes": [
+    {
+     "id": "c11",
+     "name": "Hợp thành Băng Tinh Thạch",
+     "title": "Băng Tinh Thạch",
+     "materials": [
+      {
+       "item": "6_1_30153",
+       "count": 1
+      },
+      {
+       "item": "6_1_30154",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30155",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c12",
+     "name": "Nộp vật phẩm Hoàng Thạch",
+     "title": "Nộp vật phẩm Hoàng Thạch",
+     "materials": [
+      {
+       "item": "6_1_30153",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "exp": 1000000
+     }
+    }
+   ],
+   "usables": {
+    "6_1_30155": {
+     "result": {
+      "all": [
+       {
+        "exp": 6000000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_2714",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2715",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2717",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2718",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2720",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2716",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2719",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2721",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2722",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2723",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2350",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2351",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2349",
+          "count": 1,
+          "rate": 0.01
+         },
+         {
+          "item": "6_1_2352",
+          "count": 1,
+          "rate": 0.5
+         },
+         {
+          "item": "6_1_2353",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2369",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 25.0
+         },
+         {
+          "item": "6_1_30083",
+          "count": 1,
+          "expire": {
+           "days": 7
+          },
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_30084",
+          "count": 1,
+          "expire": {
+           "days": 7
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2117",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2311",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2514",
+          "count": 1,
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_1448",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2525",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_30104",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_3002",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_1181",
+          "count": 1,
+          "rate": 6.74
+         },
+         {
+          "item": "6_1_2115",
+          "count": 1,
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2982",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_2983",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_2984",
+          "count": 1,
+          "rate": 0.01
+         },
+         {
+          "item": "6_1_2985",
+          "count": 1,
+          "rate": 0.01
+         },
+         {
+          "item": "6_1_2986",
+          "count": 1,
+          "rate": 0.01
+         },
+         {
+          "item": "6_1_2987",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_2988",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_2989",
+          "count": 1,
+          "rate": 0.04
+         },
+         {
+          "item": "6_1_2990",
+          "count": 1,
+          "rate": 0.04
+         },
+         {
+          "item": "6_1_2991",
+          "count": 1,
+          "rate": 0.04
+         },
+         {
+          "exp": 5000000,
+          "rate": 15.0
+         },
+         {
+          "exp": 10000000,
+          "rate": 10.0
+         },
+         {
+          "exp": 20000000,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2566",
+          "count": 1,
+          "rate": 10.0
+         },
+         {
+          "item": "6_1_907",
+          "count": 1,
+          "expire": {
+           "days": 7
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_1075",
+          "count": 1,
+          "expire": {
+           "days": 7
+          },
+          "rate": 2.0
+         }
+        ]
+       }
+      ]
+     },
+     "min_level": 150
+    },
+    "ev_box_phu_nu_viet_nam": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_30153",
+        "count": 1,
+        "rate": 71.43,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_30154",
+        "count": 1,
+        "rate": 28.57,
+        "tier": "Hơi hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_30153": [
+     "Tống kim cao cấp 1000 điểm",
+     "Tống kim cao cấp 3000 điểm",
+     "Vượt qua ải 17",
+     "Vượt qua ải 28",
+     "Giết chết 1 thủy tặc đầu lĩnh",
+     "Tiêu diệt thuỷ tặc đại đầu lĩnh",
+     "Vượt qua ải Viêm Đế thứ 10",
+     "Tiêu diệt boss Hoàng Kim",
+     "Nhiệm vụ sát thủ cấp 90"
+    ]
+   },
+   "drop_box": "ev_box_phu_nu_viet_nam"
+  },
+  {
+   "id": "nha_giao",
+   "name": "Nhà Giáo Việt Nam 20/11",
+   "icon": "📖",
+   "calendar": "solar",
+   "anchor": [
+    11,
+    20
+   ],
+   "desc": "Tri ân thầy cô: ghép Giấy Trắng, Cây Bút, Lọ Mực thành Cuốn Sách. Dùng Cuốn Sách, Hoa Tri Ân, Thiên Vũ Hồn nhận kinh nghiệm và bảo vật.",
+   "start_offset": -17,
+   "end_offset": 10,
+   "source": "script/activitysys/config/30",
+   "recipes": [
+    {
+     "id": "c18",
+     "name": "Hợp thành Cuốn Sách",
+     "title": "Cuốn Sách",
+     "materials": [
+      {
+       "item": "6_1_3039",
+       "count": 5
+      },
+      {
+       "item": "6_1_3040",
+       "count": 1
+      },
+      {
+       "item": "6_1_3041",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3042",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_3042": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_2349",
+        "count": 1,
+        "rate": 0.02
+       },
+       {
+        "item": "6_1_3001",
+        "count": 1,
+        "rate": 0.05
+       },
+       {
+        "item": "6_1_2982",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2983",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2984",
+        "count": 1,
+        "rate": 0.05
+       },
+       {
+        "item": "6_1_2985",
+        "count": 1,
+        "rate": 0.05
+       },
+       {
+        "item": "6_1_2986",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2987",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2988",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2989",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2990",
+        "count": 1,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2991",
+        "count": 1,
+        "rate": 0.05
+       },
+       {
+        "item": "6_1_3002",
+        "count": 1,
+        "rate": 0.05
+       },
+       {
+        "item": "6_1_3003",
+        "count": 1,
+        "rate": 0.03
+       },
+       {
+        "item": "6_1_3004",
+        "count": 1,
+        "rate": 0.001
+       },
+       {
+        "item": "6_1_2710",
+        "count": 1,
+        "rate": 0.4
+       },
+       {
+        "item": "6_1_2711",
+        "count": 1,
+        "rate": 0.3
+       },
+       {
+        "item": "6_1_2712",
+        "count": 1,
+        "rate": 0.2
+       },
+       {
+        "exp": 6000000,
+        "rate": 35.0
+       },
+       {
+        "exp": 8000000,
+        "rate": 22.0
+       },
+       {
+        "exp": 12000000,
+        "rate": 10.0
+       },
+       {
+        "exp": 20000000,
+        "rate": 3.0
+       },
+       {
+        "exp": 50000000,
+        "rate": 0.5
+       },
+       {
+        "exp": 100000000,
+        "rate": 0.1
+       },
+       {
+        "item": "6_1_2517",
+        "count": 1,
+        "rate": 3.0
+       },
+       {
+        "item": "6_1_2520",
+        "count": 1,
+        "rate": 3.0
+       },
+       {
+        "item": "6_1_2527",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 2.0
+       },
+       {
+        "item": "6_1_30083",
+        "count": 1,
+        "expire": {
+         "days": 7
+        },
+        "rate": 2.0
+       },
+       {
+        "item": "6_1_2311",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 0.5
+       },
+       {
+        "item": "6_1_2339",
+        "count": 1,
+        "rate": 2.0
+       },
+       {
+        "item": "6_1_30104",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 0.2
+       },
+       {
+        "item": "6_1_2219",
+        "count": 1,
+        "expire": {
+         "days": 30
+        },
+        "rate": 0.04
+       },
+       {
+        "item": "6_1_2952",
+        "count": 1,
+        "expire": {
+         "days": 14
+        },
+        "rate": 1.0
+       },
+       {
+        "item": "6_1_2953",
+        "count": 1,
+        "expire": {
+         "days": 14
+        },
+        "rate": 1.0
+       },
+       {
+        "item": "6_1_30105",
+        "count": 5,
+        "rate": 9.664
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.02
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.01
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.005
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.005
+       },
+       {
+        "item": "6_1_30140",
+        "count": 1,
+        "rate": 0.005
+       }
+      ]
+     },
+     "milestones": {
+      "20": {
+       "item": "6_1_3043",
+       "count": 1,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "40": {
+       "item": "6_1_3043",
+       "count": 3,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "60": {
+       "item": "6_1_3043",
+       "count": 4,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "80": {
+       "item": "6_1_3043",
+       "count": 5,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "100": {
+       "item": "6_1_3043",
+       "count": 7,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "200": {
+       "exp": 20000000
+      },
+      "300": {
+       "exp": 20000000
+      },
+      "400": {
+       "item": "6_1_3044",
+       "count": 1,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "500": {
+       "item": "6_1_3044",
+       "count": 1,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "600": {
+       "item": "6_1_3044",
+       "count": 1,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "700": {
+       "item": "6_1_3044",
+       "count": 2,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "800": {
+       "item": "6_1_3044",
+       "count": 2,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "900": {
+       "item": "6_1_3044",
+       "count": 2,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "1000": {
+       "exp": 20000000
+      },
+      "1100": {
+       "item": "6_1_3044",
+       "count": 2,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "1200": {
+       "item": "6_1_3044",
+       "count": 3,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "1300": {
+       "item": "6_1_3044",
+       "count": 3,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "1400": {
+       "item": "6_1_3044",
+       "count": 3,
+       "expire": {
+        "event_end": true
+       }
+      },
+      "1500": {
+       "exp": 50000000
+      },
+      "1600": {
+       "exp": 60000000
+      },
+      "1700": {
+       "exp": 70000000
+      },
+      "1800": {
+       "exp": 80000000
+      },
+      "1900": {
+       "exp": 90000000
+      },
+      "2000": {
+       "exp": 100000000
+      }
+     },
+     "min_level": 150
+    },
+    "ev_box_nha_giao": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_3039",
+        "count": 1,
+        "rate": 78.12,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3040",
+        "count": 1,
+        "rate": 15.62,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3041",
+        "count": 1,
+        "rate": 6.25,
+        "tier": "Hơi hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {},
+   "drop_box": "ev_box_nha_giao"
+  },
+  {
+   "id": "giang_sinh",
+   "name": "Lễ Giáng Sinh",
+   "icon": "🎄",
+   "calendar": "solar",
+   "anchor": [
+    12,
+    25
+   ],
+   "desc": "Gom Áo, Quần, Túi, Nón Giáng Sinh ghép Hộp Quà Giáng Sinh, Ông Già Noel (nhỏ / trung / đại), Bánh Giáng Sinh, Ông Già Noel Hồng; đổi Ngôi Sao lấy lệnh bài triệu hồi Boss. Mở quà nhận kinh nghiệm và bảo vật.",
+   "start_offset": -24,
+   "end_offset": 6,
+   "source": "script/activitysys/config/37",
+   "recipes": [
+    {
+     "id": "c18",
+     "name": "Hợp thành Hộp Quà Giáng Sinh",
+     "title": "Hộp quà giáng sinh",
+     "materials": [
+      {
+       "item": "6_1_3074",
+       "count": 2
+      },
+      {
+       "item": "6_1_3075",
+       "count": 1
+      }
+     ],
+     "money": 50000,
+     "result": {
+      "item": "6_1_3080",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     },
+     "rate": 70.0
+    },
+    {
+     "id": "c19",
+     "name": "Hợp thành Ông Già Noel (nhỏ)",
+     "title": "Ông Già Noel (nhỏ)",
+     "materials": [
+      {
+       "item": "6_1_3074",
+       "count": 2
+      },
+      {
+       "item": "6_1_3075",
+       "count": 1
+      },
+      {
+       "item": "6_1_3076",
+       "count": 1
+      }
+     ],
+     "money": 100000,
+     "result": {
+      "item": "6_1_3077",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     },
+     "rate": 70.0
+    },
+    {
+     "id": "c20",
+     "name": "Hợp thành Ông Già Noel (trung)",
+     "title": "Ông Già Noel (trung)",
+     "materials": [
+      {
+       "item": "6_1_3074",
+       "count": 2
+      },
+      {
+       "item": "6_1_3072",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3078",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c21",
+     "name": "Hợp thành Ông Già Noel (đại)",
+     "title": "Ông Già Noel (đại)",
+     "materials": [
+      {
+       "item": "6_1_3074",
+       "count": 2
+      },
+      {
+       "item": "6_1_3075",
+       "count": 1
+      },
+      {
+       "item": "6_1_3076",
+       "count": 1
+      },
+      {
+       "item": "6_1_3072",
+       "count": 2
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3079",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c22",
+     "name": "Hợp thành Bánh Giáng Sinh",
+     "title": "Bánh Giáng Sinh",
+     "materials": [
+      {
+       "item": "6_1_3074",
+       "count": 2
+      },
+      {
+       "item": "6_1_3076",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3082",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c24",
+     "name": "Lệnh Bài triệu hồi Boss Trương Tuyên",
+     "title": "Lệnh bài Boss - Trương Tuyên",
+     "materials": [
+      {
+       "item": "6_1_3081",
+       "count": 300
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3083",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c25",
+     "name": "Lệnh Bài triệu hồi Boss Kim Thí Lượng",
+     "title": "Lệnh bài Boss - Kim Thí Lượng",
+     "materials": [
+      {
+       "item": "6_1_3081",
+       "count": 400
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3084",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c26",
+     "name": "Lệnh Bài triệu hồi Mộ Dung Toàn",
+     "title": "Lệnh bài Boss - Mộ Dung Toàn",
+     "materials": [
+      {
+       "item": "6_1_3081",
+       "count": 500
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_3085",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c37",
+     "name": "Mua Gà Quay",
+     "title": "Gà quay",
+     "materials": [],
+     "money": 10000,
+     "result": {
+      "item": "6_1_30167",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    },
+    {
+     "id": "c38",
+     "name": "Hợp thành ông già Noel hồng",
+     "title": "Ông già Noel hồng",
+     "materials": [
+      {
+       "item": "6_1_30167",
+       "count": 1
+      },
+      {
+       "item": "6_1_30166",
+       "count": 1
+      },
+      {
+       "item": "6_1_3072",
+       "count": 1
+      }
+     ],
+     "money": 0,
+     "result": {
+      "item": "6_1_30168",
+      "count": 1,
+      "expire": {
+       "event_end": true
+      }
+     }
+    }
+   ],
+   "usables": {
+    "6_1_3077": {
+     "result": {
+      "exp": 2000000
+     },
+     "limit": 500,
+     "min_level": 150
+    },
+    "6_1_3078": {
+     "result": {
+      "item": "6_1_147",
+      "count": 1
+     },
+     "limit": 1000,
+     "min_level": 150
+    },
+    "6_1_3079": {
+     "result": {
+      "all": [
+       {
+        "exp": 10000000
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_2349",
+          "count": 1,
+          "rate": 0.04
+         },
+         {
+          "item": "6_1_3001",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2982",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2983",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2984",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2985",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2986",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2987",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2988",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2989",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2990",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2991",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_3002",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_3003",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_3004",
+          "count": 1,
+          "rate": 0.02
+         },
+         {
+          "item": "6_1_2105",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2104",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30083",
+          "count": 2,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2312",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2115",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2527",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "gold_row": 3211,
+          "name": "Hoàng Kim ấn (Cường hóa)",
+          "expire": {
+           "days": 7
+          },
+          "rate": 0.1
+         },
+         {
+          "gold_row": 3221,
+          "name": "Hoàng Kim ấn (Nhược hóa)",
+          "expire": {
+           "days": 7
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2219",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2517",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2520",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 20.0
+         },
+         {
+          "item": "6_1_2339",
+          "count": 1,
+          "rate": 2.0
+         },
+         {
+          "item": "6_1_215",
+          "count": 5,
+          "rate": 3.0
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.07
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_30140",
+          "count": 1,
+          "rate": 0.07
+         },
+         {
+          "exp": 8000000,
+          "rate": 35.0
+         },
+         {
+          "exp": 10000000,
+          "rate": 16.0
+         },
+         {
+          "exp": 15000000,
+          "rate": 6.0
+         },
+         {
+          "exp": 20000000,
+          "rate": 1.37
+         },
+         {
+          "exp": 50000000,
+          "rate": 0.5
+         },
+         {
+          "exp": 100000000,
+          "rate": 0.5
+         },
+         {
+          "exp": 200000000,
+          "rate": 0.01
+         }
+        ]
+       }
+      ]
+     },
+     "milestones": {
+      "50": {
+       "exp": 20000000
+      },
+      "100": {
+       "exp": 20000000
+      },
+      "200": {
+       "exp": 20000000
+      },
+      "300": {
+       "exp": 20000000
+      },
+      "400": {
+       "exp": 30000000
+      },
+      "500": {
+       "exp": 40000000
+      },
+      "600": {
+       "exp": 50000000
+      },
+      "700": {
+       "exp": 60000000
+      },
+      "800": {
+       "exp": 100000000
+      }
+     },
+     "limit": 800,
+     "min_level": 150
+    },
+    "6_1_3080": {
+     "result": {
+      "exp": 1000000
+     },
+     "limit": 500,
+     "min_level": 150
+    },
+    "6_1_3082": {
+     "result": {
+      "exp": 500000
+     },
+     "limit": 1000,
+     "min_level": 150
+    },
+    "6_1_30168": {
+     "result": {
+      "all": [
+       {
+        "all": [
+         {
+          "exp": 6000000
+         },
+         {
+          "pick": [
+           {
+            "item": "6_1_3081",
+            "count": 1,
+            "expire": {
+             "event_end": true
+            },
+            "rate": 40.0
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "pick": [
+         {
+          "item": "6_1_2349",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_3001",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_2982",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2983",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2984",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2985",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2986",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2987",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2988",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_2989",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2990",
+          "count": 1,
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2991",
+          "count": 1,
+          "rate": 0.05
+         },
+         {
+          "item": "6_1_3002",
+          "count": 1,
+          "rate": 0.3
+         },
+         {
+          "item": "6_1_3003",
+          "count": 1,
+          "rate": 0.2
+         },
+         {
+          "item": "6_1_3004",
+          "count": 1,
+          "rate": 0.03
+         },
+         {
+          "item": "6_1_1604",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_1157",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 1.0
+         },
+         {
+          "item": "6_1_2952",
+          "count": 1,
+          "rate": 1.2
+         },
+         {
+          "item": "6_1_2311",
+          "count": 1,
+          "rate": 1.5
+         },
+         {
+          "equip": [
+           10,
+           7,
+           1
+          ],
+          "name": "Phiên Vũ ",
+          "expire": {
+           "days": 180
+          },
+          "rate": 0.1
+         },
+         {
+          "equip": [
+           10,
+           7,
+           1
+          ],
+          "name": "Phiên Vũ ",
+          "expire": {
+           "days": 90
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2953",
+          "count": 1,
+          "rate": 1.2
+         },
+         {
+          "item": "6_1_2527",
+          "count": 1,
+          "rate": 1.6
+         },
+         {
+          "gold_row": 3211,
+          "name": "Hoàng Kim ấn (Cường hóa)",
+          "expire": {
+           "days": 7
+          },
+          "rate": 0.1
+         },
+         {
+          "gold_row": 3221,
+          "name": "Hoàng Kim ấn (Nhược hóa)",
+          "expire": {
+           "days": 7
+          },
+          "rate": 0.11
+         },
+         {
+          "item": "6_1_2219",
+          "count": 1,
+          "expire": {
+           "days": 30
+          },
+          "rate": 0.1
+         },
+         {
+          "item": "6_1_2125",
+          "count": 1,
+          "rate": 20.0
+         },
+         {
+          "exp": 5000000,
+          "rate": 40.0
+         },
+         {
+          "exp": 8000000,
+          "rate": 13.0
+         },
+         {
+          "exp": 10000000,
+          "rate": 10.0
+         },
+         {
+          "exp": 15000000,
+          "rate": 5.0
+         },
+         {
+          "exp": 20000000,
+          "rate": 1.0
+         },
+         {
+          "exp": 50000000,
+          "rate": 0.5
+         },
+         {
+          "exp": 100000000,
+          "rate": 0.01
+         }
+        ]
+       }
+      ]
+     },
+     "milestones": {
+      "100": {
+       "exp": 5000000
+      },
+      "200": {
+       "exp": 10000000
+      },
+      "300": {
+       "exp": 10000000
+      },
+      "400": {
+       "exp": 20000000
+      },
+      "500": {
+       "exp": 20000000
+      },
+      "600": {
+       "exp": 20000000
+      },
+      "700": {
+       "exp": 20000000
+      },
+      "800": {
+       "exp": 30000000
+      },
+      "900": {
+       "exp": 30000000
+      },
+      "1100": {
+       "exp": 40000000
+      },
+      "1200": {
+       "exp": 40000000
+      },
+      "1300": {
+       "exp": 40000000
+      },
+      "1400": {
+       "exp": 50000000
+      },
+      "1500": {
+       "item": "6_1_2349",
+       "count": 1
+      }
+     },
+     "limit": 1500,
+     "min_level": 150
+    },
+    "ev_box_giang_sinh": {
+     "result": {
+      "pick": [
+       {
+        "item": "6_1_3074",
+        "count": 1,
+        "rate": 36.23,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3072",
+        "count": 1,
+        "rate": 36.23,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3075",
+        "count": 1,
+        "rate": 18.12,
+        "tier": "Thường"
+       },
+       {
+        "item": "6_1_3076",
+        "count": 1,
+        "rate": 7.25,
+        "tier": "Hơi hiếm"
+       },
+       {
+        "item": "6_1_30166",
+        "count": 1,
+        "rate": 2.17,
+        "tier": "Hiếm"
+       }
+      ]
+     }
+    }
+   },
+   "material_sources": {
+    "6_1_3076": [
+     "Tiêu diệt Boss Hoàng Kim",
+     "Tiêu diệt Boss Sát Thủ"
+    ],
+    "6_1_3081": [
+     "Vượt ải tiêu diệt Boss "
+    ]
+   },
+   "drop_box": "ev_box_giang_sinh"
+  }
+ ]
+}

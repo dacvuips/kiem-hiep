@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://df7283b2a0f23"]
+
+[ext_resource type="Script" path="res://tests/test_server_profile_guard.gd" id="1_test"]
+
+[node name="TestServerProfileGuard" type="Node"]
+script = ExtResource("1_test")

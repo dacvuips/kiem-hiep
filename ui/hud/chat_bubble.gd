@@ -27,7 +27,7 @@ static func show_on(character: Node2D, speaker_name: String, text: String) -> vo
 	bubble.say(speaker_name, text)
 
 func _init() -> void:
-	z_index = 10
+	z_index = 15
 	_label = RichTextLabel.new()
 	_label.bbcode_enabled = true
 	_label.fit_content = true

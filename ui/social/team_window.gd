@@ -17,7 +17,7 @@ var _kick_btn: Button
 var _toggle_btn: Button
 var _refresh_btn: Button
 var _leave_btn: Button
-var _view_btn: Button
+var _captain_btn: Button
 var _create_btn: Button
 var _pick: OptionButton
 var _msg: PanelContainer
@@ -50,8 +50,9 @@ func _init(hub: SocialHub = null) -> void:
 	_toggle_btn = SocialUi.stone_button("Đóng nhóm", Vector2(110, 38))
 	_refresh_btn = SocialUi.stone_button("Cập nhật", Vector2(110, 38))
 	_leave_btn = SocialUi.stone_button("Rời nhóm", Vector2(110, 38))
-	_view_btn = SocialUi.stone_button("Xem trang bị", Vector2(110, 38))
-	for b in [_invite_btn, _kick_btn, _toggle_btn, _view_btn, _refresh_btn, _leave_btn]:
+	_captain_btn = SocialUi.stone_button("Chuyển trưởng nhóm", Vector2(110, 38))
+	_captain_btn.add_theme_font_size_override("font_size", 11)
+	for b in [_invite_btn, _kick_btn, _toggle_btn, _captain_btn, _refresh_btn, _leave_btn]:
 		mid.add_child(b)
 	cols.add_child(mid)
 
@@ -102,7 +103,7 @@ func _init(hub: SocialHub = null) -> void:
 	_toggle_btn.pressed.connect(func() -> void: _team.set_open(not _team.open))
 	_refresh_btn.pressed.connect(_on_refresh)
 	_leave_btn.pressed.connect(func() -> void: _team.leave())
-	_view_btn.pressed.connect(_on_view_equip)
+	_captain_btn.pressed.connect(_on_change_captain)
 	_create_btn.pressed.connect(func() -> void: _team.create_team())
 	_pick.item_selected.connect(func(idx: int) -> void: _team.set_pick_mode(idx))
 	_search.text_changed.connect(func(_t: String) -> void: _fill_players())
@@ -111,6 +112,8 @@ func _init(hub: SocialHub = null) -> void:
 	_players_list.item_selected.connect(func(_i: int) -> void: _update_buttons())
 	_team.changed.connect(_rebuild)
 	_team.message.connect(_on_message)
+	if NetClient != null and NetClient.has_signal("server_notice"):
+		NetClient.server_notice.connect(_on_server_notice)
 	_rebuild()
 
 func _exit_tree() -> void:
@@ -119,8 +122,17 @@ func _exit_tree() -> void:
 			_team.changed.disconnect(_rebuild)
 		if _team.message.is_connected(_on_message):
 			_team.message.disconnect(_on_message)
+	if NetClient != null and NetClient.has_signal("server_notice"):
+		if NetClient.server_notice.is_connected(_on_server_notice):
+			NetClient.server_notice.disconnect(_on_server_notice)
 
 func _on_message(text: String, good: bool) -> void:
+	SocialUi.set_banner(_msg, text, good)
+	_msg.visible = true
+
+func _on_server_notice(text: String) -> void:
+	var bad := text.contains("không") or text.contains("từ chối") or text.contains("chưa") or text.contains("đầy")
+	var good := not bad and (text.contains("thành công") or text.contains("Đã gửi") or text.contains("Đã mời") or text.contains("gia nhập"))
 	SocialUi.set_banner(_msg, text, good)
 	_msg.visible = true
 
@@ -165,14 +177,28 @@ func _fill_players() -> void:
 		var idx := _players_list.add_item("[xin vào] %s  (Cấp %d)" % [m.name, m.level])
 		_players_list.set_item_metadata(idx, m)
 		_players_list.set_item_custom_fg_color(idx, SocialUi.WARN)
+	var member_ids := {}
+	for x in _team.all_members():
+		member_ids[x.id] = true
 	for m in SocialDirectory.players(_profile):
 		if m.team_tag != "" and not (_team.in_team() and _team.captain != null and _team.captain.mock == m):
 			continue
-		if _team.applicants.has(m) or (filter != "" and not m.name.to_lower().contains(filter)):
+		## Online người quanh đây không mang team_tag -> loại đồng đội theo eid (kẻo 1 người hiện ở cả 2 danh sách).
+		if NetClient.is_in_world() and member_ids.has(m.id):
 			continue
-		var idx2 := _players_list.add_item("%s  (Cấp %d · %s)" % [m.name, m.level, m.sect_name])
+		if _applicant_ids().has(m.id) or (filter != "" and not m.name.to_lower().contains(filter)):
+			continue
+		var info := "Cấp %d · %s" % [m.level, m.sect_name] if m.sect_name != "" else "Cấp %d" % m.level
+		var idx2 := _players_list.add_item("%s  (%s)" % [m.name, info])
 		_players_list.set_item_metadata(idx2, m)
 		_players_list.set_item_custom_fg_color(idx2, Camp.get_color(m.camp))
+
+## Id người đang xin vào đội (online mỗi lần S_TEAM_STATE dựng MockPlayer mới -> so theo id, không so đối tượng).
+func _applicant_ids() -> Dictionary:
+	var ids := {}
+	for a in _team.applicants:
+		ids[a.id] = true
+	return ids
 
 func _update_buttons() -> void:
 	var sel_player: Variant = _selected_player()
@@ -180,12 +206,12 @@ func _update_buttons() -> void:
 	var applicant_selected: bool = sel_player is MockPlayer and _team.applicants.has(sel_player)
 	## "Mời nhóm": đội trưởng mời người đang chọn (hoặc nhận người xin vào); chưa có đội thì xin vào đội của người đó.
 	_invite_btn.disabled = sel_player == null or (_team.in_team() and not _team.is_captain())
-	_invite_btn.text = "Nhận vào" if applicant_selected else ("Xin vào" if not _team.in_team() else "Mời nhóm")
+	_invite_btn.text = "Nhận vào" if applicant_selected else ("Mời nhóm" if _team.is_captain() else "Xin vào")
 	_kick_btn.disabled = not (_team.is_captain() and (sel_member != null and sel_member != _team.captain or applicant_selected))
 	_kick_btn.text = "Từ chối" if applicant_selected else "Trục xuất"
 	_toggle_btn.disabled = not _team.is_captain()
 	_leave_btn.disabled = not _team.in_team()
-	_view_btn.disabled = sel_player == null and (sel_member == null or sel_member.mock == null)
+	_captain_btn.disabled = not (_team.is_captain() and sel_member != null and sel_member != _team.captain)
 
 func _on_invite() -> void:
 	var target: Variant = _selected_player()
@@ -207,20 +233,27 @@ func _on_kick() -> void:
 	if member != null:
 		_team.kick(member)
 
-## "Xem trang bị": người đang chọn ở danh sách người chơi, hoặc đồng đội đang chọn.
-func _on_view_equip() -> void:
-	var target: MockPlayer = null
-	var sel_player: Variant = _selected_player()
-	if sel_player is MockPlayer:
-		target = sel_player
-	else:
-		var m := _selected_member()
-		if m != null:
-			target = m.mock
-	var err := []
-	if target == null or ViewEquipWindow.open_for(get_tree().current_scene, _profile, target, err) == null:
-		SocialUi.set_banner(_msg, str(err[0]) if not err.is_empty() else "Hãy chọn một người chơi.", false)
+## "Chuyển trưởng nhóm": nhường chức đội trưởng cho thành viên đang chọn trong đội (chỉ đội trưởng).
+func _on_change_captain() -> void:
+	var member := _selected_member()
+	if member == null:
+		SocialUi.set_banner(_msg, "Hãy chọn một thành viên trong nhóm.", false)
 		_msg.visible = true
+		return
+	if member == _team.captain:
+		SocialUi.set_banner(_msg, "%s đã là đội trưởng." % member.name, false)
+		_msg.visible = true
+		return
+	if not _team.is_captain():
+		SocialUi.set_banner(_msg, "Chỉ đội trưởng mới có thể chuyển chức trưởng nhóm.", false)
+		_msg.visible = true
+		return
+	var host: Node = get_tree().current_scene if get_tree() != null else self
+	SocialWindow.confirm(host, "Chuyển trưởng nhóm", "Bạn có chắc muốn nhường chức đội trưởng cho %s không?" % member.name, func() -> void:
+		var err := _team.change_captain(member)
+		if err != "":
+			SocialUi.set_banner(_msg, err, false)
+			_msg.visible = true)
 
 ## "Cập nhật": làm mới danh sách (và cho người chơi giả có cơ hội xin vào đội).
 func _on_refresh() -> void:

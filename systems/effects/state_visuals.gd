@@ -50,7 +50,10 @@ func _sync_state_sprites() -> void:
 		if not wanted.has(id):
 			var node: VltkStateSprite = _state_sprites[id]
 			if node != null and is_instance_valid(node):
-				node.queue_free()
+				if node.has_method("finish_and_free"):
+					node.finish_and_free()
+				else:
+					node.queue_free()
 			_state_sprites.erase(id)
 
 func _exit_tree() -> void:

@@ -6,7 +6,7 @@ const AuraDatabase = preload("res://systems/auras/aura_database.gd")
 ## TRUNG TÂM ĐIỀU HÀNH GAME MASTER (GM CONTROL CENTER)
 ## Giao diện trực quan tích hợp toàn diện các công cụ hỗ trợ GM quản lý thế giới, người chơi, boss, cấp phát vật phẩm.
 
-enum Tab { SELF, PLAYER, DISPENSER, ITEM_CREATOR, BOSS, POSSESS, AUDIT, AURA }
+enum Tab { SELF, PLAYER, DISPENSER, ITEM_CREATOR, BOSS, POSSESS, AUDIT, AURA, EVENTS }
 const TAB_NAMES := [
 	"1. Bản Thân",
 	"2. Người Chơi",
@@ -15,37 +15,55 @@ const TAB_NAMES := [
 	"5. Boss & Rớt Đồ",
 	"6. Chiếm Quyền",
 	"7. Nhật Ký GM",
-	"8. Hào Quang Aura"
+	"8. Hào Quang Aura",
+	"9. Sự Kiện Năm"
 ]
 
 var _current_tab: int = Tab.SELF
 var _tab_bar: HBoxContainer
 var _content_area: VBoxContainer
-var _status_footer: HBoxContainer
+var _status_footer: HFlowContainer
 var _selected_player: Dictionary = {}
+## ID đã nhập ở tab Chiếm Quyền (giữ lại khi vẽ lại tab)
+var _possess_target_id: String = ""
 var _dispenser_res_label: Label = null
 var _aura_filter_category: String = "Tất Cả"
 var _aura_search_keyword: String = ""
 
 static func open(host: Node) -> SocialWindow:
-	if not AccountApi.is_gm():
+	if not AccountApi.has_gm_permission():
 		return null
 	var script: GDScript = load("res://ui/gm/gm_control_window.gd")
 	var win = script.new()
 	return SocialWindow.present(host, win, &"gm_control")
 
 func _init() -> void:
-	super._init("★ TRUNG TÂM ĐIỀU HÀNH GAME MASTER ★", "Bảng công cụ quản trị, giám sát và can thiệp máy chủ", 840.0)
-	custom_minimum_size = Vector2(840, 580)
+	super._init("★ TRUNG TÂM ĐIỀU HÀNH GAME MASTER ★", "", 960.0)
+	custom_minimum_size = Vector2(960, 560)
+
+	var solid_box := WuxiaStyle.create_panel_box()
+	solid_box.bg_color = Color(0.015, 0.05, 0.06, 0.98)
+	add_theme_stylebox_override("panel", solid_box)
+
+	if header_panel:
+		var h_box := header_panel.get_node_or_null("HBoxContainer") as HBoxContainer
+		if h_box:
+			var sub_bar := SocialUi.label("Bảng công cụ quản trị & can thiệp máy chủ", SocialUi.MUTED, 11)
+			sub_bar.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			h_box.add_child(sub_bar)
+			h_box.move_child(sub_bar, 1)
 
 	## Khởi tạo danh mục tab
 	_tab_bar = HBoxContainer.new()
 	_tab_bar.add_theme_constant_override("separation", 4)
+	_tab_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_tab_bar)
 
 	for i in TAB_NAMES.size():
 		var btn := GameUi.button(TAB_NAMES[i], GameUi.TAB)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.custom_minimum_size = Vector2(0, 34)
+		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void:
 			_current_tab = i
 			_render_tab())
@@ -53,7 +71,7 @@ func _init() -> void:
 
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.custom_minimum_size = Vector2(0, 370)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(scroll)
@@ -64,14 +82,23 @@ func _init() -> void:
 	scroll.add_child(_content_area)
 
 	## Footer thanh trạng thái nhanh
-	_status_footer = HBoxContainer.new()
-	_status_footer.add_theme_constant_override("separation", 12)
+	_status_footer = HFlowContainer.new()
+	_status_footer.add_theme_constant_override("h_separation", 14)
+	_status_footer.add_theme_constant_override("v_separation", 4)
+	_status_footer.alignment = FlowContainer.ALIGNMENT_CENTER
+	_status_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_status_footer)
 
-	var close_btn := SocialUi.stone_button("Đóng Bảng GM", Vector2(140, 36))
+	var bot_bar := HBoxContainer.new()
+	bot_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	var close_btn := SocialUi.stone_button("Đóng Bảng GM", Vector2(160, 32))
 	close_btn.pressed.connect(func() -> void: close_requested.emit())
-	body.add_child(close_btn)
+	bot_bar.add_child(close_btn)
+	body.add_child(bot_bar)
 
+	NetClient.event_times_changed.connect(func() -> void:
+		if _current_tab == Tab.EVENTS and is_inside_tree():
+			_render_tab())
 	if GmManager != null:
 		if GmManager.has_signal("gm_state_changed"):
 			GmManager.connect("gm_state_changed", _refresh_footer)
@@ -92,6 +119,13 @@ func _ready() -> void:
 	_selected_player = _get_default_player()
 	_refresh_footer()
 	_render_tab()
+	await get_tree().process_frame
+	if not is_inside_tree() or is_docked:
+		return
+	size = Vector2(960, 560)
+	var screen := get_viewport_rect().size
+	position = ((screen - size) * 0.5).round()
+	_clamp_to_screen()
 
 func _get_default_player() -> Dictionary:
 	var list := GmManager.get_player_list()
@@ -150,6 +184,8 @@ func _render_tab() -> void:
 			_build_audit_tab()
 		Tab.AURA:
 			_build_aura_tab()
+		Tab.EVENTS:
+			_build_events_tab()
 
 # ==============================================================================
 # TAB 1: QUẢN TRỊ NGƯỜI CHƠI
@@ -160,7 +196,7 @@ func _build_player_tab() -> void:
 	var search_row := HBoxContainer.new()
 	search_row.add_theme_constant_override("separation", 8)
 
-	var search_input := SocialUi.line_edit("Nhập Tên nhân vật hoặc ID người chơi...")
+	var search_input := SocialUi.line_edit("Nhập ID người chơi...")
 	search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	search_row.add_child(search_input)
 
@@ -177,18 +213,23 @@ func _build_player_tab() -> void:
 
 	var target_sec := SocialUi.info_box("🎯 Thao Tác Với Mục Tiêu Đang Chọn")
 	var target_detail_label := SocialUi.label("Chưa chọn mục tiêu", SocialUi.TEXT, 13)
+	target_detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	target_detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	target_sec[1].add_child(target_detail_label)
 
 	var actions_grid := GridContainer.new()
 	actions_grid.columns = 4
 	actions_grid.add_theme_constant_override("h_separation", 8)
 	actions_grid.add_theme_constant_override("v_separation", 8)
+	actions_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	target_sec[1].add_child(actions_grid)
 	_content_area.add_child(target_sec[0])
 
 	var mass_sec := SocialUi.info_box("🌍 Dịch Chuyển Hàng Loạt (Sự Kiện)")
-	var mass_row := HBoxContainer.new()
-	mass_row.add_theme_constant_override("separation", 8)
+	var mass_row := HFlowContainer.new()
+	mass_row.add_theme_constant_override("h_separation", 8)
+	mass_row.add_theme_constant_override("v_separation", 6)
+	mass_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var x_input := SocialUi.line_edit("X: 200")
 	var y_input := SocialUi.line_edit("Y: 200")
 	x_input.text = "200"
@@ -221,9 +262,11 @@ func _build_player_tab() -> void:
 		if _selected_player.is_empty():
 			target_detail_label.text = "Vui lòng chọn 1 người chơi từ danh sách bên trên."
 			return
-		var s_text := "ĐANG CHỌN: [%s] (ID: %s)  ·  Cấp: %d  ·  Phái: %s  ·  Bản đồ: %s  ·  Tọa độ: (%d, %d)" % [
+		var target_prof: PlayerProfile = _selected_profile()
+		var target_lead: int = target_prof.lead_level if target_prof else int(_selected_player.get("lead_level", 0))
+		var s_text := "ĐANG CHỌN: [%s] (ID: %s)  ·  Cấp: %d  ·  Lãnh đạo: Cấp %d  ·  Phái: %s  ·  Bản đồ: %s  ·  Tọa độ: (%d, %d)" % [
 			_selected_player.get("name", "?"), _selected_player.get("id", "?"),
-			int(_selected_player.get("level", 1)), _selected_player.get("sect", "?"),
+			int(_selected_player.get("level", 1)), target_lead, _selected_player.get("sect", "?"),
 			_selected_player.get("map", "?"),
 			roundi(_selected_player.get("pos", Vector2.ZERO).x), roundi(_selected_player.get("pos", Vector2.ZERO).y)
 		]
@@ -246,6 +289,31 @@ func _build_player_tab() -> void:
 		var btn_hkmp := SocialUi.small_button("🏆 Cấp Full Bộ HKMP")
 		var btn_pts := SocialUi.small_button("⭐ +500 Tiềm Năng & Skill")
 		var btn_custom_pot := SocialUi.small_button("✏ Nhập Số Tiềm Năng Tự Tăng")
+		var btn_add_1_lead := SocialUi.small_button("👑 +1 Lãnh Đạo")
+		var btn_add_5_lead := SocialUi.small_button("👑 +5 Lãnh Đạo")
+		var btn_add_10_lead := SocialUi.small_button("👑 +10 Lãnh Đạo")
+		var btn_set_20_lead := SocialUi.small_button("👑 Cấp 20 (Lập Bang)")
+		var btn_set_max_lead := SocialUi.small_button("👑 Max Cấp 100")
+		var btn_lv_minus := SocialUi.small_button("🎖 -1 Cấp")
+		var btn_lv_plus := SocialUi.small_button("🎖 +1 Cấp")
+		var btn_lv_plus10 := SocialUi.small_button("🎖 +10 Cấp")
+		var btn_lv_set := SocialUi.small_button("🎖 Nhập Cấp")
+		for lv_d in [[btn_lv_minus, -1], [btn_lv_plus, 1], [btn_lv_plus10, 10]]:
+			var d_val: int = lv_d[1]
+			(lv_d[0] as Button).pressed.connect(func() -> void:
+				_show_toast(GmManager.change_level_of(_selected_player, d_val, false))
+				_render_tab()
+			)
+		btn_lv_set.pressed.connect(func() -> void:
+			SocialWindow.prompt(get_tree().current_scene, "Đặt Cấp Nhân Vật", "Nhập cấp (1-%d) cho %s:" % [PlayerProfile.MAX_LEVEL, _selected_player.get("name", "người chơi")], func(val_str: String) -> void:
+				var n := int(val_str.strip_edges())
+				if n <= 0:
+					_show_toast("Cấp nhập vào không hợp lệ!")
+					return
+				_show_toast(GmManager.change_level_of(_selected_player, n, true))
+				_render_tab()
+			)
+		)
 
 		btn_goto.pressed.connect(func() -> void:
 			GmManager.goto_player(_selected_player)
@@ -284,10 +352,11 @@ func _build_player_tab() -> void:
 			_show_toast("Đã xóa pass rương bảo vệ cho %s" % _selected_player.get("name", ""))
 		)
 		btn_camp.pressed.connect(func() -> void:
-			var p: PlayerProfile = _selected_player.get("profile") if _selected_player.get("profile") else GameManager.local_profile
-			var cur_c: int = p.get_current_camp() if p else 0
+			var cur_c: int = int(_selected_player.get("camp", 0)) if _selected_player.has("camp") else (
+				_selected_player.get("profile").get_current_camp() if _selected_player.get("profile") else 0
+			)
 			var next_c: int = (cur_c + 1) % 5
-			GmManager.change_player_camp(p, next_c)
+			GmManager.change_player_camp(_selected_player, next_c)
 			_show_toast("Đã đổi màu PK thành: %s" % Camp.get_camp_name(next_c))
 			_render_tab()
 		)
@@ -322,9 +391,40 @@ func _build_player_tab() -> void:
 				_show_toast("Đã tăng +%d điểm tiềm năng cho %s (Hiện có: %d)!" % [n, _selected_player.get("name", ""), p.potential_points])
 			)
 		)
+		btn_add_1_lead.pressed.connect(func() -> void:
+			var p: PlayerProfile = _selected_profile()
+			GmManager.add_player_lead_level(p, 1)
+			_show_toast("Đã tăng +1 cấp lãnh đạo cho %s (Hiện tại: Cấp %d)!" % [_selected_player.get("name", ""), p.lead_level])
+			_render_tab()
+		)
+		btn_add_5_lead.pressed.connect(func() -> void:
+			var p: PlayerProfile = _selected_profile()
+			GmManager.add_player_lead_level(p, 5)
+			_show_toast("Đã tăng +5 cấp lãnh đạo cho %s (Hiện tại: Cấp %d)!" % [_selected_player.get("name", ""), p.lead_level])
+			_render_tab()
+		)
+		btn_add_10_lead.pressed.connect(func() -> void:
+			var p: PlayerProfile = _selected_profile()
+			GmManager.add_player_lead_level(p, 10)
+			_show_toast("Đã tăng +10 cấp lãnh đạo cho %s (Hiện tại: Cấp %d)!" % [_selected_player.get("name", ""), p.lead_level])
+			_render_tab()
+		)
+		btn_set_20_lead.pressed.connect(func() -> void:
+			var p: PlayerProfile = _selected_profile()
+			GmManager.set_player_lead_level(p, 20)
+			_show_toast("Đã đặt cấp lãnh đạo của %s thành Cấp 20 (Đủ chuẩn lập bang)!" % _selected_player.get("name", ""))
+			_render_tab()
+		)
+		btn_set_max_lead.pressed.connect(func() -> void:
+			var p: PlayerProfile = _selected_profile()
+			GmManager.set_player_lead_level(p, 100)
+			_show_toast("Đã đặt cấp lãnh đạo của %s thành Cấp 100 (Tối đa)!" % _selected_player.get("name", ""))
+			_render_tab()
+		)
 
-		for b in [btn_goto, btn_summon, btn_stuck, btn_rename, btn_mute, btn_ban, btn_kick, btn_unlock, btn_camp, btn_reset, btn_skills, btn_hkmp, btn_pts, btn_custom_pot]:
-			b.custom_minimum_size = Vector2(160, 32)
+		for b in [btn_goto, btn_summon, btn_stuck, btn_rename, btn_mute, btn_ban, btn_kick, btn_unlock, btn_camp, btn_reset, btn_skills, btn_hkmp, btn_pts, btn_custom_pot, btn_add_1_lead, btn_add_5_lead, btn_add_10_lead, btn_set_20_lead, btn_set_max_lead, btn_lv_minus, btn_lv_plus, btn_lv_plus10, btn_lv_set]:
+			b.custom_minimum_size = Vector2(0, 32)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			actions_grid.add_child(b)
 
 	var populate_list := func(items: Array[Dictionary]) -> void:
@@ -378,6 +478,21 @@ func _build_self_tab() -> void:
 	var btn_noclip := SocialUi.stone_button("👻 Xuyên Tường: %s" % ("BẬT" if GmManager.is_noclip else "TẮT"), Vector2(220, 36))
 	var btn_halo := SocialUi.stone_button("✦ Vòng Sáng GM: %s" % ("BẬT" if GmManager.is_gm_halo else "TẮT"), Vector2(220, 36))
 	var btn_mask := SocialUi.stone_button("🥋 Ngoại Hình GM: %s" % ("BẬT" if GmManager.is_gm_mask else "TẮT"), Vector2(220, 36))
+	var is_active_gm: bool = AccountApi.is_gm()
+	var btn_gm_toggle := SocialUi.stone_button(
+		"👑 Quyền Hạn GM: %s" % ("BẬT" if is_active_gm else "TẮT (Dân thường)"),
+		Vector2(220, 36)
+	)
+	btn_gm_toggle.modulate = Color(1.2, 1.1, 0.4) if is_active_gm else Color(0.8, 0.8, 0.8)
+
+	btn_gm_toggle.pressed.connect(func() -> void:
+		AccountApi.toggle_gm_mode()
+		var now_active := AccountApi.is_gm()
+		btn_gm_toggle.text = "👑 Quyền Hạn GM: %s" % ("BẬT" if now_active else "TẮT (Dân thường)")
+		btn_gm_toggle.modulate = Color(1.2, 1.1, 0.4) if now_active else Color(0.8, 0.8, 0.8)
+		_show_toast("Đã chuyển quyền GM sang: %s" % ("BẬT (Game Master)" if now_active else "TẮT (Như người chơi bình thường)"))
+		_refresh_footer()
+	)
 
 	btn_inv.pressed.connect(func() -> void:
 		GmManager.is_invisible = not GmManager.is_invisible
@@ -406,10 +521,13 @@ func _build_self_tab() -> void:
 	toggle_grid.add_child(btn_noclip)
 	toggle_grid.add_child(btn_halo)
 	toggle_grid.add_child(btn_mask)
+	toggle_grid.add_child(btn_gm_toggle)
 
 	var camp_sec := SocialUi.info_box("🚩 Thay Đổi Trạng Thái Phe PK (Màu Chữ GM)")
-	var camp_row := HBoxContainer.new()
-	camp_row.add_theme_constant_override("separation", 8)
+	var camp_row := HFlowContainer.new()
+	camp_row.add_theme_constant_override("h_separation", 8)
+	camp_row.add_theme_constant_override("v_separation", 6)
+	camp_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var camp_options := [
 		{"name": "Luyện Công (Trắng)", "id": Camp.Type.BEGIN},
 		{"name": "Chính Phái (Cam)", "id": Camp.Type.JUSTICE},
@@ -491,8 +609,10 @@ func _build_self_tab() -> void:
 	_content_area.add_child(sect_sec[0])
 
 	var skill_sec := SocialUi.info_box("📜 Kỹ Năng & Tẩy Tủy Môn Phái")
-	var skill_row := HBoxContainer.new()
-	skill_row.add_theme_constant_override("separation", 10)
+	var skill_row := HFlowContainer.new()
+	skill_row.add_theme_constant_override("h_separation", 10)
+	skill_row.add_theme_constant_override("v_separation", 6)
+	skill_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var learn_all_btn := SocialUi.small_button("📖 Học Full Kỹ Năng Phái")
 	var reset_pts_btn := SocialUi.small_button("🔄 Tẩy Tủy Toàn Bộ")
 	var add_1k_pts_btn := SocialUi.small_button("⭐ +1000 Tiềm Năng & Kỹ Năng")
@@ -516,8 +636,10 @@ func _build_self_tab() -> void:
 	_content_area.add_child(skill_sec[0])
 
 	var spd_sec := SocialUi.info_box("🏃 Tốc Độ Di Chuyển")
-	var spd_row := HBoxContainer.new()
-	spd_row.add_theme_constant_override("separation", 8)
+	var spd_row := HFlowContainer.new()
+	spd_row.add_theme_constant_override("h_separation", 8)
+	spd_row.add_theme_constant_override("v_separation", 6)
+	spd_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for m in [1.0, 1.5, 2.0, 3.0, 5.0]:
 		var b := SocialUi.small_button("%.1fx%s" % [m, " (Chuẩn)" if m == 1.0 else ""])
 		b.pressed.connect(func() -> void:
@@ -529,12 +651,12 @@ func _build_self_tab() -> void:
 	_content_area.add_child(spd_sec[0])
 
 	var stats_sec := SocialUi.info_box("💪 Hồi Máu & Cộng Chỉ Số")
-	var stats_row := HBoxContainer.new()
-	stats_row.add_theme_constant_override("separation", 10)
+	var stats_row := HFlowContainer.new()
+	stats_row.add_theme_constant_override("h_separation", 10)
+	stats_row.add_theme_constant_override("v_separation", 6)
+	stats_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var full_heal_btn := SocialUi.small_button("💚 Hồi Đầy 100% HP/MP/SP")
 	var add_100_all := SocialUi.small_button("⭐ +100 Toàn Bộ Chỉ Số")
-	var set_lv_100 := SocialUi.small_button("🎖 Đặt Cấp 100")
-	var set_lv_150 := SocialUi.small_button("🎖 Đặt Cấp 150")
 
 	full_heal_btn.pressed.connect(func() -> void:
 		GmManager.restore_self_full()
@@ -544,20 +666,162 @@ func _build_self_tab() -> void:
 		GmManager.adjust_stats(GameManager.local_profile, 100, 100, 100, 100)
 		_show_toast("Đã cộng +100 Sức mạnh, Thân pháp, Sinh khí, Nội công!")
 	)
-	set_lv_100.pressed.connect(func() -> void:
-		GmManager.set_player_level(GameManager.local_profile, 100)
-		_show_toast("Đã đặt nhân vật lên Cấp 100!")
-	)
-	set_lv_150.pressed.connect(func() -> void:
-		GmManager.set_player_level(GameManager.local_profile, 150)
-		_show_toast("Đã đặt nhân vật lên Cấp 150!")
-	)
 	stats_row.add_child(full_heal_btn)
 	stats_row.add_child(add_100_all)
-	stats_row.add_child(set_lv_100)
-	stats_row.add_child(set_lv_150)
 	stats_sec[1].add_child(stats_row)
 	_content_area.add_child(stats_sec[0])
+
+	# KHỐI CẤP NHÂN VẬT: cộng/trừ từng cấp hoặc đặt thẳng cấp — lên cấp cộng đủ điểm tiềm năng/kỹ năng
+	var lv_sec := SocialUi.info_box("🎖 Cấp Nhân Vật (Hiện tại: Cấp %d)" % (GameManager.local_profile.level if GameManager.local_profile else 1))
+	var lv_vb := VBoxContainer.new()
+	lv_vb.add_theme_constant_override("separation", 8)
+	var lv_row := HFlowContainer.new()
+	lv_row.add_theme_constant_override("h_separation", 6)
+	lv_row.add_theme_constant_override("v_separation", 6)
+	lv_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lv_row.add_child(SocialUi.label("Cộng/trừ cấp:", SocialUi.TEXT, 12))
+	for d in [-10, -1, 1, 5, 10, 50]:
+		var b_lv := SocialUi.small_button("%+d Cấp" % d)
+		b_lv.pressed.connect(func() -> void:
+			GmManager.add_player_level(GameManager.local_profile, d)
+			_show_toast("Cấp nhân vật hiện tại: Cấp %d" % GameManager.local_profile.level)
+			_render_tab()
+		)
+		lv_row.add_child(b_lv)
+	for target in [100, 150, 200]:
+		var b_set := SocialUi.small_button("Đặt Cấp %d" % target)
+		b_set.pressed.connect(func() -> void:
+			GmManager.set_player_level(GameManager.local_profile, target)
+			_show_toast("Đã đặt nhân vật lên Cấp %d!" % GameManager.local_profile.level)
+			_render_tab()
+		)
+		lv_row.add_child(b_set)
+	lv_vb.add_child(lv_row)
+	var lv_set_row := HBoxContainer.new()
+	lv_set_row.add_theme_constant_override("separation", 8)
+	lv_set_row.add_child(SocialUi.label("Hoặc nhập cấp:", SocialUi.TEXT, 12))
+	var lv_spin := SpinBox.new()
+	lv_spin.min_value = 1
+	lv_spin.max_value = PlayerProfile.MAX_LEVEL
+	lv_spin.step = 1
+	lv_spin.value = GameManager.local_profile.level if GameManager.local_profile else 1
+	lv_spin.custom_minimum_size = Vector2(110, 32)
+	lv_set_row.add_child(lv_spin)
+	var lv_apply := SocialUi.small_button("Đặt cấp")
+	lv_apply.pressed.connect(func() -> void:
+		GmManager.set_player_level(GameManager.local_profile, int(lv_spin.value))
+		_show_toast("Đã đặt nhân vật lên Cấp %d!" % GameManager.local_profile.level)
+		_render_tab()
+	)
+	lv_set_row.add_child(lv_apply)
+	lv_vb.add_child(lv_set_row)
+	lv_sec[1].add_child(lv_vb)
+	_content_area.add_child(lv_sec[0])
+
+	# KHỐI QUẢN LÝ TÀI LÃNH ĐẠO (CHỌN TRỰC TIẾP TRÊN UI)
+	var lead_sec := SocialUi.info_box("👑 Quản Lý & Tăng Cấp Tài Lãnh Đạo (Chọn Trực Tiếp Trên UI)")
+	var lead_vb := VBoxContainer.new()
+	lead_vb.add_theme_constant_override("separation", 10)
+
+	var p_self := GameManager.local_profile
+	var cur_lead_lv := p_self.lead_level if p_self else 0
+	var cur_lead_exp := p_self.lead_exp if p_self else 0
+	var max_lead_exp := SocialRules.lead_exp_to_next(cur_lead_lv)
+	var exp_txt := "%s / %s" % [CharacterHubScreen.format_number(cur_lead_exp), CharacterHubScreen.format_number(max_lead_exp)] if max_lead_exp > 0 else "Đạt Tối Đa"
+	var team_cap := SocialRules.team_size(cur_lead_lv)
+
+	var lead_status_lbl := SocialUi.label("⭐ Cấp Lãnh Đạo Hiện Tại: Cấp %d   ·   EXP: %s   ·   Tổ Đội Tối Đa: %d Người" % [
+		cur_lead_lv, exp_txt, team_cap
+	], SocialUi.GOLD, 13)
+	lead_vb.add_child(lead_status_lbl)
+
+	# 1. Hàng nút bấm chọn cấp nhanh (1 click)
+	var lead_presets_row := HFlowContainer.new()
+	lead_presets_row.add_theme_constant_override("h_separation", 6)
+	lead_presets_row.add_theme_constant_override("v_separation", 6)
+	lead_presets_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lead_presets_row.add_child(SocialUi.label("Chọn nhanh cấp:", SocialUi.TEXT, 12))
+
+	var quick_lead_levels := [
+		["+1 Cấp", 1, true],
+		["+5 Cấp", 5, true],
+		["+10 Cấp", 10, true],
+		["Cấp 20 (Lập Bang)", 20, false],
+		["Cấp 40", 40, false],
+		["Cấp 60", 60, false],
+		["Cấp 80", 80, false],
+		["Max Cấp 100", 100, false],
+		["Về Cấp 0", 0, false]
+	]
+	for item in quick_lead_levels:
+		var btn_q := SocialUi.small_button(item[0])
+		btn_q.pressed.connect(func() -> void:
+			if item[2]:
+				GmManager.add_player_lead_level(GameManager.local_profile, item[1])
+				_show_toast("Đã tăng +%d cấp lãnh đạo (Hiện tại: Cấp %d)!" % [item[1], GameManager.local_profile.lead_level])
+			else:
+				GmManager.set_player_lead_level(GameManager.local_profile, item[1])
+				_show_toast("Đã đặt cấp lãnh đạo thành Cấp %d!" % GameManager.local_profile.lead_level)
+			_render_tab()
+		)
+		lead_presets_row.add_child(btn_q)
+	lead_vb.add_child(lead_presets_row)
+
+	# 2. Thanh Menu thả xuống chọn chính xác mọi cấp từ 0 đến 100
+	var lead_dropdown_row := HBoxContainer.new()
+	lead_dropdown_row.add_theme_constant_override("separation", 10)
+	lead_dropdown_row.add_child(SocialUi.label("Hoặc chọn trực tiếp cấp từ danh sách:", SocialUi.TEXT, 12))
+
+	var opt_lead := OptionButton.new()
+	opt_lead.custom_minimum_size = Vector2(250, 32)
+	for lv in range(0, 101):
+		var desc := "Cấp %d" % lv
+		if lv == 0:
+			desc = "Cấp 0 (Mặc định)"
+		elif lv == 20:
+			desc = "Cấp 20 (Đủ chuẩn Lập Bang)"
+		elif lv == 100:
+			desc = "Cấp 100 (Tối Đa)"
+		opt_lead.add_item(desc, lv)
+	opt_lead.selected = cur_lead_lv
+	opt_lead.item_selected.connect(func(idx: int) -> void:
+		GmManager.set_player_lead_level(GameManager.local_profile, idx)
+		_show_toast("Đã chọn cấp lãnh đạo: Cấp %d (Đội tối đa: %d người)!" % [
+			GameManager.local_profile.lead_level, SocialRules.team_size(GameManager.local_profile.lead_level)
+		])
+		_render_tab()
+	)
+	lead_dropdown_row.add_child(opt_lead)
+	lead_vb.add_child(lead_dropdown_row)
+
+	# 3. Hàng cộng nhanh EXP lãnh đạo (1 click)
+	var lead_exp_row := HFlowContainer.new()
+	lead_exp_row.add_theme_constant_override("h_separation", 8)
+	lead_exp_row.add_theme_constant_override("v_separation", 6)
+	lead_exp_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lead_exp_row.add_child(SocialUi.label("Cộng nhanh EXP lãnh đạo:", SocialUi.TEXT, 12))
+
+	var quick_exps := [
+		["+1.000 EXP", 1000],
+		["+10.000 EXP", 10000],
+		["+50.000 EXP", 50000],
+		["+200.000 EXP", 200000],
+		["+1.000.000 EXP", 1000000]
+	]
+	for exp_item in quick_exps:
+		var btn_e := SocialUi.small_button(exp_item[0])
+		btn_e.pressed.connect(func() -> void:
+			var gained := GmManager.add_player_lead_exp(GameManager.local_profile, exp_item[1])
+			_show_toast("Đã cộng +%s exp lãnh đạo (Tăng %d cấp, hiện tại: Cấp %d)!" % [
+				CharacterHubScreen.format_number(exp_item[1]), gained, GameManager.local_profile.lead_level
+			])
+			_render_tab()
+		)
+		lead_exp_row.add_child(btn_e)
+	lead_vb.add_child(lead_exp_row)
+
+	lead_sec[1].add_child(lead_vb)
+	_content_area.add_child(lead_sec[0])
 
 	var custom_pts_sec := SocialUi.info_box("⭐ Tăng Điểm Tiềm Năng & Thuộc Tính (Tự Nhập Số)")
 	var pts_input_row := HBoxContainer.new()
@@ -583,7 +847,7 @@ func _build_self_tab() -> void:
 	)
 
 	var stat_btns_grid := GridContainer.new()
-	stat_btns_grid.columns = 5
+	stat_btns_grid.columns = 4
 	stat_btns_grid.add_theme_constant_override("h_separation", 8)
 	stat_btns_grid.add_theme_constant_override("v_separation", 6)
 
@@ -592,6 +856,8 @@ func _build_self_tab() -> void:
 	var btn_add_vit := SocialUi.small_button("💚 Tăng Sinh Khí")
 	var btn_add_eng := SocialUi.small_button("🌀 Tăng Nội Công")
 	var btn_add_all := SocialUi.small_button("⭐ Tăng Cả 4 Thuộc Tính")
+	var btn_add_lead := SocialUi.small_button("👑 Tăng Cấp Lãnh Đạo")
+	var btn_add_lead_exp := SocialUi.small_button("📜 +EXP Lãnh Đạo")
 
 	btn_add_str.pressed.connect(func() -> void:
 		var n := int(pts_input.text.strip_edges())
@@ -623,8 +889,20 @@ func _build_self_tab() -> void:
 		GmManager.adjust_stats(GameManager.local_profile, n, n, n, n)
 		_show_toast("Đã tăng đều +%d cho cả 4 thuộc tính cơ bản!" % n)
 	)
+	btn_add_lead.pressed.connect(func() -> void:
+		var n := int(pts_input.text.strip_edges())
+		if n <= 0: return
+		GmManager.add_player_lead_level(GameManager.local_profile, n)
+		_show_toast("Đã tăng +%d cấp lãnh đạo (Hiện có: Cấp %d)!" % [n, GameManager.local_profile.lead_level])
+	)
+	btn_add_lead_exp.pressed.connect(func() -> void:
+		var n := int(pts_input.text.strip_edges())
+		if n <= 0: return
+		var gained := GmManager.add_player_lead_exp(GameManager.local_profile, n)
+		_show_toast("Đã cộng +%d exp lãnh đạo (Lên %d cấp, hiện tại: Cấp %d)!" % [n, gained, GameManager.local_profile.lead_level])
+	)
 
-	for b in [btn_add_str, btn_add_dex, btn_add_vit, btn_add_eng, btn_add_all]:
+	for b in [btn_add_str, btn_add_dex, btn_add_vit, btn_add_eng, btn_add_all, btn_add_lead, btn_add_lead_exp]:
 		b.custom_minimum_size = Vector2(150, 32)
 		stat_btns_grid.add_child(b)
 	custom_pts_sec[1].add_child(stat_btns_grid)
@@ -641,12 +919,16 @@ func _update_dispenser_summary() -> void:
 	if p == null:
 		_dispenser_res_label.text = "Chưa có thông tin tài nguyên."
 		return
-	_dispenser_res_label.text = "💰 Ngân lượng: %s  ·  🪙 Tiền Xu: %s  ·  💎 KNB: %s  ·  Danh vọng: %s  ·  Phúc duyên: %s" % [
+	var next_exp := SocialRules.lead_exp_to_next(p.lead_level)
+	var exp_str := "%s/%s" % [CharacterHubScreen.format_number(p.lead_exp), CharacterHubScreen.format_number(next_exp)] if next_exp > 0 else "Tối đa"
+	_dispenser_res_label.text = "💰 Ngân lượng: %s  ·  🪙 Tiền Xu: %s  ·  💎 KNB: %s  ·  Danh vọng: %s  ·  Phúc duyên: %s  ·  👑 Lãnh đạo: Cấp %d (%s)" % [
 		CharacterHubScreen.format_number(p.gold),
 		CharacterHubScreen.format_number(p.xu),
 		CharacterHubScreen.format_number(p.jade),
 		CharacterHubScreen.format_number(p.prestige),
-		CharacterHubScreen.format_number(p.fuyuan)
+		CharacterHubScreen.format_number(p.fuyuan),
+		p.lead_level,
+		exp_str
 	]
 
 func _build_dispenser_tab() -> void:
@@ -669,6 +951,8 @@ func _build_dispenser_tab() -> void:
 	res_box.add_theme_stylebox_override("panel", res_sb)
 
 	_dispenser_res_label = SocialUi.label("", SocialUi.GOLD, 13)
+	_dispenser_res_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dispenser_res_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	res_box.add_child(_dispenser_res_label)
 	info_sec[1].add_child(res_box)
 	_update_dispenser_summary()
@@ -676,8 +960,10 @@ func _build_dispenser_tab() -> void:
 	_content_area.add_child(info_sec[0])
 
 	var money_sec := SocialUi.info_box("💰 Cấp Ngân Lượng, Tiền Xu & Kim Nguyên Bảo")
-	var money_row := HBoxContainer.new()
-	money_row.add_theme_constant_override("separation", 10)
+	var money_row := HFlowContainer.new()
+	money_row.add_theme_constant_override("h_separation", 10)
+	money_row.add_theme_constant_override("v_separation", 6)
+	money_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var add_10tr := SocialUi.small_button("+1.000 Vạn Lượng")
 	var add_50tr := SocialUi.small_button("+5.000 Vạn Lượng")
@@ -726,19 +1012,28 @@ func _build_dispenser_tab() -> void:
 	money_sec[1].add_child(money_row)
 	_content_area.add_child(money_sec[0])
 
-	# Cụm cấp thủ công Danh Vọng & Phúc Duyên
-	var rep_sec := SocialUi.info_box("⭐ Cấp Danh Vọng & Phúc Duyên (Thủ Công)")
+	# Cụm cấp thủ công Danh Vọng, Phúc Duyên & Tài Lãnh Đạo
+	var rep_sec := SocialUi.info_box("⭐ Cấp Danh Vọng, Phúc Duyên & Tài Lãnh Đạo (Điều Kiện Lập Bang)")
 	var rep_vb := VBoxContainer.new()
 	rep_vb.add_theme_constant_override("separation", 8)
 
-	var rep_quick_row := HBoxContainer.new()
-	rep_quick_row.add_theme_constant_override("separation", 10)
+	var rep_quick_row := HFlowContainer.new()
+	rep_quick_row.add_theme_constant_override("h_separation", 6)
+	rep_quick_row.add_theme_constant_override("v_separation", 6)
+	rep_quick_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var add_100_rep := SocialUi.small_button("+100 Danh Vọng")
 	var add_500_rep := SocialUi.small_button("+500 Danh Vọng")
 	var add_100_fy := SocialUi.small_button("+100 Phúc Duyên")
 	var add_500_fy := SocialUi.small_button("+500 Phúc Duyên")
-	var add_both_rep_fy := SocialUi.small_button("+500 Cả Hai (Lập Bang)")
+	var add_both_rep_fy := SocialUi.small_button("+500 Cả Hai")
+	var add_1_lead := SocialUi.small_button("👑 +1 Lãnh Đạo")
+	var add_5_lead := SocialUi.small_button("👑 +5 Lãnh Đạo")
+	var add_10_lead := SocialUi.small_button("👑 +10 Lãnh Đạo")
+	var set_lead_20_btn := SocialUi.small_button("👑 Cấp 20 Lập Bang")
+	var set_lead_max_btn := SocialUi.small_button("👑 Max Cấp 100")
+	var add_10k_lead_exp := SocialUi.small_button("📜 +10k EXP Lãnh Đạo")
+	var add_100k_lead_exp := SocialUi.small_button("📜 +100k EXP Lãnh Đạo")
 
 	add_100_rep.pressed.connect(func() -> void:
 		GmManager.give_resources(target_p, 0, 0, 100, 0, 0)
@@ -765,16 +1060,60 @@ func _build_dispenser_tab() -> void:
 		_update_dispenser_summary()
 		_show_toast("Đã cấp +500 Danh vọng và Phúc duyên cho %s" % target_name)
 	)
+	add_1_lead.pressed.connect(func() -> void:
+		GmManager.add_player_lead_level(target_p, 1)
+		_update_dispenser_summary()
+		_show_toast("Đã tăng +1 cấp lãnh đạo cho %s (Hiện cấp: %d)" % [target_name, target_p.lead_level])
+	)
+	add_5_lead.pressed.connect(func() -> void:
+		GmManager.add_player_lead_level(target_p, 5)
+		_update_dispenser_summary()
+		_show_toast("Đã tăng +5 cấp lãnh đạo cho %s (Hiện cấp: %d)" % [target_name, target_p.lead_level])
+	)
+	add_10_lead.pressed.connect(func() -> void:
+		GmManager.add_player_lead_level(target_p, 10)
+		_update_dispenser_summary()
+		_show_toast("Đã tăng +10 cấp lãnh đạo cho %s (Hiện cấp: %d)" % [target_name, target_p.lead_level])
+	)
+	set_lead_20_btn.pressed.connect(func() -> void:
+		GmManager.set_player_lead_level(target_p, 20)
+		_update_dispenser_summary()
+		_show_toast("Đã đặt cấp lãnh đạo của %s thành Cấp 20 (Đủ chuẩn lập bang)!" % target_name)
+	)
+	set_lead_max_btn.pressed.connect(func() -> void:
+		GmManager.set_player_lead_level(target_p, 100)
+		_update_dispenser_summary()
+		_show_toast("Đã đặt cấp lãnh đạo của %s thành Cấp 100 (Tối đa)!" % target_name)
+	)
+	add_10k_lead_exp.pressed.connect(func() -> void:
+		var gained := GmManager.add_player_lead_exp(target_p, 10000)
+		_update_dispenser_summary()
+		_show_toast("Đã cộng +10.000 exp lãnh đạo cho %s (Tăng %d cấp, hiện cấp: %d)" % [target_name, gained, target_p.lead_level])
+	)
+	add_100k_lead_exp.pressed.connect(func() -> void:
+		var gained := GmManager.add_player_lead_exp(target_p, 100000)
+		_update_dispenser_summary()
+		_show_toast("Đã cộng +100.000 exp lãnh đạo cho %s (Tăng %d cấp, hiện cấp: %d)" % [target_name, gained, target_p.lead_level])
+	)
 
 	rep_quick_row.add_child(add_100_rep)
 	rep_quick_row.add_child(add_500_rep)
 	rep_quick_row.add_child(add_100_fy)
 	rep_quick_row.add_child(add_500_fy)
 	rep_quick_row.add_child(add_both_rep_fy)
+	rep_quick_row.add_child(add_1_lead)
+	rep_quick_row.add_child(add_5_lead)
+	rep_quick_row.add_child(add_10_lead)
+	rep_quick_row.add_child(set_lead_20_btn)
+	rep_quick_row.add_child(set_lead_max_btn)
+	rep_quick_row.add_child(add_10k_lead_exp)
+	rep_quick_row.add_child(add_100k_lead_exp)
 	rep_vb.add_child(rep_quick_row)
 
-	var rep_custom_row := HBoxContainer.new()
-	rep_custom_row.add_theme_constant_override("separation", 8)
+	var rep_custom_row := HFlowContainer.new()
+	rep_custom_row.add_theme_constant_override("h_separation", 8)
+	rep_custom_row.add_theme_constant_override("v_separation", 6)
+	rep_custom_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rep_custom_row.add_child(SocialUi.label("Nhập số điểm:", SocialUi.MUTED, 13))
 
 	var custom_input := LineEdit.new()
@@ -785,6 +1124,8 @@ func _build_dispenser_tab() -> void:
 
 	var add_custom_rep := SocialUi.small_button("➕ Thêm Danh Vọng")
 	var add_custom_fy := SocialUi.small_button("➕ Thêm Phúc Duyên")
+	var add_custom_lead := SocialUi.small_button("👑 Thêm Cấp Lãnh Đạo")
+	var add_custom_lead_exp := SocialUi.small_button("📜 Thêm EXP Lãnh Đạo")
 	var reset_both := SocialUi.small_button("🔄 Đặt Lại = 0")
 
 	add_custom_rep.pressed.connect(func() -> void:
@@ -801,6 +1142,20 @@ func _build_dispenser_tab() -> void:
 			_update_dispenser_summary()
 			_show_toast("Đã cấp %+d Phúc duyên cho %s" % [val, target_name])
 	)
+	add_custom_lead.pressed.connect(func() -> void:
+		var val := int(custom_input.text.strip_edges())
+		if val != 0:
+			GmManager.add_player_lead_level(target_p, val)
+			_update_dispenser_summary()
+			_show_toast("Đã cộng %+d cấp lãnh đạo cho %s (Hiện cấp: %d)" % [val, target_name, target_p.lead_level])
+	)
+	add_custom_lead_exp.pressed.connect(func() -> void:
+		var val := int(custom_input.text.strip_edges())
+		if val > 0:
+			var gained := GmManager.add_player_lead_exp(target_p, val)
+			_update_dispenser_summary()
+			_show_toast("Đã cộng +%d exp lãnh đạo cho %s (Lên %d cấp, hiện cấp: %d)" % [val, target_name, gained, target_p.lead_level])
+	)
 	reset_both.pressed.connect(func() -> void:
 		target_p.prestige = 0
 		target_p.fuyuan = 0
@@ -813,6 +1168,8 @@ func _build_dispenser_tab() -> void:
 
 	rep_custom_row.add_child(add_custom_rep)
 	rep_custom_row.add_child(add_custom_fy)
+	rep_custom_row.add_child(add_custom_lead)
+	rep_custom_row.add_child(add_custom_lead_exp)
 	rep_custom_row.add_child(reset_both)
 	rep_vb.add_child(rep_custom_row)
 
@@ -883,6 +1240,22 @@ func _build_item_creator_tab() -> void:
 		{"name": "Thiên Nhẫn", "id": "tianren", "gid": 22},
 		{"name": "Võ Đang", "id": "wudang", "gid": 29},
 		{"name": "Côn Lôn", "id": "kunlun", "gid": 32},
+		## Vũ Hồn (bộ tự dựng theo ảnh game — tools/new_sects_gold_sets.py)
+		{"name": "Vũ Hồn Anh Hào", "id": "vu_hon", "gid": 677},
+		{"name": "Vũ Hồn Trấn Nhạc 1", "id": "vu_hon", "gid": 682},
+		{"name": "Vũ Hồn Trấn Nhạc 2", "id": "vu_hon", "gid": 683},
+		{"name": "Vũ Hồn Khai Sơn 1", "id": "vu_hon", "gid": 684},
+		{"name": "Vũ Hồn Khai Sơn 2", "id": "vu_hon", "gid": 685},
+		{"name": "Tiêu Dao Huyền Âm 1", "id": "tieu_dao", "gid": 686},
+		{"name": "Tiêu Dao Huyền Âm 2", "id": "tieu_dao", "gid": 687},
+		{"name": "Hoa Sơn Lăng Vân 1", "id": "hoa_son", "gid": 688},
+		{"name": "Hoa Sơn Lăng Vân 2", "id": "hoa_son", "gid": 689},
+		{"name": "Hoa Sơn Tử Tiêu 1", "id": "hoa_son", "gid": 690},
+		{"name": "Hoa Sơn Tử Tiêu 2", "id": "hoa_son", "gid": 691},
+		{"name": "Dương Môn Truy Phong 1", "id": "duong_gia", "gid": 692},
+		{"name": "Dương Môn Truy Phong 2", "id": "duong_gia", "gid": 693},
+		{"name": "Dương Môn Hạo Thiên 1", "id": "duong_gia", "gid": 694},
+		{"name": "Dương Môn Hạo Thiên 2", "id": "duong_gia", "gid": 695},
 	]
 	for s_info in sects_data:
 		var sb := SocialUi.small_button("Set " + str(s_info["name"]))
@@ -1059,7 +1432,9 @@ func _build_boss_tab() -> void:
 	## Máu Boss
 	var hp_row := VBoxContainer.new()
 	hp_row.add_child(SocialUi.label("Hệ số Máu Boss (Max HP): %.1fx" % GmManager.boss_hp_mult, SocialUi.TEXT, 13))
-	var hp_btn_row := HBoxContainer.new()
+	var hp_btn_row := HFlowContainer.new()
+	hp_btn_row.add_theme_constant_override("h_separation", 4)
+	hp_btn_row.add_theme_constant_override("v_separation", 4)
 	for h in [0.5, 1.0, 2.0, 5.0, 10.0]:
 		var b := SocialUi.small_button("%.1fx" % h)
 		b.pressed.connect(func() -> void:
@@ -1073,7 +1448,9 @@ func _build_boss_tab() -> void:
 	## Dame Boss
 	var dmg_row := VBoxContainer.new()
 	dmg_row.add_child(SocialUi.label("Hệ số Sát thương Boss: %.1fx" % GmManager.boss_damage_mult, SocialUi.TEXT, 13))
-	var dmg_btn_row := HBoxContainer.new()
+	var dmg_btn_row := HFlowContainer.new()
+	dmg_btn_row.add_theme_constant_override("h_separation", 4)
+	dmg_btn_row.add_theme_constant_override("v_separation", 4)
 	for d in [0.5, 1.0, 2.0, 5.0]:
 		var b := SocialUi.small_button("%.1fx" % d)
 		b.pressed.connect(func() -> void:
@@ -1087,7 +1464,9 @@ func _build_boss_tab() -> void:
 	## Rớt đồ Boss
 	var drop_row := VBoxContainer.new()
 	drop_row.add_child(SocialUi.label("Hệ số Tỉ Lệ Rớt Đồ: %.1fx" % GmManager.boss_drop_mult, SocialUi.TEXT, 13))
-	var drop_btn_row := HBoxContainer.new()
+	var drop_btn_row := HFlowContainer.new()
+	drop_btn_row.add_theme_constant_override("h_separation", 4)
+	drop_btn_row.add_theme_constant_override("v_separation", 4)
 	for r in [1.0, 2.0, 5.0, 10.0, 20.0]:
 		var b := SocialUi.small_button("%.1fx" % r)
 		b.pressed.connect(func() -> void:
@@ -1126,6 +1505,7 @@ func _build_boss_tab() -> void:
 			var b_lbl := SocialUi.label("👹 [%s] Cấp %d · Máu: %d/%d · Cách GM: %d mét · Tọa độ: (%d, %d)" % [
 				b["name"], b["level"], int(b["hp"]), int(b["max_hp"]), roundi(b["dist"]), roundi(b["pos"].x), roundi(b["pos"].y)
 			], SocialUi.GOLD, 12)
+			b_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var fly_btn := SocialUi.small_button("📍 Bay Đến")
 			fly_btn.pressed.connect(func() -> void:
@@ -1190,30 +1570,60 @@ func _build_boss_tab() -> void:
 
 func _build_possess_tab() -> void:
 	var sec := SocialUi.info_box("🎮 Chiếm Quyền & Điều Khiển Trực Tiếp Nhân Vật")
-	var target_name: String = _selected_player.get("name", "Chưa chọn")
-	var target_p: PlayerProfile = _selected_player.get("profile")
-
-	var desc_lbl := SocialUi.label("Cho phép GM đăng nhập và kiểm soát avatar của mục tiêu như tài khoản của chính mình để kiểm tra lỗi, hỗ trợ kỹ thuật hoặc thử nghiệm trực tiếp.", SocialUi.TEXT, 13)
+	var desc_lbl := SocialUi.label("Nhập ID nhân vật KHÁC để GM tiếp quản avatar đó, kiểm tra lỗi / hỗ trợ kỹ thuật. Không thể chiếm quyền chính mình.", SocialUi.TEXT, 13)
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sec[1].add_child(desc_lbl)
 
-	var target_lbl := SocialUi.label("Mục tiêu đang chọn: [%s] (ID: %s)" % [target_name, _selected_player.get("id", "?")], SocialUi.GOLD, 14)
-	sec[1].add_child(target_lbl)
+	## Ô nhập ID mục tiêu (chỉ tìm theo ID khớp đúng, giống tab Người Chơi)
+	var id_row := HBoxContainer.new()
+	id_row.add_theme_constant_override("separation", 8)
+	id_row.add_child(SocialUi.label("ID mục tiêu:", SocialUi.GOLD, 14))
+	var id_input := SocialUi.line_edit("Nhập ID người chơi cần chiếm quyền...")
+	id_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	id_input.text = _possess_target_id
+	id_row.add_child(id_input)
+	sec[1].add_child(id_row)
+
+	var status_lbl := SocialUi.label("", SocialUi.TEXT, 13)
+	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sec[1].add_child(status_lbl)
+	if GmManager.is_possessing and GmManager.possessed_profile:
+		status_lbl.text = "Đang điều khiển: [%s]" % GmManager.possessed_profile.display_name
+		status_lbl.add_theme_color_override("font_color", SocialUi.LABEL_RED)
 
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 12)
 
 	var possess_btn := SocialUi.stone_button("🎮 BẮT ĐẦU ĐIỀU KHIỂN", Vector2(200, 36))
 	var release_btn := SocialUi.stone_button("↩ TRẢ LẠI QUYỀN", Vector2(180, 36))
+	possess_btn.disabled = GmManager.is_possessing
 	release_btn.disabled = not GmManager.is_possessing
 
-	possess_btn.pressed.connect(func() -> void:
+	var do_possess := func() -> void:
+		var id := id_input.text.strip_edges()
+		_possess_target_id = id
+		if id == "":
+			_show_toast("Hãy nhập ID nhân vật cần chiếm quyền!")
+			return
+		var found := GmManager.search_players(id)
+		if found.is_empty():
+			_show_toast("Không tìm thấy nhân vật có ID: %s" % id)
+			return
+		var target: Dictionary = found[0]
+		if target.get("is_self", false):
+			_show_toast("Đây là ID của chính bạn — hãy nhập ID nhân vật khác!")
+			return
+		var target_p: PlayerProfile = target.get("profile")
 		if target_p == null:
-			_show_toast("Mục tiêu không có dữ liệu profile cục bộ để chiếm quyền!")
+			_show_toast("Nhân vật [%s] không có dữ liệu profile trên máy này để chiếm quyền!" % target.get("name", id))
 			return
 		if GmManager.possess_player(target_p):
-			_show_toast("ĐÃ CHIẾM QUYỀN ĐIỀU KHIỂN: %s!" % target_name)
+			_show_toast("ĐÃ CHIẾM QUYỀN ĐIỀU KHIỂN: %s!" % target.get("name", id))
 			_render_tab()
-	)
+	possess_btn.pressed.connect(do_possess)
+	id_input.text_submitted.connect(func(_t: String) -> void: do_possess.call())
 
 	release_btn.pressed.connect(func() -> void:
 		GmManager.release_possession()
@@ -1275,7 +1685,10 @@ func _build_audit_tab() -> void:
 				entry.get("time", ""), entry.get("gm", ""), entry.get("action", ""),
 				entry.get("target", ""), entry.get("detail", "")
 			]
-			log_list.add_child(SocialUi.label(item_text, SocialUi.TEXT, 12))
+			var l := SocialUi.label(item_text, SocialUi.TEXT, 12)
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			log_list.add_child(l)
 
 	_content_area.add_child(log_sec[0])
 
@@ -1346,8 +1759,10 @@ func _build_aura_tab() -> void:
 
 	# 2. Bộ lọc danh mục & Tìm kiếm
 	var filter_sec := SocialUi.info_box("🏷 Bộ Lọc & Tìm Kiếm Hào Quang")
-	var cat_row := HBoxContainer.new()
-	cat_row.add_theme_constant_override("separation", 6)
+	var cat_row := HFlowContainer.new()
+	cat_row.add_theme_constant_override("h_separation", 6)
+	cat_row.add_theme_constant_override("v_separation", 4)
+	cat_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var categories := AuraDatabase.get_categories()
 	for cat in categories:
 		var btn := SocialUi.small_button(cat)
@@ -1465,3 +1880,123 @@ func _build_aura_card(item: Dictionary, is_active: bool) -> Control:
 
 	card.add_child(vb)
 	return card
+
+# ==============================================================================
+# TAB 9: LỊCH SỰ KIỆN NĂM — GM đặt ngày bắt đầu / kết thúc để thử theo giờ thật; "Mặc định" về lịch gốc.
+# Online: gửi server (C_EVENT gm_time / gm_reset) -> lưu ở server tài khoản, mọi tiến trình + mọi người chơi nhận (S_EVENT_TIMES).
+# Offline: lưu trên máy (user://seasonal_event_override.json). Hộp sự kiện chỉ rơi khi chơi online.
+# ==============================================================================
+
+func _build_events_tab() -> void:
+	var online := NetClient.is_in_world()
+	var head := SocialUi.info_box("📅 Lịch Sự Kiện Năm")
+	var note := SocialUi.label(("ONLINE — lưu trên máy chủ, áp cho mọi người chơi và mọi máy chủ (≈5 giây)." if online
+		else "OFFLINE — chỉ áp trên máy này.") + "  Ngày nhập dạng dd/mm/yyyy (giờ Việt Nam); kết thúc tính hết ngày đó.",
+		SocialUi.MUTED, 12)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	head[1].add_child(note)
+	_content_area.add_child(head[0])
+	var now := SeasonalEvents.now_unix()
+	for row in SeasonalEvents.sorted_events(now):
+		_content_area.add_child(_event_gm_row(row["event"], row["period"], now, online))
+
+func _event_gm_row(ev: Dictionary, per: Dictionary, now: int, online: bool) -> Control:
+	var box := SocialUi.info_box()
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 8)
+	box[1].add_child(line)
+	var cover := SeasonalEventUi.cover_item(ev)
+	if cover != "":
+		line.add_child(SeasonalEventUi.icon_cell(cover, 0, 36))
+	var info := VBoxContainer.new()
+	info.custom_minimum_size.x = 260
+	var gm: bool = per.get("gm", false)
+	var st := SeasonalEventUi.status_of(per, now)
+	info.add_child(SocialUi.label(str(ev.get("name", "")) + ("   [GM đặt lịch]" if gm else ""), Color(1.0, 0.8, 0.35) if gm else SocialUi.TEXT, 13))
+	info.add_child(SocialUi.label("%s – %s   %s" % [SeasonalEvents.format_date(per["start"]), SeasonalEvents.format_date(per["end"]),
+		str(st.get("text", ""))], st.get("color", SocialUi.MUTED), 11))
+	line.add_child(info)
+	var start_in := SocialUi.line_edit("bắt đầu dd/mm/yyyy")
+	start_in.custom_minimum_size.x = 120
+	start_in.text = SeasonalEvents.format_date(per["start"])
+	var end_in := SocialUi.line_edit("kết thúc dd/mm/yyyy")
+	end_in.custom_minimum_size.x = 120
+	end_in.text = SeasonalEvents.format_date(per["end"])
+	line.add_child(start_in)
+	line.add_child(SocialUi.label("→", SocialUi.MUTED, 13))
+	line.add_child(end_in)
+	var ev_id := str(ev["id"])
+	var b_save := SocialUi.small_button("Lưu")
+	b_save.pressed.connect(func() -> void:
+		var a := _parse_vn_date(start_in.text)
+		var b := _parse_vn_date(end_in.text)
+		if a < 0 or b < 0:
+			_show_toast("Ngày không hợp lệ (dd/mm/yyyy).")
+			return
+		_gm_set_event(ev_id, a, b + SeasonalEvents.DAY - 1, online))
+	line.add_child(b_save)
+	var b_now := SocialUi.small_button("Kích hoạt ngay (7 ngày)")
+	b_now.tooltip_text = "Bắt đầu từ 0:00 hôm nay, kết thúc hết ngày thứ 7 — để thử theo giờ thật."
+	b_now.pressed.connect(func() -> void:
+		var d := SeasonalEvents.vn_date(SeasonalEvents.now_unix())
+		var today := SeasonalEvents.vn_midnight(int(d["year"]), int(d["month"]), int(d["day"]))
+		_gm_set_event(ev_id, today, today + 7 * SeasonalEvents.DAY - 1, online))
+	line.add_child(b_now)
+	var b_def := SocialUi.small_button("Mặc định")
+	b_def.disabled = not gm and SeasonalEvents.get_override(ev_id).is_empty()
+	b_def.tooltip_text = "Xoá lịch GM, về lịch gốc của sự kiện."
+	b_def.pressed.connect(func() -> void:
+		if online:
+			NetClient.send_event("gm_reset", {"ev": ev_id})
+			_await_event_server()
+		else:
+			SeasonalEvents.clear_override(ev_id)
+			_show_toast("%s: về lịch mặc định." % ev.get("name", ""))
+			_render_tab())
+	line.add_child(b_def)
+	return box[0]
+
+func _gm_set_event(ev_id: String, start: int, end: int, online: bool) -> void:
+	if online:
+		NetClient.send_event("gm_time", {"ev": ev_id, "start": start, "end": end})   ## server trả S_NOTICE + S_EVENT_TIMES
+		_await_event_server()
+		return
+	var err := SeasonalEvents.set_override(ev_id, start, end)
+	_show_toast(err if err != "" else "Đã đặt lịch %s – %s." % [SeasonalEvents.format_date(start), SeasonalEvents.format_date(end)])
+	_render_tab()
+
+## Online: chờ server trả lời lệnh lịch GM. Có câu báo (S_NOTICE) -> hiện lên; 5 giây không có gì -> server đang chạy bản cũ
+## (chưa có lệnh gm_time / gm_reset — bỏ qua im lặng) hoặc mất kết nối.
+var _event_wait := 0
+
+func _await_event_server() -> void:
+	_event_wait += 1
+	var ticket := _event_wait
+	_show_toast("Đã gửi lên máy chủ, chờ xác nhận…")
+	var answered := [false]
+	var on_notice := func(text: String) -> void:
+		if ticket == _event_wait and not answered[0]:
+			answered[0] = true
+			_show_toast(text)
+	NetClient.server_notice.connect(on_notice)
+	await get_tree().create_timer(5.0).timeout
+	if NetClient.server_notice.is_connected(on_notice):
+		NetClient.server_notice.disconnect(on_notice)
+	if ticket == _event_wait and not answered[0] and is_inside_tree():
+		_show_toast("Máy chủ không phản hồi — máy chủ đang chạy bản cũ chưa có lịch sự kiện GM (build lại: bash server/dev.sh up) hoặc mất kết nối.")
+
+## "dd/mm/yyyy" -> 0:00 giờ VN (unix), -1 nếu sai.
+static func _parse_vn_date(text: String) -> int:
+	var p := text.strip_edges().replace("-", "/").replace(".", "/").split("/")
+	if p.size() != 3 or not (p[0].is_valid_int() and p[1].is_valid_int() and p[2].is_valid_int()):
+		return -1
+	var d := int(p[0])
+	var m := int(p[1])
+	var y := int(p[2])
+	if y < 2000 or y > 2100 or m < 1 or m > 12 or d < 1:
+		return -1
+	var leap := (y % 4 == 0 and y % 100 != 0) or y % 400 == 0
+	var dim: int = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
+	if d > dim:
+		return -1
+	return SeasonalEvents.vn_midnight(y, m, d)

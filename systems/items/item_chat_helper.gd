@@ -26,7 +26,7 @@ static func encode_item(item: ItemInstance) -> String:
 		d["m"] = item.magic
 	if not item.expand_magic.is_empty():
 		d["em"] = item.expand_magic
-	if item.durability > 0:
+	if item.durability != item.get_max_durability():   ## đầy độ bền thì bỏ qua (nhận lại = đầy)
 		d["dur"] = item.durability
 	if item.misc_id != "":
 		d["mid"] = item.misc_id
@@ -83,7 +83,7 @@ static func decode_item(base64_str: String) -> ItemInstance:
 			"name": str(line.get("name", "")),
 			"prefix": true
 		})
-	item.durability = int(parsed.get("dur", 0))
+	item.durability = int(parsed.get("dur", item.get_max_durability()))
 	item.misc_id = str(parsed.get("mid", ""))
 	item.count = maxi(int(parsed.get("c", 1)), 1)
 	item.item_level = int(parsed.get("ilv", 0))

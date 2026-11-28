@@ -21,6 +21,16 @@ var _tick := 0
 var _acc := 0.0
 var _logic := Vector2.ZERO
 var _z := 0.0
+var _dir64 := 0
+var _dirs := 1
+
+static var _mat_add: CanvasItemMaterial = null
+
+static func get_add_material() -> CanvasItemMaterial:
+	if _mat_add == null:
+		_mat_add = CanvasItemMaterial.new()
+		_mat_add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _mat_add
 
 @onready var _sprite: Sprite2D = $Sprite
 
@@ -44,6 +54,8 @@ func _setup(phase: Dictionary, anim: Dictionary, logic_pos: Vector2, z: float, d
 	_frames_per_dir = maxi(1, frames / dirs)
 	## Nguyên văn gốc: m_nCurDir = g_DirIndex2Dir(chỉ số hướng 64, số hướng ảnh), rồi Draw lại chia như hướng 64.
 	_image_dir = VltkMath.image_dir((dirs * dir_index) >> 6, dirs)
+	_dir64 = dir_index
+	_dirs = dirs
 	end_tick = _interval * frames / dirs
 	_tick = 0
 	_acc = 0.0
@@ -51,6 +63,12 @@ func _setup(phase: Dictionary, anim: Dictionary, logic_pos: Vector2, z: float, d
 	_z = z
 	follow = follow_node
 	z_index = DRAW_Z
+	if _sprite == null:
+		_sprite = $Sprite
+	if anim.get("additive", false):
+		_sprite.material = get_add_material()
+	else:
+		_sprite.material = null
 	_sprite.texture = VltkSkillData.texture(str(phase.get("anim", "")))
 	_sprite.centered = false
 	_sprite.region_enabled = true
@@ -87,7 +105,24 @@ func _update() -> void:
 	_sprite.region_rect = Rect2((frame % cols) * size[0], (frame / cols) * size[1], size[0], size[1])
 	_sprite.position = Vector2(offset[0], offset[1] - _z * VltkMath.Z_SCREEN)
 
+## Chế độ 3D xoay camera: vùng ảnh của frame đang hiện nhưng ở hướng 64 `d64` (cùng công thức với _setup/_update).
+func get_dir64() -> int:
+	return _dir64
+
+func sprite_region_for_dir(d64: int) -> Rect2:
+	if _anim.is_empty():
+		return Rect2()
+	var img_dir := VltkMath.image_dir((_dirs * wrapi(d64, 0, VltkMath.MAX_DIR)) >> 6, _dirs)
+	var frame := _tick / _interval + img_dir * _frames_per_dir
+	if frame >= int(_anim.get("frames", 1)):
+		return Rect2()
+	var size: Array = _anim["size"]
+	var cols := int(_anim.get("cols", 1))
+	return Rect2((frame % cols) * size[0], (frame / cols) * size[1], size[0], size[1])
+
 func _on_pool_release() -> void:
 	follow = null
+	if _sprite != null:
+		_sprite.material = null
 
 @warning_ignore_restore("integer_division")

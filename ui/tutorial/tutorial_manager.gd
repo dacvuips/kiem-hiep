@@ -545,7 +545,13 @@ func get_explore_steps(hub: Node) -> Array[Dictionary]:
 			"padding": Vector2(8, 6),
 		},
 	]
-	return steps
+	var valid_steps: Array[Dictionary] = []
+	for s in steps:
+		var target: Control = s.get("target_node") as Control
+		if target != null and not target.is_visible_in_tree():
+			continue
+		valid_steps.append(s)
+	return valid_steps
 
 ## Tương thích ngược
 func get_character_hub_steps(hub: Node) -> Array[Dictionary]:

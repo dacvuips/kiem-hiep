@@ -111,7 +111,7 @@ const TRANSLATIONS: Dictionary = {
 	"Đang tải…": {"en": "Loading…", "zh": "加载中…", "ja": "読み込み中…", "ko": "로딩 중…", "ru": "Загрузка…", "fr": "Chargement…", "th": "กำลังโหลด…", "vi": "Đang tải…"},
 	"⚔  TINH ANH  ⚔": {"en": "⚔  ELITE  ⚔", "zh": "⚔  精英试炼  ⚔", "ja": "⚔  エリート試練  ⚔", "ko": "⚔  정예 시련  ⚔", "ru": "⚔  ЭЛИТА  ⚔", "fr": "⚔  ÉLITE  ⚔", "th": "⚔  ด่านชั้นยอด  ⚔", "vi": "⚔  TINH ANH  ⚔"},
 	"Màn chơi TINH ANH — độ khó cao dành cho cao thủ.": {"en": "ELITE trials — high difficulty designed for masters.", "zh": "精英试炼关卡 — 专为高手打造的高难度挑战。", "ja": "エリート試練 — 熟練者向けの超高難易度ステージ。", "ko": "정예 시련 — 고수들을 위한 최고 난이도 도전.", "ru": "ЭЛИТНЫЕ испытания — высокая сложность для мастеров.", "fr": "Épreuves ÉLITE — haute difficulté réservée aux maîtres.", "th": "ด่านชั้นยอด — ความยากระดับสูงสำหรับยอดฝีมือ", "vi": "Màn chơi TINH ANH — độ khó cao dành cho cao thủ."},
-	"Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)": {"en": "Each ★: Monster HP, damage, and magic drop rate multiplied by stars · 5★: 100% full affix drops (random stats)", "zh": "每 ★: 怪物生命、伤害及魔法掉落率乘以星级  ·  5★: 100%掉落满词缀装备（随机属性）", "ja": "各 ★: 敵のHP・攻撃力・ドロップ率が★倍  ·  5★: 100%フルOP装備がドロップ（ランダム属性）", "ko": "각 ★: 몬스터 체력, 공격력, 드롭률이 별 개수만큼 증가  ·  5★: 100% 풀옵션 장비 드롭 (무작위 속성)", "ru": "Каждая ★: Здоровье, урон и шанс дропа монстров множатся на звезды · 5★: 100% предметов с полными аффиксами", "fr": "Chaque ★: PV, dégâts et taux de butin multipliés par les étoiles · 5★: 100% d'équipement avec tous les affixes", "th": "แต่ละ ★: เลือด พลังโจมตี อัตราดรอปของมอนสเตอร์คูณตามดาว · 5★: อุปกรณ์ดรอปออปชันเต็ม 100% (สุ่มคุณสมบัติ)", "vi": "Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  5★: 100% đồ rơi ra đủ dòng (thuộc tính ngẫu nhiên)"},
+	"Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  Mỗi quái 20% rơi đồ đủ 6 dòng (thuộc tính ngẫu nhiên)": {"en": "Each ★: Monster HP, damage, and magic drop rate multiplied by stars · Each monster: 20% to drop a full 6-affix item (random stats)", "zh": "每 ★: 怪物生命、伤害及魔法掉落率乘以星级  ·  每只怪物20%掉落满6词缀装备（随机属性）", "ja": "各 ★: 敵のHP・攻撃力・ドロップ率が★倍  ·  敵1体につき20%で6OP装備がドロップ（ランダム属性）", "ko": "각 ★: 몬스터 체력, 공격력, 드롭률이 별 개수만큼 증가  ·  몬스터마다 20% 확률로 6옵션 장비 드롭 (무작위 속성)", "ru": "Каждая ★: Здоровье, урон и шанс дропа монстров множатся на звезды · Каждый монстр: 20% шанс предмета с 6 аффиксами", "fr": "Chaque ★: PV, dégâts et taux de butin multipliés par les étoiles · Chaque monstre : 20% de chance d'un objet à 6 affixes", "th": "แต่ละ ★: เลือด พลังโจมตี อัตราดรอปของมอนสเตอร์คูณตามดาว · มอนสเตอร์แต่ละตัว 20% ดรอปอุปกรณ์ออปชันเต็ม 6 แถว", "vi": "Mỗi ★: máu, sát thương, tỉ lệ rơi đồ magic của quái × số sao  ·  Mỗi quái 20% rơi đồ đủ 6 dòng (thuộc tính ngẫu nhiên)"},
 	"%d sao — %s": {"en": "%d Stars — %s", "zh": "%d 星 — %s", "ja": "%d 星 — %s", "ko": "%d 성 — %s", "ru": "%d звезд — %s", "fr": "%d Étoiles — %s", "th": "%d ดาว — %s", "vi": "%d sao — %s"},
 	"Máu ×%d  ·  Sát thương ×%d  ·  Rơi đồ ×%d  ·  Đủ dòng %d%%": {"en": "HP ×%d  ·  Damage ×%d  ·  Drops ×%d  ·  Full Stats %d%%", "zh": "生命 ×%d  ·  伤害 ×%d  ·  掉落 ×%d  ·  满属性 %d%%", "ja": "HP ×%d  ·  ダメージ ×%d  ·  ドロップ ×%d  ·  フルOP %d%%", "ko": "체력 ×%d  ·  피해량 ×%d  ·  드롭 ×%d  ·  풀옵션 %d%%", "ru": "Здоровье ×%d  ·  Урон ×%d  ·  Дроп ×%d  ·  Полные свойства %d%%", "fr": "PV ×%d  ·  Dégâts ×%d  ·  Butin ×%d  ·  Stats Max %d%%", "th": "เลือด ×%d  ·  ดาเมจ ×%d  ·  ดรอป ×%d  ·  ออปครบ %d%%", "vi": "Máu ×%d  ·  Sát thương ×%d  ·  Rơi đồ ×%d  ·  Đủ dòng %d%%"},
 	"Quái cấp %d  ·  %d quái": {"en": "Monster Lv %d  ·  %d Monsters", "zh": "怪物等级 %d  ·  %d 只怪物", "ja": "敵レベル %d  ·  %d 体", "ko": "몬스터 Lv %d  ·  %d 마리", "ru": "Мобы Ур. %d  ·  %d мобов", "fr": "Monstres Niv %d  ·  %d monstres", "th": "มอนสเตอร์ Lv %d  ·  %d ตัว", "vi": "Quái cấp %d  ·  %d quái"},
@@ -2426,6 +2426,46 @@ Chiến Báo": {
 		"th": "การตั้งค่า",
 		"zh": "设置"
 	},
+	"Thông tin người chơi": {
+		"vi": "Thông tin người chơi",
+		"en": "Player Info",
+		"ja": "プレイヤー情報",
+		"ko": "플레이어 정보",
+		"ru": "Информация об игроке",
+		"fr": "Infos du joueur",
+		"th": "ข้อมูลผู้เล่น",
+		"zh": "玩家信息"
+	},
+	"Tên nhân vật:": {
+		"vi": "Tên nhân vật:",
+		"en": "Character Name:",
+		"ja": "キャラクター名:",
+		"ko": "캐릭터 이름:",
+		"ru": "Имя персонажа:",
+		"fr": "Nom du personnage :",
+		"th": "ชื่อตัวละคร:",
+		"zh": "角色名字:"
+	},
+	"ID người chơi:": {
+		"vi": "ID người chơi:",
+		"en": "Player ID:",
+		"ja": "プレイヤーID:",
+		"ko": "플레이어 ID:",
+		"ru": "ID игрока:",
+		"fr": "ID du joueur :",
+		"th": "ID ผู้เล่น:",
+		"zh": "玩家ID:"
+	},
+	"Đã sao chép": {
+		"vi": "Đã sao chép",
+		"en": "Copied",
+		"ja": "コピーしました",
+		"ko": "복사됨",
+		"ru": "Скопировано",
+		"fr": "Copié",
+		"th": "คัดลอกแล้ว",
+		"zh": "已复制"
+	},
 	"Cài Đặt Cơ Bản": {
 		"vi": "Cài Đặt Cơ Bản",
 		"en": "Basic Settings",
@@ -2716,15 +2756,25 @@ Chiến Báo": {
 		"th": "🎨 โหมดลากวางตำแหน่งปุ่มบนหน้าจอ",
 		"zh": "🎨 屏幕拖拽布局模式"
 	},
-	"↺ Khôi Phục Toàn Bộ Mặc Định": {
-		"vi": "↺ Khôi Phục Toàn Bộ Mặc Định",
-		"en": "↺ Reset All to Default",
-		"ja": "↺ すべて初期値に戻す",
-		"ko": "↺ 전체 기본값으로 초기화",
-		"ru": "↺ Сбросить всё по умолчанию",
-		"fr": "↺ Tout réinitialiser par défaut",
-		"th": "↺ คืนค่าเริ่มต้นทั้งหมด",
-		"zh": "↺ 恢复全部默认"
+	"Khôi Phục Toàn Bộ Mặc Định": {
+		"vi": "Khôi Phục Toàn Bộ Mặc Định",
+		"en": "Reset All to Default",
+		"ja": "すべて初期値に戻す",
+		"ko": "전체 기본값으로 초기화",
+		"ru": "Сбросить всё по умолчанию",
+		"fr": "Tout réinitialiser par défaut",
+		"th": "คืนค่าเริ่มต้นทั้งหมด",
+		"zh": "恢复全部默认"
+	},
+	"Mặc Định": {
+		"vi": "Mặc Định",
+		"en": "Default",
+		"ja": "初期値",
+		"ko": "기본값",
+		"ru": "По умолчанию",
+		"fr": "Par défaut",
+		"th": "ค่าเริ่มต้น",
+		"zh": "默认"
 	},
 	"Khôi Phục Giao Diện": {
 		"vi": "Khôi Phục Giao Diện",
@@ -5576,6 +5626,16 @@ Chiến Báo": {
 		"th": "กระซิบ",
 		"zh": "私聊"
 	},
+	"Riêng": {   ## tên kênh nhắn riêng của khung chat (ChatServer.CHANNEL_NAMES) — cùng nghĩa "Mật"
+		"vi": "Riêng",
+		"en": "Whisper",
+		"ja": "密談",
+		"ko": "귓속말",
+		"ru": "Личное",
+		"fr": "Chuchoter",
+		"th": "กระซิบ",
+		"zh": "私聊"
+	},
 	"Gần": {
 		"vi": "Gần",
 		"en": "Nearby",
@@ -6425,6 +6485,60 @@ Chiến Báo": {
 			"ru": "Обычные серверы",
 			"fr": "Serveurs standards",
 			"th": "เซิร์ฟเวอร์ปกติ",
+		},
+		"Đồ Xanh": {
+			"en": "Blue Items",
+			"zh": "蓝装",
+			"ja": "青装備",
+			"ko": "청색 장비",
+			"ru": "Синяя экипировка",
+			"fr": "Équipement bleu",
+			"th": "อุปกรณ์สีฟ้า",
+		},
+		"Đồ Tím": {
+			"en": "Purple Items",
+			"zh": "紫装",
+			"ja": "紫装備",
+			"ko": "보라색 장비",
+			"ru": "Фиолетовая экипировка",
+			"fr": "Équipement violet",
+			"th": "อุปกรณ์สีม่วง",
+		},
+		"Siêu Nhân": {
+			"en": "Superhero",
+			"zh": "超人",
+			"ja": "スーパー",
+			"ko": "초인",
+			"ru": "Супергерой",
+			"fr": "Super-héros",
+			"th": "ซูเปอร์ฮีโร่",
+		},
+		"Server Đồ Xanh": {
+			"en": "Blue Item Server",
+			"zh": "蓝装服",
+			"ja": "青装備サーバー",
+			"ko": "청색 장비 서버",
+			"ru": "Сервер синей экипировки",
+			"fr": "Serveur équipement bleu",
+			"th": "เซิร์ฟเวอร์อุปกรณ์สีฟ้า",
+		},
+		"Server Đồ Tím": {
+			"en": "Purple Item Server",
+			"zh": "紫装服",
+			"ja": "紫装備サーバー",
+			"ko": "보라색 장비 서버",
+			"ru": "Сервер фиолетовой экипировки",
+			"fr": "Serveur équipement violet",
+			"th": "เซิร์ฟเวอร์อุปกรณ์สีม่วง",
+		},
+		"Server Siêu Nhân": {
+			"en": "Superhero Server",
+			"zh": "超人服",
+			"ja": "スーパーサーバー",
+			"ko": "초인 서버",
+			"ru": "Сервер супергероев",
+			"fr": "Serveur super-héros",
+			"th": "เซิร์ฟเวอร์ซูเปอร์ฮีโร่",
 		},
 		"Mới": {
 			"en": "New",

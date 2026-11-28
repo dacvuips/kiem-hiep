@@ -42,7 +42,7 @@ const WHEEL_TOOLS := [["sit", "sit", Vector2(-383, -38), 52.0, "Ngồi"], ["jump
 	["horse", "horse", Vector2(-315, -44), 64.0, "Ngựa"]]
 var _wheel_page_buttons: Array[Button] = []
 var _wheel_swap: Button
-## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào PlayerProfile.skill_layout, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
+## Sắp xếp vị trí các nút: bật thì KÉO 1 nút để dời chỗ (lưu vào SkillSlotPrefs, lưu trên máy, cụm nút trong trận đổi theo); tắt thì kéo để gắn/gỡ kỹ năng.
 var _arranging := false
 ## Sắp xếp: ô đang chọn (bấm không kéo) để thêm / ẩn / đổi cỡ — NO_DRAG = chưa chọn.
 var _selected_slot := NO_DRAG
@@ -107,6 +107,14 @@ func _ready() -> void:
 	_build_wheel()
 	_refresh()
 	_select(_skills[0] if not _skills.is_empty() else null)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 ## Ô tick "Tùy chỉnh kỹ năng" <-> PlayerProfile.skill_settings (lưu ngay). Trong trận, đóng bảng thì thanh skill
 ## áp lại (chạm nhả) — xem SkillBarUI.refresh_sub_skills / Player.get_cast_target.
@@ -216,10 +224,26 @@ func _select(skill: SkillDefinition) -> void:
 	if _profile == null and GameManager.local_profile != null:
 		_profile = GameManager.local_profile
 	var learned := _profile.get_skill_level(skill.id) if _profile != null else 0
-	(%SkillName as Label).text = skill.skill_name
+
+	# Tiêu đề kèm hệ ngũ hành chuẩn VNG (VD: Huy Sư Diệt Lỗ (hệ Hỏa))
+	var elem_name: String = ElementTypes.ELEMENT_NAME.get(skill.element, "") if skill.element in ElementTypes.ELEMENT_NAME else ""
+	var full_name := skill.skill_name
+	if elem_name != "" and not ("(" in full_name):
+		full_name += " (hệ %s)" % elem_name
+	(%SkillName as Label).text = full_name
 	(%SkillIcon as TextureRect).texture = skill.icon
-	(%SkillDesc as Label).text = skill.description
-	(%SkillSchool as Label).text = skill.school_text
+
+	# Mô tả trong ngoặc kép kiểu VNG gốc
+	var desc := skill.description.strip_edges()
+	if desc != "" and not desc.begins_with("\""):
+		desc = "\"%s\"" % desc
+	(%SkillDesc as Label).text = desc
+
+	# Lưu phái chuẩn VNG (VD: Võ công lưu phái: Thuẫn (Ngoại công))
+	var school := skill.school_text.strip_edges()
+	if school != "" and not school.begins_with("Võ công lưu phái:"):
+		school = "Võ công lưu phái: %s" % school
+	(%SkillSchool as Label).text = school
 	%StatScroll.scroll_vertical = 0
 
 	_add_line(stat_box, "Đẳng cấp hiện thời: %d" % learned, COLOR_CURRENT_LEVEL, 16)
@@ -227,34 +251,31 @@ func _select(skill: SkillDefinition) -> void:
 		var has_level := _profile != null and _profile.level >= skill.req_level
 		_add_line(stat_box, "Yêu cầu cấp nhân vật: %d" % skill.req_level,
 				COLOR_STAT if has_level else COLOR_WARNING)
-	## Hạn chế vũ khí / cưỡi ngựa — đúng chữ GameSetting.ini gốc.
-	var weapon_text := skill.get_weapon_limit_bbcode()
-	if weapon_text != "":
-		var rich := RichTextLabel.new()
-		rich.bbcode_enabled = true
-		rich.fit_content = true
-		rich.scroll_active = false
-		rich.add_theme_font_size_override("normal_font_size", 15)
-		rich.text = "[center]%s[/center]" % weapon_text
-		stat_box.add_child(rich)
-	if skill.horse_limit == 1:
-		_add_line(stat_box, "Trong lúc cưỡi ngựa không thể thi triển", COLOR_WARNING)
-	elif skill.horse_limit == 2:
-		_add_line(stat_box, "Chỉ thi triển được khi cưỡi ngựa", COLOR_WARNING)
 	var support := skill.get_support_percent_from_other_skills(_all_skills, _profile)
 	if support > 0.0:
 		_add_line(stat_box, "Hỗ trợ từ các kỹ năng khác: %d%%" % int(support), COLOR_STAT)
 	if skill.practice_only:
-		_add_line(stat_box, "Kỹ năng cao cấp: lĩnh hội khi đủ cấp, tăng cấp bằng luyện tập", COLOR_WARNING, 14)
+		_add_line(stat_box, "Mức độ luyện: 0%", COLOR_STAT)
 	if skill.is_aura:
 		_add_line(stat_box, "Hào quang: gắn lên thanh kỹ năng, bấm để bật/tắt (chỉ 1 hào quang cùng lúc) — %s" % (
 				"ĐANG BẬT" if _profile.active_aura_id == skill.id else "đang tắt"), COLOR_GOLD, 14)
+
 	if learned > 0:
 		for line in _build_stat_lines(skill, learned):
 			_add_line(stat_box, line, COLOR_STAT)
 		_append_child_skills(stat_box, skill, learned, COLOR_STAT)
+
+	## Hạn chế vũ khí / cưỡi ngựa — đặt ở cuối khối hiện thời chuẩn VNG gốc (ngay trên Đẳng cấp tiếp theo).
+	var weapon_text := skill.get_weapon_limit_bbcode()
+	if weapon_text != "":
+		_add_rich_line(stat_box, weapon_text, 15)
+	if skill.horse_limit == 1:
+		_add_line(stat_box, "Trong lúc cưỡi ngựa không thể thi triển", COLOR_WARNING)
+	elif skill.horse_limit == 2:
+		_add_line(stat_box, "Chỉ thi triển được khi cưỡi ngựa", COLOR_WARNING)
+
 	if learned < skill.max_level:
-		_add_line(stat_box, "Đẳng cấp kế tiếp", COLOR_NEXT, 16)
+		_add_line(stat_box, "Đẳng cấp tiếp theo", COLOR_NEXT, 16)
 		for line in _build_stat_lines(skill, learned + 1):
 			_add_line(stat_box, line, COLOR_NEXT)
 		_append_child_skills(stat_box, skill, learned + 1, COLOR_NEXT)
@@ -307,15 +328,27 @@ func _add_line(box: VBoxContainer, text: String, color: Color, font_size: int = 
 	label.add_theme_font_size_override("font_size", font_size)
 	box.add_child(label)
 
-## Skill con (parent_skill_id == skill.id) nhúng ngay trong chi tiết skill cha, dạng "Tăng N: <tên>" như VLTK gốc;
+func _add_rich_line(box: VBoxContainer, bbcode: String, font_size: int = 15) -> void:
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.fit_content = true
+	rich.scroll_active = false
+	rich.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rich.add_theme_font_size_override("normal_font_size", font_size)
+	rich.text = "[center]%s[/center]" % bbcode
+	box.add_child(rich)
+
+## Skill con (parent_skill_id == skill.id) nhúng ngay trong chi tiết skill cha, dạng "Tầng thứ N: <tên> [cấp K]" chuẩn VNG gốc;
 ## dùng cấp của skill cha.
 func _append_child_skills(box: VBoxContainer, parent_skill: SkillDefinition, at_level: int, color: Color) -> void:
 	var index := 2
 	for candidate in _all_skills:
 		if candidate.parent_skill_id != parent_skill.id:
 			continue
-		_add_line(box, "Tăng %d: %s" % [index, candidate.skill_name], COLOR_LINKED_SKILL)
-		for line in _build_stat_lines(candidate, clampi(at_level, 1, candidate.max_level)):
+		var child_level := clampi(at_level, 1, candidate.max_level)
+		var title_bbcode := "[color=#6488ff]Tầng thứ %d: [/color][color=#ffff44]%s[/color] [color=#6488ff][cấp %d][/color]" % [index, candidate.skill_name, child_level]
+		_add_rich_line(box, title_bbcode, 15)
+		for line in _build_stat_lines(candidate, child_level):
 			_add_line(box, line, color)
 		index += 1
 
@@ -437,8 +470,7 @@ func _set_arranging(on: bool) -> void:
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ — tắt \"Sắp xếp\" để gắn kỹ năng" if on else "Đã lưu vị trí các nút")
 
 func _reset_layout() -> void:
-	_profile.skill_layout.clear()
-	_profile.skill_slots.clear()
+	_profile.reset_skill_layout()
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
@@ -486,7 +518,7 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 	parent.add_child(holder)
 	var icon := TextureRect.new()
 	icon.name = "Icon"
-	icon.material = SkillButton.make_circle_mask_material()
+	icon.material = SkillButton.make_icon_fit_material()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -549,7 +581,7 @@ func _refresh_wheel() -> void:
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
 			## Nút Nhảy là ô tròn cắt icon như nút skill (SkillBarUI._style_jump_button); Ngồi / Ngựa giữ ảnh tròn gốc.
-			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
+			icon.material = SkillButton.make_icon_fit_material() if str(tool[0]) == "jump" else null
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
@@ -565,7 +597,7 @@ func _refresh_wheel() -> void:
 				("Ô thi triển liên tục — kỹ năng gắn vào đây tự ra chiêu mỗi khi hồi xong" if slot >= LOOP_BASE \
 				else "Ô trống — kéo kỹ năng vào đây")
 
-## Ô tắt hiện mờ, cỡ ô theo PlayerProfile.skill_slots (scale quanh tâm).
+## Ô tắt hiện mờ, cỡ ô theo SkillSlotPrefs (scale quanh tâm).
 func _apply_slot_looks() -> void:
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]

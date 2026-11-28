@@ -137,7 +137,7 @@ func run() -> void:
 				listed["room"] = r
 		if listed.is_empty():
 			await sleep(0.5)
-	check("/v1/field có phòng vừa tạo + địa chỉ field server", not listed.is_empty() and bool(listed.get("open")) and int(listed.room.get("port", 0)) == PORT
+	check("/v1/field có phòng vừa tạo + địa chỉ field server", not listed.is_empty() and listed.get("open") == true and int(listed.room.get("port", 0)) == PORT
 		and int(listed.room.get("map_id", 0)) == NORMAL_MAP, listed)
 	var entry := MapSelectWindow.join_entry(listed.get("room", {}))
 	check("tra ID ra đúng map để nạp", int(entry.get("id", 0)) == NORMAL_MAP and MapCatalog.is_playable(entry), entry.get("name"))
@@ -192,8 +192,36 @@ func run() -> void:
 	var e := await make_bot("e")
 	var gone := await field(e, FieldServer.OP_JOIN, {"room": id, "map_id": NORMAL_MAP, "tier": 0})
 	check("phòng đã đóng -> ID không vào được nữa", gone.get("op") == "reject", gone)
+	await test_password()
 	if PORT2 > 0:
 		await test_two_processes(e)
+
+## Phòng có mật khẩu: /v1/field chỉ báo "locked" (không lộ mật khẩu), vào thiếu / sai mật khẩu bị từ chối "bad_password", đúng thì vào.
+func test_password() -> void:
+	var host := await make_bot("f")
+	var guest := await make_bot("g")
+	var r := await field(host, FieldServer.OP_CREATE, {"map_id": NORMAL_MAP, "tier": 0, "password": "  bimat123  "})
+	var id := str(r.get("id", ""))
+	check("tạo phòng có mật khẩu", r.get("op") == "room" and bool(r.get("locked", false)), r)
+	var listed := {}
+	var t0 := Time.get_ticks_msec()
+	while listed.is_empty() and Time.get_ticks_msec() - t0 < 6000:
+		var st := await http("GET", "/v1/field?server_id=1", {}, str(host.get_meta("token")))
+		for x in st.get("rooms", []):
+			if str(x.get("id", "")) == id:
+				listed = x
+		if listed.is_empty():
+			await sleep(0.5)
+	check("/v1/field: phòng có 🔒, không lộ mật khẩu", bool(listed.get("locked", false)) and str(listed.get("kind", "")) == ""
+		and not JSON.stringify(listed).contains("bimat"), listed)
+	check("danh sách phòng tab Luyện có phòng, tab Tinh anh không", MapSelectWindow.rooms_for_tab([listed], false).size() == 1
+		and MapSelectWindow.rooms_for_tab([listed], true).is_empty())
+	var no_pass := await field(guest, FieldServer.OP_JOIN, {"room": id, "map_id": NORMAL_MAP, "tier": 0})
+	check("không nhập mật khẩu -> từ chối", no_pass.get("op") == "reject" and no_pass.get("code") == "bad_password", no_pass)
+	var wrong := await field(guest, FieldServer.OP_JOIN, {"room": id, "map_id": NORMAL_MAP, "tier": 0, "password": "sai"})
+	check("sai mật khẩu -> từ chối", wrong.get("op") == "reject" and wrong.get("code") == "bad_password", wrong)
+	var ok := await field(guest, FieldServer.OP_JOIN, {"room": id, "map_id": NORMAL_MAP, "tier": 0, "password": "bimat123"})
+	check("đúng mật khẩu -> vào phòng", ok.get("op") == "room" and str(ok.get("id")) == id, ok)
 
 ## 2 tiến trình field: ID không trùng (chữ số đầu = index + 1), /v1/field gộp phòng của cả 2 kèm địa chỉ, chỉ tiến trình vắng hơn.
 func test_two_processes(p1: BotClient) -> void:

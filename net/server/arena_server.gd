@@ -488,6 +488,10 @@ func _leave_room(c, by_player: bool) -> void:
 	if in_b:
 		team_b.erase(c.character_id)
 	r["fighters"].erase(c.character_id)
+	# Nếu trong phòng hết người (không còn ai ở phe A, phe B lẫn khán giả), tự động xóa phòng ngay lập tức
+	if team_a.is_empty() and team_b.is_empty() and (r.get("spectators", []) as Array).is_empty():
+		_close(id)
+		return
 	if in_a or in_b:
 		if r["state"] in [PREPARE, FIGHT] and by_player:
 			var opp_team := "b" if in_a else "a"

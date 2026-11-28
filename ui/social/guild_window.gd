@@ -1,5 +1,6 @@
 extends SocialWindow
 class_name GuildWindow
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 
 signal enter_map_requested(entry: Dictionary)
 
@@ -45,7 +46,7 @@ func _init(hub: SocialHub = null) -> void:
 	body.add_child(_tab_bar)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.custom_minimum_size = Vector2(0, 395)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content = VBoxContainer.new()
@@ -96,6 +97,7 @@ func _on_message(text: String, good: bool) -> void:
 
 func _clear_content() -> void:
 	for c in _content.get_children():
+		_content.remove_child(c)
 		c.queue_free()
 
 func _rebuild() -> void:
@@ -103,6 +105,7 @@ func _rebuild() -> void:
 		return
 	_clear_content()
 	for c in _tab_bar.get_children():
+		_tab_bar.remove_child(c)
 		c.queue_free()
 	_create_btn.disabled = _guild.in_guild()
 	if _tongda_btn != null:
@@ -171,9 +174,11 @@ func _member_table(select_cb: Callable = Callable()) -> VBoxContainer:
 	tree.set_column_title(2, "Chức vị")
 	tree.set_column_expand(0, false)
 	tree.set_column_custom_minimum_width(0, 50)
+	tree.set_column_expand(1, true)
 	tree.set_column_expand(2, false)
 	tree.set_column_custom_minimum_width(2, 110)
-	tree.custom_minimum_size = Vector2(380, 300)
+	tree.custom_minimum_size = Vector2(360, 280)
+	tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	## GameUi chưa có biến thể cho Tree → lấy khung/dòng chọn y như danh sách chung (GameUi.LIST)
 	var list_theme := GameUi.get_theme()
 	for st in [&"panel", &"selected", &"selected_focus"]:
@@ -272,17 +277,29 @@ func _build_news() -> void:
 	var g: Dictionary = _guild.data()
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 10)
+	cols.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(cols)
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 8)
-	left.custom_minimum_size = Vector2(380, 0)
+	left.custom_minimum_size = Vector2(360, 0)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(left)
 	var news := SocialUi.info_box("Tin tức")
 	var master_name := ""
 	for m in _guild.members():
 		if int(m["figure"]) == GuildRules.Figure.MASTER:
 			master_name = str(m["name"])
-	news[1].add_child(SocialUi.kv("Bang hội:", str(g["name"]), SocialUi.LABEL_RED, SocialUi.GOLD))
+	var g_row := SocialUi.kv("Bang hội:", "", SocialUi.LABEL_RED, SocialUi.GOLD)
+	g_row.remove_child(g_row.get_child(1))
+	var g_val := HBoxContainer.new()
+	g_val.add_theme_constant_override("separation", 6)
+	g_val.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var emblem_id := GuildEmblem.resolve_id(g)
+	if emblem_id > 0:
+		g_val.add_child(GuildEmblem.create_icon_rect(emblem_id, Vector2(20, 20)))
+	g_val.add_child(SocialUi.label(str(g["name"]), SocialUi.GOLD, 14))
+	g_row.add_child(g_val)
+	news[1].add_child(g_row)
 	news[1].add_child(SocialUi.kv("Bang chủ:", master_name, SocialUi.LABEL_RED, SocialUi.TEXT))
 	news[1].add_child(SocialUi.kv("Phe:", Camp.get_camp_name(int(g["camp"])), SocialUi.LABEL_RED, Camp.get_color(int(g["camp"]))))
 	news[1].add_child(SocialUi.kv("Nhân số:", "%d / %d" % [_guild.members().size(), _guild.member_cap()], SocialUi.LABEL_RED, SocialUi.TEXT))
@@ -483,6 +500,16 @@ func _build_use() -> void:
 		_content.add_child(rn[0])
 
 	if _guild.is_master():
+		var em_sec := SocialUi.section("🛡 Đổi biểu tượng bang")
+		var em_name := SocialUi.label("Đang chọn: %s" % GuildEmblem.emblem_name(_guild.emblem_id()), SocialUi.GOLD, 13)
+		em_sec[1].add_child(em_name)
+		var em_picker := GuildEmblem.create_picker(_guild.emblem_id(), func(picked_id: int) -> void:
+			em_name.text = "Đang chọn: %s" % GuildEmblem.emblem_name(picked_id))
+		em_sec[1].add_child(em_picker["node"])
+		var em_btn := SocialUi.small_button("Lưu biểu tượng")
+		em_btn.pressed.connect(func() -> void: _guild.set_emblem(em_picker["get_selected"].call()))
+		em_sec[1].add_child(em_btn)
+		_content.add_child(em_sec[0])
 		var hand := SocialUi.info_box("👑 Nhường chức Bang chủ")
 		var any := false
 		for m in _guild.members():
@@ -515,9 +542,11 @@ func _build_use() -> void:
 func _build_perms() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 10)
+	cols.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(cols)
 	var left := SocialUi.section("Quyền hạn")
-	left[0].custom_minimum_size = Vector2(380, 0)
+	left[0].custom_minimum_size = Vector2(360, 0)
+	left[0].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var is_master := _guild.is_master()
 	var selected_label := SocialUi.label("Chọn một thành viên ở danh sách bên phải.", SocialUi.SUBTITLE, 13)
 	left[1].add_child(selected_label)
@@ -638,6 +667,11 @@ func _open_create_dialog() -> void:
 		camp_pick.add_item(Camp.get_camp_name(cp), cp)
 	camp_row.add_child(camp_pick)
 	win.body.add_child(camp_row)
+	var emblem_title := SocialUi.label("Biểu tượng: %s" % GuildEmblem.emblem_name(1), SocialUi.LABEL_RED, 13)
+	win.body.add_child(emblem_title)
+	var emblem_picker := GuildEmblem.create_picker(1, func(picked_id: int) -> void:
+		emblem_title.text = "Biểu tượng: %s" % GuildEmblem.emblem_name(picked_id))
+	win.body.add_child(emblem_picker["node"])
 	var blockers := _guild.create_blockers(_hub.team)
 	var info := SocialUi.info_box("✦ Điều kiện lập bang")
 	var c: Dictionary = SocialRules.tong()["create"]
@@ -657,7 +691,7 @@ func _open_create_dialog() -> void:
 	row.add_child(cancel)
 	SocialWindow.present(_host(), win, &"guild_create")
 	ok.pressed.connect(func() -> void:
-		var err := _guild.create(name_edit.text, camp_pick.get_selected_id(), _hub.team)
+		var err := _guild.create(name_edit.text, camp_pick.get_selected_id(), _hub.team, emblem_picker["get_selected"].call())
 		if err == "":
 			win.close_requested.emit())
 	cancel.pressed.connect(func() -> void: win.close_requested.emit())

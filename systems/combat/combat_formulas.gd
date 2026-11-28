@@ -83,6 +83,16 @@ static func calc_hit_percent(attack_rating: int, defense: int, ignore_defense_pe
 		percent = MIN_HIT_PERCENT
 	return percent
 
+## AttackRating của 1 ĐÒN skill — NGUYÊN VĂN KNpc::AppendSkillEffect gốc: skill có attackrating_p thì
+## m_CurrentAttackRating + m_AttackRating × attackrating_p / 100 (m_AttackRating = AR gốc từ Thân pháp, chưa cộng trang bị/buff);
+## không có thì m_CurrentAttackRating. `mods` = null -> AR hiện tại.
+static func hit_attack_rating(attacker: CombatantStats, mods: HitModifiers) -> int:
+	if attacker == null:
+		return 0
+	if mods == null or mods.attack_rating_p == 0:
+		return attacker.attack_rating
+	return attacker.attack_rating + attacker.base_attack_rating * mods.attack_rating_p / MAX_PERCENT
+
 ## Roll thật (có RNG) xem đòn này có trúng không — dùng calc_hit_percent ở trên.
 static func roll_hit(attack_rating: int, defense: int, ignore_defense_percent: int = 0) -> bool:
 	var percent := calc_hit_percent(attack_rating, defense, ignore_defense_percent)
@@ -209,6 +219,8 @@ class DamageContext:
 	## Khiên nội lực (Tọa Vọng Vô Ngã) — tỷ lệ % chuyển sát thương sang trừ mana và lượng mana hiện có.
 	var defender_mana_shield_p: int = 0
 	var defender_current_mana: int = 0
+	## Khiên phép tĩnh (Ma Pháp Độn - Lưỡng Nghi Chân Khí) — giảm sát thương phép gấp X lần nội lực
+	var defender_static_magic_shield_p: int = 0
 
 ## Kết quả cuối 1 lần tính damage — tách struct riêng thay vì trả int trần, để chỗ gọi biết rõ
 ## đòn có trúng không (is_hit=false thì final_damage luôn 0, không phải "damage=0 do kháng hết").
@@ -216,6 +228,7 @@ class DamageResult:
 	var is_hit: bool = true
 	var final_damage: int = 0
 	var mana_absorbed: int = 0
+	var magic_shield_absorbed: int = 0
 
 ## Phần "phụ" của 1 đòn skill ngoài damage chính — lấy từ stat_lines VLTK của skill (xem
 ## SkillDefinition.get_combat_damage_at_level) và truyền tới take_damage_from() của mục tiêu:
@@ -228,6 +241,46 @@ class DamageResult:
 ## Hệ số sát thương khi người chơi đánh người chơi: settings/npc/player/pkrate.ini gốc [PK] rate=20 (KNpcSet.cpp đọc vào
 ## m_nPKDamageRate, KNpc.cpp:2592 nhân vào damage khi cả 2 bên là kind_player).
 const PK_DAMAGE_RATE_PERCENT := 20
+## Hệ số chung sát thương QUÁI gây ra cho người chơi / đồng minh (KHÔNG có trong gốc — chỉnh cân bằng riêng của game).
+## 100 = đúng bảng C++ gốc (lực tay MinDamage/MaxDamage + PhysicalDamageBase, không nhân thêm). Quái đánh quái giữ nguyên.
+## 33 = còn 1/3. Dùng chung cho máy người chơi (HitResolver — online quái chỉ báo S_MATTACK, máy bị đánh tự tính) và server
+## (bot_combat: quái đánh bot) -> đổi số này rồi build lại game server.
+const MONSTER_DAMAGE_RATE_PERCENT := 33
+## Hệ số "Ngũ hành tương khắc %" (seriesdamage_p) của QUÁI khi khắc hệ người chơi / đồng minh (KHÔNG có trong gốc — cân bằng
+## riêng): quái khắc hệ trừ bớt % kháng của người bị đánh ít hơn. 50 = còn 1/2. Quái đánh quái + người đánh quái giữ nguyên.
+const MONSTER_FIVE_ELEMENTS_RATE_PERCENT := 50
+## Hệ số TỈ LỆ TRÚNG của quái khi đánh người chơi / đồng minh (KHÔNG có trong gốc — cân bằng riêng):
+## % trúng tính đúng gốc (CheckHitTarget, có sàn 40% / trần 95%) rồi nhân hệ số này, KHÔNG áp lại sàn 40%.
+## 25 = chỉ còn 1/4 (gốc 95% -> 23%, gốc 40% -> 10%). Quái đánh quái giữ nguyên gốc.
+const MONSTER_HIT_RATE_PERCENT := 25
+
+static func calc_monster_hit_percent(attack_rating: int, defense: int, ignore_defense_percent: int = 0) -> int:
+	return calc_hit_percent(attack_rating, defense, ignore_defense_percent) * MONSTER_HIT_RATE_PERCENT / MAX_PERCENT
+
+## Roll trúng cho đòn quái đánh người (bỏ sàn 40% gốc, xem MONSTER_HIT_RATE_PERCENT).
+static func roll_monster_hit(attack_rating: int, defense: int, ignore_defense_percent: int = 0) -> bool:
+	return randi_range(1, 100) <= calc_monster_hit_percent(attack_rating, defense, ignore_defense_percent)
+
+## Quái đánh người: hệ số server thật (apply_server_damage_scaling, vật lý ~x5) CHỈ áp cho quái ải Tinh anh (hell_stars > 0);
+## map thường dùng đúng số mã nguồn C++. Đòn của người chơi / bot vào quái vẫn luôn qua hệ số này như cũ.
+static func monster_uses_server_scaling(attacker: Node) -> bool:
+	return attacker != null and is_instance_valid(attacker) and int(attacker.get("hell_stars") if "hell_stars" in attacker else 0) > 0
+
+## Node có phải quái (VltkMonster hoặc Enemy cũ enemies/enemy.gd) không.
+static func is_monster(node: Node) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	if node is VltkMonster:
+		return true
+	var scr: Script = node.get_script()
+	return scr != null and scr.resource_path == "res://enemies/enemy.gd"
+
+## Có giảm sát thương theo MONSTER_DAMAGE_RATE_PERCENT không: người đánh là quái, bên bị đánh không phải quái.
+static func is_monster_hit(attacker: Node, defender: Node) -> bool:
+	return is_monster(attacker) and not is_monster(defender)
+
+static func scale_monster_damage(amount: float) -> float:
+	return amount * MONSTER_DAMAGE_RATE_PERCENT / 100.0
 
 class HitModifiers:
 	var extra_damages: Dictionary = {}
@@ -245,6 +298,8 @@ class HitModifiers:
 	var stun_frames: int = 0
 	## % bỏ qua né tránh/phòng thủ của mục tiêu (ignoredefense_p từ skill/đòn)
 	var ignore_defense_percent: int = 0
+	## "Độ chính xác" của skill (attackrating_p) — cộng vào AR của đòn khi roll trúng, xem hit_attack_rating().
+	var attack_rating_p: int = 0
 	## Người đánh (node) — để phản đòn (damage return) và hút máu (steal life); null = bỏ qua 2 thứ đó.
 	var attacker_node: Node = null
 	## Đòn cận chiến (va chạm) hay tầm xa (đạn/skill bay) — chọn melee/range damage return của bên bị đánh.
@@ -260,6 +315,8 @@ class HitModifiers:
 	var is_state_only: bool = false
 	## Người chơi đánh người chơi (kể cả bot PK) — nhân PK_DAMAGE_RATE_PERCENT (HitResolver.receive đặt).
 	var is_pk: bool = false
+	## % áp lên five_elements_damage_p (HitResolver / bot_combat đặt mỗi đòn: quái đánh người = MONSTER_FIVE_ELEMENTS_RATE_PERCENT).
+	var five_elements_rate_percent: int = 100
 
 ## 1 đòn gồm NHIỀU loại damage cùng lúc (VD skill Đường Môn: vật lý + Độc sát) — mỗi loại đi qua
 ## resolve_damage() RIÊNG với giáp/% kháng của đúng loại đó (đúng VLTK: m_DamageAttribs lưu từng
@@ -287,17 +344,21 @@ static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantSt
 		ctx.attacker_element = attacker_element
 		ctx.defender_element = defender.element
 		if mods:
-			ctx.five_elements_damage_p = mods.five_elements_damage_p
+			ctx.five_elements_damage_p = mods.five_elements_damage_p * mods.five_elements_rate_percent / MAX_PERCENT
 			ctx.is_deadly_strike = mods.is_deadly_strike
 			ctx.is_pk = mods.is_pk
 			ctx.pk_damage_rate_percent = PK_DAMAGE_RATE_PERCENT
 		ctx.attacker_five_elements_enhance = attacker.five_elements_enhance
 		ctx.defender_five_elements_resist = defender.five_elements_resist
-		ctx.defender_resist_percent = defender.get_capped_resist(damage_type)
+		var resist := defender.get_capped_resist(damage_type)
+		if damage_type == DamageType.LIGHT and attacker != null and "ignore_lighting_res_p" in attacker and attacker.ignore_lighting_res_p > 0:
+			resist -= attacker.ignore_lighting_res_p
+		ctx.defender_resist_percent = resist
 		ctx.defender_flat_armor = defender.flat_armor.get(damage_type, 0)
 		ctx.defender_current_hp = defender_hp
 		ctx.defender_mana_shield_p = defender.mana_shield_p
 		ctx.defender_current_mana = current_mana
+		ctx.defender_static_magic_shield_p = defender.static_magic_shield_p if "static_magic_shield_p" in defender else 0
 		var result := resolve_damage(ctx)
 		if result.is_hit:
 			any_hit = true
@@ -309,6 +370,27 @@ static func resolve_multi_damage(attacker: CombatantStats, defender: CombatantSt
 	if not out_mana_absorbed.is_empty():
 		out_mana_absorbed[0] = total_mana_absorbed
 	return total if any_hit else -1
+
+## Lượng rút MỖI NHỊP độc — KNpc::Activate gốc (và CoreServer.dll thật): mỗi nhịp gọi CalcDamage(độc thô của đòn) với
+## nMissleSeries = -1, bIsDS = FALSE -> có giáp độc, kháng độc, hệ số PK nhưng KHÔNG tương khắc ngũ hành, KHÔNG chí mạng.
+## (Cú đánh đầu thì có tương khắc — vì thế không lấy damage thực của cú đánh đầu làm lượng rút.)
+## `parts` = các loại damage của đòn (đã nhân hệ số server / hệ số quái); trả -1 nếu đòn không có Độc sát, 0 nếu giáp/kháng nuốt hết.
+static func poison_tick_damage(defender: CombatantStats, parts: Dictionary, is_pk: bool) -> int:
+	var raw: Vector2i = parts.get(DamageType.POISON, Vector2i.ZERO)
+	if raw.y <= 0:
+		return -1
+	if defender == null:
+		return raw.x
+	var ctx := DamageContext.new()
+	ctx.min_damage = raw.x   ## gốc lưu m_PoisonState.nValue[0] = damage độc (cận dưới), nhịp rút roll [nValue0, nValue0]
+	ctx.max_damage = raw.x
+	ctx.damage_type = DamageType.POISON
+	ctx.is_pk = is_pk
+	ctx.pk_damage_rate_percent = PK_DAMAGE_RATE_PERCENT
+	ctx.defender_resist_percent = defender.get_capped_resist(DamageType.POISON)
+	ctx.defender_flat_armor = defender.flat_armor.get(DamageType.POISON, 0)
+	var result := resolve_damage(ctx)
+	return result.final_damage if result.is_hit else 0
 
 ## Tính damage cuối cùng — NGUYÊN VĂN pipeline các bước của KNpc::CalcDamage gốc (xem
 ## docs/vltk_player_stats_reference.md mục 11.9 và CoreServer.dll @1000fa50 để đối chiếu).
@@ -371,8 +453,17 @@ static func resolve_damage(ctx: DamageContext) -> DamageResult:
 		damage -= actual_absorbed
 		result.mana_absorbed = actual_absorbed
 
+	## Bước 8b — Ma Pháp Độn (Lưỡng Nghi Chân Khí Côn Lôn — staticmagicshield_p):
+	## Giảm sát thương phép (ngũ hành: Băng, Hỏa, Lôi, Độc) dựa trên mức nội lực (18 -> 100 lần nội lực).
+	## Sát thương vật lý (PHYSICS) không bị giảm bởi khiên phép.
+	if ctx.damage_type != DamageType.PHYSICS and ctx.defender_static_magic_shield_p > 0 and ctx.defender_current_mana > 0:
+		var shield_capacity := ctx.defender_current_mana * int(ctx.defender_static_magic_shield_p / 100)
+		var absorbed_magic := mini(damage, shield_capacity)
+		damage -= absorbed_magic
+		result.magic_shield_absorbed = absorbed_magic
+
 	## Bước 9 — damage <= 0 coi như không gây sát thương máu (return FALSE trong code gốc).
-	if damage <= 0 and result.mana_absorbed <= 0:
+	if damage <= 0 and result.mana_absorbed <= 0 and result.magic_shield_absorbed <= 0:
 		result.is_hit = false
 		return result
 

@@ -65,6 +65,8 @@ static func sanitize(d: Dictionary, cap: float) -> void:
 			var v: Variant = extra[k]
 			extra[k] = Vector2i(clampi(v.x, 0, top), clampi(v.y, 0, top)) if v is Vector2i else Vector2i.ZERO
 	mods["poison_tick_damage"] = clampi(int(mods.get("poison_tick_damage", 0)), 0, top)
+	## Độ chính xác của skill: số gốc cao nhất ~574% (Kiếm Thùy Tinh Hà cấp 26) — chặn số vô lý.
+	mods["attack_rating_p"] = clampi(int(mods.get("attack_rating_p", 0)), 0, 1000)
 	## Trạng thái (bùa) mang theo đòn: không cho thời gian vô lý.
 	mods["state_seconds"] = clampf(float(mods.get("state_seconds", 0.0)), 0.0, 60.0)
 

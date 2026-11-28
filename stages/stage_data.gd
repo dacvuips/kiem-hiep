@@ -26,6 +26,41 @@ class_name StageData
 ## Thời điểm boss xuất hiện (giây). 0.0 = tự động tính bằng 2/3 stage_duration (VD màn 180s -> boss ra lúc 120s, tương ứng chặng 3/3).
 @export var boss_spawn_time: float = 0.0
 
+@export_group("Đặc tả Vượt Ải & Đánh Giá 3 Sao (GDD)")
+## Cấp độ nhân vật tối thiểu để được tham gia ải (1x = 10, 2x = 20, 3x = 30, 4x = 40...)
+@export var required_level: int = 10
+
+## Tiêu chí 1: Thời gian hoàn thành tối đa (giây) để đạt ⭐ Thời Gian (mặc định bằng stage_duration)
+@export var target_time: float = 180.0
+
+## Tiêu chí 2: Điểm thành tích tối thiểu để đạt ⭐ Điểm Số
+@export var target_score: int = 2500
+
+## Tiêu chí 3: Số lượng quái tiêu diệt tối thiểu để đạt ⭐ Số Quái Hạ Gục
+@export var target_kills: int = 100
+
+func evaluate_stars(time_taken: float, score: int, kills: int) -> Dictionary:
+	var t_max := target_time if target_time > 0.0 else stage_duration
+	var star_time := time_taken <= t_max
+	var star_score := score >= target_score
+	var star_kills := kills >= target_kills
+	var total_stars := 0
+	if star_time: total_stars += 1
+	if star_score: total_stars += 1
+	if star_kills: total_stars += 1
+	return {
+		"total_stars": total_stars,
+		"star_time": star_time,
+		"star_score": star_score,
+		"star_kills": star_kills,
+		"target_time": t_max,
+		"target_score": target_score,
+		"target_kills": target_kills,
+		"time_taken": time_taken,
+		"score": score,
+		"kills": kills
+	}
+
 ## Lấy thời điểm boss xuất hiện (giây).
 func get_boss_spawn_time() -> float:
 	if boss_spawn_time > 0.0:

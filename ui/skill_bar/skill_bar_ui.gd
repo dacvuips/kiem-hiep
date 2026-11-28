@@ -66,15 +66,25 @@ var _auto_gear: Button = null
 
 var _player: Node
 
-## Vị trí MẶC ĐỊNH (offset_left/top/right/bottom trong scene) của từng nút skill — cộng độ dời của người chơi (PlayerProfile.skill_layout).
+## Vị trí MẶC ĐỊNH (offset_left/top/right/bottom trong scene) của từng nút skill — cộng độ dời của người chơi (SkillSlotPrefs, lưu trên máy).
 
 var _base_offsets: Dictionary = {}
 
 var _page_swap: Button
 
+var _is_survivor_mode: bool = false
+var _survivor_skills_btn: Button = null
+
 ## Kéo nút chính để NGẮM HƯỚNG: giữ rồi kéo -> mũi tên dài chỉ hướng đánh trên bản đồ, skill đánh liên tục theo hướng đó tới khi thả.
 
 const AIM_DEAD_ZONE := 14.0
+
+## Kéo xa tới AIM_MAX_DRAG pixel (tính từ chỗ bấm) = điểm thi triển ở tầm TỐI ĐA của skill; kéo ngắn hơn = đánh gần hơn theo tỉ lệ.
+const AIM_MAX_DRAG := 130.0
+
+var _aim_fraction := 1.0
+
+var _right_aiming := false
 
 var _aiming := false
 
@@ -128,7 +138,7 @@ static func make_drag_preview(skill: SkillDefinition) -> Control:
 
 		icon.texture = skill.icon
 
-		icon.material = SkillButton.make_circle_mask_material()
+		icon.material = SkillButton.make_icon_fit_material(true)
 
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 
@@ -168,11 +178,29 @@ static func make_drag_preview(skill: SkillDefinition) -> Control:
 
 	return holder
 
-## Nút Auto nằm NGAY DƯỚI mini map (góc phải-trên), canh sát cạnh phải mini map; kích thước/lề lấy từ MiniMap để đổi cỡ vẫn khớp.
+## Khối Auto nằm NGAY DƯỚI mini map (góc phải-trên), canh sát cạnh phải mini map; kích thước/lề lấy từ MiniMap để đổi cỡ vẫn khớp.
+## Gồm 2 phần dính liền: chữ "Auto" bên trái (bấm mở Cấu hình Auto) + công tắc bên phải (bật / tắt tự đánh).
 
-const AUTO_BUTTON_SIZE := Vector2(52, 52)
+const AUTO_BUTTON_SIZE := Vector2(46, 28)   ## cỡ MỖI phần (chữ / công tắc)
 
-const AUTO_BUTTON_GAP := 6.0
+const AUTO_BUTTON_GAP := 10.0
+
+const AUTO_BLOCK_BG := Color(0.05, 0.05, 0.05, 0.5)   ## nền hơi trong suốt
+
+func _auto_half_style(left: bool) -> StyleBoxFlat:
+	var st := StyleBoxFlat.new()
+	st.bg_color = AUTO_BLOCK_BG
+	## Viền vàng bao quanh cả khối: không vẽ cạnh giữa chỗ 2 nửa dính nhau.
+	st.border_color = GameUi.GOLD
+	st.border_width_top = 2
+	st.border_width_bottom = 2
+	st.border_width_left = 2 if left else 0
+	st.border_width_right = 0 if left else 2
+	st.corner_radius_top_left = 8 if left else 0
+	st.corner_radius_bottom_left = 8 if left else 0
+	st.corner_radius_top_right = 0 if left else 8
+	st.corner_radius_bottom_right = 0 if left else 8
+	return st
 
 func _place_auto_button() -> void:
 
@@ -196,25 +224,39 @@ func _place_auto_button() -> void:
 
 	var top := MiniMap.SCREEN_MARGIN + MiniMap.BASE_SIZE.y * MiniMap.UI_SCALE * mm_sc + AUTO_BUTTON_GAP + mm_oy + auto_oy
 
+	var w := AUTO_BUTTON_SIZE.x * auto_sc
+
+	var h := AUTO_BUTTON_SIZE.y * auto_sc
+
+	## Công tắc (AutoButton) ở bên phải.
 	_auto_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 
 	_auto_button.offset_right = -right
 
-	_auto_button.offset_left = -right - AUTO_BUTTON_SIZE.x * auto_sc
+	_auto_button.offset_left = -right - w
 
 	_auto_button.offset_top = top
 
-	_auto_button.offset_bottom = top + AUTO_BUTTON_SIZE.y * auto_sc
-
-	_auto_button.scale = Vector2.ONE * auto_sc
+	_auto_button.offset_bottom = top + h
 
 	if _auto_gear == null or not is_instance_valid(_auto_gear):
 		_auto_gear = Button.new()
 		_auto_gear.name = "AutoGearButton"
-		_auto_gear.text = "⚙"
+		_auto_gear.text = "Auto"
 		_auto_gear.tooltip_text = "Thiết lập auto đánh (Cấu hình Auto)"
 		_auto_gear.focus_mode = Control.FOCUS_NONE
-		_auto_gear.add_theme_font_size_override("font_size", 22)
+		_auto_gear.add_theme_font_size_override("font_size", 12)
+		var bold := FontVariation.new()
+		bold.base_font = _auto_gear.get_theme_font("font")
+		bold.variation_embolden = 0.9
+		_auto_gear.add_theme_font_override("font", bold)
+		var gear_style := _auto_half_style(true)
+		var gear_hover := _auto_half_style(true)
+		gear_hover.bg_color = Color(0.2, 0.18, 0.1, 0.65)
+		for st in ["normal", "focus"]:
+			_auto_gear.add_theme_stylebox_override(st, gear_style)
+		_auto_gear.add_theme_stylebox_override("hover", gear_hover)
+		_auto_gear.add_theme_stylebox_override("pressed", gear_hover)
 		_auto_gear.add_to_group("tutorial_auto_gear")
 		_auto_gear.pressed.connect(func() -> void:
 			if GameManager.local_profile != null:
@@ -225,18 +267,14 @@ func _place_auto_button() -> void:
 		)
 		_auto_button.add_sibling(_auto_gear)
 
-	var gear_elem: Dictionary = HudLayout.get_element("auto_gear")
-	var gear_sc: float = float(gear_elem.get("scale", 1.0))
-	var gear_ox: float = float(gear_elem.get("offset_x", 0.0))
-	var gear_oy: float = float(gear_elem.get("offset_y", 0.0))
-
-	var gear_base_right := MiniMap.SCREEN_MARGIN - mm_ox + AUTO_BUTTON_SIZE.x * auto_sc + AUTO_BUTTON_GAP - gear_ox
+	## Chữ "Auto" dính liền bên trái công tắc: cùng hàng, cùng cỡ, kéo Auto trong bảng chỉnh HUD thì đi theo.
 	_auto_gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_auto_gear.offset_right = -gear_base_right
-	_auto_gear.offset_left = -gear_base_right - AUTO_BUTTON_SIZE.x * gear_sc
-	_auto_gear.offset_top = top - auto_oy + gear_oy
-	_auto_gear.offset_bottom = top - auto_oy + AUTO_BUTTON_SIZE.y * gear_sc + gear_oy
-	_auto_gear.scale = Vector2.ONE * gear_sc
+	_auto_gear.offset_right = -right - w
+	_auto_gear.offset_left = -right - w - w
+	_auto_gear.offset_top = top
+	_auto_gear.offset_bottom = top + h
+	_auto_gear.scale = Vector2.ONE
+	_auto_button.scale = Vector2.ONE
 
 func _ready() -> void:
 
@@ -265,10 +303,15 @@ func _ready() -> void:
 		_loop_buttons[i].set_drag_forwarding(_get_slot_drag_data.bind(slot), _can_drop_on_slot.bind(slot), _drop_on_slot.bind(slot))
 
 	_jump_button.pressed.connect(_on_jump_pressed)
+	_jump_button.tooltip_text = "Khinh công / Nhảy (phím Space)"
 
 	_horse_button.pressed.connect(_on_horse_pressed)
+	_horse_button.tooltip_text = "Lên / Xuống ngựa (phím M)"
 
 	_sit_button.pressed.connect(_on_sit_pressed)
+	_sit_button.tooltip_text = "Ngồi thiền / Đứng dậy (phím V)"
+
+	_auto_button.tooltip_text = "Bật / Tắt Tự động đánh (phím Ctrl / Shift)"
 
 	_style_slot_button(_jump_button, "jump", true, 3.0)   ## icon nhảy gốc (MiTom_Pak_SPR ID_C950DFE5.spr, 1 khung, ảnh vuông)
 
@@ -406,6 +449,9 @@ func _layout_nodes() -> Dictionary:
 
 	return out
 
+## Dời cả cụm nút skill sang trái so với vị trí trong SkillBarUI.tscn (chừa góc phải cho nút đổi trang).
+const CLUSTER_SHIFT_X := -60.0
+
 func _capture_base_offsets() -> void:
 
 	var nodes := _layout_nodes()
@@ -416,9 +462,24 @@ func _capture_base_offsets() -> void:
 
 		_base_offsets[key] = [c.offset_left, c.offset_top, c.offset_right, c.offset_bottom]
 
-## Áp bố cục tự sắp xếp của người chơi: độ dời so với vị trí mặc định, bật / tắt ô (PlayerProfile.skill_slots) và cỡ ô
+## Áp bố cục tự sắp xếp của người chơi: độ dời so với vị trí mặc định, bật / tắt ô (SkillSlotPrefs) và cỡ ô
 
 ## (scale quanh tâm — vùng bấm to / nhỏ theo).
+
+## true = nút Ngồi nằm trong cụm thao tác của Main (Giao dịch / Ngồi / Tổ đội / PK): đi theo vị trí + cỡ của cụm đó.
+var sit_follows_bar := false
+
+## Đặt nút Ngồi vào đúng ô (toạ độ màn hình) — Main gọi sau khi cụm thao tác xếp xong.
+func place_sit_at(rect: Rect2) -> void:
+	if _sit_button == null:
+		return
+	_sit_button.scale = Vector2.ONE
+	_sit_button.pivot_offset = Vector2.ZERO
+	_sit_button.size = rect.size
+	_sit_button.global_position = rect.position
+
+## Phát sau mỗi lần sắp lại nút (Main dùng để canh hàng nút tiện ích theo nút Ngồi / Ngựa thật).
+signal layout_applied
 
 func apply_layout() -> void:
 	var profile := GameManager.local_profile
@@ -428,6 +489,10 @@ func apply_layout() -> void:
 		if not _base_offsets.has(key):
 			continue
 		var c: Control = nodes[key]
+		if key == "sit" and sit_follows_bar:
+			## Nút Ngồi thuộc cụm Giao dịch / Tổ đội / PK: Main đặt vị trí qua place_sit_at(); ở đây chỉ bật / tắt.
+			c.visible = profile.is_skill_slot_on(key) if profile != null else true
+			continue
 		var b: Array = _base_offsets[key]
 		var d := profile.get_layout_offset(key) if profile != null else Vector2.ZERO
 
@@ -438,10 +503,11 @@ func apply_layout() -> void:
 		var hud_oy: float = float(hud_elem.get("offset_y", 0.0))
 		var hud_sc: float = float(hud_elem.get("scale", 1.0))
 
-		c.offset_left = (b[0] + d.x) * hud_sc + hud_ox
-		c.offset_right = (b[2] + d.x) * hud_sc + hud_ox
-		c.offset_top = (b[1] + d.y) * hud_sc + hud_oy
-		c.offset_bottom = (b[3] + d.y) * hud_sc + hud_oy
+		## Cỡ (hud_sc) phóng quanh TÂM nút (pivot), không dời vị trí.
+		c.offset_left = b[0] + d.x + hud_ox + CLUSTER_SHIFT_X
+		c.offset_right = b[2] + d.x + hud_ox + CLUSTER_SHIFT_X
+		c.offset_top = b[1] + d.y + hud_oy
+		c.offset_bottom = b[3] + d.y + hud_oy
 		var k := float(profile.get_skill_slot_size(key)) if profile != null else 1.0
 		k *= hud_sc
 		c.pivot_offset = Vector2(b[2] - b[0], b[3] - b[1]) * 0.5
@@ -457,6 +523,177 @@ func apply_layout() -> void:
 		_page_swap.offset_bottom = -SWAP_MARGIN
 		_page_swap.offset_top = -SWAP_MARGIN - SWAP_SIZE
 		_page_swap.scale = Vector2.ONE
+
+	_apply_survivor_mode_visibility()
+	layout_applied.emit()
+
+func is_survivor_mode() -> bool:
+	if _is_survivor_mode:
+		return true
+	if GameManager != null:
+		if GameManager.field_map is Dictionary and bool(GameManager.field_map.get("survivor_mode", false)):
+			return true
+		if GameModeManager != null and GameModeManager.is_offline() and GameManager.game_mode == GameManager.GameMode.STAGE:
+			return true
+	if is_inside_tree():
+		var tree := get_tree()
+		if tree != null:
+			if tree.get_first_node_in_group("survivor_challenge") != null or (tree.current_scene != null and tree.current_scene.has_node("SurvivorWaveChallenge")):
+				return true
+	return false
+
+func enable_survivor_mode(enabled: bool) -> void:
+	_is_survivor_mode = enabled
+	_apply_survivor_mode_visibility()
+
+func _apply_survivor_mode_visibility() -> void:
+	if not is_inside_tree():
+		return
+	var in_survivor := is_survivor_mode()
+	if _main_button:
+		_main_button.visible = not in_survivor
+	for btn in _sub_buttons:
+		if btn:
+			btn.visible = not in_survivor
+	for btn in _loop_buttons:
+		if btn:
+			btn.visible = not in_survivor
+	## Nút số 1/2 chọn nhóm skill luôn ẩn; chỉ giữ nút ⇄ để đổi nhóm.
+	for btn in _page_buttons:
+		if btn:
+			btn.visible = false
+	if _page_swap:
+		_page_swap.visible = not in_survivor
+	if _auto_button:
+		_auto_button.visible = not in_survivor
+	if _auto_gear:
+		_auto_gear.visible = not in_survivor
+
+	_apply_web_mode()
+
+	if in_survivor:
+		_ensure_survivor_skills_button()
+		if _survivor_skills_btn:
+			_survivor_skills_btn.visible = true
+	else:
+		if _survivor_skills_btn:
+			_survivor_skills_btn.visible = false
+
+## ---- Bản web: thanh dưới kiểu PC (WebHudBar) thay cụm nút tròn ----
+
+## true (Main bật khi WebHudBar.enabled()) = ẩn mọi nút skill / nhảy / ngựa / ngồi / đổi nhóm của cụm này; vẫn giữ logic
+## (chuột phải đánh, hồi chiêu, phím tắt) và nút Auto góc trên phải. WebHudBar đọc skill + bấm ô qua slot_skill / press_slot.
+var web_mode := false:
+	set(v):
+		web_mode = v
+		_apply_web_mode()
+
+func _apply_web_mode() -> void:
+	if not web_mode or not is_inside_tree():
+		return
+	var hide: Array = [_main_button, _jump_button, _horse_button, _sit_button, _page_swap]
+	hide.append_array(_sub_buttons)
+	hide.append_array(_loop_buttons)
+	hide.append_array(_page_buttons)
+	for c in hide:
+		if c != null and is_instance_valid(c):
+			(c as Control).visible = false
+
+## Skill đang gắn ở ô `slot` (MAIN_SLOT, LOOP_SLOT_BASE + i, hoặc 0-7 = ô của trang đang chọn); null = ô trống.
+func slot_skill(slot: int) -> SkillDefinition:
+	if slot >= 0 and slot >= _sub_buttons.size() and slot < LOOP_SLOT_BASE:
+		return null
+	return _slot_button(slot).skill
+
+## Bấm ô `slot` như bấm nút tương ứng của cụm (thi triển / bật-tắt ô liên tục).
+func press_slot(slot: int) -> void:
+	if _player == null:
+		return
+	if slot == MAIN_SLOT:
+		_on_main_pressed()
+	elif slot >= LOOP_SLOT_BASE:
+		_on_loop_pressed(slot - LOOP_SLOT_BASE)
+	elif slot >= 0 and slot < _sub_buttons.size() and _sub_buttons[slot].skill != null:
+		_on_sub_pressed(slot)
+
+func _ensure_survivor_skills_button() -> void:
+	if _survivor_skills_btn != null and is_instance_valid(_survivor_skills_btn):
+		return
+
+	_survivor_skills_btn = Button.new()
+	_survivor_skills_btn.name = "SurvivorSelectedSkillsButton"
+	_survivor_skills_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_survivor_skills_btn.focus_mode = Control.FOCUS_NONE
+	_survivor_skills_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	var btn_w := 126.0
+	var btn_h := 44.0
+	_survivor_skills_btn.custom_minimum_size = Vector2(btn_w, btn_h)
+	_survivor_skills_btn.offset_left = -140.0
+	_survivor_skills_btn.offset_top = -148.0
+	_survivor_skills_btn.offset_right = -14.0
+	_survivor_skills_btn.offset_bottom = -104.0
+
+	# Nút hình chữ nhật phong cách kiếm hiệp, viền vàng kim tương đồng các nút khác
+	var normal_sb := StyleBoxFlat.new()
+	normal_sb.bg_color = Color(0.08, 0.1, 0.14, 0.95)
+	normal_sb.border_color = Color(0.85, 0.68, 0.28, 0.95)
+	normal_sb.set_border_width_all(2)
+	normal_sb.set_corner_radius_all(5)
+	_survivor_skills_btn.add_theme_stylebox_override("normal", normal_sb)
+	_survivor_skills_btn.add_theme_stylebox_override("focus", normal_sb)
+
+	var hover_sb := normal_sb.duplicate() as StyleBoxFlat
+	hover_sb.bg_color = Color(0.16, 0.2, 0.28, 0.98)
+	hover_sb.border_color = Color(1.0, 0.92, 0.45)
+	hover_sb.set_border_width_all(2)
+	_survivor_skills_btn.add_theme_stylebox_override("hover", hover_sb)
+	_survivor_skills_btn.add_theme_stylebox_override("pressed", hover_sb)
+
+	var hbox := HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_theme_constant_override("separation", 6)
+	_survivor_skills_btn.add_child(hbox)
+
+	var icon_lbl := Label.new()
+	icon_lbl.text = "⚡"
+	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_lbl.add_theme_font_size_override("font_size", 18)
+	icon_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	hbox.add_child(icon_lbl)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 0)
+	hbox.add_child(vbox)
+
+	var text_lbl := Label.new()
+	text_lbl.text = "Võ Công Đã Chọn"
+	text_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	text_lbl.add_theme_font_size_override("font_size", 11)
+	text_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	text_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	text_lbl.add_theme_constant_override("outline_size", 2)
+	vbox.add_child(text_lbl)
+
+	var hotkey_lbl := Label.new()
+	hotkey_lbl.text = "(phím V)"
+	hotkey_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hotkey_lbl.add_theme_font_size_override("font_size", 9)
+	hotkey_lbl.add_theme_color_override("font_color", Color(0.65, 0.80, 0.95))
+	vbox.add_child(hotkey_lbl)
+
+	_survivor_skills_btn.tooltip_text = "Xem toàn bộ chiêu thức tấn công & kỹ năng bổ trợ đã chọn (Phím V)"
+	_survivor_skills_btn.pressed.connect(func() -> void:
+		var sel_win_cls: GDScript = load("res://ui/hud/selected_skills_window.gd")
+		if sel_win_cls != null and sel_win_cls.has_method("toggle_window"):
+			sel_win_cls.toggle_window(self)
+	)
+
+	add_child(_survivor_skills_btn)
 
 func setup(player: Node) -> void:
 
@@ -480,47 +717,35 @@ func refresh_sub_skills() -> void:
 
 	var main_skill: SkillDefinition = _player.skill_controller.get_main_skill()
 
-	_main_button.visible = main_skill != null
+	var in_survivor := is_survivor_mode()
+	_main_button.visible = (main_skill != null and not in_survivor)
 
 	if main_skill:
-
 		_main_button.setup(main_skill, true)
 
 	for i in _loop_buttons.size():
-
 		var loop_skill: SkillDefinition = _player.skill_controller.get_loop_skill(i)
-
 		_loop_buttons[i].setup(loop_skill, false)
-
 		if loop_skill == null:
-
 			_loop_buttons[i].text = "∞"  ## ô thi triển liên tục còn trống
-
 			_loop_buttons[i].add_theme_font_size_override("font_size", 20)
 
 	var skills: Array[SkillDefinition] = _player.skill_controller.get_sub_skills()
-
 	var start := _page_start()
-
 	for i in _sub_buttons.size():
-
 		_sub_buttons[i].setup(skills[start + i] if start + i < skills.size() else null, false)
 
 	var page := GameManager.local_profile.hotbar_page if GameManager.local_profile else 0
-
 	## "Chạm nhả": ra chiêu khi nhả tay; tắt = ra chiêu ngay lúc chạm.
-
 	var on_release := GameManager.local_profile != null and GameManager.local_profile.get_skill_setting("tap_release")
-
 	for b in [_main_button] + _sub_buttons:
-
 		(b as BaseButton).action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE if on_release \
-
 				else BaseButton.ACTION_MODE_BUTTON_PRESS
 
 	for p in _page_buttons.size():
-
 		_page_buttons[p].set_pressed_no_signal(p == page)
+
+	_apply_survivor_mode_visibility()
 
 ## Chỉ số hotbar của ô đầu trang đang chọn.
 
@@ -724,17 +949,18 @@ func _refresh_auto_button_style() -> void:
 
 	_auto_button.button_pressed = is_on
 
-	var style := StyleBoxFlat.new()
+	## Công tắc: nền giữ màu tối liền với chữ "Auto"; bật thì chữ "Auto" chuyển xanh.
+	var style := _auto_half_style(false)
 
-	style.bg_color = COLOR_AUTO_ON if is_on else COLOR_AUTO_OFF
+	for st in ["normal", "pressed", "hover", "hover_pressed", "focus"]:
+		_auto_button.add_theme_stylebox_override(st, style)
 
-	style.set_corner_radius_all(8)
+	_auto_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	_auto_button.add_theme_stylebox_override("normal", style)
-
-	_auto_button.add_theme_stylebox_override("pressed", style)
-
-	_auto_button.add_theme_color_override("font_color", Color.WHITE)
+	if _auto_gear != null and is_instance_valid(_auto_gear):
+		var c := COLOR_AUTO_ON.lightened(0.25) if is_on else Color.WHITE
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			_auto_gear.add_theme_color_override(k, c)
 
 func _process(_delta: float) -> void:
 
@@ -746,11 +972,43 @@ func _process(_delta: float) -> void:
 
 	if _aiming and _aim_dir != Vector2.ZERO and not editing_hotbar:
 
-		_player.set_aim(_aim_dir)
+		_player.set_aim(_aim_dir, _aim_fraction)
 
 		if _player.skill_controller.try_cast_main(_player, _player.make_aim_target(_main_button.skill)):
 
 			_player.play_cast()
+
+	## Chuột phải giữ trên bản đồ (PC/Web): thi triển skill nút chính về phía con trỏ, gần/xa theo vị trí chuột (tối đa tầm skill).
+	## Bản web: skill chuột phải (ô P) là hào quang -> hào quang đã bật khi chọn, bấm phải không ra chiêu (KPlayer::ProcessMouse
+	## gốc: IsAura -> return).
+	elif _player.right_cast_held and web_mode and _main_button.skill != null and _main_button.skill.is_aura:
+		_player.right_cast_held = false
+
+	elif _player.right_cast_held and not editing_hotbar:
+
+		## Ngắm + đánh ÍT NHẤT 1 lần kể cả khi nhấp nhanh (nhấn và nhả trong cùng khung hình) — cờ chỉ tắt ở đây, Player không tự tắt.
+
+		if not _player.is_dead():
+
+			_right_aiming = true
+
+			var aim: Array = _player.aim_toward(World3DView.mouse_world(_player), _main_button.skill)
+
+			_player.set_aim(aim[0], aim[1], false)   ## chuột phải: không hiện mũi tên xanh
+
+			if aim[0] != Vector2.ZERO and _player.skill_controller.try_cast_main(_player, _player.make_aim_target(_main_button.skill)):
+
+				_player.play_cast()
+
+		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or _player.is_dead():
+
+			_player.right_cast_held = false
+
+			_stop_aim()
+
+	elif _right_aiming:
+
+		_stop_aim()
 
 	var controller: SectSkillController = _player.skill_controller
 
@@ -866,9 +1124,15 @@ func _on_main_gui_input(event: InputEvent) -> void:
 
 			_aim_dir = v.normalized()
 
+			_aim_fraction = clampf(v.length() / AIM_MAX_DRAG, 0.0, 1.0)
+
 func _stop_aim() -> void:
 
 	_aiming = false
+
+	_right_aiming = false
+
+	_aim_fraction = 1.0
 
 	_aim_dir = Vector2.ZERO
 
@@ -948,7 +1212,7 @@ func _style_slot_button(button: Button, sheet_name: String, mask: bool, inset: f
 
 	if mask:
 
-		icon.material = SkillButton.make_circle_mask_material()
+		icon.material = SkillButton.make_icon_fit_material(true)
 
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 

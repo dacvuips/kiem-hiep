@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name PlayerMenu
 ## MENU NGƯỜI CHƠI — bấm vào người chơi khác trên map (PopUpContextPeopleMenu gốc). Mục nào không đủ điều kiện thì ẩn (như gốc):
-##   Xem quầy (họ đang bày bán) · Tán gẫu (luôn) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
+##   Xem quầy (họ đang bày bán) · Tán gẫu (luôn) · Oẳn tù xì (online) · Hảo hữu (chưa là bạn) · Giao dịch (họ đang mở giao dịch) · Tổ đội · Theo sau · Tin tức · Cừu sát ·
 ##   Sổ đen (chưa chặn) · Đóng.
 ## Bấm ra ngoài menu = đóng (không làm nhân vật chạy tới chỗ bấm).
 
@@ -38,26 +38,31 @@ func _build(screen_pos: Vector2) -> void:
 	add_to_group(UiPopups.GROUP)   ## đang mở thì lăn chuột không zoom camera
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	## Nền trong suốt phủ màn hình: bấm ra ngoài menu thì đóng, cú bấm không lọt xuống map.
-	var back := Control.new()
+	## Nền tối mờ phủ toàn màn hình (Dark Backdrop): bấm ra ngoài menu thì đóng, cú bấm không lọt xuống map.
+	var back := ColorRect.new()
+	back.color = Color(0, 0, 0, 0)   ## trong suốt: không tối màn hình, chỉ để bắt cú bấm ra ngoài
 	back.set_anchors_preset(Control.PRESET_FULL_RECT)
 	back.mouse_filter = Control.MOUSE_FILTER_STOP
 	back.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			close_current())
 	add_child(back)
-	_panel = GameUi.panel(GameUi.WINDOW)  # khung cửa sổ chung của game
+	_panel = PanelContainer.new()
+	## Bỏ hoàn toàn khung nền menu theo yêu cầu
+	var sb := StyleBoxEmpty.new()
+	_panel.add_theme_stylebox_override("panel", sb)
 	_panel.custom_minimum_size = Vector2(WIDTH, 0)
 	add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	_panel.add_child(box)
-	box.add_child(GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(GameUi.label("Cấp %d" % _target.level, GameUi.MUTED, 12, HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(GameUi.divider())
+	var title_lbl := GameUi.label(_target.display_name, GameUi.TITLE, 14, HORIZONTAL_ALIGNMENT_CENTER)
+	title_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	title_lbl.add_theme_constant_override("outline_size", 4)
+	box.add_child(title_lbl)
 	for item in _items():
 		var b := GameUi.button(str(item[0]), GameUi.BUTTON)
-		b.custom_minimum_size = Vector2(WIDTH - 2 * GameUi.PAD_WINDOW, 32)
+		b.custom_minimum_size = Vector2(WIDTH, 32)
 		var action: Callable = item[1]
 		b.pressed.connect(func() -> void:
 			close_current()
@@ -79,6 +84,7 @@ func _items() -> Array:
 	var items := []
 	items.append(["Xem thông tin", _view_info])
 	items.append(["Tán gẫu", _chat])
+	items.append(["Oẳn tù xì", _rps])
 	items.append(["Tổ đội", _team])
 	if (_target.flags & NetProto.FLAG_TRADE_OPEN) != 0 or GameManager.field_map.get("guild_map", false):
 		items.append(["Giao dịch", _trade])
@@ -129,6 +135,13 @@ func _chat() -> void:
 	if box:
 		box.open_whisper(_target.display_name)
 
+## Oẳn tù xì (Búa - Kéo - Bao): chỉ chơi online — server gửi hộp hỏi cho người kia (RpsServer).
+func _rps() -> void:
+	if not NetClient.is_in_world():
+		_notify("Oẳn tù xì chỉ chơi được khi online với người chơi khác.")
+		return
+	NetClient.send_rps({"op": "invite", "eid": _target.eid})
+
 func _trade() -> void:
 	var p := _profile()
 	if p == null:
@@ -178,7 +191,6 @@ func _team() -> void:
 			_notify("Đã gửi lời mời vào tổ đội tới %s." % _target.display_name)
 		else:
 			_notify("Đã mời %s vào tổ đội." % _target.display_name)
-	TeamWindow.open(_host(), hub)
 
 func _enmity() -> void:
 	var eid := _target.eid

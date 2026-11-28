@@ -262,5 +262,5 @@ static func make_field_entry(room_data: Dictionary) -> Dictionary:
 		"dir": MAP_DIR,
 		"tong_kim_lol": true,
 		"room": room_data,
-		"pk_online": bool(room_data.get("online", false))
+		"pk_online": (room_data.get("online", false) == true)
 	}

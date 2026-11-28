@@ -55,6 +55,13 @@ func get_permanent_attrib_sources() -> Array[Dictionary]:
 		if not aura_on and (skill.category != SkillDefinition.SkillCategory.PASSIVE or skill.is_aura):
 			continue
 		var learned := int(skill_levels.get(skill.id, 0))
+		if aura_on and not skill.vltk_append_skill_ids.is_empty():
+			## Hào quang tổng hợp (Bế Nguyệt Phất Trần): cộng thuộc tính của từng hào quang con đã học.
+			for part in skill.aura_parts(sect, learned, func(s: SkillDefinition) -> int: return int(skill_levels.get(s.id, 0))):
+				var ps: SkillDefinition = part["skill"]
+				if not ps.vltk_attribs.is_empty():
+					sources.append(ps.get_attribs_at_level(int(part["level"])))
+			continue
 		if learned > 0 and not skill.vltk_attribs.is_empty():
 			sources.append(skill.get_attribs_at_level(learned))
 	return sources
@@ -89,7 +96,7 @@ static func from_dict(data: Dictionary) -> CombatantBuild:
 	b.sect_id = str(data.get("sect_id", ""))
 	b.camp = int(data.get("camp", b.camp))
 	b.active_aura_id = str(data.get("active_aura_id", ""))
-	b.riding = bool(data.get("riding", true))
+	b.riding = data.get("riding", true) == true
 	var saved_equipment: Dictionary = data.get("equipment", {})
 	for part in saved_equipment:
 		b.equipment[int(part)] = ItemInstance.from_dict(saved_equipment[part])

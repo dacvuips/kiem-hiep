@@ -17,6 +17,9 @@ var possible_drops: Array[PickupData] = []
 ## _on_hit_area_body_entered). Xem CombatantStats + CombatFormulas (systems/combat/).
 var combat_stats: CombatantStats
 
+var is_boss: bool = false
+var is_elite: bool = false
+
 var health: float
 var target: Node2D
 ## Cấu hình spawn của quái này ở map hiện tại (chứa các hệ số nhân strength/vitality/level_add).
@@ -63,9 +66,13 @@ var _damage_batch_timer: float = 0.0
 var _base_sprite_scale: Vector2 = Vector2.ONE
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_mask &= ~32  ## Quái đi xuyên vật cản (obstacle layer)
 	_base_sprite_scale = sprite.scale
-	target = get_tree().get_first_node_in_group("player")
+	if not PlayerStealth.local_hidden():
+		target = get_tree().get_first_node_in_group("player")
+	else:
+		target = null
 	if not $HitArea.body_entered.is_connected(_on_hit_area_body_entered):
 		$HitArea.body_entered.connect(_on_hit_area_body_entered)
 	sprite.play("walk")
@@ -76,6 +83,8 @@ func _ready() -> void:
 func setup(entry: EnemySpawnEntry) -> void:
 	_entry = entry
 	var tier := entry.tier
+	is_boss = tier != null and ("Thủ Quan" in tier.tier_name or "Boss" in tier.tier_name)
+	is_elite = is_boss or (tier != null and "Tinh Anh" in tier.tier_name) or entry.vitality_multiplier > 1.5 or (tier != null and tier.enemy_scene != null and "Elite" in tier.enemy_scene.resource_path)
 	_build = entry.to_build()
 	camp = _build.camp
 	_accumulated_damage = 0.0
@@ -220,10 +229,11 @@ func _physics_process(delta: float) -> void:
 		if _damage_batch_timer <= 0.0:
 			_flush_damage_number()
 
-	## Player đã chết (queue_free()) — target vẫn còn tham chiếu cũ (không tự về null), truy cập
-	## target.global_position lúc này sẽ lỗi vì object đã bị giải phóng. Dừng hẳn di chuyển thay
-	## vì không còn ai để đuổi theo nữa.
-	if GameManager.is_game_over or target == null or not is_instance_valid(target) or (target.is_in_group("player") and target.get("has_moved") == false):
+	## Player đã chết (queue_free()) hoặc GM tàng hình:
+	if GameManager.is_game_over or target == null or not is_instance_valid(target) \
+			or (target.is_in_group("player") and (target.get("has_moved") == false or PlayerStealth.local_hidden())):
+		if PlayerStealth.local_hidden() and target != null and target.is_in_group("player"):
+			target = null
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_update_vltk_pose(Vector2.ZERO, delta)
@@ -233,6 +243,20 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		_update_vltk_pose(Vector2.ZERO, delta)
+		return
+	if status_controller.is_confused:
+		_atk_time = -1.0
+		if not has_meta("_randmove_dir") or float(get_meta("_randmove_timer", 0.0)) <= 0.0:
+			var angle := randf() * TAU
+			set_meta("_randmove_dir", Vector2(cos(angle), sin(angle)))
+			set_meta("_randmove_timer", randf_range(0.6, 1.2))
+		var rtimer: float = float(get_meta("_randmove_timer")) - delta
+		set_meta("_randmove_timer", rtimer)
+		var rdir: Vector2 = get_meta("_randmove_dir")
+		var conf_bonus := 1.0 + (combat_stats.move_speed_p / 100.0 if combat_stats else 0.0)
+		velocity = rdir * speed * conf_bonus * 0.75 * status_controller.move_speed_multiplier
+		move_and_slide()
+		_update_vltk_pose(velocity, delta)
 		return
 	if _vltk_sprite != null:
 		_atk_cooldown = maxf(0.0, _atk_cooldown - delta)
@@ -299,7 +323,11 @@ func _tick_vltk_attack(delta: float) -> void:
 	_vltk_sprite.set_pose(_attack_action, _vltk_dir64, clampf(_atk_time / _atk_len, 0.0, 1.0))
 	if _atk_time >= _atk_len:
 		_atk_time = -1.0
-		_atk_cooldown = _atk_len * 0.5
+		_atk_cooldown = maxf(2.0, _atk_len * 0.5)
+		## Chiêu có TimePerCast (Skills.txt, frame) thì cả vòng đánh + chờ không ngắn hơn hồi chiêu gốc.
+		if _active_skill_id > 0:
+			var tpc := float(VltkSkillData.skill(_active_skill_id, _active_skill_level).get("time_per_cast", 0)) / VltkMath.FPS
+			_atk_cooldown = maxf(_atk_cooldown, tpc - _atk_len)
 
 func _make_hit_stats(skill_id: int, skill_level: int) -> ResolvedSkillStats:
 	var stats := ResolvedSkillStats.new()
@@ -423,8 +451,11 @@ func take_damage_from(attacker_stats: CombatantStats, min_damage: int, max_damag
 	var final_damage := HitResolver.receive(self, combat_stats, int(health), attacker_stats,
 			min_damage, max_damage, damage_type, attacker_element, mods)
 	if final_damage == HitResolver.MISSED:
-		spawn_miss_number()
+		var is_monster_atk := (mods != null and mods.attacker_node != null and (CombatFormulas.is_monster(mods.attacker_node) or mods.attacker_node.is_in_group("enemies")))
+		if not is_monster_atk:
+			spawn_miss_number()
 		return
+	SkillPractice.on_monster_hit_by(mods, attacker_stats, get_tree())   ## luyện skill 90/120/150 (đòn trúng)
 	if final_damage == 0:
 		return  ## đòn chỉ mang trạng thái (bùa)
 
@@ -490,7 +521,10 @@ func _on_pool_acquire() -> void:
 	_atk_cooldown = 0.0
 	_vltk_time = 0.0
 	modulate = Color.WHITE
-	target = get_tree().get_first_node_in_group("player")
+	if not PlayerStealth.local_hidden():
+		target = get_tree().get_first_node_in_group("player")
+	else:
+		target = null
 	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if col:
 		col.set_deferred("disabled", false)
@@ -514,6 +548,7 @@ func die() -> void:
 		return
 	_is_dead = true
 	died.emit()
+	PlayerStats.add_kill(is_boss or is_elite, exp_drop)
 	_flush_damage_number()
 	_play_vltk_sound("die")
 	if _vltk_sprite != null:
@@ -525,6 +560,7 @@ func die() -> void:
 		_trigger_kill_explosion()
 	spawn_gem()
 	spawn_random_drops()
+	_try_drop_da_tau_scroll()
 	if has_meta("pool_key"):
 		ObjectPool.release(self)
 	else:
@@ -545,6 +581,24 @@ func _trigger_kill_explosion() -> void:
 					e.take_damage(base_dmg * PlayerStats.explosion_damage_ratio)
 
 func spawn_random_drops() -> void:
+	if GameManager != null and (GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)):
+		var pubg_drops: Array = []
+		if randf() <= 0.90:
+			var gold_item := DropTable.roll_sect_gold_item()
+			if gold_item != null:
+				pubg_drops.append({"type": "item", "item": gold_item})
+		if randf() <= 0.50:
+			var pot := DropTable.roll_pharmacy_item()
+			if pot != null:
+				pubg_drops.append({"type": "item", "item": pot})
+		if randf() <= 0.20:
+			var horse := DropTable.roll_horse()
+			if horse != null:
+				pubg_drops.append({"type": "item", "item": horse})
+		if not pubg_drops.is_empty():
+			GroundDrop.spawn_drops(get_parent(), global_position, pubg_drops)
+		return
+
 	if possible_drops.is_empty():
 		return
 
@@ -559,13 +613,9 @@ func spawn_random_drops() -> void:
 			return
 
 func spawn_gem() -> void:
-	var gem_exp := exp_drop
-	var gem_tex := gem_texture
-	ObjectPool.acquire_deferred(GemScene, get_parent(), global_position, func(gem):
-		gem.exp_value = gem_exp
-		if gem_tex:
-			gem.get_node("Sprite").texture = gem_tex
-	)
+	var sdm = load("res://systems/survivor/survivor_drop_manager.gd")
+	if sdm and sdm.has_method("spawn_gem_for_enemy"):
+		sdm.spawn_gem_for_enemy(self)
 
 func _accumulate_damage(amount: float) -> void:
 	if amount <= 0.0:
@@ -601,7 +651,7 @@ func _get_stage_damage_scale() -> float:
 func _deal_contact_damage(body: Node) -> void:
 	if body == null or not is_instance_valid(body):
 		return
-	if body.is_in_group("player") and body.get("has_moved") == false:
+	if body.is_in_group("player") and (body.get("has_moved") == false or (GmManager and GmManager.is_invisible)):
 		return
 	## Ưu tiên take_damage_from() (pipeline CombatFormulas đầy đủ — roll trúng/né, tương khắc Ngũ
 	## Hành, % kháng) khi target hỗ trợ (Player). Fallback take_damage() cho các body khác (VD test
@@ -621,4 +671,32 @@ func _deal_contact_damage(body: Node) -> void:
 			mods.extra_damages = combat_stats.outer_element_damage.duplicate()
 		body.take_damage_from(combat_stats, min_dmg, max_dmg, CombatFormulas.DamageType.PHYSICS, combat_stats.element, mods)
 	elif body.has_method("take_damage"):
-		body.take_damage(contact_damage * scale)
+		var amount := contact_damage * scale
+		if not CombatFormulas.is_monster(body):
+			amount = CombatFormulas.scale_monster_damage(amount)
+		body.take_damage(amount)
+
+func _try_drop_da_tau_scroll() -> void:
+	if GameManager == null:
+		return
+	var profile: PlayerProfile = GameManager.local_profile
+	if profile == null:
+		return
+	var cur_map_id: int = int(GameManager.field_map.get("id", -1))
+	if cur_map_id <= 0:
+		return
+	if DaTauManager.try_drop_scroll(profile, cur_map_id):
+		SaveManager.save_profile(profile)
+		var tree := get_tree()
+		if tree != null:
+			var players := tree.get_nodes_in_group("player")
+			if not players.is_empty() and players[0].has_method("notify"):
+				var q: Variant = DaTauManager.get_current_quest(profile)
+				if q is Dictionary:
+					var s_type: int = int(q.get("scroll_type", q.get("map_type", 1)))
+					var s_name := "Địa đồ chí" if s_type == 1 else "Mật chí"
+					var cur_n: int = q.get("done_num", 0)
+					if int(q.get("type", 0)) == 2:
+						cur_n += DaTauManager.count_bag_scrolls(profile, s_type)
+					var req_n: int = q.get("need_num", 1)
+					players[0].notify("Nhặt được %s (%d/%d)" % [s_name, cur_n, req_n])

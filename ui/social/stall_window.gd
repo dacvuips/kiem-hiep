@@ -53,6 +53,9 @@ func _init(hub: SocialHub = null) -> void:
 	_bag_view.cell = 37
 	scroll.add_child(_bag_view)
 	left[1].add_child(scroll)
+	var money := CurrencyStrip.new(func() -> PlayerProfile: return _profile, _refresh, 0.72)
+	money.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	left[1].add_child(money)
 	cols.add_child(left[0])
 
 	var right := SocialUi.section("🏷 Hàng trên quầy")
@@ -112,6 +115,9 @@ func _say(err: String, ok_text := "") -> void:
 func _on_item(item: ItemInstance) -> void:
 	if SecurityLock.is_item_locked(item):
 		_say("Món đồ đang bị khoá, không đặt giá được. (%s)" % SecurityLock.describe_item_lock(item))
+		return
+	if item.lock_trade:
+		_say("Vật phẩm khoá, không bày bán được.")
 		return
 	SocialWindow.prompt(get_tree().current_scene, "Đặt giá bán", "Giá (lượng, tối đa 2 tỷ), 0 = bỏ khỏi quầy", func(text: String) -> void:
 		var price := clampi(int(text.strip_edges()) if text.strip_edges().is_valid_int() else -1, -1, 2_000_000_000)

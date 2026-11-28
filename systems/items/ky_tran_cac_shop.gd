@@ -30,12 +30,13 @@ const ITEMS_VAT_PHAM: Array[Array] = [
 		{"id": "4_238_1", "name": "Lam Thủy Tinh", "price_original": 20, "price": 20},
 		{"id": "ky_tui_lenh_bai_datau", "name": "Túi Lệnh Bài Dã Tẩu", "price_original": 15, "price": 15},
 	],
-	# Trang 2 / 2 (4 món)
+	# Trang 2 / 2 (5 món)
 	[
 		{"id": "6_1_2309", "name": "Trống Khải Hoàn", "price_original": 10, "price": 10},
 		{"id": "6_1_122", "name": "Phúc Duyên Lộ (Tiểu)", "price_original": 2, "price": 2},
 		{"id": "6_1_123", "name": "Phúc Duyên Lộ (Trung)", "price_original": 4, "price": 4},
 		{"id": "6_1_124", "name": "Phúc Duyên Lộ (Đại)", "price_original": 8, "price": 8},
+		{"id": "ky_datau_huy", "name": "Lệnh Bài Hủy Dã Tẩu", "price_original": 1, "price": 1},
 	]
 ]
 
@@ -45,7 +46,7 @@ const ITEMS_TINH_NANG: Array[Array] = [
 	[
 		{"id": "6_1_1427", "name": "Tử Mẫu Lệnh", "price_original": 10, "price": 10},
 		{"id": "6_1_72", "name": "Thiên sơn Bảo Lộ", "price_original": 2, "price": 2},
-		{"id": "6_1_438", "name": "Thổ địa phù (sử dụng vô hạn)", "price_original": 20, "price": 20},
+		{"id": "6_1_438", "name": "Thổ địa phù (x2000)", "price_original": 20, "price": 20},
 		{"id": "6_1_2424", "name": "Đại Thành Bí Kíp 90", "price_original": 100, "price": 100},
 		{"id": "6_1_1375", "name": "Thư đặc xá triều đình", "price_original": 5, "price": 5},
 		{"id": "6_1_1266", "name": "Thần Hành Phù", "price_original": 20, "price": 20},
@@ -72,7 +73,7 @@ const ITEMS_TINH_NANG: Array[Array] = [
 		{"id": "6_1_18009", "name": "Bí Kíp 180 - Chân Võ Thất Tiết", "price_original": 50, "price": 50},
 		{"id": "6_1_18010", "name": "Bí Kíp 180 - Thiên Cương Khí Kính", "price_original": 50, "price": 50},
 		{"id": "6_1_18011", "name": "Bí Kíp 180 - Độc Cô Cửu Kiếm", "price_original": 50, "price": 50},
-		{"id": "6_1_18012", "name": "Bí Kíp 180 - Trừ Gian Diệt Nịnh", "price_original": 50, "price": 50},
+		{"id": "6_1_18012", "name": "Bí Kíp 180 - Tận Trung Báo Quốc", "price_original": 50, "price": 50},
 		{"id": "6_1_18013", "name": "Bí Kíp 180 - Thập Bộ Nhất Sát", "price_original": 50, "price": 50},
 		{"id": "6_1_18014", "name": "Bí Kíp 180 - Bôn Lang Thương", "price_original": 50, "price": 50},
 		{"id": "6_1_18015", "name": "Bí Kíp 180 - Lôi Đình Nhất Kích", "price_original": 50, "price": 50},

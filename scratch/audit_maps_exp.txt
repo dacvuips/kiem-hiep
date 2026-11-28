@@ -1,0 +1,124 @@
+
+==================== CẤP 10 (5 maps) ====================
+[  20] Giang Tân Thôn                   | Kim Miêu (Lv10: 90 exp), Hươu đốm (Lv10: 90 exp), Heo trắng (Lv10: 90 exp), Mộc nhân (Lv1: 1 exp), Bao cát (Lv1: 1 exp), Cọc gỗ (Lv1: 1 exp)
+[  53] Ba Lăng Huyện                    | Kim Miêu (Lv10: 90 exp), Hươu đốm (Lv10: 90 exp), Heo trắng (Lv10: 90 exp), Mộc nhân (Lv1: 1 exp), Bao cát (Lv1: 1 exp), Cọc gỗ (Lv1: 1 exp)
+[  54] Nam Nhạc Trấn                    | Kim Miêu (Lv10: 90 exp), Hươu đốm (Lv10: 90 exp), Heo trắng (Lv10: 90 exp)
+[ 121] Long Môn Trấn                    | Kim Miêu (Lv10: 90 exp), Hươu đốm (Lv10: 90 exp), Heo trắng (Lv10: 90 exp), Mộc nhân (Lv1: 1 exp), Bao cát (Lv1: 1 exp), Cọc gỗ (Lv1: 1 exp)
+[  37] Biện Kinh                        | KHÔNG CÓ QUÁI
+
+==================== CẤP 20 (4 maps) ====================
+[   2] Hoa Sơn                          | Heo rừng (Lv20: 170 exp), Nhím (Lv20: 170 exp)
+[  11] Thành Đô                         | Heo rừng (Lv20: 170 exp), Hoán hùng (Lv20: 170 exp), Linh Miêu (Lv20: 170 exp), Nhím (Lv20: 170 exp)
+[ 162] Đại Lý phủ                       | Heo rừng (Lv20: 170 exp), Hoán hùng (Lv20: 170 exp), Linh Miêu (Lv20: 170 exp), Nhím (Lv20: 170 exp)
+[ 176] Lâm An                           | Heo rừng (Lv20: 170 exp), Hoán hùng (Lv20: 170 exp), Linh Miêu (Lv20: 170 exp), Nhím (Lv20: 170 exp)
+
+==================== CẤP 30 (3 maps) ====================
+[  21] Thanh Thành sơn                  | Kim Điêu (Lv30: 290 exp), Thương ưng (Lv30: 290 exp), Kền Kền (Lv30: 290 exp)
+[  70] Vũ Lăng Sơn                      | Hỏa Hồ (Lv30: 290 exp), Thương ưng (Lv30: 290 exp), Kền Kền (Lv30: 290 exp)
+[ 140] Dược Vương Cốc                   | Linh Miêu (Lv30: 290 exp), Kim Tơ Hầu (Lv30: 290 exp), Hươu đốm (Lv30: 290 exp)
+
+==================== CẤP 40 (2 maps) ====================
+[  90] Đông Phục Ngưu Sơn               | Sói xanh (Lv40: 410 exp), Sói tuyết (Lv40: 410 exp), Hỏa Hồ (Lv40: 410 exp)
+[  92] Thục Cương Sơn                   | Trâu rừng (Lv40: 410 exp), Khỉ xám (Lv40: 410 exp), Hắc Diệp Hầu (Lv40: 410 exp)
+
+==================== CẤP 50 (2 maps) ====================
+[  41] Tây Phục Ngưu Sơn                | Sói xanh (Lv50: 795 exp), Sói tuyết (Lv50: 795 exp), Hỏa Hồ (Lv50: 795 exp)
+[ 122] Hoàng Hà Nguyên Đầu              | Bạch Hổ (Lv50: 795 exp), Báo trắng (Lv50: 795 exp), Kền Kền (Lv50: 795 exp)
+
+==================== CẤP 55 (10 maps) ====================
+[  24] Hưởng Thủy Động                  | sơn tặc 07 (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp)
+[  38] Thiết Tháp Tầng 1                | Hắc Diệp Hầu (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp)
+[  39] Thiết Tháp Tầng 2                | Kim Tiền báo (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp)
+[  40] Thiết Tháp Tầng 3                | sơn tặc 07 (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp)
+[  42] Thiên Tâm Động                   | Hắc Diệp Hầu (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp)
+[  66] Đáy Động Đình Hồ tầng 1          | sơn tặc 06 (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp)
+[ 116] Tường Vân Động Tầng 1            | Hắc Diệp Hầu (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp)
+[ 132] Băng Huyệt Mê Cung               | Kim Tiền báo (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp)
+[ 182] Mê Cung Nghiệt Long Động         | Kim Hoàn Mãng Xà (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp), Hoa Nam hổ (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp)
+[ 194] Mê Cung Ngọc Hoa Động            | Hoa Nam hổ (Lv55: 937 exp), Hắc Diệp Hầu (Lv55: 937 exp), Kim Hoàn Mãng Xà (Lv55: 937 exp), Kim Tiền báo (Lv55: 937 exp), sơn tặc 07 (Lv55: 937 exp), sơn tặc 06 (Lv55: 937 exp)
+
+==================== CẤP 60 (3 maps) ====================
+[   8] Tần Lăng tầng 1                  | Son Tac Dau Linh1 Truong Bach B (Lv60: 1800 exp), Son Tac Dau Linh 2 (Lv60: 975 exp), Dong Nhan (Lv60: 975 exp), Nu Thich Khach (Lv60: 975 exp), Quai Nhan (Lv60: 975 exp), Kim Pho Tuong 2 Truong Bach Nam (Lv60: 2000 exp), Tong Dao Binh 1 Truong Bach Bac (Lv60: 1500 exp)
+[ 125] Lưu Tiên Động Tầng 1             | Đoạt Mệnh Liêm (Lv60: 975 exp), Thiết Trảo (Lv60: 975 exp), Đoản Kích (Lv60: 975 exp)
+[ 163] ác Bá Địa Đạo                    | Quái nhân (Lv60: 975 exp), ác bá (Lv60: 0 exp), Bát Bì (Lv60: 0 exp)
+
+==================== CẤP 65 (6 maps) ====================
+[  79] Mật Đạo Nha Môn Tương Dương      | Kim Tơ Hầu (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp), Báo trắng (Lv65: 1117 exp), Đao khách (Lv65: 1117 exp), Bạch Hổ (Lv65: 1117 exp)
+[ 114] 108 La Hán Trận                  | Đao khách (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp), Báo trắng (Lv65: 1117 exp), Kim Tơ Hầu (Lv65: 1117 exp), Bạch Hổ (Lv65: 1117 exp)
+[ 117] Tường Vân Động Tầng 2            | Đao khách (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp), Kim Tơ Hầu (Lv65: 1117 exp), Báo trắng (Lv65: 1117 exp), Bạch Hổ (Lv65: 1117 exp)
+[ 118] Tường Vân Động Tầng 3            | Đao khách (Lv65: 1117 exp), Kim Tơ Hầu (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp)
+[ 119] Tường Vân Động Tầng 4            | Báo trắng (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp), Kim Tơ Hầu (Lv65: 1117 exp), Đao khách (Lv65: 1117 exp)
+[ 196] Dương Giác Động                  | Đao khách (Lv65: 1117 exp), Thiết Trảo (Lv65: 1117 exp), Báo trắng (Lv65: 1117 exp), Bạch Hổ (Lv65: 1117 exp), Kim Tơ Hầu (Lv65: 1117 exp)
+
+==================== CẤP 70 (4 maps) ====================
+[   9] Trường Gian Nguyên Đầu           | ác Ni (Lv70: 1155 exp)
+[  56] Hành Sơn                         | Kim Điêu (Lv70: 1155 exp), Thứu thần (Lv70: 470 exp), Kền Kền (Lv70: 1155 exp)
+[ 164] Thiên Tâm tháp tầng 1            | Dong Nhan (Lv70: 1155 exp), Kim Pho Tuong 2 Truong Bach Nam (Lv70: 2000 exp), Nu Thich Khach (Lv70: 1155 exp), Quai Nhan (Lv70: 1155 exp), Son Tac Dau Linh1 Truong Bach B (Lv70: 1800 exp), Son Tac Dau Linh 2 (Lv70: 1155 exp), Tong Dao Binh 1 Truong Bach Bac (Lv70: 1500 exp)
+[ 165] Thiên Tâm tháp tầng 2            | Kim Pho Tuong 2 Truong Bach Nam (Lv70: 2000 exp), Son Tac Dau Linh 2 (Lv70: 1155 exp), Dong Nhan (Lv70: 1155 exp), Son Tac Dau Linh1 Truong Bach B (Lv70: 1800 exp), Nu Thich Khach (Lv70: 1155 exp), Quai Nhan (Lv70: 1155 exp), Tong Dao Binh 1 Truong Bach Bac (Lv70: 1500 exp)
+
+==================== CẤP 75 (8 maps) ====================
+[  55] Đào Hoa Nguyên                   | Lưu Lương (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp), Trường Thương (Lv75: 1237 exp), Đại Tượng (Lv75: 1237 exp), Xích Luyện Xà (Lv75: 1237 exp)
+[  72] Mê Cung Đại Tù Động              | Lưu Lương (Lv75: 1237 exp), Trường Thương (Lv75: 1237 exp), Xích Luyện Xà (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp)
+[  76] Sơn Bảo Động                     | Lưu Lương (Lv75: 1237 exp), Trường Thương (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp), Đại Tượng (Lv75: 1237 exp)
+[  94] Linh Cốc Động                    | Đại Tượng (Lv75: 1237 exp), Trường Thương (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp), Lưu Lương (Lv75: 1237 exp), Xích Luyện Xà (Lv75: 1237 exp)
+[ 120] Tường Vân Động Tầng 5            | Lưu Lương (Lv75: 1237 exp), Xích Luyện Xà (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp), Đại Tượng (Lv75: 1237 exp)
+[ 142] Dược Vương Động Tầng 2           | Lưu Lương (Lv75: 1237 exp), Xích Luyện Xà (Lv75: 1237 exp), Trường Thương (Lv75: 1237 exp), Đại Tượng (Lv75: 1237 exp)
+[ 166] Thiên Tâm tháp tầng 3            | Son Tac Dau Linh1 Truong Bach B (Lv75: 1800 exp), Quai Nhan (Lv75: 1237 exp), Nu Thich Khach (Lv75: 1237 exp), Son Tac Dau Linh 2 (Lv75: 1237 exp), Kim Pho Tuong 2 Truong Bach Nam (Lv75: 2000 exp), Tong Dao Binh 1 Truong Bach Bac (Lv75: 1500 exp)
+[ 169] Long Nhãn Động                   | Trường Thương (Lv75: 1237 exp), Đoản Kích (Lv75: 1237 exp), Lưu Lương (Lv75: 1237 exp), Đại Tượng (Lv75: 1237 exp)
+
+==================== CẤP 80 (5 maps) ====================
+[ 123] Lão Hổ Động                      | Khoái Thối (Lv80: 1275 exp), Trường Thương (Lv80: 1275 exp), Thanh Mi (Lv80: 1275 exp)
+[ 206] Tần Lăng tầng 2                  | Kim Pho Tuong 2 Truong Bach Nam (Lv80: 2000 exp), Quai Nhan (Lv80: 1275 exp), Dong Nhan (Lv80: 1275 exp), Son Tac Dau Linh 2 (Lv80: 1275 exp), Tong Dao Binh 1 Truong Bach Bac (Lv80: 1500 exp), Nu Thich Khach (Lv80: 1275 exp), Son Tac Dau Linh1 Truong Bach B (Lv80: 1800 exp)
+[ 319] Lâm Du Quan                      | Bôn Lôi (Lv80: 1200 exp), Ngân Nha (Lv80: 1300 exp)
+[1037] Khu Chuẩn Bị Linh Lung Tháp      | KHÔNG CÓ QUÁI
+[1038] Linh Lung Tháp                   | KHÔNG CÓ QUÁI
+
+==================== CẤP 85 (12 maps) ====================
+[  10] Nhạn Thạch Động                  | Mãng Hán (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp)
+[ 143] Dược Vương Động Tầng 3           | ảnh Côn (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp)
+[ 181] Mê Cung Lưỡng Thủy Động          | Hắc Cân (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 198] Thanh khê Động                   | Mãng Hán (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp)
+[ 199] Vũ Lăng Động                     | Hắc Cân (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 200] Cổ Dương Động                    | ảnh Côn (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp)
+[ 201] Mê Cung Băng Hà Động             | Voi Hoàng hà (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 202] Mê Cung Phù Dung Động            | Mãng Hán (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp)
+[ 203] Vô Danh Động                     | Hắc Cân (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 204] Phi Thiên Động                   | Thanh Mi (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp), ảnh Côn (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 205] Mê Cung Dương Trung Động         | ảnh Côn (Lv85: 1387 exp), Hắc Cân (Lv85: 1387 exp), Thanh Mi (Lv85: 1387 exp), Voi Hoàng hà (Lv85: 1387 exp), Mãng Hán (Lv85: 1387 exp)
+[ 207] Tần Lăng tầng 3                  | Son Tac Dau Linh 2 (Lv85: 1387 exp), Kim Pho Tuong 2 Truong Bach Nam (Lv85: 2000 exp), Nu Thich Khach (Lv85: 1387 exp), Dong Nhan (Lv85: 1387 exp), Son Tac Dau Linh1 Truong Bach B (Lv85: 1800 exp), Quai Nhan (Lv85: 1387 exp)
+
+==================== CẤP 90 (3 maps) ====================
+[ 144] Dược Vương Động tầng 4           | Giang Nam Son Tac Dau Linh (Lv90: 1425 exp), Trung Nguyen Son Tac Dau Linh (Lv90: 1425 exp), Tay Bac Son Tac Dau Linh (Lv90: 1425 exp), Tay Nam Son Tac Dau Linh (Lv90: 1425 exp), Hoa Bac Son Tac Dau Linh (Lv90: 1425 exp), Dong Bac Son Tac Dau Linh (Lv90: 1425 exp), Nam Bo Son Tac Dau Linh (Lv90: 1425 exp)
+[ 224] Sa Mạc Địa Biểu                  | Xích Luyện Xà (Lv90: 1425 exp), Kên đất (Lv90: 1425 exp), Bọ cạp (Lv90: 1425 exp)
+[ 320] Chân Núi Trường Bạch             | Đông Bắc hổ (Lv90: 1350 exp), Độc Bộ (Lv90: 1350 exp), Xích Chưởng (Lv90: 1400 exp), Tuyết ảnh (Lv90: 1400 exp)
+
+==================== CẤP 95 (1 maps) ====================
+[ 337] Thuyền Phong Lăng Độ             | KHÔNG CÓ QUÁI
+
+==================== CẤP 100 (11 maps) ====================
+[  75] Xi Vưu Động                      | Hắc Cân (Lv100: 1575 exp), ảnh Côn (Lv100: 1575 exp)
+[  93] Tiến Cúc Động                    | Đoạt Mệnh Liêm (Lv100: 0 exp), Đao khách (Lv100: 1575 exp), Báo đốm (Lv100: 1575 exp)
+[ 124] Hiên Viên Động                   | Đại Tượng (Lv100: 1575 exp), Voi Hoàng hà (Lv100: 1575 exp)
+[ 225] Sa Mạc 1                         | Lưu Vân (Lv100: 1575 exp), Lưu Quang (Lv100: 1575 exp), Lưu Phong (Lv100: 1 exp)
+[ 226] Sa Mạc 2                         | Lưu Vân (Lv100: 1575 exp), Lưu Quang (Lv100: 1575 exp), Lưu Phong (Lv100: 1 exp)
+[ 227] Sa Mạc 3                         | Tật Vũ (Lv100: 1575 exp), Tật Phong (Lv100: 1575 exp), Tật Vũ (Lv100: 1575 exp), Tật Viêm (Lv100: 1575 exp), Tật Điện (Lv100: 1575 exp)
+[ 321] Trường Bạch Sơn Nam 1            | Sương Đao (Lv100: 2000 exp), Lãnh Cung (Lv100: 1500 exp), Giáng Chùy (Lv100: 1500 exp), Sãn Vũ (Lv100: 1500 exp)
+[ 322] Trường Bạch Sơn Bắc 1            | Đao Trảm (Lv100: 1800 exp), Lạc Quang (Lv100: 1500 exp), Hàn Thương (Lv100: 1500 exp), Đoạt Phách (Lv100: 1500 exp)
+[ 336] Phong Lăng Độ                    | Thần Tý (Lv100: 1400 exp), Lãnh Thương (Lv100: 1400 exp)
+[ 340] Mạc Cao Quật (1)                 | Phi Sa (Lv100: 1500 exp), Tẩu Thạch (Lv100: 1500 exp), Sa Đạo (Lv100: 2000 exp), Mạc Tặc (Lv100: 1800 exp)
+[ 480] Thách Thức Ải 28                 | KHÔNG CÓ QUÁI
+
+==================== CẤP 110 (6 maps) ====================
+[  75] Xi Vưu Động (11x)                | Lam Y Y (Lv110: 0 exp)
+[  93] Tiến Cúc Động (11x)              | Chung Linh Tú (Lv110: 0 exp)
+[ 124] Hiên Viên Động (11x)             | Đoan Mộc Duệ (Lv110: 0 exp)
+[ 225] Sa Mạc Sơn Động 1 (11x)          | Lam Y Y (Lv110: 0 exp)
+[ 226] Sa Mạc Sơn Động 2 (11x)          | Hà Nhân Ngã (Lv110: 0 exp)
+[ 227] Sa Mạc Sơn Động 3 (11x)          | Gia Luật Tị Ly (Lv110: 0 exp)
+
+==================== CẤP 120 (5 maps) ====================
+[ 321] Trường Bạch Sơn Nam (12x)        | Đạo Thanh Chân Nhân (Lv120: 0 exp)
+[ 322] Trường Bạch Sơn Bắc (12x)        | Hà Linh Phiêu (Lv120: 0 exp)
+[ 336] Phong Lăng Độ (12x)              | Thủy Tặc Đầu Lĩnh (Lv120: 0 exp)
+[ 340] Mạc Cao Quật (12x)               | Hoàn Nhan Tuyết Y (Lv120: 800000 exp)
+[1041] Nguyệt Ca Đảo (12x)              | Giới Luật Viện Thủ Tọa Trường Bạch Nam (Lv120: 1500 exp), Tống Đao Binh 1 Trường Bạch Bắc (Lv120: 1500 exp), Sơn Tặc Đầu Lĩnh1 Trường Bạch Bắc (Lv120: 1800 exp), Kim Cung Binh 2 Trường Bạch Nam (Lv120: 1500 exp), Tống Phó Tướng 1 Trường Bạch Bắc (Lv120: 1500 exp), Kim Phó Tướng 2 Trường Bạch Nam (Lv120: 2000 exp), Địa Hộ Pháp Trường Bạch Nam (Lv120: 1500 exp), Kim Thương Quân 2 Trường Bạch Bắc (Lv120: 1500 exp), Nguyệt Ca Đảo Chủ (Giai đoạn 1) (Lv120: 0 exp)

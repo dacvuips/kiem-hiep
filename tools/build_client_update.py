@@ -27,6 +27,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "server" / "client"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import launcher_settings  # noqa: E402
 
 # (tên gói, preset, thư mục nguồn). Gói đầu là core = main pack; thứ tự còn lại = thứ tự ContentPacks nạp.
 PACKS: list[tuple[str, str, list[str]]] = [
@@ -143,6 +145,9 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--min-launcher", type=int, help="LAUNCHER_VERSION tối thiểu (launcher cũ hơn -> báo tải APK mới)")
     ap.add_argument("--apk-url", help="link tải APK mới, hiện khi launcher quá cũ")
+    ap.add_argument("--force-update", action="store_true",
+                    help="bắt buộc mọi người dùng bản này ngay (đổi giao thức mạng/server...). Mặc định bản mới tải ngầm, "
+                         "dùng ở lần mở app sau")
     ap.add_argument("--clean-old", action="store_true", help="Xoá toàn bộ gói cũ không thuộc manifest mới nhất (mặc định giữ lại 1 bản trước)")
     ap.add_argument("--files-base", help="để gói trên CDN: https://cdn.../client/ (mặc định server tài khoản)")
     args = ap.parse_args()
@@ -155,7 +160,7 @@ def main() -> None:
     force = {s.strip() for s in args.force.split(",") if s.strip()}
     only = {s.strip() for s in args.only.split(",") if s.strip()}
 
-    for proj in (ROOT / "project.godot", ROOT / "launcher" / "project.godot"):
+    for proj in (ROOT / "project.godot",):
         m = re.search(r'(?m)^network/account_url="([^"]*)"', proj.read_text(encoding="utf-8"))
         url = m.group(1) if m else ""
         if not url.startswith("https://"):
@@ -184,6 +189,12 @@ def main() -> None:
 
     for name, _, _, changed in plan:
         print(f"  {'XUẤT LẠI' if changed else 'giữ nguyên'}: {name}")
+    settings_hash = launcher_settings.settings_hash()
+    if old.get("settings_hash") and old.get("settings_hash") != settings_hash:
+        print(f"CHÚ Ý: settings_hash đổi {old.get('settings_hash')} -> {settings_hash}: phải build + phát APK mới "
+              f"(tools/build_launcher_apk.py --publish) TRƯỚC, nếu không người chơi sẽ bị báo cần cài bản mới.")
+    else:
+        print(f"settings_hash = {settings_hash}")
     if args.dry_run:
         return
 
@@ -209,15 +220,25 @@ def main() -> None:
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    changed_any = [p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
+    changed_any = ([p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
+                   or old.get("settings_hash") != settings_hash)
+    version = int(old.get("version", 0)) + (1 if changed_any else 0)
     manifest = {
-        "version": int(old.get("version", 0)) + (1 if changed_any else 0),
+        "version": version,
+        # Bản đã cài nhỏ hơn số này -> launcher bắt tải bản mới trước khi vào game (không cho chơi bản cũ).
+        "min_version": version if args.force_update else int(old.get("min_version", 0)),
         "build": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
                  if changed_any else old.get("build", ""),
         "engine": engine,
         "min_launcher": args.min_launcher if args.min_launcher is not None else int(old.get("min_launcher", 1)),
         "apk_url": args.apk_url if args.apk_url is not None else old.get("apk_url", ""),
         "files_base": args.files_base if args.files_base is not None else old.get("files_base", ""),
+        # Cài đặt mà engine chỉ đọc từ APK lúc mở app (project.godot, autoload, theme...). Launcher mỏng có mã khác
+        # -> báo tải APK mới thay vì chạy core lệch. Đổi mã này = PHẢI phát APK (tools/build_launcher_apk.py) trước.
+        "settings_hash": settings_hash,
+        # Core này (WebContentManager) biết tải ngầm bản sau mà không nạp. Bản đã cài không có dấu này -> launcher tải
+        # bản mới ngay thay vì chạy bản cũ mãi.
+        "bg_update": 1,
         "packs": packs,
     }
     tmp_manifest = manifest_path.with_suffix(".json.tmp")

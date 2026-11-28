@@ -6,10 +6,11 @@ class_name DropTable
 ## Mỗi lần quái thường chết (không phải boss xanh): nSel = ngẫu_nhiên(0..15)
 ##   nSel > 6          : không rớt gì
 ##   nSel < 2          : rớt TIỀN (cấp 0x-6x) / nSel == 2 (cấp 7x-10x)
-##   nSel == 5         : 50% rớt vật phẩm tiêu hao (thần bí lộ chí / thịt tươi — CHƯA có trong game, bỏ qua)
+##   nSel == 5         : 50% rớt Thần bí đồ chí / Địa đồ chí (6_1_206; cấp 0x-1x: 25% do RANDOMC(205, 391))
 ##   nSel == 4         : 1/30 rớt TRANG BỊ XANH (số dòng magic ngẫu nhiên theo cấp)
+##   Mật đồ thần bí (6_1_196): rớt theo bảng npcdroprate*.ini gốc (10: 2000/330000, 20-90: 2000/1000000, 110+: 3500/2000000).
 ## Cấp của bảng (0x..10x) chọn theo cấp quái / 10. CHÚ Ý: script gốc gắn bảng cho từng quái qua SetNpcDropScript trong script
-## map — chưa nhập — nên đây là SUY RA từ cấp quái, không phải dữ liệu gốc. Boss xanh (rớt 5 lần) chưa làm.
+## map — chưa nhập — nên đây là SUY RA từ cấp quái, không phải dữ liệu gốc.
 
 ## [tiền_min, tiền_max, cấp_đồ_min, cấp_đồ_max, may_mắn, dòng_magic_min, dòng_magic_max, nSel_rớt_tiền (<, hoặc == khi >= 7x)]
 const TIERS := [
@@ -37,6 +38,10 @@ const BOSS_LINES := [[1, 2], [0, 0], [2, 3], [2, 3], [2, 3], [2, 4], [2, 4], [2,
 const BOSS_DROPS := 5                 ## dropnum: boss xanh rớt 5 lần
 const BLUE_BOSS_CHANCE := 0.005       ## 0,5% mỗi lần quái sinh / sinh lại (gốc: RANDOM(150) < 2, chú thích "xác suất 2%" — giảm theo yêu cầu)
 const BLUE_ITEM_ONE_IN := 30
+## Mã vật phẩm Dã Tẩu / Mật đồ trong misc_items.json (magicscript.txt gốc):
+const MISC_MAT_DO := "6_1_196"        ## Mật đồ thần bí
+const MISC_DIA_DO_CHI := "6_1_206"    ## Thần bí đồ chí (Địa đồ chí — tasklink_goods.lua)
+const MISC_MAT_CHI := "6_1_213"       ## Thần Bí Lộ Chí (Mật chí / Địa chí — tasklink_goods_secret.lua)
 ## Hệ số (1.0 = đúng server gốc) — game server online đặt theo "Thông số game" ở web Admin (set_rates, qua nhịp tim):
 ##   item_rate_mult: tỉ lệ rơi trang bị xanh ×N (gốc 1/30 khi nSel == 4 -> N/30); money_rate_mult: SỐ TIỀN rơi ra ×N (tần suất giữ nguyên).
 static var item_rate_mult := 1.0
@@ -59,14 +64,86 @@ static func _item_chance(base: float) -> bool:
 static func tier_of(monster_level: int) -> int:
 	return clampi(monster_level / 10, 0, 10)
 
+static func _try_append_misc(out: Array, misc_id: String, chance: float) -> void:
+	if chance <= 0.0 or randf() >= chance:
+		return
+	var item := ItemGenerator.generate_misc(misc_id, 1, 0, 1)
+	if item != null:
+		out.append({"type": "item", "item": item})
+
+static func _mat_do_rate_for_tier(tier: int) -> float:
+	if tier <= 1:
+		return 2000.0 / 330000.0   ## npcdroprate10.ini (~0.606%)
+	if tier <= 9:
+		return 2000.0 / 1000000.0  ## npcdroprate20..90.ini (0.200%)
+	return 3500.0 / 2000000.0      ## npcdroprate110..119.ini (0.175%)
+
+## Sinh ngẫu nhiên 1 món trang bị Hoàng Kim Môn Phái
+static func roll_sect_gold_item() -> ItemInstance:
+	var indices := ItemDatabase.get_sect_gold_indices()
+	if indices.is_empty():
+		var total := ItemDatabase.get_gold_count()
+		if total <= 0:
+			return null
+		return ItemGenerator.generate_gold_random(randi() % total)
+	var g_idx: int = indices[randi() % indices.size()]
+	return ItemGenerator.generate_gold_random(g_idx)
+
+## Đồ Hoàng Kim THƯỜNG (không thuộc bộ Hoàng Kim Môn Phái) — Lộn Xộn tách 2 loại này ra 2 tỉ lệ riêng.
+static var _normal_gold_cache: Array[int] = []
+
+static func roll_normal_gold_item() -> ItemInstance:
+	if _normal_gold_cache.is_empty():
+		var sect := {}
+		for i in ItemDatabase.get_sect_gold_indices():
+			sect[i] = true
+		for i in ItemDatabase.get_gold_count():
+			if not sect.has(i):
+				_normal_gold_cache.append(i)
+	if _normal_gold_cache.is_empty():
+		return roll_sect_gold_item()
+	return ItemGenerator.generate_gold_random(_normal_gold_cache[randi() % _normal_gold_cache.size()])
+
+## 1 món trang bị xanh theo cấp nhân vật (bảng cấp 0x..10x như quái cùng cấp). series < 0 = ngũ hành ngẫu nhiên.
+static func roll_blue_for_level(level: int, series: int = -1) -> ItemInstance:
+	var s := series if series >= 0 else randi_range(0, 4)
+	return _roll_blue_item(TIERS[tier_of(level)], s)
+
+## Sinh ngẫu nhiên 1 con ngựa
+static func roll_horse(series: int = -1) -> ItemInstance:
+	var indices := ItemDatabase.get_horse_base_indices()
+	if indices.is_empty():
+		return null
+	var base_idx: int = indices[randi() % indices.size()]
+	var eq_rec: Dictionary = ItemDatabase.get_base(base_idx)
+	if eq_rec.is_empty():
+		return null
+	var detail := int(eq_rec.get("detail", ItemDatabase.Detail.HORSE))
+	var particular := int(eq_rec.get("particular", 0))
+	var level := int(eq_rec.get("level", 1))
+	var s := series if series >= 0 else randi_range(0, 4)
+	return ItemGenerator.generate(detail, particular, level, s, [])
+
+## Sinh ngẫu nhiên 1 vật phẩm trong Hiệu Thuốc (dược phẩm, thổ địa phù)
+static func roll_pharmacy_item() -> ItemInstance:
+	var shop_items := PotionShop.items()
+	if shop_items.is_empty():
+		return null
+	var mid: String = shop_items[randi() % shop_items.size()]
+	return ItemGenerator.generate_misc(mid)
+
 ## Kết quả: mảng [{"type": "money", "amount": int} | {"type": "item", "item": ItemInstance}]. Rỗng = không rớt gì.
+## Bảng gốc cho MỌI map / chế độ thường. Đồ Hoàng Kim / thuốc / ngựa chỉ rơi ở Lộn Xộn (LonXonRules.roll_drops)
+## và PUBG Chiến Trường Sinh Tồn (PubgServer.roll_drops / VltkMonster offline) — KHÔNG thêm vào đây.
 static func roll(monster_level: int, series: int, extra_luck: int = 0) -> Array:
-	var t: Array = TIERS[tier_of(monster_level)]
+	var tier := tier_of(monster_level)
+	var t: Array = TIERS[tier]
 	var out: Array = []
+	_try_append_misc(out, MISC_MAT_DO, _mat_do_rate_for_tier(tier))   ## Mật đồ thần bí: bảng npcdroprate*.ini, độc lập nSel
 	var sel := randi_range(0, 15)
 	if sel > 6:
 		return out
-	var money_hit := (sel == 2) if tier_of(monster_level) >= 7 else (sel < 2)
+	var money_hit := (sel == 2) if tier >= 7 else (sel < 2)
 	if money_hit:
 		out.append({"type": "money", "amount": _money(t)})
 	elif sel == 4:
@@ -75,10 +152,12 @@ static func roll(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 			var item := _roll_blue_item(t, series, -1, extra_luck)
 			if item != null:
 				out.append({"type": "item", "item": item})
+	elif sel == 5:
+		_try_append_misc(out, MISC_DIA_DO_CHI, 0.25 if tier <= 1 else (1.0 if tier == 9 else 0.50))
 	return out
 
 ## Boss xanh rớt 5 lần (dropnum): mỗi lần nSel = ngẫu_nhiên(0..20) (cấp 6x+: 0..50) — nSel < 5 (6x+: > 40) rớt TIỀN; nSel > 5 rớt
-## 1 TRANG BỊ XANH nhiều dòng magic; nSel == 8 là mật chí (6x+: thêm 9 bí kíp, 10 chìa khoá nhiệm vụ) — không có trong game -> bỏ qua.
+## 1 TRANG BỊ XANH nhiều dòng magic; nSel == 8 là Mật chí (6_1_213); (6x+: 9 bí kíp, 10 chìa khoá nhiệm vụ — không có trong game -> bỏ qua).
 static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0) -> Array:
 	var tier := tier_of(monster_level)
 	var t: Array = TIERS[tier]
@@ -88,8 +167,10 @@ static func roll_blue_boss(monster_level: int, series: int, extra_luck: int = 0)
 		var money := sel > 40 if tier >= 6 else sel < 5
 		if money:
 			out.append({"type": "money", "amount": _money(t)})
-		elif sel == 8 or sel <= 5 or (tier >= 6 and sel in [9, 10]):
-			continue   ## 8 = mật chí; (6x+) 9 = bí kíp, 10 = chìa khoá nhiệm vụ — không có trong game
+		elif sel == 8:
+			_try_append_misc(out, MISC_MAT_CHI, 1.0)
+		elif sel <= 5 or (tier >= 6 and sel in [9, 10]):
+			continue   ## (6x+) 9 = bí kíp, 10 = chìa khoá nhiệm vụ — không có trong game
 		else:
 			var lines: Array = BOSS_LINES[tier]
 			var item := _roll_blue_item(t, series, randi_range(lines[0], lines[1]), extra_luck)
@@ -224,8 +305,11 @@ static func roll_killer_boss(monster_level: int, series: int) -> Array:
 ## ĐỊA NGỤC (map 11x / 12x của Vượt Ải, độ khó `stars` 1-5): như bảng 10x nhưng
 ##   - tỉ lệ rơi TRANG BỊ XANH nhân `stars` lần (boss xanh: số lần rơi nhân `stars`);
 ##   - cấp đồ: 10x = cấp 8-10 (như bảng 10x), 11x = cấp 9-10, 12x = cấp 10;
-##   - mỗi món có stars/5 cơ hội ĐỦ dòng magic (5 sao = 100% đủ dòng); thuộc tính từng dòng vẫn ngẫu nhiên.
+##   - quái thường: mỗi con có HELL_FULL_LINE_CHANCE (20%, mọi số sao) rơi 1 món ĐỦ 6 dòng magic; đồ xanh thường khác không đủ dòng;
+##   - boss xanh: mỗi món có stars/5 cơ hội ĐỦ dòng magic; thuộc tính từng dòng vẫn ngẫu nhiên.
 ## Đây là THIẾT KẾ của game này (gốc không có map Địa Ngục).
+const HELL_FULL_LINE_CHANCE := 0.20
+
 static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := false) -> Array:
 	stars = clampi(stars, 1, 5)
 	var t: Array = (TIERS[10] as Array).duplicate()
@@ -235,20 +319,29 @@ static func roll_hell(monster_level: int, series: int, stars: int, blue_boss := 
 		for i in BOSS_DROPS * stars:
 			if randf() < 0.3:
 				out.append({"type": "money", "amount": _money(t, stars)})
+			elif randf() < (1.0 / 51.0):
+				_try_append_misc(out, MISC_MAT_CHI, 1.0)
 			elif randf() < 0.6:
 				var item := _roll_blue_item(t, series, _hell_lines(stars, BOSS_LINES[10]))
 				if item != null:
 					out.append({"type": "item", "item": item})
 		return out
+	_try_append_misc(out, MISC_MAT_DO, _mat_do_rate_for_tier(10))
+	if randf() < HELL_FULL_LINE_CHANCE:
+		var full_item := _roll_blue_item(t, series, ItemInstance.MAX_MAGIC)
+		if full_item != null:
+			out.append({"type": "item", "item": full_item})
 	var sel := randi_range(0, 15)
 	if sel > 6:
 		return out
 	if sel == 2:
 		out.append({"type": "money", "amount": _money(t, stars)})
 	elif sel == 4 and _item_chance(float(stars) / BLUE_ITEM_ONE_IN):
-		var item := _roll_blue_item(t, series, _hell_lines(stars, [t[5], t[6]]))
+		var item := _roll_blue_item(t, series, randi_range(int(t[5]), mini(int(t[6]), ItemInstance.MAX_MAGIC - 1)))
 		if item != null:
 			out.append({"type": "item", "item": item})
+	elif sel == 5:
+		_try_append_misc(out, MISC_DIA_DO_CHI, 0.50)
 	return out
 
 ## Số dòng magic của đồ Địa Ngục: stars/5 cơ hội đủ ItemInstance.MAX_MAGIC dòng, còn lại ngẫu nhiên trong `normal` [min, max].

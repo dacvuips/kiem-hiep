@@ -13,6 +13,9 @@ var stats: ResolvedSkillStats = null
 var attacker_stats: CombatantStats = null
 ## Nhóm node bị đạn va chạm/gây sát thương (quái: "enemies").
 var target_group: StringName = &"enemies"
+var star_level: int = 1
+## Hệ số khuếch đại sát thương bộc nổ (khi bị kích nổ bởi kỹ năng như Thần Quang Toàn Nhiễu)
+var detonate_mult: float = 1.0
 
 ## Cache mảng mục tiêu theo từng physics frame (Zero-Allocation GC):
 ## Tránh gọi get_nodes_in_group() hàng nghìn lần mỗi giây khi có nhiều đạn bay cùng lúc.
@@ -52,9 +55,10 @@ func targets() -> Array[Node]:
 func deal_damage(target: Node, skill: Dictionary = {}) -> void:
 	if stats == null or not is_instance_valid(target):
 		return
+	var mult := maxf(1.0, detonate_mult)
 	if target.has_method("take_damage_from"):
-		var low := int(stats.damage_min) if stats.damage_min >= 0.0 else int(stats.damage)
-		var high := int(stats.damage_max) if stats.damage_max >= 0.0 else int(stats.damage)
+		var low := int((stats.damage_min if stats.damage_min >= 0.0 else stats.damage) * mult)
+		var high := int((stats.damage_max if stats.damage_max >= 0.0 else stats.damage) * mult)
 		var attacker := attacker_stats if attacker_stats else CombatantStats.new()
 		var damage_type: CombatFormulas.DamageType = stats.main_damage_type if stats.main_damage_type >= 0 \
 				else CombatFormulas.DamageType.PHYSICS
@@ -64,7 +68,10 @@ func deal_damage(target: Node, skill: Dictionary = {}) -> void:
 		mods.do_hurt_p = int(skill.get("do_hurt", 100))
 		target.take_damage_from(attacker, low, maxi(low, high), damage_type, stats.element, mods)
 	elif target.has_method("take_damage"):
-		target.take_damage(stats.damage)
+		var amount: float = stats.damage * mult
+		if CombatFormulas.is_monster_hit(launcher, target):
+			amount = CombatFormulas.scale_monster_damage(amount)
+		target.take_damage(amount)
 
 	if launcher != null and is_instance_valid(launcher) and launcher.has_method("on_hit_target"):
 		launcher.on_hit_target(target, skill)

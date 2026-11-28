@@ -13,6 +13,14 @@ var _dragged_id: String = ""
 var _drag_start_mouse: Vector2 = Vector2.ZERO
 var _drag_start_offset: Vector2 = Vector2.ZERO
 var _backup_data: Dictionary = {}
+## Cụm đang chọn (bấm vào ô xanh) — thanh "Cỡ" trên đầu đổi kích thước riêng cụm này.
+var _selected_id: String = ""
+var _scale_slider: HSlider
+var _scale_name: Label
+var _scale_value: Label
+var _syncing_slider := false
+## Nút Ngồi nằm trong Cụm Thao Tác (đi theo cụm), không kéo riêng.
+const HIDDEN_IDS := ["skill_sit"]
 
 static func open(host: Node) -> HudLayoutEditor:
 	var ed := HudLayoutEditor.new(host)
@@ -47,6 +55,8 @@ func _build_ui() -> void:
 
 	# Khung đại diện cho từng phần tử HUD (nền màu xanh)
 	for id in HudLayout.ELEMENTS:
+		if HIDDEN_IDS.has(id):
+			continue
 		_create_element_box(id)
 
 	_refresh_box_rects.call_deferred()
@@ -54,8 +64,8 @@ func _build_ui() -> void:
 func _build_top_bar() -> void:
 	_top_panel = PanelContainer.new()
 	_top_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_top_panel.offset_left = -400
-	_top_panel.offset_right = 400
+	_top_panel.offset_left = -490
+	_top_panel.offset_right = 490
 	_top_panel.offset_top = 10
 	_top_panel.offset_bottom = 62
 	_top_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -93,7 +103,34 @@ func _build_top_bar() -> void:
 	title_box.add_child(tip_lbl)
 	hbox.add_child(title_box)
 
-	var btn_reset := SocialUi.stone_button("↺ Mặc Định")
+	## Chỉnh cỡ riêng cho cụm đang chọn.
+	var scale_box := VBoxContainer.new()
+	scale_box.custom_minimum_size = Vector2(190, 0)
+	_scale_name = Label.new()
+	_scale_name.text = "Bấm 1 cụm để chỉnh cỡ"
+	_scale_name.add_theme_font_size_override("font_size", 11)
+	_scale_name.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
+	_scale_name.clip_text = true
+	scale_box.add_child(_scale_name)
+	var scale_row := HBoxContainer.new()
+	_scale_slider = HSlider.new()
+	_scale_slider.min_value = 0.6
+	_scale_slider.max_value = 1.6
+	_scale_slider.step = 0.05
+	_scale_slider.value = 1.0
+	_scale_slider.editable = false
+	_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scale_slider.value_changed.connect(_on_scale_slider_changed)
+	scale_row.add_child(_scale_slider)
+	_scale_value = Label.new()
+	_scale_value.text = "100%"
+	_scale_value.custom_minimum_size = Vector2(40, 0)
+	_scale_value.add_theme_font_size_override("font_size", 11)
+	scale_row.add_child(_scale_value)
+	scale_box.add_child(scale_row)
+	hbox.add_child(scale_box)
+
+	var btn_reset := SocialUi.stone_button(tr("Mặc Định"))
 	btn_reset.custom_minimum_size = Vector2(90, 32)
 	btn_reset.pressed.connect(_on_reset_all)
 	hbox.add_child(btn_reset)
@@ -208,8 +245,14 @@ func _create_element_box(id: String) -> void:
 func _on_box_gui_input(event: InputEvent, id: String) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
+		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			## Lăn chuột trên cụm = đổi cỡ cụm đó.
+			_select(id)
+			_scale_slider.value += _scale_slider.step * (1.0 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0)
+			return
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
+				_select(id)
 				_dragged_id = id
 				_drag_start_mouse = mb.global_position
 				var cur_elem: Dictionary = HudLayout.get_element(id)
@@ -219,6 +262,7 @@ func _on_box_gui_input(event: InputEvent, id: String) -> void:
 	elif event is InputEventScreenTouch:
 		var st := event as InputEventScreenTouch
 		if st.pressed:
+			_select(id)
 			_dragged_id = id
 			_drag_start_mouse = st.position
 			var cur_elem: Dictionary = HudLayout.get_element(id)
@@ -245,6 +289,31 @@ func _on_box_gui_input(event: InputEvent, id: String) -> void:
 		new_offset.x = clampf(new_offset.x, -rx, rx)
 		new_offset.y = clampf(new_offset.y, -ry, ry)
 		HudLayout.set_element_offset(id, new_offset)
+
+func _select(id: String) -> void:
+	if _selected_id == id:
+		return
+	_selected_id = id
+	var info: Dictionary = HudLayout.ELEMENTS.get(id, {})
+	for bid in _boxes:
+		var sb := (_boxes[bid] as Panel).get_theme_stylebox("panel") as StyleBoxFlat
+		if sb != null:
+			sb.border_color = Color(1.0, 0.85, 0.3) if bid == id else (Color(0.22, 0.98, 0.58, 0.95) if String(bid).begins_with("skill_") else Color(0.25, 0.85, 0.65, 0.85))
+			sb.set_border_width_all(3 if bid == id else 2)
+	_scale_name.text = "Cỡ: " + str(info.get("title", id))
+	_syncing_slider = true
+	_scale_slider.min_value = float(info.get("min_scale", 0.6))
+	_scale_slider.max_value = float(info.get("max_scale", 1.6))
+	_scale_slider.value = float(HudLayout.get_element(id).get("scale", 1.0))
+	_scale_slider.editable = true
+	_syncing_slider = false
+	_scale_value.text = "%d%%" % roundi(_scale_slider.value * 100.0)
+
+func _on_scale_slider_changed(v: float) -> void:
+	_scale_value.text = "%d%%" % roundi(v * 100.0)
+	if _syncing_slider or _selected_id == "":
+		return
+	HudLayout.set_element_scale(_selected_id, v)
 
 func _refresh_box_rects() -> void:
 	for id in _boxes:
@@ -315,7 +384,7 @@ func _calc_element_screen_rect(id: String) -> Rect2:
 			return Rect2(Vector2(vp_size.x - 347.0 + ox, vp_size.y - 76.0 + oy), sz)
 		"skill_sit":
 			var sz := Vector2(52, 52) * sc
-			return Rect2(Vector2(vp_size.x - 409.0 + ox, vp_size.y - 64.0 + oy), sz)
+			return Rect2(Vector2(vp_size.x - 513.0 + ox, vp_size.y - 115.0 + oy), sz)
 		"top_bar":
 			var w := 491.0 * 1.2 * sc
 			var h := 38.0 * sc
@@ -326,7 +395,7 @@ func _calc_element_screen_rect(id: String) -> Rect2:
 		"chat_box":
 			var w := float(elem_data.get("width", 400.0)) * sc
 			var h := 120.0 * sc
-			return Rect2(Vector2(vp_size.x * 0.5 - w + ox, vp_size.y - h - 8.0 + oy), Vector2(w, h))
+			return Rect2(Vector2(vp_size.x * 0.5 - w - 80.0 + ox, vp_size.y - h - 8.0 + oy), Vector2(w, h))
 		"quick_items":
 			var w := (4.0 * 56.0 + 3.0 * 10.0) * sc
 			var h := 56.0 * sc
@@ -338,16 +407,13 @@ func _calc_element_screen_rect(id: String) -> Rect2:
 		"auto_button":
 			var sz := Vector2(52.0, 52.0) * sc
 			return Rect2(Vector2(vp_size.x - 60.0 + ox, 155.0 + oy), sz)
-		"auto_gear":
-			var sz := Vector2(52.0, 52.0) * sc
-			return Rect2(Vector2(vp_size.x - 118.0 + ox, 155.0 + oy), sz)
 		"pk_mode":
 			var sz := Vector2(115.0, 32.0) * sc
 			return Rect2(Vector2(12.0 + ox, 62.0 + oy), sz)
 		"bottom_bar":
-			var w := (3.0 * 46.0 + 2.0 * 6.0) * sc
+			var w := (3.0 * 46.0 + 52.0 + 3.0 * 6.0) * sc
 			var h := 46.0 * sc
-			return Rect2(Vector2(vp_size.x - 412.0 - w + ox, vp_size.y - 112.0 + oy), Vector2(w, h))
+			return Rect2(Vector2(vp_size.x - 357.0 - w + ox, vp_size.y - 112.0 + oy), Vector2(w, h))
 		"joystick":
 			var sz := Vector2(200.0, 200.0) * sc
 			return Rect2(Vector2(40.0 + ox, vp_size.y - 250.0 + oy), sz)
@@ -409,9 +475,6 @@ func _find_live_node(id: String) -> Control:
 		"auto_button":
 			if bar != null:
 				return bar.get_node_or_null("%AutoButton") as Control
-		"auto_gear":
-			if bar != null:
-				return bar.get_node_or_null("AutoGearButton") as Control
 		"pk_mode":
 			var top_left := root.get_node_or_null("TopLeftActionBar") as Control
 			if top_left != null:

@@ -11,6 +11,18 @@ extends Node2D
 @onready var bar: ProgressBar = $Bar
 
 var fill_style: StyleBoxFlat
+## a > 0: tô cố định màu này, bỏ màu theo % máu (VD ống máu tím khi bật Đồ sát / Bang chiến).
+var _fixed_color := Color(0, 0, 0, 0)
+
+## Color(0,0,0,0) = bỏ màu cố định, quay lại màu theo % máu.
+func set_fixed_color(c: Color) -> void:
+	_fixed_color = c
+	if fill_style != null:
+		if c.a > 0.0:
+			fill_style.bg_color = c
+		else:
+			fill_style.bg_color = Color.GREEN if use_gradient_color else Color.RED
+			_update_color()
 
 func _ready() -> void:
 	fill_style = StyleBoxFlat.new()
@@ -41,6 +53,9 @@ func set_health(value: float, new_max_health: float = -1.0) -> void:
 	_update_color()
 
 func _update_color() -> void:
+	if _fixed_color.a > 0.0:
+		fill_style.bg_color = _fixed_color
+		return
 	if not use_gradient_color or bar.max_value <= 0:
 		return
 	var ratio := bar.value / bar.max_value

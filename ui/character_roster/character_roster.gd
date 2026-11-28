@@ -30,6 +30,7 @@ const ELEMENT_KEY := {
 @onready var _message: Label = %Message
 @onready var _enter_btn: BaseButton = %EnterArea
 @onready var _create_btn: BaseButton = %CreateArea
+@onready var _delete_btn: BaseButton = %DeleteArea
 @onready var _cancel_btn: BaseButton = %CancelArea
 @onready var _quit_btn: BaseButton = %QuitArea
 
@@ -42,27 +43,45 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		_update_locale_texts()
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
+func _get_game_manager() -> Node:
+	return get_node_or_null("/root/GameManager")
+
+func _get_save_manager() -> Node:
+	return get_node_or_null("/root/SaveManager")
+
 func _ready() -> void:
-	if MusicManager.has_method("play_title_music"):
-		MusicManager.play_title_music()
-	elif MusicManager.has_method("play"):
-		MusicManager.play("music001.mp3")
+	var music_mgr: Node = get_node_or_null("/root/MusicManager")
+	if music_mgr:
+		if music_mgr.has_method("play_title_music"):
+			music_mgr.play_title_music()
+		elif music_mgr.has_method("play"):
+			music_mgr.play("music001.mp3")
 	_create_ref = load(CREATE_SCENE).instantiate()
 	_enter_btn.pressed.connect(_on_enter_pressed)
 	_create_btn.pressed.connect(_on_create_pressed)
-	_cancel_btn.pressed.connect(_go.bind(BACK_SCENE))
+	if is_instance_valid(_delete_btn):
+		_delete_btn.pressed.connect(_on_delete_pressed)
+	if GameModeManager.is_offline():
+		_cancel_btn.pressed.connect(_go.bind("res://ui/mode_select/ModeSelect.tscn"))
+	else:
+		_cancel_btn.pressed.connect(_go.bind(BACK_SCENE))
 	_quit_btn.pressed.connect(func() -> void: get_tree().quit())
-	for b: BaseButton in [_enter_btn, _create_btn, _cancel_btn, _quit_btn]:
-		_style_pill_button(b)
+	for b: BaseButton in [_enter_btn, _create_btn, _delete_btn, _cancel_btn, _quit_btn]:
+		if is_instance_valid(b):
+			_style_pill_button(b)
 	_update_locale_texts()
 	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
 	if loc_mgr and loc_mgr.has_signal("locale_changed"):
 		loc_mgr.locale_changed.connect(func(_l: String) -> void: _update_locale_texts())
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE)
-	if AccountApi.is_logged_in():
-		if AccountApi.has_signal("session_invalidated"):
-			AccountApi.session_invalidated.connect(func(reason: String) -> void:
+	var api := _get_account_api()
+	if api != null and api.is_logged_in() and not GameModeManager.is_offline():
+		if api.has_signal("session_invalidated"):
+			api.session_invalidated.connect(func(reason: String) -> void:
 				AccountScreen.next_login_message = reason if reason != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
 				get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
 			)
@@ -90,6 +109,10 @@ func _update_locale_texts() -> void:
 		var lbl: Label = _create_btn.get_node_or_null("Label")
 		if lbl:
 			lbl.text = tr("TẠO NHÂN VẬT")
+	if is_instance_valid(_delete_btn):
+		var lbl: Label = _delete_btn.get_node_or_null("Label")
+		if lbl:
+			lbl.text = tr("XÓA NHÂN VẬT")
 	if is_instance_valid(_cancel_btn):
 		var lbl: Label = _cancel_btn.get_node_or_null("Label")
 		if lbl:
@@ -143,19 +166,17 @@ func _style_pill_button(b: BaseButton) -> void:
 # ---------------------------------------------------------------- các ô nhân vật
 
 func _build_slots() -> void:
-	var profile: PlayerProfile = GameManager.local_profile
-	if profile == null and SaveManager.has_profile():
-		profile = SaveManager.load_profile()
-		GameManager.local_profile = profile
-	if profile == null:
-		profile = PlayerProfile.new()
-		profile.display_name = "cô Đơn"
-		profile.level = 10
-		profile.gender = PlayerProfile.Gender.MALE
-		profile.sect_id = "hoa_son"
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
 	for i in SLOT_COUNT:
 		var slot := {}
-		if i == 0 and profile != null:
+		var profile: PlayerProfile = null
+		if sm != null and sm.has_offline_profile(i):
+			profile = sm.load_offline_profile(i)
+		elif i == 0 and gm != null and gm.local_profile != null:
+			profile = gm.local_profile
+
+		if profile != null:
 			slot = _make_character_slot(i, profile)
 		else:
 			slot = {"card": _make_card(i, null)}
@@ -163,10 +184,15 @@ func _build_slots() -> void:
 
 ## Nhân vật trên server: mỗi ô = {profile, character (bản ghi server: id, version...), card, portrait, aura}.
 func _build_slots_online() -> void:
-	GameManager.local_profile = null
-	SaveManager.clear_online_character()
+	var gm := _get_game_manager()
+	var sm := _get_save_manager()
+	if gm != null:
+		gm.local_profile = null
+	if sm != null:
+		sm.clear_online_character()
 	_toast("Đang tải nhân vật…")
-	var r: Dictionary = await AccountApi.characters(ServerSelectScreen.selected_server_id)
+	var api := _get_account_api()
+	var r: Dictionary = await api.characters(ServerSelectScreen.selected_server_id) if api != null else {"ok": false, "code": "no_api", "message": "Lỗi kết nối"}
 	var by_slot := {}
 	if r.ok:
 		_message.modulate.a = 0.0
@@ -182,15 +208,29 @@ func _build_slots_online() -> void:
 		var slot := {}
 		if by_slot.has(i) and by_slot[i].get("data") is Dictionary:
 			var c: Dictionary = by_slot[i]
-			slot = _make_character_slot(i, PlayerProfile.from_dict(c["data"]))
+			var prof := PlayerProfile.from_dict(c["data"])
+			prof.id = int(c.get("id", 0))
+			slot = _make_character_slot(i, prof)
 			slot["character"] = c
 		else:
 			slot = {"card": _make_card(i, null)}
 		_slots.append(slot)
 
 func _on_create_pressed() -> void:
-	if not AccountApi.is_logged_in():
-		_go(CREATE_SCENE)
+	var api := _get_account_api()
+	if api == null or not api.is_logged_in() or GameModeManager.is_offline():
+		# Nếu ô đang chọn là ô trống -> tạo vào đúng ô đó
+		if _selected >= 0 and _selected < _slots.size() and not (_slots[_selected] as Dictionary).has("profile"):
+			CharacterCreateScreen.target_slot = _selected
+			_go(CREATE_SCENE)
+			return
+		# Nếu ô đang chọn đã có nhân vật -> tìm ô trống đầu tiên
+		for i in _slots.size():
+			if not (_slots[i] as Dictionary).has("profile"):
+				CharacterCreateScreen.target_slot = i
+				_go(CREATE_SCENE)
+				return
+		_toast(tr("Đã đủ %d nhân vật offline") % SLOT_COUNT)
 		return
 	for i in _slots.size():
 		if not (_slots[i] as Dictionary).has("profile"):
@@ -198,6 +238,72 @@ func _on_create_pressed() -> void:
 			_go(CREATE_SCENE)
 			return
 	_toast(tr("Đã đủ %d nhân vật trên máy chủ này") % SLOT_COUNT)
+
+func _clear_slot_nodes() -> void:
+	for slot in _slots:
+		if slot is Dictionary:
+			if slot.has("card") and is_instance_valid(slot["card"]):
+				(slot["card"] as Node).queue_free()
+			if slot.has("portrait") and is_instance_valid(slot["portrait"]):
+				(slot["portrait"] as Node).queue_free()
+			if slot.has("aura") and is_instance_valid(slot["aura"]):
+				(slot["aura"] as Node).queue_free()
+	_slots.clear()
+
+func _reload_roster() -> void:
+	_clear_slot_nodes()
+	var api := _get_account_api()
+	if api != null and api.is_logged_in() and not GameModeManager.is_offline():
+		await _build_slots_online()
+	else:
+		_build_slots()
+	var first := 0
+	for i in _slots.size():
+		if (_slots[i] as Dictionary).has("profile"):
+			first = i
+			break
+	_select(first)
+	_update_locale_texts()
+
+func _on_delete_pressed() -> void:
+	if _selected < 0 or _selected >= _slots.size():
+		_toast(tr("Vui lòng chọn nhân vật cần xóa"))
+		return
+	var slot: Dictionary = _slots[_selected]
+	if not slot.has("profile"):
+		_toast(tr("Ô này chưa có nhân vật để xóa"))
+		return
+
+	var prof: PlayerProfile = slot["profile"]
+	var char_name: String = prof.display_name if prof != null else "nhân vật"
+
+	if GameModeManager.is_offline():
+		var msg := tr("Đại hiệp có chắc chắn muốn xóa nhân vật [%s] không?\nHành động này không thể hoàn tác.") % char_name
+		var social_win = load("res://ui/common/social_window.gd")
+		if social_win != null and social_win.has_method("ask_yes_no"):
+			social_win.ask_yes_no(self, tr("XÓA NHÂN VẬT OFFLINE"), msg, func(yes: bool) -> void:
+				if not yes:
+					return
+				var sm := _get_save_manager()
+				if sm != null:
+					sm.delete_offline_profile(_selected)
+				var gm := _get_game_manager()
+				if gm != null and gm.local_profile == prof:
+					gm.local_profile = null
+				_reload_roster()
+				_toast(tr("Đã xóa nhân vật offline thành công!"))
+			, tr("Xóa bỏ"), tr("Hủy"))
+		else:
+			var sm := _get_save_manager()
+			if sm != null:
+				sm.delete_offline_profile(_selected)
+			var gm := _get_game_manager()
+			if gm != null and gm.local_profile == prof:
+				gm.local_profile = null
+			_reload_roster()
+			_toast(tr("Đã xóa nhân vật offline thành công!"))
+	else:
+		_toast(tr("Chế độ online chưa hỗ trợ xóa trực tiếp trên giao diện này"))
 
 func _map_name() -> String:
 	if FileAccess.file_exists(MINIMAP_META):
@@ -337,27 +443,48 @@ func _on_enter_pressed() -> void:
 		_toast("Ô này chưa có nhân vật — bấm \"Tạo nhân vật\"")
 		return
 
-	# Kiểm tra xác thực phiên trước khi vào Hub
-	if AccountApi.is_logged_in() and AccountApi.has_method("check_session"):
-		var chk: Dictionary = await AccountApi.check_session()
-		if not is_inside_tree():
-			return
-		if not chk.ok:
-			AccountScreen.next_login_message = chk.message if chk.message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
-			get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
-			return
+	# Kiểm tra xác thực phiên trước khi vào Hub (chỉ khi online)
+	if not GameModeManager.is_offline():
+		var api := _get_account_api()
+		if api != null and api.is_logged_in() and api.has_method("check_session"):
+			var chk: Dictionary = await api.check_session()
+			if not is_inside_tree():
+				return
+			if not chk.ok:
+				AccountScreen.next_login_message = chk.message if chk.message != "" else "Tài khoản vừa đăng nhập ở thiết bị khác"
+				get_tree().change_scene_to_file.call_deferred(AccountScreen.LOGIN_SCENE)
+				return
 
 	var prof: PlayerProfile = slot["profile"]
+	if GameModeManager.is_offline():
+		var sm := _get_save_manager()
+		if sm != null:
+			sm.current_offline_slot = _selected
 	if ResourceLoader.exists("res://systems/player_profile.gd"):
 		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
 		if prof_scr and prof != null:
 			prof.set_script(prof_scr)
-	GameManager.local_profile = prof
+	var gm := _get_game_manager()
+	if gm != null:
+		gm.local_profile = prof
 	if slot.has("character"):
 		var c: Dictionary = slot["character"]
-		SaveManager.set_online_character(int(c["id"]), int(c["version"]))
+		if prof != null:
+			prof.id = int(c.get("id", 0))
+		var sm := _get_save_manager()
+		if sm != null:
+			sm.set_online_character(int(c["id"]), int(c["version"]))
+	elif GameModeManager.is_offline() and prof != null and prof.id <= 0:
+		prof.id = _selected + 1
 	## "Vào game" = vào Character Hub trước; từ Hub bấm "Chơi" mới vào map chính.
-	WebContentManager.ensure_ready(self, func(): _go(HUB_SCENE))
+	if GameModeManager.is_offline():
+		_go(HUB_SCENE)
+		return
+	var wcm: Node = get_node_or_null("/root/WebContentManager")
+	if wcm and wcm.has_method("ensure_ready"):
+		wcm.ensure_ready(self, func(): _go(HUB_SCENE))
+	else:
+		_go(HUB_SCENE)
 
 func _go(path: String) -> void:
 	var t := create_tween()

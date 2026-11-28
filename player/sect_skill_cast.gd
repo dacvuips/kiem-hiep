@@ -9,14 +9,24 @@ const DEFAULT_SCENE := preload("res://projectiles/projectile.tscn")
 
 static func execute(caster: Node2D, target: Node2D, stats: ResolvedSkillStats, skill: SkillDefinition) -> void:
 	var scene: PackedScene = skill.projectile_scene if skill.projectile_scene else DEFAULT_SCENE
-	var projectile: Projectile = ObjectPool.acquire(scene, caster.get_parent())
-	projectile.global_position = caster.global_position
 	var direction := (target.global_position - caster.global_position).normalized()
 	## caster.combat_stats (CombatantStats CHÍNH XÁC 100% VLTK) — truyền vào để CombatFormulas
 	## roll trúng/né đúng AttackRating của người thi triển skill, xem Projectile._deal_damage_to().
 	var caster_stats: CombatantStats = caster.combat_stats if "combat_stats" in caster else null
 	## Mục tiêu ảo (điểm phía trước mặt — "Không mục tiêu"/"Đánh theo hướng trước mặt"): chỉ lấy hướng, không đuổi theo.
 	var real_target: Node2D = null if target.has_meta("cast_point") else target
-	projectile.setup_from_resolved(direction, stats, real_target, caster_stats, caster)
 	var is_player := caster.is_in_group("player") if caster else false
+	var star := PlayerStats.get_skill_star(skill.id) if (is_player and GameModeManager.is_offline() and GameManager.game_mode == GameManager.GameMode.STAGE) else 1
+	var total_count := maxi(1, star)
+	
+	for i in total_count:
+		var dir := direction
+		if total_count > 1:
+			var step := (1 if (i % 2 == 1) else -1) * int((i + 1) / 2)
+			var angle_rad := float(step) * 0.12
+			dir = direction.rotated(angle_rad)
+		var projectile: Projectile = ObjectPool.acquire(scene, caster.get_parent())
+		projectile.global_position = caster.global_position
+		projectile.setup_from_resolved(dir, stats, real_target, caster_stats, caster)
+	
 	SfxManager.play_skill_cast(stats, caster.global_position, is_player)

@@ -23,8 +23,11 @@ const SLOT_RECTS := {
 	Equipment.Part.FOOT: Rect2(292.0, 398.0, 109.0, 109.0),   # SlotRight3
 }
 
+const LOADING_TIMEOUT := 5.0
+
 var _snap: Dictionary
 var _avatar: CharacterAvatar
+var _loading_label: Label
 var _turn := 0
 
 ## Mở cửa sổ từ kết quả ViewEquipService.view(); trả về null nếu có lỗi (lời lỗi nằm trong `out_error`).
@@ -48,15 +51,16 @@ static func open_snapshot(host: Node, snapshot: Dictionary) -> ViewEquipWindow:
 		if w is ViewEquipWindow and is_instance_valid(w) and not w.is_queued_for_deletion():
 			w.remove_from_group("social_windows")
 			(w as ViewEquipWindow).close_requested.emit()
-	return SocialWindow.present(host, ViewEquipWindow.new(snapshot), &"view_equip") as ViewEquipWindow
+	return SocialWindow.present(host, ViewEquipWindow.new(snapshot), &"view_equip", true) as ViewEquipWindow
 
 func _init(snapshot: Dictionary = {}) -> void:
-	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), "Cấp %d · %s" % [int(snapshot.get("level", 1)), str(snapshot.get("sect_name", ""))], 670.0)
+	super._init("Trang Bị Của %s" % str(snapshot.get("name", "")), str(snapshot.get("sect_name", "")), 670.0)
 	_snap = snapshot.duplicate()
 	if snapshot.is_empty():
 		return
 	if snapshot.get("loading", false):
-		body.add_child(SocialUi.label("Đang tải trang bị…", SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER))
+		_loading_label = SocialUi.label("Đang tải trang bị…", SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER)
+		body.add_child(_loading_label)
 		var wait_close := SocialUi.stone_button("Đóng")
 		wait_close.pressed.connect(func() -> void: close_requested.emit())
 		body.add_child(wait_close)
@@ -103,7 +107,6 @@ func _init(snapshot: Dictionary = {}) -> void:
 				_avatar.face(Vector2.DOWN.rotated(deg_to_rad(45.0 * _turn))))
 	left[1].add_child(portrait)
 	left[1].add_child(SocialUi.kv("Tên:", str(snapshot.get("name", "")), SocialUi.LABEL_RED, Camp.get_color(int(snapshot.get("camp", 0)))))
-	left[1].add_child(SocialUi.kv("Cấp:", str(int(snapshot.get("level", 1))), SocialUi.LABEL_BLUE))
 	left[1].add_child(SocialUi.kv("Môn phái:", str(snapshot.get("sect_name", "")), SocialUi.LABEL_BLUE))
 	left[1].add_child(SocialUi.kv("Thuộc tính:", ElementTypes.ELEMENT_NAME.get(int(snapshot.get("series", 0)), "—"), SocialUi.LABEL_BLUE))
 	left[1].add_child(SocialUi.kv("Phe:", Camp.get_camp_name(int(snapshot.get("camp", 0))), SocialUi.LABEL_BLUE))
@@ -216,12 +219,29 @@ func _init(snapshot: Dictionary = {}) -> void:
 func _ready() -> void:
 	super._ready()
 	_apply_look()
+	if _loading_label != null:
+		## Server từ chối (ở xa, khác phòng, bấm quá nhanh, đã rời đi) chỉ gửi S_NOTICE, không gửi S_VIEW_EQUIP -> hiện lý do
+		## ngay trong bảng thay vì đứng mãi ở "Đang tải"; quá LOADING_TIMEOUT giây không có gì cũng báo không tải được.
+		NetClient.server_notice.connect(_on_loading_notice)
+		get_tree().create_timer(LOADING_TIMEOUT).timeout.connect(_on_loading_timeout)
+
+func _on_loading_timeout() -> void:
+	if _loading_label != null and _loading_label.text == "Đang tải trang bị…":
+		_loading_label.text = "Không tải được trang bị — người chơi đã rời đi hoặc mất kết nối."
+
+func _exit_tree() -> void:
+	if NetClient.server_notice.is_connected(_on_loading_notice):
+		NetClient.server_notice.disconnect(_on_loading_notice)
+
+func _on_loading_notice(text: String) -> void:
+	if _loading_label != null and _loading_label.text == "Đang tải trang bị…":
+		_loading_label.text = text
 
 ## Dựng hình nhân vật theo giới tính + đồ đang mặc (mũ/áo/vũ khí/ngựa) — như bảng Nhân vật của mình.
 func _apply_look() -> void:
 	if _avatar == null or _snap.is_empty():
 		return
-	var gender := "female" if bool(_snap["female"]) else "male"
+	var gender := "female" if _snap.get("female", false) == true else "male"
 	var equipment: Dictionary = _snap["equipment"]
 	var look := Equipment.get_appearance(equipment, gender, equipment.has(Equipment.Part.HORSE))
 	var final_gender: String = str(look.get("gender", gender))

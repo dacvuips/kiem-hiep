@@ -3,28 +3,17 @@ class_name ChatPanel
 const ItemChatHelper = preload("res://systems/items/item_chat_helper.gd")
 const MapChatHelper = preload("res://systems/map_chat_helper.gd")
 ## KHUNG TÁN GẪU LỚN trượt ra từ mép TRÁI màn hình (dài từ lề dưới cho tới lề trên):
-## Các kênh: Thế giới, Bang hội, Mật (bỏ kênh Gần).
-## Giao diện phong cách VLTK theo ảnh tham khảo: Tab kênh dạng pill, thanh thông báo ghim,
-## dòng chat phân màu theo kênh, ô gửi & người nhận kênh Mật.
+## Các kênh: đủ như khung chat ngoài — Gần, Tổ đội, Môn phái, Bang hội, Thế giới, Riêng (CHANNELS).
+## Giao diện: ô chọn kênh có ảnh nút kênh gốc + dòng tin kiểu gốc (ảnh kênh + tên + nội dung, màu / viền chữ theo kênh) — dùng
+## chung với khung chat ngoài (ChatBox.make_pick / ChatBox.format_line); thanh thông báo ghim, ô gửi & người nhận kênh Riêng.
 
 const WIDTH := 860.0
 const SLIDE_SECONDS := 0.22
 const MAX_HISTORY := 200
 const FONT_SIZE := 15
 
-const CHANNELS: Array[int] = [ChatServer.WORLD, ChatServer.GUILD, ChatServer.PRIVATE]
-const CHANNEL_NAMES_MAP := {
-	ChatServer.WORLD: "Thế giới",
-	ChatServer.GUILD: "Bang hội",
-	ChatServer.PRIVATE: "Mật",
-	ChatServer.NEAR: "Gần",
-}
-const CHANNEL_COLORS := {
-	ChatServer.WORLD: Color(1.0, 0.82, 0.35),   # Gold / Vàng hoàng kim
-	ChatServer.GUILD: Color(0.48, 0.95, 0.52),   # Green / Xanh ngọc bang hội
-	ChatServer.PRIVATE: Color(1.0, 0.58, 0.88), # Pink / Hồng tím tin mật
-	ChatServer.NEAR: Color(0.9, 0.9, 0.9),
-}
+## Đủ kênh như khung chat ngoài (ChatBox.SEND_CHANNELS: Gần, Tổ đội, Môn phái, Bang hội, Thế giới, Riêng).
+const CHANNELS: Array[int] = ChatBox.SEND_CHANNELS
 
 ## Lịch sử: [{channel, from, to, text, time}] — mới nhất ở cuối.
 static var history: Array = []
@@ -37,11 +26,8 @@ var _log: RichTextLabel
 var _input: LineEdit
 var _to: LineEdit
 var _to_row: HBoxContainer
-var _tabs: Dictionary = {}         # channel_int -> Button
+var _channel_pick: OptionButton    ## ô chọn kênh có ảnh (giống khung chat ngoài — ChatBox.make_pick)
 var _current_channel: int = ChatServer.WORLD
-var _style_tab_active: StyleBoxFlat
-var _style_tab_normal: StyleBoxFlat
-var _style_tab_hover: StyleBoxFlat
 var _attached_items: Dictionary = {} # "[Tên Món]" -> "{item:BASE64}"
 
 ## Bắt đầu ghi lịch sử tin từ server (gọi 1 lần khi có kết nối — NetSocial._ready). Gọi lại không sao.
@@ -123,7 +109,6 @@ func _ready() -> void:
 	_panel.add_child(main_vbox)
 
 	# --- 1. HEADER: Tabs kênh VLTK (Thế giới, Bang hội, Mật) + Nút Đóng ---
-	_setup_tab_styles()
 	var head_bar := HBoxContainer.new()
 	head_bar.add_theme_constant_override("separation", 6)
 	main_vbox.add_child(head_bar)
@@ -133,17 +118,15 @@ func _ready() -> void:
 	tabs_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head_bar.add_child(tabs_container)
 
+	## Ô chọn kênh có ảnh nút kênh gốc (UiMsgCentrePad.ini MenuImage), tên kênh như khung chat ngoài (ChatServer.CHANNEL_NAMES).
+	_channel_pick = ChatBox.make_pick(14)
+	_channel_pick.custom_minimum_size = Vector2(150, 34)
+	_channel_pick.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_channel_pick.tooltip_text = tr("Chọn kênh")
 	for ch in CHANNELS:
-		var tab_name: String = CHANNEL_NAMES_MAP.get(ch, "Kênh")
-		var b := Button.new()
-		b.text = tr(tab_name)
-		b.focus_mode = Control.FOCUS_NONE
-		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.custom_minimum_size = Vector2(110, 34)
-		b.add_theme_font_size_override("font_size", 14)
-		b.pressed.connect(func() -> void: _on_tab(ch))
-		tabs_container.add_child(b)
-		_tabs[ch] = b
+		_channel_pick.add_icon_item(ChatBox.channel_icon(str(ch)), tr(ChatServer.CHANNEL_NAMES[ch]), ch)
+	_channel_pick.item_selected.connect(func(idx: int) -> void: _on_tab(_channel_pick.get_item_id(idx)))
+	tabs_container.add_child(_channel_pick)
 
 	var close_btn := Button.new()
 	close_btn.text = "✕"
@@ -278,29 +261,12 @@ func _ready() -> void:
 	send_btn.pressed.connect(_send)
 	input_row.add_child(send_btn)
 
-	# Khởi tạo tin mẫu phong phú nếu chưa có lịch sử
-	if history.is_empty():
-		_push(ChatServer.WORLD, tr("Lệnh Hồ Xung"), "", tr("Hôm nay ai cùng ta tỉ thí kiếm pháp tại Hoa Sơn?"))
-		_push(ChatServer.WORLD, tr("Tiểu Long Nữ"), "", tr("Cổ Mộ phái chiêu mộ đệ tử, hoan nghênh chư vị đồng đạo."))
-		var demo_sword := ItemGenerator.generate_gold(0) if ItemDatabase.get_gold(0).size() > 0 else null
-		if demo_sword:
-			_push(ChatServer.WORLD, tr("Độc Cô Cầu Bại"), "", tr("Cần nhượng lại bảo kiếm %s cho cao thủ hữu duyên!") % ItemChatHelper.create_token(demo_sword))
-		_push(ChatServer.GUILD, tr("Bang Chủ"), "", tr("Tối nay 20h anh em tập hợp đánh Boss bang nhé!"))
-
 	# Hiệu ứng trượt ra mượt mà từ mép trái màn hình
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_panel, "offset_left", 0.0, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(_panel, "offset_right", WIDTH, SLIDE_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 	_on_tab(_current_channel)
-
-func _setup_tab_styles() -> void:
-	# Active: Pill màu vàng hoàng kim với chữ đen đậm
-	_style_tab_active = _make_pill_style(Color(0.92, 0.72, 0.25, 1.0), Color(1.0, 0.88, 0.55, 1.0), 14)
-	# Normal: Pill nền tối viền xám tro
-	_style_tab_normal = _make_pill_style(Color(0.12, 0.15, 0.17, 0.9), Color(0.35, 0.42, 0.42, 0.7), 14)
-	# Hover: Pill sáng nhẹ
-	_style_tab_hover = _make_pill_style(Color(0.18, 0.24, 0.27, 0.95), Color(0.65, 0.72, 0.72, 0.9), 14)
 
 func _make_pill_style(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -365,24 +331,15 @@ func set_channel(channel: int, to := "") -> void:
 ## Chuyển tab kênh chat
 func _on_tab(channel: int) -> void:
 	_current_channel = channel
-	for ch_key in _tabs:
-		var btn: Button = _tabs[ch_key]
-		var is_active: bool = (int(ch_key) == channel)
-		if is_active:
-			btn.add_theme_stylebox_override("normal", _style_tab_active)
-			btn.add_theme_stylebox_override("hover", _style_tab_active)
-			btn.add_theme_stylebox_override("pressed", _style_tab_active)
-			btn.add_theme_color_override("font_color", Color(0.12, 0.1, 0.05))
-		else:
-			btn.add_theme_stylebox_override("normal", _style_tab_normal)
-			btn.add_theme_stylebox_override("hover", _style_tab_hover)
-			btn.add_theme_stylebox_override("pressed", _style_tab_hover)
-			btn.add_theme_color_override("font_color", Color(0.82, 0.84, 0.8))
+	if _channel_pick != null:
+		var idx := _channel_pick.get_item_index(channel)
+		if idx >= 0 and _channel_pick.selected != idx:
+			_channel_pick.select(idx)
 
 	if _to_row != null:
 		_to_row.visible = (channel == ChatServer.PRIVATE)
 
-	var ch_name: String = CHANNEL_NAMES_MAP.get(channel, "kênh")
+	var ch_name: String = ChatServer.CHANNEL_NAMES[channel] if channel >= 0 and channel < ChatServer.CHANNEL_NAMES.size() else "kênh"
 	if _input != null:
 		_input.placeholder_text = "%s %s... (Enter %s)" % [tr("Tán gẫu"), tr(ch_name), tr("để gửi")]
 
@@ -396,28 +353,25 @@ func _render() -> void:
 	for m in history:
 		var ch := int(m.get("channel", ChatServer.WORLD))
 		# Lọc theo kênh hiện tại
-		if ch != _current_channel and _current_channel != ChatServer.NEAR:
-			# Ngoại lệ: kênh Mật chỉ hiện tin Mật, Bang chỉ hiện Bang, Thế giới chỉ hiện Thế giới
+		if ch != _current_channel:   ## mỗi kênh chỉ hiện tin của kênh đó
 			continue
 
-		var color: Color = CHANNEL_COLORS.get(ch, Color.WHITE)
-		var ch_label: String = tr(CHANNEL_NAMES_MAP.get(ch, "Kênh"))
-		var time_str: String = str(m.get("time", "12:00"))
-		var who := _esc(str(m.get("from", "Đại Hiệp")))
-
-		var header_part := ""
+		## Dòng kiểu gốc như khung chat ngoài (ChatBox.format_line): ảnh kênh + "tên:" + nội dung theo màu / viền chữ của kênh.
+		var from := str(m.get("from", "Đại Hiệp"))
+		var who := _esc(from)
+		var key := str(ch)
 		if ch == ChatServer.PRIVATE:
-			var to_str := _esc(str(m.get("to", "")))
-			header_part = "[color=#%s][%s][/color] [color=#F48FB1]%s → %s:[/color]" % [color.to_html(false), ch_label, who, to_str]
-		else:
-			header_part = "[color=#%s][%s][/color] [color=#FFE082]%s:[/color]" % [color.to_html(false), ch_label, who]
+			who = "%s → %s" % [who, _esc(str(m.get("to", "")))]
+			var me := GameManager.local_profile
+			if me != null and from == me.display_name:
+				key = "self"
 
 		var body_bbcode := ItemChatHelper.format_chat_bbcode(str(m.get("text", "")))
 		body_bbcode = MapChatHelper.format_chat_map_bbcode(body_bbcode)
-		lines.append("[color=#757D84]%s[/color] %s [color=#ECEFF1]%s[/color]" % [time_str, header_part, body_bbcode])
+		lines.append(ChatBox.format_line(key, who, body_bbcode))
 
 	if lines.is_empty():
-		var ch_name: String = tr(CHANNEL_NAMES_MAP.get(_current_channel, "này"))
+		var ch_name: String = tr(ChatServer.CHANNEL_NAMES[_current_channel]) if _current_channel >= 0 and _current_channel < ChatServer.CHANNEL_NAMES.size() else tr("này")
 		_log.text = "\n[center][color=#606870]— %s %s —[/color][/center]" % [tr("Chưa có tin nhắn trong kênh"), ch_name]
 	else:
 		_log.text = "\n".join(lines)
@@ -476,6 +430,9 @@ func _send() -> void:
 			text = text.replace(tag, _attached_items[tag])
 	_attached_items.clear()
 
+	if NetClient.is_in_world() and NetClient.is_hub and ch == ChatServer.NEAR:
+		_note(tr("Kênh Gần chỉ dùng khi đang ở trong map."))   ## ở sảnh không có "người gần" (server cũng chặn)
+		return
 	if NetClient.is_in_world():
 		NetClient.send_chat(ch, to, text)
 	else:

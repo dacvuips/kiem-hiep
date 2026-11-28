@@ -327,6 +327,12 @@ func test_team() -> void:
 	check("C3: đội trưởng thấy R xin vào", await wait_until(func() -> bool: return p.team.get("applicants", []).has(r.eid), 3.0), r.notices)
 	p.team_op(SocialServer.TEAM_ACCEPT, r.eid)
 	check("C3: R vào đội (3 người)", await wait_until(func() -> bool: return r.team.get("members", []).size() == 3, 3.0), p.notices)
+	## Máu tổ đội (khung danh sách tổ đội góc trái): Q báo còn 40% -> đội trưởng P nhận S_TEAM_HP có máu Q, cùng phòng.
+	q.send_hp(40)
+	check("C3: đội trưởng thấy máu đồng đội (S_TEAM_HP)", await wait_until(func() -> bool:
+		return p.team_hp.has(q.eid) and int(p.team_hp[q.eid][0]) == 40 and bool(p.team_hp[q.eid][1]), 3.0), p.team_hp)
+	check("C3: S_TEAM_HP có đủ 3 thành viên", r.team_hp.size() >= 3, r.team_hp)
+	q.send_hp(100)
 	## Cả đội đứng gần quái, P hạ quái -> Q, R cũng nhận kinh nghiệm.
 	var m := p.nearest_monster()
 	if m == 0:
@@ -341,6 +347,19 @@ func test_team() -> void:
 	await _kill(p, m)
 	check("C3: đồng đội trong tầm được chia kinh nghiệm", await wait_until(func() -> bool: return q.exp_gained > q_exp and r.exp_gained > r_exp, 3.0),
 		[q.exp_gained, r.exp_gained])
+	## Luật nhặt "nhặt tự do" (mặc định, KTeam::CheckIn gốc): đồng đội nhặt được đồ còn trong thời gian bảo hộ của nhau.
+	await wait_until(func() -> bool: return not q.drops.is_empty(), 2.0)
+	var p_drops := []
+	for id in q.drops:
+		if int(q.drops[id].owner) == p.eid:
+			p_drops.append(id)
+	if p_drops.size() >= 2:
+		var free_id: int = p_drops.pop_front()
+		q.pickup(free_id)
+		check("C3: nhặt tự do: Q nhặt được đồ của P (cùng đội)", await wait_until(func() -> bool:
+			return q.picked.any(func(g: Dictionary) -> bool: return int(g.id) == free_id), 3.0), q.notices)
+	else:
+		print("SKIP C3: nhặt tự do — quái chỉ rơi %d món của P" % p_drops.size())
 	## Luật nhặt "đội trưởng nhặt": Q không nhặt được đồ rơi của P.
 	p.team_op(SocialServer.TEAM_PICK, 0, TeamService.Pick.CAPTAIN)
 	await wait_until(func() -> bool: return int(q.team.get("pick", -1)) == TeamService.Pick.CAPTAIN, 2.0)
@@ -356,6 +375,17 @@ func test_team() -> void:
 	## Q rời đội: đội còn 2; P (đội trưởng) rời: giải tán.
 	q.team_op(SocialServer.TEAM_LEAVE)
 	check("C3: thành viên rời, đội còn lại", await wait_until(func() -> bool: return not q.team.get("in_team", true) and p.team.members.size() == 2, 3.0))
+	## Ra khỏi đội: đồ của P (còn bảo hộ) không nhặt được nữa.
+	var left_id := -1
+	for id in q.drops:
+		if int(q.drops[id].owner) == p.eid and not q.picked.any(func(g: Dictionary) -> bool: return int(g.id) == id):
+			left_id = id
+	if left_id >= 0:
+		q.notices.clear()
+		q.pickup(left_id)
+		check("C3: khác đội: Q không nhặt được đồ của P", await wait_until(func() -> bool:
+			return q.notices.any(func(n: String) -> bool: return n.contains("người khác")), 2.0)
+			and not q.picked.any(func(g: Dictionary) -> bool: return int(g.id) == left_id), q.notices)
 	p.team_op(SocialServer.TEAM_LEAVE)
 	check("C3: đội trưởng rời = giải tán", await wait_until(func() -> bool: return not r.team.get("in_team", true), 3.0))
 	for x in [p, q, r]:

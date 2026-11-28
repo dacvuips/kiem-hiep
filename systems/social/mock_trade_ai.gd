@@ -67,7 +67,7 @@ func tick() -> void:
 func _pick_items_up_to(budget: int) -> Array[ItemInstance]:
 	var cand: Array[ItemInstance] = []
 	for it in mock.bag.inventory:
-		if not SecurityLock.is_item_locked(it):
+		if it.can_trade():
 			cand.append(it)
 	cand.sort_custom(func(a: ItemInstance, b: ItemInstance) -> bool: return MockPlayer.suggested_price(a) > MockPlayer.suggested_price(b))
 	var out: Array[ItemInstance] = []

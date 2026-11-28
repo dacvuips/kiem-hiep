@@ -118,6 +118,19 @@ for sid, info in SKILL_180_DEFS.items():
         "wait": 0
     }
 
+# Từ Hàng Phổ Độ 1234 (Ba La Tâm Kinh kích hoạt): Skills.txt gốc giống hệt Từ Hàng Phổ Độ 93 (đạn 5, vùng 5 ô,
+# TargetAlly + TargetSelf, bảng cihang_pudu) — chỉ khác MissleForm 7 (bung tại chỗ người đánh) + ảnh 门派进阶\水.spr.
+if "93" in skills_fx:
+    skills_fx["1234"] = {**skills_fx["93"], "form": 7, "precast": "tien_giai_thuy", "series": 2, "name": "Từ Hàng Phổ Độ"}
+
+# Sâm La Độc Hải 1222 bị động (Skills.txt gốc không có ChildSkillId) — chỉ autoattackskill kích Hồn Ảnh Tùng Sanh 1232.
+skills_fx["1222"]["child"] = 0
+skills_fx["1222"]["child_num"] = 0
+# Hồn Ảnh Tùng Sanh 1232: Skills.txt VNG giống hệt 1095 (Đao Ngũ Độc 150 tầng 2, wudu.lua daowudu150_2) — đạn 357
+# (đầu lâu nổ), MslsGenerate 5/4, IsPhysical 1, BaseSkill 1, DoHurt 10, tầm 420; chỉ khác ảnh xuất chiêu 门派进阶\木.spr.
+if "1095" in skills_fx:
+    skills_fx["1232"] = {**skills_fx["1095"], "name": "Hồn Ảnh Tùng Sanh", "precast": "tien_giai_moc", "do_hurt": 10}
+
 with open(skills_fx_path, "w", encoding="utf-8") as f:
     json.dump(skills_fx, f, ensure_ascii=False, indent=2)
 print("Updated skills.json!")
@@ -175,14 +188,15 @@ SECT_180_DATA = {
         "element": 1,
         "desc": "Kỹ năng thất truyền của phái Ngũ Độc, dùng nó thì vạn vật sâm la. Tự động kích hoạt Hồn Ảnh Tùng Sanh làm mục tiêu trúng độc liên hồi.",
         "stat_lines": [
-            ("Tỷ lệ kích hoạt Hồn Ảnh", 10.0, 30.0, "%"),
+            ## advancedskill.lua wu_adskill: autoattackskill [3] = 1*18*256 + (20 -> 60).
+            ("Tỷ lệ kích hoạt Hồn Ảnh", 20.0, 60.0, "%"),
             ("Giãn cách kích hoạt", 1.0, 1.0, " giây"),
-            ("Độc sát nội công", 50.0, 300.0, " điểm/lần"),
-            ("Ngũ hành tương khắc", 20.0, 50.0, "%")
+            ## Số của Hồn Ảnh Tùng Sanh 1232 (wudu.lua daowudu150_2) — chỉ để hiển thị, sát thương tính ở skill 1232.
+            ("Độc sát Hồn Ảnh mỗi nhịp", 1.0, 12.0, " điểm"),
+            ("Tương khắc ngũ hành Hồn Ảnh", 40.0, 80.0, "%")
         ],
         "vltk_attribs": {
-            "autoattackskill": [ [1, 315393, 0, 20, 315412, 0], [1, -1, 0, 20, -1, 0], [1, 4618, 0, 20, 4638, 0] ],
-            "seriesdamage_p": [ [1, 20, 0, 20, 50, 0] ]
+            "autoattackskill": [ [1, 315393, 0, 20, 315412, 0], [1, -1, 0, 20, -1, 0], [1, 4628, 0, 20, 4668, 0] ]
         }
     },
     "duong_mon.tres": {
@@ -386,17 +400,17 @@ req_level = 180
 vltk_skill_id = {data['vltk_id']}
 icon = ExtResource("vicon_{data['skill_id']}")
 description = "{data['desc']}"
-school_text = "Hỗ trợ chủ động (Thất truyền 180)"
-is_active = true
-category = 0
+school_text = "Bị động (Thất truyền 180)"
+is_active = false
+category = 1
 base_damage = 0.0
 mana_cost = 0.0
-cooldown = 20.0
+cooldown = 0.0
 range = 0.0
 element = {data['element']}
 damage_growth_per_level = 0.0
 stat_lines = Array[ExtResource("3_statline")]([{stat_lines_refs}])
-is_hotbar = true
+is_hotbar = false
 """
     new_sub_blocks.append(skill_block)
 

@@ -51,17 +51,33 @@ func _ready() -> void:
 	NetClient.trade_state.connect(_on_trade_state)
 	NetClient.trade_end.connect(_on_trade_end)
 	NetClient.team_state.connect(_on_team_state)
+	NetClient.team_hp.connect(_on_team_hp)
+	## Mỗi kết nối mới (Sảnh -> map, đổi phòng train sang tiến trình server khác) bắt đầu KHÔNG có đội: server không mang đội theo
+	## kết nối cũ (ngắt kết nối = rời đội). Xoá ảnh chụp đội cũ, kẻo giao diện vẫn hiện "Nhóm 2/3" trong khi server không coi là
+	## đồng đội (không nhặt được đồ của nhau, không chia kinh nghiệm).
+	NetClient.connected_to_world.connect(func(_eid: int, _feet: Vector2, _name: String) -> void: _reset_team())
+	## Mất kết nối (đang chờ nối lại) cũng là đã rời đội ở server -> xoá ngay, không đợi lần nối sau.
+	NetClient.disconnected.connect(func(_code: String, _msg: String) -> void: _reset_team())
 	NetClient.team_invite.connect(_on_team_invite)
+	NetClient.team_apply.connect(_on_team_apply)
 	NetClient.guild_received.connect(_on_guild)
 	NetClient.guild_list.connect(func(list: Array) -> void:
 		guild_list = list
 		guild_list_updated.emit(list))
 	NetClient.guild_invite.connect(_on_guild_invite)
 	NetClient.friend_invite.connect(_on_friend_invite)
+	NetClient.rps_message.connect(_on_rps)
 
 func _exit_tree() -> void:
 	if current == self:
 		current = null
+	## Rời màn chơi / Sảnh = đóng kết nối = server cho rời đội -> bỏ ảnh chụp đội ngay (về Sảnh không còn "Nhóm 2/3" cũ).
+	_reset_team()
+
+func _reset_team() -> void:
+	var hub := _hub()
+	if hub:
+		hub.team.reset_local()
 
 func _on_profile(data: Dictionary) -> void:
 	var profile := GameManager.local_profile
@@ -69,12 +85,16 @@ func _on_profile(data: Dictionary) -> void:
 		return
 	var old_avatar := profile.custom_avatar
 	var old_gm_aura: int = int(profile.get("gm_aura_state")) if profile.get("gm_aura_state") != null else 0
+	var old_da_tau := profile.da_tau.duplicate(true)
 	profile.copy_from(PlayerProfile.from_dict(data))
 	if profile.custom_avatar.strip_edges() == "" and old_avatar.strip_edges() != "":
 		profile.custom_avatar = old_avatar
 	if profile.get("gm_aura_state") != null and profile.gm_aura_state == 0 and old_gm_aura > 0:
 		profile.gm_aura_state = old_gm_aura
+	if profile.da_tau.is_empty() and not old_da_tau.is_empty():
+		profile.da_tau = old_da_tau
 	profile_applied.emit()
+	SaveManager.notify_profile_changed(profile)
 
 func _hub() -> SocialHub:
 	return SocialHub.of(GameManager.local_profile) if GameManager.local_profile else null
@@ -123,14 +143,37 @@ func _on_friend_invite(from_eid: int, from_name: String) -> void:
 	_ask("Hảo hữu", "%s xin phép gia nhập bằng hữu." % from_name, func(ok: bool) -> void:
 		NetClient.send_friend(RelationServer.FRIEND_ANSWER, from_eid, 1 if ok else 0))
 
+## Oẳn tù xì (RpsServer): lời mời -> hộp hỏi Tham gia / Từ chối; trạng thái / kết thúc -> RpsWindow.
+func _on_rps(msg: Dictionary) -> void:
+	if str(msg.get("op", "")) == "invite":
+		var from_eid := int(msg.get("from", 0))
+		var from_name := str(msg.get("name", ""))
+		var p := GameManager.local_profile
+		if p and p.blacklist.has(from_name):
+			NetClient.send_rps({"op": "answer", "eid": from_eid, "accept": false})   ## sổ đen: tự từ chối
+			return
+		SocialWindow.ask_yes_no(get_tree().current_scene, "Oẳn tù xì",
+			"%s mời bạn chơi Oẳn tù xì (Búa - Kéo - Bao).
+Bạn có muốn tham gia không?" % from_name,
+			func(ok: bool) -> void: NetClient.send_rps({"op": "answer", "eid": from_eid, "accept": ok}), "Tham gia", "Từ chối")
+		return
+	RpsWindow.handle(get_tree().current_scene, msg)
+
 func _on_team_state(st: Dictionary) -> void:
 	var hub := _hub()
 	if hub:
 		hub.team.apply_net_state(st)
 
+func _on_team_hp(list: Array) -> void:
+	var hub := _hub()
+	if hub:
+		hub.team.apply_net_hp(list)
+
 func _on_team_invite(captain_eid: int, captain_name: String) -> void:
 	var p := GameManager.local_profile
-	if p != null:
+	var hub := _hub()
+	## Tự trả lời theo Thiết lập tổ đội của Auto CHỈ khi auto đang chạy; không thì hỏi người chơi.
+	if p != null and hub != null and hub.team.auto_team:
 		var s := p.get_auto_settings()
 		if s.team_on:
 			match s.accept_mode:
@@ -150,3 +193,28 @@ func _on_team_invite(captain_eid: int, captain_name: String) -> void:
 					return
 	_ask("Tổ đội", "%s mời bạn vào tổ đội." % captain_name, func(ok: bool) -> void:
 		NetClient.send_team(SocialServer.TEAM_ANSWER, captain_eid, 1 if ok else 0))
+
+func _on_team_apply(applicant_eid: int, applicant_name: String, applicant_level: int) -> void:
+	var p := GameManager.local_profile
+	var hub := _hub()
+	## Tự trả lời theo Thiết lập tổ đội của Auto CHỈ khi auto đang chạy; không thì hỏi người chơi.
+	if p != null and hub != null and hub.team.auto_team:
+		var s := p.get_auto_settings()
+		if s.team_on:
+			match s.accept_mode:
+				0:
+					NetClient.send_team(SocialServer.TEAM_REJECT, applicant_eid)
+					return
+				1:
+					NetClient.send_team(SocialServer.TEAM_ACCEPT, applicant_eid)
+					return
+				2:
+					var ok := false
+					for n in s.team_list:
+						if str(n).strip_edges().to_lower() == applicant_name.strip_edges().to_lower():
+							ok = true
+							break
+					NetClient.send_team(SocialServer.TEAM_ACCEPT if ok else SocialServer.TEAM_REJECT, applicant_eid)
+					return
+	_ask("Tổ đội", "%s (cấp %d) xin gia nhập tổ đội." % [applicant_name, applicant_level], func(ok: bool) -> void:
+		NetClient.send_team(SocialServer.TEAM_ACCEPT if ok else SocialServer.TEAM_REJECT, applicant_eid))

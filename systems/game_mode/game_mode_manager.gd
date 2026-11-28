@@ -33,8 +33,19 @@ static func _get_game_manager() -> Node:
 static func set_mode(mode: Mode) -> void:
 	current_mode = mode
 	var gm := _get_game_manager()
-	if gm and "network_mode" in gm:
-		gm.network_mode = 1 if mode == Mode.ONLINE else 0
+	if gm != null:
+		if "network_mode" in gm:
+			gm.network_mode = 1 if mode == Mode.ONLINE else 0
+		gm.local_profile = null
+	PlayerStats.reset()
+	var sm_cls = load("res://systems/survivor/survivor_manager.gd")
+	if sm_cls != null and sm_cls.has_method("reset"):
+		sm_cls.reset()
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("SaveManager"):
+		var sm = tree.root.get_node("SaveManager")
+		if sm != null and sm.has_method("clear_online_character"):
+			sm.clear_online_character()
 	print("GameModeManager: Chuyển sang chế độ -> %s" % ("ONLINE (Trực tuyến)" if mode == Mode.ONLINE else "OFFLINE (Ngoại tuyến)"))
 
 ## Kiểm tra có đang ở chế độ Online không

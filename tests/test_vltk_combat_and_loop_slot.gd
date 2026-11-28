@@ -83,6 +83,18 @@ func test_poison_mechanics_and_mix() -> void:
 	assert_true(mixed.y == 60, "Thời gian độc duy trì đúng 60 frame")
 	assert_true(mixed.z == 10, "Nhịp rút độc giữ đúng 10 frame")
 
+	# Gộp lớp độc khi đang dính (cân bằng riêng): lượng rút cộng dồn, thời gian giữ lớp dài hơn (không trung bình như gốc).
+	var merged := StatusEffectController.merge_poison(Vector3i(300, 5, 10), Vector3i(200, 60, 10))
+	assert_true(merged.x == 500, "Đang dính 300/nhịp + lớp 200 -> 500/nhịp")
+	assert_true(merged.y == 60, "Chồng độc to sắp hết (5 frame) vẫn được lớp mới nối thời gian lên 60 frame")
+	assert_true(merged.z == 10, "Nhịp rút trung bình 2 lớp")
+	# Không trần: đánh độc liên tục cộng dồn mãi; chỉ chặn tràn int 32 bit (không quay về số âm).
+	var stacked := Vector3i(200, 60, 10)
+	for i in 50:
+		stacked = StatusEffectController.merge_poison(stacked, Vector3i(200, 60, 10))
+	assert_true(stacked.x == 200 * 51, "Đánh độc liên tục cộng dồn không trần (51 lớp)")
+	assert_true(StatusEffectController.merge_poison(Vector3i(0x7ffffff0, 5, 8), Vector3i(1000, 60, 13)).x == StatusEffectController.POISON_INT_LIMIT, "Chồng độc cực lớn không tràn số âm")
+
 	# Test Poison Stacking trong StatusEffectController
 	var dummy := Node2D.new()
 	add_child(dummy)
@@ -104,6 +116,38 @@ func test_poison_mechanics_and_mix() -> void:
 	assert_true(int(eff.damage_per_tick) == 25, "Lượng rút mỗi nhịp = 25")
 	assert_true(eff.interval_frames == 10, "Nhịp rút độc = 10 frames")
 
+	dummy.queue_free()
+	test_poison_tick_ignores_five_elements()
+
+## Nhịp rút độc gốc (KNpc::Activate, nMissleSeries = -1): có giáp / kháng / hệ số PK, KHÔNG tương khắc ngũ hành, KHÔNG chí mạng.
+func test_poison_tick_ignores_five_elements() -> void:
+	print("\n[3b] Nhịp rút độc không tương khắc ngũ hành...")
+	var attacker := CombatantStats.new()
+	attacker.element = ElementTypes.ElementType.MOC
+	var defender := CombatantStats.new()
+	defender.element = ElementTypes.ElementType.KIM   ## Kim khắc Mộc: Ngũ Độc bị khắc
+	defender.resist_percent[CombatFormulas.DamageType.POISON] = 20
+	defender.resist_percent_cap[CombatFormulas.DamageType.POISON] = 95
+	var parts := {CombatFormulas.DamageType.POISON: Vector2i(200, 200)}
+	var mods := CombatFormulas.HitModifiers.new()
+	mods.five_elements_damage_p = 50
+	var dealt := {}
+	CombatFormulas.resolve_multi_damage(attacker, defender, 100000, parts, attacker.element, mods, dealt)
+	assert_true(int(dealt.get(CombatFormulas.DamageType.POISON, 0)) == 60, "Cú đánh đầu bị khắc: kháng 20 + 50 = 70% -> 60")
+	assert_true(CombatFormulas.poison_tick_damage(defender, parts, false) == 160, "Nhịp rút chỉ trừ kháng 20% -> 160")
+	assert_true(CombatFormulas.poison_tick_damage(defender, parts, true) == 200 * CombatFormulas.PK_DAMAGE_RATE_PERCENT / 100 * 80 / 100,
+		"Nhịp rút PK nhân hệ số PK rồi trừ kháng")
+	assert_true(CombatFormulas.poison_tick_damage(defender, {}, false) == -1, "Đòn không có Độc sát -> -1")
+	mods.is_deadly_strike = true
+	var dummy := Node2D.new()
+	add_child(dummy)
+	var sec := StatusEffectController.new()
+	dummy.add_child(sec)
+	mods.poison_time_frames = 60
+	mods.poison_interval_frames = 10
+	sec.apply_vltk_hit(mods, {CombatFormulas.DamageType.POISON: 120}, defender, CombatFormulas.poison_tick_damage(defender, parts, false))
+	assert_true(sec.has_effect("poison") and int(sec.get_effect("poison").damage_per_tick) == 160,
+		"Độc trên mục tiêu rút 160/nhịp (không lấy cú đầu đã tương khắc / chí mạng)")
 	dummy.queue_free()
 
 func test_vo_hinh_doc_and_loop_slot() -> void:

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ci158selwin001"]
+
+[ext_resource type="Script" path="res://tests/test_selected_skills_window.gd" id="1_selwin"]
+
+[node name="TestSelectedSkillsWindow" type="Node"]
+script = ExtResource("1_selwin")

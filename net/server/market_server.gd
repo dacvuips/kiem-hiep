@@ -6,6 +6,7 @@ extends RefCounted
 ## Người bán đang online: tiền về ngay. Không online: món nằm trong sổ ở trạng thái "sold", nhận khi vào game / mở tab "Của Tôi".
 
 const FLUSH_SECONDS := 1.0
+const LOAD_RETRY_SECONDS := 5.0
 const MIN_OP_GAP := 0.15          ## giây giữa 2 thao tác chợ của 1 người (chống gửi dồn)
 
 var gs: GameServer
@@ -21,11 +22,14 @@ var _busy_conns: Dictionary = {}  ## character_id -> true: đang thực hiện t
 func _init(server: GameServer) -> void:
 	gs = server
 
+## Nạp lúc khởi động: game server còn đang nạp bản đồ (Lộn Xộn...) chặn luồng chính nhiều giây nên yêu cầu đầu tiên hay bị quá giờ
+## dù máy chủ tài khoản vẫn chạy -> thử lại mỗi LOAD_RETRY_SECONDS tới khi được (trước đây lỗi 1 lần là bỏ, cả phiên không có dữ liệu).
 func load_all() -> void:
 	var r: Dictionary = await gs.account.list_market()
-	if not r.ok:
-		push_warning("Không nạp được chợ: %s" % r.get("message", ""))
-		return
+	while not r.ok:
+		push_warning("Không nạp được chợ: %s — thử lại sau %ds" % [r.get("message", ""), int(LOAD_RETRY_SECONDS)])
+		await gs.get_tree().create_timer(LOAD_RETRY_SECONDS).timeout
+		r = await gs.account.list_market()
 	for row in r.get("listings", []):
 		if row.get("data") is Dictionary and (row.data as Dictionary).has("id"):
 			var d: Dictionary = row.data
@@ -101,7 +105,7 @@ func on_market(c, b: StreamPeerBuffer) -> void:
 				return
 			_dirty[str(r[1]["id"])] = true
 			_changed(c)
-			_done(c, "", "Đã treo bán (đã trừ thuế 3%%) — xem ở tab Của Tôi.")
+			_done(c, "", "Đã treo bán (đã trừ thuế 3%) — xem ở tab Của Tôi.")
 		"buy":
 			_busy_conns[c.character_id] = true
 			if c.trade:

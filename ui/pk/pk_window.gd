@@ -14,7 +14,8 @@ const PkStakeWindow = preload("res://ui/pk/pk_stake_window.gd")
 ## xem / tự tìm đều vào thẳng arena server (ArenaServer kiểm tra mật khẩu, cấp, phái; ArenaClient lo phần còn lại). Chưa đăng nhập /
 ## arena server chưa mở: chạy cục bộ như trên (PkLobby + bot).
 
-const LIST_SIZE := Vector2(680, 260)
+const WIN_W: float = 1200.0
+const LIST_SIZE := Vector2(1160, 360)
 const FOUND_DELAY := 2.0           ## tìm được đối thủ: hiện tên đối thủ chừng này giây rồi mới vào trận
 const POLL_SEC := 2.0
 const MODE_ALL := -1
@@ -50,7 +51,8 @@ static func open(host: Node, profile: PlayerProfile, on_play: Callable) -> PkWin
 	return SocialWindow.present(host, win, &"pk") as PkWindow
 
 func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> void:
-	super._init("PK", "Võ Lâm Minh Chủ triệu tập anh hùng thiên hạ so tài", 720.0)
+	super._init("PK", "Võ Lâm Minh Chủ triệu tập anh hùng thiên hạ so tài", WIN_W)
+	custom_minimum_size = Vector2(WIN_W, 660.0)
 	_opened_at = Time.get_ticks_msec()
 	_profile = profile
 	_on_play = on_play
@@ -61,6 +63,8 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 		subtitle_label.add_theme_color_override("font_outline_color", Color(0.1, 0.08, 0.02, 0.9))
 	_content = VBoxContainer.new()
 	_content.add_theme_constant_override("separation", 8)
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(_content)
 	_select_mode(MODE_ALL)
 	_fetch_arena()
@@ -287,10 +291,12 @@ func _show_lobby() -> void:
 
 	# 4. Danh sách chung các phòng (Scrollable Unified Room List)
 	var frame := GameUi.panel(GameUi.PANEL)
+	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(frame)
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = LIST_SIZE
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	frame.add_child(scroll)

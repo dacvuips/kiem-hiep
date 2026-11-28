@@ -32,8 +32,17 @@ func _init(p_effect_id: String = "", p_duration: float = 0.0, p_damage_per_tick:
 var frame_mode: bool = false
 var frames_left: int = 0
 var interval_frames: int = 1
+## Số frame tới nhịp rút kế tiếp — đếm RIÊNG, không theo `frames_left % nhịp` như gốc: khi gộp lớp độc, thời gian được nối lên
+## (StatusEffectController.merge_poison) nên frames_left cứ bị kéo lên mãi, phép chia hết có thể không bao giờ trúng (VD nhịp 15,
+## thời gian dao động 46..56 -> không rút lần nào). Lớp mới: = frames_left % nhịp (0 -> nhịp), khớp hệt gốc khi chưa gộp.
+var tick_counter: int = 0
 var _frame_acc: float = 0.0
 const FRAME_FPS := 18.0
+
+static func first_tick_in(time_frames: int, interval: int) -> int:
+	var c := maxi(1, interval)
+	var r := time_frames % c
+	return r if r > 0 else c
 
 ## Trả về true nếu effect đã hết hạn và nên bị xoá.
 func tick(delta: float, target: Node) -> bool:
@@ -74,7 +83,12 @@ func _tick_frames(delta: float, target: Node) -> bool:
 	while _frame_acc >= 1.0 and frames_left > 0:
 		_frame_acc -= 1.0
 		frames_left -= 1
-		if frames_left % maxi(1, interval_frames) == 0 and damage_per_tick > 0.0:
+		tick_counter -= 1
+		var due := tick_counter <= 0
+		if due:
+			tick_counter = maxi(1, interval_frames)
+		## Gốc luôn rút ở nTime == 0 (0 chia hết mọi nhịp) — giữ nhịp cuối đó.
+		if (due or frames_left == 0) and damage_per_tick > 0.0:
 			_apply_tick_damage(target)
 	time_remaining = float(frames_left) / FRAME_FPS
 	return frames_left <= 0

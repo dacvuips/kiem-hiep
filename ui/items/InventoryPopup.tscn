@@ -308,6 +308,18 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Sắp Xếp"
 
+[node name="SellButton" type="Button" parent="Frame/Root/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Bán"
+
 [node name="ShopButton" type="Button" parent="Frame/Root/Body/Side/InvActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)

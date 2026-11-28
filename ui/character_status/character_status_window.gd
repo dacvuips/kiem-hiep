@@ -8,6 +8,8 @@ class_name CharacterStatusWindow
 ## scene theo anchor (co giãn theo khung) nhưng cỡ chữ cố định px — thu nhỏ khung là chữ tràn/lệch ô.
 const CONTENT_SIZE := Vector2(733, 550)
 
+signal profile_changed
+
 var screen: CharacterStatusScreen
 var _profile: PlayerProfile
 var _inventory_opener: Callable
@@ -19,10 +21,15 @@ static func open(parent: Node, profile: PlayerProfile, inventory_opener: Callabl
 	parent.add_child(w)
 	return w
 
+func refresh() -> void:
+	if screen != null and is_instance_valid(screen):
+		screen.refresh()
+
 func _ready() -> void:
 	layer = DraggableWindow.WINDOW_LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var window := DraggableWindow.new("Nhân vật", true)
+	window.default_side = -1   ## mặc định bám mép trái — Hành trang mở bám mép phải
 	window.close_requested.connect(queue_free)
 	## Dời nút X vào trong thanh tiêu đề gỗ của ảnh khung (góc phải, trước tua rua đỏ).
 	window.close_button.offset_left = -88
@@ -36,3 +43,4 @@ func _ready() -> void:
 	window.body.add_child(holder)
 	screen = CharacterStatusScreen.attach(holder, _profile)
 	screen.inventory_opener = _inventory_opener
+	screen.profile_changed.connect(func() -> void: profile_changed.emit())

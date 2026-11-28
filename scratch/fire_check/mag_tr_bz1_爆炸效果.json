@@ -1,0 +1,12 @@
+{
+  "frame_width": 93,
+  "frame_height": 97,
+  "center": [
+    51,
+    78
+  ],
+  "frames": 8,
+  "directions": 1,
+  "frames_per_direction": 8,
+  "interval": 2
+}

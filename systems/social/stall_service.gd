@@ -20,13 +20,15 @@ static func set_price(p: PlayerProfile, item: ItemInstance, price: int) -> Strin
 		return "Giá không hợp lệ."
 	if price > 0 and SecurityLock.is_item_locked(item):
 		return "Món đồ đang bị khoá, không đặt giá được."
+	if price > 0 and item.lock_trade:
+		return "Vật phẩm khoá, không bày bán được."
 	item.trade_price = price
 	return ""
 
 static func priced_items(p: PlayerProfile) -> Array[ItemInstance]:
 	var out: Array[ItemInstance] = []
 	for it in p.inventory:
-		if it.trade_price > 0 and not SecurityLock.is_item_locked(it):
+		if it.trade_price > 0 and it.can_trade():
 			out.append(it)
 	return out
 

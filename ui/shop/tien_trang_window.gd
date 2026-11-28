@@ -43,17 +43,24 @@ static func open(host: Node, on_changed: Callable = Callable(), profile: PlayerP
 		win._profile = host.get("_profile") as PlayerProfile
 	if win._profile == null:
 		win._profile = GameManager.local_profile
+	win._refresh_display()
 	return SocialWindow.present(host, win, &"tien_trang") as TienTrangWindow
 
 func _init() -> void:
 	super._init("Chủ Tiền Trang", "Quản lý Tiền Xu tài khoản & Quy đổi Kim Nguyên Bảo", 480.0)
 	_build_ui()
 	_load_data()
-	if GmManager != null and GmManager.has_signal("profile_modified"):
-		GmManager.connect("profile_modified", func(p: PlayerProfile) -> void:
-			if p == null or p == _profile or p == GameManager.local_profile:
-				_refresh_display()
-		)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func on_presented() -> void:
+	_refresh_display()
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh_display()
 
 func _build_ui() -> void:
 	# Khung tóm tắt 3 loại tiền tệ
@@ -263,6 +270,7 @@ func _load_data() -> void:
 			if _profile:
 				_profile.xu = wallet_xu
 				_refresh_display()
+				SaveManager.notify_profile_changed(_profile)
 
 func _refresh_display() -> void:
 	if _profile == null:
@@ -328,7 +336,7 @@ func _on_confirm_transfer() -> void:
 		_profile.xu -= xu
 		_profile.jade += xu * _jade_per_xu
 
-	SaveManager.save_profile(_profile)
+	SaveManager.save_profile(_profile, true)
 	if NetClient.is_in_world():
 		NetClient.send_profile(_profile.to_dict())
 
@@ -360,7 +368,7 @@ func _on_topup_pack_pressed(amount_vnd: int, pack_xu: int) -> void:
 			var p_res := await AccountApi.pay_sandbox_order(code)
 			if p_res.ok:
 				_profile.xu += pack_xu
-				SaveManager.save_profile(_profile)
+				SaveManager.save_profile(_profile, true)
 				_message.text = "Thanh toán giả lập thành công! Nhận +%s Xu." % InventoryPopup.format_money(pack_xu)
 				_message.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
 				_refresh_display()
@@ -378,7 +386,7 @@ func _on_topup_pack_pressed(amount_vnd: int, pack_xu: int) -> void:
 	else:
 		# Chế độ Offline / Test
 		_profile.xu += pack_xu
-		SaveManager.save_profile(_profile)
+		SaveManager.save_profile(_profile, true)
 		_message.text = "Nạp thành công +%s Xu (chế độ thử nghiệm)." % InventoryPopup.format_money(pack_xu)
 		_message.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
 		_refresh_display()

@@ -2,7 +2,7 @@ extends Node
 class_name NetWorldSync
 ## Nối map MAIN_MAP với game server khi chơi online (main.gd thêm node này nếu đã đăng nhập + đã chọn nhân vật trên server):
 ##   - kết nối NetClient, đặt nhân vật mình ở vị trí server cấp;
-##   - gửi vị trí / hướng / động tác của mình tối đa NetProto.CLIENT_SEND_RATE lần/giây (đứng yên thì 1 lần/giây);
+##   - gửi vị trí / hướng / động tác của mình tối đa NetProto.CLIENT_SEND_RATE lần/giây kèm giờ lấy mẫu (đứng yên thì 1 lần/giây);
 ##   - tạo / cập nhật / xóa RemotePlayer cho người chơi khác trong tầm nhìn;
 ##   - bị server kéo về (đi quá nhanh / xuyên vật cản) thì đặt lại vị trí.
 
@@ -16,6 +16,7 @@ const FATAL := ["logged_in_elsewhere", "banned", "version", "unauthorized", "cha
 
 var player: CharacterBody2D   ## player.gd (không có class_name) — gọi hàm theo kiểu động
 var _remotes: Dictionary = {}     ## eid -> RemotePlayer
+var _remote_guilds: Dictionary = {} ## eid -> {name, emblem}
 ## Kết nối tới máy chủ game KHÁC máy chủ đã chọn (chiến trường Tống Kim: {host, port, ws_url, name}) — {} = máy chủ đã chọn.
 var server_override: Dictionary = {}
 var _monsters: Dictionary = {}    ## eid -> VltkMonster (chế độ online)
@@ -32,6 +33,8 @@ static var current: NetWorldSync
 ## Danh sách bang trên server (S_GUILD_LIST) cho màn xin vào bang.
 
 static func is_online_mode() -> bool:
+	if GameModeManager.is_offline():
+		return false
 	return AccountApi.is_logged_in() and SaveManager.online_character_id != 0 and not ServerSelectScreen.selected_server.is_empty()
 
 func _ready() -> void:
@@ -43,6 +46,7 @@ func _ready() -> void:
 	NetClient.entity_look.connect(_on_look)
 	NetClient.position_corrected.connect(_on_corrected)
 	NetClient.monster_attack.connect(_on_monster_attack)
+	NetClient.monster_states.connect(_on_monster_states)
 	NetClient.player_cast.connect(_on_player_cast)
 	NetClient.monster_killed.connect(_on_monster_killed)
 	NetClient.progress.connect(_on_progress)
@@ -52,9 +56,15 @@ func _ready() -> void:
 	NetClient.stall_items.connect(_on_stall_items)
 	NetClient.stall_sign.connect(_on_stall_sign)
 	NetClient.camp_changed.connect(func(eid: int, new_camp: int, new_nation: int) -> void:
+		if eid == NetClient.my_eid:
+			if GameManager.local_profile:
+				GameManager.local_profile.camp = new_camp
+			if player and is_instance_valid(player) and player.has_method("set_camp"):
+				player.set_camp(new_camp)
 		var rp := remote_of(eid)
 		if rp:
 			rp.set_camp(new_camp, new_nation))
+	NetClient.player_guild_changed.connect(_on_player_guild_changed)
 	NetClient.enmity_state.connect(_on_enmity)
 	NetClient.pvp_hit.connect(_on_pvp_hit)
 	NetClient.view_equip.connect(_on_view_equip)
@@ -135,6 +145,8 @@ func _on_profile_applied() -> void:
 		player.refresh_combat_stats()
 		if player.has_method("_refresh_aura_sprite"):
 			player._refresh_aura_sprite()
+		if player.has_method("refresh_nameplate"):
+			player.refresh_nameplate()
 
 func _on_drops(list: Array) -> void:
 	for d in list:
@@ -163,9 +175,22 @@ func _on_picked(id: int, amount: int, item: Dictionary) -> void:
 			_notify("Nhặt được %d lượng" % amount)
 		elif not item.is_empty():
 			var it := ItemInstance.from_dict(item)
-			if not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
-				profile.add_item(it)
-			_notify("Nhặt được %s" % it.get_display_name())
+			if it.misc_id in ["6_1_206", "6_1_213"]:
+				var cur_map_id := int(GameManager.field_map.get("id", -1)) if GameManager else -1
+				var res := DaTauManager.try_collect_picked_scroll(profile, it.misc_id, cur_map_id)
+				if res.get("counted", false):
+					_notify("Nhặt được %s (%d/%d) — Dã Tẩu đã ghi nhận" % [res.get("name", "Địa đồ chí"), res.get("done", 1), res.get("need", 1)])
+				elif res.get("bag_full", false):
+					_notify("Hành trang đã đầy, không thể nhặt %s!" % res.get("name", "Địa đồ chí"))
+					return
+				else:
+					_notify("Nhặt được %s → +1 mảnh Sơn Hà Xã Tắc (Hiện có: %d)" % [res.get("name", it.get_display_name()), int(res.get("shxt_total", 1))])
+			else:
+				if ItemDatabase.max_stack(it.misc_id) > 1 and it.is_misc():
+					profile.add_item_stacked(it)   ## chồng được: gộp như server (server gửi thêm bản chuẩn nếu đã gộp)
+				elif not profile.can_place(it, it.room_x, it.room_y, it.room_bag) or not _place_at(profile, it):
+					profile.add_item(it)
+				_notify("Nhặt được %s" % it.get_display_name())
 		SaveManager.save_profile(profile)
 	_on_drop_gone(id)
 
@@ -268,19 +293,25 @@ func _on_progress(gained: int, level: int, current_exp: int) -> void:
 	profile.level = clampi(level, 1, PlayerProfile.MAX_LEVEL)
 	profile.current_exp = 0 if profile.level >= PlayerProfile.MAX_LEVEL else current_exp
 	if gained > 0:
+		SkillPractice.on_local_kill_exp(profile, gained)   ## luyện skill bị động / hào quang 90/120/150
 		var mname := _last_killed_monster_name if _last_killed_monster_name != "" else "Quái"
 		ChatBox.push_exp(mname, gained)
 		_last_killed_monster_name = ""
-	if profile.level != before and player and is_instance_valid(player):
-		player.refresh_combat_stats()
-		ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
-		_notify("Lên cấp %d!" % profile.level)
+	if profile.level != before:
+		if player and is_instance_valid(player):
+			player.refresh_combat_stats()
+			ChatBox.push_system("[color=#ffaa00][Hệ thống][/color] Chúc mừng bạn đã thăng cấp [color=#55ff55]%d[/color]!" % profile.level)
+			_notify("Lên cấp %d!" % profile.level)
+		SaveManager.notify_profile_changed(profile)
+	else:
+		SaveManager.request_exp_save(profile, 5.0)
 
 func _on_disconnected(code: String, message: String) -> void:
 	SaveManager.mark_version_unknown()
 	for r in _remotes.values():
 		r.queue_free()
 	_remotes.clear()
+	_remote_guilds.clear()
 	for m in _monsters.values():
 		if is_instance_valid(m):
 			m.queue_free()
@@ -296,6 +327,14 @@ func _on_disconnected(code: String, message: String) -> void:
 			if client_handler == null:
 				client_handler = get_tree().get_first_node_in_group("field_client")
 		if client_handler == null and is_inside_tree():
+			GameManager.field_map = {}
+			get_tree().change_scene_to_file.call_deferred(HUB_SCENE)
+		return
+	if code == "version":
+		## Lệch giao thức game <-> máy chủ (VD máy chủ chưa build lại): KHÔNG đăng xuất — phiên đăng nhập vẫn tốt,
+		## đăng xuất làm người chơi tưởng "phiên hết hạn". Về Hub, Hub tự báo lại lý do.
+		_reconnect_in = -1.0
+		if is_inside_tree():
 			GameManager.field_map = {}
 			get_tree().change_scene_to_file.call_deferred(HUB_SCENE)
 		return
@@ -360,7 +399,26 @@ func _on_spawn(info: Dictionary) -> void:
 	_parent().add_child(r)
 	r.setup(info)
 	_remotes[r.eid] = r
+	if _remote_guilds.has(r.eid):
+		var gd: Dictionary = _remote_guilds[r.eid]
+		r.set_guild(str(gd.get("name", "")), int(gd.get("emblem", 0)))
 	_apply_enmity(r.eid)
+
+func _on_player_guild_changed(eid: int, gname: String, gemblem: int) -> void:
+	if gname == "":
+		_remote_guilds.erase(eid)
+	else:
+		_remote_guilds[eid] = {"name": gname, "emblem": gemblem}
+	if eid == NetClient.my_eid and player and is_instance_valid(player):
+		var lp := GameManager.local_profile
+		if lp != null and gname == "" and not lp.guild.is_empty():
+			lp.guild = {}
+		if player.has_method("refresh_nameplate"):
+			player.refresh_nameplate()
+		return
+	var r := remote_of(eid)
+	if r:
+		r.set_guild(gname, gemblem)
 
 func _spawn_monster(info: Dictionary) -> void:
 	var eid := int(info.eid)
@@ -375,14 +433,19 @@ func _spawn_monster(info: Dictionary) -> void:
 	m.data = data.duplicate()
 	m.data["series"] = int(info.series)
 	m.level = maxi(1, int(info.level))
-	m.blue_boss = bool(info.blue)
+	m.blue_boss = info.get("blue") == true
 	## Phòng Địa Ngục (phòng train chung): sát thương quái ×sao tính ở máy mình như bản offline (máu do server giữ).
 	m.hell_stars = int((GameManager.field_map.get("hell", {}) as Dictionary).get("stars", 0))
 	m.ai_enabled = false
 	m.position = info.pos
 	_parent().add_child(m)
-	m.net_push_state(NetClient.server_now_ms() - VltkMonster.NET_INTERP_DELAY_MS, info)
+	m.net_push_state(NetClient.server_now_ms() - NetClient.interp_delay_ms(NetClient.Interp.MONSTER), info, false)
 	_monsters[eid] = m
+
+func _on_monster_states(m_eid: int, states: Array) -> void:
+	var m: VltkMonster = _monster_of(m_eid)
+	if m and is_instance_valid(m):
+		m.net_apply_states(states)
 
 func _on_monster_attack(m_eid: int, slot: int, target_eid: int, dir64: int) -> void:
 	var m: VltkMonster = _monster_of(m_eid)
@@ -408,6 +471,36 @@ func _on_player_cast(caster_eid: int, skill_id: int, level: int, cast_flags: int
 		elif _monsters.has(target_eid):
 			target_node = _monster_of(target_eid)
 	VltkSkillRunner.replay(r, skill_id, level, target_node, VltkMath.to_logic(aim))
+	## Buff vùng của đồng đội cùng phe (Thanh Phong phù, Bất Động Minh Vương...): mình đứng trong vùng thì tự nhận.
+	if (cast_flags & NetProto.CAST_SUPPORT) != 0 and player != null and is_instance_valid(player):
+		var sk := SectSkillController.skill_by_vltk_id(skill_id)
+		if sk != null and not sk.is_aura:
+			SectSkillController.receive_ally_support(player, r, sk, level, false)
+			SectSkillController.play_ally_hit_fx_around(r, sk, level)
+
+## Nhịp hào quang hỗ trợ của người chơi khác (10 frame như KNpc::ProcessState gốc): đồng đội cùng phe đang bật hào quang
+## và mình đứng trong vùng đạn skill con (10 ô, Phổ Độ Chúng Sinh 14) -> nhận chỉ số hào quang ~1 giây, nhịp sau làm mới.
+var _ally_aura_time := 0.0
+
+func _tick_ally_auras(delta: float) -> void:
+	_ally_aura_time += delta
+	if _ally_aura_time < SectSkillController.AURA_TICK:
+		return
+	_ally_aura_time = fmod(_ally_aura_time, SectSkillController.AURA_TICK)
+	if player == null or not is_instance_valid(player) or (player.has_method("is_dead") and player.is_dead()):
+		return
+	for r: RemotePlayer in _remotes.values():
+		if r == null or not is_instance_valid(r):
+			continue
+		var aura := r.get_aura()
+		if aura.x <= 0 or aura.y <= 0:
+			continue
+		var sk := SectSkillController.skill_by_vltk_id(aura.x)
+		if sk != null and sk.is_aura and not sk.target_enemy:
+			## Hào quang tổng hợp (Bế Nguyệt Phất Trần) -> nhận từng hào quang con (máy mình không biết cấp từng con
+			## của họ nên lấy theo cấp hào quang tổng — cấp con gốc cũng bị chặn bởi cấp này).
+			for part in sk.aura_parts(SectRegistry.get_by_id(SectSkillController.sect_id_of(sk)), aura.y):
+				SectSkillController.receive_ally_support(player, r, part["skill"], int(part["level"]), true)
 
 func _on_monster_killed(k: Dictionary) -> void:
 	var m: VltkMonster = _monster_of(int(k.eid))
@@ -419,12 +512,13 @@ func _on_monster_killed(k: Dictionary) -> void:
 			_last_killed_monster_name = str(rec.get("name", "Quái"))
 	if m == null or not is_instance_valid(m):
 		return
-	m.grant_rewards(bool(k.last_hit))
+	m.grant_rewards(k.get("last_hit") == true)
 
 func _on_despawn(eid: int) -> void:
 	var node: Node = _monster_of(eid) if _monsters.has(eid) else remote_of(eid)
 	_monsters.erase(eid)
 	_remotes.erase(eid)
+	_remote_guilds.erase(eid)
 	if node == null:
 		return
 	if player and player.get_selected_target() == node:
@@ -460,6 +554,7 @@ func _process(delta: float) -> void:
 	if look != _last_look:
 		_last_look = look
 		NetClient.send_look(look)
+	_tick_ally_auras(delta)
 	_send_timer -= delta
 	_heartbeat -= delta
 	if _send_timer > 0.0:
@@ -474,8 +569,11 @@ func _process(delta: float) -> void:
 		flags |= NetProto.FLAG_DEAD
 	if z > 0.5:
 		flags |= NetProto.FLAG_JUMPING
-	if player.get("pk_mode") == 2:  ## Đồ Sát (PK Murder gốc VLTK)
+	var cur_pk_mode: int = int(player.get("pk_mode")) if player else 0
+	if cur_pk_mode == 2:  ## Đồ Sát (PK Murder gốc VLTK)
 		flags |= NetProto.FLAG_PK
+	elif cur_pk_mode == 1:  ## Chiến Đấu Phe (PK War gốc VLTK)
+		flags |= NetProto.FLAG_PK_WAR
 	var cur := {"feet": player.get_ground_position().round(), "dir": av.direction, "action": av.action, "z": int(z), "flags": flags}
 	if cur == _last_sent and _heartbeat > 0.0:
 		return
@@ -483,3 +581,7 @@ func _process(delta: float) -> void:
 	_send_timer = 1.0 / NetProto.CLIENT_SEND_RATE
 	_heartbeat = 1.0
 	NetClient.send_move(cur.feet, cur.dir, cur.action, cur.z, flags)
+
+func force_sync() -> void:
+	_last_sent.clear()
+	_send_timer = 0.0

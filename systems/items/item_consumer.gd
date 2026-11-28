@@ -5,6 +5,44 @@ extends RefCounted
 ## Áp dụng cho toàn bộ các vật phẩm tiêu hao, rương báu, lễ hộp, đan dược, bí kíp, lệnh bài...
 ## Hoạt động được ở cả trong trận đấu (Map) và ngoài sảnh (CharacterHub).
 
+const HUB_SCENE_PATH := "res://ui/character_hub/CharacterHub.tscn"
+const TOWN_PORTAL_IDS: Array[String] = ["6_1_438", "5_0_0"]
+
+static var _is_exiting_to_hub: bool = false
+
+static func is_town_portal(item: ItemInstance) -> bool:
+	return item != null and item.is_misc() and item.misc_id in TOWN_PORTAL_IDS
+
+static func is_da_tau_modal_token(item: ItemInstance) -> bool:
+	return item != null and item.is_misc() and item.misc_id in ["ky_datau_hoanthanh", "ky_datau_huy"]
+
+static func _exit_to_hub_now(profile: PlayerProfile) -> void:
+	if _is_exiting_to_hub:
+		return
+	_is_exiting_to_hub = true
+	var loop := Engine.get_main_loop()
+	var tree := loop as SceneTree if loop is SceneTree else null
+	if tree != null:
+		tree.paused = false
+	var gm: Node = tree.root.get_node_or_null("GameManager") if tree != null and tree.root != null else null
+	var save_mgr: Node = tree.root.get_node_or_null("SaveManager") if tree != null and tree.root != null else null
+	var acc_api: Node = tree.root.get_node_or_null("AccountApi") if tree != null and tree.root != null else null
+	var is_gm: bool = acc_api != null and acc_api.has_method("is_gm") and acc_api.is_gm()
+	var gm_mode: Variant = gm.get("game_mode") if gm != null else null
+	var is_stage: bool = gm != null and (gm.get("current_stage") != null or (gm_mode != null and int(gm_mode) == 0))
+	if profile != null and save_mgr != null:
+		if save_mgr.has_method("save_profile"):
+			save_mgr.save_profile(profile)
+		if save_mgr.has_method("flush_online"):
+			await save_mgr.flush_online()
+	if tree != null:
+		var transition: Node = tree.root.get_node_or_null("SceneTransition") if tree.root != null else null
+		if transition != null and transition.has_method("change_scene"):
+			transition.change_scene(HUB_SCENE_PATH, "Về Thành Dưỡng Sức")
+		else:
+			tree.change_scene_to_file(HUB_SCENE_PATH)
+	_is_exiting_to_hub = false
+
 ## BẢNG 15 BÍ KÍP 180 CỦA 15 MÔN PHÁI (6_1_18001 -> 6_1_18015)
 const BIKIP_180_MAP: Dictionary = {
 	"6_1_18001": {"sect": "thieu_lam", "skill": "thieu_lam_kim_quyen_la_han", "name": "Kim Quyền La Hán", "sect_name": "Thiếu Lâm"},
@@ -18,7 +56,7 @@ const BIKIP_180_MAP: Dictionary = {
 	"6_1_18009": {"sect": "vo_dang", "skill": "vo_dang_chan_vo_that_tiet", "name": "Chân Võ Thất Tiết", "sect_name": "Võ Đang"},
 	"6_1_18010": {"sect": "con_lon", "skill": "con_lon_thien_cuong_khi_kinh", "name": "Thiên Cương Khí Kính", "sect_name": "Côn Lôn"},
 	"6_1_18011": {"sect": "hoa_son", "skill": "hoa_son_cuu_kiem_hop_nhat", "name": "Cửu Kiếm Hợp Nhất", "sect_name": "Hoa Sơn"},
-	"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tru_gian_diet_ninh", "name": "Trừ Gian Diệt Nịnh", "sect_name": "Vũ Hồn"},
+	"6_1_18012": {"sect": "vu_hon", "skill": "vu_hon_tan_trung_bao_quoc", "name": "Tận Trung Báo Quốc", "sect_name": "Vũ Hồn"},
 	"6_1_18013": {"sect": "tieu_dao", "skill": "tieu_dao_thap_bo_nhat_sat", "name": "Thập Bộ Nhất Sát", "sect_name": "Tiêu Dao"},
 	"6_1_18014": {"sect": "duong_gia", "skill": "duong_gia_bon_lang_thuong", "name": "Bôn Lang Thương", "sect_name": "Dương Môn"},
 	"6_1_18015": {"sect": "minh_giao", "skill": "minh_giao_loi_dinh_nhat_kich", "name": "Lôi Đình Nhất Kích", "sect_name": "Minh Giáo"},
@@ -28,16 +66,51 @@ static func is_chest_or_box(item: ItemInstance) -> bool:
 	if item == null:
 		return false
 	var mid := item.misc_id
-	if mid in ["6_1_2339", "6_1_2805", "item_goldenbox", "ky_tui_thuoc_lac", "ky_tui_lenh_bai_datau"]:
+	if mid in ["6_1_1476", "6_1_2339", "6_1_2805", "item_goldenbox", "ky_tui_thuoc_lac", "ky_tui_lenh_bai_datau", "ruong_bach_thu_son_trang", "6_1_1144", "6_1_1145"]:
 		return true
 	var name_lower := item.get_display_name().to_lower()
-	return name_lower.contains("rương") or name_lower.contains("hộp") or name_lower.contains("túi") or name_lower.contains("gói")
+	if name_lower.contains("rương") or name_lower.contains("hộp") or name_lower.contains("túi") or name_lower.contains("gói") or name_lower.contains("bao"):
+		return true
+	var intro := str(item.get_base().get("intro", "")).to_lower()
+	if intro.contains("sử dụng sẽ") or intro.contains("sử dụng có") or intro.contains("sử dụng nhận"):
+		return true
+	return false
+
+static func is_summon_token(item: ItemInstance) -> bool:
+	if item == null or not item.is_misc():
+		return false
+	return item.misc_id in ["6_1_2969", "6_1_3083", "6_1_3084", "6_1_3085", "6_1_4946", "6_1_30074"]
+
+static func is_usable(item: ItemInstance) -> bool:
+	if item == null or not item.is_misc():
+		return false
+	var mid := item.misc_id
+	if SeasonalEvents.is_usable(mid):
+		return true
+	if is_chest_or_box(item):
+		return true
+	if PotionEffect.usable(item) or PotionEffect.is_fuyuan_potion(item):
+		return true
+	if is_town_portal(item) or mid in ["6_1_1083", "6_1_1266"]:
+		return true
+	if mid in ["ky_thien_nien_tran_lo", "6_1_12", "6_1_2424", "6_1_2425", "6_1_30446", "6_1_22", "6_1_26", "6_1_2396", "6_1_2309", "6_1_1375", "6_1_125"]:
+		return true
+	if BIKIP_180_MAP.has(mid) or mid in ["6_1_18017", "6_1_18018", "6_1_18019", "6_1_18020", "6_1_18021", "6_1_18022", "6_1_18023", "6_1_18024", "6_1_18025"]:
+		return true
+	if is_summon_token(item):
+		return true
+	if LonXonRules.book_tier(mid) > 0:
+		return true
+	return false
 
 static func get_action_label(item: ItemInstance) -> String:
 	if item == null:
-		return "Dùng"
+		return ""
 	if not item.is_misc():
 		return "Trang bị"
+	if not is_usable(item):
+		return ""
+	var mid := item.misc_id
 	if is_chest_or_box(item):
 		var name_lower := item.get_display_name().to_lower()
 		if name_lower.contains("rương"):
@@ -46,8 +119,189 @@ static func get_action_label(item: ItemInstance) -> String:
 			return "Mở Hộp"
 		elif name_lower.contains("túi"):
 			return "Mở Túi"
-		return "Dùng"
-	return "Dùng"
+		elif name_lower.contains("bao"):
+			return "Mở Bao"
+		return "Mở"
+	if is_summon_token(item):
+		return "Triệu Hồi"
+	if mid == "6_1_2396":
+		return "Mở Mã Bài"
+	if mid == "6_1_2309":
+		return "Đánh Trống"
+	if is_town_portal(item):
+		return "Về Thành"
+	if mid in ["6_1_1083", "6_1_1266"]:
+		return "Dịch Chuyển"
+	if mid in ["6_1_12", "6_1_2424", "6_1_2425", "6_1_30446", "6_1_22", "6_1_26"] or BIKIP_180_MAP.has(mid) or mid in ["6_1_18017", "6_1_18018", "6_1_18019", "6_1_18020", "6_1_18021", "6_1_18022", "6_1_18023", "6_1_18024", "6_1_18025"]:
+		return "Luyện Bí Kíp"
+	if mid in ["6_1_1241", "6_1_1242", "6_1_1243", "6_1_1244", "6_1_1245", "6_1_1246"]:
+		return "Thắp Đèn"   ## lồng đèn Trung Thu: nhân đôi kinh nghiệm (PotionEffect)
+	if PotionEffect.usable(item) or PotionEffect.is_fuyuan_potion(item) or mid in ["ky_thien_nien_tran_lo", "6_1_125"]:
+		return "Uống"
+	return "Sử dụng"
+
+static func get_special_actions(item: ItemInstance, host: Node, profile: PlayerProfile, on_play: Callable = Callable(), on_changed: Callable = Callable()) -> Array:
+	if item == null or not item.is_misc():
+		return []
+	var mid := item.misc_id
+	var actions: Array = []
+
+	# 0. ĐẠI THÀNH BÍ KÍP (Lộn Xộn): mỗi kỹ năng cùng tầng 1 nút "Học <tên>"
+	var book_tier := LonXonRules.book_tier(mid)
+	if book_tier > 0 and profile != null:
+		for sk in LonXonRules.book_candidates(profile, book_tier):
+			var sid := sk.id
+			actions.append(["Học %s (%d/%d)" % [sk.skill_name, profile.get_skill_level(sid), sk.max_level], func() -> void:
+				var r := use_book(profile, item, sid)
+				if host != null and host.has_method("_show_toast"):
+					host.call("_show_toast", str(r.get("message", "")))
+				if on_changed.is_valid():
+					on_changed.call()
+			])
+
+	# 0.1. ĐẠI THÀNH BÍ KÍP 90 / 120 / 150: mỗi skill luyện cùng tầng 1 nút "Lĩnh hội <tên>"
+	if is_dai_thanh_book(mid) and profile != null:
+		for sk in dai_thanh_candidates(profile, mid):
+			var sid := sk.id
+			actions.append(["Lĩnh hội %s (%d -> %d)" % [sk.skill_name, profile.get_skill_level(sid), dai_thanh_target_level(mid, sk)], func() -> void:
+				var r := use_dai_thanh(profile, item, sid)
+				if r.get("ok", false):
+					SaveManager.save_profile(profile)
+					SaveManager.flush_online()
+				if host != null and host.has_method("_show_toast"):
+					host.call("_show_toast", str(r.get("message", "")))
+				if on_changed.is_valid():
+					on_changed.call()
+			])
+
+	# 1. PHONG LĂNG ĐỘ (4_489_1: Lệnh bài Phong Lăng Độ, 6_1_2745: Lệnh Bài Thủy Tặc)
+	if mid in ["4_489_1", "6_1_2745"]:
+		actions.append(["Đi Phong Lăng Độ", func() -> void:
+			var w := _open_map_select(host, profile, on_play)
+			if w != null and w.has_method("_select_tab"):
+				w._select_tab(2)
+		])
+
+	# 2. KHO BÁU VIÊM ĐẾ (6_1_1617: Viêm Đế Lệnh; 6_1_2805, 6_1_1685, 6_1_1606: Đổi thưởng)
+	if mid == "6_1_1617":
+		actions.append(["Kho Báu Viêm Đế", func() -> void:
+			var script: GDScript = load("res://ui/events/viem_de_window.gd")
+			if script != null and script.has_method("open"):
+				script.open(host, profile, on_play)
+		])
+	elif mid in ["6_1_2805", "6_1_1685", "6_1_1606"]:
+		actions.append(["Tiệm Đổi Viêm Đế", func() -> void:
+			var script: GDScript = load("res://ui/events/viem_de_window.gd")
+			if script != null and script.has_method("open_reward_shop"):
+				script.open_reward_shop(host, profile)
+		])
+
+	# 3. LINH LUNG THÁP (4_999_0)
+	if mid == "4_999_0":
+		actions.append(["Linh Lung Tháp", func() -> void:
+			var w := _open_map_select(host, profile, on_play)
+			if w != null and w.has_method("_select_tab"):
+				w._select_tab(2)
+		])
+
+	# 4. NHIỆM VỤ DÃ TẨU (ky_datau_hoanthanh, ky_datau_huy)
+	if is_da_tau_modal_token(item):
+		actions.append(["Mở Dã Tẩu", func() -> void:
+			var script: GDScript = load("res://ui/events/da_tau_window.gd")
+			if script != null and script.has_method("open"):
+				script.open(host, profile, on_play)
+		])
+
+	# 5. TIỆM ÉP ĐỒ / CHẾ TẠO (CompoundWindow):
+	# Mảnh Lệnh Bài 1-7, Sát Thủ Lệnh (5 lệnh -> 1 giản), Thủy Tinh, Tinh Hồng, Huyền Tinh, Nguyên khoáng, Khoáng thuộc tính
+	if mid in ["4_51_0", "4_52_0", "4_53_0", "4_54_0", "4_55_0", "4_56_0", "4_57_0", "6_1_399", "4_238_1", "4_239_1", "4_240_1", "4_353_1", "6_1_147"] or mid in ["6_1_149", "6_1_150", "6_1_151", "6_1_152", "6_1_153", "6_1_154", "6_1_200", "6_1_201", "6_1_202", "6_1_203", "6_1_204", "6_1_205"]:
+		actions.append(["Tiệm Ép Đồ", func() -> void:
+			var script: GDScript = load("res://ui/shop/compound_window.gd")
+			if script != null and script.has_method("open"):
+				script.open(host, profile, on_changed)
+		])
+
+	# 6. NHIỆM VỤ SÁT THỦ (Sát Thủ Giản 6_1_400, Lệnh Bài Sát Thủ 6_1_30565)
+	if mid in ["6_1_400", "6_1_30565"]:
+		actions.append(["Nhiệm Vụ Sát Thủ", func() -> void:
+			var tree := Engine.get_main_loop() as SceneTree
+			var cur := tree.current_scene if tree else null
+			if cur != null and cur.has_method("_show_toast"):
+				cur._show_toast("Mang Sát Thủ Giản đến gặp NPC Nhiếp Thí Trần tại 7 đại thành thị để nhận nhiệm vụ Sát Thủ!")
+			elif cur != null and cur.has_method("_show_message"):
+				cur._show_message("Mang Sát Thủ Giản đến gặp NPC Nhiếp Thí Trần tại 7 đại thành thị để nhận nhiệm vụ Sát Thủ!")
+		])
+
+	# 7. CÔNG THÀNH CHIẾN (Thủ thành / Công thành lệnh bài của 7 đại thành thị)
+	if mid in ["4_354_1", "4_355_1", "4_356_1", "4_357_1", "4_358_1", "4_359_1", "4_360_1", "4_361_1", "4_362_1", "4_363_1", "4_364_1", "4_365_1", "4_366_1", "4_367_1", "4_368_1", "6_1_2395"]:
+		actions.append(["Công Thành Chiến", func() -> void:
+			var script: GDScript = load("res://ui/city_war/city_war_window.gd")
+			if script != null and script.has_method("open"):
+				script.open(host, profile, on_play)
+		])
+
+	# 8. CHIẾN TRƯỜNG TỐNG KIM (Quốc chiến Tống/Kim, Lệnh bài Tống Kim Liên Server)
+	if mid in ["6_1_1167", "6_1_2057", "6_1_2058", "6_1_3307"]:
+		actions.append(["Chiến Trường Tống Kim", func() -> void:
+			var w := _open_map_select(host, profile, on_play)
+			if w != null and w.has_method("_select_tab"):
+				w._select_tab(1)
+		])
+
+	# 9. HOA SƠN LUẬN KIẾM / ANH HÙNG HỘI / VÕ LÂM LIÊN ĐẤU
+	if mid in ["4_241_0", "4_347_1", "4_348_1", "4_349_1", "4_350_1", "6_1_407", "6_1_408", "6_1_409", "6_1_410", "6_1_411", "6_1_412", "6_1_413", "6_1_414", "6_1_415", "6_1_416", "6_1_417", "6_1_418", "6_1_419", "6_1_420", "6_1_1068", "6_1_1069", "6_1_1070", "6_1_1071"]:
+		actions.append(["Anh Hùng Hội", func() -> void:
+			var tree := Engine.get_main_loop() as SceneTree
+			var cur := tree.current_scene if tree else null
+			if cur != null and cur.has_method("_show_toast"):
+				cur._show_toast("Tín vật tham gia Anh Hùng Hội / Võ Lâm Liên Đấu. Hãy gặp Võ Lâm Quan Viên để báo danh!")
+			elif cur != null and cur.has_method("_show_message"):
+				cur._show_message("Tín vật tham gia Anh Hùng Hội / Võ Lâm Liên Đấu. Hãy gặp Võ Lâm Quan Viên để báo danh!")
+		])
+
+	return actions
+
+static func _open_map_select(host: Node, profile: PlayerProfile, on_play: Callable) -> Object:
+	var script: GDScript = load("res://ui/map_select/map_select_window.gd")
+	if script != null and script.has_method("open"):
+		return script.open(host, profile, on_play)
+	return null
+
+static func _try_spawn_summon_monster(player: Node, tpl: int, m_name: String) -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	var m_script: GDScript = load("res://systems/monster/vltk_monster.gd")
+	if m_script == null:
+		return false
+	var base: Dictionary = MonsterData.monster(tpl)
+	if base.is_empty():
+		base = {"name": m_name, "level": 90, "life": 500000}
+
+	var m: Node = m_script.new()
+	m.set("monster_id", tpl)
+	var data_copy: Dictionary = base.duplicate(true)
+	data_copy["name"] = m_name
+	data_copy["series"] = randi() % 5
+	m.set("data", data_copy)
+	m.set("level", int(base.get("level", 90)))
+	m.set("ai_enabled", true)
+	if m.get("level") == null or int(m.get("level")) <= 0:
+		m.set("level", 90)
+
+	var spawn_pos: Vector2 = player.position + Vector2(randf_range(-120.0, 120.0), randf_range(-120.0, 120.0))
+	m.position = spawn_pos
+
+	var target_parent: Node = null
+	var world_script: GDScript = load("res://world/vltk_world.gd")
+	if world_script != null and world_script.has_method("objects_layer"):
+		target_parent = world_script.objects_layer()
+	if target_parent == null:
+		target_parent = player.get_parent()
+
+	if target_parent != null:
+		target_parent.add_child(m)
+		return true
+	return false
 
 static func _fmt(n: int) -> String:
 	var s := str(n)
@@ -66,6 +320,133 @@ static func _consume_one(profile: PlayerProfile, item: ItemInstance, index: int)
 	else:
 		profile.inventory.remove_at(index)
 
+## Dùng 1 cuốn Đại Thành Bí Kíp cho `skill_id` ("" = kỹ năng cùng tầng có cấp thấp nhất còn học được).
+static func use_book(profile: PlayerProfile, item: ItemInstance, skill_id: String) -> Dictionary:
+	var tier := LonXonRules.book_tier(item.misc_id if item != null else "")
+	var index := profile.inventory.find(item) if profile != null else -1
+	if tier <= 0 or index < 0:
+		return {"ok": false, "message": "Vật phẩm không còn trong hành trang."}
+	if skill_id == "":
+		skill_id = LonXonRules.default_book_skill(profile, tier)
+		if skill_id == "":
+			var why := LonXonRules.book_block_reason(profile, tier, "")
+			if LonXonRules.in_match:
+				why = "Không có kỹ năng %dx nào học được lúc này (chưa đủ cấp hoặc đã tối đa)." % tier
+			return {"ok": false, "message": why}
+	var err := LonXonRules.learn_from_book(profile, tier, skill_id)
+	if err != "":
+		return {"ok": false, "message": err}
+	_consume_one(profile, item, index)
+	var sk_name := skill_id
+	for sk in LonXonRules.book_candidates(profile, tier):
+		if sk.id == skill_id:
+			sk_name = sk.skill_name
+	return {"ok": true, "message": "Lĩnh hội Đại Thành Bí Kíp %dx: [%s] đạt cấp %d." % [tier, sk_name, profile.get_skill_level(skill_id)]}
+
+# ================================================================== Đại Thành Bí Kíp 90 / 120 / 150 (Kỳ Trân Các)
+## Theo mô tả vật phẩm gốc: 90 / 120 -> "học được một kỹ năng ... có đẳng cấp 20"; 150 -> "đưa kỹ năng 150 lên cấp 18".
+## Mỗi cuốn đưa 1 skill luyện (practice_only) cùng tầng lên thẳng cấp đích; skill chưa lĩnh hội cũng học được nếu đủ cấp.
+const DAI_THANH_BOOKS: Dictionary = {
+	"6_1_2424": {"tier": 90, "level": 20},
+	"6_1_2425": {"tier": 120, "level": 20},
+	"6_1_30446": {"tier": 150, "level": 18},
+}
+
+static func is_dai_thanh_book(misc_id: String) -> bool:
+	return DAI_THANH_BOOKS.has(misc_id)
+
+## Tầng 90 / 120 / 150 của skill theo cấp yêu cầu (skill 9x của 15 phái có req_level 80..90).
+static func _skill_tier(sk: SkillDefinition) -> int:
+	if sk.req_level >= 180:
+		return 180
+	if sk.req_level >= 150:
+		return 150
+	if sk.req_level >= 120:
+		return 120
+	if sk.req_level >= 80:
+		return 90
+	return 0
+
+## Cấp đích của cuốn `misc_id` cho skill `sk` (không vượt cấp tối đa của skill).
+static func dai_thanh_target_level(misc_id: String, sk: SkillDefinition) -> int:
+	var lv := int(DAI_THANH_BOOKS.get(misc_id, {}).get("level", 0))
+	return mini(lv, sk.max_level) if sk.max_level > 0 else lv
+
+## Skill luyện cùng tầng với cuốn bí kíp, thuộc phái hiện tại.
+static func dai_thanh_candidates(profile: PlayerProfile, misc_id: String) -> Array[SkillDefinition]:
+	var out: Array[SkillDefinition] = []
+	if profile == null or not DAI_THANH_BOOKS.has(misc_id):
+		return out
+	var sect: SectDefinition = SectRegistry.get_by_id(profile.sect_id)
+	if sect == null:
+		return out
+	var tier := int(DAI_THANH_BOOKS[misc_id]["tier"])
+	for sk: SkillDefinition in sect.skills:
+		if sk != null and sk.practice_only and not sk.is_hidden and sk.parent_skill_id == "" and _skill_tier(sk) == tier:
+			out.append(sk)
+	return out
+
+## Lý do không dùng được cuốn `misc_id` cho `skill_id` (rỗng = dùng được).
+static func dai_thanh_block_reason(profile: PlayerProfile, misc_id: String, skill_id: String) -> String:
+	if profile == null or not DAI_THANH_BOOKS.has(misc_id):
+		return "Vật phẩm không hợp lệ."
+	var tier := int(DAI_THANH_BOOKS[misc_id]["tier"])
+	if profile.sect_id == "":
+		return "Chưa gia nhập môn phái, không thể lĩnh hội Đại Thành Bí Kíp %d." % tier
+	var sk: SkillDefinition = null
+	for c in dai_thanh_candidates(profile, misc_id):
+		if c.id == skill_id:
+			sk = c
+	if sk == null:
+		return "Đại Thành Bí Kíp %d chỉ dùng cho kỹ năng %d của môn phái." % [tier, tier]
+	if profile.level < sk.req_level:
+		return "Cần đạt cấp %d để lĩnh hội [%s]." % [sk.req_level, sk.skill_name]
+	if profile.get_skill_level(sk.id) >= dai_thanh_target_level(misc_id, sk):
+		return "[%s] đã đạt cấp %d trở lên." % [sk.skill_name, dai_thanh_target_level(misc_id, sk)]
+	return ""
+
+## Skill mặc định khi bấm "Dùng": skill dùng được có cấp thấp nhất ("" = không có).
+static func dai_thanh_default_skill(profile: PlayerProfile, misc_id: String) -> String:
+	var best := ""
+	var best_lv := 1 << 30
+	for sk in dai_thanh_candidates(profile, misc_id):
+		if dai_thanh_block_reason(profile, misc_id, sk.id) != "":
+			continue
+		var lv := profile.get_skill_level(sk.id)
+		if lv < best_lv:
+			best = sk.id
+			best_lv = lv
+	return best
+
+## Dùng 1 cuốn Đại Thành Bí Kíp 90/120/150 cho `skill_id` ("" = skill cùng tầng có cấp thấp nhất còn nâng được).
+static func use_dai_thanh(profile: PlayerProfile, item: ItemInstance, skill_id: String) -> Dictionary:
+	var mid := item.misc_id if item != null else ""
+	var index := profile.inventory.find(item) if profile != null else -1
+	if not DAI_THANH_BOOKS.has(mid) or index < 0:
+		return {"ok": false, "message": "Vật phẩm không còn trong hành trang."}
+	var tier := int(DAI_THANH_BOOKS[mid]["tier"])
+	if skill_id == "":
+		skill_id = dai_thanh_default_skill(profile, mid)
+		if skill_id == "":
+			var cands := dai_thanh_candidates(profile, mid)
+			if cands.is_empty():
+				return {"ok": false, "message": dai_thanh_block_reason(profile, mid, "")}
+			return {"ok": false, "message": "Không có kỹ năng %d nào nâng được lúc này (chưa đủ cấp hoặc đã đạt cấp %d)." % [tier, int(DAI_THANH_BOOKS[mid]["level"])]}
+	var why := dai_thanh_block_reason(profile, mid, skill_id)
+	if why != "":
+		return {"ok": false, "message": why}
+	var sk: SkillDefinition = null
+	for c in dai_thanh_candidates(profile, mid):
+		if c.id == skill_id:
+			sk = c
+	var target := dai_thanh_target_level(mid, sk)
+	profile.skill_levels[skill_id] = target
+	profile.skill_exp.erase(skill_id)
+	_consume_one(profile, item, index)
+	if profile.has_method("recalc_stats"):
+		profile.call("recalc_stats")
+	return {"ok": true, "skill_changed": true, "message": "Lĩnh hội [Đại Thành Bí Kíp %d]: kỹ năng [%s] đạt cấp %d!" % [tier, sk.skill_name, target]}
+
 static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = null, host: Node = null) -> Dictionary:
 	if profile == null or item == null:
 		return {"ok": false, "message": "Thông tin vật phẩm không hợp lệ."}
@@ -76,6 +457,29 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 	
 	var mid := item.misc_id
 	var item_name := item.get_display_name()
+
+	# 0. VẬT PHẨM SỰ KIỆN NĂM (SeasonalEvents): mở / dùng theo bảng thưởng gốc của sự kiện — online server làm (gói C_EVENT).
+	if SeasonalEvents.is_usable(mid):
+		var block := SeasonalEvents.use_block_reason(profile, item)
+		if block != "":
+			return {"ok": false, "message": block}
+		if NetClient.is_in_world():
+			NetClient.send_event("open", {"uid": item.ensure_uid()})
+			return {"ok": false, "message": ""}
+		if GameModeManager.is_online():
+			return {"ok": false, "message": "Mất kết nối máy chủ, chưa mở được %s." % item_name}
+		return SeasonalEvents.open_item(profile, item.ensure_uid())
+
+	# 0. ĐẠI THÀNH BÍ KÍP (Lộn Xộn): bấm Dùng = học kỹ năng cùng tầng đang có cấp thấp nhất
+	if LonXonRules.book_tier(mid) > 0:
+		return use_book(profile, item, "")
+
+	# 0a. BẠCH CÂU HOÀN (Ủy thác): chỉ online — server cộng giờ vào quỹ ủy thác.
+	if UyThac.is_item(mid):
+		if GameModeManager.is_offline() or not NetClient.is_in_world():
+			return {"ok": false, "message": "Ủy thác chỉ dùng được khi chơi Online."}
+		NetClient.send_uy_thac("use", {"uid": item.uid})
+		return {"ok": false, "message": ""}
 
 	# 1. SÁT THỦ GIẢN LỄ HỘP (6_1_2339)
 	if mid == "6_1_2339":
@@ -146,19 +550,16 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 
 	# 4. LỆNH BÀI HOÀN THÀNH DÃ TẨU (ky_datau_hoanthanh)
 	if mid == "ky_datau_hoanthanh":
-		_consume_one(profile, item, index)
-		var exp_gain := 500000
-		var gold_gain := 50000
-		profile.add_exp(exp_gain)
-		profile.gold += gold_gain
-		profile.prestige += 20
-		profile.fuyuan += 10
+		return {
+			"ok": false,
+			"message": "Hãy mở bảng Nhiệm Vụ Dã Tẩu khi đang có nhiệm vụ và bấm 'Dùng Lệnh Bài Hoàn Thành' để hoàn tất ngay nhiệm vụ!"
+		}
+
+	# 4.1. LỆNH BÀI HỦY DÃ TẨU (ky_datau_huy)
+	if mid == "ky_datau_huy":
 		return {
 			"ok": true,
-			"message": "Sử dụng [Lệnh Bài Hoàn Thành Dã Tẩu] hoàn tất nhiệm vụ!\n+ %s EXP\n+ %s Lượng\n+ 20 Danh Vọng\n+ 10 Phúc Duyên" % [
-				_fmt(exp_gain),
-				_fmt(gold_gain)
-			]
+			"message": "Hãy mở bảng Nhiệm Vụ Dã Tẩu và bấm 'Hủy Nhiệm Vụ' khi hết lượt bỏ miễn phí ngày — lệnh bài sẽ tự động được dùng để giữ chuỗi nhiệm vụ!"
 		}
 
 	# 5. THIÊN NIÊN TRẦN LỘ (ky_thien_nien_tran_lo)
@@ -183,34 +584,38 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 			"message": "Lĩnh ngộ [Bàn Nhược Tâm Kinh]! Nhận thêm +1 Điểm Kỹ Năng và +5 Điểm Tiềm Năng."
 		}
 
-	# 7. ĐẠI THÀNH BÍ KÍP 90 (6_1_2424)
-	if mid == "6_1_2424":
+	# 7. ĐẠI THÀNH BÍ KÍP 90 / 120 / 150 (6_1_2424, 6_1_2425, 6_1_30446): đưa skill luyện cùng tầng lên cấp 20 / 20 / 18
+	if is_dai_thanh_book(mid):
+		return use_dai_thanh(profile, item, "")
+
+	# 7.3. TẨY TỦY KINH (6_1_22) & VÕ LÂM MẬT TỊCH (6_1_26)
+	if mid == "6_1_22":
 		_consume_one(profile, item, index)
-		profile.skill_points += 2
-		profile.add_exp(2000000)
+		profile.potential_points += 5
 		return {
 			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 90]! Nhận thêm +2 Điểm Kỹ Năng và +2.000.000 EXP."
+			"message": "Lĩnh ngộ [Tẩy Tủy Kinh]! Nhận thêm +5 Điểm Tiềm Năng."
 		}
 
-	# 7.1. ĐẠI THÀNH BÍ KÍP 120 (6_1_2425)
-	if mid == "6_1_2425":
+	if mid == "6_1_26":
 		_consume_one(profile, item, index)
-		profile.skill_points += 3
-		profile.add_exp(3000000)
+		profile.skill_points += 1
 		return {
 			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 120]! Nhận thêm +3 Điểm Kỹ Năng và +3.000.000 EXP."
+			"message": "Lĩnh ngộ [Võ Lâm Mật Tịch]! Nhận thêm +1 Điểm Kỹ Năng."
 		}
 
-	# 7.2. ĐẠI THÀNH BÍ KÍP 150 (6_1_30446)
-	if mid == "6_1_30446":
+	# 7.4. MÃ BÀI - PHI VÂN (6_1_2396)
+	if mid == "6_1_2396":
+		var horse := ItemGenerator.generate(ItemDatabase.Detail.HORSE, 8, 10, 0, [])
+		if horse == null:
+			return {"ok": false, "message": "Không tạo được ngựa Phi Vân!"}
+		if not profile.add_item(horse):
+			return {"ok": false, "message": "Hành trang không đủ chỗ trống để nhận ngựa Phi Vân!"}
 		_consume_one(profile, item, index)
-		profile.skill_points += 5
-		profile.add_exp(5000000)
 		return {
 			"ok": true,
-			"message": "Luyện thành [Đại Thành Bí Kíp 150]! Nhận thêm +5 Điểm Kỹ Năng và +5.000.000 EXP."
+			"message": "Đã mở [Mã bài - Phi Vân] nhận được thú cưỡi [Phi Vân]!"
 		}
 
 	# 8. TRỐNG KHẢI HOÀN (6_1_2309)
@@ -300,6 +705,108 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 		_consume_one(profile, item, index)
 		return open_ruong_bach_thu(profile)
 
+	# 12.7. BAO HOÀNG KIM (6_1_1476) - Thường nhận từ Dã Tẩu hoặc sự kiện
+	# Mô tả: "Sử dụng sẽ có xác suất nhận được một trong những vật phẩm sau: vũ khí hoặc trang bị Hoàng Kim, Thần bí khoáng thạch, Huyền tinh khoáng thạch cấp 8 và túi may mắn (đại)."
+	if mid == "6_1_1476" or item_name.to_lower().contains("bao hoàng kim"):
+		_consume_one(profile, item, index)
+		var gained_exp := randi_range(800000, 2000000)
+		var gained_gold := randi_range(80000, 250000)
+		profile.add_exp(gained_exp)
+		profile.gold += gained_gold
+
+		var roll := randf()
+		var rewarded_name := ""
+		if roll < 0.15:
+			# 15%: Vũ khí hoặc trang bị Hoàng Kim
+			var gold_count := ItemDatabase.get_gold_count()
+			if gold_count > 0:
+				var gold_idx := randi() % gold_count
+				var gold_it := ItemGenerator.generate_gold(gold_idx, randi_range(7, 10))
+				if gold_it != null:
+					profile.add_item(gold_it)
+					rewarded_name = "✨ [Trang Bị Hoàng Kim] %s" % gold_it.get_display_name()
+		elif roll < 0.45:
+			# 30%: Thần bí khoáng thạch (6_1_398)
+			var tbkt := ItemGenerator.generate_misc("6_1_398", 0, 0, 1)
+			if tbkt != null:
+				profile.add_item(tbkt)
+				rewarded_name = "💎 %s" % tbkt.get_display_name()
+		elif roll < 0.70:
+			# 25%: Huyền tinh khoáng thạch cấp 8 (6_1_147)
+			var ht8 := ItemGenerator.generate_misc("6_1_147", 8, 0, 1)
+			if ht8 != null:
+				profile.add_item(ht8)
+				rewarded_name = "⭐ %s Cấp 8" % ht8.get_display_name()
+		else:
+			# 30%: Túi may mắn (đại) (6_1_1144)
+			var tmm := ItemGenerator.generate_misc("6_1_1144", 0, 0, 1)
+			if tmm != null:
+				profile.add_item(tmm)
+				rewarded_name = "🎁 %s" % tmm.get_display_name()
+
+		if rewarded_name == "":
+			rewarded_name = "Ngân Lượng và Kinh Nghiệm dồi dào"
+
+		return {
+			"ok": true,
+			"message": "Mở [%s] thành công!\n+ %s EXP\n+ %s Lượng\n+ 1x %s" % [
+				item_name,
+				_fmt(gained_exp),
+				_fmt(gained_gold),
+				rewarded_name
+			]
+		}
+
+	# 12.8. TÚI MAY MẮN (ĐẠI) (6_1_1144) & TÚI MAY MẮN (TIỂU) (6_1_1145)
+	if mid == "6_1_1144":
+		_consume_one(profile, item, index)
+		var gained_exp := randi_range(300000, 800000)
+		var gained_gold := randi_range(30000, 100000)
+		profile.add_exp(gained_exp)
+		profile.gold += gained_gold
+		var pool := ["6_1_71", "6_1_1181", "6_1_72", "6_1_122", "6_1_123", "4_238_1", "4_239_1", "4_240_1", "4_353_1", "6_1_147"]
+		var items_given: Array[String] = []
+		for i in 4:
+			var pick: String = pool.pick_random()
+			var it: ItemInstance = null
+			if pick == "6_1_147":
+				it = ItemGenerator.generate_misc(pick, randi_range(2, 6), 0, 1)
+			else:
+				it = ItemGenerator.generate_misc(pick, 0, 0, 1)
+			if it != null:
+				profile.add_item(it)
+				items_given.append(it.get_display_name())
+		return {
+			"ok": true,
+			"message": "Mở [Túi May Mắn (Đại)] nhận được:\n+ %s EXP\n+ %s Lượng\n+ %s" % [
+				_fmt(gained_exp),
+				_fmt(gained_gold),
+				"\n+ ".join(items_given)
+			]
+		}
+
+	if mid == "6_1_1145":
+		_consume_one(profile, item, index)
+		var gained_exp := randi_range(100000, 300000)
+		var gained_gold := randi_range(10000, 40000)
+		profile.add_exp(gained_exp)
+		profile.gold += gained_gold
+		var pool := ["6_1_71", "6_1_72", "6_1_122", "4_238_1", "4_239_1"]
+		var pick: String = pool.pick_random()
+		var it := ItemGenerator.generate_misc(pick, 0, 0, 1)
+		var it_name := "Vật phẩm ngẫu nhiên"
+		if it != null:
+			profile.add_item(it)
+			it_name = it.get_display_name()
+		return {
+			"ok": true,
+			"message": "Mở [Túi May Mắn (Tiểu)] nhận được:\n+ %s EXP\n+ %s Lượng\n+ 1x %s" % [
+				_fmt(gained_exp),
+				_fmt(gained_gold),
+				it_name
+			]
+		}
+
 	# 13. THỦY TINH & TINH HỒNG BẢO THẠCH (4_238_1, 4_239_1, 4_240_1, 4_353_1)
 	if mid in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
 		if host != null:
@@ -319,27 +826,110 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 			"message": "Đã dùng %s (+%d Điểm Phúc Duyên). Hiện có: %d điểm." % [item_name, fy, profile.fuyuan]
 		}
 
-	# 15. CÁC LOẠI LỆNH BÀI (Phong Lăng Độ, Thủy Tặc, Viêm Đế)
-	if mid in ["4_489_1", "6_1_2745", "6_1_1617"]:
+	# 15. LỆNH BÀI TRIỆU HỒI (Mộc Nhân, Boss Trương Tuyên, Kim Thí Lượng, Mộ Dung Toàn, Quái Vật)
+	if is_summon_token(item):
+		var target_name := "Mộc Nhân"
+		var tpl_id := 1161
+		if mid == "6_1_2969":
+			target_name = "Mộc Nhân"
+			tpl_id = 1161
+		elif mid == "6_1_3083":
+			target_name = "Boss Trương Tuyên"
+			tpl_id = 1873
+		elif mid == "6_1_3084":
+			target_name = "Boss Kim Thí Lượng"
+			tpl_id = 1874
+		elif mid == "6_1_3085":
+			target_name = "Boss Mộ Dung Toàn"
+			tpl_id = 1875
+		elif mid in ["6_1_4946", "6_1_30074"]:
+			target_name = "Quái Vật Luyện Công"
+			tpl_id = 1161
+
+		if player == null:
+			return {
+				"ok": false,
+				"message": "Cần vào bản đồ chiến đấu hoặc bãi luyện công dã ngoại mới có thể triệu hồi [%s]!" % target_name
+			}
+
+		var spawned := _try_spawn_summon_monster(player, tpl_id, target_name)
+		if not spawned:
+			return {
+				"ok": false,
+				"message": "Không thể triệu hồi [%s] tại khu vực này (hãy di chuyển đến vị trí trống)!" % target_name
+			}
+
 		_consume_one(profile, item, index)
-		var exp_gain := 400000
-		var gold_gain := 40000
-		profile.add_exp(exp_gain)
-		profile.gold += gold_gain
-		profile.prestige += 15
 		return {
 			"ok": true,
-			"message": "Sử dụng %s thành công!\n+ %s EXP\n+ %s Lượng\n+ 15 Danh Vọng" % [
-				item_name,
-				_fmt(exp_gain),
-				_fmt(gold_gain)
-			]
+			"message": "Sử dụng [%s] thành công!\nĐã triệu hồi [%s] xuất hiện gần bạn!" % [item_name, target_name]
 		}
 
-	# 16. PHÙ DỊCH CHUYỂN (Thần Hành Phù, Thổ Địa Phù, Hồi Thành Phù)
-	if mid in ["6_1_1083", "6_1_1266", "6_1_438"]:
-		if mid != "6_1_438": # Thổ địa phù dùng vô hạn
-			_consume_one(profile, item, index)
+	# 15b. CÁC LOẠI LỆNH BÀI SỰ KIỆN & TÍN VẬT HOẠT ĐỘNG (Phong Lăng Độ, Viêm Đế, Linh Lung Tháp, Tống Kim...)
+	if mid in ["4_489_1", "6_1_2745"]:
+		return {
+			"ok": false,
+			"message": "Lệnh bài Phong Lăng Độ là tín vật lên thuyền vượt sông Hoàng Hà. Hãy mở tab Ải hoặc đến Bến Tàu Phong Lăng Độ để tham gia!"
+		}
+	if mid == "6_1_1617":
+		return {
+			"ok": false,
+			"message": "Viêm Đế Lệnh là tín vật mở phòng khiêu chiến Kho Báu Viêm Đế. Hãy mở bảng Kho Báu Viêm Đế để sử dụng!"
+		}
+	if mid == "4_999_0":
+		return {
+			"ok": false,
+			"message": "Lệnh Bài Linh Lung Tháp dùng để báo danh khiêu chiến 7 tầng Linh Lung Tháp tại tab Ải hoặc gặp NPC Nhạc Xung!"
+		}
+	if mid == "6_1_399":
+		return {
+			"ok": false,
+			"message": "Sát Thủ Lệnh dùng để ghép thành Sát Thủ Giản (5 lệnh cùng cấp -> 1 giản) tại Tiệm Ép Đồ!"
+		}
+	if mid in ["6_1_400", "6_1_30565"]:
+		return {
+			"ok": false,
+			"message": "Mang Sát Thủ Giản đến gặp NPC Nhiếp Thí Trần tại 7 đại thành thị để nhận nhiệm vụ Sát Thủ truy bắt ác tặc!"
+		}
+	if mid in ["4_51_0", "4_52_0", "4_53_0", "4_54_0", "4_55_0", "4_56_0", "4_57_0"]:
+		return {
+			"ok": false,
+			"message": "Mảnh Lệnh Bài là nguyên liệu nhiệm vụ, hãy vào Tiệm Ép Đồ để ghép!"
+		}
+	if mid in ["4_354_1", "4_355_1", "4_356_1", "4_357_1", "4_358_1", "4_359_1", "4_360_1", "4_361_1", "4_362_1", "4_363_1", "4_364_1", "4_365_1", "4_366_1", "4_367_1", "4_368_1", "6_1_2395"]:
+		return {
+			"ok": false,
+			"message": "Lệnh Bài Công Thành dùng để bang chủ báo danh Công Thành Chiến tại Công Thành Quan Viên!"
+		}
+	if mid in ["6_1_1167", "6_1_2057", "6_1_2058", "6_1_3307"]:
+		return {
+			"ok": false,
+			"message": "Tín vật Chiến Trường Tống Kim, hãy dùng để báo danh tại Mộ Binh Quan Tống / Kim!"
+		}
+	if mid in ["4_241_0", "4_347_1", "4_348_1", "4_349_1", "4_350_1", "6_1_407", "6_1_408", "6_1_409", "6_1_410", "6_1_411", "6_1_412", "6_1_413", "6_1_414", "6_1_415", "6_1_416", "6_1_417", "6_1_418", "6_1_419", "6_1_420", "6_1_1068", "6_1_1069", "6_1_1070", "6_1_1071"]:
+		return {
+			"ok": false,
+			"message": "Tín vật tham gia Hoa Sơn Luận Kiếm / Anh Hùng Hội / Võ Lâm Liên Đấu!"
+		}
+
+	# 16. THỔ ĐỊA PHÙ (6_1_438 x2000, 5_0_0 x1) — lập tức thoát ra Character Hub, không hỏi gì
+	if is_town_portal(item):
+		if player == null:
+			return {
+				"ok": false,
+				"message": "Bạn đang ở Character Hub rồi!"
+			}
+		_consume_one(profile, item, index)
+		_exit_to_hub_now(profile)
+		return {
+			"ok": true,
+			"exit_to_hub": true,
+			"message": ""
+		}
+
+	# 16b. PHÙ DỊCH CHUYỂN KHÁC (Thần Hành Phù, Hồi Thành Phù)
+	if mid in ["6_1_1083", "6_1_1266"]:
+		_consume_one(profile, item, index)
 		var max_st: int = profile.max_stamina if profile.max_stamina > 0 else 1918
 		profile.stamina = max_st
 		profile.add_exp(150000)
@@ -349,22 +939,30 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 		}
 
 	# 17. TIÊN THẢO LỘ & THIÊN SƠN BẢO LỘ (6_1_1181, 6_1_71, 6_1_72...)
-	if mid in ["6_1_1181", "6_1_71", "6_1_1765", "6_1_113", "6_1_72", "6_0_70"]:
-		if player != null and PotionEffect.usable(item):
-			if PotionEffect.consume(profile, player, item):
-				return {"ok": true, "message": "Đã dùng %s kích hoạt hiệu ứng dược thảo!" % item_name}
-		# Nếu dùng ở Hub (không có player node)
-		_consume_one(profile, item, index)
-		var exp_gain := 1000000 if mid in ["6_1_1181", "6_1_1765"] else 400000
-		profile.add_exp(exp_gain)
-		profile.fuyuan += 20
-		return {
-			"ok": true,
-			"message": "Uống %s thành công!\n+ %s EXP\n+ 20 Phúc Duyên" % [
-				item_name,
-				_fmt(exp_gain)
-			]
-		}
+	if mid in ["6_1_1181", "6_1_71", "6_1_1765", "6_1_113", "6_1_72", "6_0_70", "6_0_60", "6_0_61", "6_0_62"]:
+		var blocked := PotionEffect.block_reason(item, profile)
+		if blocked != "":
+			return {"ok": false, "message": blocked}
+		if PotionEffect.consume(profile, player, item):
+			var msg := "Uống %s thành công!" % item_name
+			if mid in ["6_1_1181", "6_1_1765"]:
+				msg = "Uống %s thành công!\nNhân đôi kinh nghiệm (x2 EXP) trong 8 giờ." % item_name
+			elif mid == "6_1_71":
+				msg = "Uống %s thành công!\nNhân đôi kinh nghiệm (x2 EXP) trong 1 giờ." % item_name
+			elif mid == "6_1_113":
+				msg = "Uống %s thành công!\nTăng 50%% kinh nghiệm luyện công trong 1 giờ." % item_name
+			elif mid == "6_1_72":
+				msg = "Uống %s thành công!\nTăng 10 điểm May Mắn trong 1 giờ." % item_name
+			elif mid == "6_0_70":
+				msg = "Dùng %s thành công!\nTăng 30 điểm May Mắn trong 30 phút." % item_name
+			elif mid == "6_0_60":
+				msg = "Ăn %s!\nTốc độ đánh và ra chiêu +20 trong 10 phút." % item_name
+			elif mid == "6_0_61":
+				msg = "Ăn %s!\nSinh lực và nội lực tối đa +100%% trong 10 phút." % item_name
+			elif mid == "6_0_62":
+				msg = "Ăn %s!\nKháng tất cả +5%% trong 10 phút." % item_name
+			return {"ok": true, "message": msg}
+		return {"ok": false, "message": "Không thể sử dụng %s lúc này." % item_name}
 
 	# 18. BÌNH HỒI MÁU / NỘI LỰC THÔNG THƯỜNG
 	if PotionEffect.usable(item):
@@ -505,13 +1103,34 @@ static func use_item(profile: PlayerProfile, item: ItemInstance, player: Node = 
 			"message": "Lĩnh hội Bí Kíp 180 thành công! Kỹ năng [%s] đạt Cấp %d/20!\n+ 1.500.000 EXP" % [sk_name, new_lvl]
 		}
 
-	# 19. MỌI MÓN MISC KHÁC (Chìa khóa, cần câu, vật phẩm đặc biệt...)
-	_consume_one(profile, item, index)
-	profile.add_exp(200000)
-	profile.gold += 10000
+	# 18.11. CÁC LOẠI RƯƠNG, HỘP, TÚI, BAO KHÁC (is_chest_or_box)
+	if is_chest_or_box(item):
+		_consume_one(profile, item, index)
+		var gained_exp := randi_range(200000, 600000)
+		var gained_gold := randi_range(20000, 80000)
+		profile.add_exp(gained_exp)
+		profile.gold += gained_gold
+		var gem_pool := ["4_238_1", "4_239_1", "4_240_1", "6_1_71", "6_1_72"]
+		var gem := ItemGenerator.generate_misc(gem_pool.pick_random(), 0, 0, 1)
+		var extra_text := ""
+		if gem != null:
+			profile.add_item(gem)
+			extra_text = "\n+ 1x %s" % gem.get_display_name()
+		return {
+			"ok": true,
+			"message": "Mở [%s] thành công!\n+ %s EXP\n+ %s Lượng%s" % [
+				item_name,
+				_fmt(gained_exp),
+				_fmt(gained_gold),
+				extra_text
+			]
+		}
+
+	# 19. MỌI MÓN MISC KHÁC KHÔNG PHẢI VẬT PHẨM TIÊU HAO TRỰC TIẾP
+	# Tuyệt đối không tự ý tiêu hao và không cộng EXP/Gold giả đối với các tín vật, nguyên liệu, thẻ bài
 	return {
-		"ok": true,
-		"message": "Đã sử dụng [%s]!\n+ 200.000 EXP\n+ 10.000 Lượng" % item_name
+		"ok": false,
+		"message": "[%s] là tín vật / nguyên liệu, không thể sử dụng trực tiếp trong túi đồ." % item_name
 	}
 
 ## MỞ RƯƠNG BÁCH THÚ SƠN TRANG (Phần thưởng khi đổi thịt thú nuôi cho NPC Trù Thần)

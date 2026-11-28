@@ -25,6 +25,13 @@ class_name SkillStatLine
 @export var min_at_max_level: float = 0.0
 @export var max_at_max_level: float = 0.0
 
+## Mốc lua gốc (định dạng vltk_attribs: cấp, giá trị, mã hàm nội suy, ...) — có thì giá trị tại mọi cấp tính bằng
+## SkillDefinition.eval_level_points (Link nhiều mốc như game gốc) thay cho đường thẳng cấp 1 -> cấp tối đa ở trên.
+## level_points = giá trị (dòng 1 số) hoặc MIN (dòng khoảng); level_points_max = MAX của dòng khoảng.
+## Ghi bởi tools/fill_statline_points.py — đừng sửa tay.
+@export var level_points: PackedFloat32Array = PackedFloat32Array()
+@export var level_points_max: PackedFloat32Array = PackedFloat32Array()
+
 ## Hậu tố hiển thị sau giá trị — "%" cho field kiểu _p, "" cho field kiểu _v (số nguyên thô).
 @export var suffix: String = ""
 
@@ -38,9 +45,18 @@ class_name SkillStatLine
 @export var target_skill_id: String = ""
 
 func format_at_level(skill: SkillDefinition, at_level: int) -> String:
+	## Dòng damage có thuộc tính gốc: hiển thị ĐÚNG số combat dùng (Link gốc, xem SkillDefinition.stat_line_range).
+	var r := skill.stat_line_range(self, at_level)
+	if skill.attrib_for_line(self) != "":
+		if is_range or r.x != r.y:
+			return "%s: %d đến %d điểm" % [label, r.x, r.y]
+		if "%d" in label:
+			return (label % int(r.x)) + suffix
+		return "%s: %d%s" % [label, r.x, suffix]
 	if is_range:
-		var lo := skill.interpolate_at_level(min_at_level_1, min_at_max_level, at_level)
-		var hi := skill.interpolate_at_level(max_at_level_1, max_at_max_level, at_level)
-		return "%s: %d đến %d điểm" % [label, int(lo), int(hi)]
-	var value := skill.interpolate_at_level(value_at_level_1, value_at_max_level, at_level)
-	return "%s: %d%s" % [label, int(value), suffix]
+		return "%s: %d đến %d điểm" % [label, r.x, r.y]
+	if "%d" in label:
+		return (label % int(r.x)) + suffix
+	if label == "":
+		return "%d%s" % [r.x, suffix]
+	return "%s: %d%s" % [label, r.x, suffix]

@@ -45,6 +45,46 @@ const LOCK_NORMAL := 0
 const LOCK_UNLOCKING := 1
 var lock_state: int = LOCK_NORMAL
 
+## ---- VẬT PHẨM KHOÁ (bLockTrade / bLockSell / bLockDrop của KItem gốc) ----
+## Cờ do HỆ THỐNG gắn khi phát đồ (lua gốc: LockItem(món, khoá_giao_dịch, khoá_bán, khoá_vứt)) — người chơi không tự đổi được,
+## không nằm trong OWNER_FIELDS (online: server giữ bản chuẩn). Khác khoá bảo hiểm `lock_state` ở trên.
+##   - lock_trade: không giao dịch, không bày bán / chợ, không đặt cược PK (KPlayer.cpp: TradeMove, bày bán, nhặt đồ tổ đội)
+##   - lock_sell : không bán cho cửa hàng NPC (KBuySell::Sell)
+##   - lock_drop : không vứt ra đất, không rơi khi chết (KPlayer::ThrowAwayItem, KItemList rơi đồ)
+var lock_trade: bool = false
+var lock_sell: bool = false
+var lock_drop: bool = false
+
+## Gắn cờ vật phẩm khoá — đúng LuaLockItem(nIdx, trade, sell, drop) gốc.
+func set_bound(trade: bool, sell: bool, drop: bool) -> void:
+	lock_trade = trade
+	lock_sell = sell
+	lock_drop = drop
+	if trade:
+		trade_price = 0
+
+## ---- HẠN SỬ DỤNG (nExpireTime gốc) ----
+## Thời điểm hết hạn (giây unix); 0 = dùng mãi. Hết hạn thì món bị xoá khỏi hành trang / đồ đang mặc / rương
+## (PlayerProfile.remove_expired_items). Do hệ thống đặt — không nằm trong OWNER_FIELDS.
+var expire_at: int = 0
+
+func set_expire_days(days: int, from_unix: int = -1) -> void:
+	expire_at = (from_unix if from_unix >= 0 else int(Time.get_unix_time_from_system())) + days * 86400
+
+func is_expired(at: int = -1) -> bool:
+	return expire_at > 0 and (at if at >= 0 else int(Time.get_unix_time_from_system())) >= expire_at
+
+func is_bound() -> bool:
+	return lock_trade or lock_sell or lock_drop
+
+## Được đưa cho người khác không (giao dịch, bày bán, chợ, cược PK): không khoá bảo hiểm, không gắn nhân vật, không khoá giao dịch.
+func can_trade() -> bool:
+	return not lock_trade and not is_locked()
+
+## Được vứt ra đất / rơi khi chết không.
+func can_drop() -> bool:
+	return not lock_drop and not is_locked()
+
 ## Tỉ lệ giá bán lại cho tiệm / NPC theo source C++ VLTK gốc (KBuySell.h: BUY_SELL_SCALE = 4, tức 25% giá gốc).
 const BUY_SELL_SCALE := 4
 
@@ -58,7 +98,7 @@ func get_base_price() -> int:
 
 ## Lấy giá bán lại của 1 đơn vị vật phẩm (đúng chuẩn KItem::GetSalePrice VLTK: price / BUY_SELL_SCALE)
 func get_unit_sale_price() -> int:
-	if is_locked():
+	if is_locked() or lock_sell:
 		return 0
 	var bp := get_base_price()
 	if bp <= 0:
@@ -157,6 +197,10 @@ func get_display_name() -> String:
 
 ## Thường trắng, có dòng magic xanh lam (đồ xanh VLTK), hoàng kim vàng.
 func get_quality_color() -> Color:
+	if misc_id in ["6_1_206", "6_1_213", "4_351_1"]:
+		return Color(1.0, 0.85, 0.3)
+	if misc_id == "6_1_196":
+		return Color(0.55, 0.88, 1.0)
 	if misc_id == "6_1_147":
 		if item_level >= 8:
 			return Color(1.0, 0.78, 0.25)
@@ -176,10 +220,11 @@ func get_requirements() -> Array:
 
 func to_dict() -> Dictionary:
 	return {"dv": DATA_VERSION, "base": base_index, "gold": gold_index, "series": series, "base_values": base_values.duplicate(true),
-		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability,
+		"magic": magic.duplicate(true), "expand_magic": expand_magic.duplicate(true), "durability": durability, "dk": 1,
 		"seed": gen_seed, "luck": luck, "rx": room_x, "ry": room_y, "rb": room_bag,
 		"lock": lock_state, "unlock_at": unlock_at, "price": trade_price, "uid": _ensure_uid(),
-		"mid": misc_id, "count": count, "ilv": item_level, "q": quality, "sk": sockets, "om": ore_magic}
+		"mid": misc_id, "count": count, "ilv": item_level, "q": quality, "sk": sockets, "om": ore_magic,
+		"bind": (1 if lock_trade else 0) | (2 if lock_sell else 0) | (4 if lock_drop else 0), "exp": expire_at}
 
 func _ensure_uid() -> String:
 	if uid == "":
@@ -212,6 +257,9 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 		item.expand_magic.append({"attrib": str(line.get("attrib", "")), "value": [int(ev[0]), int(ev[1]), int(ev[2])],
 			"name": str(line.get("name", "")), "prefix": true})
 	item.durability = int(data.get("durability", 0))
+	## Save trước khi có độ bền tụt/hỏng (không có "dk"): độ bền 0 lúc đó là dữ liệu thiếu, không phải đồ hỏng -> đầy độ bền.
+	if not data.has("dk") and item.durability == 0 and item.misc_id == "":
+		item.durability = item.get_max_durability()
 	item.gen_seed = int(data.get("seed", 0))
 	item.luck = int(data.get("luck", 0))
 	item.room_x = int(data.get("rx", -1))
@@ -220,6 +268,13 @@ static func from_dict(data: Dictionary) -> ItemInstance:
 	item.lock_state = int(data.get("lock", LOCK_NORMAL))
 	item.unlock_at = int(data.get("unlock_at", 0))
 	item.trade_price = int(data.get("price", 0))
+	item.expire_at = int(data.get("exp", 0))
+	var bind := int(data.get("bind", 0))
+	item.lock_trade = (bind & 1) != 0
+	item.lock_sell = (bind & 2) != 0
+	item.lock_drop = (bind & 4) != 0
+	if item.lock_trade:
+		item.trade_price = 0
 	item.uid = str(data.get("uid", ""))
 	item.misc_id = str(data.get("mid", ""))
 	item.count = maxi(int(data.get("count", 1)), 1)

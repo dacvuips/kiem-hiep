@@ -14,6 +14,11 @@ const COLOR_CREAM := Color("eadcc0")
 const COLOR_OUTLINE := Color("120c06")
 const COLOR_POTENTIAL := Color(0.95, 0.25, 0.2)
 
+func _get_account_api() -> Node:
+	if AccountApi != null:
+		return AccountApi
+	return get_node_or_null("/root/AccountApi")
+
 const NAV_ITEMS := [
 	["equipment", "Trang Bị"],
 	["skills", "Kỹ Năng"],
@@ -48,20 +53,9 @@ const TEX_EQUIP_BG_MALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/tr
 const TEX_EQUIP_BG_FEMALE := preload("res://assets/ui/bo_icon_nhan_vat/trang_bi/trang_bi_nu.png")
 const ICON_CHECK := preload("res://ui/login/icon_check.png")
 
-@export var stages: Array[StageData] = [
-	preload("res://stages/stage_01/stage_01.tres"),
-	preload("res://stages/stage_02/stage_02.tres"),
-	preload("res://stages/stage_03/stage_03.tres"),
-	preload("res://stages/stage_04/stage_04.tres"),
-	preload("res://stages/stage_05/stage_05.tres"),
-	preload("res://stages/stage_06/stage_06.tres"),
-	preload("res://stages/stage_07/stage_07.tres"),
-	preload("res://stages/stage_08/stage_08.tres"),
-	preload("res://stages/stage_09/stage_09.tres"),
-	preload("res://stages/stage_10/stage_10.tres"),
-	preload("res://stages/stage_11/stage_11.tres"),
-	preload("res://stages/stage_12/stage_12.tres"),
-]
+## Danh sách màn: KHÔNG preload — các .tres này tham chiếu quái/tài nguyên nằm trong gói tải ngầm, preload sẽ làm hỏng cả script hub
+## khi gói chưa tải xong. Nạp lười qua GameManager.get_all_stages() khi cần.
+@export var stages: Array[StageData] = []
 
 var _profile: PlayerProfile
 var _toast_tween: Tween
@@ -81,6 +75,10 @@ var _style_nav_active: StyleBox
 var _style_nav_normal: StyleBox
 var _style_tab_active: StyleBox
 var _style_tab_normal: StyleBox
+var _quick_sell_mode: bool = false
+## Chế độ Sửa (nút "Sửa" cạnh "Bán"): bấm trang bị (trong túi hoặc đang mặc) thì thợ rèn sửa món đó (RepairActions).
+var _repair_mode: bool = false
+var _repair_btn: Button
 const PORTRAIT_TURN_SECONDS := 1.5
 var _portrait_timer: Timer
 var _disguise_banner: PanelContainer
@@ -89,12 +87,21 @@ var _disguise_icon: TextureRect
 var _hub_custom_avatar_view: TextureRect
 var _hub_avatar_upload_box: PanelContainer
 var _hub_avatar_delete_btn: Button
+var _is_test_mode: bool = false
+var _equip_mannequin: CharacterAvatar
+var _mannequin_direction: int = 0
+var _rotate_btn: Button
+var _ride_toggle_btn: Button
 
 func _ready() -> void:
 	MusicManager.stop(0.5)
 	if PlayerStats.has_method("reset"):
 		PlayerStats.reset()
 	add_to_group("character_hub")
+	for arg in (OS.get_cmdline_args() + OS.get_cmdline_user_args()):
+		if arg.begins_with("--test-") or arg == "--capture-screenshot":
+			_is_test_mode = true
+			break
 	if "--capture-screenshot" in OS.get_cmdline_args() or "--test-open-popup" in OS.get_cmdline_args() or "--test-open-inventory" in OS.get_cmdline_args() or "--test-open-skills" in OS.get_cmdline_args() or "--test-equipment-red" in OS.get_cmdline_args() or "--test-open-events" in OS.get_cmdline_args() or "--test-tutorial-welcome" in OS.get_cmdline_args() or "--test-tutorial-spotlight" in OS.get_cmdline_args() or "--test-tutorial-mode1" in OS.get_cmdline_args() or "--test-tutorial-mode2" in OS.get_cmdline_args():
 		_create_mock_profile()
 	else:
@@ -103,10 +110,16 @@ func _ready() -> void:
 			_profile = SaveManager.load_profile()
 			GameManager.local_profile = _profile
 		if _profile == null:
-			if OS.has_feature("editor") or OS.is_debug_build():
+			if GameModeManager.is_offline():
+				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH)
+				return
+			elif _is_test_mode:
+				## Hồ sơ giả "HoaHieu" CHỈ cho chạy test (--test-*). Online mà mất hồ sơ (bị đá phiên...) thì về Danh sách /
+				## Đăng nhập như bản phát hành — không cho chơi bằng hồ sơ giả.
 				_create_mock_profile()
 			else:
-				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH if AccountApi.is_logged_in() else SELECT_SCENE_PATH)
+				var api := _get_account_api()
+				get_tree().change_scene_to_file.call_deferred(ROSTER_SCENE_PATH if (api != null and api.is_logged_in()) else SELECT_SCENE_PATH)
 				return
 
 	_all_skills = _load_all_skills()
@@ -120,6 +133,17 @@ func _ready() -> void:
 	%ChallengeButton.pressed.connect(func() -> void: MapSelectWindow.open(self, _profile, _enter_field_map))
 	if has_node("%SiegeButton"):
 		%SiegeButton.pressed.connect(func() -> void: CityWarWindow.open(self, _profile, _enter_field_map))
+	if has_node("%DaTauButton"):
+		%DaTauButton.pressed.connect(func() -> void: DaTauWindow.open(self, _profile, _enter_field_map))
+	if has_node("%PubgButton"):
+		var pubg_btn: TextureButton = %PubgButton
+		_setup_pubg_button(pubg_btn)
+		pubg_btn.pressed.connect(func() -> void: PubgWindow.open(self, _profile, _enter_field_map))
+	if has_node("%LonXonButton"):
+		var lx_btn = %LonXonButton
+		if lx_btn is TextureButton:
+			_setup_lon_xon_button(lx_btn)
+		lx_btn.pressed.connect(func() -> void: LonXonWindow.open(self, _profile, _enter_field_map))
 	if has_node("%ManorButton"):
 		var manor_btn: TextureButton = %ManorButton
 		_setup_manor_button(manor_btn)
@@ -175,12 +199,19 @@ func _ready() -> void:
 	%BaseStatButton3.pressed.connect(_add_stat.bind(3)) # Nội công
 
 	if has_node("%GmButton"):
-		var is_gm := AccountApi.is_gm()
-		%GmButton.visible = is_gm
-		if is_gm:
+		var api := _get_account_api()
+		var has_perm: bool = api != null and api.has_method("has_gm_permission") and api.has_gm_permission()
+		%GmButton.visible = has_perm
+		if has_perm:
 			%GmButton.pressed.connect(_toggle_gm_window)
+			_update_gm_button_style()
+			if api.has_signal("gm_mode_toggled"):
+				api.gm_mode_toggled.connect(func(_act: bool) -> void:
+					_update_gm_button_style()
+				)
 		else:
 			%GmButton.queue_free()
+	_layout_bottom_left_buttons()
 
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null:
@@ -191,6 +222,8 @@ func _ready() -> void:
 				_refresh_portrait()
 				_refresh_mask_check()
 			)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_gm_profile_modified)
 
 	if has_node("%ChatButton"):
 		%ChatButton.pressed.connect(func() -> void:
@@ -226,6 +259,7 @@ func _ready() -> void:
 	_setup_equipment_slots()
 	_setup_nav_buttons()
 	_setup_portrait()
+	_apply_mode_ui()
 	_set_view("character")
 
 	var stage := get_node_or_null("Stage") as Control
@@ -248,7 +282,13 @@ func _ready() -> void:
 	create_tween().tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 	_ask_sect_if_needed.call_deferred()
 
+	## Về Sảnh = rời tổ đội (offline: bỏ đội người chơi giả; online: kết nối map đã đóng nên server đã cho rời đội).
+	## Đội lập ngay ở Sảnh (online) vẫn giữ trong lúc ở Sảnh — lệnh này chỉ chạy lúc mở Sảnh, trước khi nối server.
+	if _profile != null:
+		SocialHub.of(_profile).team.reset_local()
 	HubSession.attach(self)
+	if NetWorldSync.is_online_mode():
+		NetClient.pubg_message.connect(_on_pubg_hub_message)   ## ghép được trận PUBG (kể cả đã đóng cửa sổ PUBG) -> vào trận
 
 	for arg in (OS.get_cmdline_args() + OS.get_cmdline_user_args()):
 		if arg == "--capture-screenshot":
@@ -413,11 +453,25 @@ func _test_open_events_and_quit() -> void:
 
 func _test_open_guild_and_quit() -> void:
 	await get_tree().create_timer(0.4).timeout
+	if _profile.guild.is_empty():
+		_profile.guild = {
+			"name": "Hồng Hưng",
+			"camp": 1,
+			"level": 1,
+			"exp": 0,
+			"fund": 0,
+			"tendency": "—",
+			"created_at": Time.get_unix_time_from_system() - 100,
+			"trial_until": Time.get_unix_time_from_system() + 86400 * 14,
+			"members": [
+				{"name": _profile.display_name if not _profile.display_name.is_empty() else "Vũ hồn", "figure": 1, "level": 50, "local": true, "online": true}
+			]
+		}
 	_set_view("guild")
 	await get_tree().create_timer(0.5).timeout
 	var img := get_viewport().get_texture().get_image()
 	if img:
-		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/559e8e6c-9764-4a53-b7ce-0cbbb23fca67/guild_view_rendered.png")
+		img.save_png("C:/Users/Hieu Tran/.gemini/antigravity/brain/02b816c9-d996-4099-b452-5c92e02c29d5/guild_view_rendered.png")
 		print("GUILD_CAPTURE_SUCCESS")
 	get_tree().quit()
 
@@ -617,6 +671,7 @@ func _test_equipment_red_and_quit() -> void:
 ## Tạo hồ sơ mẫu khi chạy F6 test trực tiếp
 func _create_mock_profile() -> void:
 	_profile = PlayerProfile.new()
+	_profile.id = 1001
 	_profile.display_name = "HoaHieu"
 	_profile.title = ""
 	_profile.fuyuan = 0
@@ -643,8 +698,9 @@ func _create_mock_profile() -> void:
 	SaveManager.save_profile(_profile)
 
 func _on_gm_profile_modified(target_profile: PlayerProfile) -> void:
-	if target_profile == null or target_profile == _profile or target_profile == GameManager.local_profile:
-		_profile = GameManager.local_profile
+	if target_profile == null or target_profile == _profile or (GameManager != null and target_profile == GameManager.local_profile):
+		if GameManager != null and GameManager.local_profile != null:
+			_profile = GameManager.local_profile
 		refresh()
 		_refresh_inventory_view()
 		_refresh_equipment_display()
@@ -658,12 +714,20 @@ func _on_gm_profile_modified(target_profile: PlayerProfile) -> void:
 		if _market_view and is_instance_valid(_market_view) and _market_view.visible:
 			if _market_view.has_method("_refresh_money"):
 				_market_view._refresh_money()
+			if _market_view.has_method("_refresh_bag"):
+				_market_view._refresh_bag()
+		if _crafting_view and is_instance_valid(_crafting_view) and _crafting_view.visible:
+			_crafting_view._profile = _profile
+			if _crafting_view.has_method("_refresh"):
+				_crafting_view._refresh()
+		if _events_view and is_instance_valid(_events_view) and _events_view.visible and _events_view.has_method("refresh"):
+			_events_view.refresh()
 
 func refresh() -> void:
 	if _profile == null or not is_inside_tree() or not has_node("%GoldValueLabel"):
 		return
 
-	# Thanh tiền tệ top
+	# Dải tiền tệ dưới khung Hành trang
 	%GoldValueLabel.text = _format_number(_profile.gold)
 	if has_node("%XuValueLabel"):
 		%XuValueLabel.text = _format_number(_profile.xu)
@@ -755,7 +819,13 @@ func refresh() -> void:
 	%DamageRightValue.text = "%d/%d" % [min_dmg, max_dmg]
 	%ChinhXacValue.text = "%s/%d" % [str(s.attack_rating) if left_uses_ar else "-", s.attack_rating if s.attack_rating > 0 else 52]
 	%NeTranhValue.text = str(s.defense if s.defense != 0 else -20)
-	%ChayValue.text = "10"
+	var base_run: int = 10
+	if s.move_speed_p > 0:
+		%ChayValue.text = "%d (+%d%%)" % [base_run, s.move_speed_p]
+		%ChayValue.tooltip_text = "Tốc độ chạy cơ bản: %d\nTăng thêm: +%d%% (giày, ngựa, bùa...)" % [base_run, s.move_speed_p]
+	else:
+		%ChayValue.text = str(base_run)
+		%ChayValue.tooltip_text = "Tốc độ chạy cơ bản: %d" % base_run
 	%CongKichValue.text = "%d/%d" % [s.attack_speed, s.cast_speed]
 	%TiemNangValue.text = str(_profile.potential_points)
 	%DefenseValue.text = "%d%%" % s.get_capped_resist(CombatFormulas.DamageType.PHYSICS)
@@ -771,12 +841,14 @@ func refresh() -> void:
 
 	if has_node("%SecurityButton"):
 		var sec_btn: Button = %SecurityButton
-		if not SecurityLock.has_password(_profile):
-			sec_btn.text = "Đặt Khóa"
-		elif SecurityLock.is_locked(_profile):
+		## Khoá bảo vệ (khoá rương gốc — KPlayer::SetLockState/CheckSavePw): chưa có mật mã -> bấm để đặt; đang khoá -> nhập mật mã để mở;
+		## đang mở -> bấm để khoá lại ngay.
+		if SecurityLock.is_locked(_profile):
 			sec_btn.text = "🔒 Mở Khóa"
+			sec_btn.tooltip_text = "Đang khoá bảo vệ: không giao dịch, mua bán, bày bán, vứt đồ, mở rương. Bấm để nhập mật mã mở khoá."
 		else:
-			sec_btn.text = "🔓 Đang Mở"
+			sec_btn.text = "Khóa"
+			sec_btn.tooltip_text = "Đặt mật mã khoá bảo vệ." if not SecurityLock.has_password(_profile) 				else "Bấm để khoá bảo vệ ngay (giống khoá rương)."
 
 func _sync_world_rank() -> void:
 	if _profile == null:
@@ -1062,6 +1134,7 @@ func _setup_inventory_view() -> void:
 		_room = ItemRoomView.new()
 		_room.cell = 37
 		_room.item_pressed.connect(_on_room_item_pressed)
+		_room.item_right_clicked.connect(_on_room_item_right_clicked)
 		_room.changed.connect(func() -> void:
 			SaveManager.save_profile(_profile)
 			SaveManager.flush_online()
@@ -1106,6 +1179,12 @@ func _setup_inventory_view() -> void:
 
 	%SortButton.text = tr(%SortButton.text)
 	%SortButton.pressed.connect(_on_sort_pressed)
+	if has_node("%SellButton"):
+		%SellButton.text = tr(%SellButton.text)
+		%SellButton.tooltip_text = tr("Bật/Tắt chế độ bán nhanh: Nhấp vào món đồ để bán ngay.")
+		%SellButton.pressed.connect(_toggle_quick_sell_mode)
+		_repair_btn = RepairActions.make_button(%SellButton)
+		_repair_btn.pressed.connect(func() -> void: _set_repair_mode(not _repair_mode))
 	if has_node("%ShopButton"):
 		%ShopButton.text = tr(%ShopButton.text)
 		%ShopButton.pressed.connect(func() -> void:
@@ -1114,11 +1193,6 @@ func _setup_inventory_view() -> void:
 				_refresh_inventory_view()
 			, _profile)
 		)
-	if has_node("%CraftButton"):
-		%CraftButton.text = tr(%CraftButton.text)
-		%CraftButton.pressed.connect(func() -> void:
-			_set_view("crafting")
-		)
 	if has_node("%StorageButton"):
 		%StorageButton.text = tr(%StorageButton.text)
 		%StorageButton.pressed.connect(_toggle_storage_window)
@@ -1126,7 +1200,12 @@ func _setup_inventory_view() -> void:
 		%SecurityButton.text = tr(%SecurityButton.text)
 		%SecurityButton.pressed.connect(func() -> void:
 			if not SecurityLock.has_password(_profile):
-				SecurityWindow.open(self, _profile)
+				var win := SecurityWindow.open(self, _profile)
+				if win != null:
+					win.tree_exited.connect(func() -> void:
+						if is_instance_valid(self):
+							refresh()
+					)
 			elif SecurityLock.is_locked(_profile):
 				KeypadWindow.ask(self, "Mở khóa bảo vệ", "Nhập mật mã để mở khóa.", func(code: String) -> void:
 					var err := SecurityLock.unlock(_profile, code)
@@ -1159,15 +1238,87 @@ func _drop_on_tab(_at: Vector2, data: Variant, bag: int) -> void:
 	else:
 		_show_toast("Túi %d đã đầy chỗ cho món này" % (bag + 1), true)
 
+func _setup_equip_mannequin() -> void:
+	var equip_bg: TextureRect = get_node_or_null("%EquipBackground")
+	if equip_bg == null and %CenterPanel:
+		equip_bg = %CenterPanel.get_node_or_null("EquipBox/EquipBackground")
+	if equip_bg == null:
+		return
+
+	if _equip_mannequin == null:
+		_equip_mannequin = CharacterAvatar.new()
+		_equip_mannequin.name = "EquipMannequin"
+		_equip_mannequin.position = Vector2(201, 395)
+		_equip_mannequin.scale = Vector2(1.15, 1.15)
+		equip_bg.add_child(_equip_mannequin)
+		equip_bg.move_child(_equip_mannequin, 0)
+		equip_bg.self_modulate = Color(1.0, 1.0, 1.0, 0.25)
+
+	if _rotate_btn == null:
+		_rotate_btn = Button.new()
+		_rotate_btn.name = "RotateMannequinBtn"
+		_rotate_btn.text = "⟳ Xoay"
+		_rotate_btn.tooltip_text = "Xoay góc nhìn nhân vật (8 hướng)"
+		_rotate_btn.size = Vector2(55, 24)
+		_rotate_btn.position = Vector2(109, 470)
+		_rotate_btn.focus_mode = Control.FOCUS_NONE
+		_rotate_btn.add_theme_font_size_override("font_size", 12)
+		_rotate_btn.pressed.connect(_on_rotate_mannequin_pressed)
+		equip_bg.add_child(_rotate_btn)
+
+	if _ride_toggle_btn == null:
+		_ride_toggle_btn = Button.new()
+		_ride_toggle_btn.name = "RideToggleBtn"
+		_ride_toggle_btn.text = "🐎 Lên"
+		_ride_toggle_btn.tooltip_text = "Lên / Xuống ngựa"
+		_ride_toggle_btn.size = Vector2(56, 24)
+		_ride_toggle_btn.position = Vector2(167, 470)
+		_ride_toggle_btn.focus_mode = Control.FOCUS_NONE
+		_ride_toggle_btn.add_theme_font_size_override("font_size", 12)
+		_ride_toggle_btn.pressed.connect(_on_toggle_riding_pressed)
+		equip_bg.add_child(_ride_toggle_btn)
+
+func _on_rotate_mannequin_pressed() -> void:
+	_mannequin_direction = (_mannequin_direction + 1) % 8
+	if _equip_mannequin:
+		_equip_mannequin.set_direction8(_mannequin_direction)
+
+func _on_toggle_riding_pressed() -> void:
+	if _profile == null:
+		return
+	if not _profile.equipment.has(Equipment.Part.HORSE):
+		_show_toast("Chưa trang bị ngựa!", true)
+		return
+	_profile.riding = not _profile.riding
+	SaveManager.save_profile(_profile, true)
+	_refresh_equipment_display()
+	_sync_game_player_appearance()
+	refresh()
+	if _profile.riding:
+		_show_toast("Đã lên ngựa")
+	else:
+		_show_toast("Đã xuống ngựa")
+
 func _setup_equipment_slots() -> void:
+	_setup_equip_mannequin()
 	if has_node("%MaskVisualCheck"):
 		%MaskVisualCheck.toggled.connect(_on_mask_visual_check_toggled)
 	for slot_name in SLOT_TO_PART:
 		var btn: Button = get_node_or_null("%" + slot_name)
 		if btn:
+			if not (btn is HubEquipSlot):
+				btn.set_script(preload("res://ui/character_hub/hub_equip_slot.gd"))
 			var part: int = SLOT_TO_PART[slot_name]
 			btn.set_meta("draggable", true)
 			btn.pressed.connect(_on_equip_slot_pressed.bind(part))
+			btn.gui_input.connect(func(event: InputEvent) -> void:
+				if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+					if _profile != null and _profile.equipment.has(part):
+						ItemDetailPopup.close_all(get_tree())
+						var it: ItemInstance = _profile.equipment[part]
+						_unequip_item(part, it)
+					btn.accept_event()
+			)
 			btn.set_drag_forwarding(Callable(), _can_drop_on_equip_slot.bind(part), _drop_on_equip_slot.bind(part))
 
 func _can_drop_on_equip_slot(_at: Vector2, data: Variant, part: int) -> bool:
@@ -1214,11 +1365,34 @@ func _refresh_equipment_display() -> void:
 		else:
 			equip_bg.texture = TEX_EQUIP_BG_MALE
 
+	if _equip_mannequin:
+		var gender_str := "female" if _profile.gender == PlayerProfile.Gender.FEMALE else "male"
+		_equip_mannequin.set_gender(gender_str)
+		var look := Equipment.get_appearance(_profile.equipment, gender_str, _profile.riding, _profile.show_mask)
+		_equip_mannequin.set_appearance(int(look.helm), int(look.armor), int(look.weapon), int(look.horse))
+		_equip_mannequin.set_direction8(_mannequin_direction)
+		_equip_mannequin.play("stand")
+
+	if _ride_toggle_btn:
+		var has_horse: bool = _profile.equipment.has(Equipment.Part.HORSE)
+		_ride_toggle_btn.visible = has_horse
+		if has_horse:
+			if _profile.riding:
+				_ride_toggle_btn.text = "🐎 Xuống"
+				_ride_toggle_btn.tooltip_text = "Đang cưỡi ngựa\nBấm để xuống ngựa (chỉ số ngựa tạm ẩn)"
+			else:
+				_ride_toggle_btn.text = "🐎 Lên"
+				_ride_toggle_btn.tooltip_text = "Đang đi bộ\nBấm để lên ngựa (kích hoạt chỉ số ngựa)"
+
 	var ctx := Equipment.get_requirement_context(_profile)
+	var series := _profile.get_element() if _profile.has_method("get_element") else _sect_element()
+	var counts := Equipment.get_active_counts(_profile.equipment, series)
 	for slot_name in SLOT_TO_PART:
 		var btn: Button = get_node_or_null("%" + slot_name)
 		if btn == null:
 			continue
+		if not (btn is HubEquipSlot):
+			btn.set_script(preload("res://ui/character_hub/hub_equip_slot.gd"))
 		var part: int = SLOT_TO_PART[slot_name]
 		var icon: TextureRect = btn.get_node_or_null("Icon")
 		var item: ItemInstance = _profile.equipment.get(part)
@@ -1237,12 +1411,15 @@ func _refresh_equipment_display() -> void:
 					icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 				icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				icon.visible = true
-			btn.tooltip_text = item.get_display_name()
+			var bbcode := ItemText.build(item, _profile, counts.get(part, 0), part)
+			btn.item_bbcode = bbcode
+			btn.tooltip_text = " "  ## khác rỗng để Godot gọi _make_custom_tooltip
 		else:
 			btn.set_drag_forwarding(Callable(), _can_drop_on_equip_slot.bind(part), _drop_on_equip_slot.bind(part))
 			if icon:
 				icon.texture = null
 				icon.visible = false
+			btn.item_bbcode = ""
 			btn.tooltip_text = ""
 
 	for unused_slot in ["SlotRight0", "SlotRight4", "SlotRight5"]:
@@ -1254,6 +1431,8 @@ func _refresh_equipment_display() -> void:
 				icon.visible = false
 			_update_slot_backdrop(btn, false)
 			_update_slot_rarity(btn, null)
+			if "item_bbcode" in btn:
+				btn.item_bbcode = ""
 			btn.tooltip_text = ""
 	_refresh_mask_check()
 	_refresh_pk_label()
@@ -1376,12 +1555,16 @@ func _on_equip_slot_pressed(part: int) -> void:
 	if item == null:
 		_set_view("equipment")
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _after_repair, _show_toast)
+		return
 	var series := _profile.get_element() if _profile.has_method("get_element") else _sect_element()
 	var counts := Equipment.get_active_counts(_profile.equipment, series)
 	var desc := ItemText.build(item, _profile, counts.get(part, 0), part, false)
 	var actions: Array = [
 		["Tháo đồ", func() -> void: _unequip_item(part, item)]
 	]
+	actions.append_array(RepairActions.for_item(_profile, item, _after_repair, _show_toast))
 	ItemDetailPopup.open(self, desc, actions, item)
 
 func _unequip_item(part: int, item: ItemInstance) -> void:
@@ -1389,12 +1572,20 @@ func _unequip_item(part: int, item: ItemInstance) -> void:
 		SaveManager.save_profile(_profile)
 		SaveManager.flush_online()
 		_show_toast("Đã tháo %s" % item.get_display_name())
+		_sync_game_player_appearance()
 		refresh()
 		_refresh_inventory_view()
 	else:
 		_show_toast("Hành trang đã đầy, không thể tháo đồ!", true)
 
 func _set_view(view: String) -> void:
+	if not _is_test_mode and GameModeManager.is_offline() and view in ["events", "guild", "social", "ranking"]:
+		_show_toast("Tính năng này chỉ khả dụng ở chế độ Online", true)
+		return
+	if _quick_sell_mode and not (view in ["character", "equipment", "crafting"]):
+		_set_quick_sell_mode(false)
+	if _repair_mode and not (view in ["character", "equipment", "crafting"]):
+		_set_repair_mode(false)
 	_current_view = view
 	var show_char: bool = (view == "character")
 	%InfoBox.visible = show_char
@@ -1509,7 +1700,9 @@ func _show_guild_view() -> void:
 		%LeftPanel.add_child(_guild_view)
 	_guild_view.set_docked(true, true)
 	_guild_view.visible = true
+	_guild_view.size = Vector2(1000, 585)
 	_guild_view._rebuild()
+	_update_responsive_layout.call_deferred()
 
 func _show_social_view() -> void:
 	if _market_view == null:
@@ -1565,6 +1758,9 @@ func _show_events_view() -> void:
 		_events_view.set_docked(true, true)
 		_events_view.close_requested.connect(func() -> void: _set_view("character"))
 		_events_view.event_action_requested.connect(_on_event_action)
+		_events_view.profile_changed.connect(func() -> void:
+			_refresh_inventory_view()
+			refresh())
 		%LeftPanel.add_child(_events_view)
 	_events_view.set_docked(true, true)
 	_events_view.visible = true
@@ -1574,10 +1770,13 @@ func _on_event_action(event_id: String) -> void:
 	match event_id:
 		"battle", "time_challenge", "ferry":
 			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
-			win._select_tab(2)
+			win.select_tab_name("Ải", event_id)
 		"world_boss":
+			if GameModeManager.is_offline():
+				_show_toast(tr("Hoạt động Săn Boss chỉ mở ở chế độ Trực tuyến!"))
+				return
 			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
-			win._select_tab(3)
+			win.select_tab_name("Boss")
 		"pk_arena":
 			PkWindow.open(self, _profile, _enter_field_map)
 		"hoa_dang":
@@ -1587,6 +1786,8 @@ func _on_event_action(event_id: String) -> void:
 			pk_win._select_mode(PkRules.Mode.VAN_TIEU)
 		"siege":
 			CityWarWindow.open(self, _profile, _enter_field_map)
+		"da_tau":
+			DaTauWindow.open(self, _profile, _enter_field_map)
 		"huy_hoang":
 			HuyHoangWindow.open(self, _profile)
 		"bat_nha":
@@ -1655,27 +1856,92 @@ func _on_storage_changed() -> void:
 	refresh()
 	_refresh_inventory_view()
 
+func _on_room_item_right_clicked(item: ItemInstance) -> void:
+	if _profile == null or item == null:
+		return
+	ItemDetailPopup.close_all(get_tree())
+
+	# 1. Nếu có mở rương chứa đồ -> cất vào rương ngay
+	var storage_win: StorageWindow = null
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StorageWindow and is_instance_valid(w):
+			storage_win = w
+			break
+	if storage_win != null:
+		var blocked := SecurityLock.check(_profile, SecurityLock.A_STORAGE)
+		if blocked != "":
+			_show_toast(blocked, true)
+			return
+		var err := StorageService.store_item(_profile, item, storage_win._box)
+		if err != "":
+			_show_toast(err, true)
+		else:
+			_show_toast("Đã cất %s vào rương." % item.get_display_name())
+			SaveManager.save_profile(_profile)
+			SaveManager.flush_online()
+			refresh()
+			_refresh_inventory_view()
+			storage_win._refresh()
+		return
+
+	# 2. Nếu rương không mở:
+	var index := _profile.inventory.find(item)
+	if index < 0:
+		return
+
+	# 2a. Nếu là trang bị -> mặc ngay
+	if not item.is_misc():
+		_equip_item_from_inv(index)
+		return
+
+	# 2b. Nếu là vật phẩm dùng được -> dùng ngay
+	if ItemConsumer.is_usable(item):
+		_use_item_from_inv(index)
+		return
+
 func _on_room_item_pressed(item: ItemInstance) -> void:
 	if _profile == null or item == null:
 		return
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _after_repair, _show_toast)
+		return
+	if _quick_sell_mode:
+		_sell_item_from_inv(index)
+		return
 	var actions: Array = []
 	if not item.is_misc():
 		actions.append(["Trang bị", func() -> void: _equip_item_from_inv(index)])
-	else:
+		actions.append_array(RepairActions.for_item(_profile, item, _after_repair, _show_toast))
+	elif ItemConsumer.is_usable(item):
 		var use_label := ItemConsumer.get_action_label(item)
-		actions.append([use_label, func() -> void: _use_item_from_inv(index)])
-	actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])
+		if use_label != "":
+			actions.append([use_label, func() -> void: _use_item_from_inv(index)])
 
-	if item.misc_id in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
-		actions.append(["Tiệm Ép Đồ", func() -> void: CompoundWindow.open(self, _profile, Callable())])
-	elif item.misc_id in ["6_1_2805", "6_1_1685", "6_1_1606"]:
-		actions.append(["Tiệm Đổi Viêm Đế", func() -> void: ViemDeWindow.open_reward_shop(self, _profile)])
+	# Thêm các nút tính năng đặc biệt của Lệnh bài / Tín vật sự kiện / Nguyên liệu ép đồ
+	var special_acts := ItemConsumer.get_special_actions(item, self, _profile, _enter_field_map, func() -> void:
+		refresh()
+		_refresh_inventory_view()
+	)
+	for sa in special_acts:
+		actions.append(sa)
+
 	if item.can_sell():
 		var label := "Bán (%s Lượng)" % InventoryPopup.format_money(item.get_sale_price())
-		actions.insert(1, [label, func() -> void: _sell_item_from_inv(index)])
+		actions.append([label, func() -> void: _sell_item_from_inv(index)])
+	var split := InventoryPopup.split_action(self, _profile, item, func(msg: String, is_error: bool) -> void:
+		_show_toast(msg, is_error)
+		if not is_error:
+			if not NetClient.is_in_world():
+				SaveManager.save_profile(_profile)
+			refresh()
+			_refresh_inventory_view())
+	if not split.is_empty():
+		actions.append(split)
+	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
+		actions.append(["Vứt bỏ", func() -> void: _drop_item_from_inv(index)])   ## đồ Hoàng Kim: chỉ vứt trong trận PUBG
 	if _current_view == "crafting" and _crafting_view and is_instance_valid(_crafting_view):
 		actions.insert(0, ["Đặt vào chế tạo", func() -> void: _crafting_view._put(item)])
 
@@ -1711,6 +1977,7 @@ func _equip_item_from_inv(index: int) -> void:
 	else:
 		_show_toast("Đã trang bị %s!" % item_name)
 		SaveManager.save_profile(_profile)
+		_sync_game_player_appearance()
 		refresh()
 		_refresh_inventory_view()
 
@@ -1721,6 +1988,10 @@ func _drop_item_from_inv(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "" and item.lock_drop:
+		blocked = "Vật phẩm khoá, không thể vứt ra đất."
+	if blocked == "":
+		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":
 		_show_toast(blocked, true)
 		return
@@ -1737,6 +2008,8 @@ func _sell_item_from_inv(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không thể bán."
+	if blocked == "" and item.lock_sell:
+		blocked = "Vật phẩm khoá, không thể bán cho cửa hàng."
 	if blocked != "":
 		_show_toast(blocked, true)
 		return
@@ -1748,20 +2021,7 @@ func _sell_item_from_inv(index: int) -> void:
 	var item_name: String = str(item.get_display_name())
 
 	if item.is_gold() or item.is_purple():
-		var popup := ConfirmationDialog.new()
-		popup.title = "Xác nhận bán"
-		popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, InventoryPopup.format_money(sale_price)]
-		popup.ok_button_text = "Bán"
-		popup.cancel_button_text = "Hủy"
-		add_child(popup)
-		popup.confirmed.connect(func() -> void:
-			_execute_sell_from_inv(index, item_name, sale_price)
-			popup.queue_free()
-		)
-		popup.canceled.connect(func() -> void:
-			popup.queue_free()
-		)
-		popup.popup_centered()
+		InventoryPopup.confirm_sell(self, item, sale_price, func() -> void: _execute_sell_from_inv(index, item_name, sale_price))
 		return
 
 	_execute_sell_from_inv(index, item_name, sale_price)
@@ -1771,11 +2031,65 @@ func _execute_sell_from_inv(index: int, item_name: String, sale_price: int) -> v
 		return
 	_profile.inventory.remove_at(index)
 	_profile.gold += sale_price
+	if SfxManager != null and VltkSound != null:
+		SfxManager.play_ui(VltkSound.ui(VltkSound.UI_ITEM))
 	_show_toast("Đã bán %s nhận được %s Lượng." % [item_name, InventoryPopup.format_money(sale_price)])
 	SaveManager.save_profile(_profile)
 	SaveManager.flush_online()
 	refresh()
 	_refresh_inventory_view()
+
+func _toggle_quick_sell_mode() -> void:
+	_set_quick_sell_mode(not _quick_sell_mode)
+
+func _after_repair() -> void:
+	SaveManager.flush_online()
+	refresh()
+	_refresh_inventory_view()
+
+func _set_repair_mode(enabled: bool) -> void:
+	_repair_mode = enabled
+	RepairActions.set_button_active(_repair_btn, enabled)
+	if enabled:
+		if _quick_sell_mode:
+			_set_quick_sell_mode(false)
+		_show_toast(RepairActions.mode_hint(_profile))
+	else:
+		_show_toast("Đã tắt chế độ Sửa.")
+
+func _set_quick_sell_mode(enabled: bool) -> void:
+	if enabled and _repair_mode:
+		_set_repair_mode(false)
+	_quick_sell_mode = enabled
+	_update_sell_button_visual()
+	if _quick_sell_mode:
+		_show_toast("Chế độ Bán: Nhấp chuột vào món đồ để bán nhanh (Bấm nút Bán để tắt).")
+	else:
+		_show_toast("Đã tắt chế độ Bán.")
+
+func _update_sell_button_visual() -> void:
+	if not has_node("%SellButton"):
+		return
+	var btn := %SellButton as Button
+	if _quick_sell_mode:
+		btn.text = tr("Đang Bán")
+		var active_style := StyleBoxFlat.new()
+		active_style.bg_color = Color(0.65, 0.14, 0.08, 0.95)
+		active_style.border_color = Color(1.0, 0.55, 0.25, 1.0)
+		active_style.set_border_width_all(1)
+		active_style.set_corner_radius_all(6)
+		active_style.shadow_color = Color(0.95, 0.25, 0.1, 0.6)
+		active_style.shadow_size = 4
+		btn.add_theme_stylebox_override("normal", active_style)
+		btn.add_theme_stylebox_override("hover", active_style)
+		btn.add_theme_stylebox_override("pressed", active_style)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
+	else:
+		btn.text = tr("Bán")
+		btn.remove_theme_stylebox_override("normal")
+		btn.remove_theme_stylebox_override("hover")
+		btn.remove_theme_stylebox_override("pressed")
+		btn.remove_theme_color_override("font_color")
 
 func _use_item_from_inv(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
@@ -1861,13 +2175,16 @@ func _on_change_character_pressed() -> void:
 		if _profile != null:
 			SaveManager.save_profile(_profile)
 			await SaveManager.flush_online()
-		if AccountApi.is_logged_in():
+		var api := _get_account_api()
+		if (api != null and api.is_logged_in()) or GameModeManager.is_offline():
 			get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
 			return
 		get_tree().change_scene_to_file(SELECT_SCENE_PATH)
 	)
 
 func _on_change_server_pressed() -> void:
+	if GameModeManager.is_offline():
+		return
 	SocialWindow.confirm(self, "Chọn Máy Chủ", "Lưu dữ liệu và trở về màn hình chọn máy chủ?", func() -> void:
 		if _profile != null:
 			SaveManager.save_profile(_profile)
@@ -1887,29 +2204,101 @@ func _on_back_pressed() -> void:
 	if _profile != null:
 		SaveManager.save_profile(_profile)
 		await SaveManager.flush_online()
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if (api != null and api.is_logged_in()) or GameModeManager.is_offline():
 		get_tree().change_scene_to_file(ROSTER_SCENE_PATH)
 		return
 	get_tree().change_scene_to_file(SELECT_SCENE_PATH)
 
-func _enter_field_map(entry: Dictionary) -> void:
-	if _profile != null:
+## PubgServer báo đã ghép trận (đội chờ của mình vừa được đưa vào 1 trận): chuẩn bị trận online rồi vào map Tống Kim 1.
+func _on_pubg_hub_message(msg: Dictionary) -> void:
+	if str(msg.get("op", "")) != "match" or PubgManager.is_active or _profile == null:
+		return
+	_show_toast("⚔️ Đã tìm được trận Chiến Trường Sinh Tồn — đang vào trận…")
+	_enter_field_map(PubgManager.start_online_match(_profile, msg))
+
+func _enter_field_map(entry: Variant) -> void:
+	var map_entry: Dictionary = {}
+	if entry is int:
+		map_entry = MapCatalog.get_by_id(entry)
+		if map_entry.is_empty():
+			map_entry = {
+				"id": entry,
+				"name": "Bản đồ %d" % entry,
+				"dir": "res://world/maps/map_%d" % entry,
+				"level": 1
+			}
+	elif entry is Dictionary:
+		map_entry = entry
+	else:
+		push_error("Invalid map entry type: %s" % typeof(entry))
+		return
+
+	var is_admin := AccountApi.is_gm()
+	## Cấp 11-20 vào được map 2x, 21-30 vào 3x ... (MapCatalog.unlocked_tier), không đòi bằng cấp quái.
+	var req_lvl := MapCatalog.min_level_for_tier(MapCatalog.tier_of_level(int(map_entry.get("level", 1))))
+	if not is_admin and _profile != null and _profile.level < req_lvl:
+		_show_toast(tr("⚠️ Cấp độ của bạn chưa đủ (%d/%d) để vào bản đồ này!") % [_profile.level, req_lvl])
+		return
+
+	var is_pubg_map: bool = bool(map_entry.get("pubg", false)) or bool(map_entry.get("is_pubg", false))
+	if _profile != null and not is_pubg_map:
 		SaveManager.save_profile(_profile)
 		await SaveManager.flush_online()
-	if entry.has("stage") and entry["stage"] is StageData:
+	if map_entry.get("thu_thanh_mode", false):
+		GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+		GameManager.field_map = map_entry
+		GameManager.current_stage = null
+	elif map_entry.get("survivor_mode", false):
+		GameManager.game_mode = GameManager.GameMode.MAIN_MAP
+		GameManager.field_map = map_entry
+		GameManager.current_stage = null
+	elif map_entry.has("stage") and map_entry["stage"] is StageData:
 		GameManager.game_mode = GameManager.GameMode.STAGE
 		GameManager.field_map = {}
-		GameManager.current_stage = entry["stage"]
+		GameManager.current_stage = map_entry["stage"]
 	else:
 		GameManager.game_mode = GameManager.GameMode.MAIN_MAP
-		GameManager.field_map = entry
+		GameManager.field_map = map_entry
 		GameManager.current_stage = null
 	GameManager.is_game_over = false
-	var map_title: String = str(entry.get("name", entry.get("title", "")))
+	var map_title: String = str(map_entry.get("name", map_entry.get("title", "")))
 	if has_node("/root/SceneTransition"):
 		get_node("/root/SceneTransition").change_scene(GAME_SCENE_PATH, map_title)
 	else:
 		get_tree().change_scene_to_file(GAME_SCENE_PATH)
+
+func _setup_pubg_button(btn: TextureButton) -> void:
+	btn.tooltip_text = "Chiến Trường Sinh Tồn (PUBG Võ Lâm)"
+	var path := "res://ui/character_hub/btn_pubg.png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path)
+	elif FileAccess.file_exists(path):
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null:
+			tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		btn.texture_normal = tex
+		if btn.has_node("PubgLabel"):
+			btn.get_node("PubgLabel").visible = false
+	else:
+		if btn.has_node("PubgLabel"):
+			btn.get_node("PubgLabel").visible = true
+
+func _setup_lon_xon_button(btn: TextureButton) -> void:
+	btn.tooltip_text = "Lộn Xộn — hỗn chiến tự do, chết hồi sinh, rớt hết đồ"
+	if btn.texture_normal == null:
+		var path := "res://ui/character_hub/btn_lon_xon.png"
+		var tex: Texture2D = null
+		if ResourceLoader.exists(path):
+			tex = load(path)
+		elif FileAccess.file_exists(path):
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
+		if tex != null:
+			btn.texture_normal = tex
 
 func _setup_manor_button(btn: TextureButton) -> void:
 	btn.tooltip_text = "Sơn Trang"
@@ -2042,6 +2431,7 @@ func _ask_sect_if_needed() -> void:
 		return
 	var win := SectChoiceWindow.open(self, _profile)
 	win.chosen.connect(func(sect: SectDefinition) -> void:
+		StarterKit.give_sect_weapon(_profile)
 		_all_skills = _load_all_skills()
 		SaveManager.save_profile(_profile)
 		SaveManager.flush_online()
@@ -2081,24 +2471,12 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	if stage == null:
 		return
 
-	# 1. TopBar & Cụm Tiền tệ
+	# 1. TopBar: nút Kỳ Trân Các bám mép phải (Lượng/Xu/KNB nằm TRONG khung Hành trang — InvBox, dưới lưới ô)
 	var top_bar := stage.get_node_or_null("TopBar") as Control
 	if top_bar:
 		top_bar.size.x = vw
-		var gold := top_bar.get_node_or_null("FrameCurrencyGold") as Control
-		var xu := top_bar.get_node_or_null("FrameCurrencyXu") as Control
-		var jade := top_bar.get_node_or_null("FrameCurrencyJade") as Control
 		var ktc := top_bar.get_node_or_null("KyTranCacTopButton") as Control
 		var stam := top_bar.get_node_or_null("FrameCurrencyStamina") as Control
-		if gold:
-			gold.offset_left = 696.0 + extra_w
-			gold.offset_right = 836.0 + extra_w
-		if xu:
-			xu.offset_left = 844.0 + extra_w
-			xu.offset_right = 984.0 + extra_w
-		if jade:
-			jade.offset_left = 992.0 + extra_w
-			jade.offset_right = 1132.0 + extra_w
 		if ktc:
 			ktc.offset_left = 1140.0 + extra_w
 			ktc.offset_right = 1256.0 + extra_w
@@ -2116,6 +2494,10 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 	var bot_bar := stage.get_node_or_null("BottomBar") as Control
 	if bot_bar:
 		bot_bar.size.x = vw
+		var manor_btn := bot_bar.get_node_or_null("%ManorButton") as Control
+		if manor_btn:
+			manor_btn.offset_left = 1108.0 + extra_w
+			manor_btn.offset_right = 1262.0 + extra_w
 
 	# 4. ToastLabel căn giữa màn hình
 	var toast := stage.get_node_or_null("%ToastLabel") as Control
@@ -2139,16 +2521,81 @@ func _apply_responsive_offsets(vw: float, extra_w: float) -> void:
 		if win and is_instance_valid(win) and win.visible:
 			_reposition_docked_window(win, vw, extra_w)
 
+	# 7. Căn chỉnh các nút ở chế độ Offline
+	if GameModeManager.is_offline():
+		_apply_mode_ui()
+
+func _apply_mode_ui() -> void:
+	if not GameModeManager.is_offline():
+		return
+
+	# 1. TopBar: Ẩn các nút bị đánh chéo ở bản offline (PK, Công Thành Chiến, Dã Tẩu, Xu, Kim Bảo)
+	if has_node("%PlayButton"):
+		%PlayButton.visible = false
+		%PlayButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%SiegeButton"):
+		%SiegeButton.visible = false
+		%SiegeButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%DaTauButton"):
+		%DaTauButton.visible = false
+		%DaTauButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%PubgButton"):
+		%PubgButton.visible = false
+		%PubgButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%LonXonButton"):
+		%LonXonButton.visible = false
+		%LonXonButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%FrameCurrencyXu"):
+		%FrameCurrencyXu.visible = false
+		%FrameCurrencyXu.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%FrameCurrencyJade"):
+		%FrameCurrencyJade.visible = false
+		%FrameCurrencyJade.process_mode = Node.PROCESS_MODE_DISABLED
+
+	# Căn chỉnh lại nút Vượt Ải trên TopBar: bắt đầu từ x=18
+	if has_node("%ChallengeButton"):
+		%ChallengeButton.offset_left = 18.0
+		%ChallengeButton.offset_right = 148.0
+
+	# 2. RightPanel / NavList: Ẩn Sự Kiện (NavButton2), Bang Hội (NavButton3), Giao Dịch (NavButton4), BXH (NavButton6)
+	var hidden_navs := [2, 3, 4, 6]
+	for idx in hidden_navs:
+		var btn: Button = get_node_or_null("%%NavButton%d" % idx)
+		if btn:
+			btn.visible = false
+			btn.process_mode = Node.PROCESS_MODE_DISABLED
+
+	# 3. BottomBar: Ẩn Chat, Social
+	if has_node("%ChatButton"):
+		%ChatButton.visible = false
+		%ChatButton.process_mode = Node.PROCESS_MODE_DISABLED
+	if has_node("%SocialButton"):
+		%SocialButton.visible = false
+		%SocialButton.process_mode = Node.PROCESS_MODE_DISABLED
+
+	_layout_bottom_left_buttons()
+
+## Xếp nhóm nút góc trái BottomBar (GM, Chat, Cộng đồng, Hướng Dẫn...) sát lề trái,
+## bỏ qua nút đang ẩn/đã xoá — không có GM thì Chat dồn về x=18.
+func _layout_bottom_left_buttons() -> void:
+	var x := 18.0
+	for btn_name in ["GmButton", "ChatButton", "SocialButton", "GuideButton", "TestIntroButton"]:
+		var btn := get_node_or_null("%" + btn_name) as Control
+		if btn == null or not is_instance_valid(btn) or btn.is_queued_for_deletion() or not btn.visible:
+			continue
+		var w := btn.offset_right - btn.offset_left
+		btn.offset_left = x
+		btn.offset_right = x + w
+		x += w + 8.0
+
 func _reposition_docked_window(win: Control, _vw: float, extra_w: float) -> void:
 	if win == null or not is_instance_valid(win):
 		return
 	var left_p := %LeftPanel as Control
 	var left_p_offset := left_p.offset_left if left_p else 0.0
-	var right_boundary := 1060.0 + extra_w
-	var avail_w := right_boundary - 18.0
 	var target_w := 1000.0 if (win is SocialWindow and (win as SocialWindow).is_full_width) else (win.size.x if win.size.x > 0 else 1000.0)
 	win.size = Vector2(target_w, 585.0)
-	var desired_x := 18.0 + maxf(0.0, (avail_w - target_w) * 0.5)
+	var desired_x := 18.0 + extra_w * 0.5
 	win.position.x = desired_x - left_p_offset
 
 func _on_locale_changed(_code: String) -> void:
@@ -2224,8 +2671,24 @@ func _retranslate_tree(node: Node) -> void:
 	for child in node.get_children():
 		_retranslate_tree(child)
 
+func _update_gm_button_style() -> void:
+	if not has_node("%GmButton") or not is_instance_valid(%GmButton):
+		return
+	var api := _get_account_api()
+	var is_active: bool = (api != null and api.has_method("is_gm") and api.is_gm() == true)
+	var gm_btn: Button = %GmButton
+	if is_active:
+		gm_btn.text = "★ GM (BẬT)"
+		gm_btn.modulate = Color(1.0, 1.0, 1.0)
+		gm_btn.tooltip_text = "Trung tâm điều hành Game Master (Đang BẬT quyền hạn GM - Bấm hoặc F12 để mở)"
+	else:
+		gm_btn.text = "☆ GM (TẮT)"
+		gm_btn.modulate = Color(0.7, 0.7, 0.7)
+		gm_btn.tooltip_text = "Chế độ GM đang TẮT (Bạn đang chơi như người chơi thường - Bấm để mở bảng BẬT lại)"
+
 func _toggle_gm_window() -> void:
-	if not AccountApi.is_gm():
+	var api := _get_account_api()
+	if api == null or not api.has_method("has_gm_permission") or not api.has_gm_permission():
 		return
 	var existing := get_tree().current_scene.find_child("GmControlWindow", true, false)
 	if existing:
@@ -2236,7 +2699,83 @@ func _toggle_gm_window() -> void:
 			gm_script.open(self)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F12 and AccountApi.is_gm():
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	var key_ev := event as InputEventKey
+
+	# Phím ESC đóng các cửa sổ / popup đang mở
+	if key_ev.keycode == KEY_ESCAPE:
+		if _quick_sell_mode:
+			_set_quick_sell_mode(false)
+			get_viewport().set_input_as_handled()
+			return
+		if _repair_mode:
+			_set_repair_mode(false)
+			get_viewport().set_input_as_handled()
+			return
+		var f := get_viewport().gui_get_focus_owner()
+		if f is LineEdit or f is TextEdit:
+			f.release_focus()
+			get_viewport().set_input_as_handled()
+			return
+		var closed_any := false
+		for w in get_tree().get_nodes_in_group("social_windows"):
+			if is_instance_valid(w) and w is SocialWindow:
+				w.close_requested.emit()
+				closed_any = true
+				break
+		if not closed_any:
+			var existing := get_tree().current_scene.find_child("GmControlWindow", true, false)
+			if existing and is_instance_valid(existing):
+				existing.queue_free()
+				closed_any = true
+		if closed_any:
+			get_viewport().set_input_as_handled()
+			return
+
+	var is_typing := false
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus is LineEdit or focus is TextEdit:
+		is_typing = true
+
+	if key_ev.keycode == KEY_F12:
+		var api := _get_account_api()
+		if api != null and api.has_method("has_gm_permission") and api.has_gm_permission():
 			_toggle_gm_window()
 			get_viewport().set_input_as_handled()
+			return
+	elif key_ev.keycode == KEY_F1:
+		KeyGuideWindow.open(self)
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F2:
+		_set_view("settings")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F3 or (not is_typing and key_ev.keycode == KEY_C):
+		_set_view("character")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F4 or (not is_typing and (key_ev.keycode == KEY_B or key_ev.keycode == KEY_I)):
+		_set_view("equipment")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F5 or (not is_typing and (key_ev.keycode == KEY_K or key_ev.keycode == KEY_G)):
+		_set_view("skills")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F6:
+		_set_view("guild")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F8 or (not is_typing and key_ev.keycode == KEY_P):
+		_set_view("social")
+		get_viewport().set_input_as_handled()
+		return
+	elif key_ev.keycode == KEY_F11:
+		if has_node("%KyTranCacTopButton"):
+			var btn: Button = %KyTranCacTopButton
+			if btn and not btn.disabled:
+				btn.pressed.emit()
+				get_viewport().set_input_as_handled()
+				return

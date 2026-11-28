@@ -10,7 +10,7 @@ class_name VltkWorld
 ##
 ## Chỉ có 1 VltkWorld trong cây tại 1 thời điểm (biến tĩnh `current`). Main.load_stage() gọi setup_stage().
 
-@export_dir var map_dir: String = "res://world/maps/map_321"
+@export_dir var map_dir: String = "res://world/maps/map_200"
 
 ## Khoảng từ tâm node (Player/Enemy) xuống chân — Avatar đặt ở y = 30 trong player.tscn.
 const FEET_OFFSET := 30.0
@@ -28,6 +28,7 @@ var map: VltkMap
 ## Ô vuông màn chơi hiện tại (toạ độ pixel map). size = 0 nghĩa là chưa có màn.
 var arena_rect := Rect2()
 var arena_border: ArenaBorder
+var _pubg_overlay: Node2D
 ## Điểm hồi sinh "Về thành dưỡng sức" (chiến trường: hậu doanh phe mình). INF = giữa ô màn chơi / điểm xuất phát của map.
 var respawn_point := Vector2.INF
 var _nav: AStarGrid2D   ## lưới tìm đường CHỈ trong ô vuông (sao từ lưới vật cản của map)
@@ -47,6 +48,9 @@ class SortedMap extends VltkMap:
 	const UNLOAD_EXTRA := 1              ## chỉ dỡ vùng cách khung nhìn quá MARGIN + chừng này (tránh nạp/dỡ liên tục ở mép)
 	const SHOW_PER_FRAME := 1
 	const PRUNE_INTERVAL := 4.0
+	var prune_grace := 10.0               ## ảnh không dùng quá chừng này giây mới bỏ khỏi cache (bài test đặt ngắn hơn)
+	var _region_paths := {}               ## "rx,ry" -> [đường dẫn ảnh vùng đó cần] (ghi lúc _request)
+	var _tex_last_live := {}              ## tên file ảnh -> lúc gần nhất còn thuộc 1 vùng đang hiện / chờ nạp
 	## NẠP TRƯỚC theo ý định đi: nhân vật đang chạy về hướng nào / vừa chọn đích ở đâu thì nạp sẵn các vùng ở hướng đó (dải 3 vùng rộng),
 	## để tới nơi là có hình ngay, không khựng. Vùng nạp trước đi qua cùng hàng đợi (mỗi khung 1 vùng) nên không gây giật.
 	const LOOKAHEAD_SECONDS := 3.0        ## nạp trước quãng đường chạy trong chừng này giây
@@ -208,6 +212,7 @@ class SortedMap extends VltkMap:
 				var v: Vector2i = _pending[key]["v"]
 				if (absi(v.x - c.x) > rx + UNLOAD_EXTRA or absi(v.y - c.y) > ry + UNLOAD_EXTRA) and not ahead.has(key):
 					_pending.erase(key)
+					_region_paths.erase(key)
 			## Yêu cầu nạp vùng mới, gần nhân vật trước.
 			var todo := []
 			for y in range(c.y - ry, c.y + ry + 1):
@@ -242,7 +247,7 @@ class SortedMap extends VltkMap:
 		var paths: Array[String] = []
 		if ground_mode == "tiles" and int(info[2]) == 1:
 			paths.append(map_dir.path_join("tiles/%d_%d.%s" % [v.x, v.y, tile_ext]))
-		if int(info[3]) == 1:
+		if not hide_structures and int(info[3]) == 1:
 			var parsed := region_doc(v.x, v.y)              ## regions/X_Y.json hoặc mục của vùng trong file khối
 			for o in parsed.get("objects", []):
 				var p := _p(str(o["img"]))
@@ -252,6 +257,7 @@ class SortedMap extends VltkMap:
 				var cp := _p(str(c[0]))
 				if not paths.has(cp):
 					paths.append(cp)
+		_region_paths["%d,%d" % [v.x, v.y]] = paths
 		var need: Array[String] = []
 		for p in paths:
 			if _tex_cache.has(p):
@@ -259,8 +265,19 @@ class SortedMap extends VltkMap:
 			if ResourceLoader.exists(p):
 				ResourceLoader.load_threaded_request(p)
 				need.append(p)
+			elif FileAccess.file_exists(p):
+				var im := Image.load_from_file(p)
+				_tex_cache[p] = ImageTexture.create_from_image(im) if im != null else null
 			else:
-				_tex_cache[p] = null
+				var shared := "res://world/maps/shared_sprites/".path_join(p.get_file())
+				if ResourceLoader.exists(shared):
+					ResourceLoader.load_threaded_request(shared)
+					need.append(shared)
+				elif FileAccess.file_exists(shared):
+					var im := Image.load_from_file(shared)
+					_tex_cache[p] = ImageTexture.create_from_image(im) if im != null else null
+				else:
+					_tex_cache[p] = null
 		_pending["%d,%d" % [v.x, v.y]] = {"v": v, "info": info, "need": need}
 
 	## Vùng nào nạp xong hết ảnh thì dựng node (tối đa SHOW_PER_FRAME vùng/khung).
@@ -287,12 +304,33 @@ class SortedMap extends VltkMap:
 				_pending.erase(key)
 				shown += 1
 
-	## Bản gốc giữ MỌI ảnh đã từng nạp trong _tex_cache mãi mãi (đi khắp map = hàng trăm MB). Bỏ ảnh không còn vùng nào dùng.
+	## Bản gốc giữ MỌI ảnh đã từng nạp trong _tex_cache mãi mãi (đi khắp map = hàng trăm MB: Tống Kim 1 ~546 MB bộ nhớ đồ hoạ nếu đi hết).
+	## Bỏ ảnh không thuộc vùng nào đang hiện / đang chờ nạp đã quá prune_grace giây (đi tới lui ở mép vùng không nạp lại liên tục).
+	## (Cách cũ so get_reference_count() <= 1 không bao giờ đúng: biến tạm + ép kiểu đã giữ thêm 2 tham chiếu -> chưa từng dọn được ảnh nào.)
+	## Đối chiếu theo TÊN FILE: cùng 1 ảnh có thể nằm trong cache dưới 2 đường dẫn (thư mục map / shared_sprites). Ảnh node còn đang dùng
+	## thì bỏ khỏi cache không mất hình (node giữ ảnh) — bộ nhớ chỉ thật sự trả khi không còn node nào dùng.
 	func _prune_textures() -> void:
+		var now := Time.get_ticks_msec() / 1000.0
+		var live := {}
+		for key in _region_paths:
+			if _objects.has(key) or _tiles.has(key) or _pending.has(key):
+				for p in _region_paths[key]:
+					live[str(p).get_file()] = true
 		for p in _tex_cache.keys():
 			var tex: Variant = _tex_cache[p]
-			if tex is RefCounted and (tex as RefCounted).get_reference_count() <= 1:
+			var name := str(p).get_file()
+			if live.has(name) or (tex != null and _atlas_tex.has(tex)):
+				_tex_last_live[name] = now
+				continue
+			if not _tex_last_live.has(name):
+				_tex_last_live[name] = now   ## lần đầu thấy không còn dùng: tính giờ từ đây
+			elif now - float(_tex_last_live[name]) >= prune_grace:
 				_tex_cache.erase(p)
+				_tex_last_live.erase(name)
+
+	## Số ảnh đang giữ trong cache (đo / kiểm thử).
+	func texture_cache_size() -> int:
+		return _tex_cache.size()
 
 	## QUÁI THẬT thay cho hình tĩnh của bản gốc: mỗi điểm đặt quái role="monster" có mẫu trong MonsterData được sinh thành VltkMonster
 	## (đi tuần, đuổi, đánh bằng skill gốc, máu/dame theo cấp). Điểm không có dữ liệu mẫu giữ hình tĩnh của bản gốc.
@@ -313,6 +351,7 @@ class SortedMap extends VltkMap:
 	## Dỡ vùng: quái đã chết (đã queue_free) vẫn nằm trong danh sách vùng — bản gốc gọi queue_free() lên node đã giải phóng nên báo lỗi.
 	## Ở đây bỏ qua node không còn hợp lệ, và quái còn sống bị dỡ cùng vùng (sinh lại khi nhân vật quay lại, máu đầy).
 	func _hide_region(key: String) -> void:
+		_region_paths.erase(key)   ## ảnh của vùng hết "đang dùng" -> _prune_textures bỏ sau prune_grace giây
 		if _tiles.has(key):
 			_tiles[key].queue_free()
 			_tiles.erase(key)
@@ -334,7 +373,8 @@ class SortedMap extends VltkMap:
 
 	## Quái thật do override này sinh -> bản gốc bỏ qua chúng.
 	func _spawn_filter(n: Dictionary) -> bool:
-		if (GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl() or GameManager.field_map.get("no_monsters", false)) and str(n.get("role", "")) == "monster":
+		var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+		if (GameManager.game_mode == GameManager.GameMode.STAGE or (VltkWorld.has_arena() and not is_pubg) or VltkWorld.is_brawl() or GameManager.field_map.get("no_monsters", false)) and str(n.get("role", "")) == "monster":
 			return false
 		if GameManager.field_map.get("no_monsters", false) and _is_real_monster(n):
 			return false
@@ -354,7 +394,8 @@ class SortedMap extends VltkMap:
 					made.append(m)
 
 	func _spawn_monster(n: Dictionary) -> VltkMonster:
-		if GameManager.field_map.get("no_monsters", false) or VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or VltkWorld.has_arena() or VltkWorld.is_brawl():
+		var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+		if GameManager.field_map.get("no_monsters", false) or VltkWorld.net_monsters or GameManager.game_mode == GameManager.GameMode.STAGE or (VltkWorld.has_arena() and not is_pubg) or VltkWorld.is_brawl():
 			return null
 		var uid := str(n.get("uid", ""))
 		if _live_monsters.has(uid) and is_instance_valid(_live_monsters[uid]):
@@ -465,19 +506,28 @@ class NpcShadow extends Node2D:
 func _ready() -> void:
 	current = self
 	_update_sky_background()
+	World3DView.sync.call_deferred()   ## Cài đặt "Map đánh quái dạng 3D": dựng lớp hiển thị 3D đè lên map 2D
 
 func _exit_tree() -> void:
 	if current == self:
 		current = null
+	if PubgManager.is_active:
+		PubgManager.end_match()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_sky_position()
+	if PubgManager.is_active:
+		var p := get_tree().get_first_node_in_group("player")
+		PubgManager.update_circle(delta, p)
+		if _pubg_overlay == null or not is_instance_valid(_pubg_overlay):
+			_pubg_overlay = PubgZoneOverlay.new()   ## vòng bo: tối ngoài bo, viền bo, thời tiết, HUD
+			add_child(_pubg_overlay)
 
 ## Dựng map (lần đầu) + đặt ô vuông của màn `stage` + đưa nhân vật vào giữa ô. Gọi 1 lần lúc vào màn.
 func setup_stage(stage: StageData) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	_ensure_map(player)
-	var center := stage.arena_center if stage.arena_center != Vector2.ZERO else _default_center()
+	var center := _default_center() if (stage.arena_center == Vector2.ZERO or GameManager.field_map.get("survivor_mode", false)) else stage.arena_center
 	arena_rect = Rect2(center - stage.arena_size * 0.5, stage.arena_size)
 	if arena_border == null:
 		arena_border = ArenaBorder.new()
@@ -487,8 +537,13 @@ func setup_stage(stage: StageData) -> void:
 	arena_border.setup(stage.arena_size, stage.arena_color)
 	_build_nav()
 	if player != null:
-		var corners := get_corner_spawn_positions(center)
-		var spawn_pos: Vector2 = corners.pick_random() if not corners.is_empty() else _free_position_near(center)
+		map.prepare_around(center)
+		var safe_pos := _open_position_near(center)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = _free_position_near(center)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = center
+		var spawn_pos := safe_pos
 		player.global_position = spawn_pos - Vector2(0, FEET_OFFSET)
 		respawn_point = spawn_pos
 		if player.has_method("reset_has_moved"):
@@ -724,12 +779,12 @@ static func clamp_to_arena(feet: Vector2) -> Vector2:
 ## Có đang trong chế độ PK Lộn Xộn không.
 static func is_brawl() -> bool:
 	var f: Dictionary = GameManager.field_map
-	return bool(f.get("brawl", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
+	return (f.get("brawl", false) == true) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.LON_XON
 
 ## Có đang trong chế độ Ải Tống Kim LOL không.
 static func is_tong_kim_lol() -> bool:
 	var f: Dictionary = GameManager.field_map
-	return bool(f.get("tong_kim_lol", false)) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL
+	return (f.get("tong_kim_lol", false) == true) or int(f.get("pk", {}).get("mode", -1)) == PkRules.Mode.TONG_KIM_LOL
 
 ## Dọn sạch toàn bộ quái trên map hiện tại.
 func clear_all_monsters() -> void:
@@ -757,6 +812,8 @@ func setup_main_map() -> void:
 
 	var is_lol := VltkWorld.is_tong_kim_lol()
 	var is_br := VltkWorld.is_brawl()
+	var is_pubg: bool = GameManager.field_map.get("pubg", false) or GameManager.field_map.get("is_pubg", false)
+	var is_lonxon: bool = GameManager.field_map.get("lon_xon", false)   ## Lộn Xộn: khung + điểm vào như PUBG (không bo, không thẻ 8x)
 
 	var center := _default_center()
 	var safe_pos := Vector2.ZERO
@@ -804,11 +861,27 @@ func setup_main_map() -> void:
 			if safe_pos == Vector2.ZERO:
 				safe_pos = safe_c
 		center = safe_c
+	elif is_pubg or is_lonxon:
+		var pubg_box: Rect2 = GameManager.field_map.get("arena_box", PubgManager.fixed_outer_boundary)
+		if pubg_box.has_area():
+			set_confine(pubg_box)
+		var sp: Vector2 = GameManager.field_map.get("spawn_pos", pubg_box.get_center())
+		map.prepare_around(sp)
+		safe_pos = _open_position_near(sp)
+		if safe_pos == Vector2.ZERO:
+			safe_pos = sp
+		center = safe_pos
 	else:
-		if GameManager.field_map.has("boss"):
+		if GameManager.field_map.has("boss") and not (GameManager.field_map.get("survivor_mode", false) == true):
 			# Người chơi xuất hiện ở góc/rìa map để an toàn, không bị Boss đánh khi vừa vào
+			var boss_target := _boss_spawn_target(GameManager.field_map.get("boss", {}), center)
 			var corners := get_corner_spawn_positions(center)
-			var pick: Vector2 = corners.pick_random() if not corners.is_empty() else (center + Vector2(-1600.0, -1000.0))
+			var safe_corners: Array[Vector2] = []
+			for c in corners:
+				if c.distance_to(boss_target) >= 500.0:
+					safe_corners.append(c)
+			var pool: Array[Vector2] = safe_corners if not safe_corners.is_empty() else corners
+			var pick: Vector2 = pool.pick_random() if not pool.is_empty() else (center + Vector2(-1600.0, -1000.0))
 			map.prepare_around(pick)
 			safe_pos = _open_position_near(pick)
 			if safe_pos == Vector2.ZERO:
@@ -827,9 +900,47 @@ func setup_main_map() -> void:
 		player.global_position = player_spawn
 		(map as SortedMap).warm_up(player.global_position)
 		_adopt.call_deferred(player)
+		if is_pubg:
+			var sq_size: int = int(GameManager.field_map.get("squad_size", 1))
+			if sq_size > 1:
+				if player.has_method("set_name_color"):
+					player.set_name_color(Color(0.2, 0.65, 1.0)) # Xanh dương
+				player.set("pubg_squad_id", 1)
+				if not bool(GameManager.field_map.get("pubg_online", false)):   ## online: đồng đội là người thật (NetWorldSync)
+					_spawn_pubg_teammates(safe_pos)
+			# Mở 2 đợt chọn thẻ đầu game: Đợt 1 chọn Ngựa 8x, Đợt 2 chọn Vũ khí Cấp 10
+			var prof: PlayerProfile = null
+			if player and "profile" in player and player.profile != null:
+				prof = player.profile
+			elif GameManager and GameManager.local_profile != null:
+				prof = GameManager.local_profile
+			if prof != null:
+				var draft_script = load("res://ui/pubg/pubg_draft_popup.gd")
+				if draft_script and draft_script.has_method("open"):
+					draft_script.open(self, prof, func() -> void:
+						if is_instance_valid(player) and player.has_method("refresh_appearance"):
+							player.refresh_appearance()
+					)
 	if is_br or is_lol:
 		clear_all_monsters()
 	_spawn_boss_if_requested(player, center)
+
+func _spawn_pubg_teammates(center_pos: Vector2) -> void:
+	for member: Dictionary in PubgManager.current_squad_members:
+		if member.get("is_self", false):
+			continue
+		var rp := RemotePlayer.new()
+		rp.name = "Teammate_" + str(member["name"])
+		rp.eid = 90000 + randi() % 10000
+		rp.display_name = str(member["name"])
+		rp.level = 200
+		rp.camp = 0
+		var spawn_offset: Vector2 = member.get("pos", center_pos)
+		rp.global_position = spawn_offset - Vector2(0, FEET_OFFSET)
+		rp.set("pubg_squad_id", 1)
+		add_child(rp)
+		if rp.has_method("set_name_color"):
+			rp.set_name_color(Color(0.2, 0.65, 1.0)) # Xanh dương
 
 ## Danh sách toạ độ ở các góc (Tây Bắc, Đông Bắc, Tây Nam, Đông Nam) quanh `center`, cách xa Boss
 func get_corner_spawn_positions(center: Vector2) -> Array[Vector2]:
@@ -867,6 +978,15 @@ func get_corner_spawn_positions(center: Vector2) -> Array[Vector2]:
 			res.append(center)
 	return res
 
+## Tính tọa độ world (pixel) để thả Boss: ưu tiên `spawn_coord` ([x, y] theo hệ tọa độ MiniMap), nếu không có thì dùng tâm bản đồ.
+func _boss_spawn_target(boss_data: Dictionary, fallback_center: Vector2) -> Vector2:
+	var sc: Variant = boss_data.get("spawn_coord", null)
+	if sc is Array and (sc as Array).size() >= 2:
+		return (Vector2(float(sc[0]), float(sc[1])) + Vector2(0.5, 0.5)) * 256.0
+	if sc is Vector2i:
+		return (Vector2(sc) + Vector2(0.5, 0.5)) * 256.0
+	return fallback_center
+
 ## Thả Boss Hoàng Kim / Tiểu Hoàng Kim khi khiêu chiến từ tab Boss
 func _spawn_boss_if_requested(player: Node2D, center_override := Vector2.ZERO) -> void:
 	if VltkWorld.net_monsters:
@@ -875,8 +995,9 @@ func _spawn_boss_if_requested(player: Node2D, center_override := Vector2.ZERO) -
 	if boss_data.is_empty():
 		return
 
-	# Boss được sinh ở tâm bản đồ (giữa 60 vùng), cách xa vị trí rìa của người chơi
-	var center := center_override if center_override != Vector2.ZERO else _default_center()
+	# Boss được sinh ở tọa độ chỉ định (nếu có spawn_coord) hoặc tâm bản đồ (giữa 60 vùng)
+	var fallback_center := center_override if center_override != Vector2.ZERO else _default_center()
+	var center := _boss_spawn_target(boss_data, fallback_center)
 	map.prepare_around(center)
 	var spawn_pos := _open_position_near(center)
 	if spawn_pos == Vector2.ZERO:
@@ -1159,6 +1280,12 @@ func _blocked_at(feet: Vector2, jumping: bool = false, ignore_obstacles: bool = 
 static func slide_velocity(feet: Vector2, velocity: Vector2, delta: float, jumping: bool = false, ignore_obstacles: bool = false) -> Vector2:
 	var w := current
 	if w == null or velocity == Vector2.ZERO:
+		return velocity
+	if ignore_obstacles:
+		if GmManager and GmManager.is_noclip:
+			return velocity
+		if w.arena_rect.size != Vector2.ZERO and not w.arena_rect.has_point(feet + velocity * delta):
+			return Vector2.ZERO
 		return velocity
 	if w.map == null or w.map.grid == null:
 		if w.arena_rect.size != Vector2.ZERO and not w.arena_rect.has_point(feet + velocity * delta):

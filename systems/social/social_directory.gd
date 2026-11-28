@@ -1,5 +1,6 @@
 extends RefCounted
 class_name SocialDirectory
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 ## DANH SÁCH NGƯỜI CHƠI GIẢ quanh nhân vật (xem MockPlayer). Sinh cố định theo tên nhân vật (cùng nhân vật luôn gặp cùng những người)
 ## và giữ trong phiên chơi. Online: thay hàm players() bằng dữ liệu server — mọi nơi khác chỉ gọi hàm ở đây.
 
@@ -177,7 +178,7 @@ static func guild_snapshot(profile: PlayerProfile, guild_name: String) -> Dictio
 		members.append({"name": m.name, "figure": m.guild_figure, "level": m.level, "sect": m.sect_name,
 				"joined_at": SecurityLock.now() - 86400 * (3 + m.id % 30), "devote": (m.level * 37) % 900, "title": "", "local": false, "mock_id": m.id,
 				"perms": GuildRules.default_perms(m.guild_figure)})
-	return {"name": guild_name, "camp": int(info["camp"]), "level": 3, "exp": 9500, "fund": 1_200_000,
+	return {"name": guild_name, "camp": int(info["camp"]), "emblem": GuildEmblem.resolve_id({"name": guild_name}), "level": 3, "exp": 9500, "fund": 1_200_000,
 			"notice": "Chào mừng đến %s! Chăm chỉ luyện công, giúp đỡ đồng môn." % guild_name, "recruit": true,
 			"accept_level": 30 if guild_name == "Thiên Long Bang" else 0, "created_at": SecurityLock.now() - 86400 * 40,
 			"members": members, "applies": [], "log": [], "trial_done": true,

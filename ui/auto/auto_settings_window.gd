@@ -11,6 +11,7 @@ const SLOT_SIZE := Vector2(52, 52)
 const NUM_WIDTH := 84.0
 
 static var current_dropdown: Control = null
+static var current_blocker: Control = null
 static var current_skill_menu: PopupMenu = null
 
 var profile: PlayerProfile
@@ -107,6 +108,12 @@ func _refresh_tabs() -> void:
 		GameUi.set_active(_page_buttons[i], i == _page)
 
 func _rebuild() -> void:
+	if is_instance_valid(current_dropdown):
+		current_dropdown.queue_free()
+		current_dropdown = null
+	if is_instance_valid(current_blocker):
+		current_blocker.queue_free()
+		current_blocker = null
 	for c in _content.get_children():
 		c.queue_free()
 	match _page:
@@ -177,7 +184,7 @@ func _build_recovery() -> void:
 
 	_header("Dùng Thổ Địa Phù Khi")
 	var g2 := _grid(3)
-	g2.add_child(_check("Hết bình sinh lực", "tdp_no_hp_potion"))
+	g2.add_child(_check("Hết bình sinh lực (máu dưới Mức 2)", "tdp_no_hp_potion"))
 	g2.add_child(_check("Hành trang đầy", "tdp_bag_full"))
 	g2.add_child(_row([_check("Độ bền thấp", "tdp_low_dura_on"), _num("tdp_low_dura", 1, 99)]))
 	g2.add_child(_check("Hết bình nội lực", "tdp_no_mp_potion"))
@@ -289,6 +296,9 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 	if is_instance_valid(current_dropdown):
 		current_dropdown.queue_free()
 		current_dropdown = null
+	if is_instance_valid(current_blocker):
+		current_blocker.queue_free()
+		current_blocker = null
 
 	var options: Array[SkillDefinition] = _candidates(kind)
 	var last_learned := ""
@@ -301,15 +311,19 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 	var blocker: Control = null
 	if not in_tut:
 		blocker = Control.new()
+		blocker.name = "SkillSelectBlocker"
 		blocker.set_anchors_preset(Control.PRESET_FULL_RECT)
 		blocker.top_level = true
 		blocker.z_index = 199
 		blocker.mouse_filter = Control.MOUSE_FILTER_STOP
 		add_child(blocker)
+		current_blocker = blocker
 
 	var dropdown := PanelContainer.new()
 	dropdown.name = "SkillSelectDropdown"
+	dropdown.top_level = true
 	dropdown.z_index = 200
+	dropdown.mouse_filter = Control.MOUSE_FILTER_STOP
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.10, 0.09, 0.98)
 	sb.border_width_left = 1
@@ -333,10 +347,12 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 			blocker.queue_free()
 		if current_dropdown == dropdown:
 			current_dropdown = null
+		if current_blocker == blocker:
+			current_blocker = null
 
 	if blocker != null:
 		blocker.gui_input.connect(func(ev: InputEvent) -> void:
-			if ev is InputEventMouseButton and ev.is_pressed():
+			if (ev is InputEventMouseButton and ev.is_pressed()) or (ev is InputEventScreenTouch and ev.is_pressed()):
 				close_dropdown.call()
 		)
 
@@ -353,11 +369,12 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 
 	# 1. Nút Bỏ trống
 	var empty_btn := _make_dropdown_item(null, tr("— Bỏ trống —"))
+	empty_btn.add_to_group("tutorial_skill_dropdown_item")
 	empty_btn.pressed.connect(func() -> void:
 		_s.get(key)[index] = ""
 		_changed()
-		_rebuild()
 		close_dropdown.call()
+		_rebuild()
 	)
 	vbox.add_child(empty_btn)
 
@@ -366,6 +383,7 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 	for i in options.size():
 		var skill := options[i]
 		var item_btn := _make_dropdown_item(skill.icon, skill.skill_name)
+		item_btn.add_to_group("tutorial_skill_dropdown_item")
 
 		var is_target := false
 		if not found_target:
@@ -382,8 +400,8 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 		item_btn.pressed.connect(func() -> void:
 			_s.get(key)[index] = skill.id
 			_changed()
-			_rebuild()
 			close_dropdown.call()
+			_rebuild()
 			var tm_inst = get_node_or_null("/root/TutorialManager")
 			if tm_inst and tm_inst.has_method("notify_auto_skill_selected"):
 				tm_inst.notify_auto_skill_selected()
@@ -404,9 +422,17 @@ func _open_skill_menu(anchor: Control, key: String, index: int, kind: SlotKind) 
 		add_child(dropdown)
 	current_dropdown = dropdown
 
-	# Định vị trí dropdown ngay dưới anchor (phải gán sau khi add_child)
+	# Định vị trí dropdown ngay dưới anchor (chống tràn cạnh / tràn đáy màn hình trên Web & Mobile)
 	var anchor_pos := anchor.get_global_position()
-	dropdown.global_position = Vector2(anchor_pos.x - 2.0, anchor_pos.y + anchor.size.y + 4.0)
+	var vp_size := get_viewport_rect().size
+	var dropdown_w := 250.0
+	var dropdown_h := float(visible_items * 38 + 8)
+	var target_x := anchor_pos.x - 2.0
+	var target_y := anchor_pos.y + anchor.size.y + 4.0
+	if target_y + dropdown_h > vp_size.y - 10.0:
+		target_y = maxf(10.0, anchor_pos.y - dropdown_h - 4.0)
+	target_x = clampf(target_x, 10.0, maxf(10.0, vp_size.x - dropdown_w - 10.0))
+	dropdown.global_position = Vector2(target_x, target_y)
 
 	var tm_inst = get_node_or_null("/root/TutorialManager")
 	if tm_inst and tm_inst.has_method("notify_skill_menu_opened"):
@@ -456,10 +482,10 @@ func _candidates(kind: SlotKind) -> Array[SkillDefinition]:
 		if not skill.can_assign_to_hotbar():
 			continue
 		var usable := false
-		if controller != null:
-			usable = controller.is_skill_usable(skill)
-		elif profile != null:
-			usable = skill.is_main_attack or skill.is_basic_attack or profile.get_skill_level(skill.id) > 0
+		if controller != null and controller.is_skill_usable(skill):
+			usable = true
+		elif profile != null and (skill.is_main_attack or skill.is_basic_attack or profile.get_skill_level(skill.id) > 0):
+			usable = true
 		if not usable:
 			continue
 		var state := skill.is_state_skill()
@@ -482,8 +508,10 @@ func _find_skill(id: String) -> SkillDefinition:
 			return s
 	if profile != null and not profile.sect_id.is_empty():
 		var sect := SectRegistry.get_by_id(profile.sect_id)
-		if sect != null:
-			return sect.get_skill(id)
+		if sect != null:   ## SectDefinition không có get_skill: tìm trong danh sách skill của phái
+			for sk in sect.skills:
+				if sk != null and sk.id == id:
+					return sk
 	return null
 
 # ------------------------------------------------------------------ 3. Di chuyển
@@ -714,7 +742,7 @@ func _check(text: String, key: String) -> CheckBox:
 	cb.add_theme_color_override("font_color", SocialUi.TEXT)
 	cb.add_theme_color_override("font_pressed_color", SocialUi.TEXT)
 	cb.add_theme_color_override("font_hover_color", SocialUi.GOLD)
-	cb.button_pressed = bool(_s.get(key))
+	cb.button_pressed = _s.get(key) == true
 	cb.toggled.connect(func(on: bool) -> void:
 		_s.set(key, on)
 		_changed())

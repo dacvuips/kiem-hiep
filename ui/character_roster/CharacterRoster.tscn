@@ -53,9 +53,9 @@ script = ExtResource("sf")
 [node name="EnterArea" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 107.0
+offset_left = 91.0
 offset_top = 820.0
-offset_right = 437.0
+offset_right = 361.0
 offset_bottom = 886.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pill")
@@ -77,9 +77,9 @@ vertical_alignment = 1
 [node name="CreateArea" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 483.0
+offset_left = 396.0
 offset_top = 820.0
-offset_right = 813.0
+offset_right = 666.0
 offset_bottom = 886.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pill")
@@ -98,12 +98,36 @@ label_settings = SubResource("btn_lbl")
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="DeleteArea" type="TextureButton" parent="Stage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 701.0
+offset_top = 820.0
+offset_right = 971.0
+offset_bottom = 886.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_pill")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Stage/DeleteArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "XÓA NHÂN VẬT"
+label_settings = SubResource("btn_lbl")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="CancelArea" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 859.0
+offset_left = 1006.0
 offset_top = 820.0
-offset_right = 1189.0
+offset_right = 1276.0
 offset_bottom = 886.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pill")
@@ -125,9 +149,9 @@ vertical_alignment = 1
 [node name="QuitArea" type="TextureButton" parent="Stage"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1235.0
+offset_left = 1311.0
 offset_top = 820.0
-offset_right = 1565.0
+offset_right = 1581.0
 offset_bottom = 886.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pill")

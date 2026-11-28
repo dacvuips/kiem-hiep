@@ -301,7 +301,7 @@ func test_team() -> void:
 	check("exp: chênh cấp 10 bị giảm", ExpRules.self_exp(10, 20, 200) == 200 * (295 - 190) / 200)
 	check("exp: chênh cấp > 15 chỉ còn 1", ExpRules.self_exp(10, 40, 9999) == 1)
 	var sh := ExpRules.team_shares(1000, [50, 50])
-	check("exp: 2 người cấp bằng nhau chia mỗi người 65%% (k=130)", sh[0] == 650 and sh[1] == 650, str(sh))
+	check("exp: 2 người cấp bằng nhau chia mỗi người 65% (k=130)", sh[0] == 650 and sh[1] == 650, str(sh))
 	check("exp: người cấp cao nhận nhiều hơn", ExpRules.team_shares(1000, [30, 70])[1] > ExpRules.team_shares(1000, [30, 70])[0])
 	check("exp: kinh nghiệm lãnh đạo chỉ có khi có đồng đội", ExpRules.lead_exp(1000, [50], 50) == 0 and ExpRules.lead_exp(1000, [50, 50], 50) > 0)
 	var lp := new_profile()

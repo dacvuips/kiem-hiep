@@ -6,6 +6,7 @@ class_name ItemRoomView
 ## Dữ liệu nằm hết ở PlayerProfile (inventory + room_x/room_y của từng món); view chỉ vẽ + chuyển thao tác.
 
 signal item_pressed(item: ItemInstance)
+signal item_right_clicked(item: ItemInstance)
 signal changed
 
 ## Cỡ 1 ô (pixel) — cửa sổ hành trang đặt lại theo chiều cao màn hình trước khi setup().
@@ -103,6 +104,11 @@ func _make_widget(item: ItemInstance, ctx: Dictionary, rem_count: int = -1) -> I
 	if rem_count > 0:
 		b.set_count(rem_count)
 	b.pressed.connect(func() -> void: item_pressed.emit(item))
+	b.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			item_right_clicked.emit(item)
+			b.accept_event()
+	)
 	if interactive:
 		b.set_meta("draggable", true)
 		b.set_drag_forwarding(_drag_data.bind(item, b), _can_drop_forward.bind(b), _drop_forward.bind(b))
@@ -176,6 +182,14 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	if from_other and not transfer_handler.is_valid():
 		return false
 	var item: ItemInstance = data["item"]
+	var stack_target := _stack_target(at_position, item, from_other)
+	if stack_target != null:   ## thả lên chồng cùng loại còn chỗ = gộp chồng (tô xanh cả chồng đích)
+		_hover = Rect2i(Vector2i(stack_target.room_x, stack_target.room_y), stack_target.get_size())
+		_hover_ok = true
+		_show_hover = true
+		if _overlay != null:
+			_overlay.queue_redraw()
+		return true
 	var at_cell := _target_cell(at_position, data)
 	_hover = Rect2i(at_cell, item.get_size())
 	_hover_ok = profile.can_place(item, at_cell.x, at_cell.y, bag, profile.get_room_height(bag))
@@ -201,10 +215,41 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		return
 	var at_cell := _target_cell(at_position, data)
 	var from_other: bool = source != null and ((source is not Object) or source != profile)
-	if from_other:
+	var stack_target := _stack_target(at_position, item, from_other)
+	if stack_target != null:
+		_merge_into(item, stack_target)
+	elif from_other:
 		if transfer_handler.call(item, source, profile, at_cell.x, at_cell.y, bag):
 			changed.emit()
 	elif profile.move_item(item, at_cell.x, at_cell.y, bag):
 		changed.emit()
 	if _overlay != null:
 		_overlay.queue_redraw()
+
+## Chồng vật phẩm cùng loại nằm dưới con trỏ mà món đang kéo gộp vào được (chỉ trong cùng hành trang) — null nếu không có.
+func _stack_target(at_position: Vector2, item: ItemInstance, from_other: bool) -> ItemInstance:
+	if from_other or not profile is PlayerProfile or not item.is_misc():
+		return null
+	if int(slotted_counts.get(item.uid, 0)) > 0:
+		return null
+	var c := Vector2i((at_position / cell).floor())
+	for it: ItemInstance in profile.inventory:
+		if it == item or it.room_bag != bag:
+			continue
+		if not Rect2i(Vector2i(it.room_x, it.room_y), it.get_size()).has_point(c):
+			continue
+		if int(slotted_counts.get(it.uid, 0)) > 0 or not PlayerProfile.can_stack(item, it):
+			return null
+		return it if it.count < ItemDatabase.max_stack(it.misc_id) else null
+	return null
+
+## Gộp `item` vào chồng `target`. Online: server gộp (C_ITEM_OP "merge") rồi gửi bản chuẩn; changed phát khi nhận S_PROFILE.
+func _merge_into(item: ItemInstance, target: ItemInstance) -> void:
+	if NetClient.is_in_world():
+		NetClient.profile_received.connect(func(_d: Dictionary) -> void:
+			if is_instance_valid(self):
+				changed.emit.call_deferred(), CONNECT_ONE_SHOT)
+		NetClient.send_item_op("merge", {"from": item.uid, "to": target.uid})
+		return
+	if (profile as PlayerProfile).merge_stack(item.uid, target.uid) == "":
+		changed.emit()

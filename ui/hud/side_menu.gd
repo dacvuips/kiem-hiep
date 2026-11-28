@@ -5,7 +5,7 @@ class_name SideMenu
 ## Main truyền danh sách nút qua add_entry().
 
 const SLOT := 46.0
-const ICON := 30.0
+const ICON := 28.0   ## ô vuông nằm gọn trong nút tròn 46 (đường chéo < đường kính trong)
 const GAP := 6
 
 func _ready() -> void:
@@ -24,7 +24,7 @@ static func make_button(sheet: String, glyph: String, tip: String, on_press: Cal
 	b.custom_minimum_size = Vector2(SLOT, SLOT)
 	b.focus_mode = Control.FOCUS_NONE
 	b.tooltip_text = tip
-	var normal := GameUi.box(Color(0.06, 0.07, 0.06, 0.82), Color(0.45, 0.42, 0.30), int(SLOT / 2), 2, 0)
+	var normal := GameUi.box(Color(0.0, 0.0, 0.0, 0.88), Color(0.45, 0.42, 0.30), int(SLOT / 2), 2, 0)
 	var hover := GameUi.box(Color(0.12, 0.12, 0.08, 0.92), GameUi.BORDER_ACTIVE, int(SLOT / 2), 2, 0)
 	for st in ["normal", "focus"]:
 		b.add_theme_stylebox_override(st, normal)
@@ -71,17 +71,32 @@ static func make_button(sheet: String, glyph: String, tip: String, on_press: Cal
 	b.pressed.connect(on_press)
 	return b
 
+## Bỏ nền / viền tròn của nút và phóng ảnh phủ kín ô (như nút Ngồi) — cho ảnh gốc vốn đã là nút tròn
+## (VD Giao dịch). `grow` = số px ảnh tràn ra mỗi phía để trông to hơn.
+static func make_bare(b: Button, grow := 3.0) -> void:
+	b.set_meta("bare", true)
+	for c in b.get_children():
+		if c is TextureRect:
+			c.size = Vector2(SLOT + grow * 2.0, SLOT + grow * 2.0)
+			c.position = Vector2(-grow, -grow)
+	set_active(b, false)
+
 ## Bật/tắt trạng thái hoạt động (viền vàng rực, chấm xanh góc dưới) cho nút tiện ích có chế độ toggle (như Giao dịch).
 static func set_active(b: Button, active: bool) -> void:
 	if b == null or not is_instance_valid(b):
 		return
 	var normal_box: StyleBox
 	var hover_box: StyleBox
-	if active:
+	if b.get_meta("bare", false):
+		## Nút "trần" (ảnh gốc đã là nút tròn): không nền; đang bật chỉ thêm vòng vàng.
+		var ring := GameUi.GOLD if active else Color.TRANSPARENT
+		normal_box = GameUi.box(Color.TRANSPARENT, ring, int(SLOT / 2), 2 if active else 0, 0)
+		hover_box = normal_box
+	elif active:
 		normal_box = GameUi.box(Color(0.20, 0.16, 0.05, 0.95), GameUi.GOLD, int(SLOT / 2), 2, 0)
 		hover_box = GameUi.box(Color(0.28, 0.22, 0.06, 0.98), Color(1.0, 0.95, 0.5), int(SLOT / 2), 2, 0)
 	else:
-		normal_box = GameUi.box(Color(0.06, 0.07, 0.06, 0.82), Color(0.45, 0.42, 0.30), int(SLOT / 2), 2, 0)
+		normal_box = GameUi.box(Color(0.0, 0.0, 0.0, 0.88), Color(0.45, 0.42, 0.30), int(SLOT / 2), 2, 0)
 		hover_box = GameUi.box(Color(0.12, 0.12, 0.08, 0.92), GameUi.BORDER_ACTIVE, int(SLOT / 2), 2, 0)
 	for st in ["normal", "focus"]:
 		b.add_theme_stylebox_override(st, normal_box)
@@ -102,6 +117,7 @@ static func _frames(sheet: String) -> Array[Texture2D]:
 	for i in maxi(1, tex.get_width() / h):
 		var a := AtlasTexture.new()
 		a.atlas = tex
-		a.region = Rect2(i * h, 0, h, h)
+		## Bỏ viền xám 1px quanh mỗi khung ảnh gốc (nếu không sẽ lộ khung vuông trong nút tròn).
+		a.region = Rect2(i * h + 1, 1, h - 2, h - 2) if h > 4 else Rect2(i * h, 0, h, h)
 		out.append(a)
 	return out

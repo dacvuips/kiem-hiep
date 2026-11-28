@@ -586,7 +586,7 @@ func _on_cart_hp_changed(cur: int, _max_h: int) -> void:
 func _get_surviving_members(team: String) -> Array:
 	var survivors: Array = []
 	var player: Node = get_tree().get_first_node_in_group("player")
-	var is_player_alive: bool = (player != null and is_instance_valid(player) and not bool(player.get("is_dead")))
+	var is_player_alive: bool = (player != null and is_instance_valid(player) and player.get("is_dead") != true)
 
 	if player_role == team and is_player_alive:
 		var p_name := GameManager.local_profile.display_name if GameManager.local_profile else "Player"
@@ -623,7 +623,7 @@ func _on_cart_arrived() -> void:
 
 	# Kiểm tra người chơi còn sống và có mặt trong map không (chết/out = không nhận được gì)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	var is_player_alive: bool = (player != null and is_instance_valid(player) and not bool(player.get("is_dead")))
+	var is_player_alive: bool = (player != null and is_instance_valid(player) and player.get("is_dead") != true)
 
 	if not is_player_alive:
 		_show_defeat_banner("💀 BẠN ĐÃ TỬ TRẬN / RỜI MAP!", "Dù trước đó có thành tích nhưng do tử trận / không có mặt trong map lúc kết thúc, hiệp khách không nhận được gì.")
@@ -709,7 +709,7 @@ func _on_cart_destroyed() -> void:
 
 	# Kiểm tra người chơi còn sống và có mặt trong map không (chết/out = không nhận được gì)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	var is_player_alive: bool = (player != null and is_instance_valid(player) and not bool(player.get("is_dead")))
+	var is_player_alive: bool = (player != null and is_instance_valid(player) and player.get("is_dead") != true)
 
 	if not is_player_alive:
 		_show_defeat_banner("💀 BẠN ĐÃ TỬ TRẬN / RỜI MAP!", "Dù trước đó có thành tích nhưng do tử trận / không có mặt trong map lúc kết thúc, hiệp khách không nhận được gì.")

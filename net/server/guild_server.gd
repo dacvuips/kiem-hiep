@@ -1,11 +1,13 @@
 class_name GuildServer
 extends RefCounted
+const GuildEmblem = preload("res://systems/social/guild_emblem.gd")
 ## BANG HỘI trên game server: mỗi bang là 1 Dictionary DÙNG CHUNG (định dạng GuildService), lưu PostgreSQL qua API nội bộ.
 ## Thao tác của thành viên chạy bằng chính GuildService gốc trên bản bang chung (đặt tạm vào hồ sơ server của người thao tác,
 ## đánh dấu "local" cho đúng người đó). Vào / rời / lập / giải tán / xin vào / mời / duyệt do server xử lý vì cần người thật.
 ## Sau mỗi thay đổi: lưu bang + gửi bản mới (S_GUILD) cho thành viên đang online.
 
 const FUND_TICK_SECONDS := 30
+const LOAD_RETRY_SECONDS := 5.0
 
 ## Lệnh C_GUILD (tham số trong JSON)
 const G_CREATE := 1        ## {title, camp}
@@ -28,6 +30,7 @@ const G_TITLE := 17        ## {name, title}
 const G_DONATE := 18       ## {amount}
 const G_PERMS := 19        ## {name, perms}
 const G_LIST := 20
+const G_EMBLEM := 21       ## {emblem}
 const G_TEST_BOOST := 99   ## CHỈ khi GAME_TEST_MODE=1: nâng nhân vật thử đủ điều kiện lập / rời bang
 
 var gs: GameServer
@@ -39,11 +42,14 @@ var _fund_clock := 0.0
 func _init(server: GameServer) -> void:
 	gs = server
 
+## Nạp lúc khởi động: game server còn đang nạp bản đồ (Lộn Xộn...) chặn luồng chính nhiều giây nên yêu cầu đầu tiên hay bị quá giờ
+## dù máy chủ tài khoản vẫn chạy -> thử lại mỗi LOAD_RETRY_SECONDS tới khi được (trước đây lỗi 1 lần là bỏ, cả phiên không có dữ liệu).
 func load_all() -> void:
 	var r: Dictionary = await gs.account.list_guilds()
-	if not r.ok:
-		push_warning("Không nạp được bang hội: %s" % r.get("message", ""))
-		return
+	while not r.ok:
+		push_warning("Không nạp được bang hội: %s — thử lại sau %ds" % [r.get("message", ""), int(LOAD_RETRY_SECONDS)])
+		await gs.get_tree().create_timer(LOAD_RETRY_SECONDS).timeout
+		r = await gs.account.list_guilds()
 	for g in r.get("guilds", []):
 		if g.get("data") is Dictionary:
 			guilds[str(g.name)] = g.data
@@ -62,6 +68,9 @@ func on_join(c) -> void:
 	var g := guild_of_name(c.entity.name)
 	c.profile.guild = g
 	c.data["guild"] = g
+	if c.entity:
+		c.entity.guild_name = str(g.get("name", ""))
+		c.entity.guild_emblem = GuildEmblem.resolve_id(g)
 	send_guild(c)
 
 func tick(dt: float) -> void:
@@ -106,7 +115,7 @@ func on_guild(c, b: StreamPeerBuffer) -> void:
 		G_LIST:
 			_send_list(c)
 		G_CREATE:
-			_create(c, str(a.get("title", "")), int(a.get("camp", 0)))
+			_create(c, str(a.get("title", "")), int(a.get("camp", 0)), int(a.get("emblem", 1)))
 		G_APPLY:
 			_apply(c, str(a.get("guild", "")))
 		G_ACCEPT, G_REJECT:
@@ -127,6 +136,10 @@ func on_guild(c, b: StreamPeerBuffer) -> void:
 				if k:
 					k.profile.guild = {}
 					k.profile.camp = -1
+					if k.entity:
+						k.entity.guild_name = ""
+						k.entity.guild_emblem = 0
+						gs.send_player_guild(k)
 					gs.profile_changed(k)
 					send_guild(k)
 					gs.notice(k, "Bạn đã bị mời ra khỏi bang hội."))
@@ -163,6 +176,10 @@ func on_guild(c, b: StreamPeerBuffer) -> void:
 			var who := str(a.get("name", ""))
 			var perms: Array = a.get("perms", []) if a.get("perms") is Array else []
 			_run(c, func(svc: GuildService) -> String: return svc.set_perms(who, perms))
+		G_EMBLEM:
+			var em := GuildEmblem.clamp_id(int(a.get("emblem", 1)))
+			_run(c, func(svc: GuildService) -> String: return svc.set_emblem(em), func(gname: String) -> void:
+				_sync_members_entity(gname))
 
 ## Chạy 1 thao tác GuildService của người `c` trên bang chung. after(tên bang) chạy khi thành công.
 func _run(c, action: Callable, after: Callable = Callable()) -> void:
@@ -197,7 +214,7 @@ static func _mark_local(g: Dictionary, member_name: String) -> void:
 	for m in g.get("members", []):
 		m["local"] = str(m.get("name", "")) == member_name
 
-func _create(c, title: String, camp: int) -> void:
+func _create(c, title: String, camp: int, emblem: int = 1) -> void:
 	title = title.strip_edges()
 	if guilds.has(title):
 		gs.notice(c, "Bang hội đã tồn tại hoặc tên bang bị lỗi, không thể tạo.")
@@ -210,13 +227,17 @@ func _create(c, title: String, camp: int) -> void:
 	c.profile.stall_open = c.stall_open
 	var svc := GuildService.new(c.profile)
 	svc.message.connect(func(text: String, _good: bool) -> void: gs.notice(c, text))
-	var err := svc.create(title, camp, null if c.team == null else _team_stub())
+	var err := svc.create(title, camp, null if c.team == null else _team_stub(), emblem)
 	if err != "":
 		return
 	var g: Dictionary = c.profile.guild
 	_mark_local(g, "")
 	guilds[str(g.name)] = g
 	_save(str(g.name))
+	if c.entity:
+		c.entity.guild_name = str(g.name)
+		c.entity.guild_emblem = GuildEmblem.resolve_id(g)
+		gs.send_player_guild(c)
 	gs.profile_changed(c)   ## trừ tiền lập bang, đổi phe
 	send_guild(c)
 	broadcast_list()
@@ -306,6 +327,10 @@ func _enroll(guild_name: String, who) -> void:
 	g["log"] = log
 	who.profile.guild = g
 	who.profile.camp = int(g.get("camp", who.profile.camp))
+	if who.entity:
+		who.entity.guild_name = guild_name
+		who.entity.guild_emblem = GuildEmblem.resolve_id(g)
+		gs.send_player_guild(who)
 	gs.profile_changed(who)
 	gs.notice(who, "Bạn đã gia nhập bang %s." % guild_name)
 
@@ -370,6 +395,10 @@ func _leave(c) -> void:
 	var log: Array = g.get("log", [])
 	log.append({"at": SecurityLock.now(), "text": "%s rời bang hội." % c.entity.name, "kind": "history"})
 	g["log"] = log
+	if c.entity:
+		c.entity.guild_name = ""
+		c.entity.guild_emblem = 0
+		gs.send_player_guild(c)
 	gs.profile_changed(c)
 	send_guild(c)
 	_save(name)
@@ -389,6 +418,7 @@ func _rename(c, new_name: String) -> void:
 		guilds.erase(old)
 		guilds[str(g.name)] = g
 		_save(str(g.name), old)
+		_sync_members_entity(str(g.name))
 		broadcast_list())
 
 func _disband(name: String, msg: String) -> void:
@@ -400,10 +430,24 @@ func _disband(name: String, msg: String) -> void:
 		if who:
 			who.profile.guild = {}
 			who.profile.camp = -1
+			if who.entity:
+				who.entity.guild_name = ""
+				who.entity.guild_emblem = 0
+				gs.send_player_guild(who)
 			gs.profile_changed(who)
 			send_guild(who)
 			gs.notice(who, msg)
 	broadcast_list()
+
+func _sync_members_entity(name: String) -> void:
+	var g: Dictionary = guilds.get(name, {})
+	var em := GuildEmblem.resolve_id(g)
+	for m in g.get("members", []):
+		var who = gs.conn_of_name(str(m.get("name", "")))
+		if who and who.entity:
+			who.entity.guild_name = name
+			who.entity.guild_emblem = em
+			gs.send_player_guild(who)
 
 # ---------------------------------------------------------------- gửi / lưu
 
@@ -439,7 +483,7 @@ func _send_list(c) -> void:
 		for m in g.get("members", []):
 			if int(m.get("figure", -1)) == GuildRules.Figure.MASTER:
 				master = str(m.get("name", ""))
-		list.append({"name": g.name, "camp": g.get("camp", 0), "level": g.get("level", 1), "members": g.get("members", []).size(),
+		list.append({"name": g.name, "camp": g.get("camp", 0), "emblem": GuildEmblem.resolve_id(g), "level": g.get("level", 1), "members": g.get("members", []).size(),
 			"cap": SocialRules.tong_member_cap(int(g.get("level", 1))), "master": master, "recruit": g.get("recruit", false),
 			"accept_level": g.get("accept_level", 0), "tendency": g.get("tendency", ""), "activity": g.get("activity", ""),
 			"recruit_msg": g.get("recruit_msg", "")})

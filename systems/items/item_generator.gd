@@ -99,6 +99,34 @@ static func generate_gold(gold_index: int, perfection: int = 10, gen_seed: int =
 			item.expand_magic.append(entry)
 	return item
 
+## Sinh đồ HOÀNG KIM giữ nguyên đúng các dòng gốc (1–6 dòng magic + dòng mở rộng nếu có)
+## nhưng mỗi dòng đều được roll chỉ số ngẫu nhiên độc lập trong khoảng [min, max].
+static func generate_gold_random(gold_index: int, gen_seed: int = -1) -> ItemInstance:
+	var item := generate_gold(gold_index, 10, gen_seed)
+	if item == null:
+		return null
+	var record := ItemDatabase.get_gold(gold_index)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = item.gen_seed
+
+	var lines: Array = record.get("magic", [])
+	var expand_idx := 0
+	for i in lines.size():
+		var line = lines[i]
+		if line == null:
+			continue
+		var value := []
+		for k in 3:
+			var lo := int(line["range"][k][0])
+			var hi := int(line["range"][k][1])
+			value.append(rng.randi_range(mini(lo, hi), maxi(lo, hi)))
+		if i < ItemInstance.MAX_MAGIC:
+			item.magic[i]["value"] = value
+		elif expand_idx < item.expand_magic.size():
+			item.expand_magic[expand_idx]["value"] = value
+			expand_idx += 1
+	return item
+
 ## Vật phẩm KHÔNG phải trang bị (AddItem(genre, detail, particular, cấp, hệ) gốc): `misc_id` trong misc_items.json,
 ## `level` = cấp vật phẩm (0 = theo bảng), `series` = hệ (chỉ món có hệ: Sát Thủ lệnh/giản, Nguyên thạch), `amount` =
 ## số lượng chồng — tối đa cột Stack gốc (0/1 = không chồng được). null nếu mã không có.
@@ -110,7 +138,10 @@ static func generate_misc(misc_id: String, level: int = 0, series: int = 0, amou
 	item.misc_id = misc_id
 	item.item_level = level
 	item.series = clampi(series, 0, 4)
-	item.count = clampi(amount, 1, maxi(int(record.get("stack", 0)), 1))
+	if misc_id == "6_1_438":
+		item.count = 2000 if amount <= 1 else clampi(amount, 1, 2000)
+	else:
+		item.count = clampi(amount, 1, maxi(int(record.get("stack", 0)), 1))
 	return item
 
 ## Đồ ngẫu nhiên cho nút TEST / rơi đồ thử: loại + loại cụ thể ngẫu nhiên, cấp đồ theo cấp nhân vật

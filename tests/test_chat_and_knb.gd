@@ -42,16 +42,34 @@ func test_chat_box_tabs() -> void:
 
 	# Add another system message while in SYSTEM tab
 	ChatBox.push_exp("Nhím Rừng", 250)
-	check("Tin EXP phải hiện trong tab Hệ thống", chat._lines == 2)
+	check("Tin EXP KHÔNG ghi vào khung chat", chat._lines == 1 and chat._messages.size() == 2)
+	check("EXP hiện chữ nổi +250 EXP", chat._exp_rows.size() == 1 and (chat._exp_rows[0].label as Label).text == "+250 EXP")
+	for i in 4:
+		ChatBox.push_exp("Nhím Rừng", 10 + i)
+	check("Chữ EXP nổi tối đa 3 dòng", chat._exp_rows.size() == 3)
+	chat._update_exp(ChatBox.EXP_LIFE + 0.1)
+	check("Chữ EXP biến mất sau 3 giây", chat._exp_rows.is_empty() and chat._exp_pool.size() == 3)
 
 	# Add another normal player message while in SYSTEM tab
-	chat.add_line("Người chơi 2: Đang ở đâu thế?", false)
-	check("Tin người chơi KHÔNG được hiện trong tab Hệ thống", chat._lines == 2)
-	check("Tổng tin lưu trữ phải là 4", chat._messages.size() == 4)
+	chat.add_line("Người chơi 2: Đang ở đâu thế?", false, ChatServer.WORLD)
+	check("Tin người chơi KHÔNG được hiện trong tab Hệ thống", chat._lines == 1)
+	check("Tổng tin lưu trữ phải là 3", chat._messages.size() == 3)
 
 	# Switch back to ALL tab
 	chat._set_tab(ChatBox.Tab.ALL)
-	check("Tất cả 4 tin phải hiển thị khi quay về tab Tất cả", chat._lines == 4)
+	check("Tất cả 3 tin phải hiển thị khi quay về tab Tất cả", chat._lines == 3)
+
+	# Lọc theo kênh Thế giới
+	chat._set_channel_view(ChatServer.WORLD)
+	check("Lọc kênh Thế giới chỉ hiện 1 tin", chat._lines == 1)
+	chat._set_tab(ChatBox.Tab.ALL)
+
+	# Ô chọn kênh gửi
+	check("Ô chọn kênh có 6 tần số", chat._channel_pick.item_count == 6)
+	chat._set_send_channel(ChatServer.PRIVATE)
+	check("Chọn kênh Riêng hiện ô tên người nhận", chat._to.visible)
+	chat._set_send_channel(ChatServer.FACTION)
+	check("Chọn kênh Môn phái ẩn ô tên", not chat._to.visible and chat._channel == ChatServer.FACTION)
 
 	chat.queue_free()
 
@@ -93,6 +111,18 @@ func test_chat_commands() -> void:
 	check("Phải có Tiên Thảo hoàn", found_ttl_hoan)
 	check("Phải có Kim Nguyên Bảo vật phẩm", found_knb)
 
+	# Test /lead command
+	chat._handle_slash_command("/lead 25")
+	check("/lead 25 đặt cấp lãnh đạo thành 25", p.lead_level == 25, "Thực tế: %d" % p.lead_level)
+	chat._handle_slash_command("/lead +5")
+	check("/lead +5 tăng cấp lãnh đạo lên 30", p.lead_level == 30, "Thực tế: %d" % p.lead_level)
+
+	# Test /leadexp command
+	p.lead_level = 0
+	p.lead_exp = 0
+	chat._handle_slash_command("/leadexp 100")
+	check("/leadexp 100 thăng cấp lãnh đạo lên 1", p.lead_level == 1 and p.lead_exp == 100)
+
 	chat.queue_free()
 
 func test_kill_exp_display() -> void:
@@ -114,15 +144,13 @@ func test_kill_exp_display() -> void:
 	}
 
 	var before_exp := p.current_exp
+	GameManager.game_mode = GameManager.GameMode.MAIN_MAP   ## Vượt Ải (mặc định) không cộng exp hạ quái
 	KillRewards.on_monster_killed(m)
 	check("EXP người chơi phải tăng khi diệt quái", p.current_exp > before_exp)
 
-	# Check chat log contains monster kill notice
-	var last_msg: Dictionary = chat._messages.back()
-	check("Thông báo EXP phải là tin hệ thống", last_msg.get("is_system", false) == true)
-	var text: String = str(last_msg.get("text", ""))
-	check("Thông báo phải có tên quái Heo Rừng", text.contains("Heo Rừng"), text)
-	check("Thông báo phải có chữ kinh nghiệm", text.contains("kinh nghiệm"), text)
+	# EXP hạ quái không vào chat, chỉ hiện chữ nổi
+	check("Không ghi tin kinh nghiệm vào chat", chat._messages.is_empty())
+	check("Có chữ nổi +EXP", chat._exp_rows.size() == 1 and (chat._exp_rows[0].label as Label).text.begins_with("+"))
 
 	m.free()
 	chat.queue_free()

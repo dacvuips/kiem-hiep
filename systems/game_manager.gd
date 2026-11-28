@@ -41,6 +41,28 @@ var network_mode: NetworkMode = NetworkMode.OFFLINE:
 func is_online_mode() -> bool:
 	return network_mode == NetworkMode.ONLINE
 
+## Đồ hết hạn sử dụng (ItemInstance.expire_at) — OFFLINE: máy này tự thu hồi mỗi EXPIRE_CHECK_SEC giây.
+## Online thì chỉ game server thu hồi (GameServer._check_expired_items) rồi gửi bản chuẩn xuống — máy người chơi không tự sửa.
+const EXPIRE_CHECK_SEC := 30.0
+
+func _ready() -> void:
+	_load_training_cooldown()
+	var t := Timer.new()
+	t.wait_time = EXPIRE_CHECK_SEC
+	t.autostart = true
+	t.timeout.connect(check_expired_items)
+	add_child(t)
+
+func check_expired_items() -> void:
+	if local_profile == null or is_online_mode():
+		return
+	var gone := local_profile.remove_expired_items()
+	if gone.is_empty():
+		return
+	ChatBox.push_system("[color=#ff5a00][Hệ thống][/color] Vật phẩm hết hạn sử dụng đã bị thu hồi: %s" % ", ".join(gone))
+	if OS.get_environment("KIEMHIEP_NO_SAVE") != "1":
+		SaveManager.save_profile(local_profile)
+
 func is_offline_mode() -> bool:
 	return network_mode == NetworkMode.OFFLINE
 
@@ -67,7 +89,7 @@ var game_mode: GameMode = GameMode.STAGE
 var field_map: Dictionary = {}
 
 func is_manor_mode() -> bool:
-	return bool(field_map.get("manor", false)) or int(field_map.get("id", -1)) == 1041
+	return bool(field_map.get("manor", false))
 
 ## true sau khi Player chết — Spawner kiểm tra cờ này trước khi tick sinh quái tiếp, không chỉ
 ## dựa vào signal (phòng trường hợp 1 Spawner được tạo SAU khi game_over đã bắn, VD debug/hot
@@ -134,9 +156,10 @@ func get_stage_index(stage: StageData) -> int:
 	return maxi(0, tier - 1)
 
 ## Kiểm tra bản đồ hiện tại có được MIỄN PHÍ nội lực (không mất mana khi đánh/ra chiêu) hay không:
-## Hiện tại TẤT CẢ các bản đồ và chế độ (kể cả Luyện và Tinh Anh) đều tiêu hao nội lực khi ra chiêu.
-## (Ở tab Luyện, tân thủ cấp <= 80 được hồi phục qua Hộ thể Mộng Điệp 100 HP & 100 MP / 0.5s).
+## Chế độ Vượt Ải offline (Survivor / Stage) hoàn toàn MIỄN PHÍ nội lực (không mất mana).
 func is_free_mana_stage(_player: Node = null) -> bool:
+	if GameModeManager.is_offline() and (game_mode == GameMode.STAGE or field_map.get("survivor_mode", false) or current_stage != null):
+		return true
 	return false
 
 ## Kiểm tra bản đồ hiện tại có thuộc phần "Luyện" (tab Luyện - map luyện công dã ngoại thông thường) không.
@@ -150,4 +173,62 @@ func is_training_stage() -> bool:
 	if field_map.get("challenge", false) or field_map.get("phong_lang_do", false) or field_map.has("battle") or field_map.get("escort", false) or field_map.get("viem_de", false) or field_map.get("brawl", false) or field_map.get("tong_kim_lol", false) or field_map.get("city_war", false) or field_map.get("linh_lung_thap", false) or field_map.get("linh_lung_prep", false):
 		return false
 	return true
+
+## Xử lý sự kiện đóng game vật lý (Alt+F4 / tắt cửa sổ / nút X / đóng ứng dụng):
+## Đảm bảo tự động dọn dẹp và xóa các phòng khi người cuối cùng rời đi.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		cleanup_rooms_on_game_closing()
+
+## Dọn dẹp toàn bộ phòng khi đóng game hoặc rời phòng
+static func cleanup_rooms_on_game_closing() -> void:
+	var prof: PlayerProfile = null
+	if GameManager and "local_profile" in GameManager:
+		prof = GameManager.local_profile
+
+	# 1. PUBG: Rời trận và tự động xóa phòng nếu hết người
+	PubgManager.on_game_closing(prof)
+
+	# 2. Các sảnh phòng PK, Thách Đấu Thời Gian, Viêm Đế: đóng phòng của mình
+	if prof != null:
+		PkLobby.close_own(prof)
+		TimeChallengeLobby.close_own(prof)
+		ViemDeLobby.close_own(prof)
+
+	# 3. Mạng Online: Ngắt kết nối sạch sẽ để server lập tức trigger peer_disconnected và xóa phòng
+	if NetClient != null and NetClient.has_method("disconnect_from_server") and NetClient.status != NetClient.Status.OFFLINE:
+		NetClient.disconnect_from_server()
+
+# ---------------------------------------------------------------- Cooldown phòng luyện công (30 phút)
+const TRAINING_COOLDOWN_SECONDS := 1800
+const TRAINING_COOLDOWN_FILE := "user://training_room_cooldown.json"
+var last_training_exit_time: int = 0
+
+func _load_training_cooldown() -> void:
+	if FileAccess.file_exists(TRAINING_COOLDOWN_FILE):
+		var text := FileAccess.get_file_as_string(TRAINING_COOLDOWN_FILE)
+		var parsed: Variant = JSON.parse_string(text)
+		if parsed is Dictionary:
+			last_training_exit_time = int(parsed.get("exit_time", 0))
+
+func record_training_exit() -> void:
+	last_training_exit_time = int(Time.get_unix_time_from_system())
+	var f := FileAccess.open(TRAINING_COOLDOWN_FILE, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"exit_time": last_training_exit_time}))
+		f.close()
+
+func get_training_cooldown_remaining() -> int:
+	if last_training_exit_time <= 0:
+		if FileAccess.file_exists(TRAINING_COOLDOWN_FILE):
+			_load_training_cooldown()
+	if last_training_exit_time <= 0:
+		return 0
+	var now := int(Time.get_unix_time_from_system())
+	var elapsed := now - last_training_exit_time
+	if elapsed >= TRAINING_COOLDOWN_SECONDS or elapsed < 0:
+		return 0
+	return TRAINING_COOLDOWN_SECONDS - elapsed
+
+
 

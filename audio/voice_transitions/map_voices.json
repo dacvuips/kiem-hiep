@@ -1,0 +1,840 @@
+{
+  "giang_tan_thon": {
+    "name": "Giang Tân Thôn",
+    "file": "res://audio/voice_transitions/giang_tan_thon.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Giang Tân Thôn!",
+    "variants": [
+      "Giang Tân Thôn",
+      "map_20"
+    ]
+  },
+  "ba_lang_huyen": {
+    "name": "Ba Lăng Huyện",
+    "file": "res://audio/voice_transitions/ba_lang_huyen.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Ba Lăng Huyện!",
+    "variants": [
+      "map_53",
+      "Ba Lăng Huyện"
+    ]
+  },
+  "nam_nhac_tran": {
+    "name": "Nam Nhạc Trấn",
+    "file": "res://audio/voice_transitions/nam_nhac_tran.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Nam Nhạc Trấn!",
+    "variants": [
+      "Nam Nhạc Trấn",
+      "map_54"
+    ]
+  },
+  "long_mon_tran": {
+    "name": "Long Môn Trấn",
+    "file": "res://audio/voice_transitions/long_mon_tran.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Long Môn Trấn!",
+    "variants": [
+      "Long Môn Trấn",
+      "map_121"
+    ]
+  },
+  "hoa_son": {
+    "name": "Hoa Sơn",
+    "file": "res://audio/voice_transitions/hoa_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hoa Sơn!",
+    "variants": [
+      "Hoa Sơn",
+      "map_2"
+    ]
+  },
+  "thanh_do": {
+    "name": "Thành Đô",
+    "file": "res://audio/voice_transitions/thanh_do.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thành Đô!",
+    "variants": [
+      "map_11",
+      "Thành Đô"
+    ]
+  },
+  "dai_ly_phu": {
+    "name": "Đại Lý phủ",
+    "file": "res://audio/voice_transitions/dai_ly_phu.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Đại Lý phủ!",
+    "variants": [
+      "Đại Lý phủ",
+      "map_162"
+    ]
+  },
+  "lam_an": {
+    "name": "Lâm An",
+    "file": "res://audio/voice_transitions/lam_an.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Lâm An!",
+    "variants": [
+      "Lâm An",
+      "map_176"
+    ]
+  },
+  "thanh_thanh_son": {
+    "name": "Thanh Thành sơn",
+    "file": "res://audio/voice_transitions/thanh_thanh_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thanh Thành sơn!",
+    "variants": [
+      "map_21",
+      "Thanh Thành sơn"
+    ]
+  },
+  "vu_lang_son": {
+    "name": "Vũ Lăng Sơn",
+    "file": "res://audio/voice_transitions/vu_lang_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Vũ Lăng Sơn!",
+    "variants": [
+      "Vũ Lăng Sơn",
+      "map_70"
+    ]
+  },
+  "duoc_vuong_coc": {
+    "name": "Dược Vương Cốc",
+    "file": "res://audio/voice_transitions/duoc_vuong_coc.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Dược Vương Cốc!",
+    "variants": [
+      "map_140",
+      "Dược Vương Cốc"
+    ]
+  },
+  "dong_phuc_nguu_son": {
+    "name": "Đông Phục Ngưu Sơn",
+    "file": "res://audio/voice_transitions/dong_phuc_nguu_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Đông Phục Ngưu Sơn!",
+    "variants": [
+      "map_90",
+      "Đông Phục Ngưu Sơn"
+    ]
+  },
+  "thuc_cuong_son": {
+    "name": "Thục Cương Sơn",
+    "file": "res://audio/voice_transitions/thuc_cuong_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thục Cương Sơn!",
+    "variants": [
+      "Thục Cương Sơn",
+      "map_92"
+    ]
+  },
+  "tay_phuc_nguu_son": {
+    "name": "Tây Phục Ngưu Sơn",
+    "file": "res://audio/voice_transitions/tay_phuc_nguu_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tây Phục Ngưu Sơn!",
+    "variants": [
+      "Tây Phục Ngưu Sơn",
+      "map_41"
+    ]
+  },
+  "hoang_ha_nguyen_dau": {
+    "name": "Hoàng Hà Nguyên Đầu",
+    "file": "res://audio/voice_transitions/hoang_ha_nguyen_dau.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hoàng Hà Nguyên Đầu!",
+    "variants": [
+      "Hoàng Hà Nguyên Đầu",
+      "map_122"
+    ]
+  },
+  "huong_thuy_dong": {
+    "name": "Hưởng Thủy Động",
+    "file": "res://audio/voice_transitions/huong_thuy_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hưởng Thủy Động!",
+    "variants": [
+      "map_24",
+      "Hưởng Thủy Động"
+    ]
+  },
+  "thiet_thap_tang_1": {
+    "name": "Thiết Tháp Tầng 1",
+    "file": "res://audio/voice_transitions/thiet_thap_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiết Tháp Tầng 1!",
+    "variants": [
+      "Thiết Tháp Tầng 1",
+      "map_38"
+    ]
+  },
+  "thiet_thap_tang_2": {
+    "name": "Thiết Tháp Tầng 2",
+    "file": "res://audio/voice_transitions/thiet_thap_tang_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiết Tháp Tầng 2!",
+    "variants": [
+      "map_39",
+      "Thiết Tháp Tầng 2"
+    ]
+  },
+  "thiet_thap_tang_3": {
+    "name": "Thiết Tháp Tầng 3",
+    "file": "res://audio/voice_transitions/thiet_thap_tang_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiết Tháp Tầng 3!",
+    "variants": [
+      "Thiết Tháp Tầng 3",
+      "map_40"
+    ]
+  },
+  "thien_tam_dong": {
+    "name": "Thiên Tâm Động",
+    "file": "res://audio/voice_transitions/thien_tam_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiên Tâm Động!",
+    "variants": [
+      "map_42",
+      "Thiên Tâm Động"
+    ]
+  },
+  "day_dong_dinh_ho_tang_1": {
+    "name": "Đáy Động Đình Hồ Tầng 1",
+    "file": "res://audio/voice_transitions/day_dong_dinh_ho_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Đáy Động Đình Hồ Tầng 1!",
+    "variants": [
+      "map_66",
+      "Đáy Động Đình Hồ tầng 1",
+      "Đáy Động Đình Hồ Tầng 1"
+    ]
+  },
+  "tuong_van_dong_tang_1": {
+    "name": "Tường Vân Động Tầng 1",
+    "file": "res://audio/voice_transitions/tuong_van_dong_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tường Vân Động Tầng 1!",
+    "variants": [
+      "map_116",
+      "Tường Vân Động Tầng 1"
+    ]
+  },
+  "bang_huyet_me_cung": {
+    "name": "Băng Huyệt Mê Cung",
+    "file": "res://audio/voice_transitions/bang_huyet_me_cung.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Băng Huyệt Mê Cung!",
+    "variants": [
+      "map_132",
+      "Băng Huyệt Mê Cung"
+    ]
+  },
+  "me_cung_nghiet_long_dong": {
+    "name": "Mê Cung Nghiệt Long Động",
+    "file": "res://audio/voice_transitions/me_cung_nghiet_long_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Nghiệt Long Động!",
+    "variants": [
+      "map_182",
+      "Mê Cung Nghiệt Long Động"
+    ]
+  },
+  "me_cung_ngoc_hoa_dong": {
+    "name": "Mê Cung Ngọc Hoa Động",
+    "file": "res://audio/voice_transitions/me_cung_ngoc_hoa_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Ngọc Hoa Động!",
+    "variants": [
+      "Mê Cung Ngọc Hoa Động",
+      "map_194"
+    ]
+  },
+  "tan_lang_tang_1": {
+    "name": "Tần Lăng Tầng 1",
+    "file": "res://audio/voice_transitions/tan_lang_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tần Lăng Tầng 1!",
+    "variants": [
+      "Tần Lăng Tầng 1",
+      "map_8",
+      "Tần Lăng tầng 1"
+    ]
+  },
+  "luu_tien_dong_tang_1": {
+    "name": "Lưu Tiên Động Tầng 1",
+    "file": "res://audio/voice_transitions/luu_tien_dong_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Lưu Tiên Động Tầng 1!",
+    "variants": [
+      "map_125",
+      "Lưu Tiên Động Tầng 1"
+    ]
+  },
+  "ac_ba_dia_dao": {
+    "name": "Ác Bá Địa Đạo",
+    "file": "res://audio/voice_transitions/ac_ba_dia_dao.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Ác Bá Địa Đạo!",
+    "variants": [
+      "ác Bá Địa Đạo",
+      "map_163",
+      "Ác Bá Địa Đạo"
+    ]
+  },
+  "mat_dao_nha_mon_tuong_duong": {
+    "name": "Mật Đạo Nha Môn Tương Dương",
+    "file": "res://audio/voice_transitions/mat_dao_nha_mon_tuong_duong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mật Đạo Nha Môn Tương Dương!",
+    "variants": [
+      "map_79",
+      "Mật Đạo Nha Môn Tương Dương"
+    ]
+  },
+  "108_la_han_tran": {
+    "name": "108 La Hán Trận",
+    "file": "res://audio/voice_transitions/108_la_han_tran.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào 108 La Hán Trận!",
+    "variants": [
+      "108 La Hán Trận",
+      "map_114"
+    ]
+  },
+  "tuong_van_dong_tang_2": {
+    "name": "Tường Vân Động Tầng 2",
+    "file": "res://audio/voice_transitions/tuong_van_dong_tang_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tường Vân Động Tầng 2!",
+    "variants": [
+      "map_117",
+      "Tường Vân Động Tầng 2"
+    ]
+  },
+  "tuong_van_dong_tang_3": {
+    "name": "Tường Vân Động Tầng 3",
+    "file": "res://audio/voice_transitions/tuong_van_dong_tang_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tường Vân Động Tầng 3!",
+    "variants": [
+      "Tường Vân Động Tầng 3",
+      "map_118"
+    ]
+  },
+  "tuong_van_dong_tang_4": {
+    "name": "Tường Vân Động Tầng 4",
+    "file": "res://audio/voice_transitions/tuong_van_dong_tang_4.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tường Vân Động Tầng 4!",
+    "variants": [
+      "map_119",
+      "Tường Vân Động Tầng 4"
+    ]
+  },
+  "duong_giac_dong": {
+    "name": "Dương Giác Động",
+    "file": "res://audio/voice_transitions/duong_giac_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Dương Giác Động!",
+    "variants": [
+      "map_196",
+      "Dương Giác Động"
+    ]
+  },
+  "truong_giang_nguyen_dau": {
+    "name": "Trường Giang Nguyên Đầu",
+    "file": "res://audio/voice_transitions/truong_giang_nguyen_dau.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Trường Giang Nguyên Đầu!",
+    "variants": [
+      "Trường Giang Nguyên Đầu",
+      "Trường Gian Nguyên Đầu",
+      "map_9"
+    ]
+  },
+  "hanh_son": {
+    "name": "Hành Sơn",
+    "file": "res://audio/voice_transitions/hanh_son.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hành Sơn!",
+    "variants": [
+      "map_56",
+      "Hành Sơn"
+    ]
+  },
+  "thien_tam_thap_tang_1": {
+    "name": "Thiên Tâm Tháp tầng 1",
+    "file": "res://audio/voice_transitions/thien_tam_thap_tang_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiên Tâm Tháp tầng 1!",
+    "variants": [
+      "Thiên Tâm Tháp tầng 1",
+      "Thiên Tâm tháp tầng 1",
+      "map_164"
+    ]
+  },
+  "thien_tam_thap_tang_2": {
+    "name": "Thiên Tâm Tháp tầng 2",
+    "file": "res://audio/voice_transitions/thien_tam_thap_tang_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiên Tâm Tháp tầng 2!",
+    "variants": [
+      "Thiên Tâm Tháp tầng 2",
+      "Thiên Tâm tháp tầng 2",
+      "map_165"
+    ]
+  },
+  "dao_hoa_nguyen": {
+    "name": "Đào Hoa Nguyên",
+    "file": "res://audio/voice_transitions/dao_hoa_nguyen.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Đào Hoa Nguyên!",
+    "variants": [
+      "map_55",
+      "Đào Hoa Nguyên"
+    ]
+  },
+  "me_cung_dai_tu_dong": {
+    "name": "Mê Cung Đại Tù Động",
+    "file": "res://audio/voice_transitions/me_cung_dai_tu_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Đại Tù Động!",
+    "variants": [
+      "map_72",
+      "Mê Cung Đại Tù Động"
+    ]
+  },
+  "son_bao_dong": {
+    "name": "Sơn Bảo Động",
+    "file": "res://audio/voice_transitions/son_bao_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sơn Bảo Động!",
+    "variants": [
+      "Sơn Bảo Động",
+      "map_76"
+    ]
+  },
+  "linh_coc_dong": {
+    "name": "Linh Cốc Động",
+    "file": "res://audio/voice_transitions/linh_coc_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Linh Cốc Động!",
+    "variants": [
+      "Linh Cốc Động",
+      "map_94"
+    ]
+  },
+  "tuong_van_dong_tang_5": {
+    "name": "Tường Vân Động Tầng 5",
+    "file": "res://audio/voice_transitions/tuong_van_dong_tang_5.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tường Vân Động Tầng 5!",
+    "variants": [
+      "map_120",
+      "Tường Vân Động Tầng 5"
+    ]
+  },
+  "duoc_vuong_dong_tang_2": {
+    "name": "Dược Vương Động Tầng 2",
+    "file": "res://audio/voice_transitions/duoc_vuong_dong_tang_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Dược Vương Động Tầng 2!",
+    "variants": [
+      "map_142",
+      "Dược Vương Động Tầng 2"
+    ]
+  },
+  "thien_tam_thap_tang_3": {
+    "name": "Thiên Tâm Tháp tầng 3",
+    "file": "res://audio/voice_transitions/thien_tam_thap_tang_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thiên Tâm Tháp tầng 3!",
+    "variants": [
+      "Thiên Tâm tháp tầng 3",
+      "map_166",
+      "Thiên Tâm Tháp tầng 3"
+    ]
+  },
+  "long_nhan_dong": {
+    "name": "Long Nhãn Động",
+    "file": "res://audio/voice_transitions/long_nhan_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Long Nhãn Động!",
+    "variants": [
+      "Long Nhãn Động",
+      "map_169"
+    ]
+  },
+  "lao_ho_dong": {
+    "name": "Lão Hổ Động",
+    "file": "res://audio/voice_transitions/lao_ho_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Lão Hổ Động!",
+    "variants": [
+      "map_123",
+      "Lão Hổ Động"
+    ]
+  },
+  "tan_lang_tang_2": {
+    "name": "Tần Lăng Tầng 2",
+    "file": "res://audio/voice_transitions/tan_lang_tang_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tần Lăng Tầng 2!",
+    "variants": [
+      "Tần Lăng tầng 2",
+      "Tần Lăng Tầng 2",
+      "map_206"
+    ]
+  },
+  "lam_du_quan": {
+    "name": "Lâm Du Quan",
+    "file": "res://audio/voice_transitions/lam_du_quan.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Lâm Du Quan!",
+    "variants": [
+      "Lâm Du Quan",
+      "map_319"
+    ]
+  },
+  "khu_chuan_bi_linh_lung_thap": {
+    "name": "Khu Chuẩn Bị Linh Lung Tháp",
+    "file": "res://audio/voice_transitions/khu_chuan_bi_linh_lung_thap.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Khu Chuẩn Bị Linh Lung Tháp!",
+    "variants": [
+      "map_1037",
+      "Khu Chuẩn Bị Linh Lung Tháp"
+    ]
+  },
+  "linh_lung_thap": {
+    "name": "Linh Lung Tháp",
+    "file": "res://audio/voice_transitions/linh_lung_thap.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Linh Lung Tháp!",
+    "variants": [
+      "map_1038",
+      "Linh Lung Tháp"
+    ]
+  },
+  "nhan_thach_dong": {
+    "name": "Nhạn Thạch Động",
+    "file": "res://audio/voice_transitions/nhan_thach_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Nhạn Thạch Động!",
+    "variants": [
+      "Nhạn Thạch Động",
+      "map_10"
+    ]
+  },
+  "duoc_vuong_dong_tang_3": {
+    "name": "Dược Vương Động Tầng 3",
+    "file": "res://audio/voice_transitions/duoc_vuong_dong_tang_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Dược Vương Động Tầng 3!",
+    "variants": [
+      "map_143",
+      "Dược Vương Động Tầng 3"
+    ]
+  },
+  "me_cung_luong_thuy_dong": {
+    "name": "Mê Cung Lưỡng Thủy Động",
+    "file": "res://audio/voice_transitions/me_cung_luong_thuy_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Lưỡng Thủy Động!",
+    "variants": [
+      "map_181",
+      "Mê Cung Lưỡng Thủy Động"
+    ]
+  },
+  "thanh_khe_dong": {
+    "name": "Thanh Khê Động",
+    "file": "res://audio/voice_transitions/thanh_khe_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thanh Khê Động!",
+    "variants": [
+      "map_198",
+      "Thanh Khê Động",
+      "Thanh khê Động"
+    ]
+  },
+  "vu_lang_dong": {
+    "name": "Vũ Lăng Động",
+    "file": "res://audio/voice_transitions/vu_lang_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Vũ Lăng Động!",
+    "variants": [
+      "map_199",
+      "Vũ Lăng Động"
+    ]
+  },
+  "co_duong_dong": {
+    "name": "Cổ Dương Động",
+    "file": "res://audio/voice_transitions/co_duong_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Cổ Dương Động!",
+    "variants": [
+      "map_200",
+      "Cổ Dương Động"
+    ]
+  },
+  "me_cung_bang_ha_dong": {
+    "name": "Mê Cung Băng Hà Động",
+    "file": "res://audio/voice_transitions/me_cung_bang_ha_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Băng Hà Động!",
+    "variants": [
+      "Mê Cung Băng Hà Động",
+      "map_201"
+    ]
+  },
+  "me_cung_phu_dung_dong": {
+    "name": "Mê Cung Phù Dung Động",
+    "file": "res://audio/voice_transitions/me_cung_phu_dung_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Phù Dung Động!",
+    "variants": [
+      "map_202",
+      "Mê Cung Phù Dung Động"
+    ]
+  },
+  "vo_danh_dong": {
+    "name": "Vô Danh Động",
+    "file": "res://audio/voice_transitions/vo_danh_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Vô Danh Động!",
+    "variants": [
+      "Vô Danh Động",
+      "map_203"
+    ]
+  },
+  "phi_thien_dong": {
+    "name": "Phi Thiên Động",
+    "file": "res://audio/voice_transitions/phi_thien_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Phi Thiên Động!",
+    "variants": [
+      "map_204",
+      "Phi Thiên Động"
+    ]
+  },
+  "me_cung_duong_trung_dong": {
+    "name": "Mê Cung Dương Trung Động",
+    "file": "res://audio/voice_transitions/me_cung_duong_trung_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mê Cung Dương Trung Động!",
+    "variants": [
+      "Mê Cung Dương Trung Động",
+      "map_205"
+    ]
+  },
+  "tan_lang_tang_3": {
+    "name": "Tần Lăng Tầng 3",
+    "file": "res://audio/voice_transitions/tan_lang_tang_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tần Lăng Tầng 3!",
+    "variants": [
+      "Tần Lăng Tầng 3",
+      "map_207",
+      "Tần Lăng tầng 3"
+    ]
+  },
+  "duoc_vuong_dong_tang_4": {
+    "name": "Dược Vương Động Tầng 4",
+    "file": "res://audio/voice_transitions/duoc_vuong_dong_tang_4.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Dược Vương Động Tầng 4!",
+    "variants": [
+      "map_144",
+      "Dược Vương Động Tầng 4",
+      "Dược Vương Động tầng 4"
+    ]
+  },
+  "sa_mac_dia_bieu": {
+    "name": "Sa Mạc Địa Biểu",
+    "file": "res://audio/voice_transitions/sa_mac_dia_bieu.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc Địa Biểu!",
+    "variants": [
+      "map_224",
+      "Sa Mạc Địa Biểu"
+    ]
+  },
+  "chan_nui_truong_bach": {
+    "name": "Chân Núi Trường Bạch",
+    "file": "res://audio/voice_transitions/chan_nui_truong_bach.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Chân Núi Trường Bạch!",
+    "variants": [
+      "Chân Núi Trường Bạch",
+      "map_320"
+    ]
+  },
+  "thuyen_phong_lang_do": {
+    "name": "Thuyền Phong Lăng Độ",
+    "file": "res://audio/voice_transitions/thuyen_phong_lang_do.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thuyền Phong Lăng Độ!",
+    "variants": [
+      "Thuyền Phong Lăng Độ",
+      "map_337"
+    ]
+  },
+  "xi_vuu_dong": {
+    "name": "Xi Vưu Động",
+    "file": "res://audio/voice_transitions/xi_vuu_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Xi Vưu Động!",
+    "variants": [
+      "Xi Vưu Động (11x)",
+      "Xi Vưu Động",
+      "map_75"
+    ]
+  },
+  "tien_cuc_dong": {
+    "name": "Tiến Cúc Động",
+    "file": "res://audio/voice_transitions/tien_cuc_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Tiến Cúc Động!",
+    "variants": [
+      "map_93",
+      "Tiến Cúc Động (11x)",
+      "Tiến Cúc Động"
+    ]
+  },
+  "hien_vien_dong": {
+    "name": "Hiên Viên Động",
+    "file": "res://audio/voice_transitions/hien_vien_dong.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hiên Viên Động!",
+    "variants": [
+      "Hiên Viên Động (11x)",
+      "map_124",
+      "Hiên Viên Động"
+    ]
+  },
+  "sa_mac_1": {
+    "name": "Sa Mạc 1",
+    "file": "res://audio/voice_transitions/sa_mac_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc 1!",
+    "variants": [
+      "map_225",
+      "Sa Mạc 1"
+    ]
+  },
+  "sa_mac_2": {
+    "name": "Sa Mạc 2",
+    "file": "res://audio/voice_transitions/sa_mac_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc 2!",
+    "variants": [
+      "map_226",
+      "Sa Mạc 2"
+    ]
+  },
+  "sa_mac_3": {
+    "name": "Sa Mạc 3",
+    "file": "res://audio/voice_transitions/sa_mac_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc 3!",
+    "variants": [
+      "Sa Mạc 3",
+      "map_227"
+    ]
+  },
+  "truong_bach_son_nam": {
+    "name": "Trường Bạch Sơn Nam",
+    "file": "res://audio/voice_transitions/truong_bach_son_nam.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Trường Bạch Sơn Nam!",
+    "variants": [
+      "Trường Bạch Sơn Nam",
+      "Trường Bạch Sơn Nam 1",
+      "Trường Bạch Sơn Nam (12x)",
+      "map_321"
+    ]
+  },
+  "truong_bach_son_bac": {
+    "name": "Trường Bạch Sơn Bắc",
+    "file": "res://audio/voice_transitions/truong_bach_son_bac.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Trường Bạch Sơn Bắc!",
+    "variants": [
+      "map_322",
+      "Trường Bạch Sơn Bắc (12x)",
+      "Trường Bạch Sơn Bắc 1",
+      "Trường Bạch Sơn Bắc"
+    ]
+  },
+  "phong_lang_do": {
+    "name": "Phong Lăng Độ",
+    "file": "res://audio/voice_transitions/phong_lang_do.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Phong Lăng Độ!",
+    "variants": [
+      "map_336",
+      "Phong Lăng Độ",
+      "Phong Lăng Độ (12x)"
+    ]
+  },
+  "mac_cao_quat": {
+    "name": "Mạc Cao Quật",
+    "file": "res://audio/voice_transitions/mac_cao_quat.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Mạc Cao Quật!",
+    "variants": [
+      "Mạc Cao Quật",
+      "map_340",
+      "Mạc Cao Quật (12x)",
+      "Mạc Cao Quật (1)"
+    ]
+  },
+  "thach_thuc_ai_28": {
+    "name": "Thách Thức Ải 28",
+    "file": "res://audio/voice_transitions/thach_thuc_ai_28.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Thách Thức Ải 28!",
+    "variants": [
+      "map_480",
+      "Thách Thức Ải 28"
+    ]
+  },
+  "sa_mac_son_dong_1": {
+    "name": "Sa Mạc Sơn Động 1",
+    "file": "res://audio/voice_transitions/sa_mac_son_dong_1.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc Sơn Động 1!",
+    "variants": [
+      "map_225",
+      "Sa Mạc Sơn Động 1",
+      "Sa Mạc Sơn Động 1 (11x)"
+    ]
+  },
+  "sa_mac_son_dong_2": {
+    "name": "Sa Mạc Sơn Động 2",
+    "file": "res://audio/voice_transitions/sa_mac_son_dong_2.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc Sơn Động 2!",
+    "variants": [
+      "map_226",
+      "Sa Mạc Sơn Động 2 (11x)",
+      "Sa Mạc Sơn Động 2"
+    ]
+  },
+  "sa_mac_son_dong_3": {
+    "name": "Sa Mạc Sơn Động 3",
+    "file": "res://audio/voice_transitions/sa_mac_son_dong_3.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sa Mạc Sơn Động 3!",
+    "variants": [
+      "Sa Mạc Sơn Động 3",
+      "Sa Mạc Sơn Động 3 (11x)",
+      "map_227"
+    ]
+  },
+  "nguyet_ca_dao": {
+    "name": "Nguyệt Ca Đảo",
+    "file": "res://audio/voice_transitions/nguyet_ca_dao.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Nguyệt Ca Đảo!",
+    "variants": [
+      "Ải 3 · Nguyệt Ca Đảo (12x)",
+      "Ải 7 · Nguyệt Ca Đảo (12x)",
+      "Ải 10 · Nguyệt Ca Đảo (12x)",
+      "Ải 1 · Nguyệt Ca Đảo (12x)",
+      "Ải 5 · Nguyệt Ca Đảo (12x)",
+      "Ải 8 · Nguyệt Ca Đảo (12x)",
+      "Ải 9 · Nguyệt Ca Đảo (12x)",
+      "Ải 2 · Nguyệt Ca Đảo (12x)",
+      "map_1041",
+      "Ải 4 · Nguyệt Ca Đảo (12x)",
+      "Ải 11 · Nguyệt Ca Đảo (12x)",
+      "Ải 12 · Nguyệt Ca Đảo (12x)",
+      "Ải 6 · Nguyệt Ca Đảo (12x)",
+      "Nguyệt Ca Đảo",
+      "Nguyệt Ca Đảo (12x)"
+    ]
+  },
+  "bien_kinh": {
+    "name": "Biện Kinh",
+    "file": "res://audio/voice_transitions/bien_kinh.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Biện Kinh!",
+    "variants": [
+      "Biện Kinh",
+      "map_37"
+    ]
+  },
+  "ve_thanh_duong_suc": {
+    "name": "Về Thành Dưỡng Sức",
+    "file": "res://audio/voice_transitions/ve_thanh_duong_suc.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng về thành dưỡng sức!",
+    "variants": [
+      "ve_thanh_duong_suc",
+      "Về Thành Dưỡng Sức"
+    ]
+  },
+  "son_trang": {
+    "name": "Sơn Trang",
+    "file": "res://audio/voice_transitions/son_trang.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Sơn Trang!",
+    "variants": [
+      "son_trang",
+      "Sơn Trang"
+    ]
+  },
+  "hiep_phong_luan_kiem": {
+    "name": "Hiệp Phong Luận Kiếm",
+    "file": "res://audio/voice_transitions/hiep_phong_luan_kiem.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Hiệp Phong Luận Kiếm!",
+    "variants": [
+      "hiep_phong_luan_kiem",
+      "Hiệp Phong Luận Kiếm"
+    ]
+  },
+  "bao_ve_tru_danh_du": {
+    "name": "Bảo Vệ Trụ Danh Dự",
+    "file": "res://audio/voice_transitions/bao_ve_tru_danh_du.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Bảo Vệ Trụ Danh Dự!",
+    "variants": [
+      "bao_ve_tru_danh_du",
+      "Bảo Vệ Trụ Danh Dự"
+    ]
+  },
+  "tong_kim_dai_chien": {
+    "name": "Chiến Trường Tống Kim",
+    "file": "res://audio/voice_transitions/tong_kim_dai_chien.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng tiến vào Chiến Trường Tống Kim!",
+    "variants": [
+      "Chiến Trường Tống Kim",
+      "tong_kim_dai_chien"
+    ]
+  },
+  "default_transition": {
+    "name": "Mặc Định",
+    "file": "res://audio/voice_transitions/default_transition.mp3",
+    "text": "Huynh đài hãy nắm chặt yên cương, ta cùng lên đường xuất chinh!",
+    "variants": [
+      "Mặc Định",
+      "default_transition"
+    ]
+  }
+}

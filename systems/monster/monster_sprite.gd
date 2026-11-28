@@ -10,6 +10,10 @@ const FALLBACK_SHADOW_COLOR := Color(0, 0, 0, 0.32)
 const SHOW_SHADOW := true
 
 var res_name: String = ""
+## Tư thế đang vẽ (chế độ 3D đọc lại để vẽ hướng khác khi xoay camera — ActorFrames3D).
+var pose_action: String = ""
+var pose_dir64: int = 0
+var pose_progress: float = 0.0
 
 var _shadow: Sprite2D
 var _sprite: Sprite2D
@@ -25,6 +29,11 @@ func _ensure_sprites() -> void:
 		return
 	_shadow = _make_sprite()
 	_sprite = _make_sprite()
+
+## Màu nhuộm trạng thái (băng/độc — StatusEffectController): chỉ thân quái, bóng giữ nguyên (KNpcRes gốc chỉ nhuộm bộ phận).
+func set_status_tint(c: Color) -> void:
+	_ensure_sprites()
+	_sprite.modulate = Color(c.r, c.g, c.b, _sprite.modulate.a)
 
 func _make_sprite() -> Sprite2D:
 	var s := Sprite2D.new()
@@ -52,6 +61,9 @@ func _draw() -> void:
 ## progress: 0..1 trong 1 vòng động tác. Trả về false nếu bộ này không có hình cho động tác.
 func set_pose(action_name: String, dir64: int, progress: float) -> bool:
 	_ensure_sprites()
+	pose_action = action_name
+	pose_dir64 = dir64
+	pose_progress = progress
 	var act := MonsterData.action(res_name, action_name)
 	if act.is_empty():
 		_sprite.visible = false

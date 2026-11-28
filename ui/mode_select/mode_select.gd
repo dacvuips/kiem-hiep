@@ -6,6 +6,7 @@ class_name ModeSelectScreen
 const LOGIN_SCENE := "res://ui/login/Login.tscn"
 const CHARACTER_SELECT_SCENE := "res://ui/character_select/CharacterSelect.tscn"
 const CHARACTER_HUB_SCENE := "res://ui/character_hub/CharacterHub.tscn"
+const CHARACTER_ROSTER_SCENE := "res://ui/character_roster/CharacterRoster.tscn"
 
 const COLOR_GOLD := Color(0.98, 0.86, 0.52, 1.0)
 const COLOR_GOLD_BORDER := Color(0.92, 0.78, 0.45, 1.0)
@@ -177,7 +178,7 @@ func _update_locale_texts() -> void:
 	if item4_off:
 		item4_off.text = tr("🗺️  Tự Do Khám Phá & Luyện Công\n     Trải nghiệm trọn vẹn 10 môn phái, hệ thống kỹ năng & vượt ải")
 	if _btn_offline:
-		_btn_offline.text = tr("BẮT ĐẦU CHƠI OFFLINE")
+		_btn_offline.text = tr("ĐĂNG NHẬP CHƠI OFFLINE")
 
 	# Card Online
 	var badge_on: Label = get_node_or_null("Stage/CardsContainer/CardOnline/Margin/Content/BadgeBox/BadgeOnline")
@@ -318,14 +319,7 @@ func _transition_to_offline() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(func() -> void:
-		# Nếu đã có nhân vật lưu trên máy -> vào thẳng CharacterHub, ngược lại vào CharacterSelect
-		if GameManager.local_profile == null and SaveManager.has_profile():
-			GameManager.local_profile = SaveManager.load_profile()
-		
-		if GameManager.local_profile != null:
-			get_tree().change_scene_to_file(CHARACTER_HUB_SCENE)
-		else:
-			get_tree().change_scene_to_file(CHARACTER_SELECT_SCENE)
+		get_tree().change_scene_to_file(CHARACTER_ROSTER_SCENE)
 	)
 
 func _transition_to_online() -> void:

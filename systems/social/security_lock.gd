@@ -44,6 +44,7 @@ const A_STORE_MONEY := &"store_money"
 const A_DROP_ITEM := &"drop_item"
 ## Mở rộng của game này: khoá bảo vệ cũng KHOÁ RƯƠNG CHỨA ĐỒ — đang khoá thì không mở được rương, không cất/lấy đồ, không mở thêm rương.
 const A_STORAGE := &"storage"
+const A_STORE_ITEM := &"storage"
 const BLOCKED_WHEN_LOCKED := [A_OPEN_STALL, A_TRADE_START, A_STALL_BUY, A_NPC_BUY, A_NPC_SELL, A_STORE_MONEY, A_DROP_ITEM, A_STORAGE]
 
 const MSG_LOCKED := "Chức năng này đang bị khoá bảo vệ, hãy mở khoá bằng mật khẩu trước!"

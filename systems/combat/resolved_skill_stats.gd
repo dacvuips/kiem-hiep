@@ -22,6 +22,8 @@ var five_elements_damage_p: int = 0
 var hit_count: int = 1
 var projectile_count: int = 1
 var cooldown: float = 0.5
+## Độ dài động tác ra chiêu (giây, đã tính tốc độ đánh/xuất chiêu) — khoá không cho ra chiêu đánh khác (KNpc gốc).
+var action_time: float = 1.0
 var mana_cost: float = 5.0
 var projectile_speed: float = 300.0
 var range_multiplier: float = 1.0
@@ -68,6 +70,8 @@ var poison_tick_damage: int = 0
 var stun_chance_p: int = 0
 var stun_frames: int = 0
 var ignore_defense_percent: int = 0
+## "Độ chính xác" của skill (attackrating_p gốc) — cộng vào AR của đòn khi roll trúng (CombatFormulas.hit_attack_rating).
+var attack_rating_p: int = 0
 ## Bùa (skill nhắm địch chỉ mang trạng thái): đạn trúng thì áp trạng thái này lên mục tiêu, không damage.
 var is_state_only: bool = false
 var state_source_id: String = ""
@@ -102,6 +106,7 @@ func make_hit_mods(attacker_node: Node, is_melee: bool = false) -> CombatFormula
 	mods.stun_chance_p = stun_chance_p
 	mods.stun_frames = stun_frames
 	mods.ignore_defense_percent = ignore_defense_percent
+	mods.attack_rating_p = attack_rating_p
 	mods.is_state_only = is_state_only
 	mods.state_source_id = state_source_id
 	mods.state_attribs = state_attribs

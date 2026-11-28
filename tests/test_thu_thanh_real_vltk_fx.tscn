@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c6g7h8i9j0k1l"]
+
+[ext_resource type="Script" path="res://tests/test_thu_thanh_real_vltk_fx.gd" id="1_test"]
+
+[node name="TestThuThanhRealVltkFx" type="Node"]
+script = ExtResource("1_test")

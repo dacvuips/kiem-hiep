@@ -20,9 +20,11 @@ var _overlay: Control
 var _bg: ColorRect
 var _content: VBoxContainer
 var _title_label: Label
+var _dialogue_label: Label
 var _tip_label: Label
 var _dots_label: Label
 var _dots_timer: float = 0.0
+var _voice_player: AudioStreamPlayer
 
 func _init() -> void:
 	layer = 128
@@ -95,6 +97,19 @@ func _build_ui() -> void:
 	line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_content.add_child(line)
 
+	# Câu thoại audio / lời dẫn khi chuyển map
+	_dialogue_label = Label.new()
+	_dialogue_label.name = "DialogueLabel"
+	_dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dialogue_label.custom_minimum_size = Vector2(460, 32)
+	_dialogue_label.add_theme_font_size_override("font_size", 14)
+	_dialogue_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55)) # Vàng hoàng kim nhạt
+	_dialogue_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_dialogue_label.add_theme_constant_override("shadow_offset_x", 1)
+	_dialogue_label.add_theme_constant_override("shadow_offset_y", 1)
+	_content.add_child(_dialogue_label)
+
 	# Gợi ý / Danh ngôn kiếm hiệp
 	_tip_label = Label.new()
 	_tip_label.name = "TipLabel"
@@ -105,6 +120,12 @@ func _build_ui() -> void:
 	_tip_label.add_theme_font_size_override("font_size", 13)
 	_tip_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.72, 0.85))
 	_content.add_child(_tip_label)
+
+	# AudioStreamPlayer để phát giọng đọc chuyển map
+	_voice_player = AudioStreamPlayer.new()
+	_voice_player.name = "TransitionVoicePlayer"
+	_voice_player.bus = "Master"
+	add_child(_voice_player)
 
 func _set_overlay_visible(v: bool) -> void:
 	if _overlay != null:
@@ -120,16 +141,44 @@ func change_scene(scene_path: String, map_name: String = "", custom_tip: String 
 
 	# Cập nhật thông tin giao diện
 	if _title_label != null:
-		if map_name.strip_edges() != "":
-			_title_label.text = "Tiến Vào %s" % map_name
-		else:
+		var s := map_name.strip_edges()
+		if s.is_empty():
 			_title_label.text = "Đang Tải Dữ Liệu"
+		elif s.begins_with("Về Thành") or s.begins_with("Tiến Vào"):
+			_title_label.text = s
+		else:
+			_title_label.text = "Tiến Vào %s" % s
+
+	# Lấy câu thoại và âm thanh giọng đọc tương ứng cho map
+	var voice_wait := 0.0
+	if not map_name.strip_edges().is_empty():
+		var voice_info := MapVoiceManager.get_voice_info(map_name)
+		var dialogue_text: String = voice_info.get("text", "")
+		if _dialogue_label != null:
+			_dialogue_label.text = dialogue_text
+			_dialogue_label.visible = not dialogue_text.is_empty()
+
+		# Phát âm thanh giọng đọc chuyển map
+		var audio_path: String = voice_info.get("file", "")
+		if not audio_path.is_empty():
+			var stream := MapVoiceManager.load_stream(audio_path)
+			if stream != null and is_instance_valid(_voice_player):
+				_voice_player.stream = stream
+				_voice_player.play()
+				# Giữ màn hình tải tối thiểu 2.2 giây để người chơi nghe trọn vẹn câu thoại
+				voice_wait = 2.2
+	else:
+		if _dialogue_label != null:
+			_dialogue_label.text = ""
+			_dialogue_label.visible = false
 
 	if _tip_label != null:
 		if custom_tip.strip_edges() != "":
 			_tip_label.text = custom_tip
 		else:
 			_tip_label.text = TIPS.pick_random()
+
+	var actual_min_wait: float = maxf(min_wait, voice_wait)
 
 	# 1. Bật overlay và chặn chuột click
 	_overlay.visible = true
@@ -151,10 +200,10 @@ func change_scene(scene_path: String, map_name: String = "", custom_tip: String 
 	for i in 4:
 		await get_tree().process_frame
 
-	# 5. Đảm bảo thời gian hiển thị tối thiểu để người chơi không bị nhấp nháy màn hình
+	# 5. Đảm bảo thời gian hiển thị tối thiểu để người chơi nghe câu thoại & không bị giật lag
 	var elapsed := (Time.get_ticks_msec() - start_time) / 1000.0
-	if elapsed < min_wait:
-		await get_tree().create_timer(min_wait - elapsed).timeout
+	if elapsed < actual_min_wait:
+		await get_tree().create_timer(actual_min_wait - elapsed).timeout
 
 	# 6. Fade from black (Mở sáng thế giới game)
 	var tween_out := create_tween()

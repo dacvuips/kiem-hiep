@@ -34,6 +34,7 @@ var is_god_mode: bool = false:
 var is_noclip: bool = false:
 	set(v):
 		is_noclip = v
+		_apply_noclip()
 		gm_state_changed.emit()
 
 var speed_mult: float = 1.0:
@@ -67,6 +68,7 @@ const LOCATIONS := {
 	"Chiến Trường Tống Kim": Vector2(2500, 2500),
 	"Đấu Trường PK": Vector2(3000, 3000),
 	"Phong Lăng Độ": Vector2(2000, -2000),
+	"Cổ Dương Động": Vector2(50832, 53288),
 }
 
 ## Bảng mã trang bị Hoàng Kim danh tiếng
@@ -113,6 +115,10 @@ func _ready() -> void:
 func is_gm() -> bool:
 	return AccountApi.is_gm()
 
+## Kiểm tra tài khoản có quyền hạn GM gốc không (kể cả khi đang tạm tắt chế độ GM)
+func has_gm_permission() -> bool:
+	return AccountApi.has_gm_permission()
+
 ## Ghi nhận thao tác GM vào Audit Log
 func log_action(action: String, target: String, detail: String = "") -> void:
 	var entry := {
@@ -139,9 +145,29 @@ func _apply_invisibility() -> void:
 	if is_invisible:
 		player.modulate = Color(1.0, 1.0, 1.0, 0.4)
 		_ensure_gm_badge(player, true)
+		# Xoá mục tiêu người chơi khỏi toàn bộ quái vật và kẻ địch ngay lập tức
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree:
+			for enemy in tree.get_nodes_in_group("enemies"):
+				if is_instance_valid(enemy):
+					if "target" in enemy and enemy.target == player:
+						enemy.target = null
+					if "_provoked" in enemy:
+						enemy._provoked = false
+			for other in tree.get_nodes_in_group("other_players"):
+				if is_instance_valid(other) and "target" in other and other.target == player:
+					other.target = null
 	else:
 		player.modulate = Color(1.0, 1.0, 1.0, 1.0)
 		_ensure_gm_badge(player, false)
+
+func _apply_noclip() -> void:
+	var player := get_player_node()
+	if player == null or not is_instance_valid(player):
+		return
+	var col := player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.disabled = is_noclip
 
 func _ensure_gm_badge(player: Node2D, show_badge: bool) -> void:
 	var badge := player.get_node_or_null("GmOverheadBadge") as Label
@@ -201,7 +227,7 @@ func set_player_aura(target_data: Dictionary, state_id: int) -> bool:
 	var aura_info := AuraDatabase.get_by_state(state_id)
 	var aura_name: String = str(aura_info.get("name", "State #%d" % state_id)) if state_id > 0 else "Không Có"
 	var target_name: String = str(target_data.get("name", "Người chơi"))
-	var is_self: bool = bool(target_data.get("is_self", false))
+	var is_self: bool = target_data.get("is_self", false) == true
 
 	# 1. Nếu là bản thân hoặc profile cục bộ
 	if is_self or (target_data.get("profile") != null and target_data.get("profile") == GameManager.local_profile):
@@ -247,8 +273,8 @@ func set_player_aura(target_data: Dictionary, state_id: int) -> bool:
 		SaveManager.save_profile(prof)
 		profile_modified.emit(prof)
 
-	if NetClient.is_in_world() and target_name != "":
-		NetClient.send_chat(ChatServer.NEAR, "", "/aura %d %s" % [state_id, target_name])
+	if NetClient.is_in_world() and str(target_data.get("id", "")).is_valid_int():
+		NetClient.send_chat(ChatServer.NEAR, "", "/aura %d %s" % [state_id, str(target_data["id"])])
 
 	log_action("SET_AURA", target_name, "Gắn hào quang %s (ID %d) cho %s" % [aura_name, state_id, target_name])
 	gm_state_changed.emit()
@@ -258,17 +284,58 @@ func clear_player_aura(target_data: Dictionary) -> bool:
 	return set_player_aura(target_data, 0)
 
 ## Đổi trạng thái PK / Phe (theo hàm GMChangeCamp của source 15 phái: 0: Luyện công, 1: Chính, 2: Tà, 3: Trung lập, 4: Sát thủ, 6: GM)
-func change_player_camp(target_profile: PlayerProfile, camp_type: int) -> void:
+func change_player_camp(target: Variant, camp_type: int) -> void:
+	var target_profile: PlayerProfile = null
+	var target_eid: String = ""
+	var target_name: String = ""
+	var remote: Node = null
+
+	if target is Dictionary:
+		target_name = str(target.get("name", "Người chơi"))
+		target_eid = str(target.get("id", ""))
+		remote = target.get("remote_node")
+		if target.get("is_self", false) or target.get("profile") == GameManager.local_profile:
+			target_profile = GameManager.local_profile
+		elif target.get("profile") is PlayerProfile:
+			target_profile = target.get("profile")
+	elif target is PlayerProfile:
+		target_profile = target
+	elif target == null:
+		target_profile = GameManager.local_profile
+
+	if target_profile == null and target is Dictionary and not target.get("is_self", false):
+		# Đổi phe cho người chơi khác (RemotePlayer / Bot)
+		if NetClient.is_in_world() and target_eid.is_valid_int():
+			NetClient.send_chat(ChatServer.NEAR, "", "/camp %d %s" % [camp_type, target_eid])
+		if remote != null and is_instance_valid(remote) and remote.has_method("set_camp"):
+			remote.set_camp(camp_type)
+		if target.has("camp"):
+			target["camp"] = camp_type
+		var camp_name := Camp.get_camp_name(camp_type)
+		log_action("CHANGE_CAMP", target_name, "Đổi sang phe/màu PK: %s (Camp %d)" % [camp_name, camp_type])
+		gm_state_changed.emit()
+		return
+
 	if target_profile == null:
 		target_profile = GameManager.local_profile
 	if target_profile == null:
 		return
+
 	target_profile.camp = camp_type
 	SaveManager.save_profile(target_profile)
 	SaveManager.flush_online.call_deferred()
+
 	var player := get_player_node()
-	if player and player.has_method("refresh_appearance"):
-		player.refresh_appearance()
+	if player:
+		if player.has_method("set_camp"):
+			player.set_camp(camp_type)
+		if player.has_method("refresh_appearance"):
+			player.refresh_appearance()
+
+	if NetClient.is_in_world():
+		NetClient.send_chat(ChatServer.NEAR, "", "/camp %d" % camp_type)
+		NetClient.send_profile(target_profile.to_dict())
+
 	var camp_name := Camp.get_camp_name(camp_type)
 	log_action("CHANGE_CAMP", target_profile.display_name, "Đổi sang phe/màu PK: %s (Camp %d)" % [camp_name, camp_type])
 	profile_modified.emit(target_profile)
@@ -474,16 +541,102 @@ func set_player_level(target_profile: PlayerProfile, target_level: int) -> void:
 	if target_profile == null:
 		return
 	var old_lv := target_profile.level
-	target_profile.level = clampi(target_level, 1, 200)
+	target_profile.gm_set_level(target_level)
 	SaveManager.save_profile(target_profile)
 	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
 	var player := get_player_node()
 	if player and player.get("refresh_appearance"):
 		player.refresh_appearance()
 	if player and player.has_method("refresh_combat_stats"):
 		player.refresh_combat_stats()
-	log_action("SET_LEVEL", target_profile.display_name, "Cấp cũ: %d -> Cấp mới: %d" % [old_lv, target_level])
+	log_action("SET_LEVEL", target_profile.display_name, "Cấp cũ: %d -> Cấp mới: %d" % [old_lv, target_profile.level])
 	profile_modified.emit(target_profile)
+
+## Cộng/trừ số cấp nhân vật (VD +1, -10) — đi qua set_player_level nên lên cấp được cộng điểm như thật
+func add_player_level(target_profile: PlayerProfile, delta: int) -> void:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null or delta == 0:
+		return
+	set_player_level(target_profile, target_profile.level + delta)
+
+## Đổi cấp cho người chơi đang chọn ở tab Người Chơi: delta (absolute=false) hoặc đặt thẳng cấp (absolute=true).
+## Bản thân/có profile thì sửa ngay; người chơi khác đang online thì gửi lệnh "/gmlevel" để server sửa (server
+## mới là nơi giữ hồ sơ thật). Trả về câu báo cho GM.
+func change_level_of(player_info: Dictionary, value: int, absolute: bool) -> String:
+	var name_target: String = str(player_info.get("name", "người chơi"))
+	var prof: PlayerProfile = player_info.get("profile")
+	if prof == null and player_info.get("is_self", false):
+		prof = GameManager.local_profile
+	if prof != null:
+		if absolute:
+			set_player_level(prof, value)
+		else:
+			add_player_level(prof, value)
+		player_info["level"] = prof.level
+		return "Cấp của %s hiện tại: Cấp %d" % [name_target, prof.level]
+	if NetClient.is_in_world() and player_info.get("remote_node") != null:
+		var arg := ("=%d" % value) if absolute else ("%+d" % value)
+		NetClient.send_chat(ChatServer.NEAR, "", "/gmlevel %s %s" % [arg, str(player_info.get("id", name_target))])
+		log_action("SET_LEVEL", name_target, "Gửi lệnh đổi cấp %s lên server" % arg)
+		return "Đã gửi lệnh đổi cấp (%s) cho %s" % [arg, name_target]
+	return "Không đổi cấp được cho %s (người chơi giả lập offline không có hồ sơ)" % name_target
+
+## Đặt cấp tài lãnh đạo trực tiếp (0 - 100)
+func set_player_lead_level(target_profile: PlayerProfile, target_lead_level: int) -> void:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null:
+		return
+	var old_lead := target_profile.lead_level
+	var max_lead := SocialRules.max_lead_level()
+	if max_lead <= 0:
+		max_lead = 100
+	target_profile.lead_level = clampi(target_lead_level, 0, max_lead)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("SET_LEAD_LEVEL", target_profile.display_name, "Cấp lãnh đạo cũ: %d -> Cấp mới: %d" % [old_lead, target_profile.lead_level])
+	profile_modified.emit(target_profile)
+
+## Tăng/giảm số cấp tài lãnh đạo
+func add_player_lead_level(target_profile: PlayerProfile, delta: int) -> void:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null or delta == 0:
+		return
+	var old_lead := target_profile.lead_level
+	var max_lead := SocialRules.max_lead_level()
+	if max_lead <= 0:
+		max_lead = 100
+	target_profile.lead_level = clampi(target_profile.lead_level + delta, 0, max_lead)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("ADD_LEAD_LEVEL", target_profile.display_name, "Cộng %+d cấp lãnh đạo (Trước: %d, Sau: %d)" % [delta, old_lead, target_profile.lead_level])
+	profile_modified.emit(target_profile)
+
+## Tăng điểm kinh nghiệm tài lãnh đạo (tự động thăng cấp theo bảng KPlayer::AddLeadExp)
+func add_player_lead_exp(target_profile: PlayerProfile, exp_amount: int) -> int:
+	if target_profile == null:
+		target_profile = GameManager.local_profile
+	if target_profile == null or exp_amount <= 0:
+		return 0
+	var old_lead := target_profile.lead_level
+	var gained := ExpRules.add_lead_exp(target_profile, exp_amount)
+	SaveManager.save_profile(target_profile)
+	SaveManager.flush_online.call_deferred()
+	if NetClient.is_in_world() and target_profile == GameManager.local_profile:
+		NetClient.send_profile(target_profile.to_dict())
+	log_action("ADD_LEAD_EXP", target_profile.display_name, "Cộng %+d kinh nghiệm lãnh đạo (Lên %d cấp, Cấp hiện tại: %d, Exp: %d)" % [
+		exp_amount, gained, target_profile.lead_level, target_profile.lead_exp
+	])
+	profile_modified.emit(target_profile)
+	return gained
 
 # ==============================================================================
 # 2. QUẢN TRỊ NGƯỜI CHƠI & TÌM KIẾM
@@ -507,7 +660,8 @@ func get_player_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
 	var local_p := GameManager.local_profile
 	if local_p:
-		var acc_id: String = str(AccountApi.account.get("id", "LOCAL_01"))
+		## ID nhân vật (9 số) — cùng ID hiện ở tên/Cài đặt; chưa có thì mới lấy ID tài khoản
+		var acc_id: String = str(local_p.id) if local_p.id > 0 else str(AccountApi.account.get("id", "LOCAL_01"))
 		list.append({
 			"id": acc_id if acc_id != "" else "LOCAL_01",
 			"name": local_p.display_name,
@@ -555,7 +709,7 @@ func get_player_list() -> Array[Dictionary]:
 			})
 	return list
 
-## Tìm kiếm người chơi theo Tên hoặc ID
+## Tìm người chơi CHỈ theo ID (khớp đúng ID) — không tìm theo tên để tránh nhầm người trùng/giống tên.
 func search_players(keyword: String) -> Array[Dictionary]:
 	var q := keyword.strip_edges().to_lower()
 	var all_players := get_player_list()
@@ -563,7 +717,7 @@ func search_players(keyword: String) -> Array[Dictionary]:
 		return all_players
 	var result: Array[Dictionary] = []
 	for p in all_players:
-		if q in str(p["name"]).to_lower() or q in str(p["id"]).to_lower():
+		if str(p["id"]).to_lower() == q:
 			result.append(p)
 	return result
 
@@ -729,19 +883,21 @@ func give_item(target_profile: PlayerProfile, item: ItemInstance) -> bool:
 ## Tự suy nhóm đồ Hoàng Kim Môn Phái theo mã môn phái (chuẩn 15 phái VLTK)
 func _get_default_gold_group_for_sect(sect_id: String) -> int:
 	match sect_id:
-		"shaolin": return 1    # Thiếu Lâm Mộng Long
-		"tianwang": return 4   # Thiên Vương Hám Thiên
-		"tangmen": return 12   # Đường Môn U Lung
-		"wudu": return 25      # Ngũ Độc U Minh
-		"emei": return 7       # Nga My Vô Gian
-		"cuiyan": return 10    # Thúy Yên Tê Hoàng
-		"gaibang": return 18   # Cái Bang Địch Khái
-		"tianren": return 22   # Thiên Nhẫn Ma Viêm
-		"wudang": return 29    # Võ Đang Lăng Nhược
-		"kunlun": return 32    # Côn Lôn Sương Tinh
-		"huashan": return 35   # Hoa Sơn
-		"xiaoyao": return 38   # Tiêu Dao
-		"mingjiao": return 40  # Minh Giáo
+		"shaolin", "thieu_lam": return 1    # Thiếu Lâm Mộng Long
+		"tianwang", "thien_vuong_bang", "thien_vuong": return 4   # Thiên Vương Hám Thiên
+		"tangmen", "duong_mon": return 12   # Đường Môn U Lung
+		"wudu", "ngu_doc_giao", "ngu_doc": return 25      # Ngũ Độc U Minh
+		"emei", "nga_mi": return 7       # Nga My Vô Gian
+		"cuiyan", "thuy_yen_mon", "thuy_yen": return 10    # Thúy Yên Tê Hoàng
+		"gaibang", "cai_bang": return 18   # Cái Bang Địch Khái
+		"tianren", "thien_nhan_giao", "thien_nhan": return 22   # Thiên Nhẫn Ma Viêm
+		"wudang", "vo_dang": return 29    # Võ Đang Lăng Nhược
+		"kunlun", "con_lon": return 32    # Côn Lôn Sương Tinh
+		"huashan", "hoa_son": return 35   # Hoa Sơn
+		"xiaoyao", "tieu_dao": return 686   # Tiêu Dao cầm cực phẩm Huyền Âm (bộ 1)
+		"mingjiao", "minh_giao": return 40  # Minh Giáo
+		"duong_gia": return 12 # Dương Gia / Đường Môn
+		"vu_hon": return 682 # Vũ Hồn thuẫn cực phẩm Trấn Nhạc (bộ 1)
 		_: return 1
 
 ## Cấp trọn bộ Trang Bị Hoàng Kim Môn Phái hoàn mỹ (tương ứng LayMenuHKMP của 15 phái)
@@ -1040,7 +1196,7 @@ func find_bosses() -> Array[Dictionary]:
 
 	for node in tree.get_nodes_in_group("monsters"):
 		if node is VltkMonster:
-			var is_b: bool = node.gold_boss or node.small_gold_boss or bool(node.data.get("is_boss", false))
+			var is_b: bool = node.gold_boss or node.small_gold_boss or (node.data.get("is_boss", false) == true)
 			if is_b:
 				var b_pos: Vector2 = node.global_position
 				result.append({
@@ -1080,6 +1236,9 @@ func find_bosses() -> Array[Dictionary]:
 ## Tiếp quản và điều khiển một nhân vật khác theo ID / Profile
 func possess_player(target_profile: PlayerProfile) -> bool:
 	if target_profile == null or is_possessing:
+		return false
+	## Không cho chiếm quyền chính nhân vật đang chơi
+	if target_profile == GameManager.local_profile:
 		return false
 	original_profile = GameManager.local_profile
 	possessed_profile = target_profile

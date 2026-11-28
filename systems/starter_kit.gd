@@ -14,6 +14,8 @@ const ITEMS := 1                   ## bit của PlayerProfile.starter_kit
 const WEAPON := 2
 const START_LEVEL := 10            ## = PlayerProfile.NEWBIE_LEVEL: vào game là đủ cấp chọn phái
 const GOLD_ROWS := [176, 177, 178, 179, 180, 181, 182, 183, 184, 513]   ## AddGoldItem 177..185 (Kim Phong) + 514 (nhẫn tân thủ)
+## Đồ Hoàng Kim tân thủ: VẬT PHẨM KHOÁ (không giao dịch / bán / vứt) + hạn sử dụng GOLD_EXPIRE_DAYS ngày kể từ lúc phát (yêu cầu người dùng).
+const GOLD_EXPIRE_DAYS := 30
 const HORSE := [ItemDatabase.Detail.HORSE, 2, 9]                       ## Túc Sương
 ## [mã thuốc, số bình]: Kim Sáng Dược (trung) hồi sinh lực, Ngưng Thần đan (trung) hồi nội lực — thuốc không chồng nên mỗi bình 1 ô.
 const POTIONS := [["1_0_0_2", 10], ["1_1_0_2", 10]]
@@ -28,21 +30,50 @@ static func apply(p: PlayerProfile) -> int:
 		p.level_up()
 	var added := 0
 	for row in GOLD_ROWS:
-		added += _add(p, ItemGenerator.generate_gold(ItemDatabase.gold_index_of_row(row)))
+		var gold := ItemGenerator.generate_gold(ItemDatabase.gold_index_of_row(row))
+		if gold != null:
+			gold.set_bound(true, true, true)
+			gold.set_expire_days(GOLD_EXPIRE_DAYS)
+		added += _add(p, gold)
 	var horse := ItemDatabase.find_base(HORSE[0], HORSE[1], HORSE[2])
 	if horse >= 0:
 		added += _add(p, ItemGenerator.generate(HORSE[0], HORSE[1], HORSE[2], p.get_element(), []))
 	for pot in POTIONS:
 		for i in int(pot[1]):
 			added += _add(p, ItemGenerator.generate_misc(str(pot[0])))
+	## Nhân vật hệ Hỏa: cấp cả 2 vũ khí Côn và Thương ngay khi vào game
+	if p.get_element() == ElementTypes.ElementType.HOA:
+		p.starter_kit |= WEAPON
+		var stick := _generate_weapon(ItemDatabase.Detail.MELEE, 2, p.get_element())
+		var spear := _generate_weapon(ItemDatabase.Detail.MELEE, 3, p.get_element())
+		if stick != null:
+			added += _add(p, stick)
+		if spear != null:
+			added += _add(p, spear)
 	return added
 
 ## Vũ khí tân thủ khi vừa gia nhập phái (1 lần): đúng loại vũ khí đòn chính của phái đòi hỏi (hạn chế vũ khí EqtLimit), cấp 1, hệ
 ## của nhân vật. Phái đánh tay không (quyền thủ) thì không có vũ khí. Trả món đã thêm (null = không phát).
+## Riêng phái Cái Bang & Thiên Nhẫn (hệ Hỏa): cấp CẢ 2 VŨ KHÍ Côn và Thương.
 static func give_sect_weapon(p: PlayerProfile) -> ItemInstance:
 	if p == null or p.starter_kit & WEAPON or not p.has_sect():
 		return null
 	p.starter_kit |= WEAPON
+
+	## Phái Cái Bang & Thiên Nhẫn (hệ Hỏa): cấp CẢ 2 vũ khí tân thủ (Côn và Thương)
+	if p.sect_id in ["cai_bang", "thien_nhan_giao"] or p.get_element() == ElementTypes.ElementType.HOA:
+		var stick := _generate_weapon(ItemDatabase.Detail.MELEE, 2, p.get_element())
+		var spear := _generate_weapon(ItemDatabase.Detail.MELEE, 3, p.get_element())
+		var primary: ItemInstance = stick if p.sect_id == "cai_bang" else spear
+		var secondary: ItemInstance = spear if p.sect_id == "cai_bang" else stick
+		var res: ItemInstance = null
+		if primary != null and _add(p, primary) > 0:
+			res = primary
+		if secondary != null and _add(p, secondary) > 0:
+			if res == null:
+				res = secondary
+		return res
+
 	var limit := weapon_limit_of(SectRegistry.get_by_id(p.sect_id))
 	var detail := -1
 	var particular := 0
@@ -56,11 +87,14 @@ static func give_sect_weapon(p: PlayerProfile) -> ItemInstance:
 		detail = ItemDatabase.Detail.MELEE   ## không hạn chế: kiếm
 	if detail < 0:
 		return null
+	var item := _generate_weapon(detail, particular, p.get_element())
+	return item if _add(p, item) > 0 else null
+
+static func _generate_weapon(detail: int, particular: int, element: int) -> ItemInstance:
 	var levels := ItemDatabase.get_levels(detail, particular)
 	if levels.is_empty():
 		return null
-	var item := ItemGenerator.generate(detail, particular, int(levels[0]), p.get_element(), [])
-	return item if _add(p, item) > 0 else null
+	return ItemGenerator.generate(detail, particular, int(levels[0]), element, [])
 
 ## Phái mới bản 15 phái: skill không ghi EqtLimit -> vũ khí riêng của phái (ItemDatabase.WEAPON_PARTICULAR_NAMES: ám khí 3 = Cầm
 ## của Tiêu Dao, 4 = Cung của Dương Gia).

@@ -1241,7 +1241,7 @@ func _open_luong_modal(idx: int) -> void:
 				water_btn.text = "💧 Tưới Nước (%d/3 lần) [+20%%]" % p.watered_count
 				fert_btn.visible = true
 				fert_btn.disabled = p.is_fertilized
-				fert_btn.text = "🧪 Đã Bón Phân Vi Sinh" if p.is_fertilized else "🧪 Bón Phân Vi Sinh [+30%% Tốc độ]"
+				fert_btn.text = "🧪 Đã Bón Phân Vi Sinh" if p.is_fertilized else "🧪 Bón Phân Vi Sinh [+30% Tốc độ]"
 				harvest_btn.visible = true
 				harvest_btn.disabled = true
 				harvest_btn.text = "⏳ Chưa Chín (%d%%)" % prog_pct

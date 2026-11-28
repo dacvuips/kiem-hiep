@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b2374e6f81a1a"]
+
+[ext_resource type="Script" path="res://tests/test_offline_online_separation.gd" id="1_test"]
+
+[node name="TestOfflineOnlineSeparation" type="Node"]
+script = ExtResource("1_test")

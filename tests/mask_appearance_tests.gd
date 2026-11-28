@@ -286,6 +286,16 @@ func test_proto_look_sync() -> void:
 	check("NetProto đồng bộ horse", int(read_look.get("horse", -1)) == 78)
 	check("NetProto đồng bộ mask_particular", int(read_look.get("mask_particular", -1)) == 3)
 	check("NetProto đồng bộ aura_state", int(read_look.get("aura_state", -1)) == 42)
+	## Hào quang bản 15 phái (id + 100000, VD Vô Hình Độc 100006) vượt 16-bit — phải đi qua mạng nguyên vẹn.
+	var b2 := StreamPeerBuffer.new()
+	NetProto.put_look(b2, {"aura_state": 100006})
+	b2.seek(0)
+	check("NetProto đồng bộ aura_state 15 phái (100006)", int(NetProto.get_look(b2).get("aura_state", -1)) == 100006)
+	## Hình buff/bùa đang dính: lọc trùng/số rác, giữ thứ tự tăng dần.
+	var b3 := StreamPeerBuffer.new()
+	NetProto.put_look(b3, {"aura_state": 40, "states": [100007, 13, 13, -5, 63]})
+	b3.seek(0)
+	check("NetProto đồng bộ states buff/bùa", NetProto.get_look(b3).get("states", []) == [13, 63, 100007])
 
 func test_remote_player_aura_and_mask() -> void:
 	var rp := RemotePlayer.new()
@@ -378,6 +388,15 @@ func test_remote_player_aura_and_mask() -> void:
 	look_aura["aura_state"] = 0
 	rp.set_look(look_aura)
 	check("RemotePlayer tắt aura_state", rp._aura_sprite_state == 0 and rp._aura_sprite == null)
+
+	## Buff/bùa đang dính của người khác: 13 (Thiên Thanh Địa Trọc, quanh người) + 63 (Thúc Phược Chú, trên đầu).
+	look_aura["states"] = [13, 63]
+	rp.set_look(look_aura)
+	check("RemotePlayer gắn hình buff/bùa", rp._state_sprites.has(13) and rp._state_sprites.has(63))
+	look_aura = look_aura.duplicate()
+	look_aura["states"] = [63]
+	rp.set_look(look_aura)
+	check("RemotePlayer bỏ hình buff hết hạn", not rp._state_sprites.has(13) and rp._state_sprites.has(63))
 
 	rp.queue_free()
 

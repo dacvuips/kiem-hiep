@@ -32,9 +32,14 @@ theme_type_variation = &"GameWindow"
 
 [node name="Margin" type="MarginContainer" parent="CenterContainer/Panel" unique_id=47974250]
 layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin" unique_id=1536275989]
 layout_mode = 2
+theme_override_constants/separation = 24
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox" unique_id=897696054]
 layout_mode = 2
@@ -43,4 +48,4 @@ text = "LÊN CẤP! CHỌN NÂNG CẤP"
 
 [node name="ChoicesContainer" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1852960786]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 24

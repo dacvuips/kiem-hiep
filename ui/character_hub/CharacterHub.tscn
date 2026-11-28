@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://ui/character_create/stage_fit.gd" id="sf"]
 [ext_resource type="Script" path="res://ui/character_hub/character_hub.gd" id="hub_script"]
 [ext_resource type="Script" path="res://systems/avatar/character_avatar.gd" id="avatar_script"]
+[ext_resource type="Script" path="res://ui/character_hub/hub_equip_slot.gd" id="hub_equip_slot"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/xu_vang_va_nut_cong.png" id="cur_gold"]
 [ext_resource type="Texture2D" uid="uid://hy2t28lduct7" path="res://assets/ui/bo_icon_nhan_vat/tai_nguyen/dong_tien_vang_va_nut_cong.png" id="cur_coin_gold"]
@@ -57,6 +58,8 @@
 [ext_resource type="Texture2D" path="res://ui/character_hub/icon_social.png" id="ico_social"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_cong_thanh_chien.png" id="btn_ctc_tex"]
 [ext_resource type="Texture2D" path="res://ui/character_hub/btn_son_trang.png" id="btn_st_tex"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_da_tau.png" id="btn_da_tau_tex"]
+[ext_resource type="Texture2D" path="res://ui/character_hub/btn_lon_xon.png" id="btn_lon_xon_tex"]
 
 
 [sub_resource type="StyleBoxFlat" id="wuxia_panel_box"]
@@ -587,8 +590,8 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
 offset_top = 2.0
-offset_right = 158.0
-offset_bottom = 62.0
+offset_right = 148.0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_pk_tex")
 ignore_texture_size = true
@@ -618,10 +621,10 @@ vertical_alignment = 1
 [node name="ChallengeButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 168.0
+offset_left = 154.0
 offset_top = 2.0
-offset_right = 308.0
-offset_bottom = 62.0
+offset_right = 284.0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_va_tex")
 ignore_texture_size = true
@@ -651,125 +654,69 @@ vertical_alignment = 1
 [node name="SiegeButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 318.0
-offset_top = -3.0
-offset_right = 458.0
-offset_bottom = 57.0
+offset_left = 290.0
+offset_top = 2.0
+offset_right = 420.0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("btn_ctc_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="ManorButton" type="TextureButton" parent="Stage/TopBar"]
+[node name="DaTauButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 468.0
-offset_top = -3.0
-offset_right = 608.0
-offset_bottom = 57.0
+offset_left = 426.0
+offset_top = 2.0
+offset_right = 556.0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
-texture_normal = ExtResource("btn_st_tex")
+texture_normal = ExtResource("btn_da_tau_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/TopBar"]
+[node name="PubgButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 696.0
-offset_top = 14.0
-offset_right = 836.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_coin_gold")
-expand_mode = 1
+offset_left = 562.0
+offset_top = 2.0
+offset_right = 692.0
+offset_bottom = 60.0
+mouse_default_cursor_shape = 2
+ignore_texture_size = true
 stretch_mode = 5
 
-[node name="GoldValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyGold"]
+[node name="PubgLabel" type="Label" parent="Stage/TopBar/PubgButton"]
 unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "998.800"
-label_settings = SubResource("cur_text")
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "PUBG"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="GoldPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyGold"]
+[node name="LonXonButton" type="TextureButton" parent="Stage/TopBar"]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
+offset_left = 698.0
+offset_top = 2.0
+offset_right = 828.0
+offset_bottom = 60.0
 mouse_default_cursor_shape = 2
-flat = true
-
-[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/TopBar"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 844.0
-offset_top = 14.0
-offset_right = 984.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_gold")
-expand_mode = 1
+tooltip_text = "Lộn Xộn — hỗn chiến tự do, chết hồi sinh, rớt hết đồ"
+texture_normal = ExtResource("btn_lon_xon_tex")
+ignore_texture_size = true
 stretch_mode = 5
-
-[node name="XuValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyXu"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "0"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="XuPlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyXu"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/TopBar"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 992.0
-offset_top = 14.0
-offset_right = 1132.0
-offset_bottom = 54.0
-mouse_filter = 2
-texture = ExtResource("cur_jade")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="JadeValueLabel" type="Label" parent="Stage/TopBar/FrameCurrencyJade"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 36.0
-offset_right = 104.0
-offset_bottom = 40.0
-text = "0"
-label_settings = SubResource("cur_text")
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="JadePlusButton" type="Button" parent="Stage/TopBar/FrameCurrencyJade"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 104.0
-offset_right = 140.0
-offset_bottom = 40.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
 
 [node name="KyTranCacTopButton" type="Button" parent="Stage/TopBar"]
 unique_name_in_owner = true
@@ -844,7 +791,7 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 140.0
 offset_top = 32.0
-offset_right = 380.0
+offset_right = 500.0
 offset_bottom = 56.0
 text = "HoaHieu"
 label_settings = SubResource("val_name")
@@ -1619,7 +1566,7 @@ layout_mode = 0
 offset_left = 12.0
 offset_top = 36.0
 offset_right = 515.0
-offset_bottom = 574.0
+offset_bottom = 528.0
 theme_override_constants/separation = 10
 
 [node name="GridFrame" type="PanelContainer" parent="Stage/LeftPanel/InventoryView/InvBox/Body"]
@@ -1742,6 +1689,18 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Sắp Xếp"
 
+[node name="SellButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("inv_btn_wuxia")
+theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
+text = "Bán"
+
 [node name="ShopButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
@@ -1754,7 +1713,7 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 text = "Hiệu Thuốc"
 
-[node name="CraftButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
+[node name="SecurityButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/Body/Side/InvActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -1764,7 +1723,106 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
-text = "Chế Tạo"
+text = "Khóa"
+
+[node name="FrameCurrencyGold" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 12.0
+offset_top = 536.0
+offset_right = 152.0
+offset_bottom = 576.0
+mouse_filter = 2
+texture = ExtResource("cur_coin_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "998.800"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyGold"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyXu" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 160.0
+offset_top = 536.0
+offset_right = 300.0
+offset_bottom = 576.0
+mouse_filter = 2
+texture = ExtResource("cur_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="XuValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="XuPlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyXu"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="FrameCurrencyJade" type="TextureRect" parent="Stage/LeftPanel/InventoryView/InvBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 308.0
+offset_top = 536.0
+offset_right = 448.0
+offset_bottom = 576.0
+mouse_filter = 2
+texture = ExtResource("cur_jade")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="JadeValueLabel" type="Label" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_right = 104.0
+offset_bottom = 40.0
+text = "0"
+label_settings = SubResource("cur_text")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="JadePlusButton" type="Button" parent="Stage/LeftPanel/InventoryView/InvBox/FrameCurrencyJade"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 104.0
+offset_right = 140.0
+offset_bottom = 40.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
 
 [node name="CenterPanel" type="Control" parent="Stage"]
 unique_name_in_owner = true
@@ -1829,6 +1887,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft0"]
 layout_mode = 1
@@ -1858,6 +1917,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft1"]
 layout_mode = 1
@@ -1887,6 +1947,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft2"]
 layout_mode = 1
@@ -1916,6 +1977,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft3"]
 layout_mode = 1
@@ -1945,6 +2007,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft4"]
 layout_mode = 1
@@ -1974,6 +2037,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotLeft5"]
 layout_mode = 1
@@ -2003,6 +2067,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight0"]
 layout_mode = 1
@@ -2032,6 +2097,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight1"]
 layout_mode = 1
@@ -2061,6 +2127,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight2"]
 layout_mode = 1
@@ -2090,6 +2157,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight3"]
 layout_mode = 1
@@ -2119,6 +2187,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight4"]
 layout_mode = 1
@@ -2148,6 +2217,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotRight5"]
 layout_mode = 1
@@ -2177,6 +2247,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotHead"]
 layout_mode = 1
@@ -2206,6 +2277,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotBody"]
 layout_mode = 1
@@ -2235,6 +2307,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotBelt"]
 layout_mode = 1
@@ -2264,6 +2337,7 @@ theme_override_styles/normal = SubResource("slot_interactive_empty")
 theme_override_styles/hover = SubResource("slot_interactive_hover")
 theme_override_styles/pressed = SubResource("slot_interactive_pressed")
 flat = true
+script = ExtResource("hub_equip_slot")
 
 [node name="Icon" type="TextureRect" parent="Stage/CenterPanel/EquipBox/EquipBackground/SlotHorse"]
 layout_mode = 1
@@ -2591,6 +2665,19 @@ theme_override_styles/normal = SubResource("inv_btn_wuxia")
 theme_override_styles/hover = SubResource("inv_btn_wuxia_hover")
 theme_override_styles/pressed = SubResource("inv_btn_wuxia_hover")
 text = "⚔️ Giới Thiệu (Test)"
+
+[node name="ManorButton" type="TextureButton" parent="Stage/BottomBar"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1108.0
+offset_top = -11.0
+offset_right = 1262.0
+offset_bottom = 55.0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("btn_st_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
 
 [node name="ToastLabel" type="Label" parent="Stage"]
 unique_name_in_owner = true

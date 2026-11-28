@@ -15,6 +15,7 @@ signal equipment_changed()
 const GEM_SLOT_UNLOCK_LEVELS: Array[int] = [1, 10, 20, 30, 40, 50]
 const MAX_LEVEL := 200
 
+var id: int = 0
 var display_name: String = ""
 var gender: Gender = Gender.MALE
 var level: int = 1
@@ -30,8 +31,10 @@ var prestige: int = 0
 var songjin_points: int = 0
 ## Điểm xếp hạng Đấu Trường Võ Lâm (PK): thắng +10, thua -2 ở Đại hội võ lâm & Võ lâm Liên đấu.
 var pk_points: int = 0
-## 4 ô thuốc nhanh trên màn chơi (QuickItemBar): mã vật phẩm (misc_items) gán vào từng ô, "" = trống.
-var quick_items: Array = ["", "", "", ""]
+## Ô vật phẩm nhanh: mã vật phẩm (misc_items) gán vào từng ô, "" = trống. Bản thường dùng 4 ô đầu (QuickItemBar); bản web
+## dùng đủ 9 ô như thanh dưới VLTK gốc (WebHudBar, [Item_0..8], phím 1-9). Hồ sơ cũ 4 ô đọc vẫn được (from_dict).
+const QUICK_ITEM_COUNT := 9
+var quick_items: Array = ["", "", "", "", "", "", "", "", ""]
 var world_rank: String = ""
 ## Đã hoàn thành hoặc trải nghiệm hướng dẫn bắt buộc đầu game (Introduce tân thủ)
 var intro_completed: bool = false
@@ -45,6 +48,24 @@ var element: int = -1
 ## Phe hiện tại (Camp.Type) = MÀU TÊN, quyết định ai là đồng đội (cùng màu). -1 = theo phe mặc định của
 ## môn phái (Camp.default_for_sect); đặt giá trị khác khi nhân vật đổi phe (sự kiện, bang chiến...).
 var camp: int = -1
+
+## Tên hiển thị kèm ID theo định dạng: tên(ID), ví dụ "HoaHieu(1001)".
+## Nếu không có ID thì trả về display_name thuần.
+func get_display_name_with_id() -> String:
+	var char_id := id
+	if char_id <= 0:
+		var loop := Engine.get_main_loop()
+		var root: Node = loop.root if (loop and "root" in loop) else null
+		var sm: Node = root.get_node_or_null("SaveManager") if root else null
+		if sm != null and "online_character_id" in sm and int(sm.online_character_id) > 0:
+			char_id = int(sm.online_character_id)
+		elif sm != null and "current_offline_slot" in sm and int(sm.current_offline_slot) >= 0:
+			char_id = int(sm.current_offline_slot) + 1
+	if char_id > 0:
+		if display_name.is_empty():
+			return "(%d)" % char_id
+		return "%s(%d)" % [display_name, char_id]
+	return display_name
 
 ## Hệ ngũ hành của nhân vật (theo phái nếu đã vào phái, không thì theo lúc tạo).
 func get_element() -> ElementTypes.ElementType:
@@ -92,7 +113,7 @@ func choose_element(e: ElementTypes.ElementType) -> void:
 const NEWBIE_LEVEL := 10
 
 func get_current_camp() -> int:
-	if camp > 0:
+	if camp >= 0:
 		return camp
 	if not has_sect():
 		return Camp.Type.BEGIN
@@ -153,6 +174,15 @@ var skill_points: int = 0
 ## skill_id (String) -> cấp đã học (int), 0/không có key = chưa học. Áp dụng cho MỌI skill kể cả
 ## đòn chính (đòn chính dùng được ngay ở cấp 0, cộng điểm để nâng sức mạnh).
 var skill_levels: Dictionary = {}
+## skill_id -> độ thành thạo đang tích của skill luyện 90/120/150 (SkillPractice), về 0 mỗi lần lên cấp.
+var skill_exp: Dictionary = {}
+
+## Tiến độ nâng cấp kỹ năng & điểm kỹ năng trong chế độ Thủ Thành (Zombies vs Plants JX1)
+var thu_thanh_level: int = 10
+var thu_thanh_exp: int = 0
+var thu_thanh_skill_levels: Dictionary = {}
+var thu_thanh_skill_points: int = 10
+var thu_thanh_selected_skills: Array = []
 
 const SKILL_POINTS_PER_LEVEL := 1
 
@@ -169,50 +199,174 @@ const LOOP_SLOT_COUNT := 1
 var loop_skill_ids: Array[String] = []
 ## Trang thanh skill đang chọn (0/1).
 var hotbar_page: int = 0
-## Vị trí các nút skill do người chơi tự sắp xếp: khoá ("main", "s0".."s7", "loop0", nút tiện ích "sit" / "jump" / "horse") -> [dx, dy] = độ dời (pixel HUD) so với vị trí
-## mặc định trong SkillBarUI.tscn. Thiếu khoá = đúng chỗ mặc định. Dùng chung cho cụm nút trong trận và bảng Kỹ Năng Võ Công.
-var skill_layout: Dictionary = {}
-## Ô trên cụm nút skill: bật / tắt + cỡ (bảng Kỹ năng -> Sắp xếp). Khoá như skill_layout -> {"on": bool, "size": tỉ lệ}.
-## Thiếu khoá = mặc định: DEFAULT_HIDDEN_SLOTS tắt, còn lại bật, cỡ 1.
-var skill_slots: Dictionary = {}
+## Vị trí / bật-tắt / cỡ các nút trên cụm nút skill do người chơi tự sắp xếp: cài đặt của MÁY, lưu ở
+## user://settings.cfg qua SkillSlotPrefs — KHÔNG nằm trong hồ sơ nhân vật, không gửi lên server.
+## Khoá: "main", "s0".."s7", "loop0", nút tiện ích "sit" / "jump" / "horse". Độ dời [dx, dy] tính so với vị trí mặc định
+## trong SkillBarUI.tscn. Thiếu khoá = mặc định: đúng chỗ, DEFAULT_HIDDEN_SLOTS tắt, còn lại bật, cỡ 1.
 const DEFAULT_HIDDEN_SLOTS := ["s4", "s5", "s7"]
 const SKILL_SLOT_MIN_SIZE := 0.6
 const SKILL_SLOT_MAX_SIZE := 1.6
 
 func is_skill_slot_on(key: String) -> bool:
-	var v: Variant = skill_slots.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.slots.get(key)
 	if v is Dictionary and (v as Dictionary).has("on"):
 		return bool(v["on"])
 	return not DEFAULT_HIDDEN_SLOTS.has(key)
 
 func set_skill_slot_on(key: String, on: bool) -> void:
-	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	SkillSlotPrefs.ensure_loaded()
+	var slots: Dictionary = SkillSlotPrefs.slots
+	var v: Dictionary = slots.get(key, {}) if slots.get(key) is Dictionary else {}
 	v["on"] = on
-	skill_slots[key] = v
+	slots[key] = v
+	SkillSlotPrefs.save()
 
 func get_skill_slot_size(key: String) -> float:
-	var v: Variant = skill_slots.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.slots.get(key)
 	return clampf(float(v.get("size", 1.0)), SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE) if v is Dictionary else 1.0
 
 func set_skill_slot_size(key: String, size: float) -> void:
-	var v: Dictionary = skill_slots.get(key, {}) if skill_slots.get(key) is Dictionary else {}
+	SkillSlotPrefs.ensure_loaded()
+	var slots: Dictionary = SkillSlotPrefs.slots
+	var v: Dictionary = slots.get(key, {}) if slots.get(key) is Dictionary else {}
 	v["size"] = snappedf(clampf(size, SKILL_SLOT_MIN_SIZE, SKILL_SLOT_MAX_SIZE), 0.05)
-	skill_slots[key] = v
+	slots[key] = v
+	SkillSlotPrefs.save()
 
 func get_layout_offset(key: String) -> Vector2:
-	var v: Variant = skill_layout.get(key)
+	SkillSlotPrefs.ensure_loaded()
+	var v: Variant = SkillSlotPrefs.layout.get(key)
 	return Vector2(float(v[0]), float(v[1])) if v is Array and v.size() >= 2 else Vector2.ZERO
 
 func set_layout_offset(key: String, offset: Vector2) -> void:
+	SkillSlotPrefs.ensure_loaded()
 	if offset.length() < 0.5:
-		skill_layout.erase(key)
+		SkillSlotPrefs.layout.erase(key)
 	else:
-		skill_layout[key] = [snappedf(offset.x, 0.1), snappedf(offset.y, 0.1)]
+		SkillSlotPrefs.layout[key] = [snappedf(offset.x, 0.1), snappedf(offset.y, 0.1)]
+	SkillSlotPrefs.save()
+
+## Về bố cục mặc định (nút "Mặc định" ở bảng Kỹ năng -> Sắp xếp).
+func reset_skill_layout() -> void:
+	SkillSlotPrefs.reset()
 ## Hào quang đang BẬT (skill is_aura — La Hán Trận, Thất Tinh Trận...): bấm skill để bật/tắt, chỉ 1 hào quang cùng
 ## lúc như chuột phải VLTK gốc. "" = không bật. Thuộc tính hào quang cộng vào chỉ số khi đang bật (CombatantBuild).
 var active_aura_id: String = ""
 ## Hào quang đặc biệt do GM cấp (state_id trong states.json). 0 = không có.
 var gm_aura_state: int = 0
+## Các buff thuốc có thời hạn (Tiên Thảo Lộ, Thiên Sơn Bảo Lộ, đan dược...) lưu theo nhân vật để giữ khi
+## dùng từ Hub vào map hoặc khi chuyển map: [{"source_id", "misc_id", "attribs", "time", "duration", "name", "state_id"}].
+var active_states: Array = []
+
+func has_active_state(source_id: String) -> bool:
+	for st in active_states:
+		if st is Dictionary and str(st.get("source_id", "")) == source_id and float(st.get("time", 0.0)) > 0.0:
+			return true
+	return false
+
+func set_active_state(source_id: String, attribs: Dictionary, seconds: float, duration: float, meta: Dictionary = {}) -> void:
+	if source_id == "":
+		return
+	if seconds <= 0.0:
+		remove_active_state(source_id)
+		return
+	var ser_attribs := {}
+	for k in attribs:
+		var v: Variant = attribs[k]
+		if v is Vector3i:
+			ser_attribs[str(k)] = [v.x, v.y, v.z]
+		elif v is Array and v.size() >= 3:
+			ser_attribs[str(k)] = [int(v[0]), int(v[1]), int(v[2])]
+	var entry := {
+		"source_id": source_id,
+		"misc_id": str(meta.get("misc_id", "")),
+		"attribs": ser_attribs,
+		"time": seconds,
+		"duration": maxf(duration, seconds),
+		"name": str(meta.get("name", "")),
+		"state_id": int(meta.get("state_id", 0)),
+	}
+	for i in active_states.size():
+		if active_states[i] is Dictionary and str(active_states[i].get("source_id", "")) == source_id:
+			if entry["misc_id"] == "":
+				entry["misc_id"] = str(active_states[i].get("misc_id", ""))
+			if entry["name"] == "":
+				entry["name"] = str(active_states[i].get("name", ""))
+			if int(entry["state_id"]) <= 0:
+				entry["state_id"] = int(active_states[i].get("state_id", 0))
+			active_states[i] = entry
+			return
+	active_states.append(entry)
+
+func remove_active_state(source_id: String) -> void:
+	for i in range(active_states.size() - 1, -1, -1):
+		if active_states[i] is Dictionary and str(active_states[i].get("source_id", "")) == source_id:
+			active_states.remove_at(i)
+
+## Tổng % tăng kinh nghiệm (expenhance_p) của nhân vật: dòng trên đồ đang mặc (chỉ dòng đã kích hoạt, như chỉ số)
+## + thuốc / trạng thái đang có (Tiên Thảo Lộ...). Server dùng khi cộng kinh nghiệm giết quái.
+func get_exp_enhance_p() -> int:
+	var total := get_active_exp_enhance_p()
+	for source in Equipment.get_attrib_sources(equipment, int(get_element())):
+		var v: Variant = source.get("expenhance_p")
+		if v is Vector3i:
+			total += v.x
+	return total
+
+## Xoá mọi món HẾT HẠN SỬ DỤNG (ItemInstance.expire_at) khỏi hành trang, đồ đang mặc và rương. Trả tên các món đã xoá.
+## Offline: GameManager kiểm định kỳ; online: chỉ game server gọi (lúc vào game + định kỳ) rồi gửi bản chuẩn xuống.
+func remove_expired_items(at: int = -1) -> Array[String]:
+	var now_s := at if at >= 0 else int(Time.get_unix_time_from_system())
+	var gone: Array[String] = []
+	for i in range(inventory.size() - 1, -1, -1):
+		var it: ItemInstance = inventory[i]
+		if it != null and it.is_expired(now_s):
+			gone.append(it.get_display_name())
+			inventory.remove_at(i)
+	var took_off := false
+	for part in equipment.keys():
+		var worn: ItemInstance = equipment[part]
+		if worn != null and worn.is_expired(now_s):
+			gone.append(worn.get_display_name())
+			equipment.erase(part)
+			took_off = true
+	for i in range(storage.inventory.size() - 1, -1, -1):
+		var st: ItemInstance = storage.inventory[i]
+		if st != null and st.is_expired(now_s):
+			gone.append(st.get_display_name())
+			storage.inventory.remove_at(i)
+	if took_off:
+		equipment_changed.emit()
+	return gone
+
+func get_active_exp_enhance_p() -> int:
+	var total := 0
+	for st in active_states:
+		if not st is Dictionary or float(st.get("time", 0.0)) <= 0.0:
+			continue
+		var attr: Variant = st.get("attribs", {})
+		if attr is Dictionary and attr.has("expenhance_p"):
+			var v: Variant = attr["expenhance_p"]
+			if v is Array and not v.is_empty():
+				total += int(v[0])
+			elif v is Vector3i:
+				total += v.x
+	return total
+
+func tick_active_states(delta: float) -> void:
+	if delta <= 0.0 or active_states.is_empty():
+		return
+	for i in range(active_states.size() - 1, -1, -1):
+		if not active_states[i] is Dictionary:
+			active_states.remove_at(i)
+			continue
+		var rem := float(active_states[i].get("time", 0.0)) - delta
+		if rem <= 0.0:
+			active_states.remove_at(i)
+		else:
+			active_states[i]["time"] = rem
 ## Khung "Tùy chỉnh kỹ năng" (bảng Kỹ năng): no_target = không có quái gần vẫn ra chiêu về phía trước mặt;
 ## face_direction = luôn ra chiêu theo hướng nhân vật đang quay (không tự nhắm quái gần nhất); tap_release = nút skill
 ## ra chiêu khi NHẢ tay (tắt = ra chiêu ngay lúc chạm). Chế độ Auto vẫn tự nhắm quái.
@@ -323,6 +477,9 @@ var market: Array = []
 ## magic: [cấp 6 dòng], luck, seed} | {kind: "gold", gold, perfection, seed}]. Game server sinh khi nhân vật vào map
 ## (apply_admin_grants) — seed cố định nên sinh lại vẫn ra đúng món đó. Hết chỗ trong hành trang thì để chờ lần sau.
 var admin_grants: Array = []
+## Bộ đếm SỰ KIỆN NĂM (SeasonalEvents): "<sự kiện>:<năm đợt>:use:<mã vật phẩm>" / "...:craft:<công thức>" -> số lần — giới hạn dùng
+## và thưởng mốc mỗi đợt. Online chỉ server ghi (ProfileGuard giữ bản server).
+var event_counters: Dictionary = {}
 ## Trạng thái ĐANG chạy (không lưu): đang bày bán / đang mở giao dịch (nhận lời xin giao dịch). Hai trạng thái loại trừ nhau.
 var stall_open: bool = false
 var trade_open: bool = false
@@ -331,8 +488,19 @@ var max_stamina: int = 100
 
 ## Số ải đã vượt (0 = chưa vượt ải nào) — ải đang chơi tiếp theo là index này.
 var stages_cleared: int = 0
+## Lưu kết quả đánh giá 3 sao cho từng ải: stage_index (String) -> stars (int, 1..3)
+var stage_stars: Dictionary = {}
+
+func get_stage_stars(stage_index: int) -> int:
+	return int(stage_stars.get(str(stage_index), stage_stars.get(stage_index, 0)))
+
+func set_stage_stars(stage_index: int, stars: int) -> void:
+	var prev := get_stage_stars(stage_index)
+	stage_stars[str(stage_index)] = maxi(prev, clamp(stars, 1, 3))
 var herb_garden_level: int = 1
 var pending_quest_count: int = 0
+## Trạng thái hệ thống Dã Tẩu (TaskLink) — lưu save
+var da_tau: Dictionary = {}
 ## id gem trong từng ô ("" = trống), luôn đủ GEM_SLOT_UNLOCK_LEVELS.size() phần tử.
 var gem_slots: Array[String] = []
 
@@ -344,11 +512,24 @@ func _init() -> void:
 	loop_skill_ids.resize(LOOP_SLOT_COUNT)
 	loop_skill_ids.fill("")
 
-## Đường cong EXP ngoài trận — đã nâng x10 lần theo yêu cầu cân bằng game.
+## Mốc EXP lên cấp = nguyên bảng gốc settings/npc/player/level_exp.txt (cột 2: cấp n → n+1), không chia/nhân.
+## Xuất lại: python tools/export_level_exp.py → data/player/level_exp.json [cấp 1..200].
+const LEVEL_EXP_PATH := "res://data/player/level_exp.json"
+static var _level_exp: PackedInt64Array = PackedInt64Array()
+
+static func exp_to_next_level_at(lvl: int) -> int:
+	if _level_exp.is_empty():
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(LEVEL_EXP_PATH))
+		if data is Array:
+			for v in data:
+				_level_exp.append(int(v))
+		if _level_exp.is_empty():
+			push_error("PlayerProfile: thiếu bảng " + LEVEL_EXP_PATH)
+			return 2000000000
+	return _level_exp[clampi(lvl, 1, _level_exp.size()) - 1]
+
 func get_exp_to_next_level() -> int:
-	var base := 100 + (level - 1) * 150
-	var cur := int(base / 2) if level >= 80 else int(base / 3)
-	return cur * 10
+	return exp_to_next_level_at(level)
 
 func is_gem_slot_unlocked(index: int) -> bool:
 	return level >= GEM_SLOT_UNLOCK_LEVELS[index]
@@ -397,6 +578,8 @@ func set_sect(sect_def: SectDefinition) -> void:
 ## điểm kỹ năng để học/nâng skill phụ. Dùng while thay vì if để xử lý đúng khi cộng đủ EXP nhảy
 ## nhiều level cùng lúc trong 1 lần gọi. Giới hạn tối đa MAX_LEVEL (200).
 func add_exp(amount: int) -> void:
+	if amount > 0:
+		DaTauManager.on_exp_gained(self, amount)
 	if level >= MAX_LEVEL:
 		current_exp = 0
 		return
@@ -421,6 +604,19 @@ func level_up() -> void:
 	stamina = max_stamina
 	skill_points += SKILL_POINTS_PER_LEVEL
 	potential_points += POTENTIAL_POINTS_PER_LEVEL
+
+## GM đặt cấp (dùng chung cho GM ở game và lệnh /gmlevel ở server): lên cấp đi qua level_up() để cộng
+## điểm tiềm năng/kỹ năng/thể lực như thật; hạ cấp không trừ điểm (có thể đã cộng/học), chỉ chỉnh thể lực.
+func gm_set_level(target_level: int) -> void:
+	var new_lv := clampi(target_level, 1, MAX_LEVEL)
+	if new_lv > level:
+		while level < new_lv:
+			level_up()
+	elif new_lv < level:
+		level = new_lv
+		max_stamina = _stamina_for_level()
+		stamina = mini(stamina, max_stamina)
+	current_exp = 0
 
 ## Học mới/nâng 1 cấp cho skill phụ thuộc môn phái hiện tại — false nếu hết điểm, đã max level,
 ## hoặc skill không tồn tại trong môn phái đã chọn (VD id gõ sai/môn phái đổi giữa chừng).
@@ -497,6 +693,7 @@ func reset_to_level_1() -> void:
 	potential_points = fresh.potential_points
 	skill_points = fresh.skill_points
 	skill_levels.clear()  ## kể cả skill luyện (tẩy điểm thường giữ lại chúng)
+	skill_exp.clear()
 
 ## Tẩy điểm (giữ nguyên cấp/EXP): 4 chỉ số gốc về khởi điểm, số điểm đã cộng HOÀN LẠI vào
 ## potential_points; bỏ học mọi skill, tổng số cấp đã học HOÀN LẠI vào skill_points. Thanh skill về
@@ -581,6 +778,86 @@ func add_item(item: ItemInstance) -> bool:
 	item.room_bag = spot.z
 	inventory.append(item)
 	return true
+
+## Hai món gộp chung 1 chồng được không: cùng mã vật phẩm khác, cấp, hệ, trạng thái khoá; chưa đặt giá bán.
+static func can_stack(a: ItemInstance, b: ItemInstance) -> bool:
+	return a != null and b != null and a != b and a.is_misc() and a.misc_id == b.misc_id \
+		and a.item_level == b.item_level and a.series == b.series and a.lock_state == b.lock_state \
+		and a.lock_trade == b.lock_trade and a.lock_sell == b.lock_sell and a.lock_drop == b.lock_drop and a.expire_at == b.expire_at \
+		and a.trade_price == 0 and b.trade_price == 0 and ItemDatabase.max_stack(a.misc_id) > 1
+
+## Thêm vào túi, GỘP vào các chồng cùng loại còn chỗ trước (tối đa ItemDatabase.max_stack), phần dư mới chiếm ô mới.
+## true = đã nhận hết. false = hết chỗ: `item.count` còn lại số chưa nhận được (phần đã gộp vẫn giữ trong túi).
+func add_item_stacked(item: ItemInstance) -> bool:
+	if item == null:
+		return false
+	var cap := ItemDatabase.max_stack(item.misc_id) if item.is_misc() else 1
+	if cap > 1:
+		for it in inventory:
+			if item.count <= 0:
+				break
+			if it.count < cap and can_stack(it, item):
+				var take := mini(cap - it.count, item.count)
+				it.count += take
+				item.count -= take
+		while item.count > cap:   ## dư hơn 1 chồng: tách thành chồng đầy ở ô mới
+			var part := ItemInstance.from_dict(item.to_dict())
+			part.uid = ItemInstance.new_uid()
+			part.count = cap
+			if not add_item(part):
+				return false
+			item.count -= cap
+		if item.count <= 0:
+			return true
+	return add_item(item)
+
+## Tách `n` cái khỏi chồng `uid` thành chồng mới ở ô trống (giữ nguyên khoá / hạn / cấp). "" = được, khác = lý do.
+## Online: server làm (C_ITEM_OP "split") rồi gửi bản chuẩn — game không tự tách (ProfileGuard bỏ uid lạ).
+func split_stack(uid: String, n: int) -> String:
+	var src: ItemInstance = null
+	for it in inventory:
+		if it.uid == uid:
+			src = it
+			break
+	if src == null:
+		return "Vật phẩm không còn trong hành trang."
+	if not src.is_misc() or src.count < 2:
+		return "Chỉ tách được chồng từ 2 cái trở lên."
+	if src.trade_price > 0:
+		return "Vật phẩm đang đặt giá bán, không tách được."
+	if n < 1 or n >= src.count:
+		return "Số lượng tách phải từ 1 đến %d." % (src.count - 1)
+	var part := ItemInstance.from_dict(src.to_dict())
+	part.uid = ItemInstance.new_uid()
+	part.count = n
+	if not add_item(part):
+		return "Hành trang không còn ô trống để tách."
+	src.count -= n
+	return ""
+
+## Gộp chồng `from_uid` vào chồng `to_uid` (kéo thả món lên món cùng loại): chuyển tối đa tới ItemDatabase.max_stack,
+## chồng nguồn hết thì bỏ khỏi túi, còn dư thì giữ chỗ cũ. "" = được, khác = lý do.
+## Online: server làm (C_ITEM_OP "merge") rồi gửi bản chuẩn — ProfileGuard giữ số lượng theo server.
+func merge_stack(from_uid: String, to_uid: String) -> String:
+	var src: ItemInstance = null
+	var dst: ItemInstance = null
+	for it in inventory:
+		if it.uid == from_uid:
+			src = it
+		elif it.uid == to_uid:
+			dst = it
+	if src == null or dst == null:
+		return "Vật phẩm không còn trong hành trang."
+	if not can_stack(src, dst):
+		return "Hai vật phẩm này không gộp được."
+	var take := mini(ItemDatabase.max_stack(dst.misc_id) - dst.count, src.count)
+	if take <= 0:
+		return "Chồng này đã đầy."
+	dst.count += take
+	src.count -= take
+	if src.count <= 0:
+		inventory.erase(src)
+	return ""
 
 ## Sinh đồ web Admin tặng (admin_grants) vào hành trang — trả số món đã thêm; món không đủ chỗ / hỏng thì giữ / bỏ.
 func apply_admin_grants() -> int:
@@ -762,6 +1039,8 @@ func equip_from_inventory(index: int) -> String:
 	var item := inventory[index]
 	if item.trade_price > 0:
 		return "Vật phẩm đang được đặt giá bán, không thể mặc"
+	if ItemDurability.is_broken(item):
+		return "Trang bị đã hỏng, hãy đến thợ rèn sửa trước khi mặc"   ## KItemList::CanEquip gốc: độ bền 0 không mặc được
 	var parts: Array = Equipment.DETAIL_TO_PARTS.get(item.get_detail(), [])
 	if parts.is_empty():
 		return "Không mặc được món này"
@@ -918,7 +1197,10 @@ static func _name_list(v: Variant, limit: int) -> Array:
 func copy_from(other: PlayerProfile) -> void:
 	for p in get_property_list():
 		if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) != 0:
-			set(p.name, other.get(p.name))
+			var val = other.get(p.name)
+			if p.name == "da_tau" and (val == null or (val is Dictionary and val.is_empty())) and not da_tau.is_empty():
+				continue
+			set(p.name, val)
 
 ## CHỈ ĐỂ THỬ (nút TEST trên màn chơi, bản debug): thuộc tính cộng thêm theo tên VLTK (lifemax_v, fastwalkrun_p...) -> giá trị — cộng vào
 ## chỉ số như 1 món trang bị (CombatantBuild.extra_attribs). Server chỉ nhận khi bật chế độ dev (GAME_DEV_TRUST_CLIENT / DEV_TRUST_CLIENT_SAVES).
@@ -929,11 +1211,22 @@ var server_seen: int = 0
 ## Quà tân thủ (StarterKit): bit STARTER_ITEMS = đã nhận đồ + lên cấp khởi đầu, STARTER_WEAPON = đã nhận vũ khí sau khi vào phái.
 ## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
 var starter_kit: int = 0
+## Ủy thác (UyThac): mốc giờ (giây unix) lần cuối nhân vật còn trong game + báo cáo lần ủy thác gần nhất.
+## Online chỉ game server đặt (ProfileGuard.merge / guardClientSave giữ bản server).
+var uy_thac_seen: int = 0
+var uy_thac_report: Dictionary = {}
+## Quỹ giờ ủy thác (giây) theo hệ số EXP ("1.0" / "1.5" / "2.0") — cộng khi dùng Bạch Câu Hoàn (UyThac.use).
+var uy_thac_bank: Dictionary = {}
 
 func to_dict() -> Dictionary:
 	return {
 		"server_seen": server_seen,
 		"starter_kit": starter_kit,
+		"uy_thac_seen": uy_thac_seen,
+		"uy_thac_report": uy_thac_report.duplicate(),
+		"uy_thac_bank": uy_thac_bank.duplicate(),
+		"event_counters": event_counters.duplicate(),
+		"id": id,
 		"name": display_name,
 		"gender": gender,
 		"level": level,
@@ -951,6 +1244,7 @@ func to_dict() -> Dictionary:
 		"element": element,
 		"camp": camp,
 		"show_mask": show_mask,
+		"riding": riding,   ## đang cưỡi / đã xuống ngựa — server tính ngoại hình (look_from_profile) từ đây
 		"custom_avatar": custom_avatar,
 		"inventory": inventory.map(func(it: ItemInstance) -> Dictionary: return it.to_dict()),
 		"equipment": _equipment_to_dict(),
@@ -960,23 +1254,29 @@ func to_dict() -> Dictionary:
 		"energy": energy,
 		"potential_points": potential_points,
 		"skill_points": skill_points,
-		"skill_levels": skill_levels,
+		"skill_levels": skill_levels.duplicate(true),
+		"skill_exp": skill_exp.duplicate(),
+		"thu_thanh_level": thu_thanh_level,
+		"thu_thanh_exp": thu_thanh_exp,
+		"thu_thanh_skill_levels": thu_thanh_skill_levels.duplicate(),
+		"thu_thanh_skill_points": thu_thanh_skill_points,
+		"thu_thanh_selected_skills": thu_thanh_selected_skills.duplicate(),
 		"gold": gold,
 		"xu": xu,
 		"jade": jade,
 		"stamina": stamina,
 		"max_stamina": max_stamina,
 		"stages_cleared": stages_cleared,
+		"stage_stars": stage_stars.duplicate(),
 		"herb_garden_level": herb_garden_level,
 		"pending_quest_count": pending_quest_count,
 		"gem_slots": gem_slots,
 		"hotbar_skill_ids": hotbar_skill_ids,
 		"hotbar_page": hotbar_page,
-		"skill_layout": skill_layout,
-		"skill_slots": skill_slots.duplicate(true),
 		"loop_skill_ids": loop_skill_ids,
 		"active_aura_id": active_aura_id,
 		"gm_aura_state": gm_aura_state,
+		"active_states": active_states.duplicate(true),
 		"skill_settings": skill_settings,
 		"auto": {"mode": auto_mode, "presets": auto_presets.map(func(a: AutoSettings) -> Dictionary: return a.to_dict()),
 			"log": auto_log},
@@ -997,10 +1297,12 @@ func to_dict() -> Dictionary:
 		"pk_value": pk_value,
 		"admin_grants": admin_grants.duplicate(true),
 		"test_attribs": test_attribs.duplicate(),
+		"da_tau": da_tau.duplicate(true),
 	}
 
 static func from_dict(data: Dictionary) -> PlayerProfile:
 	var profile := PlayerProfile.new()
+	profile.id = int(data.get("id", 0))
 	profile.display_name = str(data.get("name", ""))
 	profile.gender = int(data.get("gender", Gender.MALE)) as Gender
 	profile.level = clampi(int(data.get("level", 1)), 1, MAX_LEVEL)
@@ -1032,7 +1334,17 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.camp = -1
 	profile.server_seen = int(data.get("server_seen", 0))
 	profile.starter_kit = int(data.get("starter_kit", 0))
+	profile.uy_thac_seen = int(data.get("uy_thac_seen", 0))
+	profile.uy_thac_report = (data.get("uy_thac_report") as Dictionary).duplicate() if data.get("uy_thac_report") is Dictionary else {}
+	if data.get("uy_thac_bank") is Dictionary:
+		for k in data["uy_thac_bank"]:
+			if int(data["uy_thac_bank"][k]) > 0:
+				profile.uy_thac_bank[str(k)] = int(data["uy_thac_bank"][k])
+	if data.get("event_counters") is Dictionary:
+		for k in data["event_counters"]:
+			profile.event_counters[str(k)] = int(data["event_counters"][k])
 	profile.show_mask = bool(data.get("show_mask", true))
+	profile.riding = bool(data.get("riding", true))   ## bản lưu cũ chưa có khoá này: như trước (có ngựa = cưỡi)
 	profile.custom_avatar = str(data.get("custom_avatar", ""))
 	if profile.custom_avatar.strip_edges() == "" and profile.display_name != "":
 		profile.custom_avatar = CustomAvatarHelper.get_avatar_base64_cache(profile.display_name)
@@ -1051,12 +1363,27 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	var saved_skill_levels: Dictionary = data.get("skill_levels", {})
 	for skill_id in saved_skill_levels.keys():
 		profile.skill_levels[str(skill_id)] = int(saved_skill_levels[skill_id])
+	var saved_skill_exp: Variant = data.get("skill_exp", {})
+	if saved_skill_exp is Dictionary:
+		for skill_id in (saved_skill_exp as Dictionary).keys():
+			profile.skill_exp[str(skill_id)] = maxi(int(saved_skill_exp[skill_id]), 0)
+	profile.thu_thanh_level = int(data.get("thu_thanh_level", 10))
+	profile.thu_thanh_exp = int(data.get("thu_thanh_exp", 0))
+	var saved_tt_levels: Dictionary = data.get("thu_thanh_skill_levels", {})
+	for skill_id in saved_tt_levels.keys():
+		profile.thu_thanh_skill_levels[str(skill_id)] = int(saved_tt_levels[skill_id])
+	profile.thu_thanh_skill_points = int(data.get("thu_thanh_skill_points", 10))
+	var saved_tt_selected: Array = data.get("thu_thanh_selected_skills", [])
+	profile.thu_thanh_selected_skills.clear()
+	for s_id in saved_tt_selected:
+		profile.thu_thanh_selected_skills.append(str(s_id))
 	profile.gold = int(data.get("gold", 0))
 	profile.xu = int(data.get("xu", 0))
 	profile.jade = int(data.get("jade", 0))
 	profile.stamina = int(data.get("stamina", profile.max_stamina))
 	profile.max_stamina = int(data.get("max_stamina", profile.max_stamina))
 	profile.stages_cleared = int(data.get("stages_cleared", 0))
+	profile.stage_stars = data.get("stage_stars", {}).duplicate()
 	if data.has("intro_completed"):
 		profile.intro_completed = bool(data.get("intro_completed", false))
 	else:
@@ -1075,12 +1402,10 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.loop_skill_ids[i] = str(saved_loop[i])
 	profile.main_skill_id = str(data.get("main_skill_id", ""))
 	profile.hotbar_page = clampi(int(data.get("hotbar_page", 0)), 0, HOTBAR_PAGES - 1)
-	var saved_layout: Variant = data.get("skill_layout", {})
-	if saved_layout is Dictionary:
-		profile.skill_layout = saved_layout.duplicate(true)
-	var saved_skill_slots: Variant = data.get("skill_slots", {})
-	if saved_skill_slots is Dictionary:
-		profile.skill_slots = saved_skill_slots.duplicate(true)
+	## Bố cục nút skill giờ là cài đặt của máy (SkillSlotPrefs). File hồ sơ cũ còn "skill_layout" / "skill_slots" thì chuyển
+	## sang máy 1 lần (chỉ ở client có màn hình — server headless không giữ cài đặt giao diện), không đọc vào hồ sơ nữa.
+	if (data.has("skill_layout") or data.has("skill_slots")) and DisplayServer.get_name() != "headless":
+		SkillSlotPrefs.import_legacy(data.get("skill_layout"), data.get("skill_slots"))
 	profile.active_aura_id = str(data.get("active_aura_id", ""))
 	profile.gm_aura_state = int(data.get("gm_aura_state", 0))
 	profile.storage_extra = clampi(int(data.get("storage_extra", 0)), 0, 5)
@@ -1114,4 +1439,11 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		if presets[i] is Dictionary:
 			AutoSettings.from_dict(presets[i], profile.auto_presets[i])
 	profile.auto_log = (auto_data.get("log", []) as Array).filter(func(e: Variant) -> bool: return e is Dictionary)
+	var saved_da_tau: Variant = data.get("da_tau", {})
+	profile.da_tau = saved_da_tau.duplicate(true) if saved_da_tau is Dictionary else {}
+	var saved_states: Variant = data.get("active_states", [])
+	if saved_states is Array:
+		for st in saved_states:
+			if st is Dictionary and str(st.get("source_id", "")) != "" and float(st.get("time", 0.0)) > 0.0:
+				profile.active_states.append(st.duplicate(true))
 	return profile

@@ -28,7 +28,9 @@ var trade: Dictionary = {}        ## trạng thái giao dịch mới nhất {par
 var trade_ended: Array = []       ## [{ok, msg}]
 var stall: Dictionary = {}        ## {seller, title, items}
 var team: Dictionary = {}         ## trạng thái đội mới nhất {in_team, captain, members:[eid], applicants:[eid], pick}
+var team_hp: Dictionary = {}      ## eid đồng đội -> [hp %, near] (S_TEAM_HP mới nhất)
 var team_invites: Array = []      ## [captain_eid]
+var team_applies: Array = []      ## [{eid, name, level}]
 var chats: Array = []             ## [{channel, from, to, text}]
 var guild: Dictionary = {}        ## bang của mình (S_GUILD)
 var guild_list: Array = []
@@ -39,12 +41,16 @@ var view_snap: Dictionary = {}
 var enmity: Dictionary = {}       ## {state, other, name, launcher}
 var pvp_hits: Array = []          ## [{from, hit}]
 var dead := false                 ## gửi cờ FLAG_DEAD trong C_MOVE
+var mstates: Array = []           ## [[monster_eid, state_id, giây]] (S_MSTATE)
 var casts: Array = []             ## [{caster, skill, level, flags, target, aim}] (S_CAST)
 var closed := false
 var battle_msgs: Array = []       ## gói S_BATTLE nhận được (chiến trường)
 var battle_state: Dictionary = {} ## gói "state" mới nhất
 var field_msgs: Array = []        ## gói S_FIELD nhận được (phòng train chung)
 var market_msgs: Array = []       ## gói S_MARKET nhận được (Chợ Giao Thương)
+var pubg_msgs: Array = []         ## gói S_PUBG nhận được (Chiến Trường Sinh Tồn)
+var lonxon_msgs: Array = []       ## gói S_LONXON nhận được (Lộn Xộn)
+var pongs: Array = []             ## thời gian khứ hồi (ms) của các lần ping()
 var hub := false                  ## vào bằng kết nối SẢNH (NetProto.HELLO_HUB) như Character Hub
 var _token := ""
 var _character_id := 0
@@ -97,6 +103,26 @@ func _send(b: StreamPeerBuffer, ch: int) -> void:
 ## Chiến trường Tống Kim: op = BattleServer.OP_*.
 func battle(op: int, args := {}) -> void:
 	var b := NetProto.writer(NetProto.C_BATTLE)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Chiến Trường Sinh Tồn: op PubgServer.OP_* + tham số.
+func pubg(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_PUBG)
+	b.put_u8(op)
+	NetProto.put_str(b, JSON.stringify(args))
+	_send(b, NetProto.CH_RELIABLE)
+
+## Đo độ trễ: gửi C_PING kèm mốc thời gian, S_PONG về thì ghi thời gian khứ hồi vào `pongs`.
+func ping() -> void:
+	var b := NetProto.writer(NetProto.C_PING)
+	b.put_u32(Time.get_ticks_msec())
+	_send(b, NetProto.CH_RELIABLE)
+
+## Lộn Xộn: op LonXonServer.OP_* + tham số.
+func lonxon(op: int, args := {}) -> void:
+	var b := NetProto.writer(NetProto.C_LONXON)
 	b.put_u8(op)
 	NetProto.put_str(b, JSON.stringify(args))
 	_send(b, NetProto.CH_RELIABLE)
@@ -165,14 +191,24 @@ func cast(skill_id: int, lv: int, target_eid: int, aim: Vector2, cast_flags := 0
 	NetProto.put_state_pos(b, aim)
 	_send(b, NetProto.CH_RELIABLE)
 
+## Gửi đúng gói game thật dùng (C_DAMAGE_BATCH, NetClient._flush_damage): 1 quái, 1 đòn, có khựng.
 func damage(monster_eid: int, amount: int) -> void:
-	var b := NetProto.writer(NetProto.C_DAMAGE)
+	var b := NetProto.writer(NetProto.C_DAMAGE_BATCH)
+	b.put_u8(1)
 	b.put_u32(monster_eid)
 	b.put_u32(amount)
-	b.put_u8(1)
+	b.put_u8(1 | (1 << NetProto.DAMAGE_HITS_SHIFT))
 	_send(b, NetProto.CH_RELIABLE)
 
 ## Quái gần nhất mình đang thấy (eid hoặc 0).
+## Báo bùa / trạng thái mình vừa áp lên quái (C_MSTATE) — như VltkMonster._on_state_applied / _net_send_freeze.
+func monster_state(monster_eid: int, state_id: int, seconds: float) -> void:
+	var b := NetProto.writer(NetProto.C_MSTATE)
+	b.put_u32(monster_eid)
+	b.put_u32(state_id)
+	b.put_u16(clampi(int(round(seconds * 10.0)), 1, 600))
+	_send(b, NetProto.CH_RELIABLE)
+
 func nearest_monster() -> int:
 	var best := 0
 	var best_d := INF
@@ -245,6 +281,12 @@ func say(channel: int, text: String, to := "") -> void:
 func heard(text: String) -> bool:
 	return chats.any(func(c: Dictionary) -> bool: return str(c.text) == text)
 
+## Báo % máu của mình (C_HP) — như máy người chơi thật.
+func send_hp(percent: int) -> void:
+	var b := NetProto.writer(NetProto.C_HP)
+	b.put_u8(percent)
+	_send(b, NetProto.CH_RELIABLE)
+
 func team_op(op: int, arg := 0, arg2 := 0) -> void:
 	var b := NetProto.writer(NetProto.C_TEAM)
 	b.put_u8(op)
@@ -290,7 +332,7 @@ func _read_spawn(b: StreamPeerBuffer) -> void:
 	var na := b.get_u8()
 	var st := NetProto.get_str(b)
 	known[id] = {"kind": kind, "name": n, "level": lv, "camp": cp, "nation": na, "stall_title": st, "pos": Vector2(b.get_float(), b.get_float())}
-	b.get_data(4)
+	b.get_data(5)   ## dir, action, z (u8) + cờ (u16, NetProto v6)
 	known[id]["hp"] = b.get_u8()
 	if kind == NetProto.KIND_MONSTER:
 		known[id]["monster_id"] = b.get_u16()
@@ -326,14 +368,21 @@ func _on_packet(pkt: PackedByteArray) -> void:
 				var pos := NetProto.get_state_pos(b)
 				var dir_action := b.get_u8()
 				b.get_u8()
-				var fl := b.get_u8()
+				var fl := b.get_u16()
 				var hp := b.get_u8()
+				b.get_u8()   ## tuổi mẫu (NetProto v4)
 				states_received += 1
 				if known.has(id):
 					known[id].pos = pos
 					known[id].hp = hp
 					known[id].action = dir_action >> 3
 					known[id].flags = fl
+		NetProto.S_MSTATE:
+			var ms_eid := b.get_u32()
+			var n := b.get_u8()
+			for i in n:
+				var sid := b.get_u32()
+				mstates.append([ms_eid, sid, float(b.get_u16()) / 10.0])
 		NetProto.S_MATTACK:
 			var m := b.get_u32()
 			b.get_u8()
@@ -386,6 +435,10 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TRADE_END:
 			var ok := b.get_u8() != 0
 			trade_ended.append({"ok": ok, "msg": NetProto.get_str(b)})
+		NetProto.S_TEAM_HP:
+			for i in b.get_u8():
+				var hp_eid := b.get_u32()
+				team_hp[hp_eid] = [b.get_u8(), b.get_u8() != 0]
 		NetProto.S_TEAM_STATE:
 			var st := {"in_team": b.get_u8() != 0, "members": [], "applicants": []}
 			if st.in_team:
@@ -449,6 +502,11 @@ func _on_packet(pkt: PackedByteArray) -> void:
 		NetProto.S_TEAM_INVITE:
 			team_invites.append(b.get_u32())
 			NetProto.get_str(b)
+		NetProto.S_TEAM_APPLY:
+			var ae := b.get_u32()
+			var an := NetProto.get_str(b)
+			var al := b.get_u16()
+			team_applies.append({"eid": ae, "name": an, "level": al})
 		NetProto.S_STALL_SIGN:
 			var se := b.get_u32()
 			var stt := NetProto.get_str(b)
@@ -471,6 +529,18 @@ func _on_packet(pkt: PackedByteArray) -> void:
 			var mk: Variant = NetProto.get_json(b)
 			if mk is Dictionary:
 				market_msgs.append(mk)
+		NetProto.S_PUBG:
+			var pmsg := NetProto.get_json(b)
+			if not pmsg.is_empty():
+				pubg_msgs.append(pmsg)
+		NetProto.S_PONG:
+			var sent := b.get_u32()
+			b.get_u32()
+			pongs.append(Time.get_ticks_msec() - sent)
+		NetProto.S_LONXON:
+			var lmsg := NetProto.get_json(b)
+			if not lmsg.is_empty():
+				lonxon_msgs.append(lmsg)
 		NetProto.S_FIELD:
 			var fmsg: Variant = JSON.parse_string(NetProto.get_str(b, 1 << 16))
 			if fmsg is Dictionary:

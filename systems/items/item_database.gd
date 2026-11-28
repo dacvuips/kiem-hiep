@@ -31,6 +31,8 @@ static var _desc: Dictionary = {}
 static var _magic_ranges: Dictionary = {}
 ## Bộ hoàng kim (Group) -> chỉ số các món trong bộ.
 static var _gold_groups: Dictionary = {}
+static var _sect_gold_indices: Array[int] = []
+static var _horse_base_indices: Array[int] = []
 ## detail -> particular -> level -> chỉ số trong _equipment
 static var _index: Dictionary = {}
 
@@ -41,6 +43,8 @@ static func _ensure_loaded() -> void:
 	_magic = _load_json(MAGIC_PATH)
 	for i in _equipment.size():
 		var e: Dictionary = _equipment[i]
+		if int(e.get("detail", -1)) == Detail.HORSE:
+			_horse_base_indices.append(i)
 		var by_particular: Dictionary = _index.get_or_add(int(e["detail"]), {})
 		var by_level: Dictionary = by_particular.get_or_add(int(e["particular"]), {})
 		if not by_level.has(int(e["level"])):
@@ -55,6 +59,16 @@ static func _ensure_gold_loaded() -> void:
 		var group := int(_gold[i]["group"])
 		if group > 0:
 			(_gold_groups.get_or_add(group, []) as Array).append(i)
+		if int(_gold[i].get("menpai", -1)) >= 0:
+			_sect_gold_indices.append(i)
+
+static func get_sect_gold_indices() -> Array[int]:
+	_ensure_gold_loaded()
+	return _sect_gold_indices
+
+static func get_horse_base_indices() -> Array[int]:
+	_ensure_loaded()
+	return _horse_base_indices
 
 static func find_gold_by_name(gold_name: String) -> int:
 	_ensure_gold_loaded()
@@ -102,15 +116,55 @@ static func get_desc_template(attrib_name: String) -> String:
 	return str(_desc.get(attrib_name, ""))
 
 ## Các món CÙNG BỘ hoàng kim (mỗi loại đồ 1 món, theo thứ tự ô) — để hiện danh sách bộ trong mô tả.
+## Bộ TỰ DỰNG của phái mới (Group >= 674, tools/new_sects_gold_sets.py) có thể có 2 nhẫn khác tên (VD Anh Hào Bá
+## Khí Ngự Quân / Trấn Sơn Chỉ Hoàn) -> giữ cả hai. Bộ gốc giữ 1 nhẫn: cùng nhóm còn lẫn bản [Định thời] /
+## [Tống Kim] / [Cực phẩm] của chính nhẫn đó.
+const CUSTOM_GOLD_GROUP_MIN := 674
+
+## Các bộ hoàng kim TỰ DỰNG của phái mới (Group >= CUSTOM_GOLD_GROUP_MIN), tăng dần — cho bảng Tạo đồ (test).
+static func list_custom_gold_groups() -> Array[int]:
+	_ensure_gold_loaded()
+	var out: Array[int] = []
+	for group in _gold_groups:
+		if int(group) >= CUSTOM_GOLD_GROUP_MIN:
+			out.append(int(group))
+	out.sort()
+	return out
+
+## Tên hiển thị 1 bộ: phần tên chung của các món (bỏ tiền tố "[TB] ") + mô tả bộ của món đầu (bỏ "(n)").
+static func gold_set_label(group: int) -> String:
+	var members := get_gold_set_members(group)
+	if members.is_empty():
+		return "Bộ %d" % group
+	var common: PackedStringArray = []
+	for i in members.size():
+		var words := str(get_gold(members[i])["name"]).trim_prefix("[TB] ").split(" ")
+		if i == 0:
+			common = words
+			continue
+		var n := 0
+		while n < mini(common.size(), words.size()) and common[n] == words[n]:
+			n += 1
+		common = common.slice(0, n)
+	var intro := str(get_gold(members[0]).get("intro", "")).split(" (")[0]
+	return "%s — %s (%d món)" % [" ".join(common), intro, members.size()]
+
 static func get_gold_set_members(group: int) -> Array[int]:
 	_ensure_gold_loaded()
 	var out: Array[int] = []
-	var seen_details := {}
+	var seen := {}
 	for idx in _gold_groups.get(group, []):
 		var detail := int(_gold[idx]["detail"])
-		if seen_details.has(detail):
+		var key: Variant = detail
+		if detail == Detail.RING and group >= CUSTOM_GOLD_GROUP_MIN:
+			key = "ring:" + str(_gold[idx]["name"])
+			if not seen.has(key) and int(seen.get("rings", 0)) >= 2:
+				continue
+		if seen.has(key):
 			continue
-		seen_details[detail] = true
+		seen[key] = true
+		if detail == Detail.RING:
+			seen["rings"] = int(seen.get("rings", 0)) + 1
 		out.append(idx)
 	return out
 
@@ -195,6 +249,10 @@ static func get_gold(gold_index: int) -> Dictionary:
 	_ensure_gold_loaded()
 	return _gold[gold_index] if gold_index >= 0 and gold_index < _gold.size() else {}
 
+static func get_gold_count() -> int:
+	_ensure_gold_loaded()
+	return _gold.size()
+
 ## Chỉ số hoàng kim của dòng gốc `row` (cột "row" = số dòng trong goldequip.txt, AddGoldItem(0, row + 1) của script gốc). -1 nếu không có.
 static func gold_index_of_row(row: int) -> int:
 	_ensure_gold_loaded()
@@ -261,6 +319,16 @@ static func get_misc(misc_id: String) -> Dictionary:
 				"intro": "Lệnh bài thần kỳ giúp lập tức hoàn thành một nhiệm vụ Dã Tẩu.",
 				"icon": "wulinlingpai",
 				"price": 20000,
+				"stack": 100,
+				"width": 1,
+				"height": 1,
+			},
+			{
+				"id": "ky_datau_huy",
+				"name": "Lệnh Bài Hủy Dã Tẩu",
+				"intro": "Lệnh bài cho phép hủy miễn phí 1 nhiệm vụ Dã Tẩu khi hết lượt bỏ miễn phí ngày, giữ nguyên chuỗi nhiệm vụ không bị reset về #1.",
+				"icon": "xiakeling",
+				"price": 10000,
 				"stack": 100,
 				"width": 1,
 				"height": 1,
@@ -334,7 +402,59 @@ static func get_misc(misc_id: String) -> Dictionary:
 		]
 		for c_it in custom_ky_items:
 			_misc[str(c_it["id"])] = c_it
+		## Hộp sự kiện năm (quái rơi trong đợt — data/events/seasonal_events.json "boxes")
+		for b_it in SeasonalEvents.box_records():
+			_misc[str(b_it["id"])] = b_it
+		## Nguyên liệu sự kiện năm: cho chồng (nhiều món gốc stack 0 = không chồng)
+		var ev_stack := SeasonalEvents.event_stack()
+		for s_id in SeasonalEvents.stack_items():
+			if _misc.has(s_id):
+				_misc[s_id]["stack"] = maxi(int(_misc[s_id].get("stack", 0)), ev_stack)
+		## Đại Thành Bí Kíp của màn Lộn Xộn (LonXonRules.BOOK_IDS) — mỗi cuốn +1 cấp 1 kỹ năng đúng tầng, chỉ dùng trong Lộn Xộn.
+		for tier in LonXonRules.BOOK_IDS:
+			var bid: String = LonXonRules.BOOK_IDS[tier]
+			_misc[bid] = {
+				"id": bid,
+				"name": "Đại Thành Bí Kíp %dx" % tier,
+				"intro": "Bí kíp chỉ dùng được trong màn Lộn Xộn. Mỗi cuốn tăng 1 cấp cho 1 kỹ năng %dx của môn phái (cần đủ đẳng cấp yêu cầu của kỹ năng)." % tier,
+				"icon": "obj_item_lection",
+				"price": 0,
+				"stack": 50,
+				"width": 1,
+				"height": 1,
+				"source": "lonxon",
+			}
+		_misc[LonXonRules.TOKEN_ITEM_ID] = {
+			"id": LonXonRules.TOKEN_ITEM_ID,
+			"name": "Lệnh Bài Lộn Xộn",
+			"intro": "Rớt ra khi có người bị hạ trong màn Lộn Xộn. Mỗi Lệnh Bài đang giữ: +1000 điểm, nhân vật to hơn 10%, bán kính skill +5%, tầm nhìn +10%.",
+			"icon": "wulinlingpai",
+			"price": 0,
+			"stack": 9999,
+			"width": 1,
+			"height": 1,
+			"source": "lonxon",
+		}
+		## Thuốc / đan chồng được POTION_STACK bình 1 ô (gốc potion.txt MaxStack = 0, chỉ giải độc 10 — game này nới ra).
+		for rec in _misc.values():
+			if str(rec.get("source", "")) in ["potion", "songjin"]:
+				rec["stack"] = maxi(int(rec.get("stack", 0)), POTION_STACK)
+		## Bạch Câu Hoàn (UyThac): chồng được như thuốc.
+		for mid in UyThac.ITEMS:
+			if _misc.has(mid):
+				_misc[mid]["stack"] = maxi(int(_misc[mid].get("stack", 0)), UyThac.STACK)
+				if UyThac.ITEMS[mid].has("icon"):
+					_misc[mid]["icon"] = UyThac.ITEMS[mid]["icon"]
 	return _misc.get(misc_id, {})
+
+## Số bình thuốc tối đa trong 1 chồng (1 ô hành trang).
+const POTION_STACK := 50
+
+## Số lượng tối đa của 1 chồng món `misc_id` (1 = không chồng được).
+static func max_stack(misc_id: String) -> int:
+	if misc_id == "":
+		return 1
+	return maxi(int(get_misc(misc_id).get("stack", 0)), 1)
 
 ## Các món cùng nguồn (cột "source": potion / questkey / magicscript / townportal), đúng thứ tự file gốc.
 static func list_misc(source: String) -> Array:

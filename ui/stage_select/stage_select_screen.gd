@@ -101,8 +101,11 @@ func _ready() -> void:
 
 func _build_stage_card(stage: StageData, index: int) -> Control:
 	var is_admin := AccountApi.is_gm()
-	var is_unlocked := is_admin or index <= _profile.stages_cleared
+	var req_lvl: int = stage.required_level if "required_level" in stage else ((int(index / 3) + 1) * 10)
+	var has_level := is_admin or (_profile != null and _profile.level >= req_lvl)
+	var is_unlocked := (is_admin or index <= _profile.stages_cleared) and has_level
 	var is_completed := index < _profile.stages_cleared
+	var stars: int = _profile.get_stage_stars(index) if _profile != null else 0
 
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(0, 108)
@@ -169,7 +172,9 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 	hbox.add_child(info)
 
 	var name_label := Label.new()
-	name_label.text = "%d. %s" % [index + 1, stage.stage_name]
+	var bracket := int(index / 3) + 1
+	var sub_idx := (index % 3) + 1
+	name_label.text = "[%dx] Ải %d-%d: %s" % [bracket, bracket, sub_idx, stage.stage_name]
 	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color", TEXT_LIGHT if is_unlocked else TEXT_DIM)
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -203,12 +208,18 @@ func _build_stage_card(stage: StageData, index: int) -> Control:
 		rewards_row.add_child(_build_reward_slot(p, is_unlocked))
 
 	var status_label := Label.new()
-	if not is_unlocked:
+	if not has_level:
+		status_label.text = "🔒 Cấp %d" % req_lvl
+		status_label.add_theme_color_override("font_color", Color(0.9, 0.45, 0.45))
+	elif not is_unlocked:
 		status_label.text = "🔒 Khoá"
 		status_label.add_theme_color_override("font_color", TEXT_DIM)
 	elif is_completed:
-		status_label.text = "✓ Đã vượt"
-		status_label.add_theme_color_override("font_color", Color(0.4, 0.85, 0.4))
+		var stars_txt := ""
+		for s_i in range(3):
+			stars_txt += "⭐" if s_i < stars else "☆"
+		status_label.text = "%s" % stars_txt
+		status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
 	elif is_admin and index > _profile.stages_cleared:
 		status_label.text = "✦ Mở khoá"
 		status_label.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))

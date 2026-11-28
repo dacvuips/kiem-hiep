@@ -157,7 +157,23 @@ func apply_settings() -> void:
 	if profile == null:
 		return
 	var s := settings()
-	SocialHub.of(profile).team.auto_refuse_invite = s.team_on and s.accept_mode == 0
+	var team := SocialHub.of(profile).team
+	## Thiết lập tổ đội chỉ có hiệu lực khi auto đang chạy (lưu thiết lập lúc auto tắt thì chưa áp).
+	team.auto_team = running and s.team_on
+	team.auto_refuse_invite = team.auto_team and s.accept_mode == 0
+
+## Tắt thiết lập tổ đội của auto (dừng auto / rời màn chơi): lời mời vào đội lại hỏi người chơi như thường.
+func _release_team() -> void:
+	var profile := GameManager.local_profile
+	if profile == null:
+		return
+	var team := SocialHub.of(profile).team
+	team.auto_team = false
+	team.auto_refuse_invite = false
+
+func _exit_tree() -> void:
+	if running:
+		_release_team()
 
 func _start() -> void:
 	running = true
@@ -173,6 +189,7 @@ func _start() -> void:
 
 func _stop() -> void:
 	running = false
+	_release_team()
 	_drop_target()
 	_loot = null
 	if _resting and player.is_sitting():
@@ -197,7 +214,8 @@ func _tick_recovery(s: AutoSettings) -> bool:
 		reason = "Độ bền trang bị thấp"
 	elif s.tdp_bag_full and _bag_full():
 		reason = "Hành trang đầy"
-	elif s.tdp_no_hp_potion and s.hp_on and hp_pct < s.hp_lv1 and profile != null and not _has_potion(profile):
+	## Hết bình máu: còn trên Mức 2 thì đánh tiếp (đi đội máu hay tụt dưới Mức 1, dừng sớm vậy là đang đánh thì tắt); dưới Mức 2 mới phù.
+	elif s.tdp_no_hp_potion and s.hp_on and hp_pct < s.hp_lv2 and profile != null and not _has_potion(profile):
 		reason = "Hết bình sinh lực"
 	elif s.tdp_no_mp_potion and s.mp_on and ("mana" in player) and ("max_mana" in player) and profile != null and not _has_mp_potion(profile) and (player.mana / maxf(player.max_mana, 1.0) * 100.0 < s.mp_lv1):
 		reason = "Hết bình nội lực"
@@ -355,11 +373,11 @@ func _lowest_durability_pct() -> float:
 		return lowest
 	for it in profile.equipment.values():
 		var item := it as ItemInstance
-		if item == null:
+		## Bỏ qua món không thể phá hủy (durability = -1, VD đồ tân thủ / indestructible_b): trước đây bị tính thành -100%
+		## -> luôn dưới ngưỡng -> Auto "Phù về thành" và tự tắt ngay khi đang đánh.
+		if not ItemDurability.has_durability(item):
 			continue
-		var max_d := item.get_max_durability()
-		if max_d > 0:
-			lowest = minf(lowest, item.durability * 100.0 / max_d)
+		lowest = minf(lowest, item.durability * 100.0 / item.get_max_durability())
 	return lowest
 
 func _bag_full() -> bool:
@@ -620,6 +638,8 @@ func _tick_loot(s: AutoSettings) -> bool:
 ## Bộ lọc nhặt: tiền theo "Nhặt tiền vạn"; đồ: "Nhặt tất cả" lấy hết, không thì đạo cụ (thuốc, khoáng thạch, lệnh bài... — không
 ## phải trang bị) theo "Nhặt đạo cụ", đồ xanh/hoàng kim (Nhặt trang bị xanh) và đồ khớp 1 dòng lọc thuộc tính (Tuỳ chọn lọc đồ khi nhặt).
 func _wants(drop: GroundDrop, s: AutoSettings) -> bool:
+	if drop.discarded:
+		return false   ## đồ mình vừa vứt: auto không nhặt lại
 	if drop.amount > 0:
 		return s.pick_money
 	var item := drop.item

@@ -3,7 +3,7 @@ class_name InventoryPopup
 
 const TouchScrollHelperScript = preload("res://ui/common/touch_scroll_helper.gd")
 ## Khung "Hành trang" kiểu VLTK: LƯỚI Ô 6 × 10 (ItemRoomView) — mỗi món là 1 khối chiếm số ô rộng × cao riêng, kéo thả để
-## đổi chỗ; tiền ở dưới, nút "Sắp xếp". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
+## đổi chỗ; dải Lượng/Xu/KNB (CurrencyStrip) ngay dưới lưới, nút "Sắp xếp". Bấm 1 món -> khung chi tiết (ItemDetailPopup) với nút Trang bị / Vứt bỏ.
 ## Kéo thanh tiêu đề để di chuyển khung. Bố cục nằm trong InventoryPopup.tscn, khung/nút/màu lấy từ GameUi; script dựng lưới + đổ dữ liệu.
 ## Mọi thay đổi ghi vào PlayerProfile + lưu save, rồi gọi `on_changed` để màn gọi vẽ lại ô trang bị/chỉ số.
 
@@ -20,6 +20,10 @@ var _crafting_win: CompoundWindow = null
 var _style_tab_active: StyleBox = null
 var _style_tab_normal: StyleBox = null
 var _tt_btn: Button = null
+var _quick_sell_mode: bool = false
+## Chế độ Sửa (nút "Sửa" cạnh "Bán"): bấm trang bị nào thì thợ rèn sửa món đó (RepairActions).
+var _repair_mode: bool = false
+var _repair_btn: Button
 
 ## Phát sau mỗi thay đổi hành trang (để cửa sổ đi kèm như Rương vẽ lại).
 signal profile_changed
@@ -49,10 +53,9 @@ func _ready() -> void:
 	GameUi.apply()
 	var gm: Node = get_node_or_null("/root/GmManager")
 	if gm != null and gm.has_signal("profile_modified"):
-		gm.profile_modified.connect(func(p: PlayerProfile) -> void:
-			if p == null or p == _profile or p == GameManager.local_profile:
-				refresh()
-		)
+		gm.profile_modified.connect(_on_external_profile_changed)
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_external_profile_changed)
 	var dim: ColorRect = %Dim
 	dim.color = GameUi.DIM
 	dim.visible = _modal
@@ -64,6 +67,14 @@ func _ready() -> void:
 	%TitleBar.gui_input.connect(_on_title_input)
 	%SortButton.text = tr(%SortButton.text)
 	%SortButton.pressed.connect(_on_sort_pressed)
+
+	## Nút Bán nhanh
+	if has_node("%SellButton"):
+		%SellButton.text = tr(%SellButton.text)
+		%SellButton.tooltip_text = tr("Bật/Tắt chế độ bán nhanh: Nhấp vào món đồ để bán ngay.")
+		%SellButton.pressed.connect(_toggle_quick_sell_mode)
+		_repair_btn = RepairActions.make_button(%SellButton)
+		_repair_btn.pressed.connect(func() -> void: _set_repair_mode(not _repair_mode))
 
 	## Hiệu thuốc
 	if has_node("%ShopButton"):
@@ -93,21 +104,15 @@ func _ready() -> void:
 	)
 	(%SortButton as Control).add_sibling(_tt_btn)
 
-	# Gắn sự kiện click cho các nút cộng trong thanh tiền tệ
-	for frame_path in ["Frame/Root/BottomMoneyBar/FrameGold", "Frame/Root/BottomMoneyBar/FrameXu", "Frame/Root/BottomMoneyBar/FrameJade"]:
-		var f := get_node_or_null(frame_path)
-		if f:
-			var plus: Control = f.get_node_or_null("PlusBtn")
-			if plus:
-				plus.mouse_filter = Control.MOUSE_FILTER_STOP
-				plus.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-				plus.gui_input.connect(func(e: InputEvent) -> void:
-					if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-						TienTrangWindow.open(_get_host(), func() -> void:
-							if is_instance_valid(self):
-								_refresh()
-						, _profile)
-				)
+	## Lượng / Xu / KNB nằm TRONG khung, ngay dưới lưới ô (offline chỉ hiện Lượng). Nút "+" mở Tiền Trang / Kỳ Trân Các.
+	var money_row := MarginContainer.new()
+	money_row.add_theme_constant_override("margin_left", 4)
+	money_row.add_theme_constant_override("margin_top", 6)
+	money_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	money_row.add_child(CurrencyStrip.new(func() -> PlayerProfile: return _profile, func() -> void:
+		if is_instance_valid(self):
+			_refresh()))
+	($Frame/Root/Body as Control).add_sibling(money_row)
 
 	## Phong cách tab giống CharacterHub
 	if %BagTabs.get_child_count() > 1:
@@ -129,6 +134,7 @@ func _ready() -> void:
 	_room = ItemRoomView.new()
 	_room.cell = 37
 	_room.item_pressed.connect(_on_item_pressed)
+	_room.item_right_clicked.connect(_on_item_right_clicked)
 	_room.changed.connect(_commit)
 
 	if has_node("%InvScroll"):
@@ -162,16 +168,23 @@ func _ready() -> void:
 
 	_room.setup(_profile)
 	_refresh()
-	## Đặt giữa màn hình (sau 1 frame để container tính xong kích thước).
+	## Hub (modal): giữa màn hình. Map đánh quái (không modal): bám mép PHẢI, chừa bên trái cho bảng Nhân vật
+	## (sau 1 frame để container tính xong kích thước).
 	await get_tree().process_frame
 	var frame: Control = %Frame
 	frame.size = frame.get_combined_minimum_size()
-	frame.position = (frame.get_viewport_rect().size - frame.size) * 0.5
+	var screen := frame.get_viewport_rect().size
+	if _modal:
+		frame.position = (screen - frame.size) * 0.5
+	else:
+		frame.position = Vector2(maxf(0.0, screen.x - frame.size.x - 4.0), maxf(0.0, (screen.y - frame.size.y) * 0.5)).round()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		if has_node("%SortButton"):
 			%SortButton.text = tr("Sắp Xếp")
+		if has_node("%SellButton"):
+			%SellButton.text = tr("Đang Bán") if _quick_sell_mode else tr("Bán")
 		if has_node("%ShopButton"):
 			%ShopButton.text = tr("Hiệu Thuốc")
 		if is_instance_valid(_tt_btn):
@@ -210,6 +223,14 @@ func link_partner(handler: Callable, item_action: Callable) -> void:
 func unlink_partner() -> void:
 	_room.transfer_handler = Callable()
 	_partner_action = Callable()
+
+func _on_external_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		if GameManager != null and GameManager.local_profile != null and _profile == null:
+			_profile = GameManager.local_profile
+		refresh()
 
 func refresh() -> void:
 	_refresh()
@@ -254,6 +275,27 @@ func _refresh() -> void:
 		(%JadeValue as Label).text = format_money(_profile.jade)
 
 ## Kiểu VLTK: 9985010 -> "998 vạn 5010".
+## Nút "Tách" cho chồng vật phẩm từ 2 cái trở lên -> [] nếu không tách được. Bấm: hỏi số lượng (1..count-1) rồi tách thành chồng mới.
+## Online: server tách (C_ITEM_OP) rồi gửi bản chuẩn; `on_done(message, is_error)` gọi khi xong (online: lúc nhận S_PROFILE).
+static func split_action(host: Node, profile: PlayerProfile, item: ItemInstance, on_done: Callable) -> Array:
+	if item == null or not item.is_misc() or item.count < 2 or item.trade_price > 0:
+		return []
+	return ["Tách", func() -> void:
+		var most := item.count - 1
+		SocialWindow.prompt(host, "Tách %s" % item.get_display_name(), "Số lượng tách ra (1 - %d)" % most, func(text: String) -> void:
+			var n := int(text) if text.is_valid_int() else 0
+			if n < 1 or n > most:
+				on_done.call("Số lượng tách phải từ 1 đến %d." % most, true)
+				return
+			if NetClient.is_in_world():
+				NetClient.profile_received.connect(func(_d: Dictionary) -> void:
+					on_done.call_deferred("Đã tách %d %s." % [n, item.get_display_name()], false), CONNECT_ONE_SHOT)
+				NetClient.send_item_op("split", {"uid": item.uid, "n": n})
+				return
+			var err := profile.split_stack(item.uid, n)
+			on_done.call(err if err != "" else "Đã tách %d %s." % [n, item.get_display_name()], err != ""),
+			str(maxi(1, item.count / 2)), false, most)]
+
 static func format_money(value: int) -> String:
 	@warning_ignore("integer_division")
 	var van := value / 10000
@@ -262,29 +304,87 @@ static func format_money(value: int) -> String:
 		return str(rest)
 	return "%d vạn %d" % [van, rest] if rest > 0 else "%d vạn" % van
 
+func _on_item_right_clicked(item: ItemInstance) -> void:
+	if item == null or _profile == null:
+		return
+	ItemDetailPopup.close_all(get_tree())
+
+	# 1. Nếu có mở rương chứa đồ (StorageWindow) -> Cất vào rương ngay
+	var storage_win: StorageWindow = null
+	for w in get_tree().get_nodes_in_group("social_windows"):
+		if w is StorageWindow and is_instance_valid(w):
+			storage_win = w
+			break
+	if storage_win != null:
+		var blocked := SecurityLock.check(_profile, SecurityLock.A_STORAGE)
+		if blocked != "":
+			_show_message(blocked, true)
+			return
+		var err := StorageService.store_item(_profile, item, storage_win._box)
+		if err != "":
+			_show_message(err, true)
+		else:
+			_show_message("Đã cất %s vào rương." % item.get_display_name())
+			_commit()
+			storage_win._refresh()
+		return
+
+	# 2. Nếu rương chứa đồ không mở:
+	var index := _profile.inventory.find(item)
+	if index < 0:
+		return
+
+	# 2a. Nếu là trang bị (vũ khí, áo, nón, đai, giày, phi phong, trang sức...) -> Mặc vào người ngay
+	if not item.is_misc():
+		_equip(index)
+		return
+
+	# 2b. Nếu là vật phẩm có thể dùng (thuốc, phù, rương báu, hộp quà, bí kíp, đan dược...) -> Dùng ngay
+	if ItemConsumer.is_usable(item):
+		_use(index)
+		return
+
 func _on_item_pressed(item: ItemInstance) -> void:
 	var index := _profile.inventory.find(item)
 	if index < 0:
 		return
+	if _repair_mode:
+		RepairActions.click(_profile, item, self, _commit, _show_message)
+		return
+	if _quick_sell_mode:
+		_sell(index)
+		return
 	var actions := []
 	if not item.is_misc():
 		actions.append(["Trang bị", _equip.bind(index)])
-	else:
+		actions.append_array(RepairActions.for_item(_profile, item, _commit, _show_message))
+	elif ItemConsumer.is_usable(item):
 		var use_label := ItemConsumer.get_action_label(item)
-		actions.append([use_label, _use.bind(index)])
-	actions.append(["Vứt bỏ", _drop.bind(index)])
+		if use_label != "":
+			actions.append([use_label, _use.bind(index)])
 
-	if item.misc_id in ["4_238_1", "4_239_1", "4_240_1", "4_353_1"]:
-		actions.append(["Tiệm Ép Đồ", func() -> void: CompoundWindow.open(_get_host(), _profile, Callable())])
-	elif item.misc_id in ["6_1_2805", "6_1_1685", "6_1_1606"]:
-		actions.append(["Tiệm Đổi Viêm Đế", func() -> void: ViemDeWindow.open_reward_shop(_get_host(), _profile)])
+	# Thêm các nút tính năng đặc biệt của Lệnh bài / Tín vật sự kiện / Nguyên liệu ép đồ
+	var special_acts := ItemConsumer.get_special_actions(item, _get_host(), _profile, Callable(), _commit)
+	for sa in special_acts:
+		actions.append(sa)
 
-	if PotionEffect.usable(item):
-		for i in _profile.quick_items.size():
-			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if item.can_sell():
 		var label := "Bán (%s Lượng)" % format_money(item.get_sale_price())
-		actions.insert(1, [label, _sell.bind(index)])
+		actions.append([label, _sell.bind(index)])
+
+	var split := split_action(self, _profile, item, func(msg: String, is_error: bool) -> void:
+		_show_message(msg, is_error)
+		if not is_error:
+			_commit())
+	if not split.is_empty():
+		actions.append(split)
+	if PubgManager.discard_block_reason(item, PubgManager.is_pubg_active()) == "":
+		actions.append(["Vứt bỏ", _drop.bind(index)])   ## đồ Hoàng Kim: chỉ có nút Vứt bỏ trong trận PUBG
+
+	if QuickItemBar.is_quick_item(item):
+		## Bản thường có 4 ô thuốc nhanh; bản web có 9 ô vật phẩm trên thanh dưới gốc.
+		for i in mini(_profile.quick_items.size(), PlayerProfile.QUICK_ITEM_COUNT if WebHudBar.enabled() else 4):
+			actions.append(["Gắn vào ô %d" % (i + 1), _set_quick_slot.bind(item.misc_id, i)])
 	if _partner_action.is_valid():
 		var extra: Array = _partner_action.call(item)
 		if not extra.is_empty():
@@ -301,6 +401,8 @@ func _sell(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_NPC_SELL)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không thể bán."
+	if blocked == "" and item.lock_sell:
+		blocked = "Vật phẩm khoá, không thể bán cho cửa hàng."
 	if blocked != "":
 		_show_message(blocked)
 		return
@@ -318,28 +420,130 @@ func _sell(index: int) -> void:
 	_execute_sell(index, item_name, sale_price)
 
 func _confirm_sell(index: int, item_name: String, sale_price: int) -> void:
-	var popup := ConfirmationDialog.new()
-	popup.title = "Xác nhận bán"
-	popup.dialog_text = "Bạn có chắc muốn bán [%s] với giá %s Lượng không?" % [item_name, format_money(sale_price)]
-	popup.ok_button_text = "Bán"
-	popup.cancel_button_text = "Hủy"
-	add_child(popup)
-	popup.confirmed.connect(func() -> void:
-		_execute_sell(index, item_name, sale_price)
-		popup.queue_free()
+	var item: ItemInstance = _profile.inventory[index]
+	confirm_sell(self, item, sale_price, func() -> void: _execute_sell(index, item_name, sale_price))
+
+## Hộp xác nhận bán đồ quý (dùng chung Hành trang + Hub): khung SocialWindow chuẩn, ảnh món + tên màu phẩm chất + giá vàng nổi bật.
+## on_yes chỉ gọi khi bấm "Bán"; ✕ / "Huỷ" là bỏ.
+static func confirm_sell(host: Node, item: ItemInstance, sale_price: int, on_yes: Callable) -> void:
+	var win := SocialWindow.new("Xác nhận bán", "", 340.0)
+	var center := CenterContainer.new()
+	var card := HBoxContainer.new()
+	card.add_theme_constant_override("separation", 12)
+	center.add_child(card)
+	var slot := GameUi.panel(GameUi.PANEL)
+	slot.custom_minimum_size = Vector2(56, 56)
+	var tex := item.get_icon(true)
+	if tex != null:
+		var icon := TextureRect.new()
+		icon.texture = tex
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(40, 40)
+		slot.add_child(icon)
+	card.add_child(slot)
+	var info := VBoxContainer.new()
+	info.alignment = BoxContainer.ALIGNMENT_CENTER
+	info.add_theme_constant_override("separation", 4)
+	var name_l := GameUi.label(item.get_display_name(), item.get_quality_color(), 15)
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_l.custom_minimum_size.x = 200
+	info.add_child(name_l)
+	var price_row := HBoxContainer.new()
+	price_row.add_theme_constant_override("separation", 6)
+	price_row.add_child(GameUi.label("Giá bán:", GameUi.MUTED, 13))
+	price_row.add_child(GameUi.label("%s Lượng" % format_money(sale_price), GameUi.GOLD, 15))
+	info.add_child(price_row)
+	card.add_child(info)
+	win.body.add_child(center)
+	var q := GameUi.label("Bán món này cho NPC? Không thể lấy lại.", GameUi.SUBTITLE, 13, HORIZONTAL_ALIGNMENT_CENTER)
+	q.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	win.body.add_child(q)
+	var row := win.add_button_row()
+	var sell := GameUi.button("Bán", GameUi.PRIMARY)
+	sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var cancel := GameUi.button("Huỷ", GameUi.BUTTON)
+	cancel.custom_minimum_size.y = GameUi.PRIMARY_HEIGHT
+	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(sell)
+	row.add_child(cancel)
+	SocialWindow.present(host, win, &"confirm_sell")
+	sell.pressed.connect(func() -> void:
+		win.close_requested.emit()
+		on_yes.call()
 	)
-	popup.canceled.connect(func() -> void:
-		popup.queue_free()
-	)
-	popup.popup_centered()
+	cancel.pressed.connect(func() -> void: win.close_requested.emit())
 
 func _execute_sell(index: int, item_name: String, sale_price: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
 		return
 	_profile.inventory.remove_at(index)
 	_profile.gold += sale_price
+	if SfxManager != null and VltkSound != null:
+		SfxManager.play_ui(VltkSound.ui(VltkSound.UI_ITEM))
 	_show_message("Đã bán %s nhận được %s Lượng." % [item_name, format_money(sale_price)])
 	_commit()
+
+func _toggle_quick_sell_mode() -> void:
+	_set_quick_sell_mode(not _quick_sell_mode)
+
+func _set_repair_mode(enabled: bool) -> void:
+	_repair_mode = enabled
+	RepairActions.set_button_active(_repair_btn, enabled)
+	if enabled:
+		if _quick_sell_mode:
+			_set_quick_sell_mode(false)
+		_show_message(RepairActions.mode_hint(_profile))
+	else:
+		_show_message("Đã tắt chế độ Sửa.")
+
+func _set_quick_sell_mode(enabled: bool) -> void:
+	if enabled and _repair_mode:
+		_set_repair_mode(false)
+	_quick_sell_mode = enabled
+	_update_sell_button_visual()
+	if _quick_sell_mode:
+		_show_message("Chế độ Bán: Nhấp chuột vào món đồ để bán nhanh (Bấm nút Bán để tắt).")
+	else:
+		_show_message("Đã tắt chế độ Bán.")
+
+func _update_sell_button_visual() -> void:
+	if not has_node("%SellButton"):
+		return
+	var btn := %SellButton as Button
+	if _quick_sell_mode:
+		btn.text = tr("Đang Bán")
+		var active_style := StyleBoxFlat.new()
+		active_style.bg_color = Color(0.65, 0.14, 0.08, 0.95)
+		active_style.border_color = Color(1.0, 0.55, 0.25, 1.0)
+		active_style.set_border_width_all(1)
+		active_style.set_corner_radius_all(6)
+		active_style.shadow_color = Color(0.95, 0.25, 0.1, 0.6)
+		active_style.shadow_size = 4
+		btn.add_theme_stylebox_override("normal", active_style)
+		btn.add_theme_stylebox_override("hover", active_style)
+		btn.add_theme_stylebox_override("pressed", active_style)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
+	else:
+		btn.text = tr("Bán")
+		btn.remove_theme_stylebox_override("normal")
+		btn.remove_theme_stylebox_override("hover")
+		btn.remove_theme_stylebox_override("pressed")
+		btn.remove_theme_color_override("font_color")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if (event as InputEventKey).keycode == KEY_ESCAPE:
+			if _quick_sell_mode:
+				_set_quick_sell_mode(false)
+				get_viewport().set_input_as_handled()
+				return
+			if _repair_mode:
+				_set_repair_mode(false)
+				get_viewport().set_input_as_handled()
+				return
+			queue_free()
+			get_viewport().set_input_as_handled()
 
 func _open_viem_de_chest(index: int) -> void:
 	if _profile == null or index < 0 or index >= _profile.inventory.size():
@@ -399,6 +603,9 @@ func _use(index: int) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	var item := _profile.inventory[index]
 	var res := ItemConsumer.use_item(_profile, item, player, _get_host())
+	if res.get("exit_to_hub", false):
+		queue_free()
+		return
 	if res.has("message") and str(res["message"]) != "":
 		_show_message(str(res["message"]), not res.get("ok", false))
 	if res.get("ok", false):
@@ -426,12 +633,17 @@ func _drop(index: int) -> void:
 	var blocked := SecurityLock.check(_profile, SecurityLock.A_DROP_ITEM)
 	if blocked == "" and SecurityLock.is_item_locked(item):
 		blocked = "Món đồ đang bị khoá, không vứt được."
+	if blocked == "" and item.lock_drop:
+		blocked = "Vật phẩm khoá, không thể vứt ra đất."
+	if blocked == "":
+		blocked = PubgManager.discard_block_reason(item, PubgManager.is_pubg_active())
 	if blocked != "":
 		_show_message(blocked)
 		return
 	_profile.inventory.remove_at(index)
 	if NetClient.is_in_world():
 		## Online: server đặt món xuống đất (mọi người ở gần đều thấy).
+		GroundDrop.mark_discarded(item.ensure_uid())
 		NetClient.send_discard(item.uid)
 		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
 		_commit()
@@ -442,7 +654,7 @@ func _drop(index: int) -> void:
 		if parent == null:
 			parent = player.get_parent()
 		var feet := player.global_position + Vector2(0, 30)
-		GroundDrop.spawn_drops(parent, feet + Vector2(randf_range(-14, 14), 6), [{"type": "item", "item": item}])
+		GroundDrop.spawn_drops(parent, feet + Vector2(randf_range(-14, 14), 6), [{"type": "item", "item": item, "discarded": true}])
 		_show_message("Đã vứt %s xuống đất" % item.get_display_name())
 	else:
 		_show_message("")

@@ -5,6 +5,11 @@ class_name EventScheduleWindow
 ## Hiển thị đếm ngược thời gian, trạng thái (đang diễn ra, sắp diễn ra, lịch trình) và hỗ trợ tham gia nhanh.
 
 signal event_action_requested(event_id: String)
+## Ép / mở đồ sự kiện năm xong — Hub làm mới hành trang.
+signal profile_changed
+
+## 2 tab chính: sự kiện hằng ngày (lịch giờ trong ngày) và SỰ KIỆN NĂM (lễ Tết... theo SeasonalEvents, ngày âm/dương của năm hiện tại).
+const MAIN_TABS := ["Sự kiện Ngày", "Sự kiện Năm"]
 
 const TABS := [
 	"Tất Cả",
@@ -201,6 +206,9 @@ var _profile: PlayerProfile
 var _on_play: Callable
 var _tab := 0
 var _tab_buttons: Array[Button] = []
+var _main_tab := 0
+var _main_buttons: Array[Button] = []
+var _sub_tabs_box: HBoxContainer
 var _clock_label: Label
 var _summary_label: Label
 var _list_container: VBoxContainer
@@ -234,8 +242,22 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	body.add_child(top_bar)
 	body.add_child(SocialUi.divider())
 
-	# Hàng nút tab lọc
+	# Hàng tab chính: Sự kiện Ngày / Sự kiện Năm
+	var main_box := HBoxContainer.new()
+	main_box.add_theme_constant_override("separation", 8)
+	for i in MAIN_TABS.size():
+		var mb := GameUi.button(tr(MAIN_TABS[i]), GameUi.TAB)
+		mb.custom_minimum_size = Vector2(0, 40)
+		mb.add_theme_font_size_override("font_size", 16)
+		mb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mb.pressed.connect(_select_main.bind(i))
+		main_box.add_child(mb)
+		_main_buttons.append(mb)
+	body.add_child(main_box)
+
+	# Hàng nút tab lọc (chỉ tab Sự kiện Ngày)
 	var tabs_box := HBoxContainer.new()
+	_sub_tabs_box = tabs_box
 	tabs_box.add_theme_constant_override("separation", 8)
 	tabs_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in TABS.size():
@@ -269,11 +291,22 @@ func _init(profile: PlayerProfile = null, on_play: Callable = Callable()) -> voi
 	_timer.timeout.connect(_on_tick)
 	add_child(_timer)
 
-	_select_tab(0)
+	_select_main(0)
+
+func _select_main(idx: int) -> void:
+	_main_tab = idx
+	for i in _main_buttons.size():
+		GameUi.set_active(_main_buttons[i], i == idx)
+	if _sub_tabs_box != null:
+		_sub_tabs_box.visible = idx == 0
+	_select_tab(_tab)
 
 func _ready() -> void:
 	super._ready()
 	refresh()
+	NetClient.event_times_changed.connect(func() -> void:   ## GM vừa đổi lịch sự kiện năm (online)
+		if _main_tab == 1 and is_inside_tree():
+			_rebuild_list())
 
 func refresh() -> void:
 	_update_clock()
@@ -312,6 +345,9 @@ func _rebuild_list() -> void:
 	for c in _list_container.get_children():
 		c.queue_free()
 	_card_badge_map.clear()
+	if _main_tab == 1:
+		_rebuild_year_list()
+		return
 
 	var dt := Time.get_time_dict_from_system()
 	var sorted_events: Array = []
@@ -328,7 +364,7 @@ func _rebuild_list() -> void:
 			sorted_events.append({"event": ev, "timing": timing})
 
 	if _summary_label:
-		_summary_label.text = "🟢 " + tr("Đang diễn ra:") + " %d  ·  🟡 " + tr("Sắp diễn ra:") + " %d" % [ongoing_count, upcoming_count]
+		_summary_label.text = "🟢 %s %d  ·  🟡 %s %d" % [tr("Đang diễn ra:"), ongoing_count, tr("Sắp diễn ra:"), upcoming_count]
 
 	# Sắp xếp theo mức độ ưu tiên thời gian (đang diễn ra -> sắp diễn ra -> sau này -> mở cả ngày)
 	sorted_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -588,6 +624,8 @@ func _category_color(type: String) -> Color:
 	return GameUi.GOLD
 
 func _update_card_timings() -> void:
+	if _main_tab == 1:
+		return
 	var dt := Time.get_time_dict_from_system()
 	var status_changed := false
 
@@ -671,3 +709,140 @@ func _show_detail_popup(event: Dictionary) -> void:
 	var host := tree.current_scene if tree != null else null
 	if host != null:
 		SocialWindow.present(host, win, &"event_detail")
+
+# ---------------------------------------------------------------- SỰ KIỆN NĂM
+
+func _rebuild_year_list() -> void:
+	var now := SeasonalEvents.now_unix()
+	var rows := SeasonalEvents.sorted_events(now)
+	var ongoing := 0
+	for row in rows:
+		if row["period"]["status"] == "ongoing":
+			ongoing += 1
+	if _summary_label:
+		var next_txt := ""
+		for row in rows:
+			if row["period"]["status"] != "ongoing":
+				next_txt = "  ·  🟡 " + tr("Sắp tới:") + " %s (%s)" % [row["event"]["name"], SeasonalEvents.format_date(row["period"]["start"])]
+				break
+		_summary_label.text = "🟢 " + tr("Đang diễn ra:") + " %d%s" % [ongoing, next_txt]
+	if rows.is_empty():
+		_list_container.add_child(SocialUi.label("Chưa có dữ liệu sự kiện năm.", SocialUi.MUTED, 14, HORIZONTAL_ALIGNMENT_CENTER))
+		return
+	for row in rows:
+		_list_container.add_child(_build_year_card(row["event"], row["period"], now))
+
+func _build_year_card(ev: Dictionary, per: Dictionary, now: int) -> Control:
+	var card := PanelContainer.new()
+	var style := WuxiaStyle.create_inner_card(8)
+	style.content_margin_left = 12
+	style.content_margin_top = 10
+	style.content_margin_right = 12
+	style.content_margin_bottom = 10
+	card.add_theme_stylebox_override("panel", style)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var main_row := HBoxContainer.new()
+	main_row.add_theme_constant_override("separation", 14)
+	card.add_child(main_row)
+
+	## trái: biểu tượng + lịch âm/dương (rộng cố định để các thẻ thẳng hàng)
+	var left_col := VBoxContainer.new()
+	left_col.custom_minimum_size.x = 120
+	left_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_row.add_child(left_col)
+	var cover := SeasonalEventUi.cover_item(ev)
+	if cover != "" and SeasonalEvents.item_icon(cover) != null:
+		var cell := SeasonalEventUi.icon_cell(cover, 0, 64)
+		cell.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		left_col.add_child(cell)
+	else:
+		left_col.add_child(SocialUi.label(str(ev.get("icon", "🎉")), GameUi.TITLE, 30, HORIZONTAL_ALIGNMENT_CENTER))
+	var lunar: bool = str(ev.get("calendar", "")) == "lunar"
+	var chip := PanelContainer.new()
+	var cs := StyleBoxFlat.new()
+	cs.set_corner_radius_all(4)
+	cs.set_content_margin_all(3)
+	cs.set_border_width_all(1)
+	var chip_color := Color(0.95, 0.55, 0.35) if lunar else Color(0.45, 0.8, 0.95)
+	cs.bg_color = Color(chip_color.r * 0.25, chip_color.g * 0.25, chip_color.b * 0.25, 0.9)
+	cs.border_color = chip_color
+	chip.add_theme_stylebox_override("panel", cs)
+	chip.add_child(SocialUi.label(SeasonalEventUi.calendar_text(ev), chip_color, 11, HORIZONTAL_ALIGNMENT_CENTER))
+	left_col.add_child(chip)
+
+	## giữa: tên, thời gian, mô tả, nguyên liệu, thành phẩm
+	var mid_col := VBoxContainer.new()
+	mid_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mid_col.custom_minimum_size.x = 1
+	mid_col.add_theme_constant_override("separation", 4)
+	main_row.add_child(mid_col)
+	var title := str(ev.get("name", ""))
+	if per.get("gm", false):
+		title += "   [GM đặt lịch]"
+	mid_col.add_child(SocialUi.label(title, GameUi.TITLE, 16))
+	var when := "📅 %s %s     ⏳ %s %s" % [tr("Bắt đầu:"), SeasonalEvents.format_date(per["start"]), tr("Kết thúc:"), SeasonalEvents.format_date(per["end"])]
+	mid_col.add_child(SocialUi.label(when, GameUi.GOLD, 12))
+	var desc := SocialUi.label(str(ev.get("desc", "")), SocialUi.TEXT, 12)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size.x = 1
+	mid_col.add_child(desc)
+	var box := SeasonalEvents.drop_box_of(ev)
+	if box != "":   ## vật phẩm quái rơi trong đợt (chỉ online) — mở ra nguyên liệu ngẫu nhiên
+		mid_col.add_child(_icon_line("📦 " + tr("Vật phẩm rớt từ quái:"), [box]))
+	mid_col.add_child(_icon_line("🧺 " + tr("Nguyên liệu:"), SeasonalEventUi.event_materials(ev)))
+	mid_col.add_child(_icon_line("🎁 " + tr("Thành phẩm:"), SeasonalEventUi.event_results(ev)))
+
+	## phải: trạng thái + Hướng dẫn / Chế tạo
+	var right_col := VBoxContainer.new()
+	right_col.custom_minimum_size.x = 180
+	right_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	right_col.add_theme_constant_override("separation", 8)
+	main_row.add_child(right_col)
+	var st := SeasonalEventUi.status_of(per, now)
+	var status_panel := PanelContainer.new()
+	status_panel.custom_minimum_size = Vector2(170, 32)
+	var sb := StyleBoxFlat.new()
+	sb.set_corner_radius_all(6)
+	sb.set_content_margin_all(6)
+	sb.set_border_width_all(1)
+	sb.bg_color = Color(0.04, 0.06, 0.06, 0.95)
+	sb.border_color = st["color"]
+	status_panel.add_theme_stylebox_override("panel", sb)
+	var sl := SocialUi.label(st["text"], st["color"], 12, HORIZONTAL_ALIGNMENT_CENTER)
+	sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sl.custom_minimum_size.x = 1
+	sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_panel.add_child(sl)
+	right_col.add_child(status_panel)
+	var guide := GameUi.button(tr("Hướng dẫn"), GameUi.BUTTON)
+	guide.custom_minimum_size = Vector2(170, 34)
+	guide.pressed.connect(func() -> void: SeasonalEventUi.open_guide(_popup_host(), ev))
+	right_col.add_child(guide)
+	if per.get("status", "") == "ongoing":   ## chưa tới đợt: ẩn Chế tạo
+		var craft := GameUi.button(tr("Chế tạo"), GameUi.PRIMARY)
+		craft.custom_minimum_size = Vector2(170, 34)
+		craft.pressed.connect(_open_year_craft.bind(ev))
+		right_col.add_child(craft)
+	return card
+
+func _icon_line(caption: String, mids: Array) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var cap := SocialUi.label(caption, Color(0.95, 0.78, 0.35), 12)
+	cap.custom_minimum_size = Vector2(178, 34)
+	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(cap)
+	row.add_child(SeasonalEventUi.icon_row(mids))
+	return row
+
+func _popup_host() -> Node:
+	var tree := get_tree() if is_inside_tree() else Engine.get_main_loop() as SceneTree
+	return tree.current_scene if tree != null else self
+
+func _open_year_craft(ev: Dictionary) -> void:
+	var prof := _profile if _profile != null else GameManager.local_profile
+	if prof == null:
+		return
+	var win := EventCraftWindow.open(_popup_host(), ev, prof)
+	if win != null:
+		win.profile_changed.connect(func() -> void: profile_changed.emit())

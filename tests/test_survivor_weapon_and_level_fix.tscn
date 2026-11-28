@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://test_survivor_weapon_fix"]
+
+[ext_resource type="Script" path="res://tests/test_survivor_weapon_and_level_fix.gd" id="1_test"]
+
+[node name="TestSurvivorWeaponAndLevelFix" type="Node"]
+script = ExtResource("1_test")

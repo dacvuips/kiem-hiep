@@ -25,8 +25,10 @@ const PolicyDialog = preload("res://ui/policy/policy_dialog.gd")
 @onready var _apple: TextureButton = get_node_or_null("%AppleButton")
 @onready var _message: Label = %Message
 
+func _get_account_api() -> Node:
+	return get_node_or_null("/root/AccountApi")
+
 func _ready() -> void:
-	_upgrade_singletons_from_pack()
 	_setup_screen()
 	_update_locale_texts()
 	var loc_mgr: Node = get_node_or_null("/root/LocalizationManager")
@@ -56,6 +58,7 @@ func _ready() -> void:
 	if _apple:
 		_apple.pressed.connect(func() -> void:
 			_toast(_message, "Đăng nhập Apple đang phát triển"))
+	_setup_offline_play_button()
 	for b: BaseButton in [_login, _create, _register_link, _forgot, _google, _facebook, _apple]:
 		if b:
 			b.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
@@ -84,18 +87,60 @@ func _ready() -> void:
 		var dlg := PolicyDialog.show_if_needed(self)
 		if dlg:
 			dlg.accepted_done.connect(func() -> void:
-				if AccountApi.has_saved_session():
+				var api := _get_account_api()
+				if api != null and api.has_saved_session():
 					_resume()
 				elif not OS.has_feature("mobile") and not OS.has_feature("web"):
 					(_password if _user.text != "" else _user).grab_focus()
 			)
 			return
 
-	if AccountApi.is_logged_in():
+	var api := _get_account_api()
+	if api != null and api.is_logged_in():
 		## Quay lại màn này khi đang đăng nhập (VD bấm "Đổi tài khoản") = đăng xuất phiên cũ.
-		AccountApi.logout()
-	elif AccountApi.has_saved_session():
+		api.logout()
+	elif api != null and api.has_saved_session():
 		_resume()
+
+func _setup_offline_play_button() -> void:
+	var offline_btn: BaseButton = get_node_or_null("%OfflineButton")
+	if offline_btn == null:
+		var btn := Button.new()
+		btn.name = "OfflineButton"
+		btn.text = tr("🎮 CHƠI OFFLINE (KHÔNG CẦN TÀI KHOẢN)")
+		btn.custom_minimum_size = Vector2(300, 44)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.add_theme_color_override("font_color", Color(0.98, 0.92, 0.55))
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.8))
+		btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		btn.add_theme_constant_override("outline_size", 4)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.12, 0.25, 0.2, 0.85)
+		sb.border_color = Color(0.3, 0.8, 0.5, 0.9)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(6)
+		sb.content_margin_left = 12
+		sb.content_margin_right = 12
+		btn.add_theme_stylebox_override("normal", sb)
+		var sb_hover := sb.duplicate() as StyleBoxFlat
+		sb_hover.bg_color = Color(0.18, 0.35, 0.28, 0.95)
+		sb_hover.border_color = Color(0.5, 1.0, 0.7, 1.0)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+
+		var target_parent: Node = get_node_or_null("Stage")
+		if target_parent != null:
+			btn.position = Vector2(686, 750)
+			target_parent.add_child(btn)
+		else:
+			btn.position = Vector2(40, 40)
+			add_child(btn)
+		offline_btn = btn
+
+	offline_btn.pressed.connect(func() -> void:
+		GameModeManager.set_mode(GameModeManager.Mode.OFFLINE)
+		_go("res://ui/character_roster/CharacterRoster.tscn")
+	)
 
 func _test_capture_policy() -> void:
 	await get_tree().create_timer(0.5).timeout
@@ -107,11 +152,14 @@ func _test_capture_policy() -> void:
 
 ## Tự đăng nhập lại bằng phiên đã ghi nhớ.
 func _resume() -> void:
+	var api := _get_account_api()
+	if api == null:
+		return
 	if _user.text == "":
-		_user.text = AccountApi.saved_username()
+		_user.text = api.saved_username()
 	_set_busy(true, [_login, _create, _google])
 	_toast(_message, "Đang đăng nhập lại…", 30.0)
-	var r: Dictionary = await AccountApi.resume()
+	var r: Dictionary = await api.resume()
 	_set_busy(false, [_login, _create, _google])
 	if r.ok:
 		_go(AFTER_LOGIN_SCENE)
@@ -123,15 +171,17 @@ func _resume() -> void:
 var _google_waiting := false
 
 func _on_google_pressed() -> void:
+	var api := _get_account_api()
 	if _google_waiting:
-		AccountApi.cancel_google()
+		if api != null:
+			api.cancel_google()
 		return
 	if _busy:
 		return
 	_google_waiting = true
 	_set_busy(true, [_login, _create])
 	_toast(_message, "Đang chờ đăng nhập Google trên trình duyệt… (bấm Google lần nữa để hủy)", 300.0)
-	var r: Dictionary = await AccountApi.google_login()
+	var r: Dictionary = await api.google_login() if api != null else {"ok": false, "code": "no_api", "message": "Lỗi"}
 	_google_waiting = false
 	_set_busy(false, [_login, _create])
 	if not r.ok:
@@ -139,7 +189,7 @@ func _on_google_pressed() -> void:
 		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("login", "remember", true)
-	cfg.set_value("login", "name", AccountApi.username())
+	cfg.set_value("login", "name", api.username() if api != null else "")
 	cfg.save(CFG_PATH)
 	_go(AFTER_LOGIN_SCENE)
 
@@ -157,7 +207,12 @@ func _on_login_pressed() -> void:
 		return
 	_set_busy(true, [_login, _create, _google])
 	_toast(_message, "Đang đăng nhập…", 30.0)
-	var r: Dictionary = await AccountApi.login(name_text, _password.text, _remember.button_pressed)
+	var api := _get_account_api()
+	if api == null:
+		_set_busy(false, [_login, _create, _google])
+		_toast(_message, "Lỗi kết nối dịch vụ tài khoản")
+		return
+	var r: Dictionary = await api.login(name_text, _password.text, _remember.button_pressed)
 	_set_busy(false, [_login, _create, _google])
 	if not r.ok:
 		_toast(_message, r.message, 4.0 if r.code == "banned" else 2.6)
@@ -195,39 +250,3 @@ func _update_locale_texts() -> void:
 	var back_mode: BaseButton = get_node_or_null("%BackModeButton")
 	if back_mode:
 		back_mode.text = tr("‹ Đổi Chế Độ Chơi")
-
-func _upgrade_singletons_from_pack() -> void:
-	var singletons: Array = [
-		["GmManager", "res://systems/gm/gm_manager.gd"],
-		["LocalizationManager", "res://systems/localization_manager.gd"],
-		["TutorialManager", "res://ui/tutorial/tutorial_manager.gd"],
-		["MusicManager", "res://systems/music_manager.gd"],
-		["SfxManager", "res://systems/sfx_manager.gd"],
-		["PlayerStats", "res://systems/player_stats.gd"],
-		["GameManager", "res://systems/game_manager.gd"],
-		["SaveManager", "res://systems/save/save_manager.gd"],
-		["AccountApi", "res://systems/net/account_api.gd"],
-		["NetClient", "res://net/client/net_client.gd"],
-	]
-	for item in singletons:
-		var node_name: String = item[0]
-		var script_path: String = item[1]
-		var node: Node = get_tree().root.get_node_or_null(node_name)
-		if node != null:
-			if ResourceLoader.exists(script_path):
-				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-				if scr:
-					node.set_script(scr)
-					if node.has_method("_ready"):
-						node._ready()
-		else:
-			if ResourceLoader.exists(script_path):
-				var scr = ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-				if scr:
-					var inst = scr.new()
-					inst.name = node_name
-					get_tree().root.add_child(inst)
-	if ResourceLoader.exists("res://systems/player_profile.gd"):
-		var prof_scr = ResourceLoader.load("res://systems/player_profile.gd", "", ResourceLoader.CACHE_MODE_IGNORE)
-		if prof_scr and GameManager != null and GameManager.local_profile != null:
-			GameManager.local_profile.set_script(prof_scr)

@@ -33,8 +33,10 @@ func test_ui_layout() -> void:
 		top_bar = TopStatusBar.new()
 		ui.add_child(top_bar)
 
-	var top_bar_bottom = top_bar.offset_bottom
-	var side_menu_top = side_menu.offset_top
+	var top_bar_bottom = top_bar.global_position.y + top_bar.size.y if top_bar.size.y > 0 else top_bar.offset_bottom
+	var side_menu_top = side_menu.global_position.y
+	if side_menu.anchor_top > 0.5 and side_menu_top <= 0:
+		side_menu_top = side_menu.get_viewport_rect().size.y + side_menu.offset_top
 	print("[KIỂM TRA] TopStatusBar bottom = %f, SideMenu top = %f" % [top_bar_bottom, side_menu_top])
 	assert(side_menu_top >= top_bar_bottom, "SideMenu (top=%f) phải nằm dưới TopStatusBar (bottom=%f), không được chèn đè!" % [side_menu_top, top_bar_bottom])
 	print("[PASS] SideMenu không đè lên TopStatusBar!")

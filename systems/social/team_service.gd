@@ -13,6 +13,7 @@ class_name TeamService
 ## Trạng thái nằm trên thể hiện (online: server là nơi giữ đội, lớp này chỉ là ảnh chụp phía người chơi).
 
 signal changed
+signal hp_changed                         ## máu đồng đội đổi (online: S_TEAM_HP) — khung danh sách tổ đội vẽ lại thanh máu
 signal message(text: String, good: bool)
 
 enum Pick { SELF, FREE, CAPTAIN, ALTERNATE }
@@ -57,9 +58,14 @@ var pick_mode: int = Pick.FREE
 var pk_follow := false
 var allow_create := true                  ## cho phép tổ đội (m_bCreatTeamFlag)
 var auto_refuse_invite := false
+## Thiết lập tổ đội của Auto (tự mời / tự nhận lời mời / tự duyệt người xin vào) đang có hiệu lực — CHỈ khi auto đang chạy và
+## bật "Thiết lập tổ đội". AutoController bật lúc chạy auto, tắt lúc dừng / rời màn chơi.
+var auto_team := false
 var applicants: Array[MockPlayer] = []
 var rng := RandomNumberGenerator.new()
 var _turn := 0                            ## chỉ số người đang tới lượt nhặt (0 = đội trưởng, i+1 = members[i])
+var member_hp: Dictionary = {}            ## id thành viên -> % máu 0..100 (online, từ server; offline người chơi giả = đầy máu)
+var member_near: Dictionary = {}          ## id thành viên -> cùng phòng / map với mình (false = ở xa, khung tô mờ)
 
 func _init(p: PlayerProfile) -> void:
 	profile = p
@@ -102,6 +108,21 @@ func apply_net_state(st: Dictionary) -> void:
 			m.level = int(a.level)
 			applicants.append(m)
 	changed.emit()
+
+## Online: máu đồng đội server gửi định kỳ (S_TEAM_HP).
+func apply_net_hp(list: Array) -> void:
+	for d in list:
+		member_hp[int(d.eid)] = int(d.hp)
+		member_near[int(d.eid)] = bool(d.near)
+	hp_changed.emit()
+
+## % máu của 1 thành viên (chưa có tin = đầy máu).
+func hp_of(m: Member) -> int:
+	return int(member_hp.get(m.id, 100))
+
+## Thành viên đang cùng phòng / map với mình (offline: luôn đúng).
+func is_near(m: Member) -> bool:
+	return bool(member_near.get(m.id, true))
 
 func in_team() -> bool:
 	return captain != null
@@ -179,7 +200,17 @@ func _clear() -> void:
 	captain = null
 	members.clear()
 	applicants.clear()
+	member_hp.clear()
+	member_near.clear()
+	_turn = 0
 	changed.emit()
+	hp_changed.emit()
+
+## Bỏ đội phía người chơi, không báo tin — dùng khi về Sảnh (Character Hub) hoặc khi kết nối game server đóng / mất:
+## online thì server đã coi ngắt kết nối = rời đội (SocialServer.on_leave), offline thì về Sảnh = rời đội.
+func reset_local() -> void:
+	if in_team() or not applicants.is_empty():
+		_clear()
 
 ## Rời đội: đội viên rời thì đội còn lại; đội trưởng rời thì giải tán cả đội (KTeam::DeleteMember gốc).
 func leave() -> String:

@@ -106,5 +106,29 @@ func _ready() -> void:
 	# Cleanup
 	win.queue_free()
 	GameSettings.set_locale("vi")
+
+	# Test Hub System Buttons: Offline vs Online
+	print("Testing SettingsWindow Hub Buttons (Offline vs Online)...")
+	GameModeManager.current_mode = GameModeManager.Mode.OFFLINE
+	var win_off := SettingsWindow.new(true)
+	add_child(win_off)
+	assert(win_off._char_btn != null, "Offline must have _char_btn")
+	assert(win_off._quit_btn != null, "Offline must have _quit_btn")
+	assert(win_off._server_btn == null, "Offline MUST NOT have _server_btn")
+	print("PASS: Offline mode correctly has NO _server_btn, and has _char_btn and _quit_btn.")
+	win_off.queue_free()
+
+	GameModeManager.current_mode = GameModeManager.Mode.ONLINE
+	var win_on := SettingsWindow.new(true)
+	add_child(win_on)
+	assert(win_on._char_btn != null, "Online must have _char_btn")
+	assert(win_on._quit_btn != null, "Online must have _quit_btn")
+	assert(win_on._server_btn != null, "Online MUST have _server_btn")
+	print("PASS: Online mode correctly has _server_btn, _char_btn, and _quit_btn.")
+	win_on.queue_free()
+
+	# Reset mode to OFFLINE
+	GameModeManager.current_mode = GameModeManager.Mode.OFFLINE
+
 	print("=== ALL LOCALIZATION & SETTINGS TESTS PASSED SUCCESSFULLY! ===")
 	get_tree().quit(0)

@@ -103,6 +103,14 @@ func _init(profile: PlayerProfile, skills: Array[SkillDefinition]) -> void:
 	_refresh()
 	if not _skills.is_empty():
 		_select(_skills[0])
+	if SaveManager != null and SaveManager.has_signal("profile_changed"):
+		SaveManager.profile_changed.connect(_on_profile_changed)
+
+func _on_profile_changed(p: PlayerProfile) -> void:
+	if not is_instance_valid(self):
+		return
+	if p == null or p == _profile or (GameManager != null and p == GameManager.local_profile):
+		_refresh()
 
 
 # ==============================================================================
@@ -486,7 +494,7 @@ func _make_wheel_slot(parent: Control, slot: int, center: Vector2, diameter: flo
 
 	var icon := TextureRect.new()
 	icon.name = "Icon"
-	icon.material = SkillButton.make_circle_mask_material()
+	icon.material = SkillButton.make_icon_fit_material()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -529,8 +537,7 @@ func _set_arranging(on: bool) -> void:
 	_show_toast("Kéo để dời nút · bấm 1 nút để thêm / ẩn / đổi cỡ" if on else "Đã lưu vị trí các nút")
 
 func _reset_layout() -> void:
-	_profile.skill_layout.clear()
-	_profile.skill_slots.clear()
+	_profile.reset_skill_layout()
 	for slot in _wheel_slots:
 		var holder: Control = _wheel_slots[slot]
 		holder.position = _wheel_default_center[slot] - holder.size * 0.5
@@ -653,7 +660,7 @@ func _refresh_wheel() -> void:
 			holder.add_theme_stylebox_override("panel", SkillButton.make_round_style(holder.size.x, Color(0.08, 0.08, 0.07)))
 			var frames := SideMenu._frames(str(tool[1]))
 			var icon := holder.get_node("Icon") as TextureRect
-			icon.material = SkillButton.make_circle_mask_material() if str(tool[0]) == "jump" else null
+			icon.material = SkillButton.make_icon_fit_material() if str(tool[0]) == "jump" else null
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 			icon.texture = frames[0] if not frames.is_empty() else null
 			(holder.get_node("Plus") as Label).visible = false
@@ -677,6 +684,10 @@ func _get_grid_drag_data(_pos: Vector2, skill: SkillDefinition, source: Control)
 	if not skill.can_assign_to_hotbar():
 		_show_toast("Kỹ năng bị động — không thể gắn vào thanh kỹ năng")
 		return null
+	var learned_lv: int = _profile.get_skill_level(skill.id) if _profile != null else 0
+	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and learned_lv <= 0:
+		_show_toast("Chưa học kỹ năng này — học ít nhất 1 cấp để gắn")
+		return null
 	_dragged_source_slot = FROM_BOOK
 	source.set_drag_preview(SkillBarUI.make_drag_preview(skill))
 	return SkillBarUI.make_drag_data(skill.id, FROM_BOOK)
@@ -687,6 +698,10 @@ func _get_detail_drag_data(_pos: Vector2, source: Control) -> Variant:
 		return null
 	if not _selected.can_assign_to_hotbar():
 		_show_toast("Kỹ năng bị động — không thể gắn vào thanh kỹ năng")
+		return null
+	var learned_lv: int = _profile.get_skill_level(_selected.id) if _profile != null else 0
+	if not SectSkillController.DEBUG_UNLOCK_ALL_SKILLS and learned_lv <= 0:
+		_show_toast("Chưa học kỹ năng này — học ít nhất 1 cấp để gắn")
 		return null
 	_dragged_source_slot = FROM_BOOK
 	source.set_drag_preview(SkillBarUI.make_drag_preview(_selected))
@@ -808,10 +823,26 @@ func _select(skill: SkillDefinition) -> void:
 		_profile = GameManager.local_profile
 
 	var learned := _profile.get_skill_level(skill.id) if _profile != null else 0
-	_skill_name_label.text = skill.skill_name
+
+	# Tiêu đề kèm hệ ngũ hành chuẩn VNG (VD: Huy Sư Diệt Lỗ (hệ Hỏa))
+	var elem_name: String = ElementTypes.ELEMENT_NAME.get(skill.element, "") if skill.element in ElementTypes.ELEMENT_NAME else ""
+	var full_name := skill.skill_name
+	if elem_name != "" and not ("(" in full_name):
+		full_name += " (hệ %s)" % elem_name
+	_skill_name_label.text = full_name
 	_skill_icon.texture = skill.icon
-	_skill_desc.text = skill.description
-	_skill_school_label.text = skill.school_text
+
+	# Mô tả trong ngoặc kép kiểu VNG gốc
+	var desc := skill.description.strip_edges()
+	if desc != "" and not desc.begins_with("\""):
+		desc = "\"%s\"" % desc
+	_skill_desc.text = desc
+
+	# Lưu phái chuẩn VNG (VD: Võ công lưu phái: Thuẫn (Ngoại công))
+	var school := skill.school_text.strip_edges()
+	if school != "" and not school.begins_with("Võ công lưu phái:"):
+		school = "Võ công lưu phái: %s" % school
+	_skill_school_label.text = school
 	_stat_scroll.scroll_vertical = 0
 
 	_add_line(_stat_box, tr("Đẳng cấp hiện thời:") + " %d/%d" % [learned, skill.max_level], COLOR_CURRENT_LEVEL, 15)
@@ -820,27 +851,12 @@ func _select(skill: SkillDefinition) -> void:
 		_add_line(_stat_box, tr("Yêu cầu cấp độ nhân vật:") + " %d" % skill.req_level,
 				COLOR_STAT if has_level else COLOR_WARNING, 13)
 
-	var weapon_text := skill.get_weapon_limit_bbcode()
-	if weapon_text != "":
-		var rich := RichTextLabel.new()
-		rich.bbcode_enabled = true
-		rich.fit_content = true
-		rich.scroll_active = false
-		rich.add_theme_font_size_override("normal_font_size", 13)
-		rich.text = "[center]%s[/center]" % weapon_text
-		_stat_box.add_child(rich)
-
-	if skill.horse_limit == 1:
-		_add_line(_stat_box, tr("Trong lúc cưỡi ngựa không thể thi triển"), COLOR_WARNING, 13)
-	elif skill.horse_limit == 2:
-		_add_line(_stat_box, tr("Chỉ thi triển được khi cưỡi ngựa"), COLOR_WARNING, 13)
-
 	var support := skill.get_support_percent_from_other_skills(_all_skills, _profile)
 	if support > 0.0:
 		_add_line(_stat_box, tr("Hỗ trợ từ các kỹ năng khác:") + " %d%%" % int(support), COLOR_STAT, 13)
 
 	if skill.practice_only:
-		_add_line(_stat_box, "Kỹ năng cao cấp: tăng cấp bằng luyện tập", COLOR_WARNING, 13)
+		_add_line(_stat_box, "Mức độ luyện: 0%", COLOR_STAT, 13)
 
 	if skill.is_aura:
 		_add_line(_stat_box, "Hào quang: %s" % ("Đang bật" if _profile.active_aura_id == skill.id else "Đang tắt"), COLOR_GOLD, 13)
@@ -850,8 +866,18 @@ func _select(skill: SkillDefinition) -> void:
 			_add_line(_stat_box, line, COLOR_STAT, 13)
 		_append_child_skills(_stat_box, skill, learned, COLOR_STAT)
 
+	## Hạn chế vũ khí / cưỡi ngựa — đặt ở cuối khối hiện thời chuẩn VNG gốc (ngay trên Đẳng cấp tiếp theo)
+	var weapon_text := skill.get_weapon_limit_bbcode()
+	if weapon_text != "":
+		_add_rich_line(_stat_box, weapon_text, 13)
+
+	if skill.horse_limit == 1:
+		_add_line(_stat_box, tr("Trong lúc cưỡi ngựa không thể thi triển"), COLOR_WARNING, 13)
+	elif skill.horse_limit == 2:
+		_add_line(_stat_box, tr("Chỉ thi triển được khi cưỡi ngựa"), COLOR_WARNING, 13)
+
 	if learned < skill.max_level:
-		_add_line(_stat_box, "--- Đẳng cấp kế tiếp ---", COLOR_NEXT, 14)
+		_add_line(_stat_box, "Đẳng cấp tiếp theo", COLOR_NEXT, 14)
 		for line in _build_stat_lines(skill, learned + 1):
 			_add_line(_stat_box, line, COLOR_NEXT, 13)
 		_append_child_skills(_stat_box, skill, learned + 1, COLOR_NEXT)
@@ -927,13 +953,25 @@ func _add_line(box: VBoxContainer, text: String, color: Color, font_size: int = 
 	label.add_theme_font_size_override("font_size", font_size)
 	box.add_child(label)
 
+func _add_rich_line(box: VBoxContainer, bbcode: String, font_size: int = 13) -> void:
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.fit_content = true
+	rich.scroll_active = false
+	rich.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rich.add_theme_font_size_override("normal_font_size", font_size)
+	rich.text = "[center]%s[/center]" % bbcode
+	box.add_child(rich)
+
 func _append_child_skills(box: VBoxContainer, parent_skill: SkillDefinition, at_level: int, color: Color) -> void:
 	var index := 2
 	for candidate in _all_skills:
 		if candidate.parent_skill_id != parent_skill.id:
 			continue
-		_add_line(box, "Tăng %d: %s" % [index, candidate.skill_name], COLOR_LINKED_SKILL, 13)
-		for line in _build_stat_lines(candidate, clampi(at_level, 1, candidate.max_level)):
+		var child_level := clampi(at_level, 1, candidate.max_level)
+		var title_bbcode := "[color=#6488ff]Tầng thứ %d: [/color][color=#ffff44]%s[/color] [color=#6488ff][cấp %d][/color]" % [index, candidate.skill_name, child_level]
+		_add_rich_line(box, title_bbcode, 13)
+		for line in _build_stat_lines(candidate, child_level):
 			_add_line(box, line, color, 12)
 		index += 1
 
