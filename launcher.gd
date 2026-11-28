@@ -94,55 +94,70 @@ func _run() -> void:
 		_fail("Dữ liệu cập nhật trên máy chủ bị lỗi (%s).\nVui lòng thử lại sau." % bad)
 		return
 
-	var packs: Array = manifest["packs"]
-	# Ghi manifest đầy đủ để game bên trong có thể tải ngầm các gói còn lại
+	# Ghi manifest đầy đủ: WebContentManager trong game tải ngầm các gói còn thiếu của bản này.
 	_write_json_atomic(CONTENT_DIR.path_join("manifest.json"), manifest)
-
-	# Chỉ yêu cầu gói core để khởi động vào game
-	var core_pack: Dictionary = {}
-	for p: Dictionary in packs:
-		if p.get("name") == "core":
-			core_pack = p
-			break
-
+	var packs: Array = manifest["packs"]
+	var core_pack := _core_of(packs)
 	if core_pack.is_empty():
 		_fail("Không tìm thấy gói khởi động (core) trong dữ liệu máy chủ.")
 		return
 
-	var todo: Array = []
-	_dl_total = 0
-	_dl_done = 0
-	if not _pack_present(core_pack):
-		todo.append(core_pack)
-		_dl_total += int(core_pack["size"])
-
-	if not todo.is_empty():
+	# Bản mới đã tải ĐỦ mọi gói (tải ngầm từ lần chơi trước) -> dùng luôn.
+	# Chưa đủ nhưng đang có bản cũ chạy được và máy chủ không bắt buộc -> vào ngay bằng bản cũ, bản mới tải ngầm trong
+	# game và được dùng ở lần mở app sau. (Không bao giờ thay code lúc game đang chạy.)
+	# Không có bản nào chạy được (cài lần đầu / bản cũ hỏng / bắt buộc cập nhật) -> phải tải core rồi mới vào.
+	var new_installed := _installed_from(manifest)
+	var forced := int(installed.get("version", 0)) < int(manifest.get("min_version", 0))
+	if _all_present(packs):
+		pass
+	elif _installed_ok(installed) and not forced and int(installed.get("version", 0)) != new_installed["version"]:
+		_say("Vào game — bản mới (%d) sẽ tải ngầm khi chơi." % new_installed["version"])
+		_cleanup(packs + (installed.get("packs", []) as Array))
+		_boot(installed)
+		return
+	elif not _pack_present(core_pack):
+		_dl_total = int(core_pack["size"])
+		_dl_done = 0
 		DisplayServer.screen_set_keep_on(true)
 		_bar.visible = true
 		_speed_t0 = Time.get_ticks_msec()
 		_speed_b0 = 0
 		_speed = 0.0
-		var first_install := not _pack_present(core_pack)
-		for p: Dictionary in todo:
-			_say(("Đang tải dữ liệu khởi động" if first_install else "Đang cập nhật bản mới") + " (%s)..." % p["name"])
-			var err := await _fetch_pack(manifest, p)
-			if err != "":
-				DisplayServer.screen_set_keep_on(false)
-				_fail(err)
-				return
+		var first_install := not _installed_ok(installed)
+		_say(("Đang tải dữ liệu khởi động" if first_install else "Bắt buộc cập nhật bản mới") + " (core)...")
+		var err := await _fetch_pack(manifest, core_pack)
 		DisplayServer.screen_set_keep_on(false)
+		if err != "":
+			_fail(err)
+			return
 
-	var now_installed := {
-		"version": int(manifest.get("version", 0)),
-		"engine": str(manifest.get("engine", "")),
-		"packs": packs,
-	}
-	if not _write_json_atomic(INSTALLED_PATH, now_installed):
+	if not _write_json_atomic(INSTALLED_PATH, new_installed):
 		_fail("Không ghi được dữ liệu vào máy (bộ nhớ đầy?).")
 		return
 	_cleanup(packs)
-	_show_versions(now_installed)
-	_boot(now_installed)
+	_show_versions(new_installed)
+	_boot(new_installed)
+
+## installed.json cho bản trong manifest. Ghi kèm settings_hash để lần sau biết bản này có hợp với APK không.
+func _installed_from(manifest: Dictionary) -> Dictionary:
+	return {
+		"version": int(manifest.get("version", 0)),
+		"engine": str(manifest.get("engine", "")),
+		"settings_hash": str(manifest.get("settings_hash", "")),
+		"packs": manifest["packs"],
+	}
+
+func _core_of(packs: Array) -> Dictionary:
+	for p: Variant in packs:
+		if p is Dictionary and (p as Dictionary).get("name") == "core":
+			return p
+	return {}
+
+func _all_present(packs: Array) -> bool:
+	for p: Variant in packs:
+		if not p is Dictionary or not _pack_present(p):
+			return false
+	return true
 
 ## "" = hợp lệ; "outdated" = cần APK mới; còn lại = mô tả lỗi.
 func _check_manifest(m: Dictionary) -> String:
@@ -202,11 +217,13 @@ func _installed_ok(installed: Dictionary) -> bool:
 	var packs: Variant = installed.get("packs")
 	if not packs is Array or (packs as Array).is_empty():
 		return false
-	# Chỉ cần gói core hợp lệ là có thể khởi động vào màn hình đăng nhập
-	for p: Variant in packs:
-		if p is Dictionary and (p as Dictionary).get("name") == "core":
-			return _pack_present(p as Dictionary)
-	return false
+	# Bản đã cài phải hợp với APK này (APK mới có thể đổi cài đặt project mà core cũ không biết).
+	var sh := str(installed.get("settings_hash", ""))
+	if _is_thin_launcher() and sh != "" and sh != _own_settings_hash():
+		return false
+	# Chỉ cần gói core hợp lệ là khởi động được (gói tài nguyên thiếu thì game tải ngầm, cổng chọn nhân vật chờ).
+	var core := _core_of(packs)
+	return not core.is_empty() and _pack_present(core)
 
 # --- Tải 1 gói ---
 

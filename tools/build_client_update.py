@@ -145,6 +145,9 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--min-launcher", type=int, help="LAUNCHER_VERSION tối thiểu (launcher cũ hơn -> báo tải APK mới)")
     ap.add_argument("--apk-url", help="link tải APK mới, hiện khi launcher quá cũ")
+    ap.add_argument("--force-update", action="store_true",
+                    help="bắt buộc mọi người dùng bản này ngay (đổi giao thức mạng/server...). Mặc định bản mới tải ngầm, "
+                         "dùng ở lần mở app sau")
     ap.add_argument("--clean-old", action="store_true", help="Xoá toàn bộ gói cũ không thuộc manifest mới nhất (mặc định giữ lại 1 bản trước)")
     ap.add_argument("--files-base", help="để gói trên CDN: https://cdn.../client/ (mặc định server tài khoản)")
     args = ap.parse_args()
@@ -219,8 +222,11 @@ def main() -> None:
 
     changed_any = ([p["file"] for p in packs] != [p["file"] for p in old.get("packs", [])]
                    or old.get("settings_hash") != settings_hash)
+    version = int(old.get("version", 0)) + (1 if changed_any else 0)
     manifest = {
-        "version": int(old.get("version", 0)) + (1 if changed_any else 0),
+        "version": version,
+        # Bản đã cài nhỏ hơn số này -> launcher bắt tải bản mới trước khi vào game (không cho chơi bản cũ).
+        "min_version": version if args.force_update else int(old.get("min_version", 0)),
         "build": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
                  if changed_any else old.get("build", ""),
         "engine": engine,

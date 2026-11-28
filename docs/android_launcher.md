@@ -14,9 +14,19 @@ Nay APK là **launcher mỏng**: engine + màn tải (`launcher.gd`) + theme/fon
 
 1. Engine tạo các autoload giả (tên `MusicManager`, `NetClient`... được đăng ký toàn cục) rồi chạy `launcher.gd`.
 2. Launcher lấy `/v1/client/manifest`, kiểm `min_launcher`, phiên bản Godot, **`settings_hash`**. Lệch thì báo tải APK mới.
-3. Tải core nếu chưa có, nạp core (ghi đè) cùng các gói đã có, gỡ script giả, gắn script thật từ core cho từng autoload,
-   cho chúng vào cây lại đúng thứ tự (`_enter_tree`/`_ready` chạy như bình thường), rồi vào `ModeSelect`.
-4. `WebContentManager` tải ngầm các gói còn thiếu. Cổng ở màn chọn nhân vật chặn lại cho tới khi tải đủ.
+3. Chọn bản để chạy:
+   - bản trong manifest đã có **đủ mọi gói** trên máy (tải ngầm từ lần trước) → dùng bản đó;
+   - chưa đủ, nhưng bản đang cài (`installed.json`) chạy được và máy chủ không bắt buộc (`min_version`) → **vào ngay bằng
+     bản đang cài**, bản mới tải ngầm trong game;
+   - không có bản nào chạy được (cài lần đầu, bản cũ không hợp APK, bị bắt buộc) → đứng chờ tải core rồi mới vào.
+4. Nạp core (ghi đè) cùng các gói đã có, gỡ script giả, gắn script thật từ core cho từng autoload, cho chúng vào cây lại
+   đúng thứ tự (`_enter_tree`/`_ready` chạy như bình thường), rồi vào `ModeSelect`.
+5. `WebContentManager`:
+   - gói **của bản đang chạy** còn thiếu → tải rồi nạp; cổng ở màn chọn nhân vật chờ tới khi đủ;
+   - gói **của bản sau** → chỉ tải về máy, **không nạp** (bắt đầu sau khi đăng nhập, hoặc sau 15 giây nếu chơi Offline).
+     Xong thì hiện "Đã tải bản cập nhật — mở lại game để dùng". Lần mở app sau launcher dùng bản mới.
+
+Không bao giờ nạp core của bản khác vào game đang chạy: đó chính là lỗi văng 2026-11-28.
 
 ## `settings_hash`: thứ chỉ APK mới đổi được
 
@@ -32,7 +42,10 @@ Engine chỉ đọc lúc mở app, từ APK: `project.godot` (màn hình, render
 GODOT=".../Godot_v4.7.2-stable_win64_console.exe" python tools/build_client_update.py
 ```
 
-Người chơi nhận core mới ở lần mở app tiếp theo, không cần cài lại.
+Người chơi tải ngầm core mới trong lúc chơi, dùng ở lần mở app sau, không cần cài lại.
+
+**Đổi giao thức mạng / server mà bản cũ không chơi được nữa:** thêm `--force-update` (ghi `min_version`). Launcher bắt
+tải xong bản mới mới cho vào game.
 
 **Sửa `project.godot`, thêm/bớt/đổi thứ tự autoload, đổi `extends` của autoload, đổi theme/font theme, bus âm thanh:**
 `build_client_update.py` sẽ in `CHÚ Ý: settings_hash đổi ...`. Làm theo thứ tự:

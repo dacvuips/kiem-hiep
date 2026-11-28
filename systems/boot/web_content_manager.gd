@@ -12,6 +12,9 @@ signal content_loaded
 
 const CONTENT_DIR := "user://content"
 const MANIFEST_PATH := "user://content/manifest.json"
+const INSTALLED_PATH := "user://content/installed.json"
+## Gói HTTP 4xx (máy chủ đã xoá bản cũ...) thử chừng này lần rồi bỏ qua, không kẹt vòng tải.
+const MAX_CLIENT_ERROR_TRIES := 3
 
 var is_web: bool = false
 var is_native_streaming: bool = false
@@ -41,6 +44,12 @@ var _sample_timer: float = 0.0
 var _is_downloading_pack: bool = false
 var _retry_count: int = 0
 var _streaming_loop_running: bool = false
+## Byte của bản sau (chỉ tải, không nạp) — không tính vào tiến độ của cổng chọn nhân vật.
+var _next_bytes: int = 0
+## Đang tải gói của bản sau: không cập nhật tiến độ cổng / huy hiệu.
+var _quiet: bool = false
+## Đã tải xong bản cập nhật, chờ mở lại app.
+var update_downloaded: bool = false
 
 func _ready() -> void:
 	# Chạy trong Godot Editor: toàn bộ tài nguyên res:// đã có sẵn trên ổ đĩa, bỏ qua tải ngầm
@@ -214,45 +223,71 @@ func _init_native_content_streaming() -> void:
 		return
 	
 	_manifest = parsed as Dictionary
-	var packs: Array = _manifest.get("packs", [])
-	
+	# Bản ĐANG CHẠY = installed.json (launcher đã nạp core của bản này). Gói của bản này thiếu -> tải rồi NẠP, cổng chọn
+	# nhân vật chờ. Gói của BẢN SAU (manifest.json mới hơn) -> chỉ tải về máy, KHÔNG nạp: launcher dùng ở lần mở app sau.
+	# Không bao giờ nạp core/gói của bản khác lúc game đang chạy (script cũ kẹt lại -> văng, lỗi 2026-11-28).
+	var current: Array = _manifest.get("packs", [])
+	var inst: Variant = JSON.parse_string(FileAccess.get_file_as_string(INSTALLED_PATH)) 			if FileAccess.file_exists(INSTALLED_PATH) else null
+	if inst is Dictionary and (inst as Dictionary).get("packs") is Array:
+		current = (inst as Dictionary)["packs"]
+	var current_files := {}
+	for p_var in current:
+		if p_var is Dictionary:
+			current_files[str((p_var as Dictionary).get("file", ""))] = true
+
 	_missing_packs.clear()
 	_total_native_bytes = 0
 	_already_dl_bytes = 0
-	
-	for p_var in packs:
+	_next_bytes = 0
+
+	for p_var in current:
 		if not p_var is Dictionary:
 			continue
-		var p: Dictionary = p_var
+		var p: Dictionary = (p_var as Dictionary).duplicate()
 		if p.get("name") == "core":
-			continue # core đã được launcher nạp trước
-		
+			continue # core của bản này launcher đã nạp
 		var file_name: String = str(p.get("file", ""))
 		var size: int = int(p.get("size", 0))
 		var file_path: String = CONTENT_DIR.path_join(file_name)
-		
 		if FileAccess.file_exists(file_path) and _file_size(file_path) == size:
-			# Đã có sẵn trên máy -> nạp luôn vào bộ nhớ game
 			var ok := ProjectSettings.load_resource_pack(file_path, false)
 			print("[ContentManager] Nạp gói tài nguyên sẵn có: %s -> %s" % [file_name, ok])
 		else:
-			# Chưa có hoặc tải dở -> đưa vào hàng đợi tải ngầm
+			p["_mount"] = true
 			_missing_packs.append(p)
 			_total_native_bytes += size
-	
-	if _missing_packs.is_empty():
-		print("[ContentManager] Toàn bộ gói tài nguyên thế giới đã có sẵn trên thiết bị!")
+
+	for p_var in _manifest.get("packs", []):
+		if not p_var is Dictionary:
+			continue
+		var p: Dictionary = (p_var as Dictionary).duplicate()
+		var file_name: String = str(p.get("file", ""))
+		var file_path: String = CONTENT_DIR.path_join(file_name)
+		if current_files.has(file_name) or (FileAccess.file_exists(file_path) and _file_size(file_path) == int(p.get("size", 0))):
+			continue
+		p["_mount"] = false
+		_missing_packs.append(p)
+		_next_bytes += int(p.get("size", 0))
+
+	if _total_native_bytes == 0:
+		print("[ContentManager] Gói của bản đang chạy đã đủ trên thiết bị!")
 		is_ready = true
 		content_loaded.emit()
 		_flush_callbacks()
-		return
-	
+		if _missing_packs.is_empty():
+			return
+		print("[ContentManager] Có bản cập nhật %d -> tải ngầm %d gói (dùng ở lần mở app sau)." % [
+				int(_manifest.get("version", 0)), _missing_packs.size()])
+
 	# Đợi đăng nhập xong mới bắt đầu tải ngầm gói tài nguyên thế giới để tránh nghẽn mạng lúc đăng nhập
 	var api = get_node_or_null("/root/AccountApi")
 	if api == null or not api.is_logged_in():
 		print("[ContentManager] Chưa đăng nhập -> Tạm hoãn tải ngầm gói tài nguyên thế giới.")
 		if api != null and api.has_signal("logged_in") and not api.logged_in.is_connected(_start_native_streaming):
 			api.logged_in.connect(_start_native_streaming, CONNECT_ONE_SHOT)
+		if _total_native_bytes == 0:
+			# Chỉ còn bản sau: chơi Offline thì không bao giờ đăng nhập -> vẫn tải sau một lúc.
+			get_tree().create_timer(15.0).timeout.connect(_start_native_streaming)
 		return
 
 	_start_native_streaming()
@@ -274,11 +309,12 @@ func _start_native_streaming() -> void:
 	if _streaming_loop_running or _missing_packs.is_empty():
 		return
 	is_native_streaming = true
-	is_ready = false
+	is_ready = _total_native_bytes == 0
 	total_bytes = _total_native_bytes
 	loaded_bytes = _already_dl_bytes
 	
-	_create_status_badge()
+	if not is_ready:
+		_create_status_badge()
 	_run_native_download_loop()
 
 func _get_pack_url(file_name: String) -> String:
@@ -438,10 +474,11 @@ func _download_file_resumable(url: String, part_path: String, size: int) -> Stri
 			speed_calc_bytes = have
 			
 			loaded_bytes = _already_dl_bytes + have
-			if _total_native_bytes > 0:
+			if _total_native_bytes > 0 and not _quiet:
 				progress_percent = clamp(int(float(loaded_bytes) / float(_total_native_bytes) * 100), 0, 99)
-			_update_badge()
-			progress_updated.emit(progress_percent, loaded_bytes, _total_native_bytes, download_speed)
+			if not _quiet:
+				_update_badge()
+				progress_updated.emit(progress_percent, loaded_bytes, _total_native_bytes, download_speed)
 		
 		if now - frame_t > 12:
 			await get_tree().process_frame
@@ -450,11 +487,12 @@ func _download_file_resumable(url: String, part_path: String, size: int) -> Stri
 	f.close()
 	http.close()
 	
-	loaded_bytes = _already_dl_bytes + have
-	if _total_native_bytes > 0:
-		progress_percent = clamp(int(float(loaded_bytes) / float(_total_native_bytes) * 100), 0, 99)
-	_update_badge()
-	progress_updated.emit(progress_percent, loaded_bytes, _total_native_bytes, download_speed)
+	if not _quiet:
+		loaded_bytes = _already_dl_bytes + have
+		if _total_native_bytes > 0:
+			progress_percent = clamp(int(float(loaded_bytes) / float(_total_native_bytes) * 100), 0, 99)
+		_update_badge()
+		progress_updated.emit(progress_percent, loaded_bytes, _total_native_bytes, download_speed)
 	
 	if have < size:
 		return "Mất kết nối khi đang tải (%d / %d bytes)" % [have, size]
@@ -467,27 +505,31 @@ func _download_file_resumable(url: String, part_path: String, size: int) -> Stri
 func _run_native_download_loop() -> void:
 	_streaming_loop_running = true
 	_retry_count = 0
-	
+
 	while not _missing_packs.is_empty():
 		_current_pack = _missing_packs[0]
+		var mount: bool = bool(_current_pack.get("_mount", true))
+		_quiet = not mount
 		var file_name: String = str(_current_pack.get("file", ""))
 		var size: int = int(_current_pack.get("size", 0))
 		var expected_sha: String = str(_current_pack.get("sha256", "")).to_lower()
 		var pack_name: String = str(_current_pack.get("name", file_name))
 		var part_path: String = CONTENT_DIR.path_join(file_name + ".part")
 		var final_path: String = CONTENT_DIR.path_join(file_name)
-		
+
 		var url := _get_pack_url(file_name)
-		print("[ContentManager] Bắt đầu tải ngầm gói %s (%s, %d bytes)..." % [pack_name, file_name, size])
-		
+		print("[ContentManager] Bắt đầu tải ngầm gói %s (%s, %d bytes, %s)..." % [
+				pack_name, file_name, size, "bản đang chạy" if mount else "bản sau"])
+
 		var success := false
 		var retry_delay := 2.0
-		
+		var client_errors := 0
+
 		while not success:
 			var err_msg := await _download_file_resumable(url, part_path, size)
 			if err_msg == "":
 				if expected_sha != "":
-					if _badge_label and is_instance_valid(_badge_label):
+					if mount and _badge_label and is_instance_valid(_badge_label):
 						_badge_label.text = "⚡ Đang kiểm tra %s..." % pack_name
 					var actual_sha := await _compute_sha256(part_path)
 					if actual_sha != expected_sha:
@@ -495,7 +537,7 @@ func _run_native_download_loop() -> void:
 						DirAccess.remove_absolute(part_path)
 						await get_tree().create_timer(2.0).timeout
 						continue
-				
+
 				if FileAccess.file_exists(final_path):
 					DirAccess.remove_absolute(final_path)
 				var ren_err := DirAccess.rename_absolute(part_path, final_path)
@@ -503,24 +545,52 @@ func _run_native_download_loop() -> void:
 					push_error("[ContentManager] Không đổi tên được file %s (lỗi %d)" % [file_name, ren_err])
 					await get_tree().create_timer(3.0).timeout
 					continue
-				
-				var load_ok := ProjectSettings.load_resource_pack(final_path, false)
-				print("[ContentManager] Nạp nóng thành công gói %s -> %s" % [file_name, load_ok])
-				
-				_already_dl_bytes += size
-				_missing_packs.pop_front()
+
+				if mount:
+					var load_ok := ProjectSettings.load_resource_pack(final_path, false)
+					print("[ContentManager] Nạp nóng thành công gói %s -> %s" % [file_name, load_ok])
+					_already_dl_bytes += size
+				else:
+					print("[ContentManager] Đã tải gói %s của bản sau (chưa nạp)." % file_name)
 				success = true
+			elif err_msg.contains("HTTP 4"):
+				# Máy chủ không còn gói này (VD bản cũ đã bị xoá) -> bỏ qua, không kẹt cả vòng tải.
+				client_errors += 1
+				push_warning("[ContentManager] %s: %s (lần %d)" % [file_name, err_msg, client_errors])
+				if client_errors >= MAX_CLIENT_ERROR_TRIES:
+					break
+				await get_tree().create_timer(retry_delay).timeout
 			else:
 				push_warning("[ContentManager] Lỗi tải gói %s: %s. Thử lại sau %.1fs..." % [file_name, err_msg, retry_delay])
-				if _badge_label and is_instance_valid(_badge_label):
+				if mount and _badge_label and is_instance_valid(_badge_label):
 					_badge_label.text = "⚡ Mạng gián đoạn, tự kết nối lại..."
 				await get_tree().create_timer(retry_delay).timeout
 				retry_delay = minf(8.0, retry_delay * 1.5)
-	
-	print("[ContentManager] Hoàn tất toàn bộ tải ngầm tài nguyên thế giới!")
-	is_ready = true
+
+		_missing_packs.pop_front()
+		# Hết gói của bản đang chạy -> mở cổng ngay, phần còn lại (bản sau) tải tiếp lặng lẽ.
+		if not is_ready and not _has_pending_mount():
+			_mark_current_ready()
+
+	_quiet = false
+	if not is_ready:
+		_mark_current_ready()
+	if _next_bytes > 0:
+		update_downloaded = true
+		print("[ContentManager] Đã tải xong bản cập nhật %d — dùng ở lần mở app sau." % int(_manifest.get("version", 0)))
+		_show_update_ready_badge()
 	is_native_streaming = false
 	_streaming_loop_running = false
+
+func _has_pending_mount() -> bool:
+	for p in _missing_packs:
+		if bool((p as Dictionary).get("_mount", true)):
+			return true
+	return false
+
+func _mark_current_ready() -> void:
+	print("[ContentManager] Gói của bản đang chạy đã đủ.")
+	is_ready = true
 	progress_percent = 100
 	loaded_bytes = total_bytes
 	download_speed = ""
@@ -528,6 +598,19 @@ func _run_native_download_loop() -> void:
 	progress_updated.emit(100, total_bytes, total_bytes, "")
 	content_loaded.emit()
 	_flush_callbacks()
+
+func _show_update_ready_badge() -> void:
+	_create_status_badge()
+	if _badge_label and is_instance_valid(_badge_label):
+		_badge_label.text = "✅ Đã tải bản cập nhật — mở lại game để dùng"
+		_badge_label.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
+		var tween := create_tween()
+		tween.tween_interval(8.0)
+		tween.tween_property(_badge_panel, "modulate:a", 0.0, 0.6)
+		tween.tween_callback(func():
+			if _badge_layer and is_instance_valid(_badge_layer):
+				_badge_layer.queue_free()
+		)
 
 func _format_speed(bytes_per_sec: float) -> String:
 	if bytes_per_sec >= 1048576.0:
