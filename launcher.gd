@@ -106,11 +106,14 @@ func _run() -> void:
 	# Chưa đủ nhưng đang có bản cũ chạy được và máy chủ không bắt buộc -> vào ngay bằng bản cũ, bản mới tải ngầm trong
 	# game và được dùng ở lần mở app sau. (Không bao giờ thay code lúc game đang chạy.)
 	# Không có bản nào chạy được (cài lần đầu / bản cũ hỏng / bắt buộc cập nhật) -> phải tải core rồi mới vào.
+	# Bản đang cài không có "bg_update" (core cũ, WebContentManager chưa biết tải ngầm bản sau) -> cũng phải tải ngay,
+	# không thì chạy bản cũ mãi.
 	var new_installed := _installed_from(manifest)
 	var forced := int(installed.get("version", 0)) < int(manifest.get("min_version", 0))
 	if _all_present(packs):
 		pass
-	elif _installed_ok(installed) and not forced and int(installed.get("version", 0)) != new_installed["version"]:
+	elif _installed_ok(installed) and not forced and int(installed.get("bg_update", 0)) >= 1 \
+			and int(installed.get("version", 0)) != new_installed["version"]:
 		_say("Vào game — bản mới (%d) sẽ tải ngầm khi chơi." % new_installed["version"])
 		_cleanup(packs + (installed.get("packs", []) as Array))
 		_boot(installed)
@@ -144,6 +147,7 @@ func _installed_from(manifest: Dictionary) -> Dictionary:
 		"version": int(manifest.get("version", 0)),
 		"engine": str(manifest.get("engine", "")),
 		"settings_hash": str(manifest.get("settings_hash", "")),
+		"bg_update": int(manifest.get("bg_update", 0)),
 		"packs": manifest["packs"],
 	}
 

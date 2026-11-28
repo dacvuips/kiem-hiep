@@ -236,6 +236,9 @@ def main() -> None:
         # Cài đặt mà engine chỉ đọc từ APK lúc mở app (project.godot, autoload, theme...). Launcher mỏng có mã khác
         # -> báo tải APK mới thay vì chạy core lệch. Đổi mã này = PHẢI phát APK (tools/build_launcher_apk.py) trước.
         "settings_hash": settings_hash,
+        # Core này (WebContentManager) biết tải ngầm bản sau mà không nạp. Bản đã cài không có dấu này -> launcher tải
+        # bản mới ngay thay vì chạy bản cũ mãi.
+        "bg_update": 1,
         "packs": packs,
     }
     tmp_manifest = manifest_path.with_suffix(".json.tmp")
