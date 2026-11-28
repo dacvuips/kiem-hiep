@@ -1770,13 +1770,13 @@ func _on_event_action(event_id: String) -> void:
 	match event_id:
 		"battle", "time_challenge", "ferry":
 			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
-			win._select_tab(2)
+			win.select_tab_name("Ải", event_id)
 		"world_boss":
 			if GameModeManager.is_offline():
 				_show_toast(tr("Hoạt động Săn Boss chỉ mở ở chế độ Trực tuyến!"))
 				return
 			var win := MapSelectWindow.open(self, _profile, _enter_field_map)
-			win._select_tab(3)
+			win.select_tab_name("Boss")
 		"pk_arena":
 			PkWindow.open(self, _profile, _enter_field_map)
 		"hoa_dang":

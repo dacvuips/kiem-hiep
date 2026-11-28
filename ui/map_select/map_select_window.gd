@@ -43,6 +43,8 @@ var _content: HBoxContainer
 var _map_list_scroll: ScrollContainer
 var _thu_thanh_list_scroll: ScrollContainer
 var _hell_list_scroll: ScrollContainer
+var _ai_scroll: ScrollContainer
+var _ai_cards: Dictionary = {}
 var _join_row: Control
 var _join_edit: LineEdit
 var _join_button: Button
@@ -201,6 +203,29 @@ func on_presented() -> void:
 		_tab = 0
 	_select_tab(_tab)
 
+func get_current_tab_name() -> String:
+	var tabs := get_tabs()
+	if _tab >= 0 and _tab < tabs.size():
+		return str(tabs[_tab])
+	return ""
+
+func select_tab_name(tab_name: String, target_id: String = "") -> void:
+	var tabs := get_tabs()
+	var idx := tabs.find(tab_name)
+	if idx != -1:
+		_select_tab(idx)
+		if target_id != "":
+			call_deferred("_scroll_to_ai_target", target_id)
+
+func _scroll_to_ai_target(target_id: String) -> void:
+	if _ai_scroll == null or not is_instance_valid(_ai_scroll):
+		return
+	var card: Control = _ai_cards.get(target_id)
+	if card != null and is_instance_valid(card):
+		await get_tree().process_frame
+		if is_instance_valid(_ai_scroll) and is_instance_valid(card):
+			_ai_scroll.ensure_control_visible(card)
+
 func _select_tab(i: int) -> void:
 	var tabs := get_tabs()
 	if i < 0 or i >= tabs.size():
@@ -218,6 +243,8 @@ func _select_tab(i: int) -> void:
 	_map_list_scroll = null
 	_thu_thanh_list_scroll = null
 	_hell_list_scroll = null
+	_ai_scroll = null
+	_ai_cards.clear()
 	_rooms_box = null
 	_rooms_msg = null
 	var selected_tab: String = tabs[i]
@@ -251,20 +278,22 @@ func _build_ai() -> void:
 	scroll.custom_minimum_size = LIST_SIZE
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_child(scroll)
+	_ai_scroll = scroll
+	_ai_cards.clear()
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 	TouchScrollHelperScript.attach(scroll, scroll)
-	_build_thien_tam_thap(list)
-	_build_linh_lung_thap(list)
-	_build_honor_defense(list)
-	_build_stages_challenge(list)
+	_ai_cards["thien_tam_thap"] = _build_thien_tam_thap(list)
+	_ai_cards["linh_lung_thap"] = _build_linh_lung_thap(list)
+	_ai_cards["honor_defense"] = _build_honor_defense(list)
+	_ai_cards["stages_challenge"] = _build_stages_challenge(list)
 	if not GameModeManager.is_offline():
-		_build_time_challenge(list)
-		_build_phong_lang_do(list)
-		_build_tong_kim_lol(list)
-		_build_battle(list)
+		_ai_cards["time_challenge"] = _build_time_challenge(list)
+		_ai_cards["ferry"] = _build_phong_lang_do(list)
+		_ai_cards["tong_kim_lol"] = _build_tong_kim_lol(list)
+		_ai_cards["battle"] = _build_battle(list)
 
 func _get_hub() -> Node:
 	if _host != null and is_instance_valid(_host):
@@ -281,7 +310,7 @@ func _get_hub() -> Node:
 # ---------------------------------------------------------------- tab Ải (Hiệp Phong Luận Kiếm)
 
 ## Thẻ Ải "Hiệp Phong Luận Kiếm"
-func _build_thien_tam_thap(parent: Control) -> void:
+func _build_thien_tam_thap(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -358,11 +387,12 @@ func _build_thien_tam_thap(parent: Control) -> void:
 			lb_script.open(self, _profile)
 	)
 	row.add_child(rank_btn)
+	return card
 
 # ---------------------------------------------------------------- tab Ải (Linh Lung Tháp)
 
 ## Thẻ Ải "Linh Lung Tháp" (Chuẩn VNG 2.0 Hoàng Kim Phong Mã)
-func _build_linh_lung_thap(parent: Control) -> void:
+func _build_linh_lung_thap(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -442,11 +472,12 @@ func _build_linh_lung_thap(parent: Control) -> void:
 	claim_btn.tooltip_text = tr("Nhận ngay 1 Lệnh Bài Linh Lung Tháp vào hành trang để thử nghiệm tính năng lập tức")
 	claim_btn.pressed.connect(_claim_linh_lung_thap_token)
 	row.add_child(claim_btn)
+	return card
 
 func _start_linh_lung_thap() -> void:
 	var reason := LinhLungThapScript.check_entry(_profile)
 	if reason != "":
-		_select_tab(2)
+		select_tab_name("Ải")
 		return
 	var item_cnt := LinhLungThapScript.entry_item_count(_profile)
 	var cost_desc := "1 %s" % LinhLungThapScript.ENTRY_ITEM_NAME if item_cnt > 0 else "%s lượng phí khiêu chiến" % LinhLungThapScript._money(LinhLungThapScript.ENTRY_FEE)
@@ -454,7 +485,7 @@ func _start_linh_lung_thap() -> void:
 			"Báo danh tiến vào Linh Lung Tháp? Bạn sẽ vào Phòng Chờ (Khu Chuẩn Bị) 5 phút trước khi khai chiến. Thủ tục thu %s và tính 1 lượt hôm nay." % cost_desc,
 			func() -> void:
 				if not LinhLungThapScript.pay_entry(_profile):
-					_select_tab(2)
+					select_tab_name("Ải")
 					return
 				_play(LinhLungThapScript.prep_map_entry()))
 
@@ -463,10 +494,10 @@ func _claim_linh_lung_thap_token() -> void:
 		var hub := _get_hub()
 		if hub and hub.has_method("_show_toast"):
 			hub._show_toast("🎁 Đã nhận 1 Lệnh Bài Linh Lung Tháp vào hành trang!")
-		_select_tab(2)
+		select_tab_name("Ải")
 
 ## Thẻ Ải "Bảo Vệ Trụ Danh Dự"
-func _build_honor_defense(parent: Control) -> void:
+func _build_honor_defense(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -515,9 +546,10 @@ func _build_honor_defense(parent: Control) -> void:
 		_play(map_entry)
 	)
 	row.add_child(play_btn)
+	return card
 
 ## Thẻ Vượt Ải Giang Hồ (10 Bàn chơi kinh điển có ảnh thumbnail xem trước đầy đủ)
-func _build_stages_challenge(parent: Control) -> void:
+func _build_stages_challenge(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -630,8 +662,9 @@ func _build_stages_challenge(parent: Control) -> void:
 					break
 		)
 		row.add_child(td_btn)
+	return card
 
-func _build_time_challenge(parent: Control) -> void:
+func _build_time_challenge(parent: Control) -> Control:
 	var r := TimeChallenge.rules()
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -697,6 +730,7 @@ func _build_time_challenge(parent: Control) -> void:
 	team.tooltip_text = tr("Khiêu chiến cùng tổ đội tối đa 8 người (phòng chờ và danh sách phòng)")
 	team.pressed.connect(_open_time_challenge_party)
 	row.add_child(team)
+	return card
 
 func _open_time_challenge_party() -> void:
 	var win_script: GDScript = load("res://ui/events/time_challenge_window.gd")
@@ -705,21 +739,21 @@ func _open_time_challenge_party() -> void:
 func _start_time_challenge() -> void:
 	var reason := TimeChallenge.check_entry(_profile)
 	if reason != "":
-		_select_tab(2)
+		select_tab_name("Ải")
 		return
 	SocialWindow.confirm(self, "Thách Thức Thời Gian",
 			"Tham gia khiêu chiến? Tốn %s lượng, 1 %s và 1 lượt hôm nay." % [
 				TimeChallenge._money(int(TimeChallenge.rules().get("cost", 150000))), TimeChallenge.ENTRY_ITEM_NAME],
 			func() -> void:
 				if not TimeChallenge.pay_entry(_profile):
-					_select_tab(2)
+					select_tab_name("Ải")
 					return
 				_play(TimeChallenge.map_entry()))
 
 func _sweep_time_challenge() -> void:
 	var reason := TimeChallenge.check_entry(_profile)
 	if reason != "":
-		_select_tab(2)
+		select_tab_name("Ải")
 		return
 	SocialWindow.confirm(self, "Càn Quét Vượt Ải",
 			"Càn quét 28 ải nhận ngay phần thưởng? Tốn %s lượng, 1 %s và 1 lượt hôm nay." % [
@@ -730,12 +764,12 @@ func _sweep_time_challenge() -> void:
 					var hub := _get_hub()
 					if hub and hub.has_method("_show_toast"):
 						hub._show_toast("⚡ Càn quét thành công! Nhận +%d EXP." % int(res.get("exp", 0)))
-				_select_tab(2)
+				select_tab_name("Ải")
 	)
 
 # ---------------------------------------------------------------- tab Ải (Ải Thuyền Phong Lăng Độ)
 
-func _build_phong_lang_do(parent: Control) -> void:
+func _build_phong_lang_do(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -814,11 +848,12 @@ func _build_phong_lang_do(parent: Control) -> void:
 		sweep_btn.tooltip_text = tr("Ủy thác thuyền vượt sông Hoàng Hà, nhận ngay phần thưởng mà không cần đánh tay")
 		sweep_btn.pressed.connect(_sweep_phong_lang_do)
 		row.add_child(sweep_btn)
+	return card
 
 func _start_phong_lang_do() -> void:
 	var reason := PhongLangDoChallenge.check_entry(_profile)
 	if reason != "":
-		_select_tab(2)
+		select_tab_name("Ải")
 		return
 	var item_cnt := PhongLangDoChallenge.entry_item_count(_profile)
 	var cost_desc := "1 %s" % PhongLangDoChallenge.ENTRY_ITEM_NAME if item_cnt > 0 else "%s lượng vé thuyền" % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
@@ -826,14 +861,14 @@ func _start_phong_lang_do() -> void:
 			"Lên thuyền vượt sông Hoàng Hà? Thủ tục sẽ thu %s và tính 1 lượt hôm nay." % cost_desc,
 			func() -> void:
 				if not PhongLangDoChallenge.pay_entry(_profile):
-					_select_tab(2)
+					select_tab_name("Ải")
 					return
 				_play(PhongLangDoChallenge.map_entry()))
 
 func _sweep_phong_lang_do() -> void:
 	var reason := PhongLangDoChallenge.check_entry(_profile)
 	if reason != "":
-		_select_tab(2)
+		select_tab_name("Ải")
 		return
 	var item_cnt := PhongLangDoChallenge.entry_item_count(_profile)
 	var cost_desc := "1 %s" % PhongLangDoChallenge.ENTRY_ITEM_NAME if item_cnt > 0 else "%s lượng vé thuyền" % PhongLangDoChallenge._money(PhongLangDoChallenge.ENTRY_FEE)
@@ -845,12 +880,12 @@ func _sweep_phong_lang_do() -> void:
 					var hub := _get_hub()
 					if hub and hub.has_method("_show_toast"):
 						hub._show_toast("⚡ Ủy thác thành công! +%d EXP, +100 Danh vọng, +100 Phúc duyên!" % int(res.get("exp", 0)))
-				_select_tab(2)
+				select_tab_name("Ải")
 	)
 
 # ---------------------------------------------------------------- tab Ải (Tống Kim LOL)
 
-func _build_tong_kim_lol(parent: Control) -> void:
+func _build_tong_kim_lol(parent: Control) -> Control:
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(card)
@@ -877,10 +912,11 @@ func _build_tong_kim_lol(parent: Control) -> void:
 				win._select_mode(PkRules.Mode.TONG_KIM_LOL)
 	)
 	info.add_child(enter_btn)
+	return card
 
 # ---------------------------------------------------------------- tab Ải (Chiến Trường Tống Kim)
 
-func _build_battle(parent: Control) -> void:
+func _build_battle(parent: Control) -> Control:
 	_battle_buttons.clear()
 	var card := GameUi.panel(GameUi.PANEL)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -932,6 +968,7 @@ func _build_battle(parent: Control) -> void:
 		_battle_timer.start()
 	_battle_poll_acc = BATTLE_POLL
 	_battle_tick()
+	return card
 
 ## Khung ảnh mini map của 1 map (entry có "dir") — dùng chung cho thẻ map luyện công, Thách Thức Thời Gian, Tống Kim.
 static func _minimap_frame(entry: Dictionary) -> Control:
@@ -994,7 +1031,7 @@ func _cooldown_left() -> float:
 
 ## Mỗi giây: cập nhật đếm ngược nút; mỗi BATTLE_POLL giây hỏi lại trạng thái trận.
 func _battle_tick() -> void:
-	if _tab != 2 or _battle_status == null or not is_instance_valid(_battle_status):
+	if get_current_tab_name() != "Ải" or _battle_status == null or not is_instance_valid(_battle_status):
 		return
 	_battle_poll_acc += 1.0
 	if _battle_poll_acc >= BATTLE_POLL:
@@ -1021,14 +1058,16 @@ func _render_battle() -> void:
 		_battle_status.text = "Chiến trường chỉ có khi chơi trên máy chủ (đăng nhập tài khoản)."
 		_battle_sides.text = ""
 	elif not open:
-		_battle_status.text = "Chiến trường chưa mở (máy chủ chiến trường không hoạt động)."
+		_battle_status.text = "Chiến trường máy chủ chưa mở trận. Bạn có thể bấm [⚔️ Đấu Tập (Bot AI)] để tham chiến ngay với Bot AI!"
 		_battle_sides.text = ""
 	else:
 		var left := int(_battle.get("phase_left", 0))
 		@warning_ignore("integer_division")
 		var minutes := left / 60
-		_battle_status.text = "%s · còn %02d:%02d · cấp từ %d" % [BATTLE_PHASES.get(str(_battle.get("phase", "")), "?"), minutes, left % 60,
-			int(_battle.get("min_level", 0))]
+		var min_lvl := int(_battle.get("min_level", 40))
+		if min_lvl <= 0:
+			min_lvl = 40
+		_battle_status.text = "%s · còn %02d:%02d · cấp từ %d" % [BATTLE_PHASES.get(str(_battle.get("phase", "")), "?"), minutes, left % 60, min_lvl]
 		_battle_sides.text = "Phe Tống: %d người · %d điểm        Phe Kim: %d người · %d điểm" % [int(_battle.get("song", 0)),
 			int(_battle.get("song_points", 0)), int(_battle.get("jin", 0)), int(_battle.get("jin_points", 0))]
 	for side in _battle_buttons:
@@ -1042,12 +1081,15 @@ func _join_battle(side: String) -> void:
 		return
 	_battle_clicked_at = Time.get_ticks_msec()
 	_battle_msg.text = ""
+	var min_lvl := int(_battle.get("min_level", 40))
+	if min_lvl <= 0:
+		min_lvl = 40
 	if not (_battle.get("open", false) == true):
 		_battle_msg.text = "Chiến trường chưa mở."
 	elif str(_battle.get("phase", "")) == "ended":
 		_battle_msg.text = "Trận này đã kết thúc, xin chờ trận sau."
-	elif not AccountApi.is_gm() and _profile and _profile.level < int(_battle.get("min_level", 0)):
-		_battle_msg.text = "Cấp %d trở lên mới được vào chiến trường." % int(_battle.get("min_level", 0))
+	elif not AccountApi.is_gm() and _profile and _profile.level < min_lvl:
+		_battle_msg.text = "Cấp %d trở lên mới được vào chiến trường." % min_lvl
 	else:
 		var other := "jin" if side == "song" else "song"
 		var mine := int(_battle.get(side, 0))
@@ -2141,7 +2183,7 @@ func _boss_card(boss: Dictionary) -> Control:
 	return card
 
 func _tick_boss_timers() -> void:
-	if not is_inside_tree() or _tab != 3 or GameModeManager.is_offline():
+	if not is_inside_tree() or get_current_tab_name() != "Boss" or GameModeManager.is_offline():
 		return
 	for item in _boss_card_views:
 		var boss: Dictionary = item["boss"]

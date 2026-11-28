@@ -642,9 +642,30 @@ func _update_visual() -> void:
 	var size: Array = _anim["size"]
 	var offset: Array = _anim["offset"]
 	var cols := int(_anim.get("cols", 1))
+	_vis_frame = frame
+	_vis_dirs = dirs
+	_vis_per_dir = per_dir
 	_sprite.visible = true
 	_sprite.region_rect = Rect2((index % cols) * size[0], (index / cols) * size[1], size[0], size[1])
 	_sprite.position = Vector2(offset[0], offset[1] - _z * VltkMath.Z_SCREEN)
+
+## Chế độ 3D xoay camera: vùng ảnh của frame bay đang hiện nhưng ở hướng 64 `d64` (cùng công thức với _update_visual).
+## Rect2() nếu hướng đó không có ảnh.
+var _vis_frame := 0
+var _vis_dirs := 1
+var _vis_per_dir := 1
+func get_dir64() -> int:
+	return dir
+
+func sprite_region_for_dir(d64: int) -> Rect2:
+	if _anim.is_empty():
+		return Rect2()
+	var index := VltkMath.image_dir(wrapi(d64, 0, VltkMath.MAX_DIR), _vis_dirs) * _vis_per_dir + _vis_frame
+	if index >= int(_anim.get("frames", 1)):
+		return Rect2()
+	var size: Array = _anim["size"]
+	var cols := int(_anim.get("cols", 1))
+	return Rect2((index % cols) * size[0], (index / cols) * size[1], size[0], size[1])
 
 func _exit_tree() -> void:
 	active_missiles.erase(self)

@@ -65,4 +65,38 @@ Mẫu có sẵn: `data/avatar3d/models/nguoi_go/` (người gỗ do `tools/make_
 
 - Mỗi bộ đồ cần 1 model riêng. Bộ nào chưa có model thì dùng hình phẳng.
   Hướng lâu dài: 1 thân chung + áo phủ cùng bộ xương + vũ khí gắn vào tay (BoneAttachment3D).
-- Map 3D (World3DView) hiện vẽ người là các khối bộ phận (Actor3DRig); chưa nối Character3D / model vào map.
+
+## Map 3D (World3DView): thả model vào là dùng, không sửa code
+
+Mặc định người / quái / NPC / xác quái trong map 3D là **hình dựng từ frame 2D** (`ActorFrames3D`): đứng, chạy, đánh,
+ra chiêu, trúng đòn, chết y bản 2D (đổi đồ, cưỡi ngựa, nhuộm băng/độc đều theo). Xoay camera thì vẽ lại hướng đã bù góc.
+
+Có file model thì tự dùng model thay hình (ưu tiên từ trên xuống), mỗi thư mục đặt ở `res://data/avatar3d/...`
+hoặc `user://avatar3d/...` (chép vào là dùng):
+
+| Đối tượng | Thư mục / file | Ghi chú |
+|---|---|---|
+| Người — 1 bộ áo | `models/nguoi_nam_ao<mã áo>/` , `models/nguoi_nu_ao<mã áo>/` | model cả người, có xương + động tác (như trên) |
+| Người — mọi bộ | `models/nguoi_nam/` , `models/nguoi_nu/` | |
+| Người — từng bộ phận | `parts/<khe>/<mã hình>.glb` hoặc `parts/<khe>/mac_dinh.glb` | khe: `head hair shoulder body left_hand right_hand left_weapon right_weapon horse_front horse_middle horse_back`; khe chưa có model hiện **khối màu** |
+| Quái | `models/quai_<mã hình quái (res)>/` | động tác: stand, run (walk), attack (attack1), attack2, cast (magic), hurt, die |
+| NPC | `models/npc_<tên file ảnh NPC, bỏ đuôi>/` | |
+
+Model bộ phận (`parts/`) là model tĩnh: gốc ở **chân nhân vật**, quay mặt **+Z**, tay trái **+X**, đơn vị mét theo cỡ
+khối thử (người cao ~0,9 m) — không tự co giãn. Đuôi nhận: `.glb .gltf .fbx .tscn`.
+Đổi trang bị -> rig tự tìm lại model đúng mã hình.
+
+### Nhà / cây / tường / vật cản
+
+Mặc định dựng **tấm hình từ ảnh 2D** của vật đó: phần ảnh trên đường chân đế dựng đứng, phần dưới (nền, bóng vẽ sẵn) nằm
+phẳng dưới đất — camera mặc định thấy y như bản 2D, xoay camera thì thấy nhà / tường đứng thật. Chân đế lấy theo
+**từng cột ảnh** (mép dưới phần đặc của ảnh = chỗ vật chạm đất như đã vẽ) nên tường nhiều ảnh nối nhau dựng liền
+theo đường chéo, nhà gấp theo mép nền; cây luôn quay mặt về camera. Vật che nhân vật thì mờ đi.
+Giới hạn: ảnh gốc chỉ vẽ 1 mặt — xoay xa (> ~45°) mái nhà / hông nhà trông như giấy gấp; muốn nhìn vòng quanh thì thay model.
+Cảnh thử: `tests/world_3d_wall_shot.tscn` (chụp dải tường ở 6 góc xoay, cần GPU).
+
+Thay bằng model: `data/avatar3d/structures/<tên ảnh>.glb` (hoặc `user://avatar3d/structures/`, đuôi `.gltf .fbx .tscn`).
+`<tên ảnh>` = tên file ảnh của vật trong map, bỏ đuôi — xem trường `img` của `objects` trong
+`world/maps/map_<id>/chunks/*.json.gz` (VD `7716cc02_0`); mọi chỗ dùng ảnh đó trên mọi map đều đổi theo.
+Gốc model = **giữa chân đế** ảnh, mặt quay **+Z** (về phía camera mặc định), 1 m = 100 px.
+Khối hộp cũ vẫn dựng sẵn (ẩn, node `Khoi`) để so chỗ đặt / cỡ.

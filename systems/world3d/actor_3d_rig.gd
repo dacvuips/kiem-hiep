@@ -6,9 +6,15 @@ class_name Actor3DRig
 ##   áo  (armor):  shoulder, body, left_hand, right_hand
 ##   vũ khí:       left_weapon, right_weapon
 ##   ngựa (horse): horse_front, horse_middle, horse_back
-## Hiện mỗi khe là 1 KHỐI màu theo mã hình (đổi đồ -> đổi màu). SAU NÀY: set_part_model(khe, cảnh) gắn model bộ phận
-## vào khe (model đầu, áo, vũ khí... theo mã hình như bản 2D chọn sheet theo mã hình).
 ## Đọc trang bị + hướng từ CharacterAvatar của nhân vật 2D (đã đồng bộ từ server như cũ) — rig không có logic riêng.
+##
+## 3 cách hiện, TỰ CHỌN theo file có trên máy — thả file model vào đúng thư mục là dùng, KHÔNG sửa code
+## (xem docs/huong_dan_model_3d.md):
+##   1. Model CẢ NGƯỜI: data/avatar3d/models/nguoi_<nam|nu>_ao<mã áo>/ hoặc nguoi_<nam|nu>/ (Model3DLoader, có xương +
+##      động tác) -> Character3D, động tác theo avatar 2D (stand/run/attack/cast/hurt/die...).
+##   2. Model TỪNG BỘ PHẬN: data/avatar3d/parts/<khe>/<mã hình>.glb (hoặc mac_dinh.glb = mọi mã) -> gắn vào khe;
+##      khe nào chưa có model thì hiện KHỐI màu như cũ (thấy ngay khe nào còn thiếu).
+##   3. Không có model nào: HÌNH DỰNG TỪ FRAME 2D (ActorFrames3D) — đứng/chạy/đánh/chiêu/chết y bản 2D.
 
 const GROUP_OF := {
 	"head": "helm", "hair": "helm",
@@ -39,6 +45,13 @@ var _blocks := {}            ## tên khe -> MeshInstance3D (khối thử, ẩn k
 var _models := {}            ## tên khe -> Node3D model đã gắn
 var _res := {"helm": -99, "armor": -99, "weapon": -99, "horse": -99}
 var _yaw := 0.0
+var frames: ActorFrames3D    ## hình từ frame 2D (World3DView tạo, nằm cạnh rig — không quay theo rig)
+var whole: Character3D       ## model cả người (tự tạo khi có thư mục model)
+var _whole_dir := ""
+var mode := "frames"         ## "model" | "parts" | "frames"
+
+const PARTS_DIRS := ["user://avatar3d/parts/", "res://data/avatar3d/parts/"]
+const PART_EXTS := ["glb", "gltf", "fbx", "tscn"]
 
 static var _box := BoxMesh.new()
 static var _mats := {}
@@ -80,21 +93,79 @@ func _process(delta: float) -> void:
 	_yaw = lerp_angle(_yaw, target, minf(1.0, delta * 14.0))
 	rotation.y = _yaw
 	rider.position.y = (RIDE_LIFT if avatar.is_riding() else 0.0) + avatar.get_height() * 0.01 / 0.866
+	if whole != null and mode == "model":
+		whole.face_world(Vector3(cos(a), 0.0, sin(a)))
+		whole.position.y = avatar.get_height() * 0.01 / 0.866
+		if whole.action != avatar.action:
+			whole.play(avatar.action)
 
 func _sync_res() -> void:
 	var data := AvatarData.get_for(avatar.gender)
 	var now := {"helm": avatar.helm_res, "armor": avatar.armor_res, "weapon": avatar.weapon_res,
 		"horse": avatar.horse_res if avatar.is_riding() else -1}
+	var changed := false
 	for g in now:
 		if now[g] == _res[g]:
 			continue
 		_res[g] = now[g]
+		changed = true
+		for part in GROUP_OF:
+			if GROUP_OF[part] == g:
+				set_part_model(part, _load_part(part, int(now[g])) if int(now[g]) >= 0 else null)
 		for part in GROUP_OF:
 			if GROUP_OF[part] != g:
 				continue
 			var b: MeshInstance3D = _blocks[part]
 			b.visible = not _models.has(part) and _group_visible(g, data)
 			b.material_override = _mat(_color_for(part, int(now[g])))
+	if changed:
+		_choose_mode()
+
+## Model cả người > model bộ phận (khe thiếu hiện khối) > hình frame 2D.
+func _choose_mode() -> void:
+	var g := "nu" if avatar.gender == "female" else "nam"
+	var dir := Model3DLoader.model_dir("nguoi_%s_ao%d" % [g, avatar.armor_res])
+	if dir == "":
+		dir = Model3DLoader.model_dir("nguoi_" + g)
+	if dir != _whole_dir:
+		_whole_dir = dir
+		if whole != null:
+			whole.queue_free()
+			whole = null
+		if dir != "":
+			whole = Character3D.new()
+			whole.name = "WholeModel"
+			if whole.load_model(dir):
+				(get_parent() if get_parent() != null else self).add_child(whole)
+				whole.play(avatar.action)
+			else:
+				whole.free()
+				whole = null
+	mode = "model" if whole != null else ("parts" if not _models.is_empty() else "frames")
+	visible = mode == "parts"
+	if frames != null:
+		frames.visible = mode == "frames"
+	if whole != null:
+		whole.visible = mode == "model"
+
+## Model 1 bộ phận theo mã hình: parts/<khe>/<mã>.<đuôi>, không có thì parts/<khe>/mac_dinh.<đuôi>. null = chưa có.
+static func _load_part(part: String, res: int) -> Node3D:
+	for base in PARTS_DIRS:
+		for name in [str(res), "mac_dinh"]:
+			for ext in PART_EXTS:
+				var f: String = base + part + "/" + name + "." + ext
+				if not FileAccess.file_exists(f) and not ResourceLoader.exists(f):
+					continue
+				if ext == "tscn":
+					var ps := load(f) as PackedScene
+					var n := ps.instantiate() if ps != null else null
+					if n is Node3D:
+						return n
+					continue
+				var m := Model3DLoader._load_scene(f)
+				if m != null:
+					return m
+	return null
 
 ## Tay không (mã vũ khí mặc định) thì không có khối vũ khí; không cưỡi thì không có ngựa. Vũ khí 1 tay chỉ hiện tay phải.
 func _group_visible(g: String, data: AvatarData = null) -> bool:

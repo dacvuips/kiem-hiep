@@ -720,6 +720,7 @@ func _show_region(rx: int, ry: int, info: Array = []) -> void:
 					else:
 						sp.position = Vector2(0, oy)
 					holder.add_child(sp)
+					holder.set_meta("img", str(o["img"]))   # chế độ 3D tìm model thay ảnh theo tên này
 					if layer == 0:
 						_g_flat.add_child(holder)
 					elif layer == 2:

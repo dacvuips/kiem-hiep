@@ -83,24 +83,17 @@ func _ready() -> void:
 		assert(int(look_unride.horse) == -1, "Horse look should be -1 when not riding")
 		print("PASS: Riding toggle appearance correctly reflects horse")
 	
-	# 4. Test CharacterHub scene instantiation with Mannequin
+	# 4. CharacterHub: khung Trang bị không có mannequin
 	var hub_scene: PackedScene = load("res://ui/character_hub/CharacterHub.tscn")
 	var hub = hub_scene.instantiate()
 	add_child(hub)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
-	var mannequin = hub.get_node_or_null("%EquipBackground/EquipMannequin")
-	assert(mannequin != null, "EquipMannequin should exist in EquipBackground")
-	var rotate_btn = hub.get_node_or_null("%EquipBackground/RotateMannequinBtn")
-	assert(rotate_btn != null, "RotateMannequinBtn should exist")
-	var ride_btn = hub.get_node_or_null("%EquipBackground/RideToggleBtn")
-	assert(ride_btn != null, "RideToggleBtn should exist")
-	
-	# Bấm nút xoay
-	rotate_btn.emit_signal("pressed")
-	assert(hub._mannequin_direction == 1, "Mannequin direction should advance to 1")
-	print("PASS: Rotate mannequin button works")
+	# Khung Trang bị không còn nhân vật mặc đồ / nút Xoay / nút Lên ngựa (đè lên ô đồ).
+	for n in ["EquipMannequin", "RotateMannequinBtn", "RideToggleBtn"]:
+		assert(hub.get_node_or_null("%EquipBackground/" + n) == null, n + " should not exist")
+	print("PASS: Equip panel has no mannequin overlay")
 	
 	print("--- ALL NEW SECTS & MANNEQUIN TESTS PASSED SUCCESSFULLY! ---")
 	get_tree().quit()
